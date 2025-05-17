@@ -65,10 +65,11 @@
                         <h3 class="font-semibold text-gray-800 truncate">{{ $product->name }}</h3>
                         <p class="mt-2 text-green-600 font-bold">KES {{ number_format($product->price,2) }}</p>
                         <div class="mt-3 flex justify-between items-center">
-                            <a href="{{ route('products.show', $product) }}"
+                            <a href="{{ route('listing.show', $product->slug) }}"
                                class="text-sm text-gray-500 hover:underline">
                                 View Details
                             </a>
+                            
                             <button class="bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
                                      viewBox="0 0 24 24" stroke="currentColor">

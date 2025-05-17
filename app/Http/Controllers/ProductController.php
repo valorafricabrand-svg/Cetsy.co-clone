@@ -134,4 +134,13 @@ class ProductController extends Controller
         // Optional public view
         return view('products.show', compact('product'));
     }
+
+
+        public function listing($slug)
+    {
+
+        $product = Product::whereSlug($slug)->first();
+        return view('products.show', compact('product'));
+        
+    }
 }

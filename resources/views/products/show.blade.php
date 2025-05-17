@@ -23,7 +23,7 @@
             <img 
               @click="mainImage='{{ asset('storage/'.$media->url) }}'" 
               src="{{ asset('storage/'.$media->url) }}"
-              alt=""
+              alt="{{ $product->name }}"
               class="object-cover w-full h-20 rounded-lg cursor-pointer hover:opacity-75 transition"
             />
           @endforeach
@@ -66,12 +66,15 @@
         </div>
       </div>
 
-      {{-- Add to Cart (placeholder) --}}
+      {{-- Add to Cart --}}
       <form 
-        action="{{ route('cart.index') }}" 
-        method="GET" 
+        action="{{ route('cart.store') }}" 
+        method="POST" 
         class="mt-8 flex items-center space-x-4"
       >
+        @csrf
+        <input type="hidden" name="product_id" value="{{ $product->id }}">
+
         <label for="quantity" class="sr-only">Quantity</label>
         <input 
           type="number" 
@@ -81,6 +84,7 @@
           min="1"
           class="w-20 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
         />
+
         <button 
           type="submit"
           class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark transition"
