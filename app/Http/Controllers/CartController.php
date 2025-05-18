@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
 use App\Models\CartItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -9,26 +10,30 @@ use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
-    
-
     /**
-     * Show the authenticated user’s cart.
+     * Display the authenticated user’s cart.
      */
     public function index()
     {
-        $items = CartItem::with('product')
-                         ->where('user_id', Auth::id())
-                         ->get();
+        // 1. Get or create the cart for this user
+        $cart = Cart::firstOrCreate([
+            'user_id' => Auth::id(),
+        ]);
 
-        $subtotal = $items->sum(fn($item) => $item->product->price * $item->quantity);
+        // 2. Pull all items (and eager-load the product)
+        $items = $cart->items()->with('product')->get();
 
+        // 3. Calculate subtotal
+        $subtotal = $items->sum(fn($item) => 
+            $item->product->price * $item->quantity
+        );
+
+        // 4. Render view
         return view('cart.index', compact('items', 'subtotal'));
     }
 
     /**
-     * Add a product to cart.
-     * - Guests: stored in session.
-     * - Authenticated: stored in database.
+     * Add a product to the cart.
      */
     public function store(Request $request)
     {
@@ -37,7 +42,7 @@ class CartController extends Controller
             'quantity'   => 'required|integer|min:1',
         ]);
 
-        // Guest: session-based cart
+        // Guest: session-based
         if (Auth::guest()) {
             $cart = session()->get('cart', []);
             $pid  = $data['product_id'];
@@ -49,9 +54,19 @@ class CartController extends Controller
         }
 
         // Authenticated: database cart
+        $cart = Cart::firstOrCreate([
+            'user_id' => Auth::id(),
+        ]);
+
         CartItem::updateOrCreate(
-            ['user_id' => Auth::id(), 'product_id' => $data['product_id']],
-            ['quantity' => DB::raw("quantity + {$data['quantity']}")]
+            [
+                'cart_id'    => $cart->id,
+                'product_id' => $data['product_id'],
+            ],
+            [
+                // increment existing quantity
+                'quantity'   => DB::raw("quantity + {$data['quantity']}")
+            ]
         );
 
         return redirect()->route('cart.index')
@@ -59,16 +74,18 @@ class CartController extends Controller
     }
 
     /**
-     * Update an item’s quantity (authenticated users only).
+     * Update an item’s quantity (authenticated only).
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $productId)
     {
         $data = $request->validate([
             'quantity' => 'required|integer|min:1',
         ]);
 
-        $item = CartItem::where('user_id', Auth::id())
-                        ->where('product_id', $id)
+        $cart = Cart::where('user_id', Auth::id())->firstOrFail();
+
+        $item = CartItem::where('cart_id', $cart->id)
+                        ->where('product_id', $productId)
                         ->firstOrFail();
 
         $item->update(['quantity' => $data['quantity']]);
@@ -77,12 +94,14 @@ class CartController extends Controller
     }
 
     /**
-     * Remove an item from the cart (authenticated users only).
+     * Remove an item from the cart (authenticated only).
      */
-    public function destroy($id)
+    public function destroy($productId)
     {
-        $item = CartItem::where('user_id', Auth::id())
-                        ->where('product_id', $id)
+        $cart = Cart::where('user_id', Auth::id())->firstOrFail();
+
+        $item = CartItem::where('cart_id', $cart->id)
+                        ->where('product_id', $productId)
                         ->firstOrFail();
 
         $item->delete();

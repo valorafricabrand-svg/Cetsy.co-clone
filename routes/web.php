@@ -1,14 +1,18 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Http\Controllers\Seller\DashboardController as SellerDashboard;
+use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,50 +20,97 @@ use App\Http\Controllers\OrderController;
 |--------------------------------------------------------------------------
 */
 
-// Homepage (public)
+// Public homepage
 Route::get('/', [HomeController::class, 'index'])
      ->name('home');
 
-// Add to cart (public; guests may post here)
+// Guests may add items to cart
 Route::post('/cart', [CartController::class, 'store'])
      ->name('cart.store');
 
-Route::get('/listing/{slug}', [ProductController::class, 'listing'])->name('listing.show');
+// Public product detail page
+Route::get('/listing/{slug}', [ProductController::class, 'listing'])
+     ->name('listing.show');
 
-// Dashboard (requires auth & email verification)
-Route::get('/dashboard', fn() => view('dashboard'))
-     ->middleware(['auth','verified'])
-     ->name('dashboard');
+// Authenticated & verified generic dashboard (if you still use it)
 
-// All routes below require authentication
+Route::get('/dashboard',    [DashboardController::class, 'dashboard'])
+         ->name('dashboard');
+
 Route::middleware('auth')->group(function () {
     // Profile management
-    Route::get('/profile',   [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile',[ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile',    [ProfileController::class, 'edit'])
+         ->name('profile.edit');
+    Route::patch('/profile',  [ProfileController::class, 'update'])
+         ->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+         ->name('profile.destroy');
 
-    // Shop (one-per-user)
-    Route::get('/shop/create',      [ShopController::class, 'create'])->name('shops.create');
-    Route::post('/shop',            [ShopController::class, 'store'])->name('shops.store');
+    // One-shop-per-user
+    Route::get('/shop/index',       [ShopController::class, 'index'])
+         ->name('shops.index');
+    Route::get('/shop/create',      [ShopController::class, 'create'])
+         ->name('shops.create');
+    Route::post('/shop',            [ShopController::class, 'store'])
+         ->name('shops.store');
+    Route::get('/shop/{shop:slug}', [ShopController::class, 'show'])
+         ->name('shops.show');
 
-    Route::get('/shop/{shop:slug}', [ShopController::class, 'show'])->name('shops.show');
-
-    // Products CRUD
+    // Products management
     Route::resource('products', ProductController::class);
 
-    // Categories CRUD (admin/UI)
+    // Categories management
     Route::resource('categories', CategoryController::class);
 
-    // View and manage cart (only for logged-in users)
-    Route::get('/cart',                [CartController::class, 'index'])->name('cart.index');
-    Route::patch('/cart/{id}',         [CartController::class, 'update'])->name('cart.update');
-    Route::delete('/cart/{id}',        [CartController::class, 'destroy'])->name('cart.destroy');
+    // Authenticated cart routes
+    Route::get('/cart',          [CartController::class, 'index'])
+         ->name('cart.index');
+    Route::patch('/cart/{id}',   [CartController::class, 'update'])
+         ->name('cart.update');
+    Route::delete('/cart/{id}',  [CartController::class, 'destroy'])
+         ->name('cart.destroy');
 
-    // (You can add checkout & orders here)
-     Route::get('/checkout',          [CheckoutController::class,'index'])->name('checkout.index');
-     Route::post('/checkout',         [CheckoutController::class,'store'])->name('checkout.store');
-     Route::get('/orders',            [OrderController::class,'index'])->name('orders.index');
-     Route::get('/orders/{order}',    [OrderController::class,'show'])->name('orders.show');
+    // Checkout & orders
+    Route::get('/checkout',                      [CheckoutController::class, 'index'])
+         ->name('checkout.index');
+    Route::post('/checkout',                     [CheckoutController::class, 'store'])
+         ->name('checkout.store');
+    Route::get('/checkout/success/{order}',      [CheckoutController::class, 'success'])
+         ->name('checkout.success');
+    Route::get('/orders',                        [OrderController::class, 'index'])
+         ->name('orders.index');
+    Route::get('/orders/{order}',                [OrderController::class, 'show'])
+         ->name('orders.show');
 });
 
-require __DIR__.'/auth.php';
+// Admin panel (only `user_type = admin`)
+Route::middleware(['auth'])
+     ->prefix('admin')
+     ->name('admin.')
+     ->group(function () {
+         Route::get('dashboard', [AdminDashboard::class, 'index'])
+              ->name('dashboard');
+         // add admin.users, admin.reports, etc.
+     });
+
+// Seller panel (only `user_type = seller`)
+Route::middleware(['auth'])
+     ->prefix('seller')
+     ->name('seller.')
+     ->group(function () {
+         Route::get('dashboard', [SellerDashboard::class, 'index'])
+              ->name('dashboard');
+         // add seller-specific routes: orders, reports...
+     });
+
+// Buyer panel (only `user_type = buyer`)
+Route::middleware(['auth'])
+     ->prefix('buyer')
+     ->name('buyer.')
+     ->group(function () {
+         Route::get('dashboard', [BuyerDashboard::class, 'index'])
+              ->name('dashboard');
+         // add buyer-specific routes if needed
+     });
+
+require __DIR__ . '/auth.php';
