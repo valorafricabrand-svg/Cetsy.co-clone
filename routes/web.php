@@ -107,6 +107,9 @@ Route::middleware(['auth'])
     // Settings page
     Route::get('settings', [SettingsController::class, 'index'])
          ->name('settings');
+
+         Route::get('reports', [AdminReport::class, 'index'])
+             ->name('reports');
      });
 
 // Seller panel (only `user_type = seller`)
@@ -130,6 +133,6 @@ Route::middleware(['auth'])
      });
 
 
-         
+
 
 require __DIR__ . '/auth.php';
