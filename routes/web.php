@@ -101,7 +101,12 @@ Route::middleware(['auth'])
      ->group(function () {
          Route::get('dashboard', [AdminDashboard::class, 'index'])
               ->name('dashboard');
-         // add admin.users, admin.reports, etc.
+         Route::resource('users', UserController::class);
+    Route::resource('roles', RoleController::class);
+
+    // Settings page
+    Route::get('settings', [SettingsController::class, 'index'])
+         ->name('settings');
      });
 
 // Seller panel (only `user_type = seller`)
@@ -125,11 +130,6 @@ Route::middleware(['auth'])
      });
 
 
-         Route::resource('users', UserController::class);
-    Route::resource('roles', RoleController::class);
-
-    // Settings page
-    Route::get('settings', [SettingsController::class, 'index'])
-         ->name('settings');
+         
 
 require __DIR__ . '/auth.php';
