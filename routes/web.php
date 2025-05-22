@@ -62,6 +62,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/shop/{shop:slug}', [ShopController::class, 'show'])
          ->name('shops.show');
 
+// Show the edit form (only for the owner)
+Route::get('shops/{shop}/edit', [ShopController::class, 'edit'])
+     ->name('shops.edit')
+     ->middleware('auth');
+
+// Handle the form submission
+Route::patch('shops/{shop}', [ShopController::class, 'update'])
+     ->name('shops.update')
+     ->middleware('auth');
+
+
     // Products management
     Route::resource('products', ProductController::class);
 

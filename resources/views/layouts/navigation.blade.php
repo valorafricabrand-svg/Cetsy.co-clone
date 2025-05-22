@@ -31,10 +31,23 @@
               {{ __('Seller Dashboard') }}
             </x-nav-link>
 
-            <x-nav-link :href="route('shops.show', auth()->user()->shop)"
+           
+
+                @if(auth()->user()->shop)
+             <x-nav-link :href="route('shops.show', auth()->user()->shop)"
                         :active="request()->routeIs('shops.show')">
               {{ __('My Shop') }}
             </x-nav-link>
+            @else
+             
+
+                  <x-nav-link :href="route('shops.create', auth()->user()->shop)"
+                        :active="request()->routeIs('shops.create')">
+              {{ __('Open Shop') }}
+            </x-nav-link>
+            @endif
+
+
 
             <x-nav-link :href="route('products.index')"
                         :active="request()->routeIs('products.*')">

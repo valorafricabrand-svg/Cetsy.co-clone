@@ -1,9 +1,9 @@
-{{-- resources/views/shops/create.blade.php --}}
+{{-- resources/views/shops/edit.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
 <div class="container mx-auto max-w-3xl py-8">
-    <h2 class="text-3xl font-bold mb-6 text-center">Create Your Shop</h2>
+    <h2 class="text-3xl font-bold mb-6 text-center">Edit Your Shop</h2>
 
     {{-- Flash Success --}}
     @if(session('success'))
@@ -24,10 +24,13 @@
     @endif
 
     <form 
-      action="{{ route('shops.store') }}" 
+      action="{{ route('shops.update', $shop) }}" 
       method="POST" 
       enctype="multipart/form-data"
-      x-data="{ name: '{{ old('name') }}', slug: '{{ old('slug') }}' }"
+      x-data="{ 
+        name: '{{ old('name', $shop->name) }}', 
+        slug: '{{ old('slug', $shop->slug) }}' 
+      }"
       @input.debounce.300ms="
         slug = name.toLowerCase()
                    .trim()
@@ -37,6 +40,7 @@
       class="space-y-8"
     >
       @csrf
+      @method('PATCH')
 
       {{-- 1) Shop Preferences --}}
       <section class="bg-white shadow rounded-lg p-6">
@@ -49,9 +53,15 @@
             <select name="language" id="language" required
                     class="w-full border-gray-300 rounded px-3 py-2">
               <option value="" disabled>Select language</option>
-              <option {{ old('language')=='English'?'selected':'' }}>English</option>
-              <option {{ old('language')=='Spanish'?'selected':'' }}>Spanish</option>
-              <option {{ old('language')=='French'?'selected':'' }}>French</option>
+              <option value="English" {{ old('language', $shop->language)=='English' ? 'selected':'' }}>
+                English
+              </option>
+              <option value="Spanish" {{ old('language', $shop->language)=='Spanish' ? 'selected':'' }}>
+                Spanish
+              </option>
+              <option value="French" {{ old('language', $shop->language)=='French' ? 'selected':'' }}>
+                French
+              </option>
             </select>
           </div>
           <div>
@@ -61,9 +71,15 @@
             <select name="country" id="country" required
                     class="w-full border-gray-300 rounded px-3 py-2">
               <option value="" disabled>Select country</option>
-              <option {{ old('country')=='United States'?'selected':'' }}>United States</option>
-              <option {{ old('country')=='Canada'?'selected':'' }}>Canada</option>
-              <option {{ old('country')=='United Kingdom'?'selected':'' }}>United Kingdom</option>
+              <option value="United States" {{ old('country', $shop->country)=='United States' ? 'selected':'' }}>
+                United States
+              </option>
+              <option value="Canada" {{ old('country', $shop->country)=='Canada' ? 'selected':'' }}>
+                Canada
+              </option>
+              <option value="United Kingdom" {{ old('country', $shop->country)=='United Kingdom' ? 'selected':'' }}>
+                United Kingdom
+              </option>
             </select>
           </div>
           <div>
@@ -73,9 +89,15 @@
             <select name="currency" id="currency" required
                     class="w-full border-gray-300 rounded px-3 py-2">
               <option value="" disabled>Select currency</option>
-              <option {{ old('currency')=='USD'?'selected':'' }}>USD</option>
-              <option {{ old('currency')=='CAD'?'selected':'' }}>CAD</option>
-              <option {{ old('currency')=='GBP'?'selected':'' }}>GBP</option>
+              <option value="USD" {{ old('currency', $shop->currency)=='USD' ? 'selected':'' }}>
+                USD
+              </option>
+              <option value="CAD" {{ old('currency', $shop->currency)=='CAD' ? 'selected':'' }}>
+                CAD
+              </option>
+              <option value="GBP" {{ old('currency', $shop->currency)=='GBP' ? 'selected':'' }}>
+                GBP
+              </option>
             </select>
           </div>
         </div>
@@ -93,7 +115,6 @@
             x-model="name"
             required
             class="w-full border-gray-300 rounded px-3 py-2"
-            placeholder="e.g. MyCraftShop"
           >
         </div>
         <div>
@@ -105,12 +126,12 @@
             <input 
               id="slug" name="slug" type="text"
               x-model="slug"
-              readonly
+              required
               class="flex-1 bg-gray-100 border-gray-300 rounded px-3 py-2"
             >
           </div>
           <p class="text-sm text-gray-500 mt-1">
-            Auto-generated from your shop name.
+            You may customize, but it must be unique.
           </p>
         </div>
       </section>
@@ -125,10 +146,9 @@
             </label>
             <input 
               id="bank_account" name="bank_account" type="text"
-              value="{{ old('bank_account') }}"
+              value="{{ old('bank_account', $shop->bank_account) }}"
               required
               class="w-full border-gray-300 rounded px-3 py-2"
-              placeholder="000123456789"
             >
           </div>
           <div>
@@ -137,10 +157,9 @@
             </label>
             <input 
               id="routing_number" name="routing_number" type="text"
-              value="{{ old('routing_number') }}"
+              value="{{ old('routing_number', $shop->routing_number) }}"
               required
               class="w-full border-gray-300 rounded px-3 py-2"
-              placeholder="011000015"
             >
           </div>
         </div>
@@ -155,10 +174,9 @@
           </label>
           <input 
             id="address" name="address" type="text"
-            value="{{ old('address') }}"
+            value="{{ old('address', $shop->address) }}"
             required
             class="w-full border-gray-300 rounded px-3 py-2"
-            placeholder="123 Main St"
           >
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -168,10 +186,9 @@
             </label>
             <input 
               id="city" name="city" type="text"
-              value="{{ old('city') }}"
+              value="{{ old('city', $shop->city) }}"
               required
               class="w-full border-gray-300 rounded px-3 py-2"
-              placeholder="Anytown"
             >
           </div>
           <div>
@@ -180,24 +197,65 @@
             </label>
             <input 
               id="postal" name="postal" type="text"
-              value="{{ old('postal') }}"
+              value="{{ old('postal', $shop->postal) }}"
               required
               class="w-full border-gray-300 rounded px-3 py-2"
-              placeholder="12345"
             >
           </div>
         </div>
       </section>
 
- 
+      {{-- 5) Your Shop Security --}}
+      <section class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-xl font-semibold mb-4">5. Your Shop Security</h3>
+        <div class="mb-4">
+          <label for="password" class="block font-medium mb-1">
+            Confirm Your Password <span class="text-red-500">*</span>
+          </label>
+          <input 
+            id="password" name="password" type="password"
+            required
+            class="w-full border-gray-300 rounded px-3 py-2"
+            placeholder="Enter your account password"
+          >
+        </div>
+        <input type="hidden" name="enable_2fa" value="0">
+        <div class="flex items-center">
+          <input 
+            id="enable_2fa" name="enable_2fa" type="checkbox" value="1"
+            {{ old('enable_2fa', $shop->enable_2fa) ? 'checked' : '' }}
+            class="h-4 w-4 text-green-600"
+          >
+          <label for="enable_2fa" class="ml-2 text-sm text-gray-700">
+            Enable two-factor authentication
+          </label>
+        </div>
+
+        <div class="mt-4">
+          <label for="logo" class="block font-medium mb-1">Logo (optional)</label>
+          <input 
+            id="logo"
+            type="file" 
+            name="logo" 
+            accept="image/*"
+            class="w-full"
+          >
+          @if($shop->logo_url)
+            <p class="mt-2 text-sm text-gray-500">
+              Current logo:
+              <img src="{{ $shop->logo_url }}" alt="logo" class="inline-block w-10 h-10 ml-2 rounded-full">
+            </p>
+          @endif
+        </div>
+      </section>
 
       {{-- Submit --}}
       <div class="text-right">
         <button 
           type="submit"
-          class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded"
         >
-          Finish & Create
+          Save Changes
         </button>
       </div>
     </form>

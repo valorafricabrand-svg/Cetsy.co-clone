@@ -4,8 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
-use App\Models\Product;
+use Illuminate\Support\Facades\Storage;
 
 class Shop extends Model
 {
@@ -13,21 +12,50 @@ class Shop extends Model
 
     /**
      * The attributes that are mass assignable.
-     *
-     * @var array<int,string>
      */
     protected $fillable = [
         'user_id',
+
+        // Section 1: preferences
+        'language',
+        'country',
+        'currency',
+
+        // Section 2: name & slug
         'name',
         'slug',
         'bio',
         'logo',
+
+        // Section 3: payment
+        'bank_account',
+        'routing_number',
+
+        // Section 4: billing
+        'address',
+        'city',
+        'postal',
+
+        // Section 5: security
+        'enable_2fa',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     */
+    protected $casts = [
+        'enable_2fa' => 'boolean',
+    ];
+
+    /**
+     * Append these accessors to the model's array form.
+     */
+    protected $appends = [
+        'logo_url',
     ];
 
     /**
      * Use the `slug` column for implicit route model binding.
-     *
-     * @return string
      */
     public function getRouteKeyName(): string
     {
@@ -35,9 +63,17 @@ class Shop extends Model
     }
 
     /**
+     * Get a full URL for the shop logo (or null if none).
+     */
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->logo
+            ? Storage::disk('public')->url($this->logo)
+            : null;
+    }
+
+    /**
      * A shop belongs to a user.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function user()
     {
@@ -46,36 +82,34 @@ class Shop extends Model
 
     /**
      * A shop has many products.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function products()
     {
         return $this->hasMany(Product::class);
     }
 
+    /**
+     * All order items sold by this shop.
+     */
     public function orderItems()
     {
         return $this->hasManyThrough(
             OrderItem::class,
             Product::class,
-            'shop_id',     // Foreign key on products table...
-            'product_id',  // Foreign key on order_items table...
-            'id',          // Local key on shops table...
-            'id'           // Local key on products table...
+            'shop_id',    // FK on products table...
+            'product_id', // FK on order_items table...
+            'id',         // Local key on shops table...
+            'id'          // Local key on products table...
         );
     }
 
     /**
-     * Orders containing this shop's products.
-     * Allows ->count() and ->sum('total').
-     *
-     * @return \Illuminate\Database\Query\Builder
+     * All orders that contain this shop's products.
      */
     public function orders()
     {
-        return Order::whereHas('items.product', function ($query) {
-            $query->where('shop_id', $this->id);
+        return Order::whereHas('items.product', function ($q) {
+            $q->where('shop_id', $this->id);
         });
     }
 }
