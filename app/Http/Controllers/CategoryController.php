@@ -133,4 +133,14 @@ class CategoryController extends Controller
             ->route('categories.index')
             ->with('success', 'Category deleted successfully!');
     }
+
+
+public function categoryShow($slug)
+{
+    $category = Category::where('slug', $slug)->firstOrFail();
+    $products = $category->products()->latest()->get(); // Adjust as needed
+    return view('theme.show_category', compact('category', 'products'));
+}
+
+
 }

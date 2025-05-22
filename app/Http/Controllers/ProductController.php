@@ -143,4 +143,12 @@ class ProductController extends Controller
         return view('products.show', compact('product'));
         
     }
+
+
+    public function listings()
+{
+    $products = Product::with('media')->latest()->paginate(16);
+    return view('theme.listings', compact('products'));
+}
+
 }

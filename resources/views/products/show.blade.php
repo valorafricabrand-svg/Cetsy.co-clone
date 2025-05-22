@@ -2,7 +2,10 @@
 @extends('layouts.frontapp')
 
 @section('content')
-<div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+<div 
+  class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8"
+  x-data="{ qty: 1 }"
+>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 
     {{-- Image gallery --}}
@@ -31,7 +34,7 @@
       @endif
     </div>
 
-    {{-- Details --}}
+    {{-- Details & Add to Cart --}}
     <div>
       <h1 class="text-3xl font-extrabold text-neutral-900">{{ $product->name }}</h1>
       <p class="mt-2 text-2xl text-primary font-semibold">
@@ -45,7 +48,7 @@
           <span class="font-medium">Category:</span>
           @if($product->category)
             <a 
-              href="{{ route('categories.show', $product->category) }}" 
+              href="{{ route('category.show', $product->category->slug) }}" 
               class="text-primary hover:underline"
             >
               {{ $product->category->name }}
@@ -66,33 +69,27 @@
         </div>
       </div>
 
-      {{-- Add to Cart --}}
-      <form 
-        action="{{ route('cart.store') }}" 
-        method="POST" 
-        class="mt-8 flex items-center space-x-4"
-      >
-        @csrf
-        <input type="hidden" name="product_id" value="{{ $product->id }}">
-
+      {{-- Add to Cart (AJAX) --}}
+      <div class="mt-8 flex items-center space-x-4">
         <label for="quantity" class="sr-only">Quantity</label>
         <input 
+          x-model.number="qty"
           type="number" 
-          name="quantity" 
           id="quantity" 
-          value="1" 
           min="1"
           class="w-20 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
         />
 
         <button 
-          type="submit"
+          type="button"
+          @click="addToCart({{ $product->id }}, qty)"
           class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark transition"
         >
           Add to Cart
         </button>
-      </form>
+      </div>
     </div>
+
   </div>
 </div>
 @endsection

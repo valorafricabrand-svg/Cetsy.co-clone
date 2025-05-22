@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Gate;       // ← Correct import for Gate facade
-use App\Models\User;                        // ← Ensure User model is imported
+use App\Models\Cart;
+use App\Models\CartItem;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -22,10 +24,18 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->registerPolicies();
+      View::composer('*', function ($view) {
+        $cartCount = 0;
 
-        Gate::define('isAdmin', fn(User $user) => $user->isAdmin());
-        Gate::define('isSeller', fn(User $user) => $user->isSeller());
-        Gate::define('isBuyer', fn(User $user) => $user->isBuyer());
+        if (Auth::check()) {
+            $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
+            $cartCount = CartItem::where('cart_id', $cart->id)->sum('quantity');
+        } else {
+            $sessionCart = session('cart', []);
+            $cartCount = array_sum($sessionCart);
+        }
+
+        $view->with('cartCount', $cartCount);
+    });
     }
 }

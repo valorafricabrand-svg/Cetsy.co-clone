@@ -24,14 +24,20 @@ use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
 Route::get('/', [HomeController::class, 'index'])
      ->name('home');
 
-// Guests may add items to cart
-Route::post('/cart', [CartController::class, 'store'])
-     ->name('cart.store');
+// Cart
+Route::get   ('/cart',               [CartController::class, 'index'])  ->name('cart.index');
+Route::post  ('/cart',               [CartController::class, 'store'])  ->name('cart.store');
+Route::patch ('/cart/{productId}',   [CartController::class, 'update']) ->name('cart.update');
+Route::delete('/cart/{productId}',   [CartController::class, 'destroy'])->name('cart.destroy');
+
 
 // Public product detail page
+Route::get('/listings', [ProductController::class, 'listings'])
+     ->name('listings');
 Route::get('/listing/{slug}', [ProductController::class, 'listing'])
      ->name('listing.show');
-
+Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])
+     ->name('category.show');
 // Authenticated & verified generic dashboard (if you still use it)
 
 Route::get('/dashboard',    [DashboardController::class, 'dashboard'])
@@ -62,13 +68,7 @@ Route::middleware('auth')->group(function () {
     // Categories management
     Route::resource('categories', CategoryController::class);
 
-    // Authenticated cart routes
-    Route::get('/cart',          [CartController::class, 'index'])
-         ->name('cart.index');
-    Route::patch('/cart/{id}',   [CartController::class, 'update'])
-         ->name('cart.update');
-    Route::delete('/cart/{id}',  [CartController::class, 'destroy'])
-         ->name('cart.destroy');
+
 
     // Checkout & orders
     Route::get('/checkout',                      [CheckoutController::class, 'index'])

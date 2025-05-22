@@ -3,14 +3,7 @@
     <div class="flex justify-between h-16">
       <!-- Logo -->
       <div class="flex items-center">
-        <a href="{{ auth()->user()->isAdmin()
-                       ? route('admin.dashboard')
-                       : (auth()->user()->isSeller()
-                           ? route('seller.dashboard')
-                           : route('buyer.dashboard')) }}"
-           class="flex-shrink-0">
-          <x-application-logo class="h-9 w-auto text-gray-800" />
-        </a>
+   <a href="{{ url('/') }}">  <span class="ml-2 text-xl font-bold text-gray-800">{{ config('app.name') }}</span></a>
       </div>
 
       <!-- Primary Navigation Links -->

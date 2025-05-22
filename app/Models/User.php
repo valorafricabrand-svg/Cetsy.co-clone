@@ -80,4 +80,15 @@ class User extends Authenticatable
     {
         return $this->user_type === self::TYPE_ADMIN;
     }
+
+        public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+       public function wishlistItems()
+    {
+        return $this->hasMany(WishlistItem::class);
+    }
+
 }
