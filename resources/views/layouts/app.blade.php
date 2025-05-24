@@ -96,6 +96,12 @@
                 >
                   {{ __('Reports') }}
                 </x-nav-menu>
+                <x-nav-menu
+                  href="{{ route('admin.kyc.index') }}"
+                  :active="request()->routeIs('admin.kyc.*')"
+                >
+                  {{ __('KYC Management') }}
+                </x-nav-menu>
               </div>
             </div>
 
@@ -111,6 +117,19 @@
                 </svg>
               </x-slot>
               {{ __('Seller Dashboard') }}
+            </x-nav-menu>
+
+            <x-nav-menu
+              href="{{ route('seller.kyc') }}"
+              :active="request()->routeIs('seller.kyc')"
+            >
+              <x-slot name="icon">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4v16m8-8H4"/>
+                </svg>
+              </x-slot>
+              {{ __('KYC Verification') }}
             </x-nav-menu>
 
             <div x-data="{ open: request()->routeIs('shops.*') }" class="space-y-1">
@@ -154,6 +173,27 @@
                 >
                   {{ __('Orders') }}
                 </x-nav-menu>
+                <!-- <x-nav-menu
+                  href="#"
+                  :active="request()->routeIs('orders.*')"
+                >
+                  {{ __('Messages') }}
+                </x-nav-menu>
+                <x-nav-menu
+                  href="#"
+                  :active="request()->routeIs('orders.*')"
+                >
+                  {{ __('Payouts') }}
+                </x-nav-menu>
+                
+
+                <x-nav-menu
+                  href="#"
+                  :active="request()->routeIs('statistics.*')"
+                >
+                  {{ __('Statistics') }}
+                </x-nav-menu> -->
+                
               </div>
             </div>
 

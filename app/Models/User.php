@@ -91,4 +91,9 @@ class User extends Authenticatable
         return $this->hasMany(WishlistItem::class);
     }
 
+    public function kyc()
+    {
+        return $this->hasOne(Kyc::class);
+    }
+
 }
