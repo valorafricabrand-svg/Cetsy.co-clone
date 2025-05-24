@@ -17,6 +17,13 @@ class Product extends Model
         'price',
         'stock',
         'status',
+        'product_type',
+        'condition',
+        'discount_price',
+        'low_stock',
+        'download_file',
+        'download_limit',
+        'access_expiry',
     ];
 
     public function shop()
@@ -37,5 +44,10 @@ class Product extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
     }
 }

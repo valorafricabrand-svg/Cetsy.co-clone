@@ -162,6 +162,59 @@
               class="w-full border-gray-300 rounded px-3 py-2"
             >
           </div>
+          
+        </div>
+      </section>
+
+      {{-- 4) Mpesa Details --}}
+      <section class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-xl font-semibold mb-4">4. Mpesa Details</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+         
+          <div>
+            <label for="mpesa_shortcode" class="block font-medium mb-1">
+              Mpesa Shortcode <span class="text-red-500">*</span>
+            </label>
+            <input 
+              id="mpesa_shortcode" name="mpesa_shortcode" type="text"
+              value="{{ old('mpesa_shortcode', $shop->mpesa_shortcode) }}"
+              required
+              class="w-full border-gray-300 rounded px-3 py-2"
+            >
+          </div>
+          <div>
+            <label for="mpesa_passkey" class="block font-medium mb-1">
+              Mpesa Passkey<span class="text-red-500">*</span>
+            </label>
+            <input 
+              id="mpesa_passkey" name="mpesa_passkey" type="text"
+              value="{{ old('mpesa_passkey', $shop->mpesa_passkey) }}"
+              required
+              class="w-full border-gray-300 rounded px-3 py-2"
+            >
+          </div>
+          <div>
+            <label for="mpesa_consumer_key" class="block font-medium mb-1">
+              Mpesa Consumer Key<span class="text-red-500">*</span>
+            </label>
+            <input 
+              id="mpesa_consumer_key" name="mpesa_consumer_key" type="text"
+              value="{{ old('mpesa_consumer_key', $shop->mpesa_consumer_key) }}"
+              required
+              class="w-full border-gray-300 rounded px-3 py-2"
+            >
+          </div>
+          <div>
+            <label for="mpesa_consumer_secret" class="block font-medium mb-1">
+              Mpesa Consumer Secret<span class="text-red-500">*</span>
+            </label>
+            <input 
+              id="mpesa_consumer_secret" name="mpesa_consumer_secret" type="text"
+              value="{{ old('mpesa_consumer_secret', $shop->mpesa_consumer_secret) }}"
+              required
+              class="w-full border-gray-300 rounded px-3 py-2"
+            >
+          </div>
         </div>
       </section>
 

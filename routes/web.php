@@ -13,6 +13,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Seller\DashboardController as SellerDashboard;
 use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
+use App\Http\Controllers\Seller\KycController;
 
 /*
 |--------------------------------------------------------------------------
@@ -104,6 +105,13 @@ Route::middleware(['auth'])
          Route::resource('users', UserController::class);
     Route::resource('roles', RoleController::class);
 
+    Route::get('kyc', [KycController::class, 'index'])
+         ->name('kyc.index');
+    Route::patch('kyc/{kyc}', [KycController::class, 'update'])
+         ->name('kyc.update');
+    Route::get('kyc/{kyc}', [KycController::class, 'showDetails'])
+         ->name('kyc.showDetails');
+
     // Settings page
     Route::get('settings', [SettingsController::class, 'index'])
          ->name('settings');
@@ -112,15 +120,17 @@ Route::middleware(['auth'])
              ->name('reports');
      });
 
-// Seller panel (only `user_type = seller`)
-Route::middleware(['auth'])
-     ->prefix('seller')
-     ->name('seller.')
-     ->group(function () {
-         Route::get('dashboard', [SellerDashboard::class, 'index'])
-              ->name('dashboard');
-         // add seller-specific routes: orders, reports...
-     });
+// KYC routes (do NOT use ensure.seller.kyc here)
+Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
+    Route::get('/kyc', [KycController::class, 'show'])->name('kyc');
+    Route::post('/kyc', [KycController::class, 'submit'])->name('kyc.submit');
+});
+
+// All other seller routes (require KYC approval)
+Route::middleware(['auth', 'seller', 'ensure.seller.kyc'])->prefix('seller')->name('seller.')->group(function () {
+    Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
+    // ... other seller routes
+});
 
 // Buyer panel (only `user_type = buyer`)
 Route::middleware(['auth'])
