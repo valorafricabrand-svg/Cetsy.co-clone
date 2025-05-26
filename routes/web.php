@@ -14,6 +14,8 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Seller\DashboardController as SellerDashboard;
 use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
 use App\Http\Controllers\Seller\KycController;
+use App\Http\Controllers\Seller\SubscriptionController;
+use App\Http\Controllers\Admin\SubscriptionController as AdminSubscriptionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -118,16 +120,26 @@ Route::middleware(['auth'])
 
          Route::get('reports', [AdminReport::class, 'index'])
              ->name('reports');
+
+         Route::post('subscriptions/deactivate-expired', [AdminSubscriptionController::class, 'deactivateExpired'])
+             ->name('subscriptions.deactivate-expired');
      });
 
-// KYC routes (do NOT use ensure.seller.kyc here)
+// Subscription routes (NO ensure.seller.subscription middleware)
 Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
+    Route::get('/subscription', [SubscriptionController::class, 'show'])->name('subscription');
+    Route::post('/subscription', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
+    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+});
+
+// KYC routes (require subscription)
+Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
     Route::get('/kyc', [KycController::class, 'show'])->name('kyc');
     Route::post('/kyc', [KycController::class, 'submit'])->name('kyc.submit');
 });
 
-// All other seller routes (require KYC approval)
-Route::middleware(['auth', 'seller', 'ensure.seller.kyc'])->prefix('seller')->name('seller.')->group(function () {
+// All other seller routes (require KYC and subscription)
+Route::middleware(['auth', 'seller', 'ensure.seller.kyc', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     // ... other seller routes
 });
@@ -146,3 +158,4 @@ Route::middleware(['auth'])
 
 
 require __DIR__ . '/auth.php';
+

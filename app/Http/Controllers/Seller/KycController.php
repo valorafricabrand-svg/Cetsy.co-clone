@@ -20,6 +20,12 @@ class KycController extends Controller
 
     public function submit(Request $request)
     {
+        // Check subscription first
+        if (!auth()->user()->hasActiveSubscription()) {
+            return redirect()->route('seller.subscription')
+                ->with('error', 'Please subscribe first to access KYC verification.');
+        }
+
         \DB::beginTransaction();
         try {
             $request->validate([
