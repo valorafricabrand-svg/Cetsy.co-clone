@@ -27,30 +27,31 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-public function store(Request $request): RedirectResponse
-{
-    $request->validate([
-        'role'     => ['required', 'in:buyer,seller'],
-        'name'     => ['required', 'string', 'max:255'],
-        'email'    => ['required', 'string', 'email', 'lowercase', 'max:255', 'unique:users,email'],
-        'password' => ['required', 'confirmed', Rules\Password::defaults()],
-    ]);
+    public function store(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'role'     => ['required', 'in:buyer,seller'],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'string', 'email', 'lowercase', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
 
-    $user = User::create([
-        'user_type'     => $request->role,
-        'name'     => $request->name,
-        'email'    => $request->email,
-        'password' => Hash::make($request->password),
-    ]);
+        $user = User::create([
+            'user_type'     => $request->role,
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
 
-    event(new Registered($user));
-    Auth::login($user);
+        event(new Registered($user));
+        Auth::login($user);
 
-    // If seller, maybe redirect to shop creation?
-    if ($user->user_type === 'seller') {
-        return redirect()->route('shops.create');
+        // If seller, redirect to subscription page
+        if ($user->user_type === 'seller') {
+            return redirect()->route('seller.subscription')
+                ->with('info', 'Please subscribe to start selling on our platform.');
+        }
+
+        return redirect()->route('dashboard');
     }
-
-    return redirect()->route('dashboard');
-}
 }

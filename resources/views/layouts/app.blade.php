@@ -105,6 +105,13 @@
               </div>
             </div>
 
+            <form method="POST" action="{{ route('admin.subscriptions.deactivate-expired') }}">
+                @csrf
+                <button type="submit" class="w-full px-4 py-2 mt-2 text-sm text-white bg-indigo-600 rounded hover:bg-indigo-700">
+                    Update Subscriptions
+                </button>
+            </form>
+
           @elseif(auth()->user()->isSeller())
             <x-nav-menu
               href="{{ route('seller.dashboard') }}"
