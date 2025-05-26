@@ -38,6 +38,7 @@ class Shop extends Model
 
         // Section 5: security
         'enable_2fa',
+
     ];
 
     /**

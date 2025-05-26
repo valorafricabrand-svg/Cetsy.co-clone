@@ -81,12 +81,12 @@ class User extends Authenticatable
         return $this->user_type === self::TYPE_ADMIN;
     }
 
-        public function orders()
+    public function orders()
     {
         return $this->hasMany(Order::class);
     }
 
-       public function wishlistItems()
+    public function wishlistItems()
     {
         return $this->hasMany(WishlistItem::class);
     }
@@ -96,4 +96,13 @@ class User extends Authenticatable
         return $this->hasOne(Kyc::class);
     }
 
+    public function subscription()
+    {
+        return $this->hasOne(Subscription::class)->latest();
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        return $this->subscription && $this->subscription->isActive();
+    }
 }
