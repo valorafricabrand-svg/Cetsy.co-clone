@@ -7,6 +7,12 @@
 @endsection
 
 @section('content')
+@if(session('success'))
+  <div class="text-green-600">
+    {{ session('success') }}
+  </div>
+@endif
+
 <div class="py-12">
   <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">

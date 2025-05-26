@@ -162,8 +162,11 @@
               class="w-full border-gray-300 rounded px-3 py-2"
             >
           </div>
+          
         </div>
       </section>
+
+      
 
       {{-- 4) Share Your Billing Info --}}
       <section class="bg-white shadow rounded-lg p-6">
