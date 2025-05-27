@@ -1,7 +1,7 @@
 {{-- resources/views/categories/show.blade.php --}}
-@extends('layouts.frontapp')
+@extends('theme.layouts.main')
 
-@section('content')
+@section('main')
   <!-- Category Banner -->
   <div class="relative bg-cover bg-center h-64"
        style="background-image: url('{{ $category->image
