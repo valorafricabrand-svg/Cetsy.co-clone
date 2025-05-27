@@ -1,35 +1,56 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-  <h1 class="text-3xl font-bold mb-6">My Orders</h1>
+<div class="content">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
 
-  @if($orders->isEmpty())
-    <p class="text-gray-600">You have no orders yet.</p>
-    <a href="{{ route('products.index') }}"
-       class="mt-4 inline-block bg-primary text-white px-6 py-2 rounded hover:bg-primary-dark">
-       Shop Now
-    </a>
-  @else
-    <ul class="space-y-6">
-      @foreach($orders as $order)
-        <li class="bg-white shadow rounded-lg overflow-hidden">
-          <a href="{{ route('orders.show',$order) }}" class="block p-6 hover:bg-gray-50">
-            <div class="flex justify-between">
-              <span class="font-semibold">Order #{{ $order->id }}</span>
-              <span class="text-sm text-gray-500">{{ $order->created_at->format('M j, Y') }}</span>
-            </div>
-            <div class="mt-2 flex justify-between">
-              <span class="text-gray-700">Items: {{ $order->items->count() }}</span>
-              <span class="text-gray-900 font-semibold">KES {{ number_format($order->total_amount,2) }}</span>
-            </div>
-            <div class="mt-1 text-sm">
-              Status: <span class="font-medium">{{ ucfirst($order->status) }}</span>
-            </div>
+      <h1 class="mb-4">My Orders</h1>
+
+      @if($orders->isEmpty())
+        <div class="text-center py-5">
+          <p class="h5 text-muted mb-4">You have no orders yet.</p>
+          <a href="{{ route('products.index') }}"
+             class="btn btn-primary btn-lg">
+            Shop Now
           </a>
-        </li>
-      @endforeach
-    </ul>
-  @endif
+        </div>
+      @else
+        <div class="list-group">
+          @foreach($orders as $order)
+            <a href="{{ route('orders.show', $order) }}"
+               class="list-group-item list-group-item-action mb-3 shadow-sm rounded">
+              <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">Order #{{ $order->id }}</h5>
+                <small class="text-muted">{{ $order->created_at->format('M j, Y') }}</small>
+              </div>
+              <p class="mb-1">
+                <span class="me-3"><strong>Items:</strong> {{ $order->items->count() }}</span>
+                <span><strong>Total:</strong> KES {{ number_format($order->total_amount, 2) }}</span>
+              </p>
+              <small>
+                <strong>Status:</strong>
+                <span class="badge 
+                  @switch($order->status)
+                    @case('pending') bg-warning text-dark @break
+                    @case('completed') bg-success @break
+                    @case('cancelled') bg-danger @break
+                    @default bg-secondary @break
+                  @endswitch
+                ">
+                  {{ ucfirst($order->status) }}
+                </span>
+              </small>
+            </a>
+          @endforeach
+        </div>
+
+        <div class="mt-4">
+          {{ $orders->links() }}
+        </div>
+      @endif
+
+    </div>
+  </div>
 </div>
 @endsection

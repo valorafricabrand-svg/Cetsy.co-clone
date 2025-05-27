@@ -15,14 +15,28 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
-        $query = Product::with('category','media')
-            ->where('shop_id', Auth::user()->shop->id)
+        $user = Auth::user();
+
+        // Ensure the user has a shop first
+        if (! $user->shop) {
+            return redirect()
+                ->route('shops.create')
+                ->with('error', 'You need to create a shop before adding products.');
+        }
+
+        $shopId = $user->shop->id;
+
+        // Build the query
+        $query = Product::with(['category', 'media'])
+            ->where('shop_id', $shopId)
             ->latest();
 
+        // Apply search if provided
         if ($search = $request->input('search')) {
             $query->where('name', 'like', "%{$search}%");
         }
 
+        // Paginate & preserve query string
         $products = $query->paginate(20)->withQueryString();
 
         return view('products.index', compact('products'));

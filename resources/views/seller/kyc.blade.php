@@ -1,75 +1,151 @@
 @extends('layouts.app')
-@section('content')
-<div class="max-w-xl mx-auto bg-white p-6 rounded shadow">
-  <h2 class="text-2xl font-bold mb-4">KYC Verification</h2>
-  @if(session('success'))
-    <div class="mb-4 p-2 bg-green-100 text-green-700 rounded">{{ session('success') }}</div>
-  @endif
-  @if(session('error'))
-    <div class="mb-4 p-2 bg-red-100 text-red-700 rounded">{{ session('error') }}</div>
-  @endif
-  @if($kyc && $kyc->status !== 'rejected')
-    <div class="mb-4">
-      <p>Status: <span class="font-semibold">{{ ucfirst($kyc->status) }}</span></p>
-      @if($kyc->status === 'pending')
-        <p class="text-yellow-600">Your KYC is under review.</p>
-      @elseif($kyc->status === 'approved')
-        <p class="text-green-600">Your KYC is approved. You can now access all seller features.</p>
-      @endif
-    </div>
-    @if($kyc->admin_notes)
-      <div class="mb-4 p-2 bg-gray-100 rounded">
-        <strong>Admin Notes:</strong> {{ $kyc->admin_notes }}
-      </div>
-    @endif
-  @endif
 
-  @if(!$kyc || $kyc->status === 'rejected')
-    <form action="{{ route('seller.kyc.submit') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-      @csrf
-      <div>
-        <label class="block font-medium">First Name</label>
-        <input type="text" name="first_name" class="w-full border rounded px-3 py-2" required>
+@section('content')
+<div class="content">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white border-0">
+          <h2 class="h4 mb-0">KYC Verification</h2>
+        </div>
+        <div class="card-body">
+
+          @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              {{ session('success') }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          @endif
+
+          @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              {{ session('error') }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          @endif
+
+          @if($kyc && $kyc->status !== 'rejected')
+            <div class="mb-4">
+              <h5>Status:</h5>
+              <span class="badge 
+                @switch($kyc->status)
+                  @case('pending') bg-warning text-dark @break
+                  @case('approved') bg-success @break
+                  @default bg-secondary @break
+                @endswitch
+              ">
+                {{ ucfirst($kyc->status) }}
+              </span>
+            </div>
+
+            @if($kyc->status === 'pending')
+              <div class="alert alert-warning">
+                Your KYC is under review.
+              </div>
+            @elseif($kyc->status === 'approved')
+              <div class="alert alert-success">
+                Your KYC is approved. You can now access all seller features.
+              </div>
+            @endif
+
+            @if($kyc->admin_notes)
+              <div class="card card-bg-light border-info mb-4">
+                <div class="card-body">
+                  <h6 class="card-title">Admin Notes</h6>
+                  <p class="card-text">{{ $kyc->admin_notes }}</p>
+                </div>
+              </div>
+            @endif
+          @endif
+
+          @if(!$kyc || $kyc->status === 'rejected')
+            <form action="{{ route('seller.kyc.submit') }}" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+              @csrf
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="first_name" class="form-label">First Name</label>
+                  <input type="text" id="first_name" name="first_name" class="form-control" required>
+                  <div class="invalid-feedback">Please enter your first name.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="last_name" class="form-label">Last Name</label>
+                  <input type="text" id="last_name" name="last_name" class="form-control" required>
+                  <div class="invalid-feedback">Please enter your last name.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="email" class="form-label">Email</label>
+                  <input type="email" id="email" name="email" class="form-control" required>
+                  <div class="invalid-feedback">Please enter a valid email.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="phone" class="form-label">Phone</label>
+                  <input type="text" id="phone" name="phone" class="form-control" required>
+                  <div class="invalid-feedback">Please enter your phone number.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="id_number" class="form-label">ID Number</label>
+                  <input type="text" id="id_number" name="id_number" class="form-control" required>
+                  <div class="invalid-feedback">Please enter your ID number.</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="id_type" class="form-label">ID Type</label>
+                  <select id="id_type" name="id_type" class="form-select" required>
+                    <option value="" selected disabled>Select ID Type</option>
+                    <option value="national_id">National ID</option>
+                    <option value="passport">Passport</option>
+                    <option value="driver_license">Driver's License</option>
+                  </select>
+                  <div class="invalid-feedback">Please select an ID type.</div>
+                </div>
+
+                <div class="col-12">
+                  <label for="id_front" class="form-label">Upload ID Front (PDF/JPG/PNG)</label>
+                  <input class="form-control" type="file" id="id_front" name="id_front" accept=".pdf,.jpg,.jpeg,.png" required>
+                  <div class="invalid-feedback">Please upload the front of your ID.</div>
+                </div>
+                <div class="col-12">
+                  <label for="id_back" class="form-label">Upload ID Back (PDF/JPG/PNG)</label>
+                  <input class="form-control" type="file" id="id_back" name="id_back" accept=".pdf,.jpg,.jpeg,.png" required>
+                  <div class="invalid-feedback">Please upload the back of your ID.</div>
+                </div>
+                <div class="col-12">
+                  <label for="selfie" class="form-label">Upload Selfie</label>
+                  <input class="form-control" type="file" id="selfie" name="selfie" accept=".jpg,.jpeg,.png" required>
+                  <div class="invalid-feedback">Please upload a selfie.</div>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <button class="btn btn-primary w-100" type="submit">Submit KYC</button>
+              </div>
+            </form>
+          @endif
+
+        </div>
       </div>
-      <div>
-        <label class="block font-medium">Last Name</label>
-        <input type="text" name="last_name" class="w-full border rounded px-3 py-2" required>
-      </div>
-      <div>
-        <label class="block font-medium">Email</label>
-        <input type="email" name="email" class="w-full border rounded px-3 py-2" required>
-      </div>
-      <div>
-        <label class="block font-medium">Phone</label>
-        <input type="text" name="phone" class="w-full border rounded px-3 py-2" required>
-      </div>
-      <div>
-        <label class="block font-medium">ID Number</label>
-        <input type="text" name="id_number" class="w-full border rounded px-3 py-2" required>
-      </div>
-      <div>
-        <label class="block font-medium">ID Type</label>
-        <select name="id_type" class="w-full border rounded px-3 py-2" required>
-          <option value="">Select ID Type</option>
-          <option value="national_id">National ID</option>
-          <option value="passport">Passport</option>
-          <option value="driver_license">Driver's License</option>
-        </select>
-      </div>
-      <div>
-        <label class="block font-medium">Upload ID Front (PDF/JPG/PNG)</label>
-        <input type="file" name="id_front" class="w-full" accept=".pdf,.jpg,.jpeg,.png" required>
-      </div>
-      <div>
-        <label class="block font-medium">Upload ID Back (PDF/JPG/PNG)</label>
-        <input type="file" name="id_back" class="w-full" accept=".pdf,.jpg,.jpeg,.png" required>
-      </div>
-      <div>
-        <label class="block font-medium">Upload Selfie</label>
-        <input type="file" name="selfie" class="w-full" accept=".jpg,.jpeg,.png" required>
-      </div>
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit KYC</button>
-    </form>
-  @endif
+    </div>
+  </div>
 </div>
+
+{{-- Bootstrap validation script --}}
+@push('scripts')
+<script>
+  // Example starter JavaScript for disabling form submissions if there are invalid fields
+  (function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+        form.classList.add('was-validated')
+      }, false)
+    })
+  })()
+</script>
+@endpush
+
 @endsection
