@@ -87,6 +87,9 @@
         .btn-link { color: #027333; }
         a.text-primary:hover, a.text-primary:focus { color: #025a1f !important; }
     </style>
+
+     <!-- Alpine.js -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
 

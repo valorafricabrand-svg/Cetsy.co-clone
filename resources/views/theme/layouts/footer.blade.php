@@ -1,15 +1,3 @@
-<!-- Call to Action Section -->
-<section class="bg-success text-white text-center py-5">
-    <div class="container">
-        <h2 class="fw-bold mb-3">You didn’t become an entrepreneur to be a bookkeeper.</h2>
-        <p class="mb-4">
-            Grow your handmade business—let Cetsy handle the logistics, marketing, and sales.
-        </p>
-        <a href="{{ route('register') }}" class="btn btn-light btn-lg">
-            Get started for free
-        </a>
-    </div>
-</section>
 
 
 <!-- Footer Section -->
