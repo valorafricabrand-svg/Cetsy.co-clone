@@ -101,5 +101,68 @@
 @include('chat_widget')
 @yield('scripts')
  @stack('scripts')
+
+ <script>
+  document.addEventListener('alpine:init', () => {
+    Alpine.store('cart', {
+      open: false,
+      count: 0,
+      items: [],
+      subtotal: '0.00',
+      isLoading: false,
+
+      // toggle dropdown
+      toggle() { this.open = !this.open },
+
+      // fetch current cart JSON
+      async fetchCart() {
+        this.isLoading = true
+        try {
+          let res = await fetch('{{ route("cart.index") }}', {
+            headers: {
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+          })
+          if (!res.ok) throw new Error()
+          let data = await res.json()
+          this.count    = data.count
+          this.items    = data.items
+          this.subtotal = data.subtotal
+        } catch(e) {
+          console.error(e)
+        } finally {
+          this.isLoading = false
+        }
+      },
+
+      // add a product to cart
+      async addToCart(productId, quantity = 1) {
+        this.isLoading = true
+        try {
+          let res = await fetch('{{ route("cart.store") }}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+              product_id: productId,
+              quantity: quantity
+            })
+          })
+          if (!res.ok) throw new Error()
+          await this.fetchCart()
+        } catch(e) {
+          console.error(e)
+        } finally {
+          this.isLoading = false
+        }
+      }
+    })
+  })
+</script>
+
 </body>
 </html>

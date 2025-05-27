@@ -137,8 +137,15 @@ class CategoryController extends Controller
 
 public function categoryShow($slug)
 {
-    $category = Category::where('slug', $slug)->firstOrFail();
-    $products = $category->products()->latest()->get(); // Adjust as needed
+       // Find the category or 404
+        $category = Category::where('slug', $slug)->firstOrFail();
+
+        // Paginate products 12 per page, newest first
+        $products = $category
+            ->products()
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
     return view('theme.show_category', compact('category', 'products'));
 }
 

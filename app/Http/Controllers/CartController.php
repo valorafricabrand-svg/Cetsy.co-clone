@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -11,16 +12,16 @@ use Illuminate\Support\Facades\DB;
 class CartController extends Controller
 {
     /**
-     * Display the authenticated user’s cart, or return JSON for Alpine.
+     * Display the user’s cart or return JSON for Alpine.
      */
     public function index(Request $request)
     {
-        // Build the data
         $count    = 0;
         $subtotal = 0;
         $items    = [];
 
         if (Auth::check()) {
+            // Authenticated user — existing logic
             $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
             $col  = $cart->items()->with('product.media')->get();
 
@@ -35,11 +36,32 @@ class CartController extends Controller
                 'image' => $i->product->media->first()->url ?? null,
             ])->toArray();
         } else {
-            $session = session('cart', []);
-            $count   = array_sum($session);
+            // Guest user — read from session
+            $sessionCart = session('cart', []); 
+            foreach ($sessionCart as $productId => $qty) {
+                $product = Product::with('media')->find($productId);
+                if (! $product) {
+                    continue;
+                }
+
+                $price = $product->price;
+                $total = $price * $qty;
+
+                $items[] = [
+                    'id'    => $productId,
+                    'name'  => $product->name,
+                    'qty'   => $qty,
+                    'price' => number_format($price, 2),
+                    'total' => number_format($total, 2),
+                    'image' => $product->media->first()->url ?? null,
+                ];
+
+                $count    += $qty;
+                $subtotal += $total;
+            }
         }
 
-        // If JS/Alpine asked for JSON, give it JSON
+        // JSON for Alpine.js/JS requests
         if ($request->expectsJson()) {
             return response()->json([
                 'count'    => $count,
@@ -48,14 +70,14 @@ class CartController extends Controller
             ]);
         }
 
-        // Otherwise render view
+        // Otherwise render the blade view
         $viewItems = Auth::check()
             ? $cart->items()->with('product.media')->get()
-            : collect();
+            : collect($items)->map(fn($i) => (object) $i);
 
         return view('cart.index', [
             'items'    => $viewItems,
-            'subtotal' => $subtotal,
+            'subtotal' => number_format($subtotal, 2),
             'count'    => $count,
         ]);
     }
@@ -132,12 +154,12 @@ class CartController extends Controller
      */
     protected function mergeSessionCartIntoDatabase()
     {
-        $session = session('cart', []);
-        if (empty($session) || ! Auth::check()) {
+        $sessionCart = session('cart', []);
+        if (empty($sessionCart) || ! Auth::check()) {
             return;
         }
         $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
-        foreach ($session as $pid => $qty) {
+        foreach ($sessionCart as $pid => $qty) {
             CartItem::updateOrCreate(
                 ['cart_id' => $cart->id, 'product_id' => $pid],
                 ['quantity' => DB::raw("quantity + $qty")]
@@ -152,7 +174,6 @@ class CartController extends Controller
     protected function respondWithCart(Request $request)
     {
         if ($request->expectsJson()) {
-            // same logic as above
             return $this->index($request);
         }
 

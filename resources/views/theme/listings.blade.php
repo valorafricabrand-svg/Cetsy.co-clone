@@ -3,64 +3,83 @@
 
 @section('main')
   <!-- Listings Header -->
-  <div class="bg-green-600 py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      <h1 class="text-4xl font-bold text-white">All Handmade Listings</h1>
-      <p class="mt-2 text-green-100">Browse through all available products from our talented sellers.</p>
+  <div class="bg-success py-5">
+    <div class="container text-center text-white">
+      <h1 class="display-5 fw-bold text-white">All Handmade Listings</h1>
+      <p class="lead">Browse through all available products from our talented sellers.</p>
     </div>
   </div>
 
   <!-- Product Listings -->
-  <section class="py-16 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+  <section class="py-5 bg-light">
+    <div class="container">
+      <div class="row g-4">
         @forelse($products as $product)
-          <div class="bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden">
-            <a href="{{ route('products.show', $product) }}">
-              @if($img = $product->media->first())
-                <img src="{{ asset('storage/'.$img->url) }}"
-                     alt="{{ $product->name }}"
-                     class="w-full h-48 object-cover">
-              @else
-                <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                  <span class="text-gray-400">No Image</span>
+          <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 shadow-sm border-0">
+              <a href="{{ route('listing.show', $product) }}" class="text-decoration-none">
+                @if($img = $product->media->first())
+                  <img 
+                    src="{{ asset('storage/'.$img->url) }}" 
+                    class="card-img-top" 
+                    alt="{{ $product->name }}" 
+                    style="height:200px; object-fit:cover;"
+                  >
+                @else
+                  <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height:200px;">
+                    No Image
+                  </div>
+                @endif
+              </a>
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title text-truncate">{{ $product->name }}</h5>
+                <p class="card-text text-success fw-bold mb-3">
+                  KES {{ number_format($product->price, 2) }}
+                </p>
+                <div class="mt-auto d-flex justify-content-between align-items-center">
+                  <a 
+                    href="{{ route('listing.show', $product) }}" 
+                    class="small text-muted text-decoration-none"
+                  >
+                    View Details
+                  </a>
+                  <form 
+                    method="POST" 
+                    action="{{ route('cart.store') }}" 
+                    x-data="{ busy: false }" 
+                    @submit="busy = true"
+                    class="m-0"
+                  >
+                    @csrf
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button 
+                      type="submit" 
+                      class="btn btn-success btn-sm rounded-circle p-2" 
+                      :disabled="busy"
+                      aria-label="Add {{ $product->name }} to cart"
+                    >
+                      <i class="fas fa-cart-plus"></i>
+                      <span x-show="busy" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </button>
+                  </form>
                 </div>
-              @endif
-            </a>
-
-            <div class="p-4">
-              <h3 class="font-semibold text-gray-800 truncate">{{ $product->name }}</h3>
-              <p class="mt-2 text-green-600 font-bold">KES {{ number_format($product->price, 2) }}</p>
-              <div class="mt-3 flex justify-between items-center">
-                <a href="{{ route('products.show', $product) }}"
-                   class="text-sm text-gray-500 hover:underline">
-                  View Details
-                </a>
-                {{-- Add to Cart button invokes Alpine addToCart --}}
-                <button
-                  @click="addToCart({{ $product->id }}, 1)"
-                  class="bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition"
-                  aria-label="Add {{ $product->name }} to cart"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                       viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 
-                             13L5.4 5M7 13l-2 5m5-5v5m4-5v5m1-10h2"/>
-                  </svg>
-                </button>
               </div>
             </div>
           </div>
         @empty
-          <p class="text-gray-600 col-span-full">No products found at this time.</p>
+          <div class="col-12 text-center text-muted">
+            No products found at this time.
+          </div>
         @endforelse
       </div>
 
       <!-- Pagination -->
-      <div class="mt-12">
-        {{ $products->links('pagination::tailwind') }}
-      </div>
+      @if($products->hasPages())
+        <div class="mt-4 d-flex justify-content-center">
+          {{ $products->links('pagination::bootstrap-5') }}
+        </div>
+      @endif
     </div>
   </section>
 @endsection

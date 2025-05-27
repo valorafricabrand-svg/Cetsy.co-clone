@@ -323,4 +323,17 @@ class ProductController extends Controller
     return view('theme.listings', compact('products'));
 }
 
+
+  public function search(Request $request)
+    {
+        $q = $request->input('q');
+
+        $products = Product::where('name', 'like', "%{$q}%")
+                           ->orWhere('description', 'like', "%{$q}%")
+                           ->paginate(12);
+
+        return view('theme.listings', compact('products'))->with('q', $q);
+        
+    }
+
 }
