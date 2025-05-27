@@ -1,18 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="content"
-     x-data="{ name:'', slug:'' }"
-     @input.debounce.500ms="
-       slug = name.toLowerCase()
-                  .replace(/[^a-z0-9]+/g,'-')
-                  .replace(/(^-|-$)/g,'');
-     ">
-  <h2 class="text-3xl font-bold mb-8 text-center">Add New Product</h2>
+<div class="content">
+  <h2 class="text-center mb-4">Add New Product</h2>
 
   @if($errors->any())
-    <div class="mb-6 p-4 bg-red-100 text-red-700 rounded">
-      <ul class="list-disc pl-5 mb-0">
+    <div class="alert alert-danger">
+      <ul class="mb-0">
         @foreach($errors->all() as $error)
           <li>{{ $error }}</li>
         @endforeach
@@ -20,269 +14,287 @@
     </div>
   @endif
 
-  <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
+  <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
 
-    <!-- Name & Slug (do not touch this logic) -->
-    <div class="mb-4">
-      <label for="name" class="block font-medium mb-1">Name</label>
-      <input id="name" type="text" x-model="name" name="name" value="{{ old('name') }}"
-             class="w-full border rounded px-3 py-2" required>
-    </div>
-    <div class="mb-4">
-      <label for="slug" class="block font-medium mb-1">Slug</label>
-      <input id="slug" type="text" x-model="slug" name="slug" value="{{ old('slug') }}"
-             class="w-full border rounded px-3 py-2" readonly>
-      <small class="text-gray-500">
-        URL: <code>{{ url('products') }}/<span x-text="slug"></span></code>
-      </small>
+    {{-- Name & Slug --}}
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <label for="name" class="form-label">Name</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          value="{{ old('name') }}"
+          class="form-control"
+          required
+        >
+      </div>
+      <div class="col-md-6">
+        <label for="slug" class="form-label">Slug</label>
+        <input
+          type="text"
+          id="slug"
+          name="slug"
+          value="{{ old('slug') }}"
+          class="form-control"
+          readonly
+        >
+        <div class="form-text">URL: <code>{{ url('products') }}/<span id="slug-preview"></span></code></div>
+      </div>
     </div>
 
-    <!-- Group the rest of the fields into cards -->
-    <div class="bg-white shadow rounded-lg p-6">
-      <h3 class="text-xl font-semibold mb-4">Product Details</h3>
-      <div class="mb-4">
-        <label for="category_id" class="block font-medium mb-1">Category</label>
-        <select id="category_id" name="category_id" class="w-full border rounded px-3 py-2">
-          <option value="">-- Select Category --</option>
-          @foreach($categories as $category)
-            <option value="{{ $category->id }}" @selected(old('category_id')==$category->id)>
-              {{ $category->name }}
-            </option>
-          @endforeach
-        </select>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label for="product_type" class="block font-medium mb-1">Product Type</label>
-          <select id="product_type" name="product_type" class="w-full border rounded px-3 py-2" required>
-            <option value="">-- Select Type --</option>
-            <option value="physical" @selected(old('product_type')=='physical')>Physical</option>
-            <option value="digital" @selected(old('product_type')=='digital')>Digital</option>
+    {{-- Product Details --}}
+    <div class="card mb-4">
+      <div class="card-header">Product Details</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="category_id" class="form-label">Category</label>
+          <select id="category_id" name="category_id" class="form-select">
+            <option value="">— Select Category —</option>
+            @foreach($categories as $cat)
+              <option value="{{ $cat->id }}" @selected(old('category_id')==$cat->id)>
+                {{ $cat->name }}
+              </option>
+            @endforeach
           </select>
         </div>
-        <div>
-          <label for="condition" class="block font-medium mb-1">Condition</label>
-          <select id="condition" name="condition" class="w-full border rounded px-3 py-2" required>
-            <option value="">-- Select Condition --</option>
-            <option value="new" @selected(old('condition')=='new')>New</option>
-            <option value="refurbished" @selected(old('condition')=='refurbished')>Refurbished</option>
-            <option value="used" @selected(old('condition')=='used')>Used</option>
-          </select>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="product_type" class="form-label">Product Type</label>
+            <select id="product_type" name="product_type" class="form-select" required>
+              <option value="">— Select Type —</option>
+              <option value="physical" @selected(old('product_type')=='physical')>Physical</option>
+              <option value="digital"  @selected(old('product_type')=='digital')>Digital</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="condition" class="form-label">Condition</label>
+            <select id="condition" name="condition" class="form-select" required>
+              <option value="">— Select Condition —</option>
+              <option value="new"         @selected(old('condition')=='new')>New</option>
+              <option value="refurbished" @selected(old('condition')=='refurbished')>Refurbished</option>
+              <option value="used"        @selected(old('condition')=='used')>Used</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-6">
-      <h3 class="text-xl font-semibold mb-4">Pricing & Inventory</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label for="price" class="block font-medium mb-1">Selling Price (KES)</label>
-          <input id="price" type="number" name="price" value="{{ old('price') }}"
-                 class="w-full border rounded px-3 py-2" min="0" step="0.01" required>
-        </div>
-        <div>
-          <label for="discount_price" class="block font-medium mb-1">Price after discount (KES)</label>
-          <input id="discount_price" type="number" name="discount_price" value="{{ old('discount_price') }}"
-                 class="w-full border rounded px-3 py-2" min="0" step="0.01" required>
-        </div>
-        <div>
-          <label for="stock" class="block font-medium mb-1">Stock</label>
-          <input id="stock" type="number" name="stock" value="{{ old('stock',0) }}"
-                 class="w-full border rounded px-3 py-2" min="0" required>
-        </div>
-        <div>
-          <label for="low_stock" class="block font-medium mb-1">Low Stock Alert</label>
-          <input id="low_stock" type="number" name="low_stock" value="{{ old('low_stock', 0) }}"
-                 class="w-full border rounded px-3 py-2" min="0" required>
+    {{-- Pricing & Inventory --}}
+    <div class="card mb-4">
+      <div class="card-header">Pricing & Inventory</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="price" class="form-label">Price (KES)</label>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              value="{{ old('price') }}"
+              class="form-control"
+              min="0"
+              step="0.01"
+              required
+            >
+          </div>
+          <div class="col-md-6">
+            <label for="discount_price" class="form-label">Discount Price (KES)</label>
+            <input
+              type="number"
+              id="discount_price"
+              name="discount_price"
+              value="{{ old('discount_price') }}"
+              class="form-control"
+              min="0"
+              step="0.01"
+              required
+            >
+          </div>
+          <div class="col-md-6">
+            <label for="stock" class="form-label">Stock</label>
+            <input
+              type="number"
+              id="stock"
+              name="stock"
+              value="{{ old('stock',0) }}"
+              class="form-control"
+              min="0"
+              required
+            >
+          </div>
+          <div class="col-md-6">
+            <label for="low_stock" class="form-label">Low Stock Alert</label>
+            <input
+              type="number"
+              id="low_stock"
+              name="low_stock"
+              value="{{ old('low_stock',0) }}"
+              class="form-control"
+              min="0"
+              required
+            >
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-6">
-      <h3 class="text-xl font-semibold mb-4">Variants & Customization</h3>
-      <div class="mb-2">
-        <label>Sizes</label>
-        <input type="text" id="sizes" class="w-full border rounded px-3 py-2 mb-1" placeholder="e.g., Small, Medium, Large (comma separated)">
+    {{-- Variants & Customization --}}
+    <div class="card mb-4">
+      <div class="card-header">Variants & Customization</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Sizes (comma-separated)</label>
+          <input id="sizes" class="form-control"> 
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Colors</label>
+          <div class="d-flex flex-wrap gap-2">
+            @php
+              $colors = [
+                'Red'=>'#f00','Blue'=>'#00f','Black'=>'#000','White'=>'#fff',
+                'Green'=>'#080','Yellow'=>'#ff0','Purple'=>'#800','Orange'=>'#fa0'
+              ];
+            @endphp
+            @foreach($colors as $n=>$h)
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="color_checkboxes[]" value="{{ $n }}" id="color-{{ $n }}">
+                <label class="form-check-label" for="color-{{ $n }}">
+                  <span class="d-inline-block border rounded-circle" style="width:1rem;height:1rem;background:{{ $h }};"></span>
+                  {{ $n }}
+                </label>
+              </div>
+            @endforeach
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Materials (comma-separated)</label>
+          <input id="materials" class="form-control">
+        </div>
+        <button type="button" id="generate-variants" class="btn btn-primary mb-3">Generate Variants</button>
+        <div id="variants-table-wrapper"></div>
       </div>
-      <div class="mb-2">
-        <label>Colors</label>
-        <div id="color-options" class="flex flex-wrap gap-2">
-          @php
-            $colors = [
-              'Red' => '#ff0000', 'Blue' => '#0000ff', 'Black' => '#000000', 'White' => '#ffffff',
-              'Green' => '#008000', 'Yellow' => '#ffff00', 'Purple' => '#800080', 'Orange' => '#ffa500',
-              'Pink' => '#ffc0cb', 'Gray' => '#808080', 'Brown' => '#a52a2a', 'Cyan' => '#00ffff'
-            ];
-          @endphp
-          @foreach($colors as $name => $hex)
-            <label class="flex items-center space-x-1 cursor-pointer">
-              <input type="checkbox" name="color_checkboxes[]" value="{{ $name }}">
-              <span class="inline-block w-5 h-5 rounded" style="background: {{ $hex }}; border: 1px solid #ccc;"></span>
-              <span>{{ $name }}</span>
-            </label>
-          @endforeach
+    </div>
+
+    {{-- Digital Fields (collapse) --}}
+    <div class="card mb-4 collapse" id="digital-fields">
+      <div class="card-header">Digital Product Details</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="download_file" class="form-label">Downloadable File</label>
+          <input type="file" id="download_file" name="download_file" class="form-control" accept=".zip,.pdf,.mp3,.mp4">
+        </div>
+        <div class="mb-3">
+          <label for="download_limit" class="form-label">Download Limit</label>
+          <input type="number" id="download_limit" name="download_limit" class="form-control" min="1">
+          <div class="form-text">Max times buyer can download.</div>
+        </div>
+        <div class="mb-3">
+          <label for="access_expiry" class="form-label">Access Expiry (days)</label>
+          <input type="number" id="access_expiry" name="access_expiry" class="form-control" min="1">
+          <div class="form-text">Days link remains active.</div>
         </div>
       </div>
-      <div class="mb-2">
-        <label>Materials</label>
-        <input type="text" id="materials" class="w-full border rounded px-3 py-2 mb-1" placeholder="e.g., Cotton, Leather (comma separated)">
-      </div>
-      <button type="button" id="generate-variants" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded mb-3">Generate Variants</button>
-      <div id="variants-table-wrapper"></div>
     </div>
 
-    <div id="digital-fields" class="bg-white shadow rounded-lg p-6" style="display: none;">
-      <h3 class="text-xl font-semibold mb-4">Digital Product Details</h3>
-      <div class="mb-2">
-        <label for="download_file">Downloadable File</label>
-        <input type="file" id="download_file" name="download_file" class="w-full border rounded px-3 py-2" accept=".pdf,.zip,.rar,.epub,.mobi,.exe,.dmg,.mp3,.mp4,.avi,.mov,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
-      </div>
-      <div class="mb-2">
-        <label for="download_limit">Download Limit</label>
-        <input type="number" id="download_limit" name="download_limit" class="w-full border rounded px-3 py-2" min="1" placeholder="e.g., 5">
-        <small class="text-gray-500">Maximum number of times a buyer can download the file.</small>
-      </div>
-      <div class="mb-2">
-        <label for="access_expiry">Access Expiry (days)</label>
-        <input type="number" id="access_expiry" name="access_expiry" class="w-full border rounded px-3 py-2" min="1" placeholder="e.g., 30">
-        <small class="text-gray-500">Number of days the download link remains active after purchase.</small>
+    {{-- Description --}}
+    <div class="card mb-4">
+      <div class="card-body">
+        <label for="description" class="form-label">Description</label>
+        <textarea id="description" name="description" class="form-control" rows="6">{{ old('description') }}</textarea>
+        @error('description')
+          <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
       </div>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-6">
-      <label for="productDescription" class="block font-medium mb-1">Description</label>
-      <textarea id="textarea" name="description" class="form-control @error('description') is-invalid @enderror w-full border rounded px-3 py-2">
-        {{ old('description') }}
-      </textarea>
-      @error('description')
-        <span class="invalid-feedback">{{ $message }}</span>
-      @enderror
-    </div>
-
-    <div class="bg-white shadow rounded-lg p-6">
-      <div class="mb-4">
-        <label for="status" class="block font-medium mb-1">Status</label>
-        <select id="status" name="status" class="w-full border rounded px-3 py-2" required>
-          <option value="draft"   @selected(old('status')=='draft')>Draft</option>
-          <option value="active"  @selected(old('status')=='active')>Active</option>
-          <option value="archived"@selected(old('status')=='archived')>Archived</option>
-        </select>
-      </div>
-      <div>
-        <label for="images" class="block font-medium mb-1">Product Images</label>
-        <input id="images" type="file" name="images[]" multiple accept="image/*" class="w-full">
+    {{-- Status & Images --}}
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" name="status" class="form-select" required>
+              <option value="draft"    @selected(old('status')=='draft')>Draft</option>
+              <option value="active"   @selected(old('status')=='active')>Active</option>
+              <option value="archived" @selected(old('status')=='archived')>Archived</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="images" class="form-label">Product Images</label>
+            <input type="file" id="images" name="images[]" multiple accept="image/*" class="form-control">
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="flex justify-end">
-      <button type="submit"
-              class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded shadow font-semibold text-lg">
-        Save Product
-      </button>
+    <div class="text-end">
+      <button type="submit" class="btn btn-success btn-lg">Save Product</button>
     </div>
   </form>
 </div>
 
-<script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}" referrerpolicy="origin"></script>
-<script type="text/javascript">
-    tinymce.init({
-        selector: "textarea#textarea",
-        plugins: "image advcode link lists media table code wordcount fullscreen",
-        toolbar: "undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | outdent indent | link image media | code fullscreen",
-        menubar: "file edit view insert format tools table help",
-        height: 400,
-        image_title: true,
-        automatic_uploads: true,
-        promotion: false,
-        branding: false,
-        file_picker_types: 'image',
-        file_picker_callback: function (cb, value, meta) {
-            let input = document.createElement('input');
-            input.setAttribute('type', 'file');
-            input.setAttribute('accept', 'image/*');
-            input.onchange = function () {
-                let file = this.files[0];
-                let reader = new FileReader();
-                reader.onload = function () {
-                    let id = 'blobid' + (new Date()).getTime();
-                    let blobCache = tinymce.activeEditor.editorUpload.blobCache;
-                    let base64 = reader.result.split(',')[1];
-                    let blobInfo = blobCache.create(id, file, base64);
-                    blobCache.add(blobInfo);
-                    cb(blobInfo.blobUri(), { title: file.name });
-                };
-                reader.readAsDataURL(file);
-            };
-            input.click();
-        },
-    });
-</script>
-
+{{-- TinyMCE --}}
+<script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
 <script>
-function cartesian(arr) {
-  return arr.reduce(function(a, b) {
-    return a.flatMap(d => b.map(e => [ ...d, e ]));
-  }, [[]]);
-}
-
-document.getElementById('generate-variants').addEventListener('click', function() {
-  const sizes = document.getElementById('sizes').value.split(',').map(s => s.trim()).filter(Boolean);
-  const colors = Array.from(document.querySelectorAll('input[name=\"color_checkboxes[]\"]:checked')).map(cb => cb.value);
-  const materials = document.getElementById('materials').value.split(',').map(s => s.trim()).filter(Boolean);
-
-  let options = [];
-  if (sizes.length) options.push(sizes);
-  if (colors.length) options.push(colors);
-  if (materials.length) options.push(materials);
-
-  if (options.length === 0) {
-    document.getElementById('variants-table-wrapper').innerHTML = '<p class=\"text-red-500\">Please enter at least one option.</p>';
-    return;
-  }
-
-  const variants = cartesian(options);
-
-  let table = `<table class=\"w-full border mb-2\"><thead>
-    <tr>
-      ${sizes.length ? '<th class=\"border px-2 py-1\">Size</th>' : ''}
-      ${colors.length ? '<th class=\"border px-2 py-1\">Color</th>' : ''}
-      ${materials.length ? '<th class=\"border px-2 py-1\">Material</th>' : ''}
-      <th class=\"border px-2 py-1\">SKU</th>
-      <th class=\"border px-2 py-1\">Price</th>
-      <th class=\"border px-2 py-1\">Image</th>
-    </tr>
-    </thead><tbody>`;
-
-  const sizeIdx = options.indexOf(sizes);
-  const colorIdx = options.indexOf(colors);
-  const materialIdx = options.indexOf(materials);
-
-  variants.forEach((variant, i) => {
-    table += '<tr>';
-    if (sizes.length) table += `<td class="border px-2 py-1"><input type="hidden" name="variants[${i}][size]" value="${variant[sizeIdx] || ''}">${variant[sizeIdx] || ''}</td>`;
-    if (colors.length) table += `<td class="border px-2 py-1"><input type="hidden" name="variants[${i}][color]" value="${variant[colorIdx] || ''}">${variant[colorIdx] || ''}</td>`;
-    if (materials.length) table += `<td class="border px-2 py-1"><input type="hidden" name="variants[${i}][material]" value="${variant[materialIdx] || ''}">${variant[materialIdx] || ''}</td>`;
-    table += `<td class=\"border px-2 py-1\"><span class=\"text-gray-400 italic\">Auto</span></td>`;
-    table += `
-      <td class="border px-2 py-1"><input type="number" name="variants[${i}][price]" class="w-full border rounded px-2 py-1" min="0" step="0.01" required></td>
-      <td class="border px-2 py-1"><input type="file" name="variants[${i}][image]" accept="image/*"></td>
-    </tr>`;
-  });
-
-  table += '</tbody></table>';
-  document.getElementById('variants-table-wrapper').innerHTML = table;
+tinymce.init({
+  selector: '#description',
+  plugins: 'image link media code fullscreen',
+  toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
+  menubar: false,
+  height: 300
 });
 </script>
 
 <script>
-document.getElementById('product_type').addEventListener('change', function() {
-  const digitalFields = document.getElementById('digital-fields');
-  if (this.value === 'digital') {
-    digitalFields.style.display = '';
-  } else {
-    digitalFields.style.display = 'none';
+// Slug generation
+document.getElementById('name').addEventListener('input', function(){
+  let s = this.value.toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'');
+  document.getElementById('slug').value = s;
+  document.getElementById('slug-preview').textContent = s;
+});
+
+// Toggle digital fields
+document.getElementById('product_type').addEventListener('change', function(){
+  let digi = new bootstrap.Collapse(document.getElementById('digital-fields'), {
+    toggle: this.value==='digital'
+  });
+});
+
+// Cartesian helper
+function cartesian(arr){return arr.reduce((a,b)=>a.flatMap(x=>b.map(y=>x.concat([y]))),[[]]);}
+
+// Generate variants
+document.getElementById('generate-variants').addEventListener('click', function(){
+  let sizes = document.getElementById('sizes').value.split(',').map(s=>s.trim()).filter(Boolean);
+  let colors = Array.from(document.querySelectorAll('input[name="color_checkboxes[]"]:checked')).map(i=>i.value);
+  let materials = document.getElementById('materials').value.split(',').map(s=>s.trim()).filter(Boolean);
+  let opts=[sizes,colors,materials].filter(o=>o.length);
+  if(!opts.length){
+    document.getElementById('variants-table-wrapper').innerHTML = '<div class="text-danger">Enter at least one option.</div>';
+    return;
   }
+  let variants = cartesian(opts);
+  let html = `<table class="table table-bordered mb-3"><thead><tr>`;
+  if(sizes.length)    html += '<th>Size</th>';
+  if(colors.length)   html += '<th>Color</th>';
+  if(materials.length)html += '<th>Material</th>';
+  html += '<th>SKU</th><th>Price</th><th>Image</th></tr></thead><tbody>';
+  variants.forEach((v,i)=>{
+    html += '<tr>';
+    if(sizes.length)    html += `<td><input type="hidden" name="variants[${i}][size]"   value="${v[0]||''}">${v[0]||''}</td>`;
+    if(colors.length)   html += `<td><input type="hidden" name="variants[${i}][color]"  value="${v[sizes.length]||''}">${v[sizes.length]||''}</td>`;
+    if(materials.length)html += `<td><input type="hidden" name="variants[${i}][material]"value="${v[sizes.length+colors.length]||''}">${v[sizes.length+colors.length]||''}</td>`;
+    html += `<td><em>Auto</em></td>
+             <td><input type="number" name="variants[${i}][price]" class="form-control" required></td>
+             <td><input type="file" name="variants[${i}][image]" accept="image/*" class="form-control"></td>`;
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('variants-table-wrapper').innerHTML = html;
 });
 </script>
 @endsection
