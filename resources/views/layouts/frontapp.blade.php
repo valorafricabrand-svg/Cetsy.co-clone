@@ -59,7 +59,7 @@
 
         <!-- Desktop Nav -->
         <nav class="hidden sm:flex space-x-6 items-center">
-          <a href="{{ route('categories.index') }}" class="text-gray-700 hover:text-green-600">Categories</a>
+          <a href="{{ url('categories.index') }}" class="text-gray-700 hover:text-green-600">Categories</a>
 
           <!-- Cart Icon & Dropdown -->
           <div class="relative" x-data="{ open: false }">
@@ -161,7 +161,7 @@
           </button>
           <div x-show="mobileOpen" class="absolute top-full left-0 w-full bg-white border-t border-gray-200">
             <a href="{{ route('home') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Home</a>
-            <a href="{{ route('categories.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Categories</a>
+            <a href="{{ url('categories.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Categories</a>
             <a href="{{ route('cart.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Cart</a>
             @guest
               <a href="{{ route('login') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Log In</a>
