@@ -1,38 +1,51 @@
 @extends('layouts.app')
 
 @section('header')
-    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+    <h2 class="h4 text-secondary mb-0">
         {{ __('Admin Dashboard') }}
     </h2>
 @endsection
 
 @section('content')
-@if(session('success'))
-  <div class="text-green-600">
-    {{ session('success') }}
-  </div>
-@endif
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
-<div class="py-12">
-  <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-white overflow-hidden shadow rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900">Total Users</h3>
-        <p class="mt-4 text-3xl">{{ \App\Models\User::count() }}</p>
-      </div>
+    <div class="content">
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Total Users</h5>
+                        <p class="display-6 mb-0">{{ \App\Models\User::count() }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Total Orders</h5>
+                        <p class="display-6 mb-0">{{ \App\Models\Order::count() }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Revenue (KES)</h5>
+                        <p class="display-6 mb-0">
+                            {{ number_format(\App\Models\Order::sum('total'), 2) }}
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-      <div class="bg-white overflow-hidden shadow rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900">Total Orders</h3>
-        <p class="mt-4 text-3xl">{{ \App\Models\Order::count() }}</p>
-      </div>
-
-      <div class="bg-white overflow-hidden shadow rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900">Revenue (KES)</h3>
-        <p class="mt-4 text-3xl">
-          {{ number_format(\App\Models\Order::sum('total'), 2) }}
-        </p>
-      </div>
+        </div>
     </div>
-  </div>
-</div>
 @endsection

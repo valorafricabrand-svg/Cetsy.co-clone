@@ -16,6 +16,11 @@ use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
 use App\Http\Controllers\Seller\KycController;
 use App\Http\Controllers\Seller\SubscriptionController;
 use App\Http\Controllers\Admin\SubscriptionController as AdminSubscriptionController;
+use App\Http\Controllers\Admin\UserController;
+// At the top of routes/web.php
+use App\Http\Controllers\Admin\AdminReportController as AdminReport;
+use App\Http\Controllers\Admin\SettingsController as AdminSetting;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -102,9 +107,10 @@ Route::middleware(['auth'])
      ->prefix('admin')
      ->name('admin.')
      ->group(function () {
-         Route::get('dashboard', [AdminDashboard::class, 'index'])
+
+    Route::get('dashboard', [AdminDashboard::class, 'index'])
               ->name('dashboard');
-         Route::resource('users', UserController::class);
+    Route::resource('users', UserController::class);
     Route::resource('roles', RoleController::class);
 
     Route::get('kyc', [KycController::class, 'index'])
@@ -115,7 +121,7 @@ Route::middleware(['auth'])
          ->name('kyc.showDetails');
 
     // Settings page
-    Route::get('settings', [SettingsController::class, 'index'])
+    Route::get('settings', [AdminSetting::class, 'index'])
          ->name('settings');
 
          Route::get('reports', [AdminReport::class, 'index'])

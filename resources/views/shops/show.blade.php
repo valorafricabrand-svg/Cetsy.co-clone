@@ -1,105 +1,121 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto max-w-2xl py-8 space-y-6">
+<div class="content">
 
   {{-- Header: Logo + Name + Edit Button --}}
-  <div class="flex items-center justify-between">
-    <div class="flex items-center space-x-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
       @if($shop->logo_url)
-        <img src="{{ $shop->logo_url }}"
-             alt="{{ $shop->name }} logo"
-             class="w-16 h-16 object-cover rounded-full">
+        <img
+          src="{{ $shop->logo_url }}"
+          alt="{{ $shop->name }} logo"
+          class="rounded-circle me-3"
+          style="width: 64px; height: 64px; object-fit: cover;"
+        >
       @endif
       <div>
-        <h1 class="text-3xl font-bold">{{ $shop->name }}</h1>
-        <p class="text-gray-600">Owned by {{ $shop->user->name }}</p>
+        <h1 class="h3 mb-0">{{ $shop->name }}</h1>
+        <small class="text-muted">Owned by {{ $shop->user->name }}</small>
       </div>
     </div>
-
     {{-- Edit button: only the owner --}}
     @if(Auth::id() === $shop->user_id)
-      <a href="{{ route('shops.edit', $shop) }}"
-         class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">
-        Edit Shop
+      <a href="{{ route('shops.edit', $shop) }}" class="btn btn-primary">
+        <i class="fas fa-edit me-1"></i> Edit Shop
       </a>
     @endif
   </div>
 
   {{-- Flash --}}
   @if(session('success'))
-    <div class="p-4 bg-green-100 text-green-800 rounded">
+    <div class="alert alert-success">
       {{ session('success') }}
     </div>
   @endif
 
   {{-- Bio --}}
   @if($shop->bio)
-    <div class="bg-white shadow rounded-lg p-6">
-      <h2 class="text-xl font-semibold mb-2">About This Shop</h2>
-      <p class="text-gray-700">{{ $shop->bio }}</p>
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">About This Shop</h5>
+        <p class="card-text">{{ $shop->bio }}</p>
+      </div>
     </div>
   @endif
 
   {{-- Preferences --}}
-  <div class="bg-white shadow rounded-lg p-6 grid grid-cols-2 gap-4">
-    <div>
-      <h3 class="font-medium">Language</h3>
-      <p class="text-gray-700">{{ $shop->language }}</p>
-    </div>
-    <div>
-      <h3 class="font-medium">Country</h3>
-      <p class="text-gray-700">{{ $shop->country }}</p>
-    </div>
-    <div>
-      <h3 class="font-medium">Currency</h3>
-      <p class="text-gray-700">{{ $shop->currency }}</p>
-    </div>
-    <div>
-      <h3 class="font-medium">Shop URL</h3>
-      <a href="{{ route('shops.show', $shop) }}" class="text-green-600 hover:underline">
-        {{ url('shop/' . $shop->slug) }}
-      </a>
+  <div class="card mb-4">
+    <div class="card-header">Preferences</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <strong>Language</strong><br>
+          <span class="text-muted">{{ $shop->language }}</span>
+        </div>
+        <div class="col-md-6 mb-3">
+          <strong>Country</strong><br>
+          <span class="text-muted">{{ $shop->country }}</span>
+        </div>
+        <div class="col-md-6 mb-3">
+          <strong>Currency</strong><br>
+          <span class="text-muted">{{ $shop->currency }}</span>
+        </div>
+        <div class="col-md-6 mb-3">
+          <strong>Shop URL</strong><br>
+          <a href="{{ route('shops.show', $shop) }}" class="text-success">
+            {{ url('shop/' . $shop->slug) }}
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
   {{-- Payment Details --}}
-  <div class="bg-white shadow rounded-lg p-6 grid grid-cols-2 gap-4">
-    <div>
-      <h3 class="font-medium">Bank Account #</h3>
-      <p class="text-gray-700">{{ $shop->bank_account }}</p>
-    </div>
-    <div>
-      <h3 class="font-medium">Routing #</h3>
-      <p class="text-gray-700">{{ $shop->routing_number }}</p>
+  <div class="card mb-4">
+    <div class="card-header">Payment Details</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <strong>Bank Account #</strong><br>
+          <span class="text-muted">{{ $shop->bank_account }}</span>
+        </div>
+        <div class="col-md-6 mb-3">
+          <strong>Routing #</strong><br>
+          <span class="text-muted">{{ $shop->routing_number }}</span>
+        </div>
+      </div>
     </div>
   </div>
 
   {{-- Billing Address --}}
-  <div class="bg-white shadow rounded-lg p-6 space-y-2">
-    <h3 class="text-xl font-semibold">Billing Address</h3>
-    <p class="text-gray-700">{{ $shop->address }}</p>
-    <p class="text-gray-700">{{ $shop->city }}, {{ $shop->postal }}</p>
+  <div class="card mb-4">
+    <div class="card-header">Billing Address</div>
+    <div class="card-body">
+      <p class="mb-1">{{ $shop->address }}</p>
+      <p class="mb-0">{{ $shop->city }}, {{ $shop->postal }}</p>
+    </div>
   </div>
 
   {{-- Security --}}
-  <div class="bg-white shadow rounded-lg p-6 flex items-center space-x-3">
-    <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-      <path d="M10 2a6 6 0 016 6v2a2 2 0 01-2 2h-1v2a2 2 0 11-4 0v-2H6a2 2 0 01-2-2V8a6 6 0 016-6z"/>
-    </svg>
-    <span class="text-gray-700">
-      Two-Factor Authentication:
-      @if($shop->enable_2fa)
-        <strong class="text-green-700">Enabled</strong>
-      @else
-        <strong class="text-red-600">Disabled</strong>
-      @endif
-    </span>
+  <div class="card mb-4">
+    <div class="card-body d-flex align-items-center">
+      <i class="fas fa-lock fa-lg text-success me-3"></i>
+      <div>
+        Two-Factor Authentication:
+        @if($shop->enable_2fa)
+          <span class="badge bg-success">Enabled</span>
+        @else
+          <span class="badge bg-danger">Disabled</span>
+        @endif
+      </div>
+    </div>
   </div>
 
   {{-- Placeholder for future listings --}}
-  <div class="text-center text-gray-500">
+  <div class="text-center text-muted">
     (Product listings will appear here soon…)
   </div>
+
 </div>
 @endsection
