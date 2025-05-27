@@ -23,7 +23,7 @@
       ],
       [
         'label' => 'Settings',
-        'url'   => route('settings.index'),
+        'url'   => route('admin.settings'),
         'icon'  => 'fas fa-cogs',
       ],
     ];
