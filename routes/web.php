@@ -84,8 +84,7 @@ Route::patch('shops/{shop}', [ShopController::class, 'update'])
     // Products management
     Route::resource('products', ProductController::class);
 
-    // Categories management
-    Route::resource('categories', CategoryController::class);
+
 
 
 
@@ -126,6 +125,9 @@ Route::middleware(['auth'])
 
          Route::get('reports', [AdminReport::class, 'index'])
              ->name('reports');
+
+         // Categories management
+    Route::resource('categories', CategoryController::class);
 
          Route::post('subscriptions/deactivate-expired', [AdminSubscriptionController::class, 'deactivateExpired'])
              ->name('subscriptions.deactivate-expired');

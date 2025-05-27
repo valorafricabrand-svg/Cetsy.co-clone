@@ -20,7 +20,7 @@
       </form>
 
       <ul class="navbar-nav align-items-center">
-        <li class="nav-item"><a class="nav-link text-success fw-semibold" href="{{ route('categories.index') }}">Categories</a></li>
+        <li class="nav-item"><a class="nav-link text-success fw-semibold" href="{{ route('listings') }}">Products</a></li>
 
         <!-- Cart -->
         <li class="nav-item dropdown" x-data="{ open: false }">
