@@ -7,32 +7,32 @@
     <meta name="robots" content="index, follow">
 
     <!-- Dynamic Title -->
-    <title>@yield('title', 'Property Management System | Simplify Property Administration - Property Admin')</title>
+    <title>@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')</title>
     
     <!-- Description -->
-    <meta name="description" content="@yield('meta_description', 'Simplify your property administration with Property Admin. Explore our comprehensive Property Management System for administration, accounting, and communication.')">
+    <meta name="description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
     
     <!-- Canonical URL -->
-    <link rel="canonical" href="@yield('canonical_url', 'https://propertyadmin.com')">
+    <link rel="canonical" href="@yield('canonical_url', 'https://cetsy.com')">
 
     <!-- Social Meta Section -->
     @section('social-meta')
         <!-- Open Graph Meta Tags -->
-        <meta property="og:title" content="@yield('title', 'Property Management System | Simplify Property Administration - Property Admin')">
-        <meta property="og:description" content="@yield('meta_description', 'Simplify your property administration with Property Admin. Explore our comprehensive Property Management System for administration, accounting, and communication.')">
+        <meta property="og:title" content="@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')">
+        <meta property="og:description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
         <meta property="og:type" content="website">
-        <meta property="og:url" content="@yield('canonical_url', 'https://propertyadmin.com')">
-        <meta property="og:image" content="@yield('meta_image', asset('assets/images/default-og-image.jpg'))">
-        <meta property="og:image:alt" content="Property Management System - Property Admin">
+        <meta property="og:url" content="@yield('canonical_url', 'https://cetsy.com')">
+        <meta property="og:image" content="@yield('meta_image', asset('assets/images/default-og-image-cetsy.jpg'))">
+        <meta property="og:image:alt" content="Cetsy — Handmade Products Marketplace">
         <meta property="og:locale" content="en_US">
-        <meta property="og:site_name" content="Property Admin">
+        <meta property="og:site_name" content="Cetsy">
 
         <!-- Twitter Card Meta Tags -->
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="@yield('title', 'Property Management System | Simplify Property Administration - Property Admin')">
-        <meta name="twitter:description" content="@yield('meta_description', 'Simplify your property administration with Property Admin. Explore our comprehensive Property Management System for administration, accounting, and communication.')">
-        <meta name="twitter:image" content="@yield('meta_image', asset('assets/images/default-twitter-image.jpg'))">
-        <meta name="twitter:image:alt" content="Property Management System - Property Admin">
+        <meta name="twitter:title" content="@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')">
+        <meta name="twitter:description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
+        <meta name="twitter:image" content="@yield('meta_image', asset('assets/images/default-twitter-image-cetsy.jpg'))">
+        <meta name="twitter:image:alt" content="Cetsy — Handmade Products Marketplace">
     @show
 
     <!-- Favicons -->
@@ -71,11 +71,11 @@
     {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "Property Admin",
-        "url": "https://propertyadmin.com",
+        "name": "Cetsy",
+        "url": "https://cetsy.com",
         "potentialAction": {
             "@type": "SearchAction",
-            "target": "https://propertyadmin.com/search?q={search_term_string}",
+            "target": "https://cetsy.com/search?q={search_term_string}",
             "query-input": "required name=search_term_string"
         }
     }
@@ -88,11 +88,11 @@
         a.text-primary:hover, a.text-primary:focus { color: #025a1f !important; }
     </style>
 
-     <!-- Alpine.js -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-
-
 
 <body style="--phoenix-scroll-margin-top: 1.2rem;">
   <!-- ===============================================-->
@@ -102,3 +102,5 @@
     <div class="bg-body-emphasis sticky-top" data-navbar-shadow-on-scroll="true">
       @include('theme.layouts.nav')
     </div>
+
+   
