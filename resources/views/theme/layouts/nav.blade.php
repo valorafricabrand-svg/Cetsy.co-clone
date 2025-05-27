@@ -3,7 +3,7 @@
   <div class="container">
     {{-- Brand --}}
     <a class="navbar-brand" href="{{ url('/') }}">
-      {{ config('app.name') }}
+      <img src="{{ asset('assets/img/logo.jpg') }}" style="height: 100px;">
     </a>
 
     {{-- Mobile toggle --}}
