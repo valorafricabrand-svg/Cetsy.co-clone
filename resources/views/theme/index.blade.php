@@ -44,7 +44,7 @@
     <!-- Hero Image -->
     <div class="mt-4 mt-lg-0 text-center">
       <img 
-        src="{{ asset('assets/img/cetsy-hero-image.jpg') }}" 
+        src="{{ asset('assets/img/cetsy-hero-image.png') }}" 
         alt="Handmade Products on Cetsy" 
         class="img-fluid rounded shadow-sm"
         style="max-width:650px;"
