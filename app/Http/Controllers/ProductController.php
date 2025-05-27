@@ -312,7 +312,7 @@ class ProductController extends Controller
     {
 
         $product = Product::whereSlug($slug)->first();
-        return view('products.show', compact('product'));
+        return view('theme.listing_show', compact('product'));
         
     }
 

@@ -6,30 +6,37 @@
     <div class="container d-flex flex-column flex-lg-row align-items-center">
         <!-- Hero Text -->
         <div class="hero-text me-lg-5 text-center text-lg-start">
-            <h1 class="display-4 fw-bold mb-2 text-success">
+            <h1 class="display-3 fw-bold text-success mb-4">
                 Welcome to Cetsy
             </h1>
-            <h2 class="h4 text-primary fw-semibold mb-4">
+            <h2 class="h4 text-primary fw-semibold mb-5">
                 Discover Handmade, Vintage & Custom Products from Local Artists
             </h2>
             <p class="lead text-muted mb-4">
-                Cetsy is your go-to marketplace for unique finds from talented creators around the world. 
-                Whether you're looking for personalized gifts, handmade home decor, or rare vintage pieces, 
-                we've got something special just for you.
+                Cetsy is the ultimate marketplace for unique and handcrafted treasures. 
+                Explore personalized gifts, vintage home decor, and one-of-a-kind custom creations 
+                from talented artisans across the globe.
             </p>
-            <div class="d-flex justify-content-center justify-content-lg-start gap-2 mb-4">
-                <a href="{{ route('register') }}" class="btn btn-success btn-lg rounded-pill">Get Started Free</a>
-                <a href="#features" class="btn btn-outline-secondary btn-lg rounded-pill">Learn More</a>
+            <div class="d-flex justify-content-center justify-content-lg-start gap-3 mb-4">
+                <a href="{{ route('register') }}" class="btn btn-success btn-lg rounded-pill px-5 py-3 shadow-lg transition-all hover:scale-105">
+                    Get Started Free
+                </a>
+                <a href="#features" class="btn btn-outline-secondary btn-lg rounded-pill px-5 py-3 shadow-lg transition-all hover:scale-105">
+                    Learn More
+                </a>
             </div>
-            <div class="d-flex flex-wrap gap-4 align-items-center justify-content-center justify-content-lg-start text-muted small">
+            <div class="d-flex flex-wrap gap-5 align-items-center justify-content-center justify-content-lg-start text-muted small">
                 <div class="d-flex align-items-center">
-                    <i class="fas fa-shield-alt text-success me-2"></i>Secure &amp; Trusted
+                    <i class="fas fa-shield-alt text-success me-2 fs-4"></i>
+                    <span>Secure & Trusted</span>
                 </div>
                 <div class="d-flex align-items-center">
-                    <i class="fas fa-handshake text-success me-2"></i>Support Local Artists
+                    <i class="fas fa-handshake text-success me-2 fs-4"></i>
+                    <span>Support Local Artists</span>
                 </div>
                 <div class="d-flex align-items-center">
-                    <i class="fas fa-cogs text-success me-2"></i>Custom Orders Available
+                    <i class="fas fa-cogs text-success me-2 fs-4"></i>
+                    <span>Custom Orders Available</span>
                 </div>
             </div>
         </div>
@@ -39,12 +46,14 @@
             <img 
                 src="{{ asset('assets/img/cetsy-hero-image.jpg') }}" 
                 alt="Handmade Products on Cetsy" 
-                class="img-fluid shadow-lg" 
-                style="max-width: 600px;"
+                class="img-fluid shadow-lg rounded-3" 
+                style="max-width: 650px; transition: transform 0.3s ease-in-out;"
+                onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"
             >
         </div>
     </div>
 </section>
+
 
 
     <!-- Trending Categories Section -->
@@ -96,7 +105,7 @@
                                 <h5 class="card-title text-truncate">{{ $product->name }}</h5>
                                 <p class="card-text text-success font-weight-bold">KES {{ number_format($product->price, 2) }}</p>
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <a href="{{ route('products.show', $product) }}" class="text-muted text-decoration-none">View Details</a>
+                                    <a href="{{ route('listing.show', $product) }}" class="text-muted text-decoration-none">View Details</a>
                                     <button
                                       @click="addToCart({{ $product->id }}, 1)"
                                       class="btn btn-success btn-sm"
