@@ -1,7 +1,7 @@
 {{-- resources/views/listings/index.blade.php --}}
-@extends('layouts.frontapp')
+@extends('theme.layouts.main')
 
-@section('content')
+@section('main')
   <!-- Listings Header -->
   <div class="bg-green-600 py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
