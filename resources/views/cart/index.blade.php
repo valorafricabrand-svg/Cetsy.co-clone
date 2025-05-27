@@ -1,63 +1,75 @@
-@extends('layouts.frontapp')
+{{-- resources/views/cart/index.blade.php --}}
+@extends('theme.layouts.main')
 
-@section('content')
-<div class="max-w-4xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-  <h1 class="text-3xl font-bold mb-6">Your Cart</h1>
+@section('main')
+<div class="container py-5">
+  <h1 class="h3 mb-4">Your Cart</h1>
 
   @if($items->isEmpty())
-    <p class="text-gray-600">Your cart is empty.</p>
-    <a href="{{ route('listings') }}"
-       class="mt-4 inline-block bg-primary text-white px-6 py-2 rounded hover:bg-primary-dark">
-       Browse Products
+    <div class="alert alert-info">
+      Your cart is empty.
+    </div>
+    <a href="{{ route('listings') }}" class="btn btn-primary">
+      Browse Products
     </a>
   @else
-    <div class="bg-white shadow rounded-lg overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div class="table-responsive shadow-sm rounded bg-white">
+      <table class="table mb-0">
+        <thead class="table-light">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-            <th class="px-6 py-3"></th>
+            <th scope="col">Product</th>
+            <th scope="col">Price</th>
+            <th scope="col" style="width:120px">Quantity</th>
+            <th scope="col">Total</th>
+            <th scope="col"></th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody>
           @foreach($items as $item)
             <tr>
-              <td class="px-6 py-4 flex items-center space-x-4">
-                @if($img = $item->product->media->first())
-                  <img src="{{ asset('storage/'.$img->url) }}" class="w-16 h-16 object-cover rounded">
-                @endif
-                <div>
-                  <a href="{{ route('products.show', $item->product) }}"
-                     class="font-semibold text-gray-800 hover:underline">
-                    {{ $item->product->name }}
+              <td class="align-middle">
+                <div class="d-flex align-items-center">
+                  @if($item->image)
+                    <img
+                      src="{{ asset('storage/'.$item->image) }}"
+                      alt="{{ $item->name }}"
+                      class="img-thumbnail rounded me-3"
+                      style="width:60px; height:60px; object-fit:cover;"
+                    >
+                  @endif
+                  <a href="{{ route('products.show', $item->id) }}" class="fw-semibold text-decoration-none">
+                    {{ $item->name }}
                   </a>
                 </div>
               </td>
-              <td class="px-6 py-4">KES {{ number_format($item->product->price,2) }}</td>
-              <td class="px-6 py-4">
-                <form action="{{ route('cart.update', $item->product->id) }}" 
-                      method="POST" class="flex items-center space-x-2">
+              <td class="align-middle">KES {{ $item->price }}</td>
+              <td class="align-middle">
+                <form
+                  action="{{ route('cart.update', $item->id) }}"
+                  method="POST"
+                  class="d-flex align-items-center"
+                >
                   @csrf
                   @method('PATCH')
-                  <input type="number" name="quantity" value="{{ $item->quantity }}"
-                         min="1"
-                         class="w-20 border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary">
-                  <button type="submit" class="text-blue-600 hover:underline">
+                  <input
+                    type="number"
+                    name="quantity"
+                    value="{{ $item->qty }}"
+                    min="1"
+                    class="form-control form-control-sm me-2"
+                    style="width: 80px;"
+                  >
+                  <button type="submit" class="btn btn-link btn-sm p-0">
                     Update
                   </button>
                 </form>
               </td>
-              <td class="px-6 py-4">
-                KES {{ number_format($item->product->price * $item->quantity,2) }}
-              </td>
-              <td class="px-6 py-4">
-                <form action="{{ route('cart.destroy', $item->product->id) }}" method="POST">
+              <td class="align-middle">KES {{ $item->total }}</td>
+              <td class="align-middle text-end">
+                <form action="{{ route('cart.destroy', $item->id) }}" method="POST">
                   @csrf
                   @method('DELETE')
-                  <button type="submit" class="text-red-600 hover:underline">
+                  <button type="submit" class="btn btn-link btn-sm text-danger p-0">
                     Remove
                   </button>
                 </form>
@@ -68,11 +80,10 @@
       </table>
     </div>
 
-    <div class="mt-6 flex justify-between items-center">
-      <p class="text-xl font-semibold">Subtotal: KES {{ number_format($subtotal,2) }}</p>
-      <a href="{{ route('checkout.index') }}"
-         class="bg-primary text-white px-6 py-3 rounded hover:bg-primary-dark">
-         Proceed to Checkout
+    <div class="d-flex justify-content-between align-items-center mt-4">
+      <p class="h5 mb-0">Subtotal: KES {{ $subtotal }}</p>
+      <a href="{{ route('checkout.index') }}" class="btn btn-success">
+        Proceed to Checkout
       </a>
     </div>
   @endif
