@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto max-w-2xl py-10"
+<div class="content"
      x-data="{ name:'', slug:'' }"
      @input.debounce.500ms="
        slug = name.toLowerCase()

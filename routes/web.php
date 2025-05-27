@@ -156,6 +156,9 @@ Route::middleware(['auth'])
 
 
 
+Route::resource('settings', \App\Http\Controllers\SettingController::class)
+     ->only(['index', 'edit', 'update'])
+     ->middleware('auth', 'can:admin');
 
 require __DIR__ . '/auth.php';
 

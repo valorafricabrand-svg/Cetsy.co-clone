@@ -105,4 +105,25 @@ class User extends Authenticatable
     {
         return $this->subscription && $this->subscription->isActive();
     }
+
+
+        public function get_gravatar($s = 40, $d = 'mm', $r = 'g', $img = false, $atts = [])
+    {
+        $email = $this->email;
+        $url = 'https://www.gravatar.com/avatar/' . md5(strtolower(trim($email))) . "?s=$s&d=$d&r=$r";
+
+        if (!empty($this->photo)) {
+            $url = avatar_img_url($this->photo, $this->photo_storage);
+        }
+
+        if ($img) {
+            $attributes = '';
+            foreach ($atts as $key => $val) {
+                $attributes .= " $key=\"$val\"";
+            }
+            return '<img src="' . $url . '"' . $attributes . ' />';
+        }
+        return $url;
+    }
+
 }
