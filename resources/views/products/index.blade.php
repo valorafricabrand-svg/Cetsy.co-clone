@@ -51,9 +51,9 @@
           @forelse($products as $product)
           <tr>
             <td class="align-middle">
-              @if($product->media->first())
+              @if($img = $product->media->first())
                 <img
-                  src="{{ asset('storage/' . $product->media->first()->url) }}"
+                  src="{{ asset('storage/'.$img->url) }}"
                   alt="{{ $product->name }}"
                   class="rounded me-2"
                   style="width:48px;height:48px;object-fit:cover;"
