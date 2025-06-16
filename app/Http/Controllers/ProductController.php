@@ -8,6 +8,11 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\ProductVariant;
+use App\Models\ListingFeeType;
+use App\Models\Country;
+use App\Models\ProcessingTime;
+use App\Services\Shared\GetShippingService;
+use App\Models\ShippingPeriod;
 
 class ProductController extends Controller
 {
@@ -44,8 +49,71 @@ class ProductController extends Controller
 
     public function create()
     {
+        $user = auth()->user();
+        if ($user->shop()->count() <= 0) {
+            session()->put(['intend_url' => 'shop/create']);
+            return redirect(route('shops.create'))->with('message', 'To add product first create shop');
+        }
+        $shops = $user->shop;
+        $shop = $shops->first();
+        $countryOriginName = $shop ? Country::where('id', $shop->country)->value('name') : '';
         $categories = Category::orderBy('name')->get();
-        return view('products.create', compact('categories'));
+        $category_listFee_types = ListingFeeType::orderBy('id', 'asc')->get();
+        $countries = Country::orderBy('id', 'asc')->get();
+        $processing_times = ProcessingTime::all();
+        $shippinService = (new GetShippingService())->handle();
+        $shippingPeriods = ShippingPeriod::all();
+        $shipping_type = 1;
+        $shipping_type_other = 1;
+        $itemReturnString = "I don't accept returns of this item";
+        $itemExchangeString = "I don't accept exchanges of this item";
+        $item_exchange = false;
+        $item_return = false;
+        $shippingChargeType = [
+            ['id' => 0, 'name' => 'Free Shipping'],
+            ['id' => 1, 'name' => 'Fixed Price'],
+        ];
+        $returnDeliveryDays = [
+            ['id' => 7, 'name' => '7 days from delivery'],
+            ['id' => 14, 'name' => '14 days from delivery'],
+            ['id' => 21, 'name' => '21 days from delivery'],
+            ['id' => 30, 'name' => '30 days from delivery'],
+            ['id' => 45, 'name' => '45 days from delivery'],
+            ['id' => 60, 'name' => '60 days from delivery'],
+            ['id' => 90, 'name' => '90 days from delivery'],
+        ];
+        $shippingChargeType = [
+            ['id' => 0, 'name' => 'Free Shipping'],
+            ['id' => 1, 'name' => 'Fixed Price'],
+        ];
+        $shippingChargeType = [
+            ['id' => 0, 'name' => 'Free Shipping'],
+            ['id' => 1, 'name' => 'Fixed Price'],
+        ];
+        return view('products.create', compact(
+            'categories',
+            'category_listFee_types',
+            'countries',
+            'shippingChargeType',
+            'returnDeliveryDays',
+            'shippingChargeType',
+            'processing_times',
+            'countryOriginName',
+            'shippinService',
+            'shippingChargeType',
+            'returnDeliveryDays',
+            'shippingChargeType',
+            'processing_times',
+            'countryOriginName',
+            'shippinService',
+            'shippingPeriods',
+            'shipping_type',
+            'shipping_type_other',
+            'itemReturnString',
+            'itemExchangeString',
+            'item_exchange',
+            'item_return',
+        ));
     }
 
     public function store(Request $request)
@@ -55,13 +123,13 @@ class ProductController extends Controller
             $rules = [
                 'name'        => 'required|string|max:255',
                 'slug'        => 'nullable|string|max:255|unique:products,slug',
-                'category_id' => 'nullable|exists:categories,id',
+                'category_id' => 'required|exists:categories,id',
                 'description' => 'nullable|string',
                 'price'       => 'required|numeric|min:0',
                 'discount_price' => 'nullable|numeric|min:0',
                 'stock'       => 'required|integer|min:0',
                 'low_stock'   => 'nullable|integer|min:0',
-                'status'      => 'required|in:draft,active,archived',
+                'status'      => 'nullable|in:draft,active,archived',
                 'product_type'=> 'required|in:physical,digital',
                 'condition'   => 'required|in:new,refurbished,used',
                 'images.*'    => 'nullable|image|max:2048',
@@ -69,12 +137,37 @@ class ProductController extends Controller
                 'download_file'   => 'nullable|file|mimes:pdf,zip,rar,epub,mobi,exe,dmg,mp3,mp4,avi,mov,doc,docx,xls,xlsx,ppt,pptx',
                 'download_limit'  => 'nullable|integer|min:1',
                 'access_expiry'   => 'nullable|integer|min:1',
-                // Variants
-                'variants'        => 'nullable|array',
-                'variants.*.size'     => 'nullable|string|max:50',
-                'variants.*.color'    => 'nullable|string|max:50',
-                'variants.*.material' => 'nullable|string|max:50',
-                'variants.*.image'    => 'nullable|image|max:2048',
+                // New fields
+                'renewal_option'  => 'required|in:0,1',
+                'listTypeFee_id'  => 'required|exists:listing_fee_types,id',
+                'variation_one_name' => 'nullable|string|max:255',
+                'variation_two_name' => 'nullable|string|max:255',
+                'variationOneOptions' => 'nullable|array',
+                'variationOneOptions.*.title' => 'nullable|string|max:255',
+                'variationOneOptions.*.price' => 'nullable|numeric|min:0',
+                'variationTwoOptions' => 'nullable|array',
+                'variationTwoOptions.*.title' => 'nullable|string|max:255',
+                'variationTwoOptions.*.price' => 'nullable|numeric|min:0',
+                // Shipping fields
+                'origin_id' => 'required|exists:countries,id',
+                'origin_postal_code' => 'nullable|string|max:50',
+                'processing_time_id' => 'required|exists:processing_times,id',
+                'local_shipping_service_id' => 'nullable|integer',
+                'local_shipping_service_other' => 'nullable|string|max:255',
+                'localshippingPeriod_id' => 'nullable|integer',
+                'local_default_shipping_price' => 'nullable|numeric|min:0',
+                'local_shipping_price' => 'nullable|numeric|min:0',
+                'shipping_type' => 'nullable|integer',
+                'international_shipping_service_id' => 'nullable|integer',
+                'international_shipping_service_other' => 'nullable|string|max:255',
+                'internationalshippingPeriod_id' => 'nullable|integer',
+                'default_shipping_price' => 'nullable|numeric|min:0',
+                'shipping_price' => 'nullable|numeric|min:0',
+                'shipping_type_other' => 'nullable|integer',
+                // Return/exchange fields
+                'item_return' => 'nullable|boolean',
+                'item_exchange' => 'nullable|boolean',
+                'total_return_days' => 'nullable|integer',
             ];
 
             // If digital, require digital fields
@@ -100,6 +193,7 @@ class ProductController extends Controller
                 $data['download_file'] = $request->file('download_file')->store('products/digital', 'public');
             }
 
+            // Save product
             $product = Product::create($data);
 
             // Handle images
@@ -113,31 +207,42 @@ class ProductController extends Controller
                 }
             }
 
-            // Handle variants (if you have a ProductVariant model/table)
-            if ($request->has('variants')) {
-                foreach ($request->variants as $variant) {
-                    // Generate SKU: e.g., PRODUCTID-SIZE-COLOR-MATERIAL or any format you prefer
-                    $skuParts = [];
-                    if (!empty($variant['size'])) $skuParts[] = strtoupper(substr($variant['size'], 0, 3));
-                    if (!empty($variant['color'])) $skuParts[] = strtoupper(substr($variant['color'], 0, 3));
-                    if (!empty($variant['material'])) $skuParts[] = strtoupper(substr($variant['material'], 0, 3));
-                    $sku = 'P' . $product->id . '-' . implode('-', $skuParts);
-
-                    $variantData = [
-                        'product_id' => $product->id,
-                        'size'       => $variant['size'] ?? null,
-                        'color'      => $variant['color'] ?? null,
-                        'material'   => $variant['material'] ?? null,
-                        'sku'        => $sku,
-                        'price'      => $variant['price'] ?? null,
-                    ];
-                    // Handle variant image
-                    if (isset($variant['image']) && $variant['image']) {
-                        $variantData['image'] = $variant['image']->store('products/variants', 'public');
-                    }
-                    ProductVariant::create($variantData);
-                }
+            // Handle variations (Variation One & Two)
+            if ($request->filled('variationOneOptions') || $request->filled('variationTwoOptions')) {
+                $variationOneName = $request->input('variation_one_name');
+                $variationTwoName = $request->input('variation_two_name');
+                $variationOneOptions = $request->input('variationOneOptions', []);
+                $variationTwoOptions = $request->input('variationTwoOptions', []);
+                // Save as JSON or in a related table as needed
+                $product->variation_one_name = $variationOneName;
+                $product->variation_two_name = $variationTwoName;
+                $product->variation_one_options = json_encode($variationOneOptions);
+                $product->variation_two_options = json_encode($variationTwoOptions);
+                $product->save();
             }
+
+            // Save shipping and return/exchange fields
+            $product->renewal_option = $request->input('renewal_option');
+            $product->listTypeFee_id = $request->input('listTypeFee_id');
+            $product->origin_id = $request->input('origin_id');
+            $product->origin_postal_code = $request->input('origin_postal_code');
+            $product->processing_time_id = $request->input('processing_time_id');
+            $product->local_shipping_service_id = $request->input('local_shipping_service_id');
+            $product->local_shipping_service_other = $request->input('local_shipping_service_other');
+            $product->localshippingPeriod_id = $request->input('localshippingPeriod_id');
+            $product->local_default_shipping_price = $request->input('local_default_shipping_price');
+            $product->local_shipping_price = $request->input('local_shipping_price');
+            $product->shipping_type = $request->input('shipping_type');
+            $product->international_shipping_service_id = $request->input('international_shipping_service_id');
+            $product->international_shipping_service_other = $request->input('international_shipping_service_other');
+            $product->internationalshippingPeriod_id = $request->input('internationalshippingPeriod_id');
+            $product->default_shipping_price = $request->input('default_shipping_price');
+            $product->shipping_price = $request->input('shipping_price');
+            $product->shipping_type_other = $request->input('shipping_type_other');
+            $product->item_return = $request->input('item_return', false);
+            $product->item_exchange = $request->input('item_exchange', false);
+            $product->total_return_days = $request->input('total_return_days');
+            $product->save();
 
             \DB::commit();
             return redirect()
@@ -150,7 +255,7 @@ class ProductController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'user_id' => Auth::id(),
             ]);
-            return response()->view('errors.500', ['message' => 'An error occurred while creating the product. Please try again later.'], 500);
+            return back()->with('error', 'An error occurred while creating the product. Please try again later.');
         }
     }
 
