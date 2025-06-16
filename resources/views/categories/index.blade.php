@@ -7,65 +7,72 @@
 @endsection
 
 @section('content')
-<div class="py-6">
-  <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+<div class="content">
+  <div class="py-6">
+    <div class="container-lg">
 
-    @if(session('success'))
-      <div class="mb-4 p-4 bg-green-100 text-green-700 rounded">
-        {{ session('success') }}
+      @if(session('success'))
+        <div class="alert alert-success mb-4" role="alert">
+          {{ session('success') }}
+        </div>
+      @endif
+
+      <div class="d-flex justify-content-end mb-4">
+        <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
+          + New Category
+        </a>
       </div>
-    @endif
 
-    <div class="flex justify-end mb-4">
-      <a href="{{ route('categories.create') }}"
-         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-        + New Category
-      </a>
+      @if($categories->isEmpty())
+        <p class="text-muted">No categories found.</p>
+      @else
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <table class="table table-bordered table-striped">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">Image</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Slug</th>
+                  <th scope="col">Parent</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+              @foreach($categories as $cat)
+                <tr>
+                  <td class="text-center">
+                    @if($cat->image)
+                      <img src="{{ asset('storage/'.$cat->image) }}"
+                           class="img-fluid rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                    @else
+                      <span class="text-muted">—</span>
+                    @endif
+                  </td>
+                  <td>{{ $cat->name }}</td>
+                  <td>{{ $cat->slug }}</td>
+                  <td>{{ $cat->parent?->name ?? '—' }}</td>
+                  <td class="text-end">
+                    <a href="{{ route('admin.categories.edit', $cat) }}" class="btn btn-sm btn-warning">
+                      Edit
+                    </a>
+                    <form action="{{ route('admin.categories.destroy', $cat) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this category?');">
+                      @csrf
+                      @method('DELETE')
+                      <button type="submit" class="btn btn-sm btn-danger">
+                        Delete
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+      @endif
+
     </div>
-
-    @if($categories->isEmpty())
-      <p class="text-gray-500">No categories found.</p>
-    @else
-      <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Image</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent</th>
-              <th class="px-6 py-3"></th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-          @foreach($categories as $cat)
-            <tr>
-              <td class="px-6 py-4">
-                @if($cat->image)
-                  <img src="{{ asset('storage/'.$cat->image) }}"
-                       class="h-8 w-8 object-cover rounded">
-                @else
-                  <span class="text-gray-400">—</span>
-                @endif
-              </td>
-              <td class="px-6 py-4">{{ $cat->name }}</td>
-              <td class="px-6 py-4">{{ $cat->slug }}</td>
-              <td class="px-6 py-4">{{ $cat->parent?->name ?? '—' }}</td>
-              <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
-                <a href="{{ route('categories.edit', $cat) }}"
-                   class="text-blue-600 hover:text-blue-900">Edit</a>
-                <form action="{{ route('categories.destroy', $cat) }}" method="POST" class="inline" onsubmit="return confirm('Delete this category?');">
-                  @csrf @method('DELETE')
-                  <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
-                </form>
-              </td>
-            </tr>
-          @endforeach
-          </tbody>
-        </table>
-      </div>
-    @endif
-
   </div>
 </div>
 @endsection

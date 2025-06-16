@@ -81,14 +81,49 @@ class User extends Authenticatable
         return $this->user_type === self::TYPE_ADMIN;
     }
 
-        public function orders()
+    public function orders()
     {
         return $this->hasMany(Order::class);
     }
 
-       public function wishlistItems()
+    public function wishlistItems()
     {
         return $this->hasMany(WishlistItem::class);
+    }
+
+    public function kyc()
+    {
+        return $this->hasOne(Kyc::class);
+    }
+
+    public function subscription()
+    {
+        return $this->hasOne(Subscription::class)->latest();
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        return $this->subscription && $this->subscription->isActive();
+    }
+
+
+        public function get_gravatar($s = 40, $d = 'mm', $r = 'g', $img = false, $atts = [])
+    {
+        $email = $this->email;
+        $url = 'https://www.gravatar.com/avatar/' . md5(strtolower(trim($email))) . "?s=$s&d=$d&r=$r";
+
+        if (!empty($this->photo)) {
+            $url = avatar_img_url($this->photo, $this->photo_storage);
+        }
+
+        if ($img) {
+            $attributes = '';
+            foreach ($atts as $key => $val) {
+                $attributes .= " $key=\"$val\"";
+            }
+            return '<img src="' . $url . '"' . $attributes . ' />';
+        }
+        return $url;
     }
 
 }

@@ -1,116 +1,120 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto py-8">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
-        <h2 class="text-3xl font-bold text-gray-900">Your Products</h2>
-        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 w-full sm:w-auto">
-            <form action="{{ route('products.index') }}" method="GET" class="flex w-full sm:w-auto">
-                <input
-                    type="text"
-                    name="search"
-                    value="{{ request('search') }}"
-                    placeholder="Search products..."
-                    class="flex-grow border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                    type="submit"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-r-lg transition"
+<div class="content">
+
+  {{-- Header --}}
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+    <h2 class="h3 mb-3 mb-md-0">Your Products</h2>
+
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2 w-100 w-sm-auto">
+      <form action="{{ route('products.index') }}" method="GET" class="d-flex flex-grow-1 flex-sm-grow-0">
+        <input
+          type="text"
+          name="search"
+          value="{{ request('search') }}"
+          placeholder="Search products..."
+          class="form-control rounded-start"
+        >
+        <button class="btn btn-primary rounded-end ms-0">Search</button>
+      </form>
+
+      <a href="{{ route('products.create') }}" class="btn btn-success">
+        <i class="fas fa-plus me-1"></i> Add New Product
+      </a>
+    </div>
+  </div>
+
+  {{-- Success Message --}}
+  @if(session('success'))
+    <div class="alert alert-success mb-4">
+      {{ session('success') }}
+    </div>
+  @endif
+
+  {{-- Products Table Card --}}
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th class="text-end">Price</th>
+            <th class="text-end">Stock</th>
+            <th class="text-center">Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @forelse($products as $product)
+          <tr>
+            <td class="align-middle">
+              @if($product->media->first())
+                <img
+                  src="{{ asset('storage/' . $product->media->first()->url) }}"
+                  alt="{{ $product->name }}"
+                  class="rounded me-2"
+                  style="width:48px;height:48px;object-fit:cover;"
                 >
-                    Search
+              @else
+                <div class="bg-secondary bg-opacity-10 rounded d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                  &mdash;
+                </div>
+              @endif
+            </td>
+            <td class="align-middle">{{ $product->name }}</td>
+            <td class="align-middle">{{ $product->category->name ?? '—' }}</td>
+            <td class="align-middle text-end">KES {{ number_format($product->price,2) }}</td>
+            <td class="align-middle text-end">{{ $product->stock }}</td>
+            <td class="align-middle text-center">
+              @php
+                $statusClasses = [
+                  'active'   => 'badge bg-success',
+                  'draft'    => 'badge bg-secondary',
+                  'pending'  => 'badge bg-warning text-dark',
+                  'archived' => 'badge bg-danger'
+                ];
+              @endphp
+              <span class="{{ $statusClasses[$product->status] ?? 'badge bg-secondary' }}">
+                {{ ucfirst($product->status) }}
+              </span>
+            </td>
+            <td class="align-middle text-end">
+              <a href="{{ route('products.edit', $product) }}" class="text-primary me-2">
+                <i class="fas fa-edit"></i>
+              </a>
+              <form
+                action="{{ route('products.destroy', $product) }}"
+                method="POST"
+                class="d-inline"
+                onsubmit="return confirm('Delete this product?');"
+              >
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-link p-0 m-0 text-danger">
+                  <i class="fas fa-trash"></i>
                 </button>
-            </form>
-            <a
-                href="{{ route('products.create') }}"
-                class="inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition"
-            >
-                <!-- You can replace this with a Heroicon if available -->
-                Add New Product
-            </a>
-        </div>
+              </form>
+            </td>
+          </tr>
+          @empty
+          <tr>
+            <td colspan="7" class="text-center text-muted py-3">
+              No products found.
+            </td>
+          </tr>
+          @endforelse
+        </tbody>
+      </table>
     </div>
+  </div>
 
-    <!-- Success Message -->
-    @if(session('success'))
-        <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg">
-            {{ session('success') }}
-        </div>
-    @endif
+  {{-- Pagination --}}
+  <div class="mt-4">
+    {{ $products->withQueryString()->links() }}
+  </div>
 
-    <!-- Products Table Card -->
-    <div class="bg-white shadow rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200 table-auto">
-            <thead class="bg-gray-100">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Image</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Price</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Stock</th>
-                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3"></th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @forelse($products as $product)
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        @if($product->media->first())
-                            <img
-                                src="{{ asset('storage/' . $product->media->first()->url) }}"
-                                alt="{{ $product->name }}"
-                                class="w-12 h-12 object-cover rounded-md"
-                            />
-                        @else
-                            <div class="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
-                                <span class="text-gray-400">—</span>
-                            </div>
-                        @endif
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-gray-800 font-medium">{{ $product->name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-gray-600">{{ $product->category->name ?? '—' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-gray-800">KES {{ number_format($product->price, 2) }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-gray-800">{{ $product->stock }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                        @php
-                            $statusClasses = [
-                                'active' => 'bg-green-100 text-green-800',
-                                'draft'  => 'bg-gray-100 text-gray-800',
-                                'pending'=> 'bg-yellow-100 text-yellow-800',
-                                'archived' => 'bg-red-100 text-red-800',
-                            ];
-                        @endphp
-                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold {{ $statusClasses[$product->status] ?? 'bg-gray-100 text-gray-800' }}">
-                            {{ ucfirst($product->status) }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        <a href="{{ route('products.edit', $product) }}" class="text-blue-600 hover:text-blue-900 transition">Edit</a>
-                        <form
-                            action="{{ route('products.destroy', $product) }}"
-                            method="POST"
-                            class="inline"
-                            onsubmit="return confirm('Are you sure you want to delete this product?');"
-                        >
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-600 hover:text-red-900 transition">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">No products found.</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Pagination -->
-    <div class="mt-6">
-        {{ $products->withQueryString()->links() }}
-    </div>
 </div>
 @endsection

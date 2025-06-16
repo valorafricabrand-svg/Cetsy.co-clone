@@ -1,96 +1,159 @@
-{{-- resources/views/home.blade.php --}}
-@extends('layouts.frontapp')
+{{-- resources/views/cart/index.blade.php --}}
+@extends('theme.layouts.main')
 
-@section('content')
-    <!-- Hero -->
-    <div class="relative bg-cover bg-center h-96" style="background-image:url('{{ asset('images/hero.jpg') }}')">
-        <div class="absolute inset-0 bg-green-600 bg-opacity-60 flex items-center justify-center">
-            <div class="text-center px-4">
-                <h1 class="text-5xl font-extrabold text-white sm:text-6xl">Discover Handmade Treasures</h1>
-                <p class="mt-4 text-lg text-green-100">Unique finds from small shops all around the world.</p>
-                <a href="{{ auth()->check() ? route('shops.create') : route('register') }}"
-                   class="mt-8 inline-block bg-white text-green-600 font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-green-50 transition">
-                    {{ auth()->check() ? 'Open Your Shop' : 'Join Cetsy' }}
-                </a>
-            </div>
+@section('main')
+
+<!-- Hero Section -->
+<section id="hero" class="py-5 bg-light border-bottom">
+  <div class="container d-flex flex-column flex-lg-row align-items-center">
+    <!-- Hero Text -->
+    <div class="me-lg-5 text-center text-lg-start">
+      <h1 class="display-4 fw-bold text-success mb-4">
+        Welcome to Cetsy
+      </h1>
+      <h2 class="h4 text-primary fw-bold mb-4">
+        Discover Handmade, Vintage &amp; Custom Products from Local Artists
+      </h2>
+      <p class="lead text-muted mb-4">
+        Cetsy is the ultimate marketplace for unique and handcrafted treasures. Explore personalized gifts, vintage home decor, and one-of-a-kind creations from talented artisans across the globe.
+      </p>
+      <div class="d-flex justify-content-center justify-content-lg-start gap-3 mb-4">
+        <a href="{{ route('register') }}" class="btn btn-success btn-lg rounded-pill shadow-sm">
+          Get Started Free
+        </a>
+        <a href="#features" class="btn btn-outline-secondary btn-lg rounded-pill shadow-sm">
+          Learn More
+        </a>
+      </div>
+      <div class="d-flex flex-wrap gap-4 align-items-center justify-content-center justify-content-lg-start small text-muted">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-shield-alt text-success me-2 fs-4"></i>
+          <span>Secure &amp; Trusted</span>
         </div>
-    </div>
-
-    <!-- Trending Categories -->
-    <section class="py-16">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-3xl font-bold text-gray-800 mb-8">Trending Categories</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
-          @foreach($categories as $cat)
-            <a href="{{ route('category.show', $cat->slug) }}" class="group block">
-              <div class="h-32 bg-gray-100 rounded-lg overflow-hidden">
-                @if($cat->image)
-                  <img src="{{ asset('storage/'.$cat->image) }}"
-                       alt="{{ $cat->name }}"
-                       class="w-full h-full object-cover group-hover:scale-105 transition-transform">
-                @else
-                  <div class="flex items-center justify-center h-full">
-                    <span class="text-gray-700 font-medium">{{ $cat->name }}</span>
-                  </div>
-                @endif
-              </div>
-              <p class="mt-2 text-center text-sm font-medium text-gray-800 group-hover:text-green-600">
-                {{ $cat->name }}
-              </p>
-            </a>
-          @endforeach
+        <div class="d-flex align-items-center">
+          <i class="fas fa-handshake text-success me-2 fs-4"></i>
+          <span>Support Local Artists</span>
+        </div>
+        <div class="d-flex align-items-center">
+          <i class="fas fa-cogs text-success me-2 fs-4"></i>
+          <span>Custom Orders Available</span>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- Featured Products -->
-    <section class="bg-gray-50 py-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between mb-8">
-                <h2 class="text-3xl font-bold text-gray-800">Featured for You</h2>
-                <a href="{{ route('products.index') }}" class="text-green-600 hover:underline font-medium">
-                    See All Products
-                </a>
+    <!-- Hero Image -->
+    <div class="mt-4 mt-lg-0 text-center">
+      <img 
+        src="{{ asset('assets/img/cetsy-hero-image.png') }}" 
+        alt="Handmade Products on Cetsy" 
+        class="img-fluid rounded shadow-sm"
+        style="max-width:650px;"
+      >
+    </div>
+  </div>
+</section>
+
+<!-- Trending Categories -->
+<section class="py-5">
+  <div class="container">
+    <h2 class="h3 fw-bold mb-4">Trending Categories</h2>
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-6 g-3">
+      @foreach($categories as $cat)
+        <div class="col">
+          <a href="{{ route('category.show', $cat->slug) }}" class="text-decoration-none">
+            <div class="ratio ratio-1x1 bg-secondary rounded overflow-hidden">
+              @if($cat->image)
+                <img 
+                  src="{{ asset('storage/'.$cat->image) }}" 
+                  alt="{{ $cat->name }}" 
+                  class="w-100 h-100" 
+                  style="object-fit:cover;"
+                >
+              @else
+                <div class="d-flex align-items-center justify-content-center h-100 text-white fw-semibold">
+                  {{ $cat->name }}
+                </div>
+              @endif
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                @forelse($featuredProducts as $product)
-                    <div class="bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden">
-                        <a href="{{ route('products.show', $product) }}">
-                            @if($img = $product->media->first())
-                                <img src="{{ asset('storage/'.$img->url) }}"
-                                     alt="{{ $product->name }}"
-                                     class="w-full h-48 object-cover">
-                            @else
-                                <div class="w-full h-48 bg-gray-200"></div>
-                            @endif
-                        </a>
-                        <div class="p-4">
-                            <h3 class="font-semibold text-gray-800 truncate">{{ $product->name }}</h3>
-                            <p class="mt-2 text-green-600 font-bold">KES {{ number_format($product->price,2) }}</p>
-                            <div class="mt-3 flex justify-between items-center">
-                                <a href="{{ route('products.show', $product) }}"
-                                   class="text-sm text-gray-500 hover:underline">
-                                    View Details
-                                </a>
-                                <button
-                                  @click="addToCart({{ $product->id }}, 1)"
-                                  class="bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition"
-                                  aria-label="Add {{ $product->name }} to cart"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                         viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 
-                                                 13L5.4 5M7 13l-2 5m5-5v5m4-5v5m1-10h2"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <p class="text-gray-600 col-span-full">No featured products at this time.</p>
-                @endforelse
-            </div>
+            <p class="mt-2 text-center text-dark small mb-0">{{ $cat->name }}</p>
+          </a>
         </div>
-    </section>
+      @endforeach
+    </div>
+  </div>
+</section>
+
+<!-- Featured Products -->
+<section class="bg-light py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="h3 fw-bold mb-0">Featured for You</h2>
+      <a href="{{ route('listings') }}" class="text-success text-decoration-none small">
+        See All Products
+      </a>
+    </div>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+      @forelse($featuredProducts as $product)
+        <div class="col">
+          <div class="card h-100 shadow-sm border-0">
+            <a href="{{ route('listing.show', $product) }}">
+              @if($img = $product->media->first())
+                <img 
+                  src="{{ asset('storage/'.$img->url) }}" 
+                  alt="{{ $product->name }}" 
+                  class="card-img-top" 
+                  style="height:200px; object-fit:cover;"
+                >
+              @else
+                <div 
+                  class="bg-secondary text-white d-flex align-items-center justify-content-center" 
+                  style="height:200px;"
+                >
+                  No Image
+                </div>
+              @endif
+            </a>
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title text-truncate">{{ $product->name }}</h5>
+              <p class="card-text text-success fw-bold mb-3">KES {{ number_format($product->price,2) }}</p>
+              
+              <div class="mt-auto d-flex justify-content-between align-items-center">
+                <a href="{{ route('listing.show', $product) }}" class="small text-decoration-none text-muted">
+                  View Details
+                </a>
+                
+                <!-- Add to Cart Form -->
+                <form 
+                  method="POST" 
+                  action="{{ route('cart.store') }}" 
+                  x-data="{ busy: false }" 
+                  @submit="busy = true"
+                >
+                  @csrf
+                  <input type="hidden" name="product_id" value="{{ $product->id }}">
+                  <input type="hidden" name="quantity" value="1">
+                  <button 
+                    type="submit" 
+                    class="btn btn-success btn-sm" 
+                    :disabled="busy"
+                  >
+                    <i class="fas fa-cart-plus"></i>
+                    <span x-show="!busy">Add</span>
+                    <span x-show="busy" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  </button>
+                </form>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+      @empty
+        <div class="col-12 text-center text-muted">
+          No featured products at this time.
+        </div>
+      @endforelse
+    </div>
+  </div>
+</section>
+
 @endsection

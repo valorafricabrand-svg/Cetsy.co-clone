@@ -28,6 +28,14 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = Auth::user();
+
+        // If seller and no active subscription, redirect to subscription page
+        if ($user->isSeller() && !$user->hasActiveSubscription()) {
+            return redirect()->route('seller.subscription')
+                ->with('error', 'Your subscription has expired. Please renew to continue using seller features.');
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

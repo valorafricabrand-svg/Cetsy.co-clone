@@ -1,254 +1,314 @@
-{{-- resources/views/layouts/app.blade.php --}}
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en-US" dir="ltr" data-navigation-type="default" data-navbar-horizontal-shape="default">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>{{ config('app.name', 'Laravel') }}</title>
+    <!-- ===============================================-->
+    <!--    Document Title-->
+    <!-- ===============================================-->
+    <title inertia>{{ config('app.name', 'Laravel') }}</title>
+    <meta name="description" content="@section('description'){{ get_option('meta_description') }} @show">
 
-  {{-- Fonts & Icons --}}
-  <link rel="preconnect" href="https://fonts.bunny.net">
-  <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <!-- ===============================================-->
+    <!--    Favicons-->
+    <!-- ===============================================-->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ favicon_url() }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ favicon_url() }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ favicon_url() }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ favicon_url() }}">
+    <link rel="manifest" href="{{ favicon_url() }}">
+    <meta name="msapplication-TileImage" content="{{ favicon_url() }}">
+    <meta name="theme-color" content="#ffffff">
+    <script src="{{ asset('vendors/simplebar/simplebar.min.js') }}"></script>
+    <script src="{{ asset('assets/js/config.js') }}"></script>
 
-  {{-- Vite-built Tailwind + Alpine --}}
-  @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- ===============================================-->
+    <!--    Stylesheets-->
+    <!-- ===============================================-->
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&amp;display=swap"
+    rel="stylesheet">
+    <link href="{{ asset('vendors/simplebar/simplebar.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('assets/css/line.css') }}">
+    <link href="{{ asset('assets/css/theme-rtl.min.css') }}" type="text/css" rel="stylesheet" id="style-rtl">
+    <link href="{{ asset('assets/css/theme.min.css') }}" type="text/css" rel="stylesheet" id="style-default">
+    <link href="{{ asset('assets/css/user-rtl.min.css') }}" type="text/css" rel="stylesheet"
+    id="user-style-rtl">
+    <link href="{{ asset('assets/css/user.min.css') }}" type="text/css" rel="stylesheet"
+    id="user-style-default">
+    <link href="{{ asset('vendors/prism/prism-okaidia.css') }}" rel="stylesheet">
 
-  <style>[x-cloak] { display: none !important; }</style>
+
+
+    <!-- ===============================================-->
+    <!--    Additional Scripts and Styles-->
+    <!-- ===============================================-->
+    <script>
+        var phoenixIsRTL = window.config.config.phoenixIsRTL;
+        if (phoenixIsRTL) {
+            var linkDefault = document.getElementById('style-default');
+            var userLinkDefault = document.getElementById('user-style-default');
+            linkDefault.setAttribute('disabled', true);
+            userLinkDefault.setAttribute('disabled', true);
+            document.querySelector('html').setAttribute('dir', 'rtl');
+        } else {
+            var linkRTL = document.getElementById('style-rtl');
+            var userLinkRTL = document.getElementById('user-style-rtl');
+            linkRTL.setAttribute('disabled', true);
+            userLinkRTL.setAttribute('disabled', true);
+        }
+    </script>
+
+    <link href="{{ asset('vendors/leaflet/leaflet.css') }}" rel="stylesheet">
+    <link href="{{ asset('vendors/leaflet.markercluster/MarkerCluster.css') }}" rel="stylesheet">
+    <link href="{{ asset('vendors/leaflet.markercluster/MarkerCluster.Default.css') }}" rel="stylesheet">
+ 
+
+    @yield('page-css')
+      @yield('styles')
+
+    @if(get_option('additional_css'))
+    <style type="text/css">
+        {{ get_option('additional_css') }}
+    </style>
+    @endif
+
+    <style>
+        .modal {
+            z-index: 1050 !important;
+            /* Ensure the modal is above other elements */
+        }
+
+        .modal-backdrop {
+            z-index: 1040 !important;
+            /* Ensure the backdrop is below the modal */
+        }
+    </style>
+<!-- in your <head> -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js/minified/introjs.min.css" />
+
+ <!-- Alpine.js -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<!-- Hide x-cloak elements until Alpine is ready -->
+<style>[x-cloak] { display: none !important; }</style>
+   
 </head>
-<body class="font-sans antialiased bg-gray-100">
-  <div x-data="{ sidebarOpen: false }" class="flex h-screen overflow-hidden">
 
-    {{-- Mobile overlay --}}
-    <div x-show="sidebarOpen" @click="sidebarOpen = false"
-         class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden" x-cloak></div>
 
-    {{-- Sidebar --}}
-    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-           class="fixed inset-y-0 left-0 z-30 w-72 transition transform bg-gray-800 shadow-lg lg:static lg:translate-x-0">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-        <a href="{{ url('/') }}" class="text-2xl font-bold text-white">
-          {{ config('app.name', 'Laravel') }}
-        </a>
-        <button @click="sidebarOpen = false" class="text-gray-400 lg:hidden">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
-               viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"/>
-          </svg>
+<body>
+  
+    <!-- ===============================================-->
+    <!--    Main Content-->
+    <!-- ===============================================-->
+    <main class="main" id="top">
+        <nav class="navbar navbar-vertical navbar-expand-lg" style="display:none;">
+            <div class="collapse navbar-collapse" id="navbarVerticalCollapse">
+                <!-- scrollbar removed-->
+                <div class="navbar-vertical-content">
+                    <ul class="navbar-nav flex-column" id="navbarVerticalNav">
+  @if(Auth::user()->isSeller())
+    <!-- Always visible Search Tenant Form -->
+    <form class="d-flex flex-grow-1 mx-2" action="{{ url('user.search') }}" method="GET">
+        <input class="form-control me-2" type="search" name="query" placeholder="Search products" aria-label="Search products">
+        <button class="btn btn-outline-success" type="submit">
+            <i class="fas fa-search"></i>
         </button>
-      </div>
+    </form>
+@endif
 
-      {{-- Search box --}}
-      <div class="px-6 py-3">
-        <div class="relative">
-          <input type="text" placeholder="Search…"
-                 class="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-700 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
-          <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none"
-               stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-        </div>
-      </div>
+                        <li class="nav-item">
+                       
 
-      {{-- Navigation --}}
-      <nav class="px-2 py-4 space-y-1">
-        @auth
-          @if(auth()->user()->isAdmin())
-            <x-nav-menu
-              href="{{ route('admin.dashboard') }}"
-              :active="request()->routeIs('admin.dashboard')"
-            >
-              <x-slot name="icon">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 3h18v18H3V3z"/>
-                </svg>
-              </x-slot>
-              {{ __('Dashboard') }}
-            </x-nav-menu>
 
-            <div x-data="{ open: request()->routeIs('admin.users.*') || request()->routeIs('admin.reports') }" class="space-y-1">
-              <button @click="open = !open"
-                      class="flex items-center w-full px-4 py-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none transition-colors">
-                <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-                <span class="ml-3 flex-1 text-sm font-medium">{{ __('Management') }}</span>
-                <svg :class="open ? 'rotate-90' : ''" class="w-4 h-4 text-gray-300 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 5l7 7-7 7"/>
-                </svg>
-              </button>
-              <div x-show="open" x-cloak class="space-y-1 pl-12">
-                <x-nav-menu
-                  href="{{ route('admin.users.index') }}"
-                  :active="request()->routeIs('admin.users.*')"
-                >
-                  {{ __('Users') }}
-                </x-nav-menu>
-                <x-nav-menu
-                  href="{{ route('admin.reports') }}"
-                  :active="request()->routeIs('admin.reports')"
-                >
-                  {{ __('Reports') }}
-                </x-nav-menu>
-              </div>
-            </div>
 
-          @elseif(auth()->user()->isSeller())
-            <x-nav-menu
-              href="{{ route('seller.dashboard') }}"
-              :active="request()->routeIs('seller.dashboard')"
-            >
-              <x-slot name="icon">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M5 13l4 4L19 7"/>
-                </svg>
-              </x-slot>
-              {{ __('Seller Dashboard') }}
-            </x-nav-menu>
 
-            <div x-data="{ open: request()->routeIs('shops.*') }" class="space-y-1">
-              <button @click="open = !open"
-                      class="flex items-center w-full px-4 py-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none transition-colors">
-                <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 7h18M3 12h18M3 17h18"/>
-                </svg>
-                <span class="ml-3 flex-1 text-sm font-medium">{{ __('My Store') }}</span>
-                <svg :class="open ? 'rotate-90' : ''" class="w-4 h-4 text-gray-300 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 5l7 7-7 7"/>
-                </svg>
-              </button>
-              <div x-show="open" x-cloak class="space-y-1 pl-12">
-                @if(auth()->user()->shop)
-                  <x-nav-menu
-                    href="{{ route('shops.show', auth()->user()->shop) }}"
-                    :active="request()->routeIs('shops.show')"
-                  >
-                    {{ __('My Shop') }}
-                  </x-nav-menu>
-                @else
-                  <x-nav-menu
-                    href="{{ route('shops.create') }}"
-                    :active="request()->routeIs('shops.create')"
-                  >
-                    {{ __('Open Shop') }}
-                  </x-nav-menu>
-                @endif
-                <x-nav-menu
-                  href="{{ route('products.index') }}"
-                  :active="request()->routeIs('products.*')"
-                >
-                  {{ __('Products') }}
-                </x-nav-menu>
-                <x-nav-menu
-                  href="{{ route('orders.index') }}"
-                  :active="request()->routeIs('orders.*')"
-                >
-                  {{ __('Orders') }}
-                </x-nav-menu>
-              </div>
-            </div>
 
-          @else {{-- Buyer --}}
-            <x-nav-menu
-              href="{{ route('buyer.dashboard') }}"
-              :active="request()->routeIs('buyer.dashboard')"
-            >
-              <x-slot name="icon">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 3h18v18H3V3z"/>
-                </svg>
-              </x-slot>
-              {{ __('Dashboard') }}
-            </x-nav-menu>
-            <x-nav-menu
-              href="{{ route('products.index') }}"
-              :active="request()->routeIs('products.index')"
-            >
-              {{ __('Browse Products') }}
-            </x-nav-menu>
-            <x-nav-menu
-              href="{{ route('cart.index') }}"
-              :active="request()->routeIs('cart.*')"
-            >
-              {{ __('Cart') }}
-            </x-nav-menu>
-            <x-nav-menu
-              href="{{ route('orders.index') }}"
-              :active="request()->routeIs('orders.*')"
-            >
-              {{ __('My Orders') }}
-            </x-nav-menu>
-          @endif
+@include('layouts.buyer_submenu')
+@include('layouts.admin_submenu')
+@include('layouts.seller_submenu')
 
-          {{-- Profile & Logout --}}
-          <div class="mt-6 border-t border-gray-700 pt-4 px-4">
-            <x-nav-menu
-              href="{{ route('profile.edit') }}"
-              :active="request()->routeIs('profile.edit')"
-              class="text-gray-300 hover:bg-gray-700 hover:text-white"
-            >
-              <x-slot name="icon">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M5.121 17.804A13.937 13.937 0 0112 15c3.07 0 5.914.998 8.879 2.69M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-              </x-slot>
-              {{ __('Profile') }}
-            </x-nav-menu>
-            <form method="POST" action="{{ route('logout') }}">
-              @csrf
-              <button type="submit"
-                      class="flex items-center w-full px-4 py-2 mt-2 text-red-400 hover:bg-gray-700 hover:text-white rounded-md transition-colors">
-                <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 16l4-4m0 0l-4-4m4 4H7"/>
-                </svg>
-                {{ __('Log Out') }}
-              </button>
-            </form>
-          </div>
-        @endauth
-      </nav>
-    </aside>
 
-    {{-- Main content --}}
-    <div class="flex-1 flex flex-col">
-      {{-- Top bar --}}
-      <header class="flex items-center justify-between px-8 py-4 bg-white border-b shadow-sm">
-        <button @click="sidebarOpen = true" class="text-gray-600 lg:hidden">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
-               viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-        </button>
-        <h1 class="text-2xl font-semibold text-gray-800">@yield('title', 'Dashboard')</h1>
-        <div class="flex items-center space-x-4">
-          <span class="text-gray-600 hidden md:inline">{{ Auth::user()->name }}</span>
-          <img src="{{ Auth::user()->avatar_url ?? 'https://i.pravatar.cc/40' }}"
-               alt="Avatar" class="w-10 h-10 rounded-full border-2 border-indigo-500"/>
-        </div>
-      </header>
 
-      {{-- Page Content --}}
-      <main class="flex-1 overflow-y-auto p-8 bg-gray-50">
-        @yield('content')
-      </main>
-    </div>
-  </div>
 
-  {{-- Alpine.js --}}
-  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-  @stack('scripts')
+                            </li>
+
+
+
+                        </ul>
+                    </div>
+                </div>
+                <div class="navbar-vertical-footer"><button
+                    class="btn navbar-vertical-toggle border-0 fw-semibold w-100 white-space-nowrap d-flex align-items-center"><span
+                    class="uil uil-left-arrow-to-left fs-8"></span><span
+                    class="uil uil-arrow-from-right fs-8"></span><span
+                    class="navbar-vertical-footer-text ms-2">Collapsed View</span></button></div>
+                </nav>
+
+
+
+@include('layouts.topnav')
+
+
+
+
+    <script>
+        var navbarTopShape = window.config.config.phoenixNavbarTopShape;
+        var navbarPosition = window.config.config.phoenixNavbarPosition;
+        var body = document.querySelector('body');
+        var navbarDefault = document.querySelector('#navbarDefault');
+        var navbarTop = document.querySelector('#navbarTop');
+        var topNavSlim = document.querySelector('#topNavSlim');
+        var navbarTopSlim = document.querySelector('#navbarTopSlim');
+        var navbarCombo = document.querySelector('#navbarCombo');
+        var navbarComboSlim = document.querySelector('#navbarComboSlim');
+        var dualNav = document.querySelector('#dualNav');
+
+        var documentElement = document.documentElement;
+        var navbarVertical = document.querySelector('.navbar-vertical');
+
+        if (navbarPosition === 'dual-nav') {
+            topNavSlim?.remove();
+            navbarTop?.remove();
+            navbarTopSlim?.remove();
+            navbarCombo?.remove();
+            navbarComboSlim?.remove();
+            navbarDefault?.remove();
+            navbarVertical?.remove();
+            dualNav.removeAttribute('style');
+            document.documentElement.setAttribute('data-navigation-type', 'dual');
+
+        } else if (navbarTopShape === 'slim' && navbarPosition === 'vertical') {
+            navbarDefault?.remove();
+            navbarTop?.remove();
+            navbarTopSlim?.remove();
+            navbarCombo?.remove();
+            navbarComboSlim?.remove();
+            topNavSlim.style.display = 'block';
+            navbarVertical.style.display = 'inline-block';
+            document.documentElement.setAttribute('data-navbar-horizontal-shape', 'slim');
+
+        } else if (navbarTopShape === 'slim' && navbarPosition === 'horizontal') {
+            navbarDefault?.remove();
+            navbarVertical?.remove();
+            navbarTop?.remove();
+            topNavSlim?.remove();
+            navbarCombo?.remove();
+            navbarComboSlim?.remove();
+            dualNav?.remove();
+            navbarTopSlim.removeAttribute('style');
+            document.documentElement.setAttribute('data-navbar-horizontal-shape', 'slim');
+        } else if (navbarTopShape === 'slim' && navbarPosition === 'combo') {
+            navbarDefault?.remove();
+            navbarTop?.remove();
+            topNavSlim?.remove();
+            navbarCombo?.remove();
+            navbarTopSlim?.remove();
+            dualNav?.remove();
+            navbarComboSlim.removeAttribute('style');
+            navbarVertical.removeAttribute('style');
+            document.documentElement.setAttribute('data-navbar-horizontal-shape', 'slim');
+        } else if (navbarTopShape === 'default' && navbarPosition === 'horizontal') {
+            navbarDefault?.remove();
+            topNavSlim?.remove();
+            navbarVertical?.remove();
+            navbarTopSlim?.remove();
+            navbarCombo?.remove();
+            navbarComboSlim?.remove();
+            dualNav?.remove();
+            navbarTop.removeAttribute('style');
+            document.documentElement.setAttribute('data-navigation-type', 'horizontal');
+        } else if (navbarTopShape === 'default' && navbarPosition === 'combo') {
+            topNavSlim?.remove();
+            navbarTop?.remove();
+            navbarTopSlim?.remove();
+            navbarDefault?.remove();
+            navbarComboSlim?.remove();
+            dualNav?.remove();
+            navbarCombo.removeAttribute('style');
+            navbarVertical.removeAttribute('style');
+            document.documentElement.setAttribute('data-navigation-type', 'combo');
+        } else {
+            topNavSlim?.remove();
+            navbarTop?.remove();
+            navbarTopSlim?.remove();
+            navbarCombo?.remove();
+            navbarComboSlim?.remove();
+            dualNav?.remove();
+            navbarDefault.removeAttribute('style');
+            navbarVertical.removeAttribute('style');
+        }
+
+        var navbarTopStyle = window.config.config.phoenixNavbarTopStyle;
+        var navbarTop = document.querySelector('.navbar-top');
+        if (navbarTopStyle === 'darker') {
+            navbarTop.setAttribute('data-navbar-appearance', 'darker');
+        }
+
+        var navbarVerticalStyle = window.config.config.phoenixNavbarVerticalStyle;
+        var navbarVertical = document.querySelector('.navbar-vertical');
+        if (navbarVerticalStyle === 'darker') {
+            navbarVertical.setAttribute('data-navbar-appearance', 'darker');
+        }
+    </script>
+
+
+
+    @yield('content')
+
+
+@include('layouts.toast')
+
+
+</main><!-- ===============================================-->
+<!--    End of Main Content-->
+<!-- ===============================================-->
+
+
+<!-- ===============================================-->
+<!--    JavaScripts-->
+<!-- ===============================================-->
+<script src="{{ asset('vendors/popper/popper.min.js') }}"></script>
+<script src="{{ asset('vendors/bootstrap/bootstrap.min.js') }}"></script>
+<script src="{{ asset('vendors/anchorjs/anchor.min.js') }}"></script>
+<script src="{{ asset('vendors/is/is.min.js') }}"></script>
+<script src="{{ asset('vendors/fontawesome/all.min.js') }}"></script>
+
+
+<script src="{{ asset('vendors/lodash/lodash.min.js') }}"></script>
+<script src="{{ asset('vendors/list.js/list.min.js') }}"></script>
+<script src="{{ asset('vendors/feather-icons/feather.min.js') }}"></script>
+<script src="{{ asset('vendors/dayjs/dayjs.min.js') }}"></script>
+<script src="{{ asset('vendors/leaflet/leaflet.js') }}"></script>
+<script src="{{ asset('vendors/leaflet.markercluster/leaflet.markercluster.js') }}"></script>
+<script src="{{ asset('vendors/leaflet.tilelayer.colorfilter/leaflet-tilelayer-colorfilter.min.js') }}"></script>
+<script src="{{ asset('assets/js/phoenix.js') }}"></script>
+<script src="{{ asset('vendors/echarts/echarts.min.js') }}"></script>
+<script src="{{ asset('assets/js/ecommerce-dashboard.js') }}"></script>
+<script src="{{ asset('vendors/prism/prism.js') }}"></script>
+
+<script>
+    var toastr_options = {closeButton : true};
+</script>
+@yield('page-js')
+@yield('scripts')
+@include('chat_widget')
+@stack('scripts')
+
+@if(get_option('additional_js') && get_option('additional_js') !== 'additional_js' )
+{!! get_option('additional_js') !!}}
+@endif
+<script>
+    $(document).on('click', '.ghuranti', function(){
+        $('.themeqx-demo-chooser-wrap').toggleClass('open');
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- before </body> -->
+<script src="https://cdn.jsdelivr.net/npm/intro.js/minified/intro.min.js"></script>
 </body>
 </html>
