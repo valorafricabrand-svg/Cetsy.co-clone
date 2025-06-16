@@ -37,6 +37,7 @@ Route::get   ('/cart',               [CartController::class, 'index'])  ->name('
 Route::post  ('/cart',               [CartController::class, 'store'])  ->name('cart.store');
 Route::patch ('/cart/{productId}',   [CartController::class, 'update']) ->name('cart.update');
 Route::delete('/cart/{productId}',   [CartController::class, 'destroy'])->name('cart.destroy');
+
 Route::get('/categories', [CategoryController::class, 'index'])
      ->name('categories.index');
 Route::get('/search', [ProductController::class, 'search'])
