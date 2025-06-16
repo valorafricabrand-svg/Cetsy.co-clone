@@ -13,6 +13,14 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Seller\DashboardController as SellerDashboard;
 use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
+use App\Http\Controllers\Seller\KycController;
+use App\Http\Controllers\Seller\SubscriptionController;
+use App\Http\Controllers\Admin\SubscriptionController as AdminSubscriptionController;
+use App\Http\Controllers\Admin\UserController;
+// At the top of routes/web.php
+use App\Http\Controllers\Admin\AdminReportController as AdminReport;
+use App\Http\Controllers\Admin\SettingsController as AdminSetting;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +39,10 @@ Route::patch ('/cart/{productId}',   [CartController::class, 'update']) ->name('
 Route::delete('/cart/{productId}',   [CartController::class, 'destroy'])->name('cart.destroy');
 
 
+Route::get('/categories', [CategoryController::class, 'index'])
+     ->name('categories.index');
+Route::get('/search', [ProductController::class, 'search'])
+     ->name('search');
 // Public product detail page
 Route::get('/listings', [ProductController::class, 'listings'])
      ->name('listings');
@@ -76,8 +88,7 @@ Route::patch('shops/{shop}', [ShopController::class, 'update'])
     // Products management
     Route::resource('products', ProductController::class);
 
-    // Categories management
-    Route::resource('categories', CategoryController::class);
+
 
 
 
@@ -99,28 +110,51 @@ Route::middleware(['auth'])
      ->prefix('admin')
      ->name('admin.')
      ->group(function () {
-         Route::get('dashboard', [AdminDashboard::class, 'index'])
+
+    Route::get('dashboard', [AdminDashboard::class, 'index'])
               ->name('dashboard');
-         Route::resource('users', UserController::class);
+    Route::resource('users', UserController::class);
     Route::resource('roles', RoleController::class);
 
+    Route::get('kyc', [KycController::class, 'index'])
+         ->name('kyc.index');
+    Route::patch('kyc/{kyc}', [KycController::class, 'update'])
+         ->name('kyc.update');
+    Route::get('kyc/{kyc}', [KycController::class, 'showDetails'])
+         ->name('kyc.showDetails');
+
     // Settings page
-    Route::get('settings', [SettingsController::class, 'index'])
+    Route::get('settings', [AdminSetting::class, 'index'])
          ->name('settings');
 
          Route::get('reports', [AdminReport::class, 'index'])
              ->name('reports');
+
+         // Categories management
+    Route::resource('categories', CategoryController::class);
+
+         Route::post('subscriptions/deactivate-expired', [AdminSubscriptionController::class, 'deactivateExpired'])
+             ->name('subscriptions.deactivate-expired');
      });
 
-// Seller panel (only `user_type = seller`)
-Route::middleware(['auth'])
-     ->prefix('seller')
-     ->name('seller.')
-     ->group(function () {
-         Route::get('dashboard', [SellerDashboard::class, 'index'])
-              ->name('dashboard');
-         // add seller-specific routes: orders, reports...
-     });
+// Subscription routes (NO ensure.seller.subscription middleware)
+Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
+    Route::get('/subscription', [SubscriptionController::class, 'show'])->name('subscription');
+    Route::post('/subscription', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
+    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+});
+
+// KYC routes (require subscription)
+Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
+    Route::get('/kyc', [KycController::class, 'show'])->name('kyc');
+    Route::post('/kyc', [KycController::class, 'submit'])->name('kyc.submit');
+});
+
+// All other seller routes (require KYC and subscription)
+Route::middleware(['auth', 'seller', 'ensure.seller.kyc', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
+    Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
+    // ... other seller routes
+});
 
 // Buyer panel (only `user_type = buyer`)
 Route::middleware(['auth'])
@@ -134,5 +168,9 @@ Route::middleware(['auth'])
 
 
 
+Route::resource('settings', \App\Http\Controllers\SettingController::class)
+     ->only(['index', 'edit', 'update'])
+     ->middleware('auth', 'can:admin');
 
 require __DIR__ . '/auth.php';
+
