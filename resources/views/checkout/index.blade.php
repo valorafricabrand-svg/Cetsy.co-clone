@@ -1,40 +1,443 @@
-@extends('layouts.frontapp')
+@extends('theme.layouts.main')
 
-@section('content')
-<div class="max-w-3xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-  <h1 class="text-3xl font-bold mb-6">Checkout</h1>
+@section('main')
+<style>
+    .form-control, .form-select {
+        background-color: #ffffff;
+        color: #000000;
+        border: 1px solid #ced4da;
+    }
+    .form-control:focus, .form-select:focus {
+        background-color: #ffffff;
+        color: #000000;
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.25);
+    }
+    .text-danger {
+        font-size: 0.875rem;
+    }
+</style>
 
-  <div class="bg-white shadow rounded-lg p-6 mb-8">
-    <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
-    <ul class="divide-y divide-gray-200">
-      @foreach($items as $item)
-        <li class="py-4 flex justify-between">
-          <span>{{ $item->product->name }} (×{{ $item->quantity }})</span>
-          <span>KES {{ number_format($item->product->price * $item->quantity,2) }}</span>
-        </li>
-      @endforeach
-      <li class="pt-4 flex justify-between font-semibold">
-        <span>Subtotal</span>
-        <span>KES {{ number_format($subtotal,2) }}</span>
-      </li>
-    </ul>
-  </div>
+<section class="checkout-page py-5" style="margin-top: 100px;">
+    <div class="container">
 
-  <form action="{{ route('checkout.store') }}" method="POST" class="bg-white shadow rounded-lg p-6">
-    @csrf
-    <div class="mb-4">
-      <label for="shipping_address" class="block font-medium mb-1">Shipping Address</label>
-      <textarea name="shipping_address" id="shipping_address" rows="4"
-                class="w-full border rounded px-3 py-2">{{ old('shipping_address') }}</textarea>
-      @error('shipping_address')
-        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-      @enderror
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <strong>There were some problems with your input:</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if (count($cart) > 0)
+            <form action="{{ route('store_order') }}" method="POST" class="row" novalidate>
+                @csrf
+
+                <!-- Billing & Shipping Details -->
+                <div class="col-lg-7">
+                    <h4 class="mb-4">Billing & Shipping Details</h4>
+                    <div class="row g-3">
+
+                        <!-- Full Name -->
+                        <div class="col-md-6">
+                            <label for="full_name" class="form-label">
+                                Full Name <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="full_name"
+                                name="full_name"
+                                class="form-control"
+                                value="{{ old('full_name') }}"
+                                required
+                            >
+                            @error('full_name')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Email Address -->
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">
+                                Email Address <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                class="form-control"
+                                value="{{ old('email') }}"
+                                required
+                            >
+                            @error('email')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">
+                                Phone Number <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="tel"
+                                id="phone"
+                                name="phone"
+                                class="form-control"
+                                value="{{ old('phone') }}"
+                                required
+                            >
+                            @error('phone')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Shipping Country -->
+                        <div class="col-md-6">
+                            <label for="shipping_country" class="form-label">
+                                Country <span class="text-danger">*</span>
+                            </label>
+                            <select
+                                id="shipping_country"
+                                name="shipping_country"
+                                class="form-select"
+                                required
+                            >
+                                <option value="">Select Country</option>
+                                @foreach(\App\Models\Country::orderBy('name')->get() as $country)
+                                    <option
+                                        value="{{ $country->id }}"
+                                        @selected(old('shipping_country') == $country->id)
+                                    >
+                                        {{ $country->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('shipping_country')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Address Line 1 -->
+                        <div class="col-12">
+                            <label for="shipping_address_1" class="form-label">
+                                Address Line 1 <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="shipping_address_1"
+                                name="shipping_address_1"
+                                class="form-control"
+                                value="{{ old('shipping_address_1') }}"
+                                required
+                            >
+                            @error('shipping_address_1')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Address Line 2 -->
+                        <div class="col-12">
+                            <label for="shipping_address_2" class="form-label">Address Line 2</label>
+                            <input
+                                type="text"
+                                id="shipping_address_2"
+                                name="shipping_address_2"
+                                class="form-control"
+                                value="{{ old('shipping_address_2') }}"
+                            >
+                            @error('shipping_address_2')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- City/Town -->
+                        <div class="col-md-6">
+                            <label for="shipping_city" class="form-label">
+                                City/Town <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="shipping_city"
+                                name="shipping_city"
+                                class="form-control"
+                                value="{{ old('shipping_city') }}"
+                                required
+                            >
+                            @error('shipping_city')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- State/Province/Region -->
+                        <div class="col-md-6">
+                            <label for="shipping_state" class="form-label">State/Province/Region</label>
+                            <input
+                                type="text"
+                                id="shipping_state"
+                                name="shipping_state"
+                                class="form-control"
+                                value="{{ old('shipping_state') }}"
+                            >
+                            @error('shipping_state')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Postal/ZIP Code -->
+                        <div class="col-md-6">
+                            <label for="shipping_postal_code" class="form-label">Postal/ZIP Code</label>
+                            <input
+                                type="text"
+                                id="shipping_postal_code"
+                                name="shipping_postal_code"
+                                class="form-control"
+                                value="{{ old('shipping_postal_code') }}"
+                            >
+                            @error('shipping_postal_code')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Billing same as shipping checkbox -->
+                        <div class="col-12 mt-3">
+                            {{-- Hidden input to ensure a value is always sent --}}
+                            <input type="hidden" name="billing_same_as_shipping" value="0">
+                            <div class="form-check">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    id="billing_same_as_shipping"
+                                    name="billing_same_as_shipping"
+                                    value="1"
+                                    {{ old('billing_same_as_shipping', '1') == '1' ? 'checked' : '' }}
+                                    onchange="toggleBillingAddress(this.checked)"
+                                >
+                                <label class="form-check-label" for="billing_same_as_shipping">
+                                    Billing address is the same as shipping address
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Billing Address Fields -->
+                        <div
+                            id="billing_address_fields"
+                            style="display: {{ old('billing_same_as_shipping', '1') == '1' ? 'none' : 'block' }};"
+                        >
+                            <hr class="my-4">
+                            <h5 class="mb-3">Billing Address</h5>
+
+                            <div class="col-md-6">
+                                <label for="billing_country" class="form-label">Billing Country <span class="text-danger">*</span></label>
+                                <select
+                                    id="billing_country"
+                                    name="billing_country"
+                                    class="form-select"
+                                >
+                                    <option value="">Select Country</option>
+                                    @foreach(\App\Models\Country::orderBy('name')->get() as $country)
+                                        <option
+                                            value="{{ $country->id }}"
+                                            @selected(old('billing_country') == $country->id)
+                                        >
+                                            {{ $country->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('billing_country')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-12 mt-2">
+                                <label for="billing_address_1" class="form-label">Billing Address Line 1 <span class="text-danger">*</span></label>
+                                <input
+                                    type="text"
+                                    id="billing_address_1"
+                                    name="billing_address_1"
+                                    class="form-control"
+                                    value="{{ old('billing_address_1') }}"
+                                >
+                                @error('billing_address_1')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-12 mt-2">
+                                <label for="billing_address_2" class="form-label">Billing Address Line 2</label>
+                                <input
+                                    type="text"
+                                    id="billing_address_2"
+                                    name="billing_address_2"
+                                    class="form-control"
+                                    value="{{ old('billing_address_2') }}"
+                                >
+                                @error('billing_address_2')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label for="billing_city" class="form-label">Billing City/Town <span class="text-danger">*</span></label>
+                                <input
+                                    type="text"
+                                    id="billing_city"
+                                    name="billing_city"
+                                    class="form-control"
+                                    value="{{ old('billing_city') }}"
+                                >
+                                @error('billing_city')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label for="billing_state" class="form-label">Billing State/Province/Region</label>
+                                <input
+                                    type="text"
+                                    id="billing_state"
+                                    name="billing_state"
+                                    class="form-control"
+                                    value="{{ old('billing_state') }}"
+                                >
+                                @error('billing_state')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label for="billing_postal_code" class="form-label">Billing Postal/ZIP Code</label>
+                                <input
+                                    type="text"
+                                    id="billing_postal_code"
+                                    name="billing_postal_code"
+                                    class="form-control"
+                                    value="{{ old('billing_postal_code') }}"
+                                >
+                                @error('billing_postal_code')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Shipping Method -->
+                        <div class="col-12">
+                            <label for="shipping_method" class="form-label">
+                                Shipping Method <span class="text-danger">*</span>
+                            </label>
+                            <select
+                                id="shipping_method"
+                                name="shipping_method"
+                                class="form-select"
+                                required
+                            >
+                                <option value="">Select Shipping Method</option>
+                                <option value="standard" @selected(old('shipping_method') == 'standard')>Standard Shipping</option>
+                                <option value="express" @selected(old('shipping_method') == 'express')>Express Shipping</option>
+                            </select>
+                            @error('shipping_method')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <hr class="my-4">
+
+                       
+
+                        <!-- Order Notes -->
+                        <div class="col-12 mt-3">
+                            <label for="order_notes" class="form-label">Order Notes</label>
+                            <textarea
+                                id="order_notes"
+                                name="order_notes"
+                                class="form-control"
+                                rows="3"
+                                placeholder="Special instructions for delivery"
+                            >{{ old('order_notes') }}</textarea>
+                            @error('order_notes')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Promo Code -->
+                        <div class="col-12 mt-3">
+                            <label for="promo_code" class="form-label">Promo Code</label>
+                            <input
+                                type="text"
+                                id="promo_code"
+                                name="promo_code"
+                                class="form-control"
+                                value="{{ old('promo_code') }}"
+                            >
+                            @error('promo_code')
+                                <div class="text-danger">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="col-lg-5">
+                    <h4 class="mb-4">Your Order</h4>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-end">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php $subtotal = 0; @endphp
+                            @foreach ($cart as $item)
+                                <tr>
+                                    <td>{{ $item['name'] }} x {{ $item['quantity'] }}</td>
+                                    <td class="text-end">{{ get_currency() }} {{ number_format($item['price'] * $item['quantity'], 2) }}</td>
+
+                                    <input type="hidden" name="product_ids[]" value="{{ $item['id'] }}">
+                                    <input type="hidden" name="quantities[]" value="{{ $item['quantity'] }}">
+                                </tr>
+                                @php $subtotal += $item['price'] * $item['quantity']; @endphp
+                            @endforeach
+                            <tr>
+                                <td><strong>Subtotal</strong></td>
+                                <td class="text-end"><strong>{{ get_currency() }} {{ number_format($subtotal, 2) }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total</strong></td>
+                                <td class="text-end"><strong>{{ get_currency() }} {{ number_format($subtotal, 2) }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <input type="hidden" name="subtotal" value="{{ $subtotal }}">
+                    <input type="hidden" name="total" value="{{ $subtotal }}">
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Place Your Order</button>
+                    </div>
+                </div>
+
+            </form>
+        @else
+            <div class="text-center py-5">
+                <h2>Your cart is empty</h2>
+                <p class="lead">It looks like you haven't added any products to your cart yet.</p>
+                <a href="{{ route('listings') }}" class="btn btn-primary">Continue Shopping</a>
+            </div>
+        @endif
     </div>
+</section>
 
-    <button type="submit"
-            class="bg-primary text-white px-6 py-3 rounded hover:bg-primary-dark">
-      Place Order
-    </button>
-  </form>
-</div>
+<script>
+    function toggleBillingAddress(isChecked) {
+        const billingFields = document.getElementById('billing_address_fields');
+        billingFields.style.display = isChecked ? 'none' : 'block';
+    }
+</script>
 @endsection

@@ -2,39 +2,385 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Shop;
 use App\Models\Order;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Wallet;
+use App\Models\OrderItem;
+use Illuminate\Support\Facades\DB;
+use App\Models\Payment;
 use Illuminate\Http\Request;
+use App\Models\Product\Product;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
     /**
-     * Display a listing of the current user's orders.
+     * Display a listing of the orders/payments for the seller's shop.
+     *
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
-    public function index()
-    {
-        // Only fetch this user's orders
-        $orders = Order::where('user_id', Auth::id())
-                       ->with('items.product')
-                       ->latest()
-                       ->paginate(10);
+// app/Http/Controllers/OrderController.php
+public function index()
+{
+    $user   = auth()->user();
+    $shopId = Shop::where('user_id', $user->id)->value('id');
 
-        return view('orders.index', compact('orders'));
+    $orders = Order::with(['items.product'])      // eager-load to kill N+1
+                   ->where('shop_id', $shopId)
+                   ->orderByDesc('id')            // newest first
+                   ->paginate(15)                // 15 per page
+                   ->withQueryString();          // keep query params if you add filters later
+
+    return view('seller.orders.index', compact('user', 'orders'));
+}
+
+
+
+    /**
+     * Display a specific order by ID.
+     *
+     * @param int $id
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
+     */
+public function show(Order $order)
+{
+   
+
+    return view('seller.orders.show', compact('order'));
+}
+
+
+
+    /**
+     * Show payments related to orders for the seller's shop.
+     *
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
+     */
+
+
+    public function orderPayments()
+    {
+        $shop = Shop::where('user_id', Auth::user()->id)->first();
+        
+        $payments = Payment::whereShopId($shop->id)
+            ->get();
+
+        return view('seller.orders.payments', [
+            'payments' => $payments
+        ]);
+
+
     }
 
     /**
-     * Display the specified order.
+     * Store a newly created order with validation.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function show(Order $order)
-    {
-        // Prevent viewing another user's order
-        if ($order->user_id !== Auth::id()) {
-            abort(403, 'This action is unauthorized.');
+public function storeOrder(Request $request)
+{
+    // Normalize billing_same_as_shipping to boolean before validation
+    $request->merge([
+        'billing_same_as_shipping' => $request->input('billing_same_as_shipping') === '1',
+    ]);
+
+    $rules = [
+        'full_name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'phone' => 'required|string|max:20',
+        'shipping_country' => 'required|integer|exists:countries,id',
+        'shipping_address_1' => 'required|string|max:255',
+        'shipping_address_2' => 'nullable|string|max:255',
+        'shipping_city' => 'required|string|max:255',
+        'shipping_state' => 'nullable|string|max:255',
+        'shipping_postal_code' => 'nullable|string|max:20',
+        'billing_same_as_shipping' => 'required|boolean',
+    
+   
+        'billing_address_2' => 'nullable|string|max:255',
+        'billing_state' => 'nullable|string|max:255',
+        'billing_postal_code' => 'nullable|string|max:20',
+        'shipping_method' => 'required|string|in:standard,express',
+        'order_notes' => 'nullable|string|max:1000',
+        'promo_code' => 'nullable|string|max:50',
+        'product_ids' => 'required|array|min:1',
+        'product_ids.*' => 'required|integer|exists:products,id',
+        'quantities' => 'required|array|min:1',
+        'quantities.*' => 'required|integer|min:1',
+        'subtotal' => 'required|numeric|min:0',
+        'total' => 'required|numeric|min:0',
+    ];
+
+    $validated = $request->validate($rules);
+
+    $cart = $request->session()->get('cart', []);
+    if (empty($cart)) {
+        return redirect()->back()->withErrors(['cart' => 'Your cart is empty.']);
+    }
+
+    // Group items by shop_id
+    $itemsByShop = [];
+    foreach ($cart as $item) {
+        $product = \App\Models\Product::find($item['id']);
+        if (!$product) continue;
+
+        $itemsByShop[$product->shop_id][] = [
+            'product' => $product,
+            'quantity' => $item['quantity'],
+            'price' => $product->price,
+        ];
+    }
+
+    foreach ($itemsByShop as $shopId => $items) {
+        $order = new \App\Models\Order();
+        $order->user_id = auth()->id();
+        $order->shop_id = $shopId;
+
+        // Customer info
+        $order->full_name = $validated['full_name'];
+        $order->email = $validated['email'];
+        $order->phone = $validated['phone'];
+
+        // Shipping info
+        $order->shipping_country_id = $validated['shipping_country'];
+        $order->shipping_address_1 = $validated['shipping_address_1'];
+        $order->shipping_address_2 = $validated['shipping_address_2'] ?? null;
+        $order->shipping_city = $validated['shipping_city'];
+        $order->shipping_state = $validated['shipping_state'] ?? null;
+        $order->shipping_postal_code = $validated['shipping_postal_code'] ?? null;
+
+        // Billing info based on boolean
+        if ($validated['billing_same_as_shipping']) {
+            $order->billing_same_as_shipping = true;
+            $order->billing_country_id = $order->shipping_country_id;
+            $order->billing_address_1 = $order->shipping_address_1;
+            $order->billing_address_2 = $order->shipping_address_2;
+            $order->billing_city = $order->shipping_city;
+            $order->billing_state = $order->shipping_state;
+            $order->billing_postal_code = $order->shipping_postal_code;
+        } else {
+            $order->billing_same_as_shipping = false;
+            $order->billing_country_id = $validated['billing_country'];
+            $order->billing_address_1 = $validated['billing_address_1'];
+            $order->billing_address_2 = $validated['billing_address_2'] ?? null;
+            $order->billing_city = $validated['billing_city'];
+            $order->billing_state = $validated['billing_state'] ?? null;
+            $order->billing_postal_code = $validated['billing_postal_code'] ?? null;
         }
 
-        // Eager-load items and their products
-        $order->load('items.product');
+        $order->shipping_method = $validated['shipping_method'];
+        $order->payment_method = 'paypal';
+        $order->order_notes = $validated['order_notes'] ?? null;
+        $order->promo_code = $validated['promo_code'] ?? null;
 
-        return view('orders.show', compact('order'));
+        $subtotal = 0;
+        foreach ($items as $item) {
+            $subtotal += $item['price'] * $item['quantity'];
+        }
+        $order->subtotal = $subtotal;
+        $order->total_amount = $subtotal; // Adjust as needed
+        $order->status = 'pending';
+
+        $order->save();
+
+        foreach ($items as $item) {
+            $orderItem = new \App\Models\OrderItem();
+            $orderItem->order_id = $order->id;
+            $orderItem->product_id = $item['product']->id;
+            $orderItem->quantity = $item['quantity'];
+            $orderItem->price = $item['price'];
+            $orderItem->save();
+        }
     }
+
+
+    $request->session()->forget('cart');
+
+    // TODO: Add payment processing and notifications
+
+    return redirect()->route('buyer.orders.show', $order->id)
+        ->with('success', 'Your orders have been placed successfully! Please proceed to make the payments.');
+}
+
+
+
+public function payNow($total){
+        $order = Order::find($total);
+        return view('account.pay_now', ['order' => $order]);
+    }
+
+
+    public function payNowInvoice($total){
+        $order = Invoice::find($total);
+        return view('invoices.pay_now', ['order' => $order]);
+    }
+
+
+              public function successDeposit(Request $request, $id)
+    {
+        // Retrieve the order/invoice
+        $order = Order::findOrFail($id);
+
+        // Determine payment method: default to 'paypal'
+        $method = $request->get('method', 'paypal');
+
+        // Prepare a unique local transaction ID if not provided
+        // (e.g., PayPal flow might not send one; MPESA flow might include its own)
+        $localTxId = $request->get('transaction_id');
+        if (!$localTxId) {
+            do {
+                $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
+            } while (Payment::where('local_transaction_id', $localTxId)->exists());
+        }
+
+        // Determine currency sign dynamically
+        // (assume order has a currency column; fallback to 'USD')
+        $currency = $order->currency ?? 'USD';
+
+        // Build the payment data array
+        $paymentData = [
+            'order_id'             => $order->id,
+            'user_id'              => $order->user_id,
+            'shop_id'              => $order->shop_id,
+            'total_amount'         => $order->total_amount,
+            'payment_method'       => $method,
+            'status'               => '3',
+            'currency'             => $currency,
+            'local_transaction_id' => $localTxId,
+        ];
+
+
+
+
+        // If MPESA, you might want to capture the MPESA metadata (e.g., MpesaReceiptNumber)
+        if ($method === 'mpesa' && $request->filled('mpesa_receipt')) {
+            $paymentData['mpesa_receipt'] = $request->input('mpesa_receipt');
+        }
+
+        // Create the payment record
+        $payment = Payment::create($paymentData);
+
+        // Mark order as successful if payment record was created
+        if ($payment) {
+            $order->status = 'processing';
+            $order->save();
+        }
+
+$shop = Shop::find($order->shop_id);
+
+
+
+        Wallet::create([
+            'user_id'    => $shop->user_id,
+            'credit'     => $order->total_amount,
+            'debit'      => 0,
+            'balance'    => 0, // Optional: recalculate after insert
+            'reference'  => $localTxId,
+            'method'     => $method,
+            'description'=> 'Order payment',
+        ]);
+
+        return redirect()
+            ->route('account.orders')
+            ->with('success', 'Your payment has been received. Your order is being processed; you will receive a call from our sales team shortly.');
+    }
+
+
+   public function ship(Request $request, Order $order)
+{
+    
+    
+
+    // 2. validate
+    $data = $request->validate([
+        'courier'       => 'required|string|max:100',
+        'tracking_no'   => 'required|string|max:120',
+        'shipped_at' => 'nullable|date',
+        'ship_notes'    => 'nullable|string|max:1000',
+    ]);
+
+    // 3. persist (transaction for safety)
+    DB::transaction(function () use ($order, $data) {
+        $order->update([
+            'status'      => Order::STATUS_SHIPPED,
+            'courier'     => $data['courier'],
+            'tracking_no' => $data['tracking_no'],
+            'shipped_at'  => $data['shipping_date'] ?? now(),
+            'ship_notes'  => $data['ship_notes'] ?? null,
+        ]);
+    });
+
+    // 4. fire event / notification if you have it
+    if (class_exists(\App\Events\OrderShipped::class)) {
+        OrderShipped::dispatch($order);
+    }
+
+    return back()->with('success', 'Order marked as shipped.');
+}
+
+
+public function updateStatus(Request $request, Order $order)
+{
+    
+
+    $request->validate([
+        'action' => 'required|string|in:deliver,cancel', // add more if needed
+    ]);
+
+    match ($request->action) {
+        'deliver' => $this->deliver($order),
+        'cancel'  => $this->cancel($order),            // optional
+    };
+
+    return back()->with('success', 'Order updated successfully.');
+}
+
+
+private function deliver(Order $order): void
+{
+  
+
+    // only SHIPPED orders can transition to DELIVERED
+    if ($order->status !== Order::STATUS_SHIPPED) {
+        abort(422, 'Only shipped orders can be marked as delivered.');
+    }
+
+    DB::transaction(function () use ($order) {
+        $order->update([
+            'status'       => Order::STATUS_DELIVERED,
+            'delivered_at' => now(),
+        ]);
+    });
+
+}
+
+
+public function process(Order $order)
+{
+    
+
+    // Only “pending” orders may move to “processing”
+    abort_unless(
+        $order->status === Order::STATUS_PENDING,
+        422,
+        'Only pending orders can be processed.'
+    );
+
+    // Transaction ensures consistency
+    DB::transaction(function () use ($order) {
+        $order->update([
+            'status'      => Order::STATUS_PROCESSING,
+            'processed_at'=> now(),         // add this column if you want
+        ]);
+    });
+
+    // Notify / broadcast (optional event)
+    if (class_exists(\App\Events\OrderProcessed::class)) {
+        OrderProcessed::dispatch($order);
+    }
+
+    return back()->with('success', 'Order marked as processing.');
+}
 }
