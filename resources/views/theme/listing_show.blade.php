@@ -111,7 +111,7 @@
           {{-- Add to Cart Form --}}
           <form
             method="POST"
-            action="{{ route('cart.store') }}"
+            action="{{ route('cart.add') }}"
             @submit="busy = true"
             class="d-inline-block"
           >

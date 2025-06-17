@@ -2,20 +2,20 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto max-w-3xl py-8">
-    <h2 class="text-3xl font-bold mb-6 text-center">Edit Your Shop</h2>
+<div class="content">
+    <h2 class="text-center fw-bold mb-5">Edit Your Shop</h2>
 
     {{-- Flash Success --}}
     @if(session('success'))
-      <div class="mb-6 p-4 bg-green-100 text-green-800 rounded">
+      <div class="alert alert-success">
         {{ session('success') }}
       </div>
     @endif
 
     {{-- Validation Errors --}}
     @if($errors->any())
-      <div class="mb-6 p-4 bg-red-100 text-red-800 rounded">
-        <ul class="list-disc pl-5 space-y-1 mb-0">
+      <div class="alert alert-danger">
+        <ul class="mb-0">
           @foreach($errors->all() as $error)
             <li>{{ $error }}</li>
           @endforeach
@@ -37,229 +37,128 @@
                    .replace(/[^a-z0-9]+/g,'-')
                    .replace(/(^-|-$)/g,'');
       "
-      class="space-y-8"
     >
       @csrf
       @method('PATCH')
 
       {{-- 1) Shop Preferences --}}
-      <section class="bg-white shadow rounded-lg p-6">
-        <h3 class="text-xl font-semibold mb-4">1. Shop Preferences</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label for="language" class="block font-medium mb-1">
-              Language <span class="text-red-500">*</span>
-            </label>
-            <select name="language" id="language" required
-                    class="w-full border-gray-300 rounded px-3 py-2">
-              <option value="" disabled>Select language</option>
-              <option value="English" {{ old('language', $shop->language)=='English' ? 'selected':'' }}>
-                English
-              </option>
-              <option value="Spanish" {{ old('language', $shop->language)=='Spanish' ? 'selected':'' }}>
-                Spanish
-              </option>
-              <option value="French" {{ old('language', $shop->language)=='French' ? 'selected':'' }}>
-                French
-              </option>
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">1. Shop Preferences</div>
+        <div class="card-body row g-3">
+          <div class="col-md-4">
+            <label for="language" class="form-label">Language <span class="text-danger">*</span></label>
+            <select name="language" id="language" class="form-select" required>
+              <option disabled selected>Select language</option>
+              <option value="English" {{ old('language', $shop->language)=='English' ? 'selected':'' }}>English</option>
+              <option value="Spanish" {{ old('language', $shop->language)=='Spanish' ? 'selected':'' }}>Spanish</option>
+              <option value="French"  {{ old('language', $shop->language)=='French' ? 'selected':'' }}>French</option>
             </select>
           </div>
-          <div>
-            <label for="country" class="block font-medium mb-1">
-              Country <span class="text-red-500">*</span>
-            </label>
-            <select name="country" id="country" required
-                    class="w-full border-gray-300 rounded px-3 py-2">
-              <option value="" disabled>Select country</option>
-              <option value="United States" {{ old('country', $shop->country)=='United States' ? 'selected':'' }}>
-                United States
-              </option>
-              <option value="Canada" {{ old('country', $shop->country)=='Canada' ? 'selected':'' }}>
-                Canada
-              </option>
-              <option value="United Kingdom" {{ old('country', $shop->country)=='United Kingdom' ? 'selected':'' }}>
-                United Kingdom
-              </option>
+          <div class="col-md-4">
+            <label for="country" class="form-label">Country <span class="text-danger">*</span></label>
+            <select name="country" id="country" class="form-select" required>
+              <option disabled selected>Select country</option>
+              <option value="United States" {{ old('country', $shop->country)=='United States' ? 'selected':'' }}>United States</option>
+              <option value="Canada" {{ old('country', $shop->country)=='Canada' ? 'selected':'' }}>Canada</option>
+              <option value="United Kingdom" {{ old('country', $shop->country)=='United Kingdom' ? 'selected':'' }}>United Kingdom</option>
             </select>
           </div>
-          <div>
-            <label for="currency" class="block font-medium mb-1">
-              Currency <span class="text-red-500">*</span>
-            </label>
-            <select name="currency" id="currency" required
-                    class="w-full border-gray-300 rounded px-3 py-2">
-              <option value="" disabled>Select currency</option>
-              <option value="USD" {{ old('currency', $shop->currency)=='USD' ? 'selected':'' }}>
-                USD
-              </option>
-              <option value="CAD" {{ old('currency', $shop->currency)=='CAD' ? 'selected':'' }}>
-                CAD
-              </option>
-              <option value="GBP" {{ old('currency', $shop->currency)=='GBP' ? 'selected':'' }}>
-                GBP
-              </option>
+          <div class="col-md-4">
+            <label for="currency" class="form-label">Currency <span class="text-danger">*</span></label>
+            <select name="currency" id="currency" class="form-select" required>
+              <option disabled selected>Select currency</option>
+              <option value="USD" {{ old('currency', $shop->currency)=='USD' ? 'selected':'' }}>USD</option>
+              <option value="CAD" {{ old('currency', $shop->currency)=='CAD' ? 'selected':'' }}>CAD</option>
+              <option value="GBP" {{ old('currency', $shop->currency)=='GBP' ? 'selected':'' }}>GBP</option>
             </select>
           </div>
         </div>
-      </section>
+      </div>
 
       {{-- 2) Name & Slug --}}
-      <section class="bg-white shadow rounded-lg p-6">
-        <h3 class="text-xl font-semibold mb-4">2. Name Your Shop</h3>
-        <div class="mb-4">
-          <label for="name" class="block font-medium mb-1">
-            Shop Name <span class="text-red-500">*</span>
-          </label>
-          <input 
-            id="name" name="name" type="text"
-            x-model="name"
-            required
-            class="w-full border-gray-300 rounded px-3 py-2"
-          >
-        </div>
-        <div>
-          <label for="slug" class="block font-medium mb-1">
-            Slug (URL Identifier)
-          </label>
-          <div class="flex items-center space-x-2">
-            <span class="text-gray-500">{{ url('shop') }}/</span>
-            <input 
-              id="slug" name="slug" type="text"
-              x-model="slug"
-              required
-              class="flex-1 bg-gray-100 border-gray-300 rounded px-3 py-2"
-            >
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">2. Name Your Shop</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="name" class="form-label">Shop Name <span class="text-danger">*</span></label>
+            <input type="text" id="name" name="name" x-model="name" class="form-control" required>
           </div>
-          <p class="text-sm text-gray-500 mt-1">
-            You may customize, but it must be unique.
-          </p>
+          <div>
+            <label for="slug" class="form-label">Slug (URL Identifier)</label>
+            <div class="input-group">
+              <span class="input-group-text">{{ url('shop') }}/</span>
+              <input type="text" id="slug" name="slug" x-model="slug" class="form-control" required>
+            </div>
+            <div class="form-text">You may customize, but it must be unique.</div>
+          </div>
         </div>
-      </section>
+      </div>
 
       {{-- 3) How You’ll Get Paid --}}
-      <section class="bg-white shadow rounded-lg p-6">
-        <h3 class="text-xl font-semibold mb-4">3. How You’ll Get Paid</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label for="bank_account" class="block font-medium mb-1">
-              Bank Account # <span class="text-red-500">*</span>
-            </label>
-            <input 
-              id="bank_account" name="bank_account" type="text"
-              value="{{ old('bank_account', $shop->bank_account) }}"
-              required
-              class="w-full border-gray-300 rounded px-3 py-2"
-            >
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">3. How You’ll Get Paid</div>
+        <div class="card-body row g-3">
+          <div class="col-md-6">
+            <label for="bank_account" class="form-label">Bank Account # <span class="text-danger">*</span></label>
+            <input type="text" id="bank_account" name="bank_account" value="{{ old('bank_account', $shop->bank_account) }}" class="form-control" required>
           </div>
-          <div>
-            <label for="routing_number" class="block font-medium mb-1">
-              Routing # <span class="text-red-500">*</span>
-            </label>
-            <input 
-              id="routing_number" name="routing_number" type="text"
-              value="{{ old('routing_number', $shop->routing_number) }}"
-              required
-              class="w-full border-gray-300 rounded px-3 py-2"
-            >
-          </div>
-          
-        </div>
-      </section>
-
-      
-
-      {{-- 4) Share Your Billing Info --}}
-      <section class="bg-white shadow rounded-lg p-6">
-        <h3 class="text-xl font-semibold mb-4">4. Share Your Billing Info</h3>
-        <div class="mb-4">
-          <label for="address" class="block font-medium mb-1">
-            Street Address <span class="text-red-500">*</span>
-          </label>
-          <input 
-            id="address" name="address" type="text"
-            value="{{ old('address', $shop->address) }}"
-            required
-            class="w-full border-gray-300 rounded px-3 py-2"
-          >
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label for="city" class="block font-medium mb-1">
-              City <span class="text-red-500">*</span>
-            </label>
-            <input 
-              id="city" name="city" type="text"
-              value="{{ old('city', $shop->city) }}"
-              required
-              class="w-full border-gray-300 rounded px-3 py-2"
-            >
-          </div>
-          <div>
-            <label for="postal" class="block font-medium mb-1">
-              Postal Code <span class="text-red-500">*</span>
-            </label>
-            <input 
-              id="postal" name="postal" type="text"
-              value="{{ old('postal', $shop->postal) }}"
-              required
-              class="w-full border-gray-300 rounded px-3 py-2"
-            >
+          <div class="col-md-6">
+            <label for="routing_number" class="form-label">Routing # <span class="text-danger">*</span></label>
+            <input type="text" id="routing_number" name="routing_number" value="{{ old('routing_number', $shop->routing_number) }}" class="form-control" required>
           </div>
         </div>
-      </section>
+      </div>
 
-      {{-- 5) Your Shop Security --}}
-      <section class="bg-white shadow rounded-lg p-6">
-        <h3 class="text-xl font-semibold mb-4">5. Your Shop Security</h3>
-        <div class="mb-4">
-          <label for="password" class="block font-medium mb-1">
-            Confirm Your Password <span class="text-red-500">*</span>
-          </label>
-          <input 
-            id="password" name="password" type="password"
-            required
-            class="w-full border-gray-300 rounded px-3 py-2"
-            placeholder="Enter your account password"
-          >
+      {{-- 4) Billing Info --}}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">4. Share Your Billing Info</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="address" class="form-label">Street Address <span class="text-danger">*</span></label>
+            <input type="text" id="address" name="address" value="{{ old('address', $shop->address) }}" class="form-control" required>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="city" class="form-label">City <span class="text-danger">*</span></label>
+              <input type="text" id="city" name="city" value="{{ old('city', $shop->city) }}" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label for="postal" class="form-label">Postal Code <span class="text-danger">*</span></label>
+              <input type="text" id="postal" name="postal" value="{{ old('postal', $shop->postal) }}" class="form-control" required>
+            </div>
+          </div>
         </div>
-        <input type="hidden" name="enable_2fa" value="0">
-        <div class="flex items-center">
-          <input 
-            id="enable_2fa" name="enable_2fa" type="checkbox" value="1"
-            {{ old('enable_2fa', $shop->enable_2fa) ? 'checked' : '' }}
-            class="h-4 w-4 text-green-600"
-          >
-          <label for="enable_2fa" class="ml-2 text-sm text-gray-700">
-            Enable two-factor authentication
-          </label>
-        </div>
+      </div>
 
-        <div class="mt-4">
-          <label for="logo" class="block font-medium mb-1">Logo (optional)</label>
-          <input 
-            id="logo"
-            type="file" 
-            name="logo" 
-            accept="image/*"
-            class="w-full"
-          >
-          @if($shop->logo_url)
-            <p class="mt-2 text-sm text-gray-500">
-              Current logo:
-              <img src="{{ $shop->logo_url }}" alt="logo" class="inline-block w-10 h-10 ml-2 rounded-full">
-            </p>
-          @endif
+      {{-- 5) Security --}}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">5. Your Shop Security</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="password" class="form-label">Confirm Your Password <span class="text-danger">*</span></label>
+            <input type="password" id="password" name="password" class="form-control" required placeholder="Enter your account password">
+          </div>
+          <input type="hidden" name="enable_2fa" value="0">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="1" id="enable_2fa" name="enable_2fa" {{ old('enable_2fa', $shop->enable_2fa) ? 'checked' : '' }}>
+            <label class="form-check-label" for="enable_2fa">Enable two-factor authentication</label>
+          </div>
+
+          <div class="mt-4">
+            <label for="logo" class="form-label">Logo (optional)</label>
+            <input class="form-control" type="file" id="logo" name="logo" accept="image/*">
+            @if($shop->logo_url)
+              <div class="mt-2">
+                <img src="{{ $shop->logo_url }}" alt="logo" class="rounded-circle" width="50" height="50">
+              </div>
+            @endif
+          </div>
         </div>
-      </section>
+      </div>
 
       {{-- Submit --}}
-      <div class="text-right">
-        <button 
-          type="submit"
-          class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded"
-        >
-          Save Changes
-        </button>
+      <div class="text-end">
+        <button type="submit" class="btn btn-primary px-4">Save Changes</button>
       </div>
     </form>
 </div>

@@ -1,6 +1,6 @@
 <?php
 use App\Models\Setting;
-
+use App\Models\Shop;
 function favicon_url(){
 
     
@@ -29,6 +29,13 @@ function settings() {
 }
 
 
+function shop_id(){
+
+    $shop = Shop::whereUserId(Auth::id())->first();
+    return $shop->id;
+}
+
+
 function shop(){
     return 'Cetsy';
 }
@@ -53,6 +60,19 @@ function shop(){
       return $option_key;
   }
 
+
+   function wallet(){
+     $walletBalance = \App\Models\Wallet::where('user_id', Auth::id())
+                            ->selectRaw('SUM(credit - debit) as balance')
+                            ->value('balance') ?? 0;
+
+        return $walletBalance;
+  }
+
+
+  function get_currency() {
+    return 'USD';
+ }
 
 
 ?>

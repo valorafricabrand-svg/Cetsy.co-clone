@@ -39,6 +39,23 @@
       'url'   => route('orders.index'),
       'icon'  => 'fas fa-shopping-cart',
     ];
+
+
+        $navItems[] = [
+      'label' => 'Payments',
+      'url'   => route('seller.orders.payments'),
+      'icon'  => 'fas fa-shopping-cart',
+    ];
+
+
+            $navItems[] = [
+      'label' => 'Analytics',
+      'url'   => route('seller.analytics.index'),
+      'icon'  => 'fas fa-chart-line me-2 text-success',
+    ];
+
+
+    
   @endphp
 
   @foreach($navItems as $item)

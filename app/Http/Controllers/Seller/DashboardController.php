@@ -3,35 +3,53 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\Address;
+use App\Models\Payment;
+use App\Models\Wishlist;
+use App\Models\WalletTransaction;
+use App\Models\Product;
+
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     /**
-     * Show the seller dashboard, or redirect to shop creation if none exists.
+     * Display the buyer dashboard.
+     *
+     * @return \Illuminate\View\View
      */
-    public function index()
-    {
-        $user = Auth::user();
-
-        // 1. Ensure the seller has a shop
-        $shop = $user->shop;
-        if (! $shop) {
-            return redirect()->route('shops.create')
-                             ->with('info', 'Please create your shop first.');
+public function index()
+{
+     $user = Auth::user();
+        
+        // Check if seller has active subscription
+        if (!$user->hasActiveSubscription()) {
+            return redirect()->route('seller.subscription')
+                ->with('warning', 'Please activate your subscription to access seller features.');
         }
+        
+        // Check if seller has completed KYC
+        // if (!$user->kyc || $user->kyc->status !== 'approved') {
+        //     return redirect()->route('seller.kyc.create')
+        //         ->with('warning', 'Please complete your KYC verification to access seller features.');
+        // }
+        
+        // If all checks pass, show the dashboard
+        $orders = $user->orders()->orderBy('created_at', 'Desc')->with(['customer', 'payment'])->take(5)->get();
+             $shopId = $user->shop->id;
+        $products = Product::whereShopId($shopId)->orderBy('created_at', 'Desc')->with(['category'])->take(5)->get();
+        $total_orders = $user->orders->count();
+        $total_products = $products->count();
 
-        // 2. Compute metrics
-        $productsCount = $shop->products()->count();
-        $salesCount    = $shop->orders()->count();
-        $earnings      = $shop->orders()->sum('total');
+        // dd($products);
 
-        // 3. Pass everything to the view
-        return view('seller.dashboard', [
-            'shop'          => $shop,
-            'productsCount' => $productsCount,
-            'salesCount'    => $salesCount,
-            'earnings'      => $earnings,
-        ]);
-    }
+        return view('seller.dashboard', compact('orders', 'products', 'total_orders', 'total_products'));
+
+   
+}
+
+
+
+
 }

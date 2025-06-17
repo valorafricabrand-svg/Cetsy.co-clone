@@ -34,45 +34,47 @@ class CheckoutController extends Controller
     /**
      * Handle the form post, create the Order, and clear the cart.
      */
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'shipping_address' => 'required|string',
-        ]);
+public function store(Request $request)
+{
+    $data = $request->validate([
+        'shipping_address' => 'required|string',
+    ]);
 
-        // 1. Fetch the cart
-        $cart = Cart::where('user_id', Auth::id())->firstOrFail();
-        $items = $cart->items()->with('product')->get();
+    $cart = Cart::where('user_id', Auth::id())->firstOrFail();
+    $items = $cart->items()->with('product')->get();
 
-        // 2. Calculate total
-        $total = $items->sum(fn($item) =>
-            $item->product->price * $item->quantity
-        );
+    $total = $items->sum(fn($item) =>
+        $item->product->price * $item->quantity
+    );
 
-        // 3. Create the order record
-        $order = Order::create([
-            'user_id'          => Auth::id(),
-            'shipping_address' => $data['shipping_address'],
-            'total'            => $total,
-        ]);
+    $shopId = $items->first()->product->shop_id ?? null;
 
-        // 4. Attach each cart item to the order
-        foreach ($items as $item) {
-            $order->items()->create([
-                'product_id' => $item->product_id,
-                'quantity'   => $item->quantity,
-                'price'      => $item->product->price,
-            ]);
-        }
-
-        // 5. Clear the cart
-        $cart->items()->delete();
-
-        // 6. Redirect to a thank-you page
-        return redirect()
-            ->route('checkout.success', $order)
-            ->with('success', 'Your order has been placed!');
+    if (!$shopId) {
+        return back()->withErrors('Unable to determine shop for this order.');
     }
+
+    $order = Order::create([
+        'user_id'          => Auth::id(),
+        'shipping_address' => $data['shipping_address'],
+        'total'            => $total,
+        'shop_id'          => $shopId,
+    ]);
+
+    foreach ($items as $item) {
+        $order->items()->create([
+            'product_id' => $item->product_id,
+            'quantity'   => $item->quantity,
+            'price'      => $item->product->price,
+        ]);
+    }
+
+    $cart->items()->delete();
+
+    return redirect()
+        ->route('checkout.success', $order)
+        ->with('success', 'Your order has been placed!');
+}
+
 
     /**
      * Show a simple order confirmation.

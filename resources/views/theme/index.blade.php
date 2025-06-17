@@ -4,50 +4,48 @@
 @section('main')
 
 <!-- Hero Section -->
-<section id="hero" class="py-5 bg-light border-bottom">
+<!-- Hero Section -->
+<section id="hero" class="py-5" style="background-color: #FDF4E4;">
   <div class="container d-flex flex-column flex-lg-row align-items-center">
     <!-- Hero Text -->
     <div class="me-lg-5 text-center text-lg-start">
-      <h1 class="display-4 fw-bold text-success mb-4">
-        Welcome to Cetsy
+      <h1 class="display-4 fw-bold text-success mb-3">
+        Cetsy Your Global Marketplace
       </h1>
-      <h2 class="h4 text-primary fw-bold mb-4">
-        Discover Handmade, Vintage &amp; Custom Products from Local Artists
-      </h2>
-      <p class="lead text-muted mb-4">
-        Cetsy is the ultimate marketplace for unique and handcrafted treasures. Explore personalized gifts, vintage home decor, and one-of-a-kind creations from talented artisans across the globe.
+      
+      <p class="lead text-muted mb-4" style="max-width: 480px;">
+        Your global marketplace where you’ll find almost anything—from anyone, anywhere.
       </p>
       <div class="d-flex justify-content-center justify-content-lg-start gap-3 mb-4">
-        <a href="{{ route('register') }}" class="btn btn-success btn-lg rounded-pill shadow-sm">
-          Get Started Free
+        <a href="{{ route('listings') }}"
+           class="btn btn-success btn-lg rounded-pill shadow-sm px-4">
+          Shop Now
         </a>
-        <a href="#features" class="btn btn-outline-secondary btn-lg rounded-pill shadow-sm">
+        <a href="#features"
+           class="btn btn-outline-success btn-lg rounded-pill shadow-sm px-4">
           Learn More
         </a>
       </div>
-      <div class="d-flex flex-wrap gap-4 align-items-center justify-content-center justify-content-lg-start small text-muted">
+      <div class="d-flex flex-wrap gap-4 align-items-center justify-content-center justify-content-lg-start small text-secondary">
         <div class="d-flex align-items-center">
-          <i class="fas fa-shield-alt text-success me-2 fs-4"></i>
+          <i class="fas fa-shield-alt fs-5 me-2 text-success"></i>
           <span>Secure &amp; Trusted</span>
         </div>
+       
         <div class="d-flex align-items-center">
-          <i class="fas fa-handshake text-success me-2 fs-4"></i>
-          <span>Support Local Artists</span>
-        </div>
-        <div class="d-flex align-items-center">
-          <i class="fas fa-cogs text-success me-2 fs-4"></i>
+          <i class="fas fa-cogs fs-5 me-2 text-success"></i>
           <span>Custom Orders Available</span>
         </div>
       </div>
     </div>
 
     <!-- Hero Image -->
-    <div class="mt-4 mt-lg-0 text-center">
-      <img 
-        src="{{ asset('assets/img/cetsy-hero-image.png') }}" 
-        alt="Handmade Products on Cetsy" 
-        class="img-fluid rounded shadow-sm"
-        style="max-width:650px;"
+    <div class="mt-5 mt-lg-0 text-center flex-shrink-0">
+      <img
+        src="{{ asset('assets/images/illustrator.webp') }}"
+        alt="World map with shopping icons"
+        class="img-fluid rounded-lg shadow"
+        style="max-width: 600px;"
       >
     </div>
   </div>
@@ -125,7 +123,7 @@
                 <!-- Add to Cart Form -->
                 <form 
                   method="POST" 
-                  action="{{ route('cart.store') }}" 
+                  action="{{ route('cart.add') }}" 
                   x-data="{ busy: false }" 
                   @submit="busy = true"
                 >
