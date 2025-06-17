@@ -486,6 +486,10 @@ class ProductController extends Controller
     {
 
         $product = Product::whereSlug($slug)->first();
+          $product->views()->create([
+        'viewer_id' => auth()->id(),
+        'ip'        => request()->ip(),
+    ]);
         return view('theme.listing_show', compact('product'));
         
     }

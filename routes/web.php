@@ -20,6 +20,9 @@ use App\Http\Controllers\Admin\UserController;
 // At the top of routes/web.php
 use App\Http\Controllers\Admin\AdminReportController as AdminReport;
 use App\Http\Controllers\Admin\SettingsController as AdminSetting;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\OrderMessageController;
+use App\Http\Controllers\AccountController;
 
 
 /*
@@ -33,10 +36,13 @@ Route::get('/', [HomeController::class, 'index'])
      ->name('home');
 
 // Cart
-Route::get   ('/cart',               [CartController::class, 'index'])  ->name('cart.index');
-Route::post  ('/cart',               [CartController::class, 'store'])  ->name('cart.store');
-Route::patch ('/cart/{productId}',   [CartController::class, 'update']) ->name('cart.update');
-Route::delete('/cart/{productId}',   [CartController::class, 'destroy'])->name('cart.destroy');
+Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');
+Route::post('/cart/buy', [CartController::class, 'addToBuy'])->name('cart.buy');
+Route::get('/cart', [CartController::class, 'viewCart'])->name('cart.view');
+Route::post('/cart/remove', [CartController::class, 'removeFromCart'])->name('cart.remove');
+Route::get('/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+
+Route::post('/cart/update', [CartController::class, 'updateCart'])->name('cart.update');
 
 Route::get('/categories', [CategoryController::class, 'index'])
      ->name('categories.index');
@@ -50,6 +56,11 @@ Route::get('/listing/{slug}', [ProductController::class, 'listing'])
 Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])
      ->name('category.show');
 // Authenticated & verified generic dashboard (if you still use it)
+
+
+
+Route::get('shop/{id}',    [DashboardController::class, 'about_shopname'])
+         ->name('about_shopname');
 
 Route::get('/dashboard',    [DashboardController::class, 'dashboard'])
          ->name('dashboard');
@@ -88,16 +99,11 @@ Route::patch('shops/{shop}', [ShopController::class, 'update'])
     Route::resource('products', ProductController::class);
 
 
-
+Route::get('/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+Route::post('/checkout/order', [OrderController::class, 'storeOrder'])->name('store_order');
 
 
     // Checkout & orders
-    Route::get('/checkout',                      [CheckoutController::class, 'index'])
-         ->name('checkout.index');
-    Route::post('/checkout',                     [CheckoutController::class, 'store'])
-         ->name('checkout.store');
-    Route::get('/checkout/success/{order}',      [CheckoutController::class, 'success'])
-         ->name('checkout.success');
     Route::get('/orders',                        [OrderController::class, 'index'])
          ->name('orders.index');
     Route::get('/orders/{order}',                [OrderController::class, 'show'])
@@ -150,7 +156,7 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
 });
 
 // All other seller routes (require KYC and subscription)
-Route::middleware(['auth', 'seller', 'ensure.seller.kyc', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
+Route::middleware(['auth', 'seller',])->prefix('seller')->name('seller.')->group(function () {
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     // ... other seller routes
 });
@@ -173,3 +179,143 @@ Route::resource('settings', \App\Http\Controllers\SettingController::class)
 
 require __DIR__ . '/auth.php';
 
+
+
+Route::prefix('seller')->middleware(['auth', 'seller'])->group(function () {
+
+    Route::get('/orders', [OrderController::class, 'index'])->name('seller.orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('seller.orders.show');
+
+    Route::get('/order/payments', [OrderController::class, 'orderPayments'])->name('seller.orders.payments');
+
+
+         // 2. NEW — mark “pending” → “processing”
+    Route::patch('orders/{order}/process',
+        [OrderController::class, 'process']
+    )->name('seller.orders.process');
+
+    // 3. NEW — mark “processing” → “shipped”
+    Route::post('orders/{order}/ship',
+        [OrderController::class, 'ship']
+    )->name('seller.orders.ship');
+
+    Route::patch(
+    'orders/{order}/status',
+    [\App\Http\Controllers\OrderController::class, 'updateStatus']
+)->name('seller.orders.status');
+
+
+
+});
+
+
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
+
+    Route::get('/wallet/deposit', [WalletController::class, 'depositForm'])->name('wallet.deposit.form');
+
+    Route::post('/wallet/deposit', [WalletController::class, 'storeDeposit'])->name('wallet.deposit.store');
+
+    Route::post('/wallet/deposit/paypal', [WalletController::class, 'handlePayPalDeposit'])->name('wallet.deposit.paypal');
+
+
+ 
+
+Route::post('/wallet/deposit/paypal', [WalletController::class, 'handlePaypalDeposit'])->name('wallet.deposit.paypal');
+Route::get('/bmpesa', [MpesaController::class, 'initiate']);
+Route::get('/bconfirm-payment/{id}', [MpesaController::class, 'checkStatus']);
+
+
+
+
+
+});
+
+
+Route::prefix('buyer')->middleware(['auth'])->group(function () {
+
+  
+    Route::get('/orders/{order}', [AccountController::class, 'orderDetails'])->name('buyer.orders.show');
+
+
+     
+
+
+});
+
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('orders/{order}/chat', [OrderMessageController::class, 'show'])
+         ->name('orders.chat.show');
+    Route::get('orders/{order}/chat/messages', [OrderMessageController::class, 'fetch'])
+         ->name('orders.chat.fetch');
+    Route::post('orders/{order}/chat', [OrderMessageController::class, 'send'])
+         ->name('orders.chat.send');
+
+
+
+});
+
+   Route::get('/account/dashboard', [AccountController::class, 'dashboard'])->name('account.dashboard');
+    Route::get('/account/orders', [AccountController::class, 'orders'])->name('account.orders');
+    Route::get('/account/payments', [AccountController::class, 'payments'])->name('account.payments');
+    Route::get('/account/details', [AccountController::class, 'details'])->name('account.details');
+    Route::post('/account/details/update', [AccountController::class, 'updateDetails'])->name('account.updateDetails');
+    Route::get('/account/addresses', [AccountController::class, 'addresses'])->name('account.addresses');
+    Route::get('/account/logout', [AccountController::class, 'logout'])->name('account.logout');
+Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_now');
+Route::get('/pay-now-invoice/{total}', [OrderController::class, 'payNowInvoice'])->name('pay_now_invoice');
+
+
+Route::middleware('auth')->group(function () {
+    Route::prefix('orders/{order}')->name('orders.')->group(function () {
+        Route::post('items/{item}/reviews',
+            [\App\Http\Controllers\ReviewController::class, 'store']
+        )->name('items.reviews.store');
+    });
+});
+
+
+Route::middleware(['auth'])
+      ->prefix('seller')
+      ->name('seller.')
+      ->group(function () {
+
+    // list + create payouts
+    Route::get ('payouts', [\App\Http\Controllers\Seller\PayoutRequestController::class,'index'])
+         ->name('payouts.index');     // 👈 now exists
+
+    Route::post('payouts', [\App\Http\Controllers\Seller\PayoutRequestController::class,'store'])
+         ->name('payouts.store');
+
+
+            Route::get('analytics', [\App\Http\Controllers\Seller\AnalyticsController::class,'index'])
+               ->name('analytics.index');
+});
+
+
+Route::get('wishlist', [ProductInfoController::class, 'wishlist'])->name('wishlist');
+
+
+Route::middleware(['auth'])
+      ->prefix('admin')
+      ->name('admin.')
+      ->group(function () {
+
+    // payout management
+    Route::controller(\App\Http\Controllers\Admin\PayoutRequestController::class)
+         ->prefix('payout-requests')
+         ->name('payouts.')
+         ->group(function () {
+            Route::get  ('/',            'index' )->name('index');
+            Route::get  ('/{payout}',    'show'  )->name('show');
+            Route::post ('/{payout}/approve', 'approve')->name('approve');
+            Route::post ('/{payout}/reject',  'reject' )->name('reject');
+            Route::post ('/{payout}/paid',    'markPaid')->name('paid');
+         });
+});
+
+Route::get('success-deposit/{id}', ['as' => 'success_deposit', 'uses' => 'App\Http\Controllers\OrderController@successDeposit']);
+Route::get('success-deposit-invoice/{id}', ['as' => 'success_deposit_invoice', 'uses' => 'App\Http\Controllers\OrderController@successDepositInvoice']);

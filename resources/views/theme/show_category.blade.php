@@ -63,7 +63,7 @@
                     </a>
                     <form 
                       method="POST" 
-                      action="{{ route('cart.store') }}" 
+                      action="{{ route('cart.add') }}" 
                       x-data="{ busy: false }" 
                       @submit="busy = true"
                       class="m-0"

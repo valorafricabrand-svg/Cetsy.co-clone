@@ -126,4 +126,7 @@ class User extends Authenticatable
         return $url;
     }
 
+
+   
+
 }
