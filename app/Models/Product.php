@@ -52,7 +52,19 @@ class Product extends Model
         'email',
         'location',
         'tags',
-        
+        'price_type',
+        'available_days',
+        'available_time',
+        'available_time_to',
+        'available_time_from',
+        'duration_value',
+        'duration_unit',
+        'is_remote',
+    ];
+
+    protected $casts = [
+        'available_days' => 'array',
+        'is_remote' => 'boolean',
     ];
 
     public function shop()
