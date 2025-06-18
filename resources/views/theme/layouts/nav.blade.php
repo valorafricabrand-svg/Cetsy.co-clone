@@ -85,11 +85,7 @@
               </a>
             </li>
           @else
-            <li class="nav-item">
-              <a class="nav-link" href="{{ route('seller.shop.create') }}">
-                Open Shop
-              </a>
-            </li>
+           
           @endif
 
           <li class="nav-item dropdown">
@@ -104,6 +100,14 @@
               {{ auth()->user()->name }}
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+
+              <li>
+                <a class="dropdown-item" href="{{ route('dashboard') }}">
+                  Dashboard
+                </a>
+              </li>
+
+
               <li>
                 <a class="dropdown-item" href="{{ route('profile.edit') }}">
                   Profile

@@ -30,6 +30,15 @@
                         <i class="bi bi-credit-card"></i> Pay&nbsp;Now
                     </a>
                 @endif
+
+                  @if ($order->status === \App\Models\Order::STATUS_SHIPPED)
+                <button class="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deliverModal-{{ $order->id }}">
+                    <i class="bi bi-check2-circle"></i> Mark Delivered
+                </button>
+                @include('seller.orders.modals.delivered')
+            @endif
             </div>
         </div>
 
@@ -88,15 +97,15 @@
                             </li>
                             <li class="list-group-item px-0 d-flex justify-content-between">
                                 <span class="fw-semibold">Subtotal:</span>
-                                <span>{{ get_currency() }} {{ number_format($order->subtotal,2) }}</span>
+                                <span>{{ get_currency() }} {{ number_format($order->subtotal, 2) }}</span>
                             </li>
                             <li class="list-group-item px-0 d-flex justify-content-between">
                                 <span class="fw-semibold">Shipping Fee:</span>
-                                <span>{{ get_currency() }} {{ number_format($order->shipping_fee,2) }}</span>
+                                <span>{{ get_currency() }} {{ number_format($order->shipping_cost, 2) }}</span>
                             </li>
                             <li class="list-group-item px-0 d-flex justify-content-between">
                                 <span class="fw-semibold">Total Amount:</span>
-                                <span class="fw-bold">{{ get_currency() }} {{ number_format($order->total_amount,2) }}</span>
+                                <span class="fw-bold">{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</span>
                             </li>
                             <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
                                 <span class="fw-semibold">Status:</span>
@@ -141,7 +150,7 @@
             </div>
         </div>
 
-        {{-- ================= ORDER ITEMS (with Review) ================= --}}
+        {{-- ================= ORDER ITEMS (with Shipping Profile and Review) ================= --}}
         @if($order->items->count())
             <div class="card shadow-sm border-0 mt-4">
                 <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
@@ -158,6 +167,8 @@
                                     <th scope="col">Variation</th>
                                     <th scope="col">Qty</th>
                                     <th scope="col">Price</th>
+                                    <th scope="col">Shipping Profile</th>
+                                    <th scope="col">Shipping Cost</th>
                                     <th scope="col">Subtotal</th>
                                     <th scope="col" class="text-center">Review</th>
                                 </tr>
@@ -168,6 +179,8 @@
                                     @php
                                         $reviewed = $item->review !== null;
                                         $modalId  = 'reviewModal_'.$item->id;
+                                        $shippingProfileName = optional($item->shippingProfile)->name ?? 'N/A';
+                                        $shippingCost = $item->shipping_cost ?? 0;
                                     @endphp
 
                                     <tr>
@@ -176,8 +189,10 @@
                                         <td>{{ $item->variation_details ?? '-' }}</td>
                                         <td>{{ $item->quantity }}</td>
                                         <td>{{ get_currency() }} {{ number_format($item->price, 2) }}</td>
+                                        <td>{{ $shippingProfileName }}</td>
+                                        <td>{{ get_currency() }} {{ number_format($shippingCost, 2) }}</td>
                                         <td class="fw-semibold">
-                                            {{ get_currency() }} {{ number_format($item->quantity * $item->price, 2) }}
+                                            {{ get_currency() }} {{ number_format(($item->quantity * $item->price) + $shippingCost, 2) }}
                                         </td>
                                         <td class="text-center">
                                             @if($reviewed)
@@ -202,7 +217,7 @@
             </div>
         @endif
 
-        {{-- ================= PAYMENTS (unchanged) ================= --}}
+        {{-- ================= PAYMENTS ================= --}}
         @if($order->payments->count())
             <div class="card shadow-sm border-0 mt-4">
                 <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
@@ -243,7 +258,7 @@
             </div>
         @endif
 
-        {{-- ================= ADDITIONAL INFO (unchanged) ================= --}}
+        {{-- ================= ADDITIONAL INFO ================= --}}
         @if($order->order_notes || $order->promo_code)
             <div class="card shadow-sm border-0 mt-4">
                 <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
@@ -267,7 +282,7 @@
     </div>
 </div>
 
-{{-- ================= RENDER ALL REVIEW MODALS OUTSIDE TABLE ================= --}}
+{{-- ================= RENDER REVIEW MODALS ================= --}}
 @foreach($order->items as $item)
     @if(!$item->review)
         @php($modalId = 'reviewModal_'.$item->id)

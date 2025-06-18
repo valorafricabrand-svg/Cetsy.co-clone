@@ -19,6 +19,8 @@ class OrderItem extends Model
         'product_id',
         'quantity',
         'price',
+        'shipping_profile_id',  // Add this field here
+        'shipping_cost'
     ];
 
     /**
@@ -35,5 +37,13 @@ class OrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the shipping profile selected for this order item.
+     */
+    public function shippingProfile()
+    {
+        return $this->belongsTo(ShippingProfile::class, 'shipping_profile_id');
     }
 }
