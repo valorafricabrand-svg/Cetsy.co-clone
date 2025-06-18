@@ -14,7 +14,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::paginate(15);
+        $users = User::where('user_type', 'seller')->paginate(15);
         return view('admin.users.index', compact('users'));
     }
 
@@ -102,5 +102,29 @@ class UserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * Approve/activate the specified user.
+     */
+    public function approve(User $user)
+    {
+        $user->update(['is_active' => 1]);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'Seller Account approved successfully.');
+    }
+
+    /**
+     * Deactivate the specified user.
+     */
+    public function deactivate(User $user)
+    {
+        $user->update(['is_active' => 0]);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'Seller Account deactivated successfully.');
     }
 }
