@@ -56,7 +56,7 @@ Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])->nam
 // Shop and dashboard routes
 Route::get('shop/{id}', [DashboardController::class, 'about_shopname'])->name('about_shopname');
 Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
-=======
+
 Route::get('/categories', [CategoryController::class, 'index'])
      ->name('categories.index');
 Route::get('/search', [ProductController::class, 'search'])
