@@ -42,7 +42,8 @@
     id="user-style-default">
     <link href="{{ asset('vendors/prism/prism-okaidia.css') }}" rel="stylesheet">
 
-
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 
     <!-- ===============================================-->
     <!--    Additional Scripts and Styles-->

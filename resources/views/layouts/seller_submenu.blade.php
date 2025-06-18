@@ -1,11 +1,41 @@
 @if(Auth::user()->isSeller())
   @php
     $currentRoute = Route::currentRouteName();
+    $walletBalance = \App\Models\Wallet::where('user_id', Auth::id())
+        ->selectRaw('SUM(credit - debit) as balance')
+        ->value('balance') ?? 0;
+    $walletBalanceFormatted = number_format($walletBalance, 2);
+
+    $pendingPayouts = \App\Models\PayoutRequest::where('user_id', Auth::id())
+        ->where('status', 'pending')
+        ->count();
+
     $navItems = [
         [
             'label' => 'Dashboard',
             'url'   => route('dashboard'),
             'icon'  => 'fas fa-tachometer-alt',
+        ],
+        // Wallet Balance
+        [
+            'custom_html' => true,
+            'html' => '<div class="mb-2">
+                <a href="' . route('wallet.index') . '" class="nav-link d-flex align-items-center mt-2 bg-light text-success fw-bold rounded px-2 py-2" role="status">
+                    <i class="fas fa-dollar-sign me-2 text-success"></i>
+                    Balance: USD ' . (isset($walletBalanceFormatted) ? $walletBalanceFormatted : '0.00') . '
+                </a>
+            </div>'
+        ],
+        // Payouts
+        [
+            'custom_html' => true,
+            'html' => '<div class="mb-2">
+                <a href="' . route('seller.payouts.index', ['layout' => 'side-menu']) . '" class="nav-link d-flex align-items-center mt-2 ' . (function_exists('active') && active('seller.payouts.index') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2') . '">
+                    <i class="fas fa-money-check-alt me-2 text-success"></i>
+                    Payouts
+                    ' . (isset($pendingPayouts) && $pendingPayouts ? '<span class="badge bg-danger ms-auto">' . $pendingPayouts . '</span>' : '') . '
+                </a>
+            </div>'
         ],
         [
             'label' => 'Listings',
@@ -34,6 +64,11 @@
       'icon'  => 'fas fa-chart-line me-2 text-success',
     ];
 
+    $navItems[] = [
+      'label' => 'My Buyers',
+      'url'   => route('seller.buyers.index'),
+      'icon'  => 'fas fa-users me-2 text-info',
+    ];
 
       $navItems[] = [
       'label' => 'Shipping Profiles',
@@ -86,7 +121,9 @@
   <div class="sidebar-menu">
     @foreach($navItems as $item)
         <div class="nav-item-wrapper">
-            @if(isset($item['items']))
+            @if(isset($item['custom_html']) && $item['custom_html'])
+                {!! $item['html'] !!}
+            @elseif(isset($item['items']))
                 @php
                     $isActive = false;
                     foreach($item['items'] as $subItem) {

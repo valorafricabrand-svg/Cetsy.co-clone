@@ -36,6 +36,16 @@
         'url'   => route('admin.settings'),
         'icon'  => 'fas fa-cogs',
       ],
+      [
+        'label' => 'Payout Requests',
+        'url'   => route('admin.payouts.index'),
+        'icon'  => 'fas fa-money-check-alt',
+      ],
+      [
+        'label' => 'Payments',
+        'url'   => route('admin.payments.index'),
+        'icon'  => 'fas fa-shopping-cart',
+      ],
     ];
   @endphp
 

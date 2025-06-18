@@ -20,8 +20,8 @@
             <div class="col">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body text-center">
-                        <h5 class="card-title">Total Users</h5>
-                        <p class="display-6 mb-0">{{ \App\Models\User::count() }}</p>
+                        <h5 class="card-title">Total Sellers</h5>
+                        <p class="display-6 mb-0">{{ \App\Models\User::where('user_type', 'seller')->count() }}</p>
                     </div>
                 </div>
             </div>
