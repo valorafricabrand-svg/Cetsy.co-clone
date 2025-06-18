@@ -114,7 +114,7 @@
         @else
             <div class="text-center">
                 <h4>Your cart is empty</h4>
-                <a href="{{ url('listing') }}" class="btn btn-primary">Return to Shop</a>
+                <a href="{{ route('listings') }}" class="btn btn-primary">Return to Shop</a>
             </div>
         @endif
     </div>
