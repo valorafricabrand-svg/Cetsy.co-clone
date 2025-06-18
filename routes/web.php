@@ -45,6 +45,7 @@ Route::post('/cart/update', [CartController::class, 'updateCart'])->name('cart.u
 Route::patch('/cart/{productId}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/{productId}', [CartController::class, 'destroy'])->name('cart.destroy');
 
+
 // Categories and product listings
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('/search', [ProductController::class, 'search'])->name('search');
@@ -55,10 +56,33 @@ Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])->nam
 // Shop and dashboard routes
 Route::get('shop/{id}', [DashboardController::class, 'about_shopname'])->name('about_shopname');
 Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+=======
+Route::get('/categories', [CategoryController::class, 'index'])
+     ->name('categories.index');
+Route::get('/search', [ProductController::class, 'search'])
+     ->name('search');
+// Public product detail page
+Route::get('/listings', [ProductController::class, 'listings'])
+     ->name('listings');
+Route::get('/listing/{slug}', [ProductController::class, 'listing'])
+     ->name('listing.show');
+Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])
+     ->name('category.show');
+// Authenticated & verified generic dashboard (if you still use it)
+
+ Route::get('/shop/{shop:slug}', [ShopController::class, 'showPublic'])
+         ->name('shop.show');
+
+
+
+Route::get('/dashboard',    [DashboardController::class, 'dashboard'])
+         ->name('dashboard');
+
 
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     // Profile management
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -70,6 +94,34 @@ Route::middleware('auth')->group(function () {
     Route::get('/shop/{shop:slug}', [ShopController::class, 'show'])->name('shops.show');
     Route::get('shops/{shop}/edit', [ShopController::class, 'edit'])->name('shops.edit');
     Route::patch('shops/{shop}', [ShopController::class, 'update'])->name('shops.update');
+
+    Route::get('/profile',    [ProfileController::class, 'edit'])
+         ->name('profile.edit');
+    Route::patch('/profile',  [ProfileController::class, 'update'])
+         ->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+         ->name('profile.destroy');
+
+    // One-shop-per-user
+    Route::get('/shop/index',       [ShopController::class, 'index'])
+         ->name('shops.index');
+    Route::get('/shop/create',      [ShopController::class, 'create'])
+         ->name('shops.create');
+    Route::post('/shop',            [ShopController::class, 'store'])
+         ->name('shops.store');
+    Route::get('/shops/{shop:slug}', [ShopController::class, 'show'])
+         ->name('shops.show');
+
+// Show the edit form (only for the owner)
+Route::get('shops/{shop}/edit', [ShopController::class, 'edit'])
+     ->name('shops.edit')
+     ->middleware('auth');
+
+// Handle the form submission
+Route::patch('shops/{shop}', [ShopController::class, 'update'])
+     ->name('shops.update')
+     ->middleware('auth');
+
 
     // Products management
     Route::resource('products', ProductController::class);
@@ -192,8 +244,39 @@ Route::get('success-deposit-invoice/{id}', ['as' => 'success_deposit_invoice', '
 Route::get('/bmpesa', [MpesaController::class, 'initiate']);
 Route::get('/bconfirm-payment/{id}', [MpesaController::class, 'checkStatus']);
 
+
 // Wishlist
 Route::get('wishlist', [ProductInfoController::class, 'wishlist'])->name('wishlist');
+
+Route::middleware('auth')->group(function () {
+    Route::prefix('orders/{order}')->name('orders.')->group(function () {
+        Route::post('items/{item}/reviews',
+            [\App\Http\Controllers\ReviewController::class, 'store']
+        )->name('items.reviews.store');
+    });
+});
+
+
+Route::middleware(['auth'])
+      ->prefix('seller')
+      ->name('seller.')
+      ->group(function () {
+
+    // list + create payouts
+    Route::get ('payouts', [\App\Http\Controllers\Seller\PayoutRequestController::class,'index'])
+         ->name('payouts.index');     // 👈 now exists
+
+    Route::post('payouts', [\App\Http\Controllers\Seller\PayoutRequestController::class,'store'])
+         ->name('payouts.store');
+
+
+            Route::get('analytics', [\App\Http\Controllers\Seller\AnalyticsController::class,'index'])
+               ->name('analytics.index');
+});
+
+
+Route::get('wishlist', [ProductController::class, 'wishlist'])->name('wishlist');
+
 
 // Settings resource
 Route::resource('settings', \App\Http\Controllers\SettingController::class)

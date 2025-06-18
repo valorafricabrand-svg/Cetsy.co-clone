@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\ProductVariant;
 use App\Models\ListingFeeType;
 use App\Models\Country;
+use App\Models\Wishlist;
 use App\Models\ProcessingTime;
 use App\Services\Shared\GetShippingService;
 use App\Models\ShippingPeriod;
@@ -493,6 +494,16 @@ class ProductController extends Controller
     ]);
         return view('theme.listing_show', compact('product'));
         
+    }
+
+
+       public function wishlist()
+    {
+        $wishlistItems = Wishlist::where('user_id', Auth::id())->get();
+
+       
+
+        return view('buyer.wishlist', compact('wishlistItems'));
     }
 
 
