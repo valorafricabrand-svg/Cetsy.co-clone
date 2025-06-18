@@ -39,7 +39,7 @@
             @foreach($orders as $order)
               <tr>
                 <td>#{{ $order->id }}</td>
-                <td><a target="_blank" href="{{ route('about_shopname', $order->shop->id) }}"> {{ optional($order->shop)->name ?? 'N/A' }}</a></td>
+                <td><a target="_blank" href="{{ route('shop.show', $order->shop) }}"> {{ optional($order->shop)->name ?? 'N/A' }}</a></td>
                 <td>{{ $order->created_at->format('d M Y') }}</td>
                 <td>
                   <span class="badge {{ $order->getStatusBadgeClass() }}">
