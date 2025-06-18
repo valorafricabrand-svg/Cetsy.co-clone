@@ -1,40 +1,78 @@
-@if(Auth::user()->isBuyer())
-  @php
-    $navItems = [
-      [
-        'label' => 'Dashboard',
-        'url'   => route('buyer.dashboard'),
-        'icon'  => 'fas fa-tachometer-alt',
-      ],
-      [
-        'label' => 'Browse Products',
-        'url'   => route('listings'),
-        'icon'  => 'fas fa-th-list',
-      ],
-      [
-        'label' => 'Cart',
-        'url'   => route('cart.index'),
-        'icon'  => 'fas fa-shopping-cart',
-      ],
-      [
-        'label' => 'My Orders',
-        'url'   => route('orders.index'),
-        'icon'  => 'fas fa-box',
-      ],
-    ];
-  @endphp
+@php
+    $active = fn($routes) => collect((array) $routes)
+        ->contains(fn($r) => request()->routeIs($r));
+@endphp
 
-  @foreach($navItems as $item)
-    <div class="nav-item-wrapper">
-      <a href="{{ $item['url'] }}"
-         class="nav-link d-flex align-items-center text-decoration-none text-dark py-2">
-        <span class="nav-link-icon me-2">
-          <i class="{{ $item['icon'] }}" style="color: #027333;"></i>
-        </span>
-        <span class="nav-link-text fw-bold" style="font-size: 0.9rem;">
-          {{ $item['label'] }}
-        </span>
-      </a>
-    </div>
-  @endforeach
+@if(Auth::user()->isBuyer())
+
+
+  @php
+        $walletBalance = \App\Models\Wallet::where('user_id', Auth::id())
+                            ->selectRaw('SUM(credit - debit) as balance')
+                            ->value('balance') ?? 0;
+        $walletBalanceFormatted = number_format($walletBalance, 2);
+        $hasShop = \App\Models\Shop::where('user_id', Auth::id())->exists();
+    @endphp
+    <nav class="d-flex flex-column h-100 bg-white border-end shadow-sm p-3" style="min-height: 100vh; width: 250px;" aria-label="Buyer Sidebar">
+
+        <!-- Dashboard -->
+        <div class="mb-2">
+            <a
+                href="{{ route('buyer.dashboard') }}"
+                class="nav-link d-flex align-items-center mt-2 {{ $active('buyer.dashboard') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
+                aria-current="page"
+            >
+                <i class="fas fa-tachometer-alt me-2 text-success"></i>
+                Dashboard
+            </a>
+        </div>
+
+
+         <div class="mb-2">
+                <a
+                    href="{{ route('wallet.index') }}" 
+                    class="nav-link d-flex align-items-center mt-2 bg-light text-success fw-bold rounded px-2 py-2"
+                    role="status"
+                >
+                    <i class="fas fa-dollar-sign me-2 text-success"></i>
+                    Balance: USD {{ $walletBalanceFormatted }}
+                </a>
+            </div>
+
+        <!-- My Orders -->
+        <div class="mb-2">
+            <a
+                href="{{ route('account.orders') }}"
+                class="nav-link d-flex align-items-center mt-2 {{ $active('account.orders') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
+            >
+                <i class="fas fa-box me-2 text-success"></i>
+                My Orders
+            </a>
+        </div>
+
+        <!-- Payments -->
+        <div class="mb-2">
+            <a
+                href="{{ route('account.payments') }}"
+                class="nav-link d-flex align-items-center mt-2 {{ $active('account.payments') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
+            >
+                <i class="fas fa-credit-card me-2 text-success"></i>
+                Payments
+            </a>
+        </div>
+
+
+
+        <!-- Profiles -->
+        <div class="mb-2">
+            <a
+                href="{{ route('profile.edit') }}"
+                class="nav-link d-flex align-items-center mt-2 {{ $active('profile.edit') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
+            >
+                <i class="fas fa-user me-2 text-success"></i>
+                Profiles
+            </a>
+        </div>
+
+    </nav>
 @endif

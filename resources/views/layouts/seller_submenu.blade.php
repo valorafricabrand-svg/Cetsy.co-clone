@@ -30,6 +30,23 @@
         ],
         // ... add other items as needed
     ];
+
+
+        $navItems[] = [
+      'label' => 'Payments',
+      'url'   => route('seller.orders.payments'),
+      'icon'  => 'fas fa-shopping-cart',
+    ];
+
+
+            $navItems[] = [
+      'label' => 'Analytics',
+      'url'   => route('seller.analytics.index'),
+      'icon'  => 'fas fa-chart-line me-2 text-success',
+    ];
+
+
+    
   @endphp
 
   <style>
