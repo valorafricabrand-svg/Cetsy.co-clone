@@ -21,7 +21,7 @@
     </div>
     {{-- Edit button: only the owner --}}
     @if(Auth::id() === $shop->user_id)
-      <a href="{{ route('shops.edit', $shop) }}" class="btn btn-primary">
+      <a href="{{ route('seller.shops.edit', $shop) }}" class="btn btn-primary">
         <i class="fas fa-edit me-1"></i> Edit Shop
       </a>
     @endif
@@ -63,7 +63,7 @@
         </div>
         <div class="col-md-6 mb-3">
           <strong>Shop URL</strong><br>
-          <a href="{{ route('shops.show', $shop) }}" class="text-success">
+          <a href="{{ route('seller.shops.show', $shop) }}" class="text-success">
             {{ url('shop/' . $shop->slug) }}
           </a>
         </div>

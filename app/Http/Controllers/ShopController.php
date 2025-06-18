@@ -13,14 +13,16 @@ class ShopController extends Controller
     /**
      * Show the “Create Your Shop” form, or redirect if the user already has a shop.
      */
-    public function create()
-    {
-        if (Auth::user()->shop) {
-            return redirect()->route('shops.show', Auth::user()->shop);
-        }
-
-        return view('shops.create');
+public function create()
+{
+    if (auth()->user()->shop) {
+        return redirect()->route('seller.shops.show', auth()->user()->shop->slug)
+            ->with('info', 'You already have a shop.');
     }
+
+    return view('shops.create');
+}
+
 
     /**
      * Validate and store a new shop.
@@ -76,7 +78,7 @@ class ShopController extends Controller
         $shop = Auth::user()->shop()->create($data);
 
         return redirect()
-            ->route('shops.show', $shop)
+            ->route('seller.shops.show', $shop)
             ->with('success', 'Your shop has been created!');
     }
 
@@ -89,17 +91,18 @@ class ShopController extends Controller
     }
 
 
-   public function showPublic($id)
+public function showPublic($id)
 {
+    $shop = Shop::whereSlug($id)->firstOrFail();
 
-    $shop = Shop::whereSlug($id)->first();
     $products = $shop->products()
-        ->with('media')      // Eager load product images
+        ->with('media')
         ->latest()
-        ->paginate(12);      // Paginate for frontend performance
+        ->paginate(12);
 
     return view('theme.shop', compact('shop', 'products'));
 }
+
 
 
     

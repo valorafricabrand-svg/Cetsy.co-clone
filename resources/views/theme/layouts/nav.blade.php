@@ -79,14 +79,14 @@
             <li class="nav-item">
               <a
                 class="nav-link"
-                href="{{ route('shops.show', auth()->user()->shop) }}"
+                href="{{ route('seller.shops.show', auth()->user()->shop) }}"
               >
                 My Shop
               </a>
             </li>
           @else
             <li class="nav-item">
-              <a class="nav-link" href="{{ route('shops.create') }}">
+              <a class="nav-link" href="{{ route('seller.shop.create') }}">
                 Open Shop
               </a>
             </li>

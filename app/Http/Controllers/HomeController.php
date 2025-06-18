@@ -19,7 +19,7 @@ class HomeController extends Controller
                               ->get();
 
         // Latest 8 active products
-        $featuredProducts = Product::where('status', 'active')
+        $featuredProducts = Product::where('is_active', '1')
                                    ->latest()
                                    ->with('media')
                                    ->take(8)

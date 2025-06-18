@@ -4,7 +4,6 @@
 @section('main')
 
 <!-- Hero Section -->
-<!-- Hero Section -->
 <section id="hero" class="py-5" style="background-color: #FDF4E4;">
   <div class="container d-flex flex-column flex-lg-row align-items-center">
     <!-- Hero Text -->
@@ -31,7 +30,6 @@
           <i class="fas fa-shield-alt fs-5 me-2 text-success"></i>
           <span>Secure &amp; Trusted</span>
         </div>
-       
         <div class="d-flex align-items-center">
           <i class="fas fa-cogs fs-5 me-2 text-success"></i>
           <span>Custom Orders Available</span>
@@ -112,15 +110,17 @@
               @endif
             </a>
             <div class="card-body d-flex flex-column">
-              <h5 class="card-title text-truncate">{{ $product->name }}</h5>
+              <h5 class="card-title text-truncate">
+                <a href="{{ route('listing.show', $product) }}" class="text-dark text-decoration-none">
+                  {{ $product->name }}
+                </a>
+              </h5>
               <p class="card-text text-success fw-bold mb-3">KES {{ number_format($product->price,2) }}</p>
               
               <div class="mt-auto d-flex justify-content-between align-items-center">
                 <a href="{{ route('listing.show', $product) }}" class="small text-decoration-none text-muted">
                   View Details
                 </a>
-                
-                <!-- Add to Cart Form -->
                 <form 
                   method="POST" 
                   action="{{ route('cart.add') }}" 
@@ -140,7 +140,6 @@
                     <span x-show="busy" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                   </button>
                 </form>
-                
               </div>
             </div>
           </div>

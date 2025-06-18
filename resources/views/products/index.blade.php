@@ -2,129 +2,75 @@
 
 @section('content')
 <div class="content">
-
-  {{-- Header --}}
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-    <h2 class="h3 mb-3 mb-md-0">Your Products</h2>
-
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2 w-100 w-sm-auto">
-      <form action="{{ route('products.index') }}" method="GET" class="d-flex flex-grow-1 flex-sm-grow-0">
-        <input
-          type="text"
-          name="search"
-          value="{{ request('search') }}"
-          placeholder="Search products..."
-          class="form-control rounded-start"
-        >
-        <button class="btn btn-primary rounded-end ms-0">Search</button>
-      </form>
-
-      <a href="{{ route('products.create') }}" class="btn btn-success">
-        <i class="fas fa-plus me-1"></i> Add New Product
-      </a>
-    </div>
-  </div>
-
-  {{-- Success Message --}}
-  @if(session('success'))
-    <div class="alert alert-success mb-4">
-      {{ session('success') }}
-    </div>
-  @endif
-
-  {{-- Products Grid --}}
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-    @forelse($products as $product)
-    <div class="col">
-      <div class="card h-100 shadow-sm">
-        {{-- Product Image --}}
-        <div class="position-relative">
-          @if($img = $product->media->first())
-            <img
-              src="{{ asset('storage/'.$img->url) }}"
-              alt="{{ $product->name }}"
-              class="card-img-top"
-              style="height: 200px; object-fit: cover;"
-            >
-          @else
-            <div class="bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center" style="height: 200px;">
-              <i class="fas fa-image fa-2x text-secondary"></i>
-            </div>
-          @endif
-          {{-- Status Badge --}}
-          @php
-            $statusClasses = [
-              'active'   => 'bg-success',
-              'draft'    => 'bg-secondary',
-              'pending'  => 'bg-warning text-dark',
-              'archived' => 'bg-danger'
-            ];
-          @endphp
-          <span class="position-absolute top-0 end-0 m-2 badge {{ $statusClasses[$product->status] ?? 'bg-secondary' }}">
-            {{ ucfirst($product->status) }}
-          </span>
-        </div>
-
-        {{-- Card Body --}}
-        <div class="card-body">
-          <h5 class="card-title text-truncate" title="{{ $product->name }}">
-            {{ $product->name }}
-          </h5>
-          <p class="card-text text-muted small mb-2">
-            {{ $product->category->name ?? 'Uncategorized' }}
-          </p>
-          <div class="d-flex justify-content-between align-items-center">
-            <span class="h5 mb-0">KES {{ number_format($product->price,2) }}</span>
-            <span class="badge bg-light text-dark">
-              Stock: {{ $product->stock }}
-            </span>
-          </div>
-        </div>
-
-        {{-- Card Footer --}}
-        <div class="card-footer bg-transparent border-top-0">
-          <div class="d-flex justify-content-between align-items-center">
-            <div class="btn-group">
-              <a href="{{ route('products.edit', $product) }}" class="btn btn-sm btn-outline-primary">
-                <i class="fas fa-edit"></i>
-              </a>
-              <a href="{{ route('products.show', $product) }}" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-eye"></i>
-              </a>
-            </div>
-            <form
-              action="{{ route('products.destroy', $product) }}"
-              method="POST"
-              class="d-inline"
-              onsubmit="return confirm('Delete this product?');"
-            >
-              @csrf
-              @method('DELETE')
-              <button type="submit" class="btn btn-sm btn-outline-danger">
-                <i class="fas fa-trash"></i>
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-    @empty
-    <div class="col-12">
-      <div class="text-center text-muted py-5">
-        <i class="fas fa-box-open fa-3x mb-3"></i>
-        <p class="h5">No products found.</p>
-        <a href="{{ route('products.create') }}" class="btn btn-primary mt-3">
-          Add Your First Product
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">My Listings</h2>
+        <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
+            <i class="fas fa-plus me-1"></i> Add New Listing
         </a>
-      </div>
     </div>
-    @endforelse
-  </div>
 
-  {{-- Pagination --}}
-  <div class="mt-4">
-    {{ $products->withQueryString()->links() }}
-  </div>
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
 
+    @if($products->count())
+        <div class="row g-4">
+            @foreach($products as $product)
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 rounded-4">
+                        @if($img = $product->media->first())
+                            <img src="{{ asset('storage/' . $img->url) }}" class="card-img-top rounded-top-4" style="height: 220px; object-fit: cover;" alt="{{ $product->name }}">
+                        @else
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 220px;">
+                                <span class="text-muted">No Image</span>
+                            </div>
+                        @endif
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title mb-1">{{ Str::limit($product->name, 40) }}</h5>
+                            <p class="mb-2 text-muted small">
+                                {{ ucfirst($product->type) }}
+                                @if($product->stock !== null)
+                                    | Stock: {{ $product->stock }}
+                                @endif
+                            </p>
+                            <p class="fw-bold mb-3">
+                                @if($product->discount_price)
+                                    <span class="text-danger me-2">KES {{ number_format($product->discount_price) }}</span>
+                                    <span class="text-muted text-decoration-line-through">KES {{ number_format($product->price) }}</span>
+                                @else
+                                    <span>KES {{ number_format($product->price) }}</span>
+                                @endif
+                            </p>
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </a>
+                                <a href="{{ route('products.edit', $product) }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-edit me-1"></i> Edit
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-5">
+            {{ $products->links('pagination::bootstrap-5') }}
+        </div>
+    @else
+        <div class="alert alert-info rounded-3 text-center py-4">
+            You haven’t listed any products yet.
+            <div class="mt-2">
+                <a href="{{ route('products.create') }}" class="btn btn-sm btn-success rounded-pill">
+                    <i class="fas fa-plus-circle me-1"></i> Create Your First Product
+                </a>
+            </div>
+        </div>
+    @endif
 </div>
 @endsection

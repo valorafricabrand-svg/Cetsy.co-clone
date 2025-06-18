@@ -31,7 +31,7 @@
           @endif
 
           <form 
-            action="{{ route('shops.store') }}" 
+            action="{{ route('seller.shops.store') }}" 
             method="POST" 
             enctype="multipart/form-data"
             x-data="{ name: '{{ old('name') }}', slug: '{{ old('slug') }}' }"
