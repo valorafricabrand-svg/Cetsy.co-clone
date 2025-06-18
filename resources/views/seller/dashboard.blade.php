@@ -4,6 +4,23 @@
 
 @section('content')
 <div class="content">
+    {{-- Return to Admin Button (when impersonating) --}}
+    @if(session('impersonating'))
+        <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <i class="fas fa-user-secret me-2"></i>
+                    <strong>Admin Impersonation Active</strong>
+                    <br>
+                    <small>You are currently logged in as {{ auth()->user()->name }} (Seller)</small>
+                </div>
+                <a href="{{ route('admin.return-from-impersonation') }}" class="btn btn-warning btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Return to Admin
+                </a>
+            </div>
+        </div>
+    @endif
+
     <style>
         .text-primary, .btn-outline-primary, .bg-success, .btn-primary, .badge.bg-success {
             color: #fff !important;

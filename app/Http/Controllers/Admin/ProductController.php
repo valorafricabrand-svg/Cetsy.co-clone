@@ -103,15 +103,28 @@ class ProductController extends Controller
     }
 
     /**
-     * Toggle product active status.
+     * Update product status (0=inactive, 1=active, 2=suspended).
      */
-    public function toggleStatus(Product $product)
+    public function toggleStatus(Request $request, Product $product)
     {
-        $product->update(['is_active' => !$product->is_active]);
+        $request->validate([
+            'status' => 'required|in:0,1,2',
+        ]);
 
-        $status = $product->is_active ? 'activated' : 'deactivated';
+        $status = (int) $request->input('status');
+        $product->update(['is_active' => $status]);
+
+        // Determine status message
+        $statusMessages = [
+            0 => 'deactivated',
+            1 => 'activated', 
+            2 => 'suspended'
+        ];
+
+        $statusText = $statusMessages[$status] ?? 'updated';
+        
         return redirect()
             ->route('admin.products.index')
-            ->with('success', "Product {$status} successfully.");
+            ->with('success', "Product {$statusText} successfully.");
     }
 } 
