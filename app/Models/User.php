@@ -52,10 +52,12 @@ class User extends Authenticatable
     /**
      * One user → one shop.
      */
-    public function shop()
-    {
-        return $this->hasOne(Shop::class);
-    }
+public function shop()
+{
+    return $this->hasOne(Shop::class);
+}
+
+
 
     /**
      * Helper: is this user a Buyer?
