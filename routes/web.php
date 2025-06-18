@@ -5,7 +5,7 @@ use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController
+    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController
 };
 
 use App\Http\Controllers\Admin\{
@@ -87,6 +87,8 @@ Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'de
     // Products
     Route::resource('products', ProductController::class);
 
+Route::resource('shipping_profiles', ShippingProfileController::class)
+        ->except(['show']);
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
