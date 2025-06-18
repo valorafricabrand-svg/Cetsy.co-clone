@@ -56,6 +56,26 @@
             </div>
           @enderror
         </div>
+        <div>
+          <label for="phone" class="form-label">Phone</label>
+          <input id="phone" name="phone" type="text" required
+                 value="{{ old('phone') }}"
+                 class="form-control @error('phone') is-invalid @enderror">
+        </div>
+        <div>
+          <label for="country_id" class="form-label">Country</label>
+          <select name="country_id" id="country_id" class="form-control @error('country_id') is-invalid @enderror">
+            <option value="">Select Country</option>
+            @foreach($countries as $country)
+              <option value="{{ $country->id }}">{{ $country->name }}</option>
+            @endforeach
+          </select>
+          @error('country_id')
+            <div class="invalid-feedback">
+              {{ $message }}
+            </div>
+          @enderror
+        </div>
 
         <!-- Password -->
         <div>

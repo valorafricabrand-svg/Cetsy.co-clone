@@ -24,7 +24,7 @@ public function index()
    $user = Auth::user();
 
     if (!$user->shop) {
-        return redirect()->route('shops.create')
+        return redirect()->route('seller.shop.create')
             ->with('warning', 'Please create a shop to continue.');
     }
     $shopId = $user->shop->id;
