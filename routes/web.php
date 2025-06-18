@@ -54,7 +54,7 @@ Route::get('/listing/{slug}', [ProductController::class, 'listing'])->name('list
 Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])->name('category.show');
 
 // Shop and dashboard routes
-Route::get('shop/{id}', [DashboardController::class, 'about_shopname'])->name('about_shopname');
+Route::get('shop/{id}', [ShopController::class, 'showPublic'])->name('shop.show');
 Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
 Route::get('/categories', [CategoryController::class, 'index'])
@@ -70,8 +70,7 @@ Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])
      ->name('category.show');
 // Authenticated & verified generic dashboard (if you still use it)
 
- Route::get('/shop/{shop:slug}', [ShopController::class, 'showPublic'])
-         ->name('shop.show');
+
 
 
 

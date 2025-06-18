@@ -89,8 +89,10 @@ class ShopController extends Controller
     }
 
 
-   public function showPublic(Shop $shop)
+   public function showPublic($id)
 {
+
+    $shop = Shop::whereSlug($id)->first();
     $products = $shop->products()
         ->with('media')      // Eager load product images
         ->latest()
