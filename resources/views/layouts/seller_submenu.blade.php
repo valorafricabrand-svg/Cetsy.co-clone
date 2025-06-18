@@ -35,6 +35,12 @@
     ];
 
 
+      $navItems[] = [
+      'label' => 'Shipping Profiles',
+      'url'   => route('shipping_profiles.index'),
+      'icon'  => 'fas fa-chart-line me-2 text-success',
+    ];
+
             $navItems[] = [
       'label' => 'Analytics',
       'url'   => route('seller.analytics.index'),

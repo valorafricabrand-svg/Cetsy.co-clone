@@ -113,4 +113,11 @@ class Shop extends Model
             $q->where('shop_id', $this->id);
         });
     }
+
+
+    public function shippingProfiles()
+{
+    return $this->hasMany(\App\Models\ShippingProfile::class);
+}
+
 }

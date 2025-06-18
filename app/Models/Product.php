@@ -95,5 +95,13 @@ public function digitalFiles()
 }
 
 
+public function shippingProfiles()
+{
+    return $this->belongsToMany(ShippingProfile::class, 'product_shipping')
+                ->withPivot('is_default')
+                ->withTimestamps();
+}
+
+
 
 }
