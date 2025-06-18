@@ -1,70 +1,116 @@
 
 
 <!-- Footer Section -->
-<footer class="bg-dark text-white pt-5 pb-4">
-  <div class="container">
-    <div class="row gy-4">
-      <!-- About Cetsy -->
-      <div class="col-lg-3 col-md-6">
-        <h5 class="text-primary fw-bold mb-3">About Cetsy</h5>
-        <p>All‑in‑one platform to showcase your handmade products to a global audience.</p>
-        <a href="{{ url('/about') }}" class="btn btn-outline-light btn-sm mt-2">Learn More</a>
-      </div>
+<footer class="bg-dark text-white py-5">
+  <div class="container px-3 px-sm-5">
+    <div class="row gx-4 gy-5">
 
-      <!-- Quick Links -->
-      <div class="col-lg-3 col-md-6">
-        <h5 class="text-primary fw-bold mb-3">Quick Links</h5>
-        <ul class="list-unstyled">
-          <li><a href="{{ url('/') }}" class="text-light text-decoration-none">Home</a></li>
-          <li><a href="{{ url('about') }}" class="text-light text-decoration-none">About</a></li>
-          <li><a href="{{ url('/features') }}" class="text-light text-decoration-none">Features</a></li>
-          <li><a href="{{ url('/pricing') }}" class="text-light text-decoration-none">Pricing</a></li>
-          <li><a href="{{ url('/contact') }}" class="text-light text-decoration-none">Contact</a></li>
+      <!-- Sellers -->
+      <div class="col-md-3 col-6">
+        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">Sellers</h5>
+        <ul class="list-unstyled small mb-0">
+          <li class="mb-2">
+            <a href="{{ url('/become_seller') }}" class="text-white text-decoration-none footer-link">
+              Become a Seller
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="{{ url('/privacy') }}" class="text-white text-decoration-none footer-link">
+              Privacy Policy
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="{{ url('/terms') }}" class="text-white text-decoration-none footer-link">
+              Terms &amp; Conditions
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="{{ url('/seller_forum') }}" class="text-white text-decoration-none footer-link">
+              Seller Forum
+            </a>
+          </li>
+          <li>
+            <a href="{{ url('/seller_tips') }}" class="text-white text-decoration-none footer-link">
+              Seller Tips
+            </a>
+          </li>
         </ul>
       </div>
 
-      <!-- Payments & Support -->
-      <div class="col-lg-3 col-md-6">
-        <h5 class="text-primary fw-bold mb-3">Payments & Support</h5>
-        <ul class="list-unstyled">
-          <li><a href="{{ url('bank_deposits') }}" class="text-light text-decoration-none">Bank Deposits</a></li>
-          <li><a href="{{ url('mpesa_deposits') }}" class="text-light text-decoration-none">M‑Pesa Deposits</a></li>
-          <li><a href="{{ url('payment_methods') }}" class="text-light text-decoration-none">Payment Methods</a></li>
+      <!-- Buyers -->
+      <div class="col-md-3 col-6">
+        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">Buyers</h5>
+        <ul class="list-unstyled small mb-0">
+          <li class="mb-2">
+            <a href="{{ url('/buyer_tips') }}" class="text-white text-decoration-none footer-link">
+              Buyer Tips
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="{{ url('/privacy') }}" class="text-white text-decoration-none footer-link">
+              Privacy Policy
+            </a>
+          </li>
+          <li>
+            <a href="{{ url('/buyer_terms') }}" class="text-white text-decoration-none footer-link">
+              Terms &amp; Conditions
+            </a>
+          </li>
         </ul>
       </div>
 
-      <!-- Stay Updated & Social Media -->
-      <div class="col-lg-3 col-md-6">
-        <h5 class="text-primary fw-bold mb-3">Stay Updated</h5>
-        <p>Subscribe to our newsletter for the latest updates and trends.</p>
-        <h5 class="text-primary fw-bold mb-3">Contact Us</h5>
-        <p class="mb-1">
-          <i class="fas fa-phone-alt me-2"></i>
-          <a href="tel:+254725537399" class="text-light text-decoration-none">+254 725 345 345</a>
-        </p>
-        <p class="mb-3">
-          <i class="fas fa-envelope me-2"></i>
-          <a href="mailto:support@cetsy.com" class="text-light text-decoration-none">support@cetsy.com</a>
-        </p>
+      <!-- About -->
+      <div class="col-md-3 col-6">
+        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">About</h5>
+        <ul class="list-unstyled small mb-0">
+          <li class="mb-2">
+            <a href="{{ url('/about') }}" class="text-white text-decoration-none footer-link">
+              About Cetsy
+            </a>
+          </li>
+          <li>
+            <a href="{{ url('/house_policy') }}" class="text-white text-decoration-none footer-link">
+              House Rules &amp; Policy
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Support -->
+      <div class="col-md-3 col-6">
+        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">Support</h5>
+        <ul class="list-unstyled small mb-4">
+          <li class="mb-2">
+            <a href="{{ url('/contact') }}" class="text-white text-decoration-none footer-link">
+              Reach Us
+            </a>
+          </li>
+          <li class="text-secondary small text-white">
+            Email: support@cetsy.co
+          </li>
+        </ul>
+
+        <!-- Social Icons -->
         <div class="d-flex gap-3">
-          <a href="#" class="text-light fs-5"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="text-light fs-5"><i class="fab fa-twitter"></i></a>
-          <a href="#" class="text-light fs-5"><i class="fab fa-linkedin-in"></i></a>
-          <a href="#" class="text-light fs-5"><i class="fab fa-instagram"></i></a>
+          <a href="#!" aria-label="Facebook" class="text-white footer-link">
+            <i class="fab fa-facebook-f fs-5"></i>
+          </a>
+          <a href="#!" aria-label="Instagram" class="text-white footer-link">
+            <i class="fab fa-instagram fs-5"></i>
+          </a>
+          <a href="#!" aria-label="Twitter" class="text-white footer-link">
+            <i class="fab fa-twitter fs-5"></i>
+          </a>
+          <a href="#!" aria-label="LinkedIn" class="text-white footer-link">
+            <i class="fab fa-linkedin-in fs-5"></i>
+          </a>
         </div>
       </div>
+
     </div>
 
-    <hr class="border-light my-4">
-
-    <div class="row align-items-center">
-      <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
-        <p class="mb-0 small">&copy; {{ date('Y') }} Cetsy. All rights reserved. Powered by <a target="_blank" href="https://zama.co.ke">Zama Web Experts</a></p>
-      </div>
-      <div class="col-md-6 text-center text-md-end">
-        <a href="{{ url('/privacy-policy') }}" class="text-light small me-3">Privacy Policy</a>
-        <a href="{{ url('/terms-of-service') }}" class="text-light small">Terms of Service</a>
-      </div>
+    <div class="mt-5 pt-4 border-top border-secondary text-center text-secondary small text-white">
+      &copy; {{ date('Y') }} cetsy.co — All rights reserved.
     </div>
   </div>
 </footer>
