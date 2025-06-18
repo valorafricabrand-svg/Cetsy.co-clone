@@ -57,10 +57,10 @@ Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])
      ->name('category.show');
 // Authenticated & verified generic dashboard (if you still use it)
 
+ Route::get('/shop/{shop:slug}', [ShopController::class, 'showPublic'])
+         ->name('shop.show');
 
 
-Route::get('shop/{id}',    [DashboardController::class, 'about_shopname'])
-         ->name('about_shopname');
 
 Route::get('/dashboard',    [DashboardController::class, 'dashboard'])
          ->name('dashboard');
@@ -81,7 +81,7 @@ Route::middleware('auth')->group(function () {
          ->name('shops.create');
     Route::post('/shop',            [ShopController::class, 'store'])
          ->name('shops.store');
-    Route::get('/shop/{shop:slug}', [ShopController::class, 'show'])
+    Route::get('/shops/{shop:slug}', [ShopController::class, 'show'])
          ->name('shops.show');
 
 // Show the edit form (only for the owner)
@@ -296,7 +296,7 @@ Route::middleware(['auth'])
 });
 
 
-Route::get('wishlist', [ProductInfoController::class, 'wishlist'])->name('wishlist');
+Route::get('wishlist', [ProductController::class, 'wishlist'])->name('wishlist');
 
 
 Route::middleware(['auth'])

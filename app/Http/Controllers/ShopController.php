@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Shop;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -86,6 +87,20 @@ class ShopController extends Controller
     {
         return view('shops.show', compact('shop'));
     }
+
+
+   public function showPublic(Shop $shop)
+{
+    $products = $shop->products()
+        ->with('media')      // Eager load product images
+        ->latest()
+        ->paginate(12);      // Paginate for frontend performance
+
+    return view('theme.shop', compact('shop', 'products'));
+}
+
+
+    
 
 
     /**
