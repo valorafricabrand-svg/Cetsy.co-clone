@@ -30,15 +30,14 @@
             {{-- Main Product Update Form --}}
             <form action="{{ route('products.update', $product) }}" method="POST" enctype="multipart/form-data" class="card shadow rounded-4 border-0 p-4 mb-5">
                 @csrf
-@method('PUT')
-                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                @method('PUT')
 
                 <!-- Name -->
                 <div class="mb-3">
                     <label for="name" class="form-label fw-semibold">Product Name</label>
                     <input type="text" name="name" id="name"
                            class="form-control @error('name') is-invalid @enderror"
-                           value="{{ old('name', $product->name) }}" required>
+                           value="{{ old('name', $product->name) }}" required autofocus>
                     @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
@@ -47,9 +46,9 @@
                     <label for="type" class="form-label fw-semibold">Product Type</label>
                     <select name="type" id="type"
                             class="form-select @error('type') is-invalid @enderror" required>
-                        <option value="physical" @selected($product->type == 'physical')>Physical</option>
-                        <option value="digital" @selected($product->type == 'digital')>Digital Download</option>
-                        <option value="service" @selected($product->type == 'service')>Service</option>
+                        <option value="physical" @selected(old('type', $product->type) == 'physical')>Physical</option>
+                        <option value="digital" @selected(old('type', $product->type) == 'digital')>Digital Download</option>
+                        <option value="service" @selected(old('type', $product->type) == 'service')>Service</option>
                     </select>
                     @error('type') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
@@ -62,29 +61,29 @@
                 </div>
 
                 <!-- Price & Discount -->
-                <div class="row">
-                    <div class="col-md-6 mb-3">
+                <div class="row g-3">
+                    <div class="col-md-6">
                         <label for="price" class="form-label fw-semibold">Price (KES)</label>
                         <input type="number" name="price" id="price"
                                class="form-control @error('price') is-invalid @enderror"
-                               value="{{ old('price', $product->price) }}" required>
+                               value="{{ old('price', $product->price) }}" required min="0" step="0.01">
                         @error('price') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6">
                         <label for="discount_price" class="form-label fw-semibold">Discount Price</label>
                         <input type="number" name="discount_price" id="discount_price"
                                class="form-control @error('discount_price') is-invalid @enderror"
-                               value="{{ old('discount_price', $product->discount_price) }}">
+                               value="{{ old('discount_price', $product->discount_price) }}" min="0" step="0.01">
                         @error('discount_price') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>
 
                 <!-- Stock -->
-                <div class="mb-3" id="stockSection">
+                <div class="mb-3 mt-3" id="stockSection">
                     <label for="stock" class="form-label fw-semibold">Stock Quantity</label>
                     <input type="number" name="stock" id="stock"
                            class="form-control @error('stock') is-invalid @enderror"
-                           value="{{ old('stock', $product->stock) }}">
+                           value="{{ old('stock', $product->stock) }}" min="0" step="1">
                     @error('stock') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
@@ -95,6 +94,58 @@
                            class="form-control @error('digital_file') is-invalid @enderror"
                            accept=".zip,.pdf,.mp3,.mp4,.docx,.xlsx,.pptx">
                     @error('digital_file') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+
+                <!-- Shipping Profiles (Only show if type is physical) -->
+                <div class="mb-4" id="shippingProfilesSection" style="display:none;">
+                    <label class="form-label fw-semibold">Shipping Profiles <small class="text-muted">(Select one or more)</small></label>
+
+                    <div class="row g-3">
+                        @foreach($shippingProfiles as $profile)
+                        <div class="col-12 col-md-6">
+                            <div class="card shadow-sm border rounded p-3 d-flex flex-row align-items-center">
+                                <div class="form-check flex-shrink-0 me-3" style="min-width: 24px;">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        name="shipping_profiles[]"
+                                        value="{{ $profile->id }}"
+                                        id="shipping_profile_{{ $profile->id }}"
+                                        {{ in_array($profile->id, old('shipping_profiles', $assignedProfiles ?? [])) ? 'checked' : '' }}
+                                    >
+                                </div>
+                                <div class="flex-grow-1">
+                                    <label class="form-check-label fw-semibold" for="shipping_profile_{{ $profile->id }}">
+                                        {{ $profile->name }}
+                                    </label>
+                                    <div class="text-muted small">
+                                        KES {{ number_format($profile->base_rate, 2) }} &middot; {{ $profile->delivery_days }} day{{ $profile->delivery_days > 1 ? 's' : '' }}
+                                        @if($profile->pickup_available)
+                                            <span class="badge bg-success ms-2">Pickup</span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="form-check ms-3 flex-shrink-0" style="min-width: 70px;">
+                                    <input
+                                        type="radio"
+                                        class="form-check-input"
+                                        name="default_shipping_profile"
+                                        value="{{ $profile->id }}"
+                                        id="default_shipping_profile_{{ $profile->id }}"
+                                        {{ old('default_shipping_profile', $defaultProfileId) == $profile->id ? 'checked' : '' }}
+                                        {{ !in_array($profile->id, old('shipping_profiles', $assignedProfiles ?? [])) ? 'disabled' : '' }}
+                                        aria-label="Set default shipping profile for {{ $profile->name }}"
+                                    >
+                                    <label class="form-check-label small" for="default_shipping_profile_{{ $profile->id }}">Default</label>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+
+                    @error('shipping_profiles') <div class="text-danger mt-2">{{ $message }}</div> @enderror
+                    @error('default_shipping_profile') <div class="text-danger mt-2">{{ $message }}</div> @enderror
                 </div>
 
                 <!-- Save Button -->
@@ -233,8 +284,8 @@
                           <i class="fas fa-times"></i>
                         </button>
                         <div
-                          class="position-absolute bottom-0 start-0 bg-dark bg-opacity-50 text-white px-1 small"
-                          style="max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;"
+                          class="position-absolute bottom-0 start-0 bg-dark bg-opacity-50 text-white px-1 small text-truncate"
+                          style="max-width: 100%;"
                           x-text="file.name"
                         ></div>
                       </div>
@@ -277,20 +328,28 @@
         height: 300
     });
 
-    // Toggle stock/digital file inputs based on product type
+    // Toggle stock/digital file inputs & shipping profiles based on product type
     document.getElementById('type').addEventListener('change', function () {
         const digital = document.getElementById('digitalFileSection');
         const stock = document.getElementById('stockSection');
+        const shippingProfiles = document.getElementById('shippingProfilesSection');
 
         if (this.value === 'digital') {
             digital.style.display = 'block';
             stock.style.display = 'none';
+            shippingProfiles.style.display = 'none';
         } else if (this.value === 'service') {
             digital.style.display = 'none';
             stock.style.display = 'none';
-        } else {
+            shippingProfiles.style.display = 'none';
+        } else if (this.value === 'physical') {
             digital.style.display = 'none';
             stock.style.display = 'block';
+            shippingProfiles.style.display = 'block';
+        } else {
+            digital.style.display = 'none';
+            stock.style.display = 'none';
+            shippingProfiles.style.display = 'none';
         }
     });
 
@@ -301,7 +360,7 @@
     // Modal image show handler
     var imageModal = document.getElementById('imageModal');
     imageModal.addEventListener('show.bs.modal', function (event) {
-        var img = event.relatedTarget; // Image that triggered the modal
+        var img = event.relatedTarget;
         var imgSrc = img.getAttribute('data-img-url');
         var imgAlt = img.getAttribute('data-img-alt') || '';
         var modalImage = imageModal.querySelector('#modalImage');
@@ -310,7 +369,7 @@
         modalImage.alt = imgAlt;
     });
 
-    // Alpine.js component for new image uploads with previews + reorder
+    // Alpine.js component for image upload previews and sortable
     function imageUploadSortable() {
         return {
           previews: [],
@@ -358,6 +417,6 @@
             );
           },
         };
-      }
+    }
 </script>
 @endsection
