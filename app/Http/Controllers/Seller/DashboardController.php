@@ -21,33 +21,32 @@ class DashboardController extends Controller
      */
 public function index()
 {
-     $user = Auth::user();
-        
-        // Check if seller has active subscription
-        if (!$user->hasActiveSubscription()) {
-            return redirect()->route('seller.subscription')
-                ->with('warning', 'Please activate your subscription to access seller features.');
-        }
-        
-        // Check if seller has completed KYC
-        // if (!$user->kyc || $user->kyc->status !== 'approved') {
-        //     return redirect()->route('seller.kyc.create')
-        //         ->with('warning', 'Please complete your KYC verification to access seller features.');
-        // }
-        
-        // If all checks pass, show the dashboard
-        $orders = $user->orders()->orderBy('created_at', 'Desc')->with(['customer', 'payment'])->take(5)->get();
-             $shopId = $user->shop->id;
-        $products = Product::whereShopId($shopId)->orderBy('created_at', 'Desc')->with(['category'])->take(5)->get();
-        $total_orders = $user->orders->count();
-        $total_products = $products->count();
+   $user = Auth::user();
 
-        // dd($products);
+    if (!$user->shop) {
+        return redirect()->route('shops.create')
+            ->with('warning', 'Please create a shop to continue.');
+    }
+    $shopId = $user->shop->id;
 
-        return view('seller.dashboard', compact('orders', 'products', 'total_orders', 'total_products'));
+    $orders = $user->orders()
+        ->orderBy('created_at', 'desc')
+        ->with(['customer', 'payment'])
+        ->take(5)
+        ->get();
 
-   
+    $products = Product::where('shop_id', $shopId)
+        ->orderBy('created_at', 'desc')
+        ->with('category')
+        ->take(5)
+        ->get();
+
+    $total_orders = $user->orders()->count();
+    $total_products = $products->count();
+
+    return view('seller.dashboard', compact('orders', 'products', 'total_orders', 'total_products'));
 }
+
 
 
 

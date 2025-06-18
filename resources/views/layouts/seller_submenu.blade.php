@@ -9,19 +9,8 @@
         ],
         [
             'label' => 'Listings',
-            'icon'  => 'fas fa-list',
-            'items' => [
-                [
-                    'label' => 'Product Listings',
-                    'url'   => route('products.index'),
-                    'icon'  => 'fas fa-box-open',
-                ],
-                [
-                    'label' => 'Service Listings',
-                    'url'   => route('seller.services.index'),
-                    'icon'  => 'fas fa-cogs',
-                ],
-            ],
+            'url'   => route('products.index'),
+            'icon'  => 'fas fa-box-open',
         ],
         [
             'label' => 'Orders',
@@ -36,6 +25,13 @@
       'label' => 'Payments',
       'url'   => route('seller.orders.payments'),
       'icon'  => 'fas fa-shopping-cart',
+    ];
+
+
+    $navItems[] = [
+      'label' => 'My Shop',
+      'url'   => route('seller.shop.create'),
+      'icon'  => 'fas fa-chart-line me-2 text-success',
     ];
 
 
