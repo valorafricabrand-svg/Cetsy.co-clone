@@ -145,8 +145,10 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($product->is_active)
+                                    @if($product->is_active == 1)
                                         <span class="badge bg-success">Active</span>
+                                    @elseif($product->is_active == 2)
+                                        <span class="badge bg-warning">Suspended</span>
                                     @else
                                         <span class="badge bg-secondary">Inactive</span>
                                     @endif
@@ -160,29 +162,14 @@
                                     <a href="{{ route('admin.products.show', $product) }}" class="btn btn-sm btn-outline-secondary me-1" title="View">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
-                                        <i class="fas fa-pencil-alt"></i>
-                                    </a>
                                     
-                                    {{-- Toggle Status Button --}}
-                                    <form action="{{ route('admin.products.toggle-status', $product) }}" method="POST" class="d-inline-block me-1">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm {{ $product->is_active ? 'btn-warning' : 'btn-success' }}" 
-                                                title="{{ $product->is_active ? 'Deactivate' : 'Activate' }}"
-                                                onclick="return confirm('{{ $product->is_active ? 'Deactivate' : 'Activate' }} this product?')">
-                                            <i class="fas {{ $product->is_active ? 'fa-ban' : 'fa-check' }}"></i>
-                                        </button>
-                                    </form>
-
-                                    {{-- Delete Button --}}
-                                    <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="d-inline-block" 
-                                          onsubmit="return confirm('Are you sure you want to delete this product? This action cannot be undone.');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
+                                    {{-- Status Management Button --}}
+                                    <button type="button" class="btn btn-sm btn-outline-primary me-1" 
+                                            title="Manage Status"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#statusModal{{ $product->id }}">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
                                 </td>
                             </tr>
                         @endforeach
@@ -211,4 +198,77 @@
         </div>
     @endif
 </div>
+
+{{-- Status Management Modals --}}
+@foreach($products as $product)
+    <div class="modal fade" id="statusModal{{ $product->id }}" tabindex="-1" aria-labelledby="statusModalLabel{{ $product->id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statusModalLabel{{ $product->id }}">
+                        Manage Product Status
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('admin.products.toggle-status', $product) }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <h6 class="fw-bold">{{ $product->name }}</h6>
+                            <p class="text-muted mb-3">Select the new status for this product:</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="status" id="inactive{{ $product->id }}" value="0" {{ $product->is_active == 0 ? 'checked' : '' }}>
+                                <label class="form-check-label" for="inactive{{ $product->id }}">
+                                    <span class="badge bg-secondary me-2">Inactive</span>
+                                    Product will not be visible to customers
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="status" id="active{{ $product->id }}" value="1" {{ $product->is_active == 1 ? 'checked' : '' }}>
+                                <label class="form-check-label" for="active{{ $product->id }}">
+                                    <span class="badge bg-success me-2">Active</span>
+                                    Product will be visible and purchasable
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="status" id="suspended{{ $product->id }}" value="2" {{ $product->is_active == 2 ? 'checked' : '' }}>
+                                <label class="form-check-label" for="suspended{{ $product->id }}">
+                                    <span class="badge bg-warning me-2">Suspended</span>
+                                    Product is temporarily unavailable (admin action required)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Current Status:</strong> 
+                            @if($product->is_active == 1)
+                                <span class="badge bg-success">Active</span>
+                            @elseif($product->is_active == 2)
+                                <span class="badge bg-warning">Suspended</span>
+                            @else
+                                <span class="badge bg-secondary">Inactive</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Update Status
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endforeach
 @endsection

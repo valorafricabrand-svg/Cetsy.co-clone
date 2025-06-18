@@ -127,4 +127,66 @@ class UserController extends Controller
             ->route('admin.users.index')
             ->with('success', 'Seller Account deactivated successfully.');
     }
+
+    /**
+     * Login as the specified seller (impersonation).
+     */
+    public function loginAs($userId)
+    {
+        // Find the user
+        $user = User::findOrFail($userId);
+        
+        // Check if user is a seller
+        if ($user->user_type !== 'seller') {
+            return redirect()
+                ->route('admin.products.index')
+                ->with('error', 'Can only login as sellers.');
+        }
+
+        // Store admin session data for return
+        session([
+            'admin_id' => auth()->id(),
+            'admin_name' => auth()->user()->name,
+            'impersonating' => true
+        ]);
+
+        // Login as the seller
+        auth()->login($user);
+
+        return redirect()
+            ->route('seller.dashboard')
+            ->with('success', "You are now logged in as {$user->name}. Use the 'Return to Admin' button to go back.");
+    }
+
+    /**
+     * Return from seller impersonation to admin session.
+     */
+    public function returnFromImpersonation()
+    {
+        // Check if admin is impersonating
+        if (!session('impersonating')) {
+            return redirect()
+                ->route('admin.dashboard')
+                ->with('error', 'No impersonation session found.');
+        }
+
+        // Get admin user
+        $adminUser = User::find(session('admin_id'));
+        
+        if (!$adminUser) {
+            return redirect()
+                ->route('login')
+                ->with('error', 'Admin session expired. Please login again.');
+        }
+
+        // Clear impersonation session data
+        session()->forget(['admin_id', 'admin_name', 'impersonating']);
+
+        // Login as admin
+        auth()->login($adminUser);
+
+        return redirect()
+            ->route('admin.dashboard')
+            ->with('success', 'Successfully returned to admin dashboard.');
+    }
 }

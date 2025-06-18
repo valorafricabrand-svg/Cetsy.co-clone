@@ -60,6 +60,7 @@ class Product extends Model
         'duration_value',
         'duration_unit',
         'is_remote',
+        'is_active',
     ];
 
     protected $casts = [
