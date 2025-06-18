@@ -7,7 +7,7 @@
     {{-- Flash Message --}}
     @if(session('success'))
       <div class="alert alert-success alert-dismissible fade show" role="alert">
-        {{ session('success') }}
+        {!! session('success') !!}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
     @endif
@@ -77,62 +77,29 @@
         <p>
           <strong>Shop:</strong>
           <a
-            href="{{ route('shops.show', $product->shop) }}"
+            href="{{ route('shop.show', $product->shop) }}"
             class="text-success"
           >{{ $product->shop->name }}</a>
         </p>
 
         <div class="d-flex align-items-center mb-4">
-          {{-- Quantity Controls --}}
-          <div class="input-group me-3" style="max-width:140px;">
-            <button
-              class="btn btn-outline-secondary"
-              type="button"
-              @click="qty = Math.max(1, qty - 1)"
-              :disabled="busy"
-            >−</button>
+        
+         
 
-            <input
-              type="number"
-              class="form-control text-center"
-              min="1"
-              x-model.number="qty"
-              :disabled="busy"
-            >
+             <form action="{{ route('cart.add') }}" method="POST" class="d-flex">
+                                @csrf
+                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                <button type="submit" class="btn btn-primary btn-lg shadow-sm">Add to Cart</button>
+                            </form>
+                            <form action="{{ route('cart.buy') }}" method="POST" class="d-flex">
+                                @csrf
+                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                <button type="submit" class="btn btn-outline-primary btn-lg shadow-sm">Buy Now</button>
+                            </form>
 
-            <button
-              class="btn btn-outline-secondary"
-              type="button"
-              @click="qty++"
-              :disabled="busy"
-            >+</button>
-          </div>
 
-          {{-- Add to Cart Form --}}
-          <form
-            method="POST"
-            action="{{ route('cart.add') }}"
-            @submit="busy = true"
-            class="d-inline-block"
-          >
-            @csrf
-            <input type="hidden" name="product_id" value="{{ $product->id }}">
-            <input type="hidden" name="quantity" x-model.number="qty">
 
-            <button
-              type="submit"
-              class="btn btn-success btn-lg rounded-pill px-5"
-              :disabled="busy"
-            >
-              <span x-show="!busy">Add to Cart</span>
-              <span
-                x-show="busy"
-                class="spinner-border spinner-border-sm"
-                role="status"
-                aria-hidden="true"
-              ></span>
-            </button>
-          </form>
+
         </div>
       </div>
     </div>
