@@ -5,7 +5,7 @@ use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController
+    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController
 };
 
 use App\Http\Controllers\Admin\{
@@ -77,6 +77,14 @@ Route::get('/success-deposit-invoice/{id}', [OrderController::class, 'successDep
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+    Route::post('/favorites/toggle', [WishlistController::class, 'toggle'])
+         ->name('favorites.toggle');
+        Route::delete('/favorites/{wishlist}', [WishlistController::class, 'remove'])
+         ->name('wishlist.remove'); 
+        Route::post('/offers', [OfferController::class, 'store'])
+         ->name('offers.store');
+          Route::post('/messages', [MessageController::class, 'store'])
+         ->name('messages.store');
 Route::post('/products/{product}/media', [MediaController::class, 'upload'])->name('media.upload');
 Route::delete('/media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
 Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'destroy'])->name('digital-files.destroy');
