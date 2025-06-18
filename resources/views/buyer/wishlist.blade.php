@@ -1,3 +1,4 @@
+{{-- resources/views/wishlist/index.blade.php --}}
 @extends('layouts.app')
 
 @section('header')
@@ -7,45 +8,58 @@
 @endsection
 
 @section('content')
-<div class="content">
+<div class="content py-5">
     <div class="container-xxl">
 
         <div class="mb-4">
-            <h4 class="text-dark">Wishlist</h4>
-            <p class="text-muted">Here are the items you’ve added to your wishlist.</p>
+            <h4 class="text-dark mb-1">Wishlist</h4>
+            <p class="text-muted mb-0">Here are the items you’ve added to your wishlist.</p>
         </div>
 
-        @if($wishlistItems->isEmpty())
+        @if ($wishlistItems->isEmpty())
             <div class="alert alert-warning">
                 Your wishlist is empty.
             </div>
         @else
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                @foreach($wishlistItems as $item)
+                @foreach ($wishlistItems as $item)
                     @php
                         $product = $item->product;
+                        $firstImg = $product->media->first();
+                        $imgUrl   = $firstImg
+                                    ? asset('storage/' . ($firstImg->url   ?? $firstImg->file_path))
+                                    : asset('assets/img/placeholder.svg');
                     @endphp
+
                     <div class="col">
-                        <div class="card h-100 shadow-sm border-0">
-                            <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="text-decoration-none">
-                                @if($product->media->first())
-                                    <img src="{{ asset('storage/' . $product->media->first()->file_path) }}"
-                                         class="card-img-top"
-                                         alt="{{ $product->name }}">
-                                @else
-                                    <img src="{{ asset('images/no-image.png') }}" class="card-img-top" alt="No Image">
-                                @endif
+                        <div class="card h-100 border-0 shadow-sm">
+
+                            {{-- Product cover --}}
+                            <a href="{{ route('products.show', $product->slug ?? $product->id) }}"
+                               class="ratio ratio-4x3">
+                                <img src="{{ $imgUrl }}"
+                                     alt="{{ $product->name }}"
+                                     class="object-fit-cover rounded-top">
                             </a>
+
                             <div class="card-body">
-                                <h5 class="card-title text-dark">{{ $product->name }}</h5>
-                                <p class="card-text text-muted mb-1">
+                                <h5 class="card-title text-truncate mb-1">
+                                    <a href="{{ route('products.show', $product->slug ?? $product->id) }}"
+                                       class="text-dark text-decoration-none">
+                                        {{ $product->name }}
+                                    </a>
+                                </h5>
+                                <p class="text-muted fw-semibold mb-0">
                                     {{ get_currency() }} {{ number_format($product->price, 2) }}
                                 </p>
                             </div>
-                            <div class="card-footer d-flex justify-content-between align-items-center bg-white border-0">
-                                <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="btn btn-sm btn-outline-primary">
+
+                            <div class="card-footer bg-white border-0 d-flex justify-content-between">
+                                <a href="{{ route('listing.show', $product ?? $product->id) }}"
+                                   class="btn btn-sm btn-outline-primary">
                                     View
                                 </a>
+
                                 <form method="POST" action="{{ route('wishlist.remove', $item->id) }}">
                                     @csrf
                                     @method('DELETE')

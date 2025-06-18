@@ -131,3 +131,65 @@
 </nav>
 
 
+
+@php
+  $mainCategories = \App\Models\Category::whereNull('parent_id')->orderBy('id')->get();
+@endphp
+
+@if($mainCategories->count())
+  <nav class="bg-success">
+    <div class="container">
+      <ul class="nav">
+        @foreach($mainCategories as $main)
+          @php
+            $subs = \App\Models\Category::where('parent_id',$main->id)->orderBy('id')->get();
+          @endphp
+          <li class="nav-item dropdown">
+            <a
+              class="nav-link text-white"
+              href="#"
+              id="catDropdown{{ $main->id }}"
+              data-bs-toggle="dropdown"
+            >
+              {{ $main->name }}
+              @if($subs->count()) <i class="fas fa-chevron-down ms-1"></i> @endif
+            </a>
+            @if($subs->count())
+              <ul class="dropdown-menu" aria-labelledby="catDropdown{{ $main->id }}">
+                @foreach($subs as $sub)
+                  @php
+                    $subsubs = \App\Models\Category::where('parent_id',$sub->id)->get();
+                  @endphp
+                  <li class="dropdown-submenu">
+                    <a
+                      class="dropdown-item d-flex justify-content-between align-items-center"
+                      href="{{ $subsubs->count() ? '#' : route('category.show', $sub->slug) }}"
+                    >
+                      {{ $sub->name }}
+                      @if($subsubs->count())
+                        <i class="fas fa-chevron-right"></i>
+                      @endif
+                    </a>
+                    @if($subsubs->count())
+                      <ul class="dropdown-menu ms-2">
+                        @foreach($subsubs as $ss)
+                          <li>
+                            <a class="dropdown-item" href="{{ route('category.show', $sub->slug) }}">
+                              {{ $ss->name }}
+                            </a>
+                          </li>
+                        @endforeach
+                      </ul>
+                    @endif
+                  </li>
+                @endforeach
+              </ul>
+            @endif
+          </li>
+        @endforeach
+      </ul>
+    </div>
+  </nav>
+@endif
+
+
