@@ -36,14 +36,22 @@ use App\Http\Controllers\ProductInfoController;
 Route::get('/', [HomeController::class, 'index'])
      ->name('home');
 
-// Cart routes - combining both versions
-Route::get('/cart', [CartController::class, 'viewCart'])->name('cart.view');
+// Cart
 Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');
 Route::post('/cart/buy', [CartController::class, 'addToBuy'])->name('cart.buy');
+Route::get('/cart', [CartController::class, 'viewCart'])->name('cart.view');
 Route::post('/cart/remove', [CartController::class, 'removeFromCart'])->name('cart.remove');
+
+
 Route::post('/cart/update', [CartController::class, 'updateCart'])->name('cart.update');
-Route::patch('/cart/{productId}', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/{productId}', [CartController::class, 'destroy'])->name('cart.destroy');
+
+
+
+
+
+
+
+
 
 
 // Categories and product listings
@@ -283,4 +291,10 @@ Route::resource('settings', \App\Http\Controllers\SettingController::class)
     ->middleware('auth', 'can:admin');
 
 require __DIR__ . '/auth.php';
+
+
+Route::middleware('auth')->group(function () {
+ Route::get('/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+Route::post('/checkout/order', [OrderController::class, 'storeOrder'])->name('store_order');
+});
 
