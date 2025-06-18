@@ -85,4 +85,15 @@ class Product extends Model
 {
     return $this->hasMany(ProductView::class);
 }
+
+
+// Product.php
+
+public function digitalFiles()
+{
+    return $this->hasMany(DigitalFile::class);
+}
+
+
+
 }
