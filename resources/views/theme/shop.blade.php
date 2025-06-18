@@ -68,7 +68,7 @@
             </div>
             <div class="col-12">
               <strong>Shop URL:</strong><br>
-              <a href="{{ route('shops.show', $shop) }}" class="text-success text-decoration-none">
+              <a href="{{ route('shop.show', $shop) }}" class="text-success text-decoration-none">
                 {{ url('shop/' . $shop->slug) }}
               </a>
             </div>
