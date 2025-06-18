@@ -47,6 +47,11 @@ class Product extends Model
         'item_return',
         'item_exchange',
         'total_return_days',
+        'type',
+        'phone',
+        'email',
+        'location',
+        'tags',
         
     ];
 

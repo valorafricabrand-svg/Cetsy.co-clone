@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\UserController;
 // At the top of routes/web.php
 use App\Http\Controllers\Admin\AdminReportController as AdminReport;
 use App\Http\Controllers\Admin\SettingsController as AdminSetting;
+use App\Http\Controllers\Seller\ServiceController;
 
 
 /*
@@ -151,6 +152,8 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
 // All other seller routes (require KYC and subscription)
 Route::middleware(['auth', 'seller', 'ensure.seller.kyc', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
+//     Route::resource('products', ProductController::class);
+    Route::resource('services', ServiceController::class);
     // ... other seller routes
 });
 

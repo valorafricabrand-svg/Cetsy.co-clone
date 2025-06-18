@@ -42,7 +42,7 @@ class ProductController extends Controller
         }
 
         // Paginate & preserve query string
-        $products = $query->paginate(20)->withQueryString();
+        $products = $query->where('type', 'product')->paginate(20)->withQueryString();
 
         return view('products.index', compact('products'));
     }
@@ -242,6 +242,7 @@ class ProductController extends Controller
             $product->item_return = $request->input('item_return', false);
             $product->item_exchange = $request->input('item_exchange', false);
             $product->total_return_days = $request->input('total_return_days');
+            $product->type = 'product';
             $product->save();
 
             \DB::commit();
