@@ -57,6 +57,16 @@
            class="btn btn-sm btn-outline-info me-1">
           Messages
         </a>
+
+
+          @if ($order->status === \App\Models\Order::STATUS_SHIPPED)
+                <button class="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deliverModal-{{ $order->id }}">
+                    <i class="bi bi-check2-circle"></i> Mark Delivered
+                </button>
+                @include('seller.orders.modals.delivered')
+            @endif
                 </td>
               </tr>
             @endforeach

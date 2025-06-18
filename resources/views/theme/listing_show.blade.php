@@ -1,7 +1,7 @@
 @extends('theme.layouts.main')
 
 @section('main')
-<div class="container py-5" x-data="{ qty: 1, busy: false }">
+<div class="container py-5" x-data="{ qty: 1, busy: false, shippingProfileId: {{ $product->shippingProfiles->firstWhere('is_default', true)->id ?? 'null' }} }">
 
   {{-- Flash Message --}}
   @if(session('success'))
@@ -82,23 +82,48 @@
         </a>
       </p>
 
-      <div class="d-flex gap-3 flex-wrap">
-        <form action="{{ route('cart.add') }}" method="POST">
-          @csrf
-          <input type="hidden" name="product_id" value="{{ $product->id }}">
-          <button type="submit" class="btn btn-success btn-lg shadow-sm px-4">
-            <i class="fas fa-cart-plus me-2"></i> Add to Cart
-          </button>
-        </form>
+      <form action="{{ route('cart.add') }}" method="POST" class="mb-3" @submit.prevent="busy = true; $el.submit()">
+        @csrf
+        <input type="hidden" name="product_id" value="{{ $product->id }}">
+        <input type="hidden" name="quantity" :value="qty">
+        <input type="hidden" name="size_id" value="0">
 
-        <form action="{{ route('cart.buy') }}" method="POST">
-          @csrf
-          <input type="hidden" name="product_id" value="{{ $product->id }}">
-          <button type="submit" class="btn btn-outline-primary btn-lg shadow-sm px-4">
-            <i class="fas fa-bolt me-2"></i> Buy Now
-          </button>
-        </form>
-      </div>
+        {{-- Quantity Selector --}}
+        <div class="mb-3 d-flex align-items-center gap-2">
+          <label for="quantity" class="form-label mb-0 fw-semibold">Quantity:</label>
+          <button type="button" class="btn btn-outline-secondary" @click="qty = Math.max(1, qty - 1)" :disabled="qty <= 1">-</button>
+          <input type="text" id="quantity" class="form-control text-center" style="width: 70px;" :value="qty" readonly>
+          <button type="button" class="btn btn-outline-secondary" @click="qty++">+</button>
+        </div>
+
+        {{-- Shipping Profile Selector --}}
+        @if($product->shippingProfiles->count())
+          <div class="mb-4">
+            <label for="shipping_profile" class="form-label fw-semibold">Shipping Profile:</label>
+            <select id="shipping_profile" name="shipping_profile_id" class="form-select" x-model="shippingProfileId" required>
+              @foreach($product->shippingProfiles as $profile)
+                <option value="{{ $profile->id }}">
+                  {{ $profile->name }} - KES {{ number_format($profile->base_rate, 2) }}
+                </option>
+              @endforeach
+            </select>
+          </div>
+        @endif
+
+        <button type="submit" class="btn btn-success btn-lg shadow-sm px-4" :disabled="busy">
+          <i class="fas fa-cart-plus me-2"></i> Add to Cart
+        </button>
+      </form>
+
+      <form action="{{ route('cart.buy') }}" method="POST" @submit.prevent="busy = true; $el.submit()">
+        @csrf
+        <input type="hidden" name="product_id" value="{{ $product->id }}">
+        <input type="hidden" name="quantity" :value="qty">
+        <input type="hidden" name="shipping_profile_id" :value="shippingProfileId">
+        <button type="submit" class="btn btn-outline-primary btn-lg shadow-sm px-4" :disabled="busy">
+          <i class="fas fa-bolt me-2"></i> Buy Now
+        </button>
+      </form>
     </div>
   </div>
 </div>
