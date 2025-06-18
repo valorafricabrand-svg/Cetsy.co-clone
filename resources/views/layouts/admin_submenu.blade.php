@@ -7,9 +7,14 @@
         'icon'  => 'fas fa-tachometer-alt',
       ],
       [
-        'label' => 'Users',
+        'label' => 'Sellers',
         'url'   => route('admin.users.index'),
         'icon'  => 'fas fa-users',
+      ],
+      [
+        'label' => 'Product Listings',
+        'url'   => route('admin.products.index'),
+        'icon'  => 'fas fa-box',
       ],
       [
         'label' => 'Reports',

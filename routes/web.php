@@ -141,6 +141,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
 
     Route::resource('users', UserController::class);
+    Route::post('users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
+    Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+    Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
     Route::resource('categories', CategoryController::class);
 
