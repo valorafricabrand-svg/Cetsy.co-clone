@@ -36,6 +36,7 @@ class CheckoutController extends Controller
      */
 public function store(Request $request)
 {
+    
     $data = $request->validate([
         'shipping_address' => 'required|string',
     ]);

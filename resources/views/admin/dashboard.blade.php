@@ -40,7 +40,7 @@
                     <div class="card-body text-center">
                         <h5 class="card-title">Revenue (KES)</h5>
                         <p class="display-6 mb-0">
-                            {{ number_format(\App\Models\Order::sum('total'), 2) }}
+                            {{ number_format(\App\Models\Order::sum('total_amount'), 2) }}
                         </p>
                     </div>
                 </div>

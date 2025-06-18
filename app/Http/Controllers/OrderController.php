@@ -97,12 +97,12 @@ public function storeOrder(Request $request)
         'shipping_state' => 'nullable|string|max:255',
         'shipping_postal_code' => 'nullable|string|max:20',
         'billing_same_as_shipping' => 'required|boolean',
-    
-   
+        'billing_country' => 'nullable|integer|exists:countries,id',
+        'billing_address_1' => 'nullable|string|max:255',
         'billing_address_2' => 'nullable|string|max:255',
+        'billing_city' => 'nullable|string|max:255',
         'billing_state' => 'nullable|string|max:255',
         'billing_postal_code' => 'nullable|string|max:20',
-        'shipping_method' => 'required|string|in:standard,express',
         'order_notes' => 'nullable|string|max:1000',
         'promo_code' => 'nullable|string|max:50',
         'product_ids' => 'required|array|min:1',
@@ -111,6 +111,7 @@ public function storeOrder(Request $request)
         'quantities.*' => 'required|integer|min:1',
         'subtotal' => 'required|numeric|min:0',
         'total' => 'required|numeric|min:0',
+        'shipping_total' => 'required|numeric|min:0',
     ];
 
     $validated = $request->validate($rules);
@@ -162,39 +163,71 @@ public function storeOrder(Request $request)
             $order->billing_postal_code = $order->shipping_postal_code;
         } else {
             $order->billing_same_as_shipping = false;
-            $order->billing_country_id = $validated['billing_country'];
-            $order->billing_address_1 = $validated['billing_address_1'];
+            $order->billing_country_id = $validated['billing_country'] ?? null;
+            $order->billing_address_1 = $validated['billing_address_1'] ?? null;
             $order->billing_address_2 = $validated['billing_address_2'] ?? null;
-            $order->billing_city = $validated['billing_city'];
+            $order->billing_city = $validated['billing_city'] ?? null;
             $order->billing_state = $validated['billing_state'] ?? null;
             $order->billing_postal_code = $validated['billing_postal_code'] ?? null;
         }
 
-        $order->shipping_method = $validated['shipping_method'];
-        $order->payment_method = 'paypal';
+        $order->shipping_method = "standard"; // or use $validated['shipping_method'] if available
+        $order->payment_method = 'paypal'; // adjust as necessary
         $order->order_notes = $validated['order_notes'] ?? null;
         $order->promo_code = $validated['promo_code'] ?? null;
 
+        // Calculate subtotal for this shop
         $subtotal = 0;
         foreach ($items as $item) {
             $subtotal += $item['price'] * $item['quantity'];
         }
         $order->subtotal = $subtotal;
-        $order->total_amount = $subtotal; // Adjust as needed
+
+        // Save total shipping cost for entire order (all items)
+        // You may want to sum shipping costs for only this shop's items
+        $shopShippingCost = 0;
+        foreach ($items as $item) {
+            $cartItem = $cart[$item['product']->id] ?? null;
+            if ($cartItem) {
+                $shippingProfiles = collect($cartItem['shipping_profiles'] ?? []);
+                $selectedProfileId = $cartItem['selected_shipping_profile_id'] ?? null;
+                $selectedProfile = $shippingProfiles->firstWhere('id', $selectedProfileId);
+                $itemShippingCost = ($selectedProfile ? $selectedProfile['base_rate'] : 0) * $item['quantity'];
+                $shopShippingCost += $itemShippingCost;
+            }
+        }
+
+        $order->shipping_cost = $shopShippingCost;
+        $order->total_amount = $subtotal + $shopShippingCost;
         $order->status = 'pending';
 
         $order->save();
 
+        // Save each order item with shipping profile and cost
         foreach ($items as $item) {
             $orderItem = new \App\Models\OrderItem();
             $orderItem->order_id = $order->id;
             $orderItem->product_id = $item['product']->id;
             $orderItem->quantity = $item['quantity'];
             $orderItem->price = $item['price'];
+
+            $cartItem = $cart[$item['product']->id] ?? null;
+
+            if ($cartItem) {
+                $orderItem->shipping_profile_id = $cartItem['selected_shipping_profile_id'] ?? null;
+
+                $shippingProfiles = collect($cartItem['shipping_profiles'] ?? []);
+                $selectedProfile = $shippingProfiles->firstWhere('id', $orderItem->shipping_profile_id);
+
+                $orderItem->shipping_cost = ($selectedProfile ? $selectedProfile['base_rate'] : 0) * $orderItem->quantity;
+            } else {
+                $orderItem->shipping_profile_id = null;
+                $orderItem->shipping_cost = 0;
+            }
+
             $orderItem->save();
         }
     }
-
 
     $request->session()->forget('cart');
 
@@ -203,6 +236,9 @@ public function storeOrder(Request $request)
     return redirect()->route('buyer.orders.show', $order->id)
         ->with('success', 'Your orders have been placed successfully! Please proceed to make the payments.');
 }
+
+
+
 
 
 

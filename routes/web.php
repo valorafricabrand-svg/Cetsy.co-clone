@@ -50,8 +50,11 @@ Route::prefix('cart')->name('cart.')->group(function () {
     Route::post('/buy', [CartController::class, 'addToBuy'])->name('buy');
     Route::post('/remove', [CartController::class, 'removeFromCart'])->name('remove');
     Route::post('/update', [CartController::class, 'updateCart'])->name('update');
+
 });
 
+Route::post('/cart/update-shipping-selection', [CartController::class, 'updateShippingSelection'])->name('cart.updateShippingSelection');
+Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
 // Wishlist
 Route::get('/wishlist', [ProductController::class, 'wishlist'])->name('wishlist');
 
