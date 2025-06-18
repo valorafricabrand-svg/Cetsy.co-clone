@@ -1,0 +1,61 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="content">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Shipping Profiles</h2>
+        <a href="{{ route('shipping_profiles.create') }}" class="btn btn-primary">Add Shipping Profile</a>
+    </div>
+
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
+    @if($profiles->count())
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Country</th>
+                    <th>Base Rate (KES)</th>
+                    <th>Delivery Days</th>
+                    <th>Pickup Available</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($profiles as $profile)
+                    <tr>
+                        <td>{{ $profile->name }}</td>
+                        <td>{{ strtoupper($profile->country) }}</td>
+                        <td>{{ number_format($profile->base_rate, 2) }}</td>
+                        <td>{{ $profile->delivery_days }}</td>
+                        <td>
+                            @if($profile->pickup_available)
+                                <span class="badge bg-success">Yes</span>
+                            @else
+                                <span class="badge bg-secondary">No</span>
+                            @endif
+                        </td>
+                        <td>
+                            <a href="{{ route('shipping_profiles.edit', $profile) }}" class="btn btn-sm btn-warning">Edit</a>
+                            <form action="{{ route('shipping_profiles.destroy', $profile) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Delete this shipping profile?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        {{ $profiles->links() }}
+    @else
+        <p>No shipping profiles found. <a href="{{ route('shipping_profiles.create') }}">Create one now.</a></p>
+    @endif
+</div>
+@endsection
