@@ -72,7 +72,8 @@ Route::get('/pay-now-invoice/{total}', [OrderController::class, 'payNowInvoice']
 Route::get('/success-deposit/{id}', [OrderController::class, 'successDeposit'])->name('success_deposit');
 Route::get('/success-deposit-fee/{id}', [ProductController::class, 'successDeposit'])->name('success_deposit_fee');
 Route::get('/success-deposit-invoice/{id}', [OrderController::class, 'successDepositInvoice'])->name('success_deposit_invoice');
-
+Route::resource('shipping-profiles', ShippingProfileController::class)
+     ->only(['store']);
 /*
 |--------------------------------------------------------------------------
 | Authenticated Routes
