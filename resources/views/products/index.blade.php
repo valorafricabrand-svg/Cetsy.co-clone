@@ -1,3 +1,4 @@
+{{-- resources/views/products/index.blade.php (or similar) --}}
 @extends('layouts.app')
 
 @section('content')
@@ -20,35 +21,61 @@
         <div class="row g-4">
             @foreach($products as $product)
                 <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 shadow-sm border-0 rounded-4">
+                    {{-- position-relative lets us place the badge --}}
+                    <div class="card position-relative h-100 shadow-sm border-0 rounded-4">
+
+                        {{-- Inactive badge --}}
+                        @if(! $product->is_active)
+                            <span class="badge bg-warning text-dark position-absolute top-0 start-0 m-2">
+                                Inactive
+                            </span>
+                        @endif
+
+                        {{-- Image --}}
                         @if($img = $product->media->first())
-                            <img src="{{ asset('storage/' . $img->url) }}" class="card-img-top rounded-top-4" style="height: 220px; object-fit: cover;" alt="{{ $product->name }}">
+                            <img src="{{ asset('storage/' . $img->url) }}"
+                                 class="card-img-top rounded-top-4"
+                                 style="height:220px;object-fit:cover;"
+                                 alt="{{ $product->name }}">
                         @else
-                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 220px;">
+                            <div class="bg-light d-flex align-items-center justify-content-center"
+                                 style="height:220px;">
                                 <span class="text-muted">No Image</span>
                             </div>
                         @endif
+
+                        {{-- Body --}}
                         <div class="card-body d-flex flex-column">
                             <h5 class="card-title mb-1">{{ Str::limit($product->name, 40) }}</h5>
                             <p class="mb-2 text-muted small">
                                 {{ ucfirst($product->type) }}
-                                @if($product->stock !== null)
+                                @if(!is_null($product->stock))
                                     | Stock: {{ $product->stock }}
                                 @endif
                             </p>
+
+                            {{-- Price --}}
                             <p class="fw-bold mb-3">
                                 @if($product->discount_price)
-                                    <span class="text-danger me-2">KES {{ number_format($product->discount_price) }}</span>
-                                    <span class="text-muted text-decoration-line-through">KES {{ number_format($product->price) }}</span>
+                                    <span class="text-danger me-2">
+                                        KES {{ number_format($product->discount_price) }}
+                                    </span>
+                                    <span class="text-muted text-decoration-line-through">
+                                        KES {{ number_format($product->price) }}
+                                    </span>
                                 @else
                                     <span>KES {{ number_format($product->price) }}</span>
                                 @endif
                             </p>
-                            <div class="mt-auto d-flex justify-content-between align-items-center">
-                                <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary btn-sm">
+
+                            {{-- Actions --}}
+                            <div class="mt-auto d-flex justify-content-between">
+                                <a href="{{ route('products.show', $product) }}"
+                                   class="btn btn-outline-primary btn-sm">
                                     <i class="fas fa-eye me-1"></i> View
                                 </a>
-                                <a href="{{ route('products.edit', $product) }}" class="btn btn-outline-secondary btn-sm">
+                                <a href="{{ route('products.edit', $product) }}"
+                                   class="btn btn-outline-secondary btn-sm">
                                     <i class="fas fa-edit me-1"></i> Edit
                                 </a>
                             </div>
@@ -58,7 +85,6 @@
             @endforeach
         </div>
 
-        <!-- Pagination -->
         <div class="mt-5">
             {{ $products->links('pagination::bootstrap-5') }}
         </div>
