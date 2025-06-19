@@ -30,69 +30,113 @@ class ProductController extends Controller
         return view('products.index', compact('products'));
     }
 
-    public function create()
-    {
-       $categories = \App\Models\Category::orderBy('name')->get();
-return view('products.create', compact('categories'));
+ public function create()
+{
+    // Categories as before
+    $categories = \App\Models\Category::orderBy('name')->get();
+
+    // Load all shipping profiles for “choose existing”
+    $shippingProfiles = \App\Models\ShippingProfile::orderBy('name')->get();
+
+    // (Optional) if you want to pre-select a default:
+    $defaultProfileId = old('default_shipping_profile', null);
+
+    return view('products.create', compact(
+        'categories',
+        'shippingProfiles',
+        'defaultProfileId'
+    ));
+}
+
+
+public function store(Request $request)
+{
+    $user = Auth::user();
+
+    if (! $user->shop) {
+        return redirect()->route('shops.create')
+            ->with('warning', 'You must create a shop before listing products.');
     }
 
-    public function store(Request $request)
-    {
-        $user = Auth::user();
+    $data = $request->validate([
+        'name'                       => 'required|string|max:255',
+        'type'                       => 'required|in:physical,digital,service',
+        'description'                => 'nullable|string',
+        'category_id'                => 'nullable|exists:categories,id',
+        'price'                      => 'required|numeric|min:0',
+        'discount_price'             => 'nullable|numeric|min:0|lt:price',
+        'stock'                      => 'nullable|integer|min:0',
+        'media.*'                    => 'nullable|image|max:5120',
+        'digital_file'               => 'nullable|file|max:10240',
+        'shipping_profiles'          => 'required_if:type,physical|array|min:1',
+        'shipping_profiles.*'        => 'exists:shipping_profiles,id',
+        'default_shipping_profile'   => 'required_if:type,physical|exists:shipping_profiles,id',
+    ]);
 
-        if (!$user->shop) {
-            return redirect()->route('shops.create')
-                ->with('warning', 'You must create a shop before listing products.');
+    // Ensure default is among selected
+    if ($data['type'] === 'physical'
+        && ! in_array($data['default_shipping_profile'], $data['shipping_profiles'])) {
+        return back()
+            ->withInput()
+            ->withErrors(['default_shipping_profile' => 'Default must be one of the selected shipping profiles.']);
+    }
+
+    // Create product
+    $product = new Product();
+    $product->shop_id                     = $user->shop->id;
+    $product->name                        = $data['name'];
+    $product->slug                        = Str::slug($data['name']) . '-' . uniqid();
+    $product->type                        = $data['type'];
+    $product->category_id                 = $data['category_id'] ?? null;
+    $product->description                 = $data['description'] ?? null;
+    $product->price                       = $data['price'];
+    $product->discount_price              = $data['discount_price'] ?? null;
+    $product->stock                       = $data['type'] === 'physical' ? ($data['stock'] ?? 0) : null;
+    $product->default_shipping_profile_id = $data['type'] === 'physical'
+                                            ? $data['default_shipping_profile']
+                                            : null;
+    $product->is_active                   = false;
+    $product->save();
+
+    // Sync shipping profiles if physical
+    if ($data['type'] === 'physical') {
+        $syncData = [];
+        foreach ($data['shipping_profiles'] as $profileId) {
+            $syncData[$profileId] = [
+                'is_default' => $profileId == $data['default_shipping_profile'],
+            ];
         }
+        $product->shippingProfiles()->sync($syncData);
+    }
 
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:physical,digital,service',
-            'description' => 'nullable|string',
-            'category_id'=>'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0|lt:price',
-            'stock' => 'nullable|integer|min:0',
-            'media.*' => 'nullable|image|max:5120', // 5MB max per image
-            'digital_file' => 'nullable|file|max:10240', // 10MB max
+    // Upload images
+    if ($request->hasFile('media')) {
+        foreach ($request->file('media') as $file) {
+            $path = $file->store('products', 'public');
+            $product->media()->create(['url' => $path]);
+        }
+    }
+
+    // Handle digital file
+    if ($data['type'] === 'digital' && $request->hasFile('digital_file')) {
+        $disk = 'local';
+        $file = $request->file('digital_file');
+
+        // No old files to delete on create
+
+        $path     = $file->store('digital-files', $disk);
+        $filename = $file->getClientOriginalName();
+
+        $product->digitalFiles()->create([
+            'filename' => $filename,
+            'filepath' => $path,
         ]);
-
-        $product = new Product();
-        $product->shop_id = $user->shop->id;
-        $product->name = $data['name'];
-        $product->slug = Str::slug($data['name']) . '-' . uniqid();
-        $product->type = $data['type'];
-        $product->category_id = $data['category_id'];
-        $product->description = $data['description'] ?? null;
-        $product->price = $data['price'];
-        $product->discount_price = $data['discount_price'] ?? null;
-        $product->stock = in_array($data['type'], ['physical']) ? ($data['stock'] ?? 0) : null;
-        $product->is_active = false;
-        $product->save();
-
-        if ($request->hasFile('media')) {
-            foreach ($request->file('media') as $file) {
-                $path = $file->store('products', 'public');
-                $product->media()->create(['url' => $path]);
-            }
-        }
-
-        if ($data['type'] === 'digital' && $request->hasFile('digital_file')) {
-            $file = $request->file('digital_file');
-            $disk = 'local'; // Adjust if you have 'private' disk configured
-
-            $path = $file->store('digital-files', $disk);
-            $filename = $file->getClientOriginalName();
-
-            $product->digitalFiles()->create([
-                'filename' => $filename,
-                'filepath' => $path,
-            ]);
-        }
-
-        return redirect()->route('products.index')
-            ->with('success', 'Product created successfully!');
     }
+
+    return redirect()
+        ->route('products.edit', $product)
+        ->with('success', 'Product created successfully! You can now add more details or activate it.');
+}
 
   public function edit(Product $product)
 {
