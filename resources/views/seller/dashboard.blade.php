@@ -30,7 +30,7 @@
     {{-- ───────── Header ───────── --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h4 fw-semibold mb-0">General Report</h2>
-       
+      
     </div>
 
     {{-- ───────── Summary Cards ───────── --}}
@@ -61,7 +61,7 @@
                     'href'  => route('wallet.index')
                 ],
                 [
-                    'value' => '0',
+                    'value' => 0,
                     'label' => 'Active / Inactive',
                     'icon'  => 'fas fa-toggle-on',
                     'class' => 'text-primary',
@@ -165,7 +165,7 @@
             @endforeach
         </div>
 
-      
+       
     @else
         <div class="alert alert-info rounded-3 text-center py-4">
             You haven’t listed any products yet.

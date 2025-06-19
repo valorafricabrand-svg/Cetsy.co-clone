@@ -13,14 +13,15 @@ use App\Http\Controllers\Admin\{
     SubscriptionController as AdminSubscriptionController,
     UserController, AdminReportController as AdminReport,
     SettingsController as AdminSetting,
-    PayoutRequestController as AdminPayoutRequestController
+    PayoutRequestController as AdminPayoutRequestController,
+    PaymentController
 };
 
 use App\Http\Controllers\Seller\{
     DashboardController as SellerDashboard,
     KycController, SubscriptionController,
     AnalyticsController, PayoutRequestController,
-    ServiceController
+    ServiceController, BuyerController
 };
 
 use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
@@ -153,6 +154,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
 
     Route::resource('users', UserController::class);
+    Route::post('users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
+    Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+    Route::get('sellers/{userId}/login-as', [UserController::class, 'loginAs'])->name('sellers.login-as');
+    Route::get('return-from-impersonation', [UserController::class, 'returnFromImpersonation'])->name('return-from-impersonation');
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+    Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
     Route::resource('categories', CategoryController::class);
 
@@ -172,6 +179,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::post('/{payout}/reject', 'reject')->name('reject');
         Route::post('/{payout}/paid', 'markPaid')->name('paid');
     });
+
+    Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
 });
 
 /*
@@ -212,6 +222,10 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
     Route::post('payouts', [PayoutRequestController::class, 'store'])->name('payouts.store');
 
     Route::resource('services', ServiceController::class);
+
+    // Buyers
+    Route::get('buyers', [BuyerController::class, 'index'])->name('buyers.index');
+    Route::get('buyers/{buyer}', [BuyerController::class, 'show'])->name('buyers.show');
 });
 
 /*

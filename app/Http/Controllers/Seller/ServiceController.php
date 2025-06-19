@@ -78,9 +78,15 @@ class ServiceController extends Controller
             'tags' => 'nullable|string|max:255',
             'origin_id' => 'required|string|max:255',
             'category_id' => 'required|string|max:255',
-            'renewal_option'  => 'required|in:0,1',
-            'listTypeFee_id' => 'required|string|max:255',
             'photos.*' => 'required|image|max:2048',
+            'price_type' => 'required|string|max:255',
+            'available_days' => 'required|array',
+            'available_days.*' => 'required|string|max:255',
+            'available_time_from' => 'required|string|max:255',
+            'available_time_to' => 'required|string|max:255',
+            'duration_value' => 'required|numeric|min:0',
+            'duration_unit' => 'required|string|max:255',
+            'is_remote' => 'nullable|in:0,1',
         ]);
 
         DB::beginTransaction();
@@ -105,12 +111,17 @@ class ServiceController extends Controller
                 'description' => $data['description'],
                 'status' => 'draft',
                 'type' => 'service',
-                'listTypeFee_id' => $data['listTypeFee_id'],
-                'renewal_option' => $data['renewal_option'],
                 'phone' => $data['phone'],
                 'email' => $data['email'],
                 'location' => $data['location'],
                 'tags' => $data['tags'] ?? null,
+                'price_type' => $data['price_type'],
+                'available_days' => $data['available_days'],
+                'available_time_to' => $data['available_time_to'],
+                'available_time_from' => $data['available_time_from'],
+                'duration_value' => $data['duration_value'],
+                'duration_unit' => $data['duration_unit'],
+                'is_remote' => $data['is_remote'],
             ]);
 
             // Attach images
@@ -183,6 +194,14 @@ class ServiceController extends Controller
             'renewal_option'  => 'required|in:0,1',
             'listTypeFee_id' => 'required|string|max:255',
             'photos.*' => 'nullable|image|max:2048',
+            'price_type' => 'required|string|max:255',
+            'available_days' => 'required|array',
+            'available_days.*' => 'required|string|max:255',
+            'available_time_from' => 'required|string|max:255',
+            'available_time_to' => 'required|string|max:255',
+            'duration_value' => 'required|numeric|min:0',
+            'duration_unit' => 'required|string|max:255',
+            'is_remote' => 'required|in:0,1',
         ]);
 
         DB::beginTransaction();
@@ -208,6 +227,13 @@ class ServiceController extends Controller
                 'email' => $data['email'],
                 'location' => $data['location'],
                 'tags' => $data['tags'] ?? null,
+                'price_type' => $data['price_type'],
+                'available_days' => $data['available_days'],
+                'available_time_to' => $data['available_time_to'],
+                'available_time_from' => $data['available_time_from'],
+                'duration_value' => $data['duration_value'],
+                'duration_unit' => $data['duration_unit'],
+                'is_remote' => $data['is_remote'],
             ]);
 
             // Attach new images if any

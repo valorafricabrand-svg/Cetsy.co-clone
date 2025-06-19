@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\Shop;
+use App\Models\Country;
 
 class User extends Authenticatable
 {
@@ -27,6 +28,9 @@ class User extends Authenticatable
         'email',
         'password',
         'user_type',
+        'is_active',
+        'country_id',
+        'phone',
     ];
 
     /**
@@ -52,12 +56,18 @@ class User extends Authenticatable
     /**
      * One user → one shop.
      */
-public function shop()
-{
-    return $this->hasOne(Shop::class);
-}
+    public function shop()
+    {
+        return $this->hasOne(Shop::class);
+    }
 
-
+    /**
+     * One user → one country.
+     */
+    public function country()
+    {
+        return $this->belongsTo(Country::class);
+    }
 
     /**
      * Helper: is this user a Buyer?
