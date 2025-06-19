@@ -248,6 +248,8 @@ public function payNow($total){
     }
 
 
+
+
     public function payNowInvoice($total){
         $order = Invoice::find($total);
         return view('invoices.pay_now', ['order' => $order]);

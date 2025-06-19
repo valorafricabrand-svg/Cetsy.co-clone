@@ -64,8 +64,12 @@ Route::get('/bconfirm-payment/{id}', [MpesaController::class, 'checkStatus']);
 
 // Payment routes
 Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_now');
+Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
+      ->name('products.pay-fee');
+
 Route::get('/pay-now-invoice/{total}', [OrderController::class, 'payNowInvoice'])->name('pay_now_invoice');
 Route::get('/success-deposit/{id}', [OrderController::class, 'successDeposit'])->name('success_deposit');
+Route::get('/success-deposit-fee/{id}', [ProductController::class, 'successDeposit'])->name('success_deposit_fee');
 Route::get('/success-deposit-invoice/{id}', [OrderController::class, 'successDepositInvoice'])->name('success_deposit_invoice');
 
 /*

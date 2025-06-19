@@ -52,6 +52,9 @@ class Product extends Model
         'email',
         'location',
         'tags',
+        'is_active',
+        'listing_paid_at',
+        'next_due_date'
         
     ];
 

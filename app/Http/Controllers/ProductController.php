@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Payment;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -31,48 +32,8 @@ class ProductController extends Controller
 
     public function create()
     {
-        $user = auth()->user();
-
-        if (!$user->shop) {
-            session()->put(['intend_url' => 'shop/create']);
-            return redirect(route('shops.create'))->with('message', 'To add product first create shop');
-        }
-
-        $shop = $user->shop;
-        $countryOriginName = $shop ? Country::where('id', $shop->country)->value('name') : '';
-        $categories = Category::orderBy('name')->get();
-        $category_listFee_types = ListingFeeType::orderBy('id', 'asc')->get();
-        $countries = Country::orderBy('id', 'asc')->get();
-        $processing_times = ProcessingTime::all();
-        $shippingService = (new GetShippingService())->handle();
-        $shippingPeriods = ShippingPeriod::all();
-
-        $shippingChargeType = [
-            ['id' => 0, 'name' => 'Free Shipping'],
-            ['id' => 1, 'name' => 'Fixed Price'],
-        ];
-
-        $returnDeliveryDays = [
-            ['id' => 7, 'name' => '7 days from delivery'],
-            ['id' => 14, 'name' => '14 days from delivery'],
-            ['id' => 21, 'name' => '21 days from delivery'],
-            ['id' => 30, 'name' => '30 days from delivery'],
-            ['id' => 45, 'name' => '45 days from delivery'],
-            ['id' => 60, 'name' => '60 days from delivery'],
-            ['id' => 90, 'name' => '90 days from delivery'],
-        ];
-
-        return view('products.create', compact(
-            'categories',
-            'category_listFee_types',
-            'countries',
-            'shippingChargeType',
-            'returnDeliveryDays',
-            'processing_times',
-            'countryOriginName',
-            'shippingService',
-            'shippingPeriods'
-        ));
+       $categories = \App\Models\Category::orderBy('name')->get();
+return view('products.create', compact('categories'));
     }
 
     public function store(Request $request)
@@ -88,6 +49,7 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'type' => 'required|in:physical,digital,service',
             'description' => 'nullable|string',
+            'category_id'=>'nullable|string',
             'price' => 'required|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0|lt:price',
             'stock' => 'nullable|integer|min:0',
@@ -100,11 +62,12 @@ class ProductController extends Controller
         $product->name = $data['name'];
         $product->slug = Str::slug($data['name']) . '-' . uniqid();
         $product->type = $data['type'];
+        $product->category_id = $data['category_id'];
         $product->description = $data['description'] ?? null;
         $product->price = $data['price'];
         $product->discount_price = $data['discount_price'] ?? null;
         $product->stock = in_array($data['type'], ['physical']) ? ($data['stock'] ?? 0) : null;
-        $product->is_active = true;
+        $product->is_active = false;
         $product->save();
 
         if ($request->hasFile('media')) {
@@ -143,7 +106,10 @@ class ProductController extends Controller
     // Get default profile ID if any
     $defaultProfileId = $product->shippingProfiles()->wherePivot('is_default', true)->pluck('shipping_profile_id')->first();
 
-    return view('products.edit', compact('product', 'shippingProfiles', 'assignedProfiles', 'defaultProfileId'));
+    $categories = \App\Models\Category::orderBy('name')->get();
+
+
+    return view('products.edit', compact('product', 'shippingProfiles', 'assignedProfiles', 'defaultProfileId', 'categories'));
 }
 
 
@@ -155,6 +121,7 @@ public function update(Request $request, Product $product)
         'name' => 'required|string|max:255',
         'type' => 'required|in:physical,digital,service',
         'description' => 'nullable|string',
+     'category_id' => 'required|string|max:255',
         'price' => 'required|numeric|min:0',
         'discount_price' => 'nullable|numeric|min:0|lt:price',
         'stock' => 'nullable|integer|min:0',
@@ -171,6 +138,7 @@ public function update(Request $request, Product $product)
     $product->name = $data['name'];
     $product->slug = Str::slug($data['name']) . '-' . uniqid();
     $product->type = $data['type'];
+     $product->category_id = $data['category_id'];
     $product->description = $data['description'] ?? null;
     $product->price = $data['price'];
     $product->discount_price = $data['discount_price'] ?? null;
@@ -292,5 +260,63 @@ public function update(Request $request, Product $product)
             ->paginate(12);
 
         return view('theme.listings', compact('products'))->with('q', $q);
+    }
+
+
+      public function payFee(Request $request, Product $product)
+    {
+         
+        return view('products.pay_fee', ['order' => $product]);
+    }
+
+
+               public function successDeposit(Request $request, $id)
+    {
+        // Retrieve the order/invoice
+        $product = Product::findOrFail($id);
+
+          $product->update([
+            'is_active'        => 1,
+            'listing_paid_at'  => now(),     // add this column if desired
+            'next_due_date'   => now()->addMonth(4), 
+        ]);
+
+        // Determine payment method: default to 'paypal'
+        $method = $request->get('method', 'paypal');
+
+        // Prepare a unique local transaction ID if not provided
+        // (e.g., PayPal flow might not send one; MPESA flow might include its own)
+        $localTxId = $request->get('transaction_id');
+        if (!$localTxId) {
+            do {
+                $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
+            } while (Payment::where('local_transaction_id', $localTxId)->exists());
+        }
+
+        // Determine currency sign dynamically
+        // (assume order has a currency column; fallback to 'USD')
+        $currency = $order->currency ?? 'USD';
+
+        // Build the payment data array
+        $paymentData = [
+            
+           
+            'shop_id'              => $product->shop_id,
+            'total_amount'         => $product->category?->listing_fee,
+            'payment_method'       => $method,
+            'status'               => '3',
+            'currency'             => $currency,
+            'local_transaction_id' => $localTxId,
+            'payment_name' => 'listing_fee',
+        ];
+
+
+        // Create the payment record
+        $payment = Payment::create($paymentData);
+
+      
+        return redirect()
+            ->route('products.show', $product)
+            ->with('success', 'Your payment has been received.');
     }
 }

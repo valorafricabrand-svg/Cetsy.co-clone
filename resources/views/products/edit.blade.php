@@ -53,6 +53,24 @@
                     @error('type') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
+
+                   {{-- Category (NEW) --}}
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Category</label>
+              <select name="category_id" required
+                      class="form-select form-select-lg @error('category_id') is-invalid @enderror">
+                <option value="">Choose a category</option>
+                @foreach($categories as $cat)
+                  <option value="{{ $cat->id }}"
+                          @selected(old('category_id', $product->category_id)==$cat->id)>
+                    {{ $cat->name }}
+                    @isset($cat->listing_fee)@endisset
+                  </option>
+                @endforeach
+              </select>
+              @error('category_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+
                 <!-- Description -->
                 <div class="mb-4">
                     <label for="description" class="form-label fw-semibold">Description</label>
