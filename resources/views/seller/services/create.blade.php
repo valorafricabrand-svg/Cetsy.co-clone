@@ -24,16 +24,7 @@
     @endif
     <form action="{{ route('seller.services.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
-        <div class="card mb-4">
-            <div class="card-header">Photos</div>
-            <div class="card-body">
-                <p class="text-muted">Avoid offering services that are violating Intellectual Property Rights, so that your services are not blacklisted.</p>
-                <div class="mb-3">
-                    <label for="photos" class="form-label">Service Photos <span class="text-danger">Required</span></label>
-                    <input class="form-control" type="file" id="photos" name="photos[]" multiple required>
-                </div>
-            </div>
-        </div>
+        
 
         <div class="card mb-4">
             <div class="card-header">Listing details</div>
@@ -52,17 +43,18 @@
                     <input type="text" class="form-control" id="price" name="price" required placeholder="Price" value="{{ old('price') }}">
                 </div>
                 <div class="mb-3">
+                    <label for="price_type" class="form-label">Price Type <span class="text-danger">Required</span></label>
+                    <select class="form-select" id="price_type" name="price_type" required>
+                        <option value="">Select price type</option>
+                        <option value="fixed" {{ old('price_type') == 'fixed' ? 'selected' : '' }}>Fixed Price</option>
+                        <option value="hourly" {{ old('price_type') == 'hourly' ? 'selected' : '' }}>Hourly Rate</option>
+                        <option value="negotiable" {{ old('price_type') == 'negotiable' ? 'selected' : '' }}>Negotiable</option>
+                        <option value="per_item" {{ old('price_type') == 'per_item' ? 'selected' : '' }}>Per Item</option>
+                    </select>
+                </div>
+                <div class="mb-3">
                     <label for="email" class="form-label">Service Provider Email Address <span class="text-danger">Required</span></label>
                     <input type="email" class="form-control" id="email" name="email" required placeholder="Service Provider Email Address" value="{{ old('email') }}">
-                </div>
-                <div class="mb-3">
-                    <label for="location" class="form-label">Service Provider Geographical Location <span class="text-danger">Required</span></label>
-                    <input type="text" class="form-control" id="location" name="location" required placeholder="Service Provider Geographical Location" value="{{ old('location') }}">
-                </div>
-                <div class="mb-3">
-                    <label for="description" class="form-label">Service Description <span class="text-danger">Required</span></label>
-                    <textarea class="form-control" id="description" name="description" rows="5" required>{{ old('description') }}</textarea>
-                    <small class="form-text text-muted">Make sure the service description provides a detailed explanation of your service so that it is easy to understand and find your service. It is recommended not to enter info on mobile numbers, e-mails, etc. into the service description to protect your personal data.</small>
                 </div>
                 <div class="mb-3">
                     <label for="tags" class="form-label">Tags <span class="text-muted">Optional</span></label>
@@ -87,30 +79,100 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="flex-grow-1 d-flex align-items-center gap-4">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="renewal_option" id="renewal_automatic" value="0" {{ old('renewal_option', '0') == '0' ? 'checked' : '' }} required>
-                        <label class="form-check-label" for="renewal_automatic">Automatic</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="renewal_option" id="renewal_manual" value="1" {{ old('renewal_option') == '1' ? 'checked' : '' }} required>
-                        <label class="form-check-label" for="renewal_manual">Manual</label>
-                    </div>
-                    @error('renewal_option')
-                        <span class="text-danger">{{ $message }}</span>
-                    @enderror
-                </div>
                 <div class="mb-3">
-                    <label for="listing_fee_renewal" class="form-label">Listing Fee Renewal <span class="text-danger">Required</span></label>
-                    <select name="listTypeFee_id" id="listTypeFee_id" class="form-select" required>
-                        <option value="">--choose--</option>
-                        @foreach ($category_listFee_types as $listType)
-                            <option value="{{ $listType->id }}" {{ old('listTypeFee_id') == $listType->id ? 'selected' : '' }}>{{ $listType->name }}</option>
+                    <label for="description" class="form-label">Service Description <span class="text-danger">Required</span></label>
+                    <textarea class="form-control" id="description" name="description" rows="5" required>{{ old('description') }}</textarea>
+                    <small class="form-text text-muted">Make sure the service description provides a detailed explanation of your service so that it is easy to understand and find your service. It is recommended not to enter info on mobile numbers, e-mails, etc. into the service description to protect your personal data.</small>
+                </div>
+                
+                
+                
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Location & Availability</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="service_area" class="form-label">Service Area <span class="text-danger">Required</span></label>
+                    <input type="text" class="form-control" id="location" name="location" required placeholder="e.g., Nairobi, Remote, Global" value="{{ old('location') }}">
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_remote" name="is_remote" value="1" {{ old('is_remote') ? 'checked' : '' }}>
+                        <label class="form-check-label" for="is_remote">
+                            This service can be provided remotely
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Available Days <span class="text-danger">Required</span></label>
+                    <div class="row g-3">
+                        @php
+                            $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                            $oldDays = old('available_days', []);
+                        @endphp
+                        @foreach($days as $day)
+                            <div class="col-auto">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="day_{{ strtolower($day) }}" 
+                                           name="available_days[]" 
+                                           value="{{ $day }}"
+                                           {{ in_array($day, $oldDays) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="day_{{ strtolower($day) }}">
+                                        {{ $day }}
+                                    </label>
+                                </div>
+                            </div>
                         @endforeach
-                    </select>
-                    @error('listTypeFee_id')
-                        <span class="text-danger">{{ $message }}</span>
-                    @enderror
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="available_time_from" class="form-label">Available Hours - Start <span class="text-danger">Required</span></label>
+                            <input type="time" class="form-control" id="available_time_from" name="available_time_from" required value="{{ old('available_time_from') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="available_time_to" class="form-label">Available Hours - End <span class="text-danger">Required</span></label>
+                            <input type="time" class="form-control" id="available_time_to" name="available_time_to" required value="{{ old('available_time_to') }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="service_duration" class="form-label">Service Duration <span class="text-danger">Required</span></label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <input type="number" class="form-control" id="duration_value" name="duration_value" required placeholder="Duration" value="{{ old('duration_value') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select" id="duration_unit" name="duration_unit" required>
+                                <option value="">Select Unit</option>
+                                <option value="minutes" {{ old('duration_unit') == 'minutes' ? 'selected' : '' }}>Minutes</option>
+                                <option value="hours" {{ old('duration_unit') == 'hours' ? 'selected' : '' }}>Hours</option>
+                                <option value="days" {{ old('duration_unit') == 'days' ? 'selected' : '' }}>Days</option>
+                                <option value="weeks" {{ old('duration_unit') == 'weeks' ? 'selected' : '' }}>Weeks</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Photos</div>
+            <div class="card-body">
+                <p class="text-muted">Avoid offering services that are violating Intellectual Property Rights, so that your services are not blacklisted.</p>
+                <div class="mb-3">
+                    <label for="photos" class="form-label">Service Photos <span class="text-danger">Required</span></label>
+                    <input class="form-control" type="file" id="photos" name="photos[]" multiple required>
                 </div>
             </div>
         </div>

@@ -16,9 +16,9 @@
     @endif
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="h5 mb-0">All Users</h3>
+        <h3 class="h5 mb-0">All Sellers</h3>
         <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> New User
+            <i class="fas fa-plus me-1"></i> New Seller
         </a>
     </div>
 
@@ -31,6 +31,7 @@
                         <th scope="col">Name</th>
                         <th scope="col">Email</th>
                         <th scope="col">Type</th>
+                        <th scope="col">Status</th>
                         <th scope="col" class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -43,6 +44,7 @@
                             <td>{{ $user->name }}</td>
                             <td>{{ $user->email }}</td>
                             <td>{{ $user->user_type }}</td>
+                            <td>{{ $user->is_active ? 'Active' : 'Inactive' }}</td>
                             <td class="text-end">
                                 <a href="{{ route('admin.users.show', $user) }}" class="btn btn-sm btn-outline-secondary me-1">
                                     <i class="fas fa-eye"></i>
@@ -50,6 +52,21 @@
                                 <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-primary me-1">
                                     <i class="fas fa-pencil-alt"></i>
                                 </a>
+                                @if(!$user->is_active)
+                                    <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="d-inline-block me-1">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this Seller Account?')">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                @else
+                                    <form action="{{ route('admin.users.deactivate', $user) }}" method="POST" class="d-inline-block me-1">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Deactivate this Seller Account?')">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    </form>
+                                @endif
                                 <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Delete this user?');">
                                     @csrf
                                     @method('DELETE')

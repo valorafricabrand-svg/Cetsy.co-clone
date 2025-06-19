@@ -7,9 +7,14 @@
         'icon'  => 'fas fa-tachometer-alt',
       ],
       [
-        'label' => 'Users',
+        'label' => 'Sellers',
         'url'   => route('admin.users.index'),
         'icon'  => 'fas fa-users',
+      ],
+      [
+        'label' => 'Product Listings',
+        'url'   => route('admin.products.index'),
+        'icon'  => 'fas fa-box',
       ],
       [
         'label' => 'Reports',
@@ -30,6 +35,16 @@
         'label' => 'Settings',
         'url'   => route('admin.settings'),
         'icon'  => 'fas fa-cogs',
+      ],
+      [
+        'label' => 'Payout Requests',
+        'url'   => route('admin.payouts.index'),
+        'icon'  => 'fas fa-money-check-alt',
+      ],
+      [
+        'label' => 'Payments',
+        'url'   => route('admin.payments.index'),
+        'icon'  => 'fas fa-shopping-cart',
       ],
     ];
   @endphp
