@@ -1,159 +1,180 @@
+{{-- resources/views/dashboard/index.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'KYC Management')
+@section('title', 'Seller Dashboard')
 
 @section('content')
-<div class="content">
-    <style>
-        .text-primary, .btn-outline-primary, .bg-success, .btn-primary, .badge.bg-success {
-            color: #fff !important;
-            background-color: #27b105 !important;
-            border-color: #27b105 !important;
-        }
-        .btn-outline-primary {
-            color: #27b105 !important;
-            background-color: #fff !important;
-            border-color: #27b105 !important;
-        }
-        .btn-outline-primary:hover, .btn-outline-primary:focus {
-            background-color: #27b105 !important;
-            color: #fff !important;
-        }
-        .fa-sync-alt, .fa-box-open {
-            color: #27b105 !important;
-        }
-        .badge.bg-success {
-            background-color: #27b105 !important;
-        }
-    </style>
-    <div class="row gx-4 gy-4">
-        <div class="col-12">
+<style>
+    :root { --cetsy-green:#27b105; }
 
-            {{-- Page Header --}}
-            <div class="d-flex align-items-center justify-content-between mb-4">
-                <h2 class="h5 fw-semibold mb-0">General Report</h2>
-                <a href="#" class="text-primary d-flex align-items-center">
-                    <i class="fas fa-sync-alt me-2"></i> Reload Data
+    /* Brand utilities */
+    .brand-text         { color:var(--cetsy-green)!important; }
+    .brand-bg           { background:var(--cetsy-green)!important; color:#fff!important; }
+    .brand-outline      { color:var(--cetsy-green)!important; border-color:var(--cetsy-green)!important; }
+    .brand-outline:hover,
+    .brand-outline:focus{ background:var(--cetsy-green)!important; color:#fff!important; }
+
+    /* Cards & effects */
+    .card.hover-lift      { transition:transform .2s,box-shadow .2s; }
+    .card.hover-lift:hover{ transform:translateY(-4px); box-shadow:0 .5rem 1rem rgba(0,0,0,.15); }
+
+    .status-badge{
+        position:absolute;top:.5rem;left:.5rem;
+        font-size:.75rem;padding:.15rem .5rem;
+        border-radius:.25rem;background:#ffc107;color:#000;
+    }
+</style>
+
+<div class="content">
+
+    {{-- ───────── Header ───────── --}}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h4 fw-semibold mb-0">General Report</h2>
+       
+    </div>
+
+    {{-- ───────── Summary Cards ───────── --}}
+    <div class="row gy-4 mb-5">
+
+        {{-- Card template --}}
+        @php
+            $cards = [
+                [
+                    'value' => $total_orders,
+                    'label' => 'Total Orders',
+                    'icon'  => 'fas fa-credit-card',
+                    'class' => 'text-warning',
+                    'href'  => route('seller.orders.index')
+                ],
+                [
+                    'value' => $total_products,
+                    'label' => 'Total Products',
+                    'icon'  => 'fas fa-box-open',
+                    'class' => 'text-info',
+                    'href'  => route('products.index')
+                ],
+                [
+                    'value' => 'KES '.number_format(wallet(),2),
+                    'label' => 'Wallet Balance',
+                    'icon'  => 'fas fa-wallet',
+                    'class' => 'text-success',
+                    'href'  => route('wallet.index')
+                ],
+                [
+                    'value' => '0',
+                    'label' => 'Active / Inactive',
+                    'icon'  => 'fas fa-toggle-on',
+                    'class' => 'text-primary',
+                    'href'  => route('products.index')
+                ],
+            ];
+        @endphp
+
+        @foreach($cards as $c)
+            <div class="col-6 col-md-3">
+                <a href="{{ $c['href'] }}" class="text-decoration-none text-dark">
+                    <div class="card hover-lift shadow-sm border-0">
+                        <div class="card-body text-center">
+                            <div class="mb-2">
+                                <i class="{{ $c['icon'] }} fa-xl {{ $c['class'] }}"></i>
+                            </div>
+                            <div class="fs-4 fw-semibold">{{ $c['value'] }}</div>
+                            <div class="text-muted small">{{ $c['label'] }}</div>
+                        </div>
+                    </div>
                 </a>
             </div>
+        @endforeach
 
-    {{-- Summary Cards --}}
-<div class="row gy-4">
-    {{-- Total Orders --}}
-    <div class="col-12 col-sm-6 col-xl-3">
-        <a href="{{ route('seller.orders.index') }}" class="text-decoration-none text-dark">
-            <div class="card shadow-sm border-0 hover-shadow-sm">
-                <div class="card-body text-center">
-                    <div class="mb-2">
-                        <i class="fas fa-credit-card fa-xl text-warning"></i>
-                    </div>
-                    <div class="fs-4 fw-semibold">{{ $total_orders }}</div>
-                    <div class="text-muted small">Total Orders</div>
-                </div>
-            </div>
-        </a>
     </div>
 
-    {{-- Total Products --}}
-    <div class="col-12 col-sm-6 col-xl-3">
-        <a href="{{ route('products.index', ['layout' => 'side-menu']) }}" class="text-decoration-none text-dark">
-            <div class="card shadow-sm border-0 hover-shadow-sm">
-                <div class="card-body text-center">
-                    <div class="mb-2">
-                        <i class="fas fa-box-open fa-xl text-info"></i>
-                    </div>
-                    <div class="fs-4 fw-semibold">{{ $total_products }}</div>
-                    <div class="text-muted small">Total Products</div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    {{-- Wallet Balance --}}
-    <div class="col-12 col-sm-6 col-xl-3">
-        <a href="{{ route('wallet.index') }}" class="text-decoration-none text-dark">
-            <div class="card shadow-sm border-0 hover-shadow-sm">
-                <div class="card-body text-center">
-                    <div class="mb-2">
-                        <i class="fas fa-wallet fa-xl text-success"></i>
-                    </div>
-                    <div class="fs-4 fw-semibold">${{ number_format(wallet(), 2) }}</div>
-                    <div class="text-muted small">Wallet Balance</div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
-
-
-            {{-- Top Products Table --}}
-            <div class="mt-5">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h2 class="h5 fw-semibold mb-0">Top Products</h2>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th scope="col">Image</th>
-                                <th scope="col">Product Name</th>
-                                <th scope="col" class="text-center">Stock</th>
-                                <th scope="col" class="text-center">Status</th>
-                                <th scope="col" class="text-center">Created On</th>
-                                <th scope="col" class="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($products as $product)
-                            @php
-                        
-                            $original =  asset('images/default.jpg');
-                            $thumb = asset('images/default-thumb.jpg');
-                            @endphp
-                                <tr>
-                                    <td style="width: 60px;">
-                                        <img src="{{ $thumb }}" alt="{{ $product->name }}" class="rounded-circle" width="40" height="40" title="Uploaded at {{ $product->created_at }}">
-                                    </td>
-                                    <td>
-                                        <a href="{{ url('seller.editProduct', $product->id) }}" target="_blank" class="fw-semibold text-decoration-none">
-                                            {{ $product->name }}
-                                        </a>
-                                    </td>
-                                    <td class="text-center">{{ $product->stock_quantity }}</td>
-                                    <td class="text-center">
-                                        @if ($product->is_active)
-                                            <span class="badge bg-success">Active</span>
-                                        @else
-                                            <span class="badge bg-secondary">Inactive</span>
-                                        @endif
-                                    </td>
-
-                                    <td class="text-center">{{ $product->created_at->format('d M Y') }}</td>
-                                    <td class="text-center">
-                                        <a href="{{ url('seller.editProduct', $product->id) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <form action="{{ url('seller.deleteProduct', $product->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure to delete this product?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">No top products available.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
+    {{-- Flash success --}}
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show rounded-3">
+            {{ session('success') }}
+            <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    </div>
+    @endif
+
+    {{-- ───────── Latest Listings ───────── --}}
+    <h4 class="h5 fw-semibold mb-3">Latest Listings</h4>
+
+    @if($products->count())
+        <div class="row g-4">
+            @foreach($products as $product)
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift position-relative">
+
+                        {{-- Inactive & pay badge --}}
+                        @if(! $product->is_active)
+                            <span class="status-badge">Inactive</span>
+                            @php $fee = $product->category->listing_fee ?? 0; @endphp
+                            <form method="POST" action="{{ route('products.pay-fee',$product) }}"
+                                  class="position-absolute end-0 bottom-0 m-2">
+                                @csrf
+                                <button class="btn btn-sm brand-bg shadow-sm">
+                                    Pay KES {{ number_format($fee,2) }}
+                                </button>
+                            </form>
+                        @endif
+
+                        {{-- Image --}}
+                        @if($img = $product->media->first())
+                            <img src="{{ asset('storage/'.$img->url) }}"
+                                 class="card-img-top rounded-top-4"
+                                 style="height:220px;object-fit:cover;" alt="{{ $product->name }}">
+                        @else
+                            <div class="bg-light d-flex align-items-center justify-content-center"
+                                 style="height:220px;">
+                                <span class="text-muted">No Image</span>
+                            </div>
+                        @endif
+
+                        {{-- Body --}}
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-truncate">{{ $product->name }}</h5>
+                            <p class="text-muted small mb-2">
+                                {{ ucfirst($product->type) }}
+                                @if(!is_null($product->stock)) • Stock {{ $product->stock }} @endif
+                            </p>
+
+                            {{-- Price --}}
+                            <p class="fw-bold mb-3">
+                                @if($product->discount_price)
+                                    <span class="text-danger me-1">KES {{ number_format($product->discount_price) }}</span>
+                                    <small class="text-muted text-decoration-line-through">
+                                        KES {{ number_format($product->price) }}
+                                    </small>
+                                @else
+                                    KES {{ number_format($product->price) }}
+                                @endif
+                            </p>
+
+                            {{-- Buttons --}}
+                            <div class="mt-auto d-flex gap-2">
+                                <a href="{{ route('products.show',$product) }}" class="btn btn-sm btn-outline-primary flex-fill">
+                                    View
+                                </a>
+                                <a href="{{ route('products.edit',$product) }}" class="btn btn-sm btn-outline-secondary flex-fill">
+                                    Edit
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+      
+    @else
+        <div class="alert alert-info rounded-3 text-center py-4">
+            You haven’t listed any products yet.
+            <div class="mt-2">
+                <a href="{{ route('products.create') }}" class="btn btn-sm brand-bg rounded-pill">
+                    <i class="fas fa-plus-circle me-1"></i> Create Your First Product
+                </a>
+            </div>
+        </div>
+    @endif
 </div>
 @endsection
