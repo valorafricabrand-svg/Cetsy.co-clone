@@ -70,6 +70,18 @@
       'icon'  => 'fas fa-users me-2 text-info',
     ];
 
+    $navItems[] = [
+      'label' => 'My Offers',
+      'url'   => route('seller.offers.index'),
+      'icon'  => 'fas fa-gift me-2 text-warning',
+    ];
+
+    $navItems[] = [
+      'label' => 'My Messages',
+      'url'   => route('seller.messages.index'),
+      'icon'  => 'fas fa-comments me-2 text-primary',
+    ];
+
       $navItems[] = [
       'label' => 'Shipping Profiles',
       'url'   => route('shipping_profiles.index'),
