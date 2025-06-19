@@ -227,6 +227,11 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
     // Buyers
     Route::get('buyers', [BuyerController::class, 'index'])->name('buyers.index');
     Route::get('buyers/{buyer}', [BuyerController::class, 'show'])->name('buyers.show');
+
+    Route::resource('offers', App\Http\Controllers\Seller\OfferController::class);
+
+    Route::get('messages', [App\Http\Controllers\Seller\MessageController::class, 'index'])->name('messages.index');
+    Route::get('messages/{message}', [App\Http\Controllers\Seller\MessageController::class, 'show'])->name('messages.show');
 });
 
 /*
