@@ -99,7 +99,7 @@
   <!--    Main Content-->
   <!-- ===============================================-->
   <main class="main" id="top">
-    <div class="bg-body-emphasis sticky-top" data-navbar-shadow-on-scroll="true">
+    <div class="bg-body-emphasis" data-navbar-shadow-on-scroll="true">
       @include('theme.layouts.nav')
     </div>
 
