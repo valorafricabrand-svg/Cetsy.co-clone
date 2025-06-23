@@ -146,7 +146,7 @@ public function categoryShow($slug)
             ->latest()
             ->paginate(12)
             ->withQueryString();
-    return view('theme.show_category', compact('category', 'products'));
+    return themed_view('show_category', compact('category', 'products'));
 }
 
 

@@ -1,267 +1,457 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_','-', app()->getLocale()) }}">
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>{{ config('app.name', 'Cetsy') }}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
-  @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="robots" content="index, follow">
+
+    <!-- Dynamic Title -->
+    <title>@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')</title>
+    
+    <!-- Description -->
+    <meta name="description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="@yield('canonical_url', 'https://cetsy.com')">
+
+    <!-- Social Meta Section -->
+    @section('social-meta')
+        <!-- Open Graph Meta Tags -->
+        <meta property="og:title" content="@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')">
+        <meta property="og:description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="@yield('canonical_url', 'https://cetsy.com')">
+        <meta property="og:image" content="@yield('meta_image', asset('assets/images/default-og-image-cetsy.jpg'))">
+        <meta property="og:image:alt" content="Cetsy — Handmade Products Marketplace">
+        <meta property="og:locale" content="en_US">
+        <meta property="og:site_name" content="Cetsy">
+
+        <!-- Twitter Card Meta Tags -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')">
+        <meta name="twitter:description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
+        <meta name="twitter:image" content="@yield('meta_image', asset('assets/images/default-twitter-image-cetsy.jpg'))">
+        <meta name="twitter:image:alt" content="Cetsy — Handmade Products Marketplace">
+    @show
+
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ favicon_url() }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ favicon_url() }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ favicon_url() }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ favicon_url() }}">
+    <link rel="manifest" href="{{ asset('assets/img/favicons/manifest.json') }}">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="{{ favicon_url() }}">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- Stylesheets -->
+    <link href="{{ asset('vendors/mapbox-gl/mapbox-gl.css') }}" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="{{ asset('vendors/simplebar/simplebar.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/theme.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/user.min.css') }}" rel="stylesheet">
+
+    <!-- Scripts -->
+    <script src="{{ asset('vendors/simplebar/simplebar.min.js') }}" defer></script>
+    <script src="{{ asset('assets/js/config.js') }}" defer></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var phoenixIsRTL = window.config.config.phoenixIsRTL;
+            if (phoenixIsRTL) {
+                document.querySelector('html').setAttribute('dir', 'rtl');
+            }
+        });
+    </script>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Cetsy",
+        "url": "https://cetsy.com",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://cetsy.com/search?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
+
+    <!-- Inline Styles -->
+    <style>
+        .text-primary { color: #027333 !important; }
+        .btn-link { color: #027333; }
+        a.text-primary:hover, a.text-primary:focus { color: #025a1f !important; }
+    </style>
+
+
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
-<body 
-  x-data="cartComponent()" 
-  x-init="init(); fetchCart()" 
-  class="font-sans antialiased text-gray-800"
->
-  <!-- Centered Toast -->
-  <div
-    x-cloak
-    x-show="flashMessage"
-    x-transition.opacity
-    class="fixed inset-0 flex items-center justify-center pointer-events-none"
-  >
-    <div class="bg-green-600 text-white px-6 py-3 rounded shadow-lg pointer-events-auto">
-      <span x-text="flashMessage"></span>
-    </div>
-  </div>
+<body style="--phoenix-scroll-margin-top: 1.2rem;">
+  <!-- ===============================================-->
+  <!--    Main Content-->
+  <!-- ===============================================-->
+  <main class="main" id="top">
+    <div class="bg-body-emphasis" data-navbar-shadow-on-scroll="true">
+    {{-- resources/views/layouts/partials/navbar.blade.php --}}
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+  <div class="container">
+    {{-- Brand --}}
+    <a class="navbar-brand" href="{{ url('/') }}">
+      <img src="{{ asset('assets/img/logo.jpg') }}" style="height: 100px;">
+    </a>
 
-  <!-- Header -->
-  <header @click.away="open = false" class="bg-white shadow sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
+    {{-- Mobile toggle --}}
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#mainNavbar"
+      aria-controls="mainNavbar"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-        <!-- Logo -->
-        <a href="{{ route('home') }}" class="text-xl font-bold text-gray-800">
-          {{ config('app.name') }}
-        </a>
+    <div class="collapse navbar-collapse" id="mainNavbar">
+     
 
-        <!-- Search -->
-        <div class="flex-1 mx-6">
-          <form action="{{ route('products.index') }}" method="GET" class="relative">
-            <input
-              name="search" type="text" value="{{ request('search') }}"
-              placeholder="Search handmade, vintage, and more..."
-              class="w-full border border-gray-300 rounded-full py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-            <button type="submit"
-                    class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    aria-label="Search">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                   viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
-              </svg>
-            </button>
-          </form>
-        </div>
+      {{-- Search --}}
+      <form
+        class="d-flex me-3 flex-grow-1"
+        method="GET"
+        action="{{ route('search') }}"
+      >
+        <input
+          class="form-control flex-grow-1"
+          type="search"
+          name="q"
+          placeholder="Search handmade, vintage, and more..."
+          aria-label="Search"
+          value="{{ request('q') }}"
+        >
+        <button class="btn btn-outline-secondary ms-2" type="submit">
+          <i class="fas fa-search"></i>
+        </button>
+      </form>
 
-        <!-- Desktop Nav -->
-        <nav class="hidden sm:flex space-x-6 items-center">
-          <a href="{{ url('categories.index') }}" class="text-gray-700 hover:text-green-600">Categories</a>
+      {{-- Cart + User --}}
+      <ul
+        class="navbar-nav ms-auto align-items-center"
+        x-data="cartDropdown()"
+        x-init="fetchCart()"
+      >
+      
 
-          <!-- Cart Icon & Dropdown -->
-          <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open; fetchCart()"
-                    class="relative text-gray-700 hover:text-green-600"
-                    aria-label="Cart">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                   viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 
-                         13L5.4 5M7 13l-2 5m5-5v5m4-5v5m1-10h2"/>
-              </svg>
-              <span x-show="cartCount > 0"
-                    x-text="cartCount"
-                    class="absolute -top-1 -right-2 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+           {{-- Cart --}}
+        @php
+          $cartCount = count(session('cart', []));
+        @endphp
+        <li class="nav-item me-3">
+          <a href="{{ route('cart.view') }}" class="nav-link position-relative text-dark">
+            <i class="fas fa-shopping-cart fa-lg"></i>
+            @if($cartCount)
+              <span class="badge bg-success position-absolute top-0 start-100 translate-middle">
+                {{ $cartCount }}
               </span>
-            </button>
+            @endif
+          </a>
+        </li>
 
-            <div x-show="open" x-cloak @click.away="open = false"
-                 class="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg overflow-hidden text-sm">
-              <template x-if="cartItems.length">
-                <div class="p-4">
-                  <p class="font-semibold mb-2">Cart Preview</p>
-                  <ul class="divide-y divide-gray-200 max-h-60 overflow-y-auto">
-                    <template x-for="item in cartItems" :key="item.id">
-                      <li class="py-2 flex items-center space-x-3">
-                        <img :src="`/storage/${item.image}`" x-bind:alt="item.name"
-                             class="w-12 h-12 object-cover rounded">
-                        <div class="flex-1">
-                          <p class="font-medium text-gray-800" x-text="item.name"></p>
-                          <p class="text-gray-500 text-xs">Qty: <span x-text="item.qty"></span></p>
-                        </div>
-                        <p class="text-green-600 font-semibold" x-text="`KES ${item.total}`"></p>
-                      </li>
-                    </template>
-                  </ul>
-                  <div class="mt-4 flex justify-between items-center">
-                    <a href="{{ route('cart.index') }}" class="text-sm text-green-600 hover:underline">View Cart</a>
-                    <span class="font-semibold text-gray-800">
-                      Subtotal: <span x-text="`KES ${cartSubtotal}`"></span>
-                    </span>
-                  </div>
-                </div>
-              </template>
-              <div class="p-4 text-gray-500" x-show="!cartItems.length">Your cart is empty.</div>
-            </div>
-          </div>
-
-          @guest
-            <a href="{{ route('login') }}" class="text-gray-700 hover:text-green-600">Log In</a>
-            <a href="{{ route('register') }}"
-               class="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 transition">
+        {{-- Authentication Links --}}
+        @guest
+          <li class="nav-item">
+            <a class="nav-link" href="{{ route('login') }}">Log In</a>
+          </li>
+          <li class="nav-item">
+            <a class="btn btn-success btn-sm" href="{{ route('register') }}">
               Sign Up
             </a>
+          </li>
+        @else
+          @if(auth()->user()->shop)
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="{{ route('seller.shops.show', auth()->user()->shop) }}"
+              >
+                My Shop
+              </a>
+            </li>
           @else
-            @if(auth()->user()->shop)
-              <a href="{{ route('shops.show', auth()->user()->shop) }}"
-                 class="text-gray-700 hover:text-green-600">My Shop</a>
-            @else
-              <a href="{{ route('shops.create') }}"
-                 class="text-gray-700 hover:text-green-600">Open Shop</a>
-            @endif
+           
+          @endif
 
-            <x-dropdown align="right" width="48">
-              <x-slot name="trigger">
-                <button class="flex items-center space-x-1 text-gray-700 hover:text-green-600">
-                  <span>{{ auth()->user()->name }}</span>
-                  <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 
-                             1 0 111.414 1.414l-4 4a1 1 0 
-                             01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clip-rule="evenodd"/>
-                  </svg>
-                </button>
-              </x-slot>
-              <x-slot name="content">
-                <x-dropdown-link :href="route('profile.edit')">Profile</x-dropdown-link>
+          <li class="nav-item dropdown">
+            <a
+              class="nav-link dropdown-toggle"
+              href="#"
+              id="userMenu"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              {{ auth()->user()->name }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+
+              <li>
+                <a class="dropdown-item" href="{{ route('dashboard') }}">
+                  Dashboard
+                </a>
+              </li>
+
+
+              <li>
+                <a class="dropdown-item" href="{{ route('profile.edit') }}">
+                  Profile
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
                 <form method="POST" action="{{ route('logout') }}">
                   @csrf
-                  <x-dropdown-link :href="route('logout')"
-                                   onclick="event.preventDefault(); this.closest('form').submit();">
+                  <button class="dropdown-item" type="submit">
                     Log Out
-                  </x-dropdown-link>
+                  </button>
                 </form>
-              </x-slot>
-            </x-dropdown>
-          @endguest
-        </nav>
+              </li>
+            </ul>
+          </li>
+        @endguest
+      </ul>
+    </div>
+  </div>
+</nav>
 
-        <!-- Mobile Toggle -->
-        <div class="sm:hidden flex items-center" x-data="{ mobileOpen: false }">
-          <button @click="mobileOpen = !mobileOpen" class="text-gray-500 hover:text-gray-700">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                 viewBox="0 0 24 24" stroke="currentColor">
-              <path :class="{'hidden': mobileOpen, 'inline-flex': !mobileOpen}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-              <path :class="{'hidden': !mobileOpen, 'inline-flex': mobileOpen}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-          <div x-show="mobileOpen" class="absolute top-full left-0 w-full bg-white border-t border-gray-200">
-            <a href="{{ route('home') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Home</a>
-            <a href="{{ url('categories.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Categories</a>
-            <a href="{{ route('cart.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Cart</a>
-            @guest
-              <a href="{{ route('login') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Log In</a>
-              <a href="{{ route('register') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Sign Up</a>
-            @else
-              @if(auth()->user()->shop)
-                <a href="{{ route('shops.show', auth()->user()->shop) }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">My Shop</a>
-              @else
-                <a href="{{ route('shops.create') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Open Shop</a>
-              @endif
-              <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50">Log Out</button>
-              </form>
-            @endguest
-          </div>
+
+
+@php
+  $mainCategories = \App\Models\Category::whereNull('parent_id')->orderBy('id')->get();
+@endphp
+
+@if($mainCategories->count())
+  <nav class="bg-success">
+    <div class="container">
+      <ul class="nav">
+        @foreach($mainCategories as $main)
+          @php
+            $subs = \App\Models\Category::where('parent_id',$main->id)->orderBy('id')->get();
+          @endphp
+          <li class="nav-item dropdown">
+            <a
+              class="nav-link text-white"
+              href="#"
+              id="catDropdown{{ $main->id }}"
+              data-bs-toggle="dropdown"
+            >
+              {{ $main->name }}
+              @if($subs->count()) <i class="fas fa-chevron-down ms-1"></i> @endif
+            </a>
+            @if($subs->count())
+              <ul class="dropdown-menu" aria-labelledby="catDropdown{{ $main->id }}">
+                @foreach($subs as $sub)
+                  @php
+                    $subsubs = \App\Models\Category::where('parent_id',$sub->id)->get();
+                  @endphp
+                  <li class="dropdown-submenu">
+                    <a
+                      class="dropdown-item d-flex justify-content-between align-items-center"
+                      href="{{ $subsubs->count() ? '#' : route('category.show', $sub->slug) }}"
+                    >
+                      {{ $sub->name }}
+                      @if($subsubs->count())
+                        <i class="fas fa-chevron-right"></i>
+                      @endif
+                    </a>
+                    @if($subsubs->count())
+                      <ul class="dropdown-menu ms-2">
+                        @foreach($subsubs as $ss)
+                          <li>
+                            <a class="dropdown-item" href="{{ route('category.show', $sub->slug) }}">
+                              {{ $ss->name }}
+                            </a>
+                          </li>
+                        @endforeach
+                      </ul>
+                    @endif
+                  </li>
+                @endforeach
+              </ul>
+            @endif
+          </li>
+        @endforeach
+      </ul>
+    </div>
+  </nav>
+@endif
+
+
+
+    </div>
+
+   
+
+@yield('main')
+
+
+<!-- Footer Section -->
+<footer class="bg-dark text-white py-5">
+  <div class="container px-3 px-sm-5">
+    <div class="row gx-4 gy-5">
+
+      <!-- Sellers -->
+      <div class="col-md-3 col-6">
+        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">Sellers</h5>
+        <ul class="list-unstyled small mb-0">
+          <li class="mb-2">
+            <a href="{{ url('/become_seller') }}" class="text-white text-decoration-none footer-link">
+              Become a Seller
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="{{ url('/privacy') }}" class="text-white text-decoration-none footer-link">
+              Privacy Policy
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="{{ url('/terms') }}" class="text-white text-decoration-none footer-link">
+              Terms &amp; Conditions
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="{{ url('/seller_forum') }}" class="text-white text-decoration-none footer-link">
+              Seller Forum
+            </a>
+          </li>
+          <li>
+            <a href="{{ url('/seller_tips') }}" class="text-white text-decoration-none footer-link">
+              Seller Tips
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Buyers -->
+      <div class="col-md-3 col-6">
+        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">Buyers</h5>
+        <ul class="list-unstyled small mb-0">
+          <li class="mb-2">
+            <a href="{{ url('/buyer_tips') }}" class="text-white text-decoration-none footer-link">
+              Buyer Tips
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="{{ url('/privacy') }}" class="text-white text-decoration-none footer-link">
+              Privacy Policy
+            </a>
+          </li>
+          <li>
+            <a href="{{ url('/buyer_terms') }}" class="text-white text-decoration-none footer-link">
+              Terms &amp; Conditions
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- About -->
+      <div class="col-md-3 col-6">
+        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">About</h5>
+        <ul class="list-unstyled small mb-0">
+          <li class="mb-2">
+            <a href="{{ url('/about') }}" class="text-white text-decoration-none footer-link">
+              About Cetsy
+            </a>
+          </li>
+          <li>
+            <a href="{{ url('/house_policy') }}" class="text-white text-decoration-none footer-link">
+              House Rules &amp; Policy
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Support -->
+      <div class="col-md-3 col-6">
+        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">Support</h5>
+        <ul class="list-unstyled small mb-4">
+          <li class="mb-2">
+            <a href="{{ url('/contact') }}" class="text-white text-decoration-none footer-link">
+              Reach Us
+            </a>
+          </li>
+          <li class="text-secondary small text-white">
+            Email: support@cetsy.co
+          </li>
+        </ul>
+
+        <!-- Social Icons -->
+        <div class="d-flex gap-3">
+          <a href="#!" aria-label="Facebook" class="text-white footer-link">
+            <i class="fab fa-facebook-f fs-5"></i>
+          </a>
+          <a href="#!" aria-label="Instagram" class="text-white footer-link">
+            <i class="fab fa-instagram fs-5"></i>
+          </a>
+          <a href="#!" aria-label="Twitter" class="text-white footer-link">
+            <i class="fab fa-twitter fs-5"></i>
+          </a>
+          <a href="#!" aria-label="LinkedIn" class="text-white footer-link">
+            <i class="fab fa-linkedin-in fs-5"></i>
+          </a>
         </div>
       </div>
+
     </div>
-  </header>
 
-  <!-- Main Content -->
-  <main class="mt-6">
-    @yield('content')
-  </main>
-
-  <!-- Footer -->
-  <footer class="bg-gray-100 mt-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div>
-        <h4 class="font-semibold text-gray-700 mb-4">Cetsy</h4>
-        <p class="text-sm text-gray-600">Bringing handmade and vintage goods from independent shops to your door.</p>
-      </div>
-      <div>
-        <h4 class="font-semibold text-gray-700 mb-4">About</h4>
-        <ul class="space-y-2 text-sm text-gray-600">
-          <li><a href="#" class="hover:text-green-600">Our Story</a></li>
-          <li><a href="#" class="hover:text-green-600">Careers</a></li>
-          <li><a href="#" class="hover:text-green-600">Press</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4 class="font-semibold text-gray-700 mb-4">Support</h4>
-        <ul class="space-y-2 text-sm text-gray-600">
-          <li><a href="#" class="hover:text-green-600">Help Center</a></li>
-          <li><a href="#" class="hover:text-green-600">Contact Us</a></li>
-          <li><a href="#" class="hover:text-green-600">Policies</a></li>
-        </ul>
-      </div>
+    <div class="mt-5 pt-4 border-top border-secondary text-center text-secondary small text-white">
+      &copy; {{ date('Y') }} cetsy.co — All rights reserved.
     </div>
-    <div class="border-t border-gray-200 py-4 text-center text-sm text-gray-500">
-      &copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
-    </div>
-  </footer>
+  </div>
+</footer>
 
-  <script>
-    function cartComponent() {
-      return {
-        flashMessage: '{{ session("success") ?? session("info") ?? "" }}',
-        cartCount: 0,
-        cartItems: [],
-        cartSubtotal: '0.00',
 
-        init() {
-          if (this.flashMessage) {
-            setTimeout(() => this.flashMessage = '', 3000);
-          }
-        },
+</main>
 
-        fetchCart() {
-          fetch('/cart', { headers: { 'Accept': 'application/json' } })
-            .then(r => r.json())
-            .then(d => {
-              this.cartCount    = d.count;
-              this.cartItems    = d.items;
-              this.cartSubtotal = d.subtotal;
-            });
-        },
+<!-- ===============================================-->
+<!--    End of Main Content-->
+<!-- ===============================================-->
 
-        addToCart(productId, qty = 1) {
-          fetch('/cart', {
-            method: 'POST',
-            headers: {
-              'Content-Type':'application/json',
-              'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({ product_id: productId, quantity: qty })
-          })
-          .then(r => r.json())
-          .then(d => {
-            this.cartCount    = d.count;
-            this.cartItems    = d.items;
-            this.cartSubtotal = d.subtotal;
-            this.flashMessage = 'Added to cart!';
-            setTimeout(() => this.flashMessage = '', 3000);
-          });
-        }
-      };
-    }
-  </script>
+<!-- ===============================================-->
+<!--    JavaScripts-->
+<!-- ===============================================-->
+<script src="{{ asset('') }}vendors/popper/popper.min.js"></script>
+<script src="{{ asset('') }}vendors/bootstrap/bootstrap.min.js"></script>
+<script src="{{ asset('') }}vendors/anchorjs/anchor.min.js"></script>
+<script src="{{ asset('') }}vendors/is/is.min.js"></script>
+<script src="{{ asset('') }}vendors/fontawesome/all.min.js"></script>
+<script src="{{ asset('') }}vendors/lodash/lodash.min.js"></script>
+<script src="{{ asset('') }}vendors/list.js/list.min.js"></script>
+<script src="{{ asset('') }}vendors/feather-icons/feather.min.js"></script>
+<script src="{{ asset('') }}vendors/dayjs/dayjs.min.js"></script>
+<script src="{{ asset('') }}vendors/mapbox-gl/mapbox-gl.js"></script>
+<script src="{{ asset('') }}assets/js/phoenix.js"></script>
+<script src="{{ asset('') }}vendors/isotope-layout/isotope.pkgd.min.js"></script>
+<script src="{{ asset('') }}vendors/imagesloaded/imagesloaded.pkgd.min.js"></script>
+<script src="{{ asset('') }}vendors/isotope-packery/packery-mode.pkgd.min.js"></script>
+<script src="{{ asset('') }}vendors/bigpicture/BigPicture.js"></script>
+<script src="{{ asset('') }}vendors/countup/countUp.umd.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDbaQGvhe7Af-uOMJz68NWHnO34UjjE7Lo&amp;callback=initMap" async></script>
+<script src="{{ asset('') }}/{{ asset('') }}/../smtpjs.com/v3/smtp.js"></script>
+
+
+@yield('scripts')
+ @stack('scripts')
+
+
+
 </body>
 </html>

@@ -3,43 +3,62 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Setting extends Model
 {
-    use HasFactory;
-
     /**
      * The table associated with the model.
-     * (Optional if you follow Laravel’s naming conventions.)
      *
-     * @var string
+     * (only needed if your table name is non-standard;
+     * by default Eloquent will use the plural of the model name)
      */
     protected $table = 'settings';
 
     /**
      * The attributes that are mass assignable.
-     *
-     * @var array<int,string>
      */
     protected $fillable = [
-        'key',
-        'value',
+        'site_name',
+        'meta_description',
+        'phone',
+        'email',
+        'facebook_url',
+        'instagram_url',
+        'x_url',
+        'linkedin_url',
+        'tiktok_url',
+        'paypal_client_id',
+        'default_currency',
+        'youtube_url',
+        'whatsapp_number',
+        'address',
+        'timezone',
     ];
 
     /**
-     * Indicates if the model should be timestamped.
-     *
-     * @var bool
+     * The model's default values for attributes.
      */
-    public $timestamps = false;
+    protected $attributes = [
+        'site_name'         => '',
+        'meta_description'  => '',
+        'phone'             => '',
+        'email'             => '',
+        'facebook_url'      => '',
+        'instagram_url'     => '',
+        'x_url'             => '',
+        'linkedin_url'      => '',
+        'tiktok_url'        => '',
+        'paypal_client_id'  => '',
+        // you can also set a default currency here if you like:
+        // 'default_currency' => 'USD',
+        'youtube_url'       => '',
+        'whatsapp_number'   => '',
+        'address'           => '',
+        'timezone'          => '',
+    ];
 
     /**
-     * Retrieve a setting by key.
+     * Disable timestamps if your settings table doesn't have created_at/updated_at.
      */
-    public static function get($key, $default = null)
-    {
-        $record = static::where('key', $key)->first();
-        return $record ? $record->value : $default;
-    }
+    public $timestamps = false;
 }
