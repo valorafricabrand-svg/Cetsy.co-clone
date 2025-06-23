@@ -4,7 +4,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Wishlist;
+use App\Models\Product;
+use App\Mail\ProductWishlistedMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class WishlistController extends Controller
 {
@@ -24,10 +27,28 @@ class WishlistController extends Controller
             return back()->with('success', 'Removed from Favorites.');
         }
 
+        // Create the wishlist item
         Wishlist::create([
             'user_id'    => $request->user()->id,
             'product_id' => $data['product_id'],
         ]);
+
+        // Send email to shop owner
+        try {
+            $product = Product::with('shop.user')->find($data['product_id']);
+            
+            if ($product && $product->shop && $product->shop->user) {
+                Mail::to($product->shop->user->email)
+                    ->send(new ProductWishlistedMail(
+                        $product,
+                        $request->user(),
+                        $product->shop->user
+                    ));
+            }
+        } catch (\Exception $e) {
+            // Log the error but don't break the user experience
+            \Log::error('Failed to send wishlist notification email: ' . $e->getMessage());
+        }
 
         return back()->with('success', 'Added to Favorites!');
     }
@@ -35,7 +56,7 @@ class WishlistController extends Controller
 
         public function remove(Wishlist $wishlist)
     {
-        // Prevent users from deleting someone else’s item
+        // Prevent users from deleting someone else's item
         if ($wishlist->user_id !== auth()->id()) {
             abort(403);
         }
