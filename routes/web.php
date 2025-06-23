@@ -232,6 +232,7 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
 
     Route::get('messages', [App\Http\Controllers\Seller\MessageController::class, 'index'])->name('messages.index');
     Route::get('messages/{message}', [App\Http\Controllers\Seller\MessageController::class, 'show'])->name('messages.show');
+    Route::post('messages/{message}/reply', [App\Http\Controllers\Seller\MessageController::class, 'reply'])->name('messages.reply');
 });
 
 /*
@@ -242,6 +243,12 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
 Route::middleware('auth')->prefix('buyer')->name('buyer.')->group(function () {
     Route::get('dashboard', [BuyerDashboard::class, 'index'])->name('dashboard');
     Route::get('orders/{order}', [AccountController::class, 'orderDetails'])->name('orders.show');
+    Route::get('messages', [MessageController::class, 'buyerIndex'])->name('messages.index');
+    Route::get('messages/{message}', [MessageController::class, 'show'])->name('messages.show');
+
+    Route::get('/messages/{message}/chat', [MessageController::class, 'show'])->name('messages.chat.show');
+    Route::get('/messages/{message}/chat/messages', [MessageController::class, 'fetch'])->name('messages.chat.fetch');
+    Route::post('/messages/{message}/chat', [MessageController::class, 'send'])->name('messages.chat.send');
 });
 
 /*

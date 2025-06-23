@@ -7,6 +7,10 @@
     $pendingPayouts = \App\Models\PayoutRequest::where('user_id', Auth::id())
                          ->where('status','pending')->count();
     $formatMoney    = fn($amt) => number_format($amt,2);
+    // Unread messages count
+    $unreadMessages = \App\Models\Message::where('receiver_id', Auth::id())
+        ->where('is_read', false)
+        ->count();
   @endphp
 
   <style>
@@ -93,6 +97,17 @@
     .help-btn:hover {
       transform: translateY(-2px);
     }
+
+    /* Unread badge for messages */
+    .badge-unread {
+      background: #dc3545 !important;
+      color: #fff !important;
+      font-size: 0.8rem;
+      padding: 0.35em 0.7em;
+      border-radius: 1rem;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
   </style>
 
   <aside class="seller-sidebar mb-4">
@@ -104,8 +119,10 @@
             <i class="fas fa-wallet fa-lg"></i>
           </div>
           <div class="flex-grow-1">
-            <small class="text-muted d-block fw-medium">Available Balance</small>
-            <h4 class="mb-0 fw-bold text-success">${{ $formatMoney($walletBalance) }}</h4>
+            <a href="{{ route('wallet.index') }}" class="stretched-link text-decoration-none text-dark">
+              <small class="text-muted d-block fw-medium">Available Balance</small>
+              <h4 class="mb-0 fw-bold text-success">${{ $formatMoney($walletBalance) }}</h4>
+            </a>
           </div>
         </div>
         <div class="d-flex align-items-center">
@@ -113,7 +130,7 @@
             <i class="fas fa-money-check-alt fa-lg"></i>
           </div>
           <div class="flex-grow-1">
-            <a href="{{ route('seller.payouts.index') }}" class="stretched-link text-decoration-none text-dark">
+            <a href="{{ route('wallet.index') }}" class="stretched-link text-decoration-none text-dark">
               <small class="text-muted d-block fw-medium">Payout Requests</small>
               <div class="d-flex align-items-center">
                 <span class="fw-semibold">Withdraw Funds</span>
@@ -136,6 +153,12 @@
         ['url'=>route('seller.orders.payments'),'icon'=>'fas fa-credit-card','label'=>'Payments'],
         ['url'=>route('seller.shop.create'),'icon'=>'fas fa-store','label'=>'My Shop'],
         ['url'=>route('seller.buyers.index'),'icon'=>'fas fa-users','label'=>'My Buyers'],
+        [
+          'url'=>route('seller.messages.index'),
+          'icon'=>'fas fa-comments',
+          'label'=>'Messages',
+          'unread'=>$unreadMessages
+        ],
         ['url'=>route('shipping_profiles.index'),'icon'=>'fas fa-truck-fast','label'=>'Shipping'],
         ['url'=>route('seller.analytics.index'),'icon'=>'fas fa-chart-line','label'=>'Analytics'],
       ] as $item)
@@ -147,6 +170,9 @@
               <i class="{{ $item['icon'] }} fa-fw"></i>
             </div>
             <span class="fw-medium">{{ $item['label'] }}</span>
+            @if(isset($item['unread']) && $item['unread'])
+              <span class="badge badge-unread">{{ $item['unread'] }}</span>
+            @endif
             @if(str_starts_with($currentUrl, $item['url']))
               <i class="fas fa-chevron-right ms-auto"></i>
             @endif
