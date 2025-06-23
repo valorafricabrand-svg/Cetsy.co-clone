@@ -20,16 +20,16 @@ class OrderMessageController extends Controller
     /**
      * Fetch all messages for the order (JSON).
      */
- // In fetch() method
-public function fetch(Order $order, Request $request)
-{
-    $query = $order->messages()->with('user:id,name')->orderBy('id');
-    if ($request->has('after')) {
-        $query->where('id', '>', $request->after);
+    // In fetch() method
+    public function fetch(Order $order, Request $request)
+    {
+        $query = $order->messages()->with('user:id,name')->orderBy('id');
+        if ($request->has('after')) {
+            $query->where('id', '>', $request->after);
+        }
+        $messages = $query->get()->values();
+        return response()->json($messages);
     }
-    $messages = $query->get()->values();
-    return response()->json($messages);
-}
 
 
     /**

@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Offer;
+use App\Models\Product;
+use App\Mail\OfferReceivedMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class OfferController extends Controller
 {
@@ -24,6 +27,24 @@ class OfferController extends Controller
                 'status'      => 'pending',
             ]
         );
+
+        // Send email to shop owner
+        try {
+            $product = Product::with('shop.user')->find($data['product_id']);
+            
+            if ($product && $product->shop && $product->shop->user) {
+                Mail::to($product->shop->user->email)
+                    ->send(new OfferReceivedMail(
+                        $offer,
+                        $product,
+                        $request->user(),
+                        $product->shop->user
+                    ));
+            }
+        } catch (\Exception $e) {
+            // Log the error but don't break the user experience
+            \Log::error('Failed to send offer notification email: ' . $e->getMessage());
+        }
 
         return back()->with('success', 'Offer submitted! The seller will review it soon.');
     }

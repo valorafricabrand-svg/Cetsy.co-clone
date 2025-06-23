@@ -1,20 +1,30 @@
 @php
     $active = fn($routes) => collect((array) $routes)
         ->contains(fn($r) => request()->routeIs($r));
+    $walletBalance = \App\Models\Wallet::where('user_id', Auth::id())
+                        ->selectRaw('SUM(credit - debit) as balance')
+                        ->value('balance') ?? 0;
+    $walletBalanceFormatted = number_format($walletBalance, 2);
+    $hasShop = \App\Models\Shop::where('user_id', Auth::id())->exists();
+    // Unread messages count for buyer
+    $unreadMessages = \App\Models\Message::where('receiver_id', Auth::id())
+        ->where('is_read', false)
+        ->count();
 @endphp
 
 @if(Auth::user()->isBuyer())
-
-
-  @php
-        $walletBalance = \App\Models\Wallet::where('user_id', Auth::id())
-                            ->selectRaw('SUM(credit - debit) as balance')
-                            ->value('balance') ?? 0;
-        $walletBalanceFormatted = number_format($walletBalance, 2);
-        $hasShop = \App\Models\Shop::where('user_id', Auth::id())->exists();
-    @endphp
+    <style>
+        .badge-unread {
+            background: #dc3545 !important;
+            color: #fff !important;
+            font-size: 0.8rem;
+            padding: 0.35em 0.7em;
+            border-radius: 1rem;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+    </style>
     <nav class="d-flex flex-column h-100 bg-white border-end shadow-sm p-3" style="min-height: 100vh; width: 250px;" aria-label="Buyer Sidebar">
-
         <!-- Dashboard -->
         <div class="mb-2">
             <a
@@ -26,19 +36,16 @@
                 Dashboard
             </a>
         </div>
-
-
-         <div class="mb-2">
-                <a
-                    href="{{ route('wallet.index') }}" 
-                    class="nav-link d-flex align-items-center mt-2 bg-light text-success fw-bold rounded px-2 py-2"
-                    role="status"
-                >
-                    <i class="fas fa-dollar-sign me-2 text-success"></i>
-                    Balance: USD {{ $walletBalanceFormatted }}
-                </a>
-            </div>
-
+        <div class="mb-2">
+            <a
+                href="{{ route('wallet.index') }}" 
+                class="nav-link d-flex align-items-center mt-2 bg-light text-success fw-bold rounded px-2 py-2"
+                role="status"
+            >
+                <i class="fas fa-dollar-sign me-2 text-success"></i>
+                Balance: USD {{ $walletBalanceFormatted }}
+            </a>
+        </div>
         <!-- My Orders -->
         <div class="mb-2">
             <a
@@ -49,7 +56,6 @@
                 My Orders
             </a>
         </div>
-
         <!-- Payments -->
         <div class="mb-2">
             <a
@@ -60,9 +66,18 @@
                 Payments
             </a>
         </div>
-
-
-
+        <div class="mb-2">
+            <a
+                href="{{ route('buyer.messages.index') }}"
+                class="nav-link d-flex align-items-center mt-2 {{ $active('messages.index') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
+            >
+                <i class="fas fa-comments me-2 text-success"></i>
+                Messages
+                @if($unreadMessages)
+                    <span class="badge badge-unread">{{ $unreadMessages }}</span>
+                @endif
+            </a>
+        </div>
         <!-- Profiles -->
         <div class="mb-2">
             <a
@@ -73,6 +88,5 @@
                 Profiles
             </a>
         </div>
-
     </nav>
 @endif
