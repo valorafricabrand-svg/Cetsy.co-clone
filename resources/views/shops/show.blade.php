@@ -19,6 +19,10 @@
         <small class="text-muted">Owned by {{ $shop->user->name }}</small>
       </div>
     </div>
+    {{-- View Payment Methods --}}
+    <a href="{{ route('seller.payment-methods.index') }}" class="btn btn-outline-">
+      <i class="fas fa-credit-card me-1"></i> Payment Methods
+    </a>
     {{-- Edit button: only the owner --}}
     @if(Auth::id() === $shop->user_id)
       <a href="{{ route('seller.shops.edit', $shop) }}" class="btn btn-primary">
@@ -76,14 +80,16 @@
     <div class="card-header">Payment Details</div>
     <div class="card-body">
       <div class="row">
+        @foreach($paymentMethods as $paymentMethod)
         <div class="col-md-6 mb-3">
-          <strong>Bank Account #</strong><br>
-          <span class="text-muted">{{ $shop->bank_account }}</span>
+          <strong>{{ $paymentMethod->paymentType->name }}</strong><br>
+          <span class="text-muted">{{ $paymentMethod->account_number }}</span>
         </div>
         <div class="col-md-6 mb-3">
-          <strong>Routing #</strong><br>
-          <span class="text-muted">{{ $shop->routing_number }}</span>
-        </div>
+            <strong>Account Name</strong><br>
+            <span class="text-muted">{{ $paymentMethod->account_name }}</span>
+          </div>
+        @endforeach
       </div>
     </div>
   </div>
