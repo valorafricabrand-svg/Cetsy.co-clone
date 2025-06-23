@@ -1,4 +1,4 @@
-@extends('theme.layouts.main')
+@extends('layouts.frontapp')
 
 @section('main')
 <section class="cart-page py-5 bg-light" x-data="cartComponent()" x-init="init()">

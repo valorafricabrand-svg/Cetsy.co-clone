@@ -40,7 +40,7 @@ public function index()
                  ->take(8)
                  ->get();
 
-    return view('theme.index', compact('categories', 'featuredProducts', 'shops', 'services'));
+    return themed_view('index', compact('categories', 'featuredProducts', 'shops', 'services'));
 }
 
 }

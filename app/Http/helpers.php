@@ -75,4 +75,55 @@ function shop(){
  }
 
 
+   if (! function_exists('setting')) {
+    /**
+     * Retrieve a setting value by key (column name), or return default.
+     *
+     * @param  string  $key
+     * @param  mixed   $default
+     * @return mixed
+     */
+    function setting(string $key, $default = null)
+    {
+        static $settings;
+
+        // cache the row so we only hit the DB once
+        if (! $settings) {
+            $settings = Setting::first();
+        }
+
+        return $settings && isset($settings->$key)
+            ? $settings->$key
+            : $default;
+    }
+}
+
+if (! function_exists('theme')) {
+    /**
+     * Shortcut for 'theme' setting.
+     */
+    function theme(): string
+    {
+        return setting('theme', 'cetsy');
+    }
+}
+
+
+
+
+
+    function themed_view(string $view, array $data = [])
+    {
+       
+ $theme    = theme();             ;
+
+        // Compose full themed view name
+        $themedView = "theme."."$theme.$view";
+
+   return view($themedView, $data);
+
+       
+    }
+
+
 ?>
