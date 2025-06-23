@@ -280,7 +280,7 @@ public function update(Request $request, Product $product)
             ]);
         }
 
-        return view('theme.listing_show', compact('product'));
+        return themed_view('listing_show', compact('product'));
     }
 
     public function wishlist()
@@ -292,7 +292,7 @@ public function update(Request $request, Product $product)
     public function listings()
     {
         $products = Product::with('media')->latest()->paginate(16);
-        return view('theme.listings', compact('products'));
+        return themed_view('listings', compact('products'));
     }
 
     public function search(Request $request)
@@ -303,7 +303,7 @@ public function update(Request $request, Product $product)
             ->orWhere('description', 'like', "%{$q}%")
             ->paginate(12);
 
-        return view('theme.listings', compact('products'))->with('q', $q);
+        return themed_view('listings', compact('products'))->with('q', $q);
     }
 
 

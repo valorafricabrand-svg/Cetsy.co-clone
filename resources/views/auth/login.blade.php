@@ -1,4 +1,4 @@
-@extends('theme.layouts.main')
+@extends('layouts.frontapp')
 
 @section('main')
 <div class="container py-16">

@@ -1,5 +1,5 @@
 {{-- resources/views/categories/show.blade.php --}}
-@extends('theme.layouts.main')
+@extends('layouts.frontapp')
 
 {{-- Optional SEO title --}}
 @section('title', $category->name . ' – Marketplace Category')
