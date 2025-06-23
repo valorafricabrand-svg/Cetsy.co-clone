@@ -12,6 +12,12 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
     <h2 class="h5 fw-semibold mb-0">Wallet Overview</h2>
     <div class="d-flex align-items-center gap-2">
+        {{-- View Payouts --}}
+        @if(auth()->user()->isSeller())
+        <a href="{{ route('seller.payouts.index') }}" class="btn btn-outline-primary">
+            <i class="fas fa-sync-alt me-1"></i> View Payouts
+        </a>
+        @endif
         <a href="{{ route('wallet.deposit.form') }}" class="btn btn-success">
             <i class="fas fa-plus me-1"></i> Deposit Funds
         </a>
@@ -61,6 +67,7 @@
       class="modal-content needs-validation"
       novalidate>
     @csrf
+
 
     <div class="modal-header">
         <h5 class="modal-title">Request Payout</h5>

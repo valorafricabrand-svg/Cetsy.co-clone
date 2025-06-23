@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use App\Models\PaymentMethod;
 
 class ShopController extends Controller
 {
@@ -87,7 +88,8 @@ public function create()
      */
     public function show(Shop $shop)
     {
-        return view('shops.show', compact('shop'));
+        $paymentMethods = PaymentMethod::where('shop_id', $shop->id)->get();
+        return view('shops.show', compact('shop', 'paymentMethods'));
     }
 
 

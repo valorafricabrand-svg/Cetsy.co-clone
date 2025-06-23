@@ -42,6 +42,11 @@
         'icon'  => 'fas fa-money-check-alt',
       ],
       [
+        'label' => 'Payment Types',
+        'url'   => route('admin.payment-types.index'),
+        'icon'  => 'fas fa-credit-card',
+      ],
+      [
         'label' => 'Payments',
         'url'   => route('admin.payments.index'),
         'icon'  => 'fas fa-shopping-cart',

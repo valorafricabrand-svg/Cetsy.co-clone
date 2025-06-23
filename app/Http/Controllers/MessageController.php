@@ -75,6 +75,8 @@ class MessageController extends Controller
 
     public function show(Message $message)
     {
+        $message->is_read = true;
+        $message->save();
         $messages = $message->with('sender:id,name')->orderBy('id')->get();
         return view('buyer.messages.show', compact('message', 'messages'));
     }
