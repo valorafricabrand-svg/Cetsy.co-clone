@@ -14,7 +14,8 @@ use App\Http\Controllers\Admin\{
     UserController, AdminReportController as AdminReport,
     SettingsController as AdminSetting,
     PayoutRequestController as AdminPayoutRequestController,
-    PaymentController
+    PaymentController,
+    PaymentTypeController
 };
 
 use App\Http\Controllers\Seller\{
@@ -183,6 +184,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+//Payment Types
+    Route::resource('payment-types', PaymentTypeController::class);
 });
 
 /*
@@ -233,6 +236,9 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
     Route::get('messages', [App\Http\Controllers\Seller\MessageController::class, 'index'])->name('messages.index');
     Route::get('messages/{message}', [App\Http\Controllers\Seller\MessageController::class, 'show'])->name('messages.show');
     Route::post('messages/{message}/reply', [App\Http\Controllers\Seller\MessageController::class, 'reply'])->name('messages.reply');
+
+    // Payment Methods
+    Route::resource('payment-methods', \App\Http\Controllers\Seller\PaymentMethodController::class);
 });
 
 /*
