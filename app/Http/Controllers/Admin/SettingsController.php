@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;   // ← add this
+use Illuminate\Support\Str;
 
 class SettingsController extends Controller
 {
@@ -14,8 +16,8 @@ class SettingsController extends Controller
     public function index()
     {
         // Retrieve all settings (or paginate if many)
-        $setting = Setting::first();
-        return view('admin.settings.index', compact('setting'));
+        $settings = Setting::first();
+        return view('admin.settings.index', compact('settings'));
     }
 
     /**
@@ -29,18 +31,66 @@ class SettingsController extends Controller
     /**
      * Validate and update the specified setting.
      */
-    public function update(Request $request, Setting $setting)
-    {
-        // Example validation rules - adjust keys to match your settings columns
-        $data = $request->validate([
-            'key'   => ['required', 'string', 'max:255'],
-            'value' => ['nullable', 'string'],
-        ]);
+public function update(Request $request, Setting $setting)
+{
+    /* ----------------------------------------------------------
+     | 1. Validate input                                         |
+     ---------------------------------------------------------- */
+    $validated = $request->validate([
+        // Branding
+        'site_name'         => 'required|string|max:255',
+        'meta_description'  => 'required|string|max:255',
 
-        $setting->update($data);
+        // Logo & Favicon: either file OR URL (both optional)
+        'logo'              => 'nullable|image|max:2048',                       // 2 MB
+        'logo_url'          => 'nullable|max:255',
+        'favicon'           => 'nullable|image|mimes:png,ico,svg|max:1024',     // 1 MB
+        'favicon_url'       => 'nullable|max:255',
 
-        return redirect()
-            ->route('admin.settings.index')
-            ->with('success', 'Setting updated successfully.');
+        // Contact
+        'phone'             => 'nullable|string|max:50',
+        'email'             => 'required|email|max:255',
+        'address'           => 'nullable|string|max:255',
+        'whatsapp_number'   => 'nullable|string|max:50',
+        'timezone'          => 'required|string|max:64',
+
+        // Social
+        'facebook_url'      => 'nullable|url|max:255',
+        'instagram_url'     => 'nullable|url|max:255',
+        'x_url'             => 'nullable|url|max:255',
+        'linkedin_url'      => 'nullable|url|max:255',
+        'tiktok_url'        => 'nullable|url|max:255',
+        'youtube_url'       => 'nullable|url|max:255',
+
+        // Payment
+        'paypal_client_id'  => 'nullable|string|max:255',
+        'default_currency'  => 'required|string|size:3',
+    ]);
+
+    /* ----------------------------------------------------------
+     | 2. Handle file uploads                                    |
+     ---------------------------------------------------------- */
+    if ($request->hasFile('logo')) {
+        $path = $request->file('logo')->store('settings', 'public');
+        $validated['logo_url'] = Storage::url($path);         // public URL
     }
+
+    if ($request->hasFile('favicon')) {
+        $path = $request->file('favicon')->store('settings', 'public');
+        $validated['favicon_url'] = Storage::url($path);
+    }
+
+    /* ----------------------------------------------------------
+     | 3. Persist to DB                                          |
+     ---------------------------------------------------------- */
+    $setting->update($validated);
+
+    /* ----------------------------------------------------------
+     | 4. Redirect with flash                                    |
+     ---------------------------------------------------------- */
+    return back()->with('success', 'Settings updated successfully.');
+}
+
+
+
 }

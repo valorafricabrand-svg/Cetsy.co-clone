@@ -9,7 +9,7 @@
                         <a class="navbar-brand me-1 me-sm-3" href="{{ url('/') }}">
                             <div class="d-flex align-items-center">
                                 <!-- <img src="{{ favicon_url() }}" alt="b2b" width="27" /> -->
-                                <h5 class="logo-text ms-2 d-none d-sm-block" style="color: #027333;">Cetsy</h5>
+                                    <img src="{{ setting('logo_url') }}" style="height: 50px;">
                             </div>
                         </a>
                     </div>

@@ -11,16 +11,16 @@
     <!-- ===============================================-->
     <title inertia>{{ config('app.name', 'Laravel') }}</title>
     <meta name="description" content="@section('description'){{ get_option('meta_description') }} @show">
-
+   
     <!-- ===============================================-->
     <!--    Favicons-->
     <!-- ===============================================-->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ favicon_url() }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ favicon_url() }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ favicon_url() }}">
-    <link rel="shortcut icon" type="image/x-icon" href="{{ favicon_url() }}">
-    <link rel="manifest" href="{{ favicon_url() }}">
-    <meta name="msapplication-TileImage" content="{{ favicon_url() }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ setting('favicon_url') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ setting('favicon_url') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ setting('favicon_url') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ setting('favicon_url') }}">
+    <link rel="manifest" href="{{ setting('favicon_url') }}">
+    <meta name="msapplication-TileImage" content="{{ setting('favicon_url') }}">
     <meta name="theme-color" content="#ffffff">
     <script src="{{ asset('vendors/simplebar/simplebar.min.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
@@ -297,7 +297,6 @@
 </script>
 @yield('page-js')
 @yield('scripts')
-@include('chat_widget')
 @stack('scripts')
 
 @if(get_option('additional_js') && get_option('additional_js') !== 'additional_js' )
