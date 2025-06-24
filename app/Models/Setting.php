@@ -7,58 +7,69 @@ use Illuminate\Database\Eloquent\Model;
 class Setting extends Model
 {
     /**
-     * The table associated with the model.
-     *
-     * (only needed if your table name is non-standard;
-     * by default Eloquent will use the plural of the model name)
+     * Table name (only needed if non-standard).
      */
     protected $table = 'settings';
 
     /**
-     * The attributes that are mass assignable.
+     * Mass-assignable attributes.
      */
     protected $fillable = [
+        // Branding
         'site_name',
         'meta_description',
+        'logo_url',
+        'favicon_url',
+
+        // Contact
         'phone',
         'email',
+        'address',
+        'whatsapp_number',
+        'timezone',
+
+        // Social
         'facebook_url',
         'instagram_url',
         'x_url',
         'linkedin_url',
         'tiktok_url',
+        'youtube_url',
+
+        // Payment
         'paypal_client_id',
         'default_currency',
-        'youtube_url',
-        'whatsapp_number',
-        'address',
-        'timezone',
     ];
 
     /**
-     * The model's default values for attributes.
+     * Default attribute values.
      */
     protected $attributes = [
-        'site_name'         => '',
-        'meta_description'  => '',
-        'phone'             => '',
-        'email'             => '',
-        'facebook_url'      => '',
-        'instagram_url'     => '',
-        'x_url'             => '',
-        'linkedin_url'      => '',
-        'tiktok_url'        => '',
-        'paypal_client_id'  => '',
-        // you can also set a default currency here if you like:
-        // 'default_currency' => 'USD',
-        'youtube_url'       => '',
-        'whatsapp_number'   => '',
-        'address'           => '',
-        'timezone'          => '',
+        'site_name'        => '',
+        'meta_description' => '',
+
+        'logo_url'         => '',
+        'favicon_url'      => '',
+
+        'phone'            => '',
+        'email'            => '',
+        'address'          => '',
+        'whatsapp_number'  => '',
+        'timezone'         => '',
+
+        'facebook_url'     => '',
+        'instagram_url'    => '',
+        'x_url'            => '',
+        'linkedin_url'     => '',
+        'tiktok_url'       => '',
+        'youtube_url'      => '',
+
+        'paypal_client_id' => '',
+        // 'default_currency' => 'USD', // uncomment if you want a hard default
     ];
 
     /**
-     * Disable timestamps if your settings table doesn't have created_at/updated_at.
+     * Disable timestamps (settings table has no created_at/updated_at).
      */
     public $timestamps = false;
 }
