@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
 use App\Models\Subscription;
+use App\Models\Payment;
+use App\Models\Shop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class SubscriptionController extends Controller
@@ -20,28 +23,58 @@ class SubscriptionController extends Controller
 
     public function subscribe(Request $request)
     {
-        $request->validate([
-            'payment_method' => 'required|string',
-            'transaction_id' => 'required|string'
-        ]);
+        // Redirect to payment processing page instead of direct subscription creation
+        return view('seller.subscription_pay');
+    }
 
-        $user = Auth::user();
-        
+    public function successDeposit(Request $request, $id)
+    {
+        // Find the user by ID
+        $user = \App\Models\User::findOrFail($id);
+        $shop = Shop::where('user_id', $user->id)->first();
+
         // Create new subscription
         $subscription = new Subscription([
             'user_id' => $user->id,
             'status' => 'active',
             'start_date' => now(),
             'end_date' => now()->addMonth(),
-            'amount' => config('subscription.monthly_fee', 1000), // Default to 1000 if not configured
-            'payment_method' => $request->payment_method,
-            'transaction_id' => $request->transaction_id
+            'amount' => config('subscription.monthly_fee', 1000),
+            'payment_method' => $request->get('method', 'paypal'),
+            'transaction_id' => $request->get('transaction_id', uniqid())
         ]);
 
         $subscription->save();
 
-        return redirect()->route('seller.dashboard')
-            ->with('success', 'Subscription activated successfully!');
+        // Determine payment method: default to 'paypal'
+        $method = $request->get('method', 'paypal');
+
+        // Prepare a unique local transaction ID if not provided
+        $localTxId = $request->get('transaction_id');
+        if (!$localTxId) {
+            do {
+                $localTxId = 'SUB_' . time() . Str::upper(Str::random(6));
+            } while (Payment::where('local_transaction_id', $localTxId)->exists());
+        }
+
+        // Build the payment data array
+        $paymentData = [
+            'user_id'               => $user->id,
+            'shop_id'               => $shop ? $shop->id : null,
+            'total_amount'          => config('subscription.monthly_fee', 1000),
+            'payment_method'        => $method,
+            'status'                => '3', // Completed
+            'currency'              => 'USD',
+            'local_transaction_id'  => $localTxId,
+            'payment_name'          => 'subscription_fee',
+        ];
+
+        // Create the payment record
+        $payment = Payment::create($paymentData);
+
+        return redirect()
+            ->route('seller.dashboard')
+            ->with('success', 'Your subscription has been activated successfully!');
     }
 
     public function cancel()

@@ -105,35 +105,10 @@
               </div>
             </div>
 
-            {{-- 3) How You’ll Get Paid --}}
-            <h5 class="mt-4">3. How You’ll Get Paid</h5>
-            <div class="row g-3 mb-4">
-              <div class="col-md-6">
-                <label for="bank_account" class="form-label">Bank Account # <span class="text-danger">*</span></label>
-                <input 
-                  id="bank_account" name="bank_account" type="text"
-                  value="{{ old('bank_account') }}"
-                  required
-                  class="form-control"
-                  placeholder="000123456789"
-                >
-                <div class="invalid-feedback">Please enter your bank account number.</div>
-              </div>
-              <div class="col-md-6">
-                <label for="routing_number" class="form-label">Routing # <span class="text-danger">*</span></label>
-                <input 
-                  id="routing_number" name="routing_number" type="text"
-                  value="{{ old('routing_number') }}"
-                  required
-                  class="form-control"
-                  placeholder="011000015"
-                >
-                <div class="invalid-feedback">Please enter your routing number.</div>
-              </div>
-            </div>
+           
 
-            {{-- 4) Share Your Billing Info --}}
-            <h5 class="mt-4">4. Share Your Billing Info</h5>
+            {{-- 3) Share Your Billing Info --}}
+            <h5 class="mt-4">3. Share Your Billing Info</h5>
             <div class="row g-3 mb-4">
               <div class="col-12">
                 <label for="address" class="form-label">Street Address <span class="text-danger">*</span></label>
