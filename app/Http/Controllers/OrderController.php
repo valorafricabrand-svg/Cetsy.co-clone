@@ -81,160 +81,211 @@ public function show(Order $order)
      */
 public function storeOrder(Request $request)
 {
-    // Normalize billing_same_as_shipping to boolean before validation
-    $request->merge([
-        'billing_same_as_shipping' => $request->input('billing_same_as_shipping') === '1',
-    ]);
+    try {
+        // Normalize billing_same_as_shipping to boolean before validation
+        $request->merge([
+            'billing_same_as_shipping' => $request->input('billing_same_as_shipping') === '1',
+        ]);
 
-    $rules = [
-        'full_name' => 'required|string|max:255',
-        'email' => 'required|email|max:255',
-        'phone' => 'required|string|max:20',
-        'shipping_country' => 'required|integer|exists:countries,id',
-        'shipping_address_1' => 'required|string|max:255',
-        'shipping_address_2' => 'nullable|string|max:255',
-        'shipping_city' => 'required|string|max:255',
-        'shipping_state' => 'nullable|string|max:255',
-        'shipping_postal_code' => 'nullable|string|max:20',
-        'billing_same_as_shipping' => 'required|boolean',
-        'billing_country' => 'nullable|integer|exists:countries,id',
-        'billing_address_1' => 'nullable|string|max:255',
-        'billing_address_2' => 'nullable|string|max:255',
-        'billing_city' => 'nullable|string|max:255',
-        'billing_state' => 'nullable|string|max:255',
-        'billing_postal_code' => 'nullable|string|max:20',
-        'order_notes' => 'nullable|string|max:1000',
-        'promo_code' => 'nullable|string|max:50',
-        'product_ids' => 'required|array|min:1',
-        'product_ids.*' => 'required|integer|exists:products,id',
-        'quantities' => 'required|array|min:1',
-        'quantities.*' => 'required|integer|min:1',
-        'subtotal' => 'required|numeric|min:0',
-        'total' => 'required|numeric|min:0',
-        'shipping_total' => 'required|numeric|min:0',
-    ];
-
-    $validated = $request->validate($rules);
-
-    $cart = $request->session()->get('cart', []);
-    if (empty($cart)) {
-        return redirect()->back()->withErrors(['cart' => 'Your cart is empty.']);
-    }
-
-    // Group items by shop_id
-    $itemsByShop = [];
-    foreach ($cart as $item) {
-        $product = \App\Models\Product::find($item['id']);
-        if (!$product) continue;
-
-        $itemsByShop[$product->shop_id][] = [
-            'product' => $product,
-            'quantity' => $item['quantity'],
-            'price' => $product->price,
+        $rules = [
+            'full_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:20',
+            'shipping_country' => 'required|integer|exists:countries,id',
+            'shipping_address_1' => 'required|string|max:255',
+            'shipping_address_2' => 'nullable|string|max:255',
+            'shipping_city' => 'required|string|max:255',
+            'shipping_state' => 'nullable|string|max:255',
+            'shipping_postal_code' => 'nullable|string|max:20',
+            'billing_same_as_shipping' => 'required|boolean',
+            'billing_country' => 'nullable|integer|exists:countries,id',
+            'billing_address_1' => 'nullable|string|max:255',
+            'billing_address_2' => 'nullable|string|max:255',
+            'billing_city' => 'nullable|string|max:255',
+            'billing_state' => 'nullable|string|max:255',
+            'billing_postal_code' => 'nullable|string|max:20',
+            'order_notes' => 'nullable|string|max:1000',
+            'promo_code' => 'nullable|string|max:50',
+            'product_ids' => 'required|array|min:1',
+            'product_ids.*' => 'required|integer|exists:products,id',
+            'quantities' => 'required|array|min:1',
+            'quantities.*' => 'required|integer|min:1',
+            'subtotal' => 'required|numeric|min:0',
+            'total' => 'required|numeric|min:0',
+            'shipping_total' => 'required|numeric|min:0',
         ];
-    }
 
-    foreach ($itemsByShop as $shopId => $items) {
-        $order = new \App\Models\Order();
-        $order->user_id = auth()->id();
-        $order->shop_id = $shopId;
+        $validated = $request->validate($rules);
 
-        // Customer info
-        $order->full_name = $validated['full_name'];
-        $order->email = $validated['email'];
-        $order->phone = $validated['phone'];
-
-        // Shipping info
-        $order->shipping_country_id = $validated['shipping_country'];
-        $order->shipping_address_1 = $validated['shipping_address_1'];
-        $order->shipping_address_2 = $validated['shipping_address_2'] ?? null;
-        $order->shipping_city = $validated['shipping_city'];
-        $order->shipping_state = $validated['shipping_state'] ?? null;
-        $order->shipping_postal_code = $validated['shipping_postal_code'] ?? null;
-
-        // Billing info based on boolean
-        if ($validated['billing_same_as_shipping']) {
-            $order->billing_same_as_shipping = true;
-            $order->billing_country_id = $order->shipping_country_id;
-            $order->billing_address_1 = $order->shipping_address_1;
-            $order->billing_address_2 = $order->shipping_address_2;
-            $order->billing_city = $order->shipping_city;
-            $order->billing_state = $order->shipping_state;
-            $order->billing_postal_code = $order->shipping_postal_code;
-        } else {
-            $order->billing_same_as_shipping = false;
-            $order->billing_country_id = $validated['billing_country'] ?? null;
-            $order->billing_address_1 = $validated['billing_address_1'] ?? null;
-            $order->billing_address_2 = $validated['billing_address_2'] ?? null;
-            $order->billing_city = $validated['billing_city'] ?? null;
-            $order->billing_state = $validated['billing_state'] ?? null;
-            $order->billing_postal_code = $validated['billing_postal_code'] ?? null;
+        $cart = $request->session()->get('cart', []);
+        if (empty($cart)) {
+            return redirect()->back()->withErrors(['cart' => 'Your cart is empty.']);
         }
 
-        $order->shipping_method = "standard"; // or use $validated['shipping_method'] if available
-        $order->payment_method = 'paypal'; // adjust as necessary
-        $order->order_notes = $validated['order_notes'] ?? null;
-        $order->promo_code = $validated['promo_code'] ?? null;
+        // Group items by shop_id
+        $itemsByShop = [];
+        foreach ($cart as $item) {
+            $product = \App\Models\Product::find($item['id']);
+            if (!$product) continue;
 
-        // Calculate subtotal for this shop
-        $subtotal = 0;
-        foreach ($items as $item) {
-            $subtotal += $item['price'] * $item['quantity'];
-        }
-        $order->subtotal = $subtotal;
-
-        // Save total shipping cost for entire order (all items)
-        // You may want to sum shipping costs for only this shop's items
-        $shopShippingCost = 0;
-        foreach ($items as $item) {
-            $cartItem = $cart[$item['product']->id] ?? null;
-            if ($cartItem) {
-                $shippingProfiles = collect($cartItem['shipping_profiles'] ?? []);
-                $selectedProfileId = $cartItem['selected_shipping_profile_id'] ?? null;
-                $selectedProfile = $shippingProfiles->firstWhere('id', $selectedProfileId);
-                $itemShippingCost = ($selectedProfile ? $selectedProfile['base_rate'] : 0) * $item['quantity'];
-                $shopShippingCost += $itemShippingCost;
-            }
+            $itemsByShop[$product->shop_id][] = [
+                'product' => $product,
+                'quantity' => $item['quantity'],
+                'price' => $product->price,
+            ];
         }
 
-        $order->shipping_cost = $shopShippingCost;
-        $order->total_amount = $subtotal + $shopShippingCost;
-        $order->status = 'pending';
+        $orders = [];
+        
+        DB::beginTransaction();
+        
+        foreach ($itemsByShop as $shopId => $items) {
+            $order = new \App\Models\Order();
+            $order->user_id = auth()->id();
+            $order->shop_id = $shopId;
 
-        $order->save();
+            // Customer info
+            $order->full_name = $validated['full_name'];
+            $order->email = $validated['email'];
+            $order->phone = $validated['phone'];
 
-        // Save each order item with shipping profile and cost
-        foreach ($items as $item) {
-            $orderItem = new \App\Models\OrderItem();
-            $orderItem->order_id = $order->id;
-            $orderItem->product_id = $item['product']->id;
-            $orderItem->quantity = $item['quantity'];
-            $orderItem->price = $item['price'];
+            // Shipping info
+            $order->shipping_country_id = $validated['shipping_country'];
+            $order->shipping_address_1 = $validated['shipping_address_1'];
+            $order->shipping_address_2 = $validated['shipping_address_2'] ?? null;
+            $order->shipping_city = $validated['shipping_city'];
+            $order->shipping_state = $validated['shipping_state'] ?? null;
+            $order->shipping_postal_code = $validated['shipping_postal_code'] ?? null;
 
-            $cartItem = $cart[$item['product']->id] ?? null;
-
-            if ($cartItem) {
-                $orderItem->shipping_profile_id = $cartItem['selected_shipping_profile_id'] ?? null;
-
-                $shippingProfiles = collect($cartItem['shipping_profiles'] ?? []);
-                $selectedProfile = $shippingProfiles->firstWhere('id', $orderItem->shipping_profile_id);
-
-                $orderItem->shipping_cost = ($selectedProfile ? $selectedProfile['base_rate'] : 0) * $orderItem->quantity;
+            // Billing info based on boolean
+            if ($validated['billing_same_as_shipping']) {
+                $order->billing_same_as_shipping = true;
+                $order->billing_country_id = $order->shipping_country_id;
+                $order->billing_address_1 = $order->shipping_address_1;
+                $order->billing_address_2 = $order->shipping_address_2;
+                $order->billing_city = $order->shipping_city;
+                $order->billing_state = $order->shipping_state;
+                $order->billing_postal_code = $order->shipping_postal_code;
             } else {
-                $orderItem->shipping_profile_id = null;
-                $orderItem->shipping_cost = 0;
+                $order->billing_same_as_shipping = false;
+                $order->billing_country_id = $validated['billing_country'] ?? null;
+                $order->billing_address_1 = $validated['billing_address_1'] ?? null;
+                $order->billing_address_2 = $validated['billing_address_2'] ?? null;
+                $order->billing_city = $validated['billing_city'] ?? null;
+                $order->billing_state = $validated['billing_state'] ?? null;
+                $order->billing_postal_code = $validated['billing_postal_code'] ?? null;
             }
 
-            $orderItem->save();
+            $order->shipping_method = "standard"; // or use $validated['shipping_method'] if available
+            $order->payment_method = 'paypal'; // adjust as necessary
+            $order->order_notes = $validated['order_notes'] ?? null;
+            $order->promo_code = $validated['promo_code'] ?? null;
+
+            // Calculate subtotal for this shop
+            $subtotal = 0;
+            foreach ($items as $item) {
+                $subtotal += $item['price'] * $item['quantity'];
+            }
+            $order->subtotal = $subtotal;
+
+            // Save total shipping cost for entire order (all items)
+            // You may want to sum shipping costs for only this shop's items
+            $shopShippingCost = 0;
+            foreach ($items as $item) {
+                $cartItem = $cart[$item['product']->id] ?? null;
+                if ($cartItem) {
+                    $shippingProfiles = collect($cartItem['shipping_profiles'] ?? []);
+                    $selectedProfileId = $cartItem['selected_shipping_profile_id'] ?? null;
+                    $selectedProfile = $shippingProfiles->firstWhere('id', $selectedProfileId);
+                    $itemShippingCost = ($selectedProfile ? $selectedProfile['base_rate'] : 0) * $item['quantity'];
+                    $shopShippingCost += $itemShippingCost;
+                }
+            }
+
+            $order->shipping_cost = $shopShippingCost;
+            $order->total_amount = $subtotal + $shopShippingCost;
+            $order->status = 'pending';
+
+            $order->save();
+
+            // Save each order item with shipping profile and cost
+            foreach ($items as $item) {
+                $orderItem = new \App\Models\OrderItem();
+                $orderItem->order_id = $order->id;
+                $orderItem->product_id = $item['product']->id;
+                $orderItem->quantity = $item['quantity'];
+                $orderItem->price = $item['price'];
+
+                $cartItem = $cart[$item['product']->id] ?? null;
+
+                if ($cartItem) {
+                    $orderItem->shipping_profile_id = $cartItem['selected_shipping_profile_id'] ?? null;
+
+                    $shippingProfiles = collect($cartItem['shipping_profiles'] ?? []);
+                    $selectedProfile = $shippingProfiles->firstWhere('id', $orderItem->shipping_profile_id);
+
+                    $orderItem->shipping_cost = ($selectedProfile ? $selectedProfile['base_rate'] : 0) * $orderItem->quantity;
+                } else {
+                    $orderItem->shipping_profile_id = null;
+                    $orderItem->shipping_cost = 0;
+                }
+
+                $orderItem->save();
+            }
+            
+            $orders[] = $order;
         }
+        
+        DB::commit();
+
+        $request->session()->forget('cart');
+
+        // Send email notifications
+        foreach ($orders as $order) {
+            // Load relationships for email
+            $order->load(['items.product', 'shop.user']);
+            
+            // Get the buyer (current user)
+            $buyer = auth()->user();
+            
+            // Get the shop owner
+            $shopOwner = $order->shop->user;
+            
+            // Send email to shop owner
+            \Mail::to($shopOwner->email)->send(new \App\Mail\OrderCreatedShopOwnerMail(
+                $order, 
+                $shopOwner, 
+                $buyer, 
+                $order->shop
+            ));
+            
+            // Send email to buyer
+            \Mail::to($buyer->email)->send(new \App\Mail\OrderCreatedBuyerMail(
+                $order, 
+                $buyer, 
+                $order->shop
+            ));
+        }
+
+        // TODO: Add payment processing and notifications
+
+        return redirect()->route('buyer.orders.show', $orders[0]->id)
+            ->with('success', 'Your orders have been placed successfully! Please proceed to make the payments.');
+            
+    } catch (\Exception $e) {
+        DB::rollback();
+        
+        // Log the error for debugging
+        \Log::error('Order creation failed: ' . $e->getMessage(), [
+            'user_id' => auth()->id(),
+            'cart' => $request->session()->get('cart'),
+            'exception' => $e
+        ]);
+        
+        return redirect()->back()
+            ->withErrors(['error' => 'Failed to create order. Please try again or contact support if the problem persists.'])
+            ->withInput();
     }
-
-    $request->session()->forget('cart');
-
-    // TODO: Add payment processing and notifications
-
-    return redirect()->route('buyer.orders.show', $order->id)
-        ->with('success', 'Your orders have been placed successfully! Please proceed to make the payments.');
 }
 
 
@@ -256,7 +307,7 @@ public function payNow($total){
     }
 
 
-              public function successDeposit(Request $request, $id)
+public function successDeposit(Request $request, $id)
     {
         // Retrieve the order/invoice
         $order = Order::findOrFail($id);
@@ -306,7 +357,7 @@ public function payNow($total){
             $order->save();
         }
 
-$shop = Shop::find($order->shop_id);
+        $shop = Shop::find($order->shop_id);
 
 
 
@@ -320,10 +371,46 @@ $shop = Shop::find($order->shop_id);
             'description'=> 'Order payment',
         ]);
 
+        // Send email notifications for successful payment
+        try {
+            // Load relationships for email
+            $order->load(['items.product', 'shop.user']);
+            
+            // Get the buyer (order user)
+            $buyer = $order->user;
+            
+            // Get the shop owner
+            $shopOwner = $shop->user;
+            
+            // Send email to shop owner
+            \Mail::to($shopOwner->email)->send(new \App\Mail\PaymentSuccessShopOwnerMail(
+                $order, 
+                $shopOwner, 
+                $buyer, 
+                $shop,
+                $payment
+            ));
+            
+            // Send email to buyer
+            \Mail::to($buyer->email)->send(new \App\Mail\PaymentSuccessBuyerMail(
+                $order, 
+                $buyer, 
+                $shop,
+                $payment
+            ));
+        } catch (\Exception $e) {
+            // Log email sending error but don't fail the payment process
+            \Log::error('Failed to send payment success emails: ' . $e->getMessage(), [
+                'order_id' => $order->id,
+                'payment_id' => $payment->id,
+                'exception' => $e
+            ]);
+        }
+
         return redirect()
             ->route('account.orders')
             ->with('success', 'Your payment has been received. Your order is being processed; you will receive a call from our sales team shortly.');
-    }
+}
 
 
    public function ship(Request $request, Order $order)
@@ -350,6 +437,48 @@ $shop = Shop::find($order->shop_id);
         ]);
     });
 
+    // Send email notifications for shipped order
+    try {
+        // Load relationships for email
+        $order->load(['items.product', 'shop.user', 'user']);
+        
+        // Get the buyer (order user)
+        $buyer = $order->user;
+        
+        // Get the shop owner
+        $shopOwner = $order->shop->user;
+        
+        // Prepare shipping data for email
+        $shippingData = [
+            'courier' => $data['courier'],
+            'tracking_no' => $data['tracking_no'],
+            'ship_notes' => $data['ship_notes'] ?? null,
+        ];
+        
+        // Send email to shop owner
+        \Mail::to($shopOwner->email)->send(new \App\Mail\OrderShippedShopOwnerMail(
+            $order, 
+            $shopOwner, 
+            $buyer, 
+            $order->shop,
+            $shippingData
+        ));
+        
+        // Send email to buyer
+        \Mail::to($buyer->email)->send(new \App\Mail\OrderShippedBuyerMail(
+            $order, 
+            $buyer, 
+            $order->shop,
+            $shippingData
+        ));
+    } catch (\Exception $e) {
+        // Log email sending error but don't fail the shipping process
+        \Log::error('Failed to send shipping emails: ' . $e->getMessage(), [
+            'order_id' => $order->id,
+            'exception' => $e
+        ]);
+    }
+
     // 4. fire event / notification if you have it
     if (class_exists(\App\Events\OrderShipped::class)) {
         OrderShipped::dispatch($order);
@@ -372,6 +501,8 @@ public function updateStatus(Request $request, Order $order)
         'cancel'  => $this->cancel($order),            // optional
     };
 
+    dd("success after match");
+
     return back()->with('success', 'Order updated successfully.');
 }
 
@@ -392,6 +523,40 @@ private function deliver(Order $order): void
         ]);
     });
 
+    // Send email notifications for delivered order
+    try {
+        // Load relationships for email
+        $order->load(['items.product', 'shop.user', 'user']);
+        
+        // Get the buyer (order user)
+        $buyer = $order->user;
+        
+        // Get the shop owner
+        $shopOwner = $order->shop->user;
+        
+        // Send email to shop owner
+        \Mail::to($shopOwner->email)->send(new \App\Mail\OrderDeliveredShopOwnerMail(
+            $order, 
+            $shopOwner, 
+            $buyer, 
+            $order->shop
+        ));
+        
+        // Send email to buyer
+        \Mail::to($buyer->email)->send(new \App\Mail\OrderDeliveredBuyerMail(
+            $order, 
+            $buyer, 
+            $order->shop
+        ));
+        dd("success");
+    } catch (\Exception $e) {
+        
+        // Log email sending error but don't fail the delivery process
+        \Log::error('Failed to send delivery emails: ' . $e->getMessage(), [
+            'order_id' => $order->id,
+            'exception' => $e
+        ]);
+    }
 }
 
 
@@ -399,7 +564,7 @@ public function process(Order $order)
 {
     
 
-    // Only “pending” orders may move to “processing”
+    // Only "pending" orders may move to "processing"
     abort_unless(
         $order->status === Order::STATUS_PENDING,
         422,

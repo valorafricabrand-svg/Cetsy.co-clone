@@ -5,7 +5,7 @@
      aria-labelledby="deliverModalLabel-{{ $order->id }}"
      aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <form action="{{ route('seller.orders.status', $order) }}"
+        <form action="{{ route('buyer.orders.status', $order) }}"
               method="post"
               class="modal-content needs-validation"
               novalidate>
