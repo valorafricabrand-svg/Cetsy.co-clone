@@ -54,6 +54,12 @@
         </select>
       </div>
 
+      <!-- Listing Fee -->
+      <div class="mb-4">
+        <label for="listing_fee" class="form-label">Listing Fee</label>
+        <input id="listing_fee" name="listing_fee" type="number" class="form-control" value="{{ old('listing_fee') }}" step="0.01">
+      </div>
+
       <!-- Featured Image -->
       <div class="mb-6">
         <label for="image" class="form-label">Featured Image</label>

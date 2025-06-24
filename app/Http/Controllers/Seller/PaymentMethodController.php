@@ -22,7 +22,7 @@ class PaymentMethodController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
             
-        return view('seller.payment-methods.index', compact('paymentMethods'));
+        return view('seller.payment-methods.index', compact('paymentMethods','shop'));
     }
 
     /**

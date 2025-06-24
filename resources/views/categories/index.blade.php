@@ -35,6 +35,7 @@
                   <th scope="col">Name</th>
                   <th scope="col">Slug</th>
                   <th scope="col">Parent</th>
+                  <th scope="col">listing fee</th>
                   <th scope="col">Actions</th>
                 </tr>
               </thead>
@@ -52,6 +53,7 @@
                   <td>{{ $cat->name }}</td>
                   <td>{{ $cat->slug }}</td>
                   <td>{{ $cat->parent?->name ?? '—' }}</td>
+                  <td>{{ $cat->listing_fee }}</td>
                   <td class="text-end">
                     <a href="{{ route('admin.categories.edit', $cat) }}" class="btn btn-sm btn-warning">
                       Edit

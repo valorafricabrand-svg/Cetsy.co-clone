@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Wallet;
+use App\Models\Shop;
+use App\Models\PaymentMethod;
 
 class WalletController extends Controller
 {
@@ -31,7 +33,17 @@ class WalletController extends Controller
                 ->selectRaw('SUM(credit - debit) as balance')
                 ->value('balance') ?? 0;
 
-    return view('wallet.index', compact('transactions', 'balance'));
+    // Fetch payment methods for the current user's shop
+    $shop = Shop::where('user_id', Auth::id())->first();
+    $paymentMethods = collect();
+    
+    if ($shop) {
+        $paymentMethods = PaymentMethod::where('shop_id', $shop->id)
+            ->with('paymentType')
+            ->get();
+    }
+
+    return view('wallet.index', compact('transactions', 'balance', 'paymentMethods'));
 }
 
 

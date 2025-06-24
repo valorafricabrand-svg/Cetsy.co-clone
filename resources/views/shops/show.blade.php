@@ -20,7 +20,7 @@
       </div>
     </div>
     {{-- View Payment Methods --}}
-    <a href="{{ route('seller.payment-methods.index') }}" class="btn btn-outline-">
+    <a href="{{ route('seller.payment-methods.index') }}" class="btn btn-outline-success">
       <i class="fas fa-credit-card me-1"></i> Payment Methods
     </a>
     {{-- Edit button: only the owner --}}

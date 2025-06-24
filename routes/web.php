@@ -102,9 +102,9 @@ Route::middleware('auth')->group(function () {
          ->name('offers.store');
           Route::post('/messages', [MessageController::class, 'store'])
          ->name('messages.store');
-Route::post('/products/{product}/media', [MediaController::class, 'upload'])->name('media.upload');
-Route::delete('/media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
-Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'destroy'])->name('digital-files.destroy');
+    Route::post('/products/{product}/media', [MediaController::class, 'upload'])->name('media.upload');
+    Route::delete('/media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
+    Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'destroy'])->name('digital-files.destroy');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -116,7 +116,7 @@ Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'de
     // Products
     Route::resource('products', ProductController::class);
 
-Route::resource('shipping_profiles', ShippingProfileController::class)
+    Route::resource('shipping_profiles', ShippingProfileController::class)
         ->except(['show']);
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
@@ -228,6 +228,7 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
 
     Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription');
     Route::post('subscription', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
+    Route::get('subscription/success/{id}', [SubscriptionController::class, 'successDeposit'])->name('subscription.success');
     Route::post('subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 
     Route::get('kyc', [KycController::class, 'show'])->name('kyc');
