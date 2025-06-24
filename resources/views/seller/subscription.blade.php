@@ -51,7 +51,7 @@
               <div class="card-body">
                 <h3 class="h5 mb-3">Monthly Subscription</h3>
                 <p class="display-6 fw-bold mb-4">
-                  KES {{ number_format(config('subscription.monthly_fee', 1000), 2) }}
+                  USD {{ number_format(config('subscription.monthly_fee', 1000), 2) }}
                 </p>
 
                 <ul class="list-unstyled mb-4">
@@ -71,8 +71,6 @@
 
                 <form action="{{ route('seller.subscription.subscribe') }}" method="POST">
                   @csrf
-                  <input type="hidden" name="payment_method" value="mpesa">
-                  <input type="hidden" name="transaction_id" value="{{ uniqid() }}">
                   <button type="submit" class="btn btn-success w-100">
                     Subscribe Now
                   </button>

@@ -57,6 +57,12 @@
         </select>
       </div>
 
+      <!-- Listing Fee -->
+      <div class="mb-4">
+        <label for="listing_fee" class="form-label">Listing Fee</label>
+        <input id="listing_fee" name="listing_fee" type="number" class="form-control" value="{{ old('listing_fee', $category->listing_fee) }}" step="0.01">
+      </div>
+
       <!-- Current Featured Image -->
       <div class="mb-4">
         <label class="form-label">Current Featured Image</label>

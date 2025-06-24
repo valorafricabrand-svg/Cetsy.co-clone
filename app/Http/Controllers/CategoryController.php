@@ -51,6 +51,7 @@ class CategoryController extends Controller
             'slug'      => 'nullable|string|max:255|unique:categories,slug',
             'parent_id' => 'nullable|exists:categories,id',
             'image'     => 'nullable|image|max:20480',
+            'listing_fee' => 'nullable|numeric|min:0',
         ]);
 
         // Auto-generate slug if blank, ensure uniqueness
@@ -95,6 +96,7 @@ class CategoryController extends Controller
             'slug'      => "nullable|string|max:255|unique:categories,slug,{$category->id}",
             'parent_id' => 'nullable|exists:categories,id',
             'image'     => 'nullable|image|max:2048',
+            'listing_fee' => 'nullable|numeric|min:0',
         ]);
 
         // Auto-generate slug if blank

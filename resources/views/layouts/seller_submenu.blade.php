@@ -149,6 +149,8 @@
       @foreach([
         ['url'=>route('dashboard'),'icon'=>'fas fa-gauge-high','label'=>'Dashboard'],
         ['url'=>route('products.index'),'icon'=>'fas fa-box-open','label'=>'Listings'],
+        ['url'=>route('seller.kyc'),'icon'=>'fas fa-list','label'=>'KYC'],
+        ['url'=>route('seller.subscription'),'icon'=>'fas fa-list','label'=>'Subscriptions'],
         ['url'=>route('orders.index'),'icon'=>'fas fa-basket-shopping','label'=>'Orders'],
         ['url'=>route('seller.orders.payments'),'icon'=>'fas fa-credit-card','label'=>'Payments'],
         ['url'=>route('seller.shop.create'),'icon'=>'fas fa-store','label'=>'My Shop'],

@@ -8,6 +8,9 @@
         
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Payment Methods</h2>
+            <a href="{{ route('seller.shops.show', $shop) }}" class="btn btn-outline-success">
+                <i class="fas fa-arrow-left me-2"></i>Back to Shop
+            </a>
             <a href="{{ route('seller.payment-methods.create') }}" class="btn btn-outline-success">
                 <i class="fas fa-plus me-2"></i>Add Payment Method
             </a>

@@ -97,33 +97,18 @@
                     class="form-select @error('method') is-invalid @enderror"
                     required>
                 <option hidden value="">Choose…</option>
-                <option value="mpesa" {{ old('method')=='mpesa' ? 'selected' : '' }}>M-Pesa</option>
-                <option value="bank"  {{ old('method')=='bank'  ? 'selected' : '' }}>Bank transfer</option>
+                @forelse($paymentMethods as $paymentMethod)
+                    <option value="{{ $paymentMethod->id }}" {{ old('method') == $paymentMethod->id ? 'selected' : '' }}>
+                        {{ $paymentMethod->paymentType->name }} - {{ $paymentMethod->account_name }}
+                    </option>
+                @empty
+                    <option value="">No payment methods found</option>
+                @endif
             </select>
             <div class="invalid-feedback">@error('method') {{ $message }} @else Required @enderror</div>
         </div>
 
-        {{-- account name --}}
-        <div class="mb-3">
-            <label class="form-label fw-semibold">Account Name</label>
-            <input type="text"
-                   name="account_name"
-                   class="form-control @error('account_name') is-invalid @enderror"
-                   value="{{ old('account_name') }}"
-                   required>
-            <div class="invalid-feedback">@error('account_name') {{ $message }} @else Required @enderror</div>
-        </div>
-
-        {{-- account / phone number --}}
-        <div class="mb-3">
-            <label class="form-label fw-semibold">Account / Phone&nbsp;Number</label>
-            <input type="text"
-                   name="account_no"
-                   class="form-control @error('account_no') is-invalid @enderror"
-                   value="{{ old('account_no') }}"
-                   required>
-            <div class="invalid-feedback">@error('account_no') {{ $message }} @else Required @enderror</div>
-        </div>
+        
     </div>
 
     <div class="modal-footer">
@@ -168,7 +153,6 @@
                             <th>Description</th>
                             <th class="text-end">Credit (USD)</th>
                             <th class="text-end">Debit (USD)</th>
-                            <th class="text-end">Balance After</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -182,9 +166,7 @@
                                 <td class="text-end text-danger">
                                     {{ $transaction->debit > 0 ? number_format($transaction->debit, 2) : '-' }}
                                 </td>
-                                <td class="text-end">
-                                    USD {{ number_format($transaction->balance_after, 2) }}
-                                </td>
+                                
                             </tr>
                         @empty
                             <tr>

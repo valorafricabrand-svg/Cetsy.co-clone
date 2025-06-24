@@ -40,10 +40,6 @@ public function create()
             'name'             => 'required|string|max:255',
             'slug'             => 'nullable|string|max:255|unique:shops,slug',
 
-            // 3) Payment details
-            'bank_account'     => 'required|string|max:50',
-            'routing_number'   => 'required|string|max:50',
-
             // 4) Billing info
             'address'          => 'required|string|max:255',
             'city'             => 'required|string|max:100',

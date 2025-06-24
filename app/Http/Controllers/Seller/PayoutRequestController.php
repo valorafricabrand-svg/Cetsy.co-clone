@@ -9,6 +9,8 @@ use App\Models\PayoutRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\PaymentMethod;
+use App\Models\Shop;
 
 class PayoutRequestController extends Controller
 {
@@ -40,10 +42,12 @@ public function store(Request $request)
 
     $request->validate([
         'amount'       => 'required|numeric|min:1|max:' . $balance,
-        'method'       => 'required|in:mpesa,bank',
-        'account_name' => 'required|string|max:255',
-        'account_no'   => 'required|string|max:255',
+        'method'       => 'required|exists:payment_methods,id',
     ]);
+
+    $shop = Shop::where('user_id', Auth::id())->first();
+    $paymentMethod = PaymentMethod::where('shop_id', $shop->id)->where('id', $request->method)->first();
+    
 
     /* -------------------------------------------------
        2️⃣  Everything else in one DB transaction
@@ -61,13 +65,25 @@ public function store(Request $request)
             'description' => 'Payout request debit',
         ]);
 
+         Wallet::create([
+            'user_id'     => Auth::id(),
+            'credit'      => 0,
+            'debit'       => $request->amount * 0.015,
+            'balance'     => 0,                   // not used in ledger pattern
+            'type'        => 'withdrawal_fee',
+            'reference'   => \Illuminate\Support\Str::uuid(),
+            'description' => 'Withdrawal fee',
+        ]);
+
+
         // 2-b log the payout request
         PayoutRequest::create([
             'wallet_id' => $wallet_created->id,                  // optional — link if you added FK
             'user_id'   => Auth::id(),            // add this column if easier
             'amount'    => $request->amount,
+            'payment_method_id' => $request->method,
             'status'    => 'pending',
-            'meta'      => $request->only('method','account_name','account_no'),
+            'meta'      => $request->only('method'),
         ]);
     });
 
