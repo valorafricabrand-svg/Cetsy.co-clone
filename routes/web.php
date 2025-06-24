@@ -35,6 +35,17 @@ use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// pages
+Route::get('/become-seller', function () {return themed_view('pages.become-seller');})->name('become-seller');
+Route::get('/privacy', function () {return themed_view('pages.privacy');})->name('privacy');
+Route::get('/terms', function () {return themed_view('pages.terms');})->name('terms');
+Route::get('/seller-forum', function () {return themed_view('pages.seller-forum');})->name('seller-forum');
+Route::get('/seller-tips', function () {return themed_view('pages.seller-tips');})->name('seller-tips');
+Route::get('/buyer-tips', function () {return themed_view('pages.buyer-tips');})->name('buyer-tips');
+Route::get('/buyer-terms', function () {return themed_view('pages.buyer-terms');})->name('buyer-terms');
+Route::get('/about', function () {return themed_view('pages.about');})->name('about');
+Route::get('/house-policy', function () {return themed_view('pages.house-policy');})->name('house-policy');
+
 // Product listings & categories
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('/search', [ProductController::class, 'search'])->name('search');
@@ -262,7 +273,7 @@ Route::middleware('auth')->prefix('buyer')->name('buyer.')->group(function () {
 | Settings (Admin Only)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'can:admin'])->resource('settings', \App\Http\Controllers\SettingController::class)
+Route::middleware(['auth'])->resource('settings', AdminSetting::class)
     ->only(['index', 'edit', 'update']);
 
 require __DIR__ . '/auth.php';

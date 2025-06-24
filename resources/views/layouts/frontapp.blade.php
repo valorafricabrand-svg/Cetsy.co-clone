@@ -36,13 +36,13 @@
     @show
 
     <!-- Favicons -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ favicon_url() }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ favicon_url() }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ favicon_url() }}">
-    <link rel="shortcut icon" type="image/x-icon" href="{{ favicon_url() }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ setting('favicon_url') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ setting('favicon_url') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ setting('favicon_url') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ setting('favicon_url') }}">
     <link rel="manifest" href="{{ asset('assets/img/favicons/manifest.json') }}">
     <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="{{ favicon_url() }}">
+    <meta name="msapplication-TileImage" content="{{ setting('favicon_url') }}">
     <meta name="theme-color" content="#ffffff">
 
     <!-- Stylesheets -->
@@ -105,7 +105,7 @@
   <div class="container">
     {{-- Brand --}}
     <a class="navbar-brand" href="{{ url('/') }}">
-      <img src="{{ asset('assets/img/logo.jpg') }}" style="height: 100px;">
+      <img src="{{ setting('logo_url') }}" style="height: 60px;">
     </a>
 
     {{-- Mobile toggle --}}
@@ -134,7 +134,7 @@
           class="form-control flex-grow-1"
           type="search"
           name="q"
-          placeholder="Search handmade, vintage, and more..."
+          placeholder="Search..."
           aria-label="Search"
           value="{{ request('q') }}"
         >
@@ -304,119 +304,155 @@
 
 
 <!-- Footer Section -->
-<footer class="bg-dark text-white py-5">
+@php
+    $settings = \App\Models\Setting::first();
+@endphp
+
+<footer class="bg-dark text-white pt-5">
   <div class="container px-3 px-sm-5">
     <div class="row gx-4 gy-5">
 
       <!-- Sellers -->
-      <div class="col-md-3 col-6">
-        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">Sellers</h5>
-        <ul class="list-unstyled small mb-0">
-          <li class="mb-2">
-            <a href="{{ url('/become_seller') }}" class="text-white text-decoration-none footer-link">
-              Become a Seller
-            </a>
-          </li>
-          <li class="mb-2">
-            <a href="{{ url('/privacy') }}" class="text-white text-decoration-none footer-link">
-              Privacy Policy
-            </a>
-          </li>
-          <li class="mb-2">
-            <a href="{{ url('/terms') }}" class="text-white text-decoration-none footer-link">
-              Terms &amp; Conditions
-            </a>
-          </li>
-          <li class="mb-2">
-            <a href="{{ url('/seller_forum') }}" class="text-white text-decoration-none footer-link">
-              Seller Forum
-            </a>
-          </li>
-          <li>
-            <a href="{{ url('/seller_tips') }}" class="text-white text-decoration-none footer-link">
-              Seller Tips
-            </a>
-          </li>
+      <div class="col-6 col-md-3">
+        <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">
+          Sellers
+        </h4>
+        <ul class="list-unstyled mb-0">
+          @foreach([
+            'Become a Seller'    => url('/become-seller'),
+            'Privacy Policy'     => url('/privacy'),
+            'Terms & Conditions' => url('/terms'),
+            'Seller Forum'       => url('/seller-forum'),
+            'Seller Tips'        => url('/seller-tips'),
+          ] as $label => $link)
+            <li class="mb-2">
+              <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
+                {{ $label }}
+              </a>
+            </li>
+          @endforeach
         </ul>
       </div>
 
       <!-- Buyers -->
-      <div class="col-md-3 col-6">
-        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">Buyers</h5>
-        <ul class="list-unstyled small mb-0">
-          <li class="mb-2">
-            <a href="{{ url('/buyer_tips') }}" class="text-white text-decoration-none footer-link">
-              Buyer Tips
-            </a>
-          </li>
-          <li class="mb-2">
-            <a href="{{ url('/privacy') }}" class="text-white text-decoration-none footer-link">
-              Privacy Policy
-            </a>
-          </li>
-          <li>
-            <a href="{{ url('/buyer_terms') }}" class="text-white text-decoration-none footer-link">
-              Terms &amp; Conditions
-            </a>
-          </li>
+      <div class="col-6 col-md-3">
+        <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">
+          Buyers
+        </h4>
+        <ul class="list-unstyled mb-0">
+          @foreach([
+            'Buyer Tips'         => url('/buyer-tips'),
+            'Privacy Policy'     => url('/privacy'),
+            'Terms & Conditions' => url('/buyer-terms'),
+          ] as $label => $link)
+            <li class="mb-2">
+              <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
+                {{ $label }}
+              </a>
+            </li>
+          @endforeach
         </ul>
       </div>
 
       <!-- About -->
-      <div class="col-md-3 col-6">
-        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">About</h5>
-        <ul class="list-unstyled small mb-0">
-          <li class="mb-2">
-            <a href="{{ url('/about') }}" class="text-white text-decoration-none footer-link">
-              About Cetsy
-            </a>
-          </li>
-          <li>
-            <a href="{{ url('/house_policy') }}" class="text-white text-decoration-none footer-link">
-              House Rules &amp; Policy
-            </a>
-          </li>
+      <div class="col-6 col-md-3">
+        <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">
+          About
+        </h4>
+        <ul class="list-unstyled mb-0">
+          @foreach([
+            'About ' . config('app.name') => url('/about'),
+            'House Rules & Policy'       => url('/house-policy'),
+          ] as $label => $link)
+            <li class="mb-2">
+              <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
+                {{ $label }}
+              </a>
+            </li>
+          @endforeach
         </ul>
       </div>
 
       <!-- Support -->
-      <div class="col-md-3 col-6">
-        <h5 class="text-uppercase text-success mb-3 border-bottom border-success pb-2">Support</h5>
-        <ul class="list-unstyled small mb-4">
+      <div class="col-6 col-md-3">
+        <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">
+          Support
+        </h4>
+        <ul class="list-unstyled mb-4">
           <li class="mb-2">
-            <a href="{{ url('/contact') }}" class="text-white text-decoration-none footer-link">
+            <a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">
               Reach Us
             </a>
           </li>
-          <li class="text-secondary small text-white">
-            Email: support@cetsy.co
+          <li class="text-white-50 mb-1 footer-text">
+            <strong>Email:</strong>
+            <a href="mailto:{{ $settings->email }}" class="text-white">{{ $settings->email }}</a>
+          </li>
+          <li class="text-white-50 footer-text">
+            <strong>Phone:</strong>
+            <a href="tel:{{ $settings->phone }}" class="text-white">{{ $settings->phone }}</a>
           </li>
         </ul>
 
         <!-- Social Icons -->
-        <div class="d-flex gap-3">
-          <a href="#!" aria-label="Facebook" class="text-white footer-link">
-            <i class="fab fa-facebook-f fs-5"></i>
-          </a>
-          <a href="#!" aria-label="Instagram" class="text-white footer-link">
-            <i class="fab fa-instagram fs-5"></i>
-          </a>
-          <a href="#!" aria-label="Twitter" class="text-white footer-link">
-            <i class="fab fa-twitter fs-5"></i>
-          </a>
-          <a href="#!" aria-label="LinkedIn" class="text-white footer-link">
-            <i class="fab fa-linkedin-in fs-5"></i>
-          </a>
+        <div class="d-flex gap-4">
+          @foreach([
+            'facebook_url'  => 'fab fa-facebook-f',
+            'instagram_url' => 'fab fa-instagram',
+            'x_url'         => 'fab fa-twitter',
+            'linkedin_url'  => 'fab fa-linkedin-in',
+            'tiktok_url'    => 'fab fa-tiktok',
+          ] as $key => $icon)
+            @if(!empty($settings->{$key}))
+              <a href="{{ $settings->{$key} }}" target="_blank" aria-label="{{ ucfirst(str_replace('_url','',$key)) }}"
+                 class="footer-link social-icon">
+                <i class="{{ $icon }}"></i>
+              </a>
+            @endif
+          @endforeach
         </div>
       </div>
 
     </div>
 
-    <div class="mt-5 pt-4 border-top border-secondary text-center text-secondary small text-white">
-      &copy; {{ date('Y') }} cetsy.co — All rights reserved.
+    <div class="mt-5 pt-4 border-top border-secondary text-center">
+      <p class="mb-0 text-white-50 footer-text">
+        &copy; {{ date('Y') }} {{ config('app.name') }} — All rights reserved.
+      </p>
     </div>
   </div>
 </footer>
+
+@push('styles')
+<style>
+  /* Base font size for all footer text and links */
+  footer,
+  .footer-text,
+  .footer-link,
+  .footer-heading {
+    font-size: 15px !important;
+  }
+
+  .footer-heading {
+    font-weight: 600;
+  }
+
+  .footer-link {
+    display: inline-block;
+    transition: color .2s ease-in-out;
+  }
+  .footer-link:hover {
+    color: #fff !important;
+    text-decoration: none;
+  }
+
+  /* Social icons slightly larger for visibility */
+  .social-icon i {
+    font-size: 18px;
+  }
+</style>
+@endpush
+
 
 
 </main>
