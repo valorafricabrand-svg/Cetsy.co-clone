@@ -18,7 +18,13 @@ class SubscriptionController extends Controller
         $user = Auth::user();
         $subscription = $user->subscription;
         
-        return view('seller.subscription', compact('subscription'));
+        // Fetch all subscription payments for this user
+        $subscriptionPayments = Payment::where('user_id', $user->id)
+            ->where('payment_name', 'subscription_fee')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('seller.subscription', compact('subscription', 'subscriptionPayments'));
     }
 
     public function subscribe(Request $request)
@@ -61,8 +67,9 @@ class SubscriptionController extends Controller
         $paymentData = [
             'user_id'               => $user->id,
             'shop_id'               => $shop ? $shop->id : null,
-            'total_amount'          => config('subscription.monthly_fee', 1000),
+            'total_amount'          => config('subscription.monthly_fee', 5),
             'payment_method'        => $method,
+            'payment_status'        => 'successful',
             'status'                => '3', // Completed
             'currency'              => 'USD',
             'local_transaction_id'  => $localTxId,

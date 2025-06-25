@@ -8,11 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\PaymentMethod;
-
+use App\Models\Country;
 class ShopController extends Controller
 {
     /**
-     * Show the “Create Your Shop” form, or redirect if the user already has a shop.
+     * Show the "Create Your Shop" form, or redirect if the user already has a shop.
      */
 public function create()
 {
@@ -20,8 +20,9 @@ public function create()
         return redirect()->route('seller.shops.show', auth()->user()->shop->slug)
             ->with('info', 'You already have a shop.');
     }
+    $countries = Country::all();
 
-    return view('shops.create');
+    return view('shops.create', compact('countries'));
 }
 
 
@@ -32,8 +33,8 @@ public function create()
     {
         $data = $request->validate([
             // 1) Shop preferences
-            'language'         => 'required|string|in:English,Spanish,French',
-            'country'          => 'required|string|in:United States,Canada,United Kingdom',
+            'language'         => 'required|string|in:en',
+            'country'          => 'required|string|exists:countries,id',
             'currency'         => 'required|string|in:USD,CAD,GBP',
 
             // 2) Name & slug
@@ -85,7 +86,8 @@ public function create()
     public function show(Shop $shop)
     {
         $paymentMethods = PaymentMethod::where('shop_id', $shop->id)->get();
-        return view('shops.show', compact('shop', 'paymentMethods'));
+        $subscription = $shop->user->subscription;
+        return view('shops.show', compact('shop', 'paymentMethods', 'subscription'));
     }
 
 
@@ -111,9 +113,9 @@ public function showPublic($id)
  */
 public function edit(Shop $shop)
 {
-  
+    $countries = Country::all();
 
-    return view('shops.edit', compact('shop'));
+    return view('shops.edit', compact('shop', 'countries'));
 }
 
 /**
@@ -121,18 +123,18 @@ public function edit(Shop $shop)
  */
 public function update(Request $request, Shop $shop)
 {
-    // Authorization
-    $this->authorize('update', $shop);
+    // Authorization - ensure user can only edit their own shop
+    if (Auth::id() !== $shop->user_id) {
+        abort(403, 'You can only edit your own shop.');
+    }
 
     // Validate just the editable fields
     $data = $request->validate([
-        'language'       => 'required|string|in:English,Spanish,French',
-        'country'        => 'required|string|in:United States,Canada,United Kingdom',
+        'language'       => 'required|string|in:English',
+        'country'        => 'required|string|exists:countries,id',
         'currency'       => 'required|string|in:USD,CAD,GBP',
         'name'           => 'required|string|max:255',
         'slug'           => 'required|string|max:255|unique:shops,slug,' . $shop->id,
-        'bank_account'   => 'required|string|max:50',
-        'routing_number' => 'required|string|max:50',
         'address'        => 'required|string|max:255',
         'city'           => 'required|string|max:100',
         'postal'         => 'required|string|max:20',
@@ -162,7 +164,7 @@ public function update(Request $request, Shop $shop)
     $shop->update($data);
 
     return redirect()
-        ->route('shops.show', $shop)
+        ->route('seller.shops.show', $shop)
         ->with('success','Shop updated successfully!');
 }
 
