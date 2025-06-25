@@ -10,7 +10,7 @@ return [
     |
     */
 
-    'monthly_fee' => env('SUBSCRIPTION_MONTHLY_FEE', 1000),
+    'monthly_fee' => env('SUBSCRIPTION_MONTHLY_FEE', 5),
 
     /*
     |--------------------------------------------------------------------------

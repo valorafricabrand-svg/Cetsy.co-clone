@@ -77,20 +77,90 @@
 
   {{-- Payment Details --}}
   <div class="card mb-4">
-    <div class="card-header">Payment Details</div>
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Payment Details</span>
+      <a href="{{ route('seller.payment-methods.index') }}" class="btn btn-sm btn-outline-success">
+        <i class="fas fa-plus me-1"></i> Add Payment Method
+      </a>
+    </div>
     <div class="card-body">
       <div class="row">
-        @foreach($paymentMethods as $paymentMethod)
-        <div class="col-md-6 mb-3">
-          <strong>{{ $paymentMethod->paymentType->name }}</strong><br>
-          <span class="text-muted">{{ $paymentMethod->account_number }}</span>
-        </div>
-        <div class="col-md-6 mb-3">
-            <strong>Account Name</strong><br>
-            <span class="text-muted">{{ $paymentMethod->account_name }}</span>
+        @if($paymentMethods->count() > 0)
+          @foreach($paymentMethods as $paymentMethod)
+          <div class="col-md-6 mb-3">
+            <strong>{{ $paymentMethod->paymentType->name }}</strong><br>
+            <span class="text-muted">{{ $paymentMethod->account_number }}</span>
           </div>
-        @endforeach
+          <div class="col-md-6 mb-3">
+              <strong>Account Name</strong><br>
+              <span class="text-muted">{{ $paymentMethod->account_name }}</span>
+            </div>
+          @endforeach
+        @else
+          <div class="col-12 text-center text-muted py-3">
+            <i class="fas fa-credit-card fa-2x mb-2"></i>
+            <p>No payment methods added yet</p>
+            <a href="{{ route('seller.payment-methods.index') }}" class="btn btn-success">
+              <i class="fas fa-plus me-1"></i> Add Your First Payment Method
+            </a>
+          </div>
+        @endif
       </div>
+    </div>
+  </div>
+
+  {{-- Subscription Status --}}
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Subscription Status</span>
+      <a href="{{ route('seller.subscription') }}" class="btn btn-sm btn-outline-success">
+        <i class="fas fa-cog me-1"></i> Manage Subscription
+      </a>
+    </div>
+    <div class="card-body">
+      @if($subscription)
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <strong>Status</strong><br>
+            @if($subscription->isActive())
+              <span class="badge bg-success">Active</span>
+            @else
+              <span class="badge bg-danger">Inactive</span>
+            @endif
+          </div>
+          <div class="col-md-6 mb-3">
+            <strong>Plan Amount</strong><br>
+            <span class="text-muted">${{ number_format($subscription->amount, 2) }}</span>
+          </div>
+          <div class="col-md-6 mb-3">
+            <strong>Start Date</strong><br>
+            <span class="text-muted">{{ $subscription->start_date ? $subscription->start_date->format('M d, Y') : 'N/A' }}</span>
+          </div>
+          <div class="col-md-6 mb-3">
+            <strong>End Date</strong><br>
+            <span class="text-muted">{{ $subscription->end_date ? $subscription->end_date->format('M d, Y') : 'N/A' }}</span>
+          </div>
+          @if($subscription->end_date && $subscription->end_date->isFuture())
+            <div class="col-12">
+              <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                Your subscription will expire on {{ $subscription->end_date->format('M d, Y') }}
+                @if($subscription->end_date->diffInDays(now()) <= 7)
+                  <span class="text-warning fw-bold">(Expires soon!)</span>
+                @endif
+              </div>
+            </div>
+          @endif
+        </div>
+      @else
+        <div class="text-center text-muted py-3">
+          <i class="fas fa-credit-card fa-2x mb-2"></i>
+          <p>No active subscription found</p>
+          <a href="{{ route('seller.subscription') }}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Subscribe Now
+          </a>
+        </div>
+      @endif
     </div>
   </div>
 
