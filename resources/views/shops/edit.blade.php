@@ -24,7 +24,7 @@
     @endif
 
     <form 
-      action="{{ route('shops.update', $shop) }}" 
+      action="{{ route('seller.shops.update', $shop) }}" 
       method="POST" 
       enctype="multipart/form-data"
       x-data="{ 
@@ -48,19 +48,18 @@
           <div class="col-md-4">
             <label for="language" class="form-label">Language <span class="text-danger">*</span></label>
             <select name="language" id="language" class="form-select" required>
-              <option disabled selected>Select language</option>
-              <option value="English" {{ old('language', $shop->language)=='English' ? 'selected':'' }}>English</option>
-              <option value="Spanish" {{ old('language', $shop->language)=='Spanish' ? 'selected':'' }}>Spanish</option>
-              <option value="French"  {{ old('language', $shop->language)=='French' ? 'selected':'' }}>French</option>
+              <!-- <option disabled selected>Select language</option> -->
+              <option value="English" {{ old('language', $shop->language)=='English' ? 'selected':'' }}>{{$shop->language}}</option>
+             
             </select>
           </div>
           <div class="col-md-4">
             <label for="country" class="form-label">Country <span class="text-danger">*</span></label>
             <select name="country" id="country" class="form-select" required>
-              <option disabled selected>Select country</option>
-              <option value="United States" {{ old('country', $shop->country)=='United States' ? 'selected':'' }}>United States</option>
-              <option value="Canada" {{ old('country', $shop->country)=='Canada' ? 'selected':'' }}>Canada</option>
-              <option value="United Kingdom" {{ old('country', $shop->country)=='United Kingdom' ? 'selected':'' }}>United Kingdom</option>
+              <option value="{{$shop->country}}" {{ old('country', $shop->country)=='United States' ? 'selected':'' }}>{{country_name($shop->country)}}</option>
+              @foreach($countries as $country)
+                <option value="{{$country->id}}" {{ old('country', $shop->country)=='United States' ? 'selected':'' }}>{{country_name($country->id)}}</option>
+              @endforeach
             </select>
           </div>
           <div class="col-md-4">
@@ -94,22 +93,9 @@
         </div>
       </div>
 
-      {{-- 3) How You’ll Get Paid --}}
-      <div class="card mb-4">
-        <div class="card-header fw-semibold">3. How You’ll Get Paid</div>
-        <div class="card-body row g-3">
-          <div class="col-md-6">
-            <label for="bank_account" class="form-label">Bank Account # <span class="text-danger">*</span></label>
-            <input type="text" id="bank_account" name="bank_account" value="{{ old('bank_account', $shop->bank_account) }}" class="form-control" required>
-          </div>
-          <div class="col-md-6">
-            <label for="routing_number" class="form-label">Routing # <span class="text-danger">*</span></label>
-            <input type="text" id="routing_number" name="routing_number" value="{{ old('routing_number', $shop->routing_number) }}" class="form-control" required>
-          </div>
-        </div>
-      </div>
+      
 
-      {{-- 4) Billing Info --}}
+      {{-- 3) Billing Info --}}
       <div class="card mb-4">
         <div class="card-header fw-semibold">4. Share Your Billing Info</div>
         <div class="card-body">
@@ -130,7 +116,7 @@
         </div>
       </div>
 
-      {{-- 5) Security --}}
+      {{-- 4) Security --}}
       <div class="card mb-4">
         <div class="card-header fw-semibold">5. Your Shop Security</div>
         <div class="card-body">

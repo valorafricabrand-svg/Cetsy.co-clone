@@ -48,9 +48,7 @@
                 <label for="language" class="form-label">Language <span class="text-danger">*</span></label>
                 <select name="language" id="language" required class="form-select">
                   <option value="" disabled selected>Select language</option>
-                  <option {{ old('language')=='English'?'selected':'' }}>English</option>
-                  <option {{ old('language')=='Spanish'?'selected':'' }}>Spanish</option>
-                  <option {{ old('language')=='French'?'selected':'' }}>French</option>
+                  <option value="English" {{ old('language')=='English'?'selected':'' }}>English</option>
                 </select>
                 <div class="invalid-feedback">Please select a language.</div>
               </div>
@@ -58,9 +56,9 @@
                 <label for="country" class="form-label">Country <span class="text-danger">*</span></label>
                 <select name="country" id="country" required class="form-select">
                   <option value="" disabled selected>Select country</option>
-                  <option {{ old('country')=='United States'?'selected':'' }}>United States</option>
-                  <option {{ old('country')=='Canada'?'selected':'' }}>Canada</option>
-                  <option {{ old('country')=='United Kingdom'?'selected':'' }}>United Kingdom</option>
+                  @foreach($countries as $country)
+                    <option value="{{ $country->id }}" {{ old('country')==$country->id?'selected':'' }}>{{ $country->name }}</option>
+                  @endforeach
                 </select>
                 <div class="invalid-feedback">Please select a country.</div>
               </div>

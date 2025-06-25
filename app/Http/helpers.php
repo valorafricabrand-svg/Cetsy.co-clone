@@ -1,6 +1,8 @@
 <?php
 use App\Models\Setting;
 use App\Models\Shop;
+use App\Models\Country;
+
 function favicon_url(){
 
     
@@ -108,6 +110,11 @@ if (! function_exists('theme')) {
     }
 }
 
+
+ function country_name($id){
+    $country = Country::find($id);
+    return $country->name;
+ }
 
 
 
