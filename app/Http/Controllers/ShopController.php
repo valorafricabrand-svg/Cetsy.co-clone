@@ -33,7 +33,7 @@ public function create()
     {
         $data = $request->validate([
             // 1) Shop preferences
-            'language'         => 'required|string|in:en',
+            'language'         => 'required|string|in:English',
             'country'          => 'required|string|exists:countries,id',
             'currency'         => 'required|string|in:USD,CAD,GBP',
 
