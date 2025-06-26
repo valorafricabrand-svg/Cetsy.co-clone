@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="robots" content="index, follow">
+
+  <!-- Dynamic Title -->
+  <title>
+    @yield('title', 'Jaat | Kenya’s Marketplace for Handmade & Locally-Made Products')
+  </title>
+
+  <!-- Description -->
+  <meta name="description"
+        content="@yield('meta_description', 'Jaat is Kenya’s all-in-one platform to showcase, sell, and promote your handmade and locally-made products nationwide.')">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="@yield('canonical_url', 'https://jaat.co.ke')">
+
+  <!-- Social Meta Section -->
+  @section('social-meta')
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title"
+          content="@yield('title', 'Jaat | Kenya’s Marketplace for Handmade & Locally-Made Products')">
+    <meta property="og:description"
+          content="@yield('meta_description', 'Jaat is Kenya’s all-in-one platform to showcase, sell, and promote your handmade and locally-made products nationwide.')">
+    <meta property="og:type" content="website">
+    <meta property="og:url"  content="@yield('canonical_url', 'https://jaat.co.ke')">
+    <meta property="og:image"
+          content="@yield('meta_image', asset('assets/images/default-og-image-jaat.jpg'))">
+    <meta property="og:image:alt" content="Jaat — Kenyan Handmade Products Marketplace">
+    <meta property="og:locale" content="en_KE">
+    <meta property="og:site_name" content="Jaat">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title"
+          content="@yield('title', 'Jaat | Kenya’s Marketplace for Handmade & Locally-Made Products')">
+    <meta name="twitter:description"
+          content="@yield('meta_description', 'Jaat is Kenya’s all-in-one platform to showcase, sell, and promote your handmade and locally-made products nationwide.')">
+    <meta name="twitter:image"
+          content="@yield('meta_image', asset('assets/images/default-twitter-image-jaat.jpg'))">
+    <meta name="twitter:image:alt" content="Jaat — Kenyan Handmade Products Marketplace">
+  @show
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ setting('favicon_url') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ setting('favicon_url') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ setting('favicon_url') }}">
+  <link rel="shortcut icon" type="image/x-icon" href="{{ setting('favicon_url') }}">
+  <link rel="manifest" href="{{ asset('assets/img/favicons/manifest.json') }}">
+  <meta name="msapplication-TileColor" content="#ffffff">
+  <meta name="msapplication-TileImage" content="{{ setting('favicon_url') }}">
+  <meta name="theme-color" content="#ffffff">
+
+  <!-- Stylesheets -->
+  <link href="{{ asset('vendors/mapbox-gl/mapbox-gl.css') }}" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="{{ asset('vendors/simplebar/simplebar.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('assets/css/theme.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('assets/css/user.min.css') }}" rel="stylesheet">
+
+  <!-- Scripts -->
+  <script src="{{ asset('vendors/simplebar/simplebar.min.js') }}" defer></script>
+  <script src="{{ asset('assets/js/config.js') }}" defer></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var phoenixIsRTL = window.config.config.phoenixIsRTL;
+      if (phoenixIsRTL) {
+        document.querySelector('html').setAttribute('dir', 'rtl');
+      }
+    });
+  </script>
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Jaat",
+    "url": "https://jaat.co.ke",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://jaat.co.ke/search?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
+  <!-- Inline Styles -->
+  <style>
+    .text-primary { color: #027333 !important; }
+    .btn-link     { color: #027333; }
+    a.text-primary:hover,
+    a.text-primary:focus { color: #025a1f !important; }
+  </style>
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+
+<body style="--phoenix-scroll-margin-top: 1.2rem;">
+  <!-- ===============================================-->
+  <!--    Main Content-->
+  <!-- ===============================================-->
+  <main class="main" id="top">
+    <div class="bg-body-emphasis" data-navbar-shadow-on-scroll="true">
+      {{-- resources/views/layouts/partials/navbar.blade.php --}}
+      <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+          {{-- Brand --}}
+          <a class="navbar-brand" href="{{ url('/') }}">
+            <img src="{{ setting('logo_url') }}" style="height: 60px;" alt="Jaat logo">
+          </a>
+
+          {{-- Mobile toggle --}}
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#mainNavbar" aria-controls="mainNavbar"
+                  aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <div class="collapse navbar-collapse" id="mainNavbar">
+
+            {{-- Search --}}
+            <form class="d-flex me-3 flex-grow-1" method="GET" action="{{ route('search') }}">
+              <input class="form-control flex-grow-1" type="search" name="q"
+                     placeholder="Search…" aria-label="Search" value="{{ request('q') }}">
+              <button class="btn btn-outline-secondary ms-2" type="submit">
+                <i class="fas fa-search"></i>
+              </button>
+            </form>
+
+            {{-- Cart + User --}}
+            <ul class="navbar-nav ms-auto align-items-center" x-data="cartDropdown()" x-init="fetchCart()">
+              {{-- Cart --}}
+              @php $cartCount = count(session('cart', [])); @endphp
+              <li class="nav-item me-3">
+                <a href="{{ route('cart.view') }}" class="nav-link position-relative text-dark">
+                  <i class="fas fa-shopping-cart fa-lg"></i>
+                  @if($cartCount)
+                    <span class="badge bg-success position-absolute top-0 start-100 translate-middle">
+                      {{ $cartCount }}
+                    </span>
+                  @endif
+                </a>
+              </li>
+
+              {{-- Authentication Links --}}
+              @guest
+                <li class="nav-item">
+                  <a class="nav-link" href="{{ route('login') }}">Log In</a>
+                </li>
+                <li class="nav-item">
+                  <a class="btn btn-success btn-sm" href="{{ route('register') }}">
+                    Sign Up
+                  </a>
+                </li>
+              @else
+                @if(auth()->user()->shop)
+                  <li class="nav-item">
+                    <a class="nav-link" href="{{ route('seller.shops.show', auth()->user()->shop) }}">
+                      My Shop
+                    </a>
+                  </li>
+                @endif
+
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button"
+                     data-bs-toggle="dropdown" aria-expanded="false">
+                    {{ auth()->user()->name }}
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                    <li><a class="dropdown-item" href="{{ route('dashboard') }}">Dashboard</a></li>
+                    <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="dropdown-item" type="submit">Log Out</button>
+                      </form>
+                    </li>
+                  </ul>
+                </li>
+              @endguest
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+{{-- ================ Responsive Multi-level Category Nav ================ --}}
+@php
+  $mainCategories = \App\Models\Category::with('childrenRecursive')
+      ->whereNull('parent_id')->orderBy('id')->get();
+
+  $renderCats = function ($nodes) use (&$renderCats){
+      foreach($nodes as $cat){
+          $kids = $cat->childrenRecursive;
+          $has  = $kids->isNotEmpty();
+          echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
+          echo   '<a class="dropdown-item d-flex justify-content-between align-items-center"'.
+                 ' href="'.($has?'#':route('category.show',$cat->slug)).'">';
+          echo     e($cat->name);
+          if($has) echo '<i class="fas fa-chevron-right ms-2 rotate"></i>';
+          echo   '</a>';
+          if($has){
+              echo '<ul class="dropdown-menu">'.PHP_EOL;
+              $renderCats($kids);
+              echo '</ul>'.PHP_EOL;
+          }
+          echo '</li>'.PHP_EOL;
+      }
+  };
+@endphp
+
+@if($mainCategories->isNotEmpty())
+<nav class="bg-success">
+  <div class="container">
+    <ul class="nav flex-wrap">
+      @foreach($mainCategories as $main)
+        <li class="nav-item dropdown">
+          <a class="nav-link text-white" href="#" id="catDD{{ $main->id }}" data-bs-toggle="dropdown">
+            {{ $main->name }}
+            @if($main->childrenRecursive->isNotEmpty()) <i class="fas fa-chevron-down ms-1 rotate"></i>@endif
+          </a>
+
+          @if($main->childrenRecursive->isNotEmpty())
+            <ul class="dropdown-menu">
+              {!! $renderCats($main->childrenRecursive) !!}
+            </ul>
+          @endif
+        </li>
+      @endforeach
+    </ul>
+  </div>
+</nav>
+@endif
+
+@push('styles')
+<style>
+/* ——— Layout ——— */
+.dropdown-menu                { min-width:230px; border-radius:.5rem; box-shadow:0 .5rem 1rem rgba(0,0,0,.08); }
+.dropdown-submenu>.dropdown-menu{
+  top:-0.25rem;               /* 1 — tiny offset so corners don’t overlap */
+  left:100%;
+  margin-left:.15rem;
+}
+.dropdown-submenu.no-children > a .rotate{display:none}
+
+/* ——— Hover/active styles ——— */
+.dropdown-item:hover,
+.dropdown-item:focus         { background:#eaf7ef; color:#198754; }
+.rotate                       { transition:.25s transform; }
+.dropdown-submenu.show   > a .rotate,
+.nav-item.dropdown.show  > a .rotate{ transform:rotate(90deg); }
+
+/* ——— Ensure stacking & scrolling ——— */
+.dropdown-menu               { max-height:72vh; overflow:auto; z-index:1055; }
+
+/* Desktop hover open */
+@media (min-width:992px){
+  .nav-item.dropdown:hover   >.dropdown-menu { display:block; }
+  .dropdown-submenu:hover    >.dropdown-menu { display:block; }
+}
+</style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+
+  /* ---------- Toggle / flip logic ---------- */
+  document.querySelectorAll('.dropdown-submenu > a').forEach(anchor=>{
+    anchor.addEventListener('click',e=>{
+      const sub = anchor.nextElementSibling;
+      if(sub && sub.classList.contains('dropdown-menu')){
+        e.preventDefault();
+        const parentLi = anchor.parentElement;
+        const already = parentLi.classList.toggle('show');
+        sub.classList.toggle('show', already);
+
+        // 2 — Flip left if overflowing viewport
+        if(already){
+          const rect = sub.getBoundingClientRect();
+          if(rect.right > window.innerWidth){
+            sub.style.left = 'auto';
+            sub.style.right = '100%';
+          }else{
+            sub.style.left = '100%';
+            sub.style.right = 'auto';
+          }
+        }
+
+        // Hide open siblings
+        parentLi.parentElement.querySelectorAll(':scope > .dropdown-submenu.show').forEach(li=>{
+          if(li!==parentLi){
+            li.classList.remove('show');
+            li.querySelectorAll('.dropdown-menu.show').forEach(m=>m.classList.remove('show'));
+          }
+        });
+      }
+    });
+  });
+
+  // Hover open (desktop) & keep flip logic
+  if(window.matchMedia('(hover:hover)').matches){
+    document.querySelectorAll('.dropdown-submenu').forEach(li=>{
+      li.addEventListener('mouseenter',()=>{
+        const sub = li.querySelector(':scope > .dropdown-menu');
+        if(sub){
+          sub.classList.add('show'); li.classList.add('show');
+          const rect = sub.getBoundingClientRect();
+          if(rect.right > window.innerWidth){
+            sub.style.left='auto'; sub.style.right='100%';
+          }
+        }
+      });
+      li.addEventListener('mouseleave',()=>{
+        li.classList.remove('show');
+        li.querySelectorAll('.dropdown-menu').forEach(m=>m.classList.remove('show'));
+        li.querySelectorAll('.dropdown-menu').forEach(m=>{m.style.left='';m.style.right='';});
+      });
+    });
+  }
+
+  // Close on outside click or Esc
+  const closeAll=()=>document.querySelectorAll('.dropdown-menu.show,.dropdown-submenu.show')
+                      .forEach(el=>{el.classList.remove('show');el.style.left='';el.style.right='';});
+  document.addEventListener('click',e=>{ if(!e.target.closest('nav')) closeAll(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
+});
+</script>
+@endpush
+
+    </div>
+
+    {{-- Page-specific content --}}
+    @yield('main')
+
+    <!-- Footer Section -->
+    @php $settings = \App\Models\Setting::first(); @endphp
+    <footer class="bg-dark text-white pt-5">
+      <div class="container px-3 px-sm-5">
+        <div class="row gx-4 gy-5">
+
+          <!-- Sellers -->
+          <div class="col-6 col-md-3">
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading">
+              Sellers
+            </h4>
+            <ul class="list-unstyled mb-0">
+              @foreach([
+                'Become a Seller'    => url('/become-seller'),
+                'Privacy Policy'     => url('/privacy'),
+                'Terms & Conditions' => url('/terms'),
+                'Seller Forum'       => url('/seller-forum'),
+                'Seller Tips'        => url('/seller-tips'),
+              ] as $label => $link)
+                <li class="mb-2">
+                  <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
+                    {{ $label }}
+                  </a>
+                </li>
+              @endforeach
+            </ul>
+          </div>
+
+          <!-- Buyers -->
+          <div class="col-6 col-md-3">
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading">
+              Buyers
+            </h4>
+            <ul class="list-unstyled mb-0">
+              @foreach([
+                'Buyer Tips'         => url('/buyer-tips'),
+                'Privacy Policy'     => url('/privacy'),
+                'Terms & Conditions' => url('/buyer-terms'),
+              ] as $label => $link)
+                <li class="mb-2">
+                  <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
+                    {{ $label }}
+                  </a>
+                </li>
+              @endforeach
+            </ul>
+          </div>
+
+          <!-- About -->
+          <div class="col-6 col-md-3">
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading">
+              About
+            </h4>
+            <ul class="list-unstyled mb-0">
+              @foreach([
+                'About ' . config('app.name') => url('/about'),
+                'House Rules & Policy'        => url('/house-policy'),
+              ] as $label => $link)
+                <li class="mb-2">
+                  <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
+                    {{ $label }}
+                  </a>
+                </li>
+              @endforeach
+            </ul>
+          </div>
+
+          <!-- Support -->
+          <div class="col-6 col-md-3">
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading">
+              Support
+            </h4>
+            <ul class="list-unstyled mb-4">
+              <li class="mb-2">
+                <a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">
+                  Reach Us
+                </a>
+              </li>
+              <li class="text-white-50 mb-1 footer-text">
+                <strong>Email:</strong>
+                <a href="mailto:{{ $settings->email }}" class="text-white">{{ $settings->email }}</a>
+              </li>
+              <li class="text-white-50 footer-text">
+                <strong>Phone:</strong>
+                <a href="tel:{{ $settings->phone }}" class="text-white">{{ $settings->phone }}</a>
+              </li>
+            </ul>
+
+            <!-- Social Icons -->
+            <div class="d-flex gap-4">
+              @foreach([
+                'facebook_url'  => 'fab fa-facebook-f',
+                'instagram_url' => 'fab fa-instagram',
+                'x_url'         => 'fab fa-twitter',
+                'linkedin_url'  => 'fab fa-linkedin-in',
+                'tiktok_url'    => 'fab fa-tiktok',
+              ] as $key => $icon)
+                @if(!empty($settings->{$key}))
+                  <a href="{{ $settings->{$key} }}" target="_blank"
+                     aria-label="{{ ucfirst(str_replace('_url','',$key)) }}"
+                     class="footer-link social-icon">
+                    <i class="{{ $icon }}"></i>
+                  </a>
+                @endif
+              @endforeach
+            </div>
+          </div>
+
+        </div>
+
+        <div class="mt-5 pt-4 border-top border-secondary text-center">
+          <p class="mb-0 text-white-50 footer-text">
+            &copy; {{ date('Y') }} {{ config('app.name') }} — All rights reserved.
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    @push('styles')
+    <style>
+      footer,
+      .footer-text,
+      .footer-link,
+      .footer-heading { font-size: 15px !important; }
+
+      .footer-heading { font-weight: 600; }
+
+      .footer-link { display: inline-block; transition: color .2s ease-in-out; }
+      .footer-link:hover { color: #fff !important; text-decoration: none; }
+
+      .social-icon i { font-size: 18px; }
+    </style>
+    @endpush
+
+  </main>
+
+  <!-- ===============================================-->
+  <!--    JavaScripts-->
+  <!-- ===============================================-->
+  <script src="{{ asset('vendors/popper/popper.min.js') }}"></script>
+  <script src="{{ asset('vendors/bootstrap/bootstrap.min.js') }}"></script>
+  <script src="{{ asset('vendors/anchorjs/anchor.min.js') }}"></script>
+  <script src="{{ asset('vendors/is/is.min.js') }}"></script>
+  <script src="{{ asset('vendors/fontawesome/all.min.js') }}"></script>
+  <script src="{{ asset('vendors/lodash/lodash.min.js') }}"></script>
+  <script src="{{ asset('vendors/list.js/list.min.js') }}"></script>
+  <script src="{{ asset('vendors/feather-icons/feather.min.js') }}"></script>
+  <script src="{{ asset('vendors/dayjs/dayjs.min.js') }}"></script>
+  <script src="{{ asset('vendors/mapbox-gl/mapbox-gl.js') }}"></script>
+  <script src="{{ asset('assets/js/phoenix.js') }}"></script>
+  <script src="{{ asset('vendors/isotope-layout/isotope.pkgd.min.js') }}"></script>
+  <script src="{{ asset('vendors/imagesloaded/imagesloaded.pkgd.min.js') }}"></script>
+  <script src="{{ asset('vendors/isotope-packery/packery-mode.pkgd.min.js') }}"></script>
+  <script src="{{ asset('vendors/bigpicture/BigPicture.js') }}"></script>
+  <script src="{{ asset('vendors/countup/countUp.umd.js') }}"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDbaQGvhe7Af-uOMJz68NWHnO34UjjE7Lo&amp;callback=initMap" async></script>
+  <script src="https://smtpjs.com/v3/smtp.js" defer></script>
+
+  @yield('scripts')
+  @stack('scripts')
+</body>
+</html>

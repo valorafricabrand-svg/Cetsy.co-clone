@@ -171,7 +171,7 @@
         <ul class="list-group list-group-flush">
           @foreach($product->digitalFiles as $file)
             <li class="list-group-item d-flex justify-content-between align-items-center">
-              <a href="{{ Storage::url($file->filepath) }}" target="_blank">
+              <a href="{{ route('digital-files.download', $file) }}" target="_blank">
                 <i class="fas fa-file-download me-2"></i>{{ $file->filename }}
               </a>
               <form action="{{ route('digital-files.destroy',$file) }}" method="POST" onsubmit="return confirm('Delete this file?')">
