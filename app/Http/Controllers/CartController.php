@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class CartController extends Controller
 {
@@ -132,38 +133,68 @@ class CartController extends Controller
     /**
      * Update shipping profile selections for products in the cart.
      */
-    public function updateShippingSelection(Request $request)
-    {
-        $cart = session()->get('cart', []);
 
-        $request->validate([
-            'product_ids' => 'required|array',
-            'shipping_profile_ids' => 'required|array',
-            'shipping_profile_ids.*' => 'required|integer',
-        ]);
 
-        foreach ($request->shipping_profile_ids as $index => $profileId) {
-            $productId = $request->product_ids[$index] ?? null;
 
-            if (!$productId || !isset($cart[$productId])) {
+
+
+
+public function updateShippingSelection(Request $request)
+{
+    $cart = session('cart', []);
+
+    /* 1. basic structure */
+    $data = $request->validate([
+        'product_ids'          => 'required|array',
+        'shipping_profile_ids' => 'sometimes|array',   // keyed by product-ID
+        'return_to'            => 'sometimes|string',
+    ]);
+
+    $profileIds = $data['shipping_profile_ids'] ?? [];
+
+    /* 2. custom rules */
+    $v = \Validator::make($data, []);
+    $v->after(function ($validator) use (&$cart, $profileIds) {
+
+        foreach ($cart as $id => $item) {
+
+            $isPhysical = ($item['type'] ?? 'product') === 'product';
+            $allowed    = collect($item['shipping_profiles'] ?? [])->pluck('id');
+
+            /* — a) services / digital — */
+            if (! $isPhysical) {
+                $cart[$id]['selected_shipping_profile_id'] = null;
                 continue;
             }
 
-            $productItem = $cart[$productId];
-            $shippingProfiles = collect($productItem['shipping_profiles'] ?? []);
-
-            if (!$shippingProfiles->pluck('id')->contains($profileId)) {
-                return redirect()->route('cart.view')
-                    ->withErrors('Invalid shipping profile selected for ' . $productItem['name']);
+            /* — b) physical but NO profiles → treat as no-shipping — */
+            if ($allowed->isEmpty()) {
+                $cart[$id]['selected_shipping_profile_id'] = null;
+                $cart[$id]['shippingCost'] = 0;
+                continue;
             }
 
-            $cart[$productId]['selected_shipping_profile_id'] = $profileId;
+            /* — c) physical WITH profiles → validate chosen id — */
+            $chosen = $profileIds[$id] ?? null;
+
+          $cart[$id]['selected_shipping_profile_id'] = (int) $chosen;
         }
+    });
 
-        session()->put('cart', $cart);
+    $v->validate();   // will redirect back on error
 
-        return redirect()->route('cart.checkout')->with('success', 'Shipping selections updated, proceed to checkout.');
-    }
+    /* 3. save & redirect */
+    session()->put('cart', $cart);
+
+    return redirect()
+        ->route($data['return_to'] ?? 'cart.checkout')
+        ->with('success', 'Shipping selections updated – proceed to checkout.');
+}
+
+
+
+
+
 
     /**
      * Remove product from cart.

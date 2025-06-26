@@ -27,6 +27,13 @@ public function index()
                                ->take(8)
                                ->get();
 
+       $featuredDigitals = Product::where('is_active', 1)
+                               ->where('type', 'digital')
+                               ->latest()
+                               ->with('media')
+                               ->take(8)
+                               ->get();
+
     // Latest 8 active service products
     $services = Product::where('is_active', 1)
                        ->where('type', 'service')
@@ -40,7 +47,7 @@ public function index()
                  ->take(8)
                  ->get();
 
-    return themed_view('index', compact('categories', 'featuredProducts', 'shops', 'services'));
+    return themed_view('index', compact('categories', 'featuredProducts', 'shops', 'services', 'featuredDigitals'));
 }
 
 }

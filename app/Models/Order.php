@@ -25,6 +25,7 @@ class Order extends Model
     public const STATUS_CANCELLED  = 'cancelled';
     public const STATUS_REFUNDED   = 'refunded';
     public const STATUS_RETURNED   = 'returned';
+     public const STATUS_COMPLETED   = 'completed';
 
     /**
      * Return all possible statuses

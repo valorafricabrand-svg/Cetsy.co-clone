@@ -10,15 +10,22 @@ class Category extends Model
 
     protected $fillable = ['parent_id', 'name', 'slug', 'image', 'listing_fee'];
 
-    public function parent()
-    {
-        return $this->belongsTo(Category::class, 'parent_id');
-    }
+  
 
-    public function children()
-    {
-        return $this->hasMany(Category::class, 'parent_id');
-    }
+    // Direct children (one-level down)
+public function children()
+{
+    return $this->hasMany(self::class, 'parent_id');
+}
+
+// Optional: the inverse (upwards) if you need it elsewhere
+public function parent()
+{
+    return $this->belongsTo(self::class, 'parent_id');
+}
+
+
+
 
     public function products()
     {
@@ -29,4 +36,15 @@ class Category extends Model
     {
         return 'slug';
     }
+
+
+    /**
+ * Recursive children relationship (all descendants, eager-loadable)
+ */
+public function childrenRecursive()
+{
+    // Call itself recursively so every level comes back in one query
+    return $this->children()->with('childrenRecursive');
+}
+
 }
