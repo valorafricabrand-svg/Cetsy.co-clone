@@ -84,7 +84,7 @@
                                         <select 
                                             :name="`shipping_profile_ids[${index}]`" 
                                             class="form-select form-select-sm" 
-                                            required 
+                                             
                                             x-model.number="item.selected_shipping_profile_id"
                                             @change="updateShippingCost(index)"
                                         >

@@ -33,7 +33,7 @@
 
   <div class="card shadow-sm rounded-4">
     <div class="card-header bg-success text-white rounded-top-4">
-      <h4 class="mb-0">New Product Details</h4>
+      <h4 class="mb-0 text-white">New Product Details</h4>
     </div>
 
     <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data"

@@ -66,8 +66,8 @@ Route::prefix('cart')->name('cart.')->group(function () {
 
 });
 
-Route::post('/cart/update-shipping-selection', [CartController::class, 'updateShippingSelection'])->name('cart.updateShippingSelection');
-Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+
+
 // Wishlist
 Route::get('/wishlist', [ProductController::class, 'wishlist'])->name('wishlist');
 
@@ -94,6 +94,11 @@ Route::resource('shipping-profiles', ShippingProfileController::class)
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+
+    Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+
+    Route::post('/cart/update-shipping-selection', [CartController::class, 'updateShippingSelection'])->name('cart.updateShippingSelection');
+
     Route::post('/favorites/toggle', [WishlistController::class, 'toggle'])
          ->name('favorites.toggle');
         Route::delete('/favorites/{wishlist}', [WishlistController::class, 'remove'])
@@ -123,6 +128,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::post('/checkout/order', [OrderController::class, 'storeOrder'])->name('store_order');
+
+    Route::get('/downloads/{file}', [DigitalFileController::class, 'download'])
+     ->name('digital-files.download');
 
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');

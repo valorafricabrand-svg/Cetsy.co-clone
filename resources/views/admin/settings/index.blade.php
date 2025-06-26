@@ -158,30 +158,49 @@
       </div>
     </div>
 
-    <!-- ========== PAYMENT & CURRENCY ========== -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-light fw-semibold">Payment &amp; Currency</div>
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">PayPal Client&nbsp;ID</label>
-            <input type="text" name="paypal_client_id"
-                   class="form-control @error('paypal_client_id') is-invalid @enderror"
-                   value="{{ old('paypal_client_id', $settings->paypal_client_id) }}">
-            @error('paypal_client_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
+<!-- ========== PAYMENT & CURRENCY ========== -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light fw-semibold">Payment &amp; Currency</div>
 
-          <div class="col-md-6">
-            <label class="form-label">Default Currency</label>
-            <input type="text" name="default_currency"
-                   class="form-control @error('default_currency') is-invalid @enderror"
-                   value="{{ old('default_currency', $settings->default_currency) }}"
-                   placeholder="e.g. USD" required>
-            @error('default_currency') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
-        </div>
+  <div class="card-body">
+    <div class="row g-3">
+
+      {{-- PayPal Client ID --}}
+      <div class="col-md-6">
+        <label class="form-label">PayPal&nbsp;Client&nbsp;ID</label>
+        <input type="text"
+               name="paypal_client_id"
+               class="form-control @error('paypal_client_id') is-invalid @enderror"
+               value="{{ old('paypal_client_id', $settings->paypal_client_id) }}">
+        @error('paypal_client_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
+
+      {{-- Default Currency --}}
+      <div class="col-md-4">
+        <label class="form-label">Default&nbsp;Currency</label>
+        <input type="text"
+               name="default_currency"
+               class="form-control @error('default_currency') is-invalid @enderror"
+               value="{{ old('default_currency', $settings->default_currency) }}"
+               placeholder="e.g. USD" required>
+        @error('default_currency') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
+      {{-- NEW: PayPal Fee % --}}
+      <div class="col-md-2">
+        <label class="form-label">PayPal&nbsp;Fee&nbsp;%</label>
+        <input type="number"
+               name="paypal_transaction_fee_percent"
+               class="form-control @error('paypal_transaction_fee_percent') is-invalid @enderror"
+               value="{{ old('paypal_transaction_fee_percent', $settings->paypal_transaction_fee_percent) }}"
+               step="0.0001" min="0" max="10"
+               placeholder="0.0398" title="Enter as decimal e.g. 0.0398 for 3.98 %">
+        @error('paypal_transaction_fee_percent') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
     </div>
+  </div>
+</div>
 
     <!-- Action Buttons -->
     <div class="text-end">

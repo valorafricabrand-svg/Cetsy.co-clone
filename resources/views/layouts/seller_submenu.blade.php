@@ -183,14 +183,6 @@
       @endforeach
     </nav>
 
-    <!-- Help Section -->
-    <div class="mt-4 pt-4 border-top">
-      <a href="#" class="btn btn-outline-success help-btn w-100 mb-3 d-flex align-items-center">
-        <i class="fas fa-question-circle me-2"></i> Help Center
-      </a>
-      <a href="#" class="btn btn-outline-secondary help-btn w-100 d-flex align-items-center">
-        <i class="fas fa-comments me-2"></i> Contact Support
-      </a>
-    </div>
+
   </aside>
 @endif

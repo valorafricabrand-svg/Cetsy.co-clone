@@ -82,7 +82,7 @@
 <section class="bg-light py-5">
   <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="h3 fw-bold mb-0">Featured products for You</h2>
+      <h2 class="h3 fw-bold mb-0">Featured for You</h2>
       <a href="{{ route('listings') }}" class="text-success text-decoration-none small">
         See All Products
       </a>
@@ -220,81 +220,6 @@
         </div>
       @empty
         <p class="col-12 text-center text-muted fs-5 fw-medium">No services available.</p>
-      @endforelse
-    </div>
-  </div>
-</section>
-
-
-<section class="bg-light py-5">
-  <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="h3 fw-bold mb-0">Featured digital downloads for You</h2>
-      <a href="{{ route('listings') }}" class="text-success text-decoration-none small">
-        See All Products
-      </a>
-    </div>
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-      @forelse($featuredDigitals as $product)
-        <div class="col">
-          <div class="card h-100 shadow-sm border-0">
-            <a href="{{ route('listing.show', $product) }}">
-              @if($img = $product->media->first())
-                <img 
-                  src="{{ asset('storage/'.$img->url) }}" 
-                  alt="{{ $product->name }}" 
-                  class="card-img-top" 
-                  style="height:200px; object-fit:cover;"
-                  loading="lazy"
-                >
-              @else
-                <div 
-                  class="bg-secondary text-white d-flex align-items-center justify-content-center" 
-                  style="height:200px;"
-                >
-                  No Image
-                </div>
-              @endif
-            </a>
-            <div class="card-body d-flex flex-column">
-              <h5 class="card-title text-truncate">
-                <a href="{{ route('listing.show', $product) }}" class="text-dark text-decoration-none" title="{{ $product->name }}">
-                  {{ $product->name }}
-                </a>
-              </h5>
-              <p class="card-text text-success fw-bold mb-3">KES {{ number_format($product->price, 2) }}</p>
-              <div class="mt-auto d-flex justify-content-between align-items-center">
-                <a href="{{ route('listing.show', $product) }}" class="small text-decoration-none text-muted">
-                  View Details
-                </a>
-                <form 
-                  method="POST" 
-                  action="{{ route('cart.add') }}" 
-                  x-data="{ busy: false }" 
-                  @submit="busy = true"
-                >
-                  @csrf
-                  <input type="hidden" name="product_id" value="{{ $product->id }}">
-                  <input type="hidden" name="quantity" value="1">
-                  <button 
-                    type="submit" 
-                    class="btn btn-success btn-sm" 
-                    :disabled="busy"
-                    aria-label="Add {{ $product->name }} to cart"
-                  >
-                    <i class="fas fa-cart-plus"></i>
-                    <span x-show="!busy">Add</span>
-                    <span x-show="busy" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      @empty
-        <div class="col-12 text-center text-muted">
-          No featured products at this time.
-        </div>
       @endforelse
     </div>
   </div>
