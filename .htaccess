@@ -1,16 +1,15 @@
-# serve index.php by default
-DirectoryIndex index.php
+<IfModule mod_rewrite.c>
+  # Default file(s) to serve for directories
+  DirectoryIndex index.php index.html
 
-RewriteEngine On
+  RewriteEngine On
+  RewriteBase /
 
-# ───────────────────────────────────────────────────────
-# 1) Let any request to /blog or /blog/... pass through
-RewriteRule ^blog(/.*)?$ blog/$1 [L,NC]
+  # 1) If the request maps to a real file or directory—serve it directly.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
 
-# ───────────────────────────────────────────────────────
-# 2) If URL is exactly “/”, send to public/index.php
-RewriteRule ^$ public/index.php [L]
-
-# ───────────────────────────────────────────────────────
-# 3) Everything else (except already under public/) → public/
-RewriteRule ^((?!public/).*)$ public/$1 [L,NC]
+  # 2) Otherwise, rewrite into public/ (your Laravel front controller)
+  RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
