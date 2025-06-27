@@ -1,5 +1,16 @@
+# serve index.php by default
 DirectoryIndex index.php
 
-RewriteEngine On 
+RewriteEngine On
+
+# ───────────────────────────────────────────────────────
+# 1) Let any request to /blog or /blog/... pass through
+RewriteRule ^blog(/.*)?$ blog/$1 [L,NC]
+
+# ───────────────────────────────────────────────────────
+# 2) If URL is exactly “/”, send to public/index.php
 RewriteRule ^$ public/index.php [L]
+
+# ───────────────────────────────────────────────────────
+# 3) Everything else (except already under public/) → public/
 RewriteRule ^((?!public/).*)$ public/$1 [L,NC]
