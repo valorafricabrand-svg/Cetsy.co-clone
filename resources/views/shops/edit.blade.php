@@ -62,15 +62,35 @@
               @endforeach
             </select>
           </div>
-          <div class="col-md-4">
-            <label for="currency" class="form-label">Currency <span class="text-danger">*</span></label>
-            <select name="currency" id="currency" class="form-select" required>
-              <option disabled selected>Select currency</option>
-              <option value="USD" {{ old('currency', $shop->currency)=='USD' ? 'selected':'' }}>USD</option>
-              <option value="CAD" {{ old('currency', $shop->currency)=='CAD' ? 'selected':'' }}>CAD</option>
-              <option value="GBP" {{ old('currency', $shop->currency)=='GBP' ? 'selected':'' }}>GBP</option>
-            </select>
-          </div>
+ <div class="col-md-4">
+  <label for="currency" class="form-label">
+    Currency <span class="text-danger">*</span>
+  </label>
+  <select
+    id="currency"
+    name="currency"
+    class="form-select @error('currency') is-invalid @enderror"
+    required
+  >
+    <option value="" disabled {{ old('currency', $shop->currency) ? '' : 'selected' }}>
+      Select a currency
+    </option>
+    @foreach(currencies() as $code => $name)
+      <option
+        value="{{ $code }}"
+        {{ old('currency', $shop->currency) === $code ? 'selected' : '' }}
+      >
+        {{ $name }} ({{ $code }})
+      </option>
+    @endforeach
+  </select>
+  @error('currency')
+    <div class="invalid-feedback">{{ $message }}</div>
+  @else
+    <div class="invalid-feedback">Please select a currency.</div>
+  @enderror
+</div>
+
         </div>
       </div>
 
