@@ -35,7 +35,7 @@ public function create()
             // 1) Shop preferences
             'language'         => 'required|string|in:English',
             'country'          => 'required|string|exists:countries,id',
-            'currency'         => 'required|string|in:USD,CAD,GBP',
+            'currency'         => 'required|string',
 
             // 2) Name & slug
             'name'             => 'required|string|max:255',
@@ -132,7 +132,7 @@ public function update(Request $request, Shop $shop)
     $data = $request->validate([
         'language'       => 'required|string|in:English',
         'country'        => 'required|string|exists:countries,id',
-        'currency'       => 'required|string|in:USD,CAD,GBP',
+        'currency'       => 'required|string',
         'name'           => 'required|string|max:255',
         'slug'           => 'required|string|max:255|unique:shops,slug,' . $shop->id,
         'address'        => 'required|string|max:255',
