@@ -52,18 +52,12 @@
                                 </p>
 
                                 <div class="mt-auto">
-                                    <form method="POST" action="{{ route('cart.add') }}">
-                                        @csrf
-                                        <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                        <input type="hidden" name="quantity" value="1">
-
-                                        <button type="submit"
-                                                class="btn btn-outline-success w-100 d-flex justify-content-center align-items-center gap-2"
-                                                aria-label="Add {{ $product->name }} to cart">
-                                            <span>Add to Cart</span>
-                                            <i class="fas fa-cart-plus"></i>
-                                        </button>
-                                    </form>
+                                    <a href="{{ route('listing.show', $product) }}"
+                                       class="btn btn-outline-success w-100 d-flex justify-content-center align-items-center gap-2"
+                                       aria-label="View {{ $product->name }}">
+                                        <span>View Listing</span>
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
