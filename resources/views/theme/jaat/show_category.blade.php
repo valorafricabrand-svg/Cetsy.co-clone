@@ -7,12 +7,15 @@
 @section('main')
     {{-- ────────── Category Banner ────────── --}}
     <div class="position-relative bg-cover bg-center"
-         style="background-image:url('{{ $category->image ? asset('storage/' . $category->image) : asset('assets/img/default-category.jpg') }}'); height:300px;">
+         style="background-image:url('{{ $category->image
+            ? asset('storage/' . $category->image)
+            : asset('assets/img/default-category.jpg') }}'); height:300px;">
         <div class="position-absolute top-0 start-0 w-100 h-100 bg-success bg-opacity-75 d-flex align-items-center justify-content-center">
             <div class="text-center text-white px-3">
                 <h1 class="display-5 fw-bold text-white">{{ $category->name }}</h1>
                 <p class="lead mb-0">
-                    {{ $category->description ?? 'Explore a wide range of physical products, professional services and digital goods in this category.' }}
+                    {{ $category->description
+                        ?? 'Explore a wide range of physical products, professional services and digital goods in this category.' }}
                 </p>
             </div>
         </div>
@@ -62,20 +65,14 @@
                                         KES {{ number_format($product->price, 2) }}
                                     </p>
 
-                                    {{-- Add-to-Cart --}}
+                                    {{-- View Listing --}}
                                     <div class="mt-auto">
-                                        <form method="POST" action="{{ route('cart.add') }}">
-                                            @csrf
-                                            <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                            <input type="hidden" name="quantity" value="1">
-
-                                            <button type="submit"
-                                                    class="btn btn-outline-success w-100 d-flex justify-content-center align-items-center gap-2"
-                                                    aria-label="Add {{ $product->name }} to cart">
-                                                <span>Add to Cart</span>
-                                                <i class="fas fa-cart-plus"></i>
-                                            </button>
-                                        </form>
+                                        <a href="{{ route('listing.show', $product) }}"
+                                           class="btn btn-outline-success w-100 d-flex justify-content-center align-items-center gap-2"
+                                           aria-label="View {{ $product->name }}">
+                                            <span>View Listing</span>
+                                            <i class="fas fa-eye"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
