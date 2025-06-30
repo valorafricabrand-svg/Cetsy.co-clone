@@ -71,7 +71,7 @@
           @error('type') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
 
-{{-- Category (with parent → sub → sub-sub grouping) --}}
+{{-- Category --}}
 <div class="mb-3">
   <label for="category_id" class="form-label fw-semibold">Category</label>
   <select id="category_id" name="category_id"
@@ -80,36 +80,18 @@
     <option value="">Choose a category</option>
 
     @foreach($categories as $parent)
-      {{-- Only show parents that have children --}}
       @if($parent->children->isNotEmpty())
         <optgroup label="{{ $parent->name }}">
           @foreach($parent->children as $child)
-            {{-- First-level child --}}
             <option value="{{ $child->id }}"
-                    {{ old('category_id') == $child->id ? 'selected' : '' }}>
-              &nbsp;&nbsp;— {{ $child->name }}
+              @selected(old('category_id') == $child->id)>
+              {{ $child->name }}
             </option>
-
-            @if($child->children->isNotEmpty())
-              @foreach($child->children as $grandchild)
-                {{-- Second-level child --}}
-                <option value="{{ $grandchild->id }}"
-                        {{ old('category_id') == $grandchild->id ? 'selected' : '' }}>
-                  &nbsp;&nbsp;&nbsp;&nbsp;• {{ $grandchild->name }}
-                </option>
-              @endforeach
-            @endif
-
           @endforeach
         </optgroup>
-      @else
-        {{-- Parent with no children: show as top-level option --}}
-        <option value="{{ $parent->id }}"
-                {{ old('category_id') == $parent->id ? 'selected' : '' }}>
-          {{ $parent->name }}
-        </option>
       @endif
     @endforeach
+
   </select>
   @error('category_id')
     <div class="invalid-feedback">{{ $message }}</div>
