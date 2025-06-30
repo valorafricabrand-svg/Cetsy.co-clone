@@ -21,7 +21,7 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Shipping to Country</th>
+                    <th>Shipping to {{ setting('region') }}</th>
                     <th>Base Rate ({{ get_currency() }})</th>
                     <th>Delivery Days</th>
                     <th>Pickup Available</th>
