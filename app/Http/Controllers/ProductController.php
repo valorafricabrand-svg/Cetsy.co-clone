@@ -36,7 +36,7 @@ class ProductController extends Controller
     $categories = \App\Models\Category::orderBy('name')->get();
 
     // Load all shipping profiles for “choose existing”
-    $shippingProfiles = \App\Models\ShippingProfile::orderBy('name')->get();
+    $shippingProfiles = \App\Models\ShippingProfile::whereShopId(shop_id())->orderBy('name')->get();
 
     // (Optional) if you want to pre-select a default:
     $defaultProfileId = old('default_shipping_profile', null);
