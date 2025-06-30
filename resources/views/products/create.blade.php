@@ -1,6 +1,15 @@
+{{-- resources/views/products/create.blade.php --}}
+
 @extends('layouts.app')
 
 @section('content')
+@php
+    // Determine the first profile as default on initial load
+    $firstProfileId = $shippingProfiles->first()->id ?? null;
+    $selectedProfiles = old('shipping_profiles', $firstProfileId ? [$firstProfileId] : []);
+    $defaultShippingProfile = old('default_shipping_profile', $firstProfileId);
+@endphp
+
 <div class="content">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">Create New Product</h2>
@@ -40,7 +49,7 @@
           x-data="imageUploadSortable()" @submit.prevent="$el.submit()">
       @csrf
       <div class="card-body p-4">
-        {{-- Name --}}
+        {{-- Product Name --}}
         <div class="mb-3">
           <label for="name" class="form-label fw-semibold">Product Name</label>
           <input type="text" id="name" name="name"
@@ -49,7 +58,7 @@
           @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
 
-        {{-- Type --}}
+        {{-- Product Type --}}
         <div class="mb-3">
           <label for="type" class="form-label fw-semibold">Product Type</label>
           <select id="type" name="type"
@@ -89,7 +98,7 @@
         {{-- Price & Discount --}}
         <div class="row g-3 mb-4">
           <div class="col-md-6">
-            <label for="price" class="form-label fw-semibold">Price (KES)</label>
+            <label for="price" class="form-label fw-semibold">Price ({{ get_currency() }})</label>
             <input type="number" id="price" name="price"
                    class="form-control @error('price') is-invalid @enderror"
                    value="{{ old('price') }}" placeholder="e.g., 2500" min="0" step="0.01" required>
@@ -104,7 +113,7 @@
           </div>
         </div>
 
-        {{-- Stock --}}
+        {{-- Stock Section --}}
         <div class="mb-4" id="stockSection">
           <label for="stock" class="form-label fw-semibold">Stock Quantity</label>
           <input type="number" id="stock" name="stock"
@@ -113,7 +122,7 @@
           @error('stock') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
 
-        {{-- Digital File --}}
+        {{-- Digital File Section --}}
         <div class="mb-4" id="digitalFileSection" style="display:none;">
           <label for="digital_file" class="form-label fw-semibold">Upload Digital File</label>
           <input type="file" id="digital_file" name="digital_file"
@@ -123,7 +132,7 @@
           @error('digital_file') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
 
-        {{-- Shipping Profiles --}}
+        {{-- Shipping Profiles Section --}}
         <div class="mb-4" id="shippingProfilesSection" style="display:none;">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <label class="form-label fw-semibold">
@@ -145,28 +154,28 @@
                     <input class="form-check-input" type="checkbox"
                            name="shipping_profiles[]" value="{{ $profile->id }}"
                            id="sp_{{ $profile->id }}"
-                           {{ in_array($profile->id, old('shipping_profiles', [])) ? 'checked' : '' }}>
+                           {{ in_array($profile->id, $selectedProfiles) ? 'checked' : '' }}>
                   </div>
-                  {{-- Details --}}
+                  {{-- Profile Details --}}
                   <div class="flex-grow-1">
                     <label class="form-check-label fw-semibold" for="sp_{{ $profile->id }}">
                       {{ $profile->name }}
                     </label>
                     <div class="small text-muted">
-                      KES {{ number_format($profile->base_rate,2) }} · 
-                      {{ $profile->delivery_days }} day{{ $profile->delivery_days>1?'s':'' }}
+                      {{ get_currency() }} {{ number_format($profile->base_rate,2) }} · 
+                      {{ $profile->delivery_days }} day{{ $profile->delivery_days > 1 ? 's' : '' }}
                       @if($profile->pickup_available)
                         <span class="badge bg-success ms-2">Pickup</span>
                       @endif
                     </div>
                   </div>
-                  {{-- Radio --}}
+                  {{-- Radio Default --}}
                   <div class="form-check ms-3 mt-1">
                     <input class="form-check-input" type="radio"
                            name="default_shipping_profile"
                            value="{{ $profile->id }}"
                            id="default_{{ $profile->id }}"
-                           {{ old('default_shipping_profile') == $profile->id ? 'checked' : '' }}>
+                           {{ $defaultShippingProfile == $profile->id ? 'checked' : '' }}>
                     <label class="form-check-label small" for="default_{{ $profile->id }}">
                       Default
                     </label>
@@ -190,7 +199,7 @@
 
         <template x-if="previews.length">
           <div class="row g-3 mb-4" id="previewList">
-            <template x-for="(file,i) in previews" :key="file.id">
+            <template x-for="(file, i) in previews" :key="file.id">
               <div class="col-6 col-sm-4 col-md-3">
                 <div class="position-relative rounded overflow-hidden" style="height:140px;">
                   <img :src="file.url" class="w-100 h-100 object-fit-cover">
@@ -207,7 +216,7 @@
           <p class="text-muted mb-4">No images selected yet.</p>
         </template>
 
-        {{-- Submit --}}
+        {{-- Submit Button --}}
         <div class="d-grid">
           <button type="submit" class="btn btn-success btn-lg rounded-pill">
             <i class="fas fa-check-circle me-2"></i> Publish Product
@@ -218,43 +227,70 @@
   </div>
 </div>
 
-{{-- New Profile Modal --}}
+{{-- New Shipping Profile Modal --}}
 <div class="modal fade" id="newProfileModal" tabindex="-1" aria-labelledby="newProfileLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form action="{{ route('shipping-profiles.store') }}" method="POST" class="modal-content">
+    <form action="{{ route('shipping_profiles.store') }}" method="POST" class="modal-content">
       @csrf
       <div class="modal-header">
         <h5 class="modal-title" id="newProfileLabel">Add Shipping Profile</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        {{-- Profile Name & Country --}}
+        {{-- Name --}}
         <div class="mb-3">
-          <label for="profile_name" class="form-label">Name</label>
-          <input type="text" id="profile_name" name="name" class="form-control" required>
+          <label for="profile_name" class="form-label">Name <span class="text-danger">*</span></label>
+          <input type="text" id="profile_name" name="name"
+                 value="{{ old('name') }}"
+                 class="form-control @error('name') is-invalid @enderror"
+                 required>
+          @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
+        {{-- Shipping to Country --}}
         <div class="mb-3">
-          <label for="country" class="form-label">Country (ISO Code)</label>
-          <input type="text" id="country" name="country" maxlength="3"
-                 class="form-control @error('country') is-invalid @enderror"
-                 value="{{ old('country','KE') }}" required>
-          @error('country') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          <div class="form-text">2–3 letter ISO code (e.g. KE, UG, TZ).</div>
+          <label for="country_id" class="form-label">Shipping to Country <span class="text-danger">*</span></label>
+          <select id="country_id" name="country_id"
+                  class="form-select @error('country_id') is-invalid @enderror"
+                  required>
+            <option value="">Select country</option>
+            @foreach($countries as $country)
+              <option value="{{ $country->id }}"
+                {{ old('country_id') == $country->id ? 'selected' : '' }}>
+                {{ $country->name }} ({{ $country->iso_code }})
+              </option>
+            @endforeach
+          </select>
+          @error('country_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
         {{-- Rate & Days --}}
         <div class="row g-3">
           <div class="col-md-6">
-            <label for="base_rate" class="form-label">Base Rate (KES)</label>
-            <input type="number" id="base_rate" name="base_rate" class="form-control" min="0" step="0.01" required>
+            <label for="base_rate" class="form-label">Base Rate ({{ get_currency() }}) <span class="text-danger">*</span></label>
+            <input type="number" id="base_rate" name="base_rate"
+                   value="{{ old('base_rate') }}"
+                   min="0" step="0.01"
+                   class="form-control @error('base_rate') is-invalid @enderror"
+                   required>
+            @error('base_rate') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
           <div class="col-md-6">
-            <label for="delivery_days" class="form-label">Delivery Days</label>
-            <input type="number" id="delivery_days" name="delivery_days" class="form-control" min="1" required>
+            <label for="delivery_days" class="form-label">Delivery Days <span class="text-danger">*</span></label>
+            <input type="number" id="delivery_days" name="delivery_days"
+                   value="{{ old('delivery_days') }}"
+                   min="0"
+                   class="form-control @error('delivery_days') is-invalid @enderror"
+                   required>
+            @error('delivery_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
         </div>
+        {{-- Pickup Available --}}
+        <input type="hidden" name="pickup_available" value="0">
         <div class="form-check form-switch mt-3">
-          <input class="form-check-input" type="checkbox" id="pickup_available" name="pickup_available">
-          <label class="form-check-label" for="pickup_available">Pickup Available</label>
+          <input type="checkbox" id="pickup_available" name="pickup_available" value="1"
+                 class="form-check-input @error('pickup_available') is-invalid @enderror"
+                 {{ old('pickup_available') ? 'checked' : '' }}>
+          <label for="pickup_available" class="form-check-label">Pickup Available</label>
+          @error('pickup_available') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
         </div>
       </div>
       <div class="modal-footer">
@@ -274,66 +310,60 @@
     selector: '#description',
     plugins: 'image link media code fullscreen',
     toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
-    menubar: false, height: 300
+    menubar: false,
+    height: 300
   });
 
-  // Toggle physical/digital sections
-  document.getElementById('type').addEventListener('change', function(){
-    const phys = this.value==='physical',
-          digi = this.value==='digital';
-    document.getElementById('stockSection').style.display            = phys ? 'block':'none';
-    document.getElementById('shippingProfilesSection').style.display = phys ? 'block':'none';
-    document.getElementById('digitalFileSection').style.display      = digi ? 'block':'none';
+  // Toggle sections based on Product Type
+  document.getElementById('type').addEventListener('change', function() {
+    const phys = this.value === 'physical',
+          digi = this.value === 'digital';
+    document.getElementById('stockSection').style.display            = phys ? 'block' : 'none';
+    document.getElementById('shippingProfilesSection').style.display = phys ? 'block' : 'none';
+    document.getElementById('digitalFileSection').style.display      = digi ? 'block' : 'none';
   });
   window.addEventListener('DOMContentLoaded', ()=> {
     document.getElementById('type').dispatchEvent(new Event('change'));
   });
 
-  // When a checkbox is toggled, auto-select it as default
-  document.addEventListener('change', function(e){
-    if(e.target.matches('input[name="shipping_profiles[]"]')){
+  // Auto-select radio default when checkbox toggled
+  document.addEventListener('change', function(e) {
+    if (e.target.matches('input[name="shipping_profiles[]"]')) {
       const id = e.target.value;
-      // if checked, make it default
-      if(e.target.checked){
-        document.getElementById('default_'+id).checked = true;
-      } else {
-        // if unchecking the one that was default, pick another
-        if(document.getElementById('default_'+id).checked){
-          const next = document.querySelector('input[name="shipping_profiles[]"]:checked');
-          if(next){
-            document.getElementById('default_'+next.value).checked = true;
-          }
-        }
+      if (e.target.checked) {
+        document.getElementById('default_' + id).checked = true;
+      } else if (document.getElementById('default_' + id).checked) {
+        const next = document.querySelector('input[name="shipping_profiles[]"]:checked');
+        if (next) document.getElementById('default_' + next.value).checked = true;
       }
     }
   });
 
-  // Alpine.js: Image Upload + Sortable
-  function imageUploadSortable(){
+  // Alpine.js: Image Upload & Sortable
+  function imageUploadSortable() {
     return {
-      previews: [], idCounter:0, sortable:null,
-      handleFiles(files){ Array.from(files).forEach(f=> this.previewFile(f)); },
-      previewFile(file){
-        let reader=new FileReader();
-        reader.onload=e=>{
-          this.previews.push({id:this.idCounter++, url:e.target.result, fileObject:file});
-          this.$nextTick(()=> this.initSortable());
+      previews: [], idCounter: 0, sortable: null,
+      handleFiles(files) { Array.from(files).forEach(f => this.previewFile(f)); },
+      previewFile(file) {
+        let reader = new FileReader();
+        reader.onload = e => {
+          this.previews.push({ id: this.idCounter++, url: e.target.result, fileObject: file });
+          this.$nextTick(() => this.initSortable());
         };
         reader.readAsDataURL(file);
       },
-      removeFile(i){ this.previews.splice(i,1); },
-      handleDrop(e){ if(e.dataTransfer.files.length) this.handleFiles(e.dataTransfer.files); },
-      initSortable(){
-        if(this.sortable) this.sortable.destroy();
+      removeFile(i) { this.previews.splice(i, 1); },
+      handleDrop(e) { if (e.dataTransfer.files.length) this.handleFiles(e.dataTransfer.files); },
+      initSortable() {
+        if (this.sortable) this.sortable.destroy();
         this.sortable = Sortable.create(document.getElementById('previewList'), {
-          animation:150,
-          onEnd: evt=>{
-            let m=this.previews.splice(evt.oldIndex,1)[0];
-            this.previews.splice(evt.newIndex,0,m);
+          animation: 150,
+          onEnd: evt => {
+            let m = this.previews.splice(evt.oldIndex, 1)[0];
+            this.previews.splice(evt.newIndex, 0, m);
           }
         });
-      },
-      prepareFiles(){ this.$el.submit(); }
+      }
     }
   }
 </script>
