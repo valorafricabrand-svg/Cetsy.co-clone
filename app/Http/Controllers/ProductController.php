@@ -40,11 +40,12 @@ class ProductController extends Controller
 
     // (Optional) if you want to pre-select a default:
     $defaultProfileId = old('default_shipping_profile', null);
-
+  $countries = Country::orderBy('name')->get();
     return view('products.create', compact(
         'categories',
         'shippingProfiles',
-        'defaultProfileId'
+        'defaultProfileId',
+        'countries'
     ));
 }
 

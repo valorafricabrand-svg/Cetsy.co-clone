@@ -1,49 +1,116 @@
+{{-- resources/views/shipping_profiles/edit.blade.php --}}
+
 @extends('layouts.app')
 
 @section('content')
 <div class="content">
     <h2>Edit Shipping Profile</h2>
 
-    <form method="POST" action="{{ route('shipping_profiles.update', $shippingProfile) }}">
+    <form action="{{ route('shipping_profiles.update', $shippingProfile) }}" method="POST">
         @csrf
-        @method('PATCH')
+        @method('PUT')
 
+        {{-- Profile Name --}}
         <div class="mb-3">
-            <label for="name" class="form-label">Profile Name <span class="text-danger">*</span></label>
-            <input type="text" id="name" name="name" class="form-control @error('name') is-invalid @enderror"
-                value="{{ old('name', $shippingProfile->name) }}" required>
-            @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            <label for="profile_name" class="form-label">Name <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              id="profile_name"
+              name="name"
+              value="{{ old('name', $shippingProfile->name) }}"
+              class="form-control @error('name') is-invalid @enderror"
+              required
+            >
+            @error('name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
+        {{-- Shipping to Country --}}
         <div class="mb-3">
-            <label for="country" class="form-label">Country (ISO Code) <span class="text-danger">*</span></label>
-            <input type="text" id="country" name="country" maxlength="3" class="form-control @error('country') is-invalid @enderror"
-                value="{{ old('country', $shippingProfile->country) }}" required>
-            @error('country') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            <small class="form-text text-muted">Use 2 or 3 letter ISO country code, e.g. KE, UG, TZ</small>
+            <label for="country_id" class="form-label">Shipping to Country <span class="text-danger">*</span></label>
+            <select
+              id="country_id"
+              name="country_id"
+              class="form-select @error('country_id') is-invalid @enderror"
+              required
+            >
+                <option value="">Select country</option>
+                @foreach($countries as $country)
+                    <option
+                      value="{{ $country->id }}"
+                      {{ old('country_id', $shippingProfile->country_id) == $country->id ? 'selected' : '' }}
+                    >
+                      {{ $country->name }} ({{ $country->iso_code }})
+                    </option>
+                @endforeach
+            </select>
+            @error('country_id')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
-        <div class="mb-3">
-            <label for="base_rate" class="form-label">Base Rate (KES) <span class="text-danger">*</span></label>
-            <input type="number" id="base_rate" name="base_rate" min="0" step="0.01"
-                class="form-control @error('base_rate') is-invalid @enderror" value="{{ old('base_rate', $shippingProfile->base_rate) }}" required>
-            @error('base_rate') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        {{-- Base Rate & Delivery Days --}}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="base_rate" class="form-label">Base Rate ({{ get_currency() }}) <span class="text-danger">*</span></label>
+                <input
+                  type="number"
+                  id="base_rate"
+                  name="base_rate"
+                  value="{{ old('base_rate', $shippingProfile->base_rate) }}"
+                  min="0"
+                  step="0.01"
+                  class="form-control @error('base_rate') is-invalid @enderror"
+                  required
+                >
+                @error('base_rate')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="col-md-6">
+                <label for="delivery_days" class="form-label">Delivery Days <span class="text-danger">*</span></label>
+                <input
+                  type="number"
+                  id="delivery_days"
+                  name="delivery_days"
+                  value="{{ old('delivery_days', $shippingProfile->delivery_days) }}"
+                  min="0"
+                  class="form-control @error('delivery_days') is-invalid @enderror"
+                  required
+                >
+                @error('delivery_days')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label for="delivery_days" class="form-label">Estimated Delivery Days <span class="text-danger">*</span></label>
-            <input type="number" id="delivery_days" name="delivery_days" min="0"
-                class="form-control @error('delivery_days') is-invalid @enderror" value="{{ old('delivery_days', $shippingProfile->delivery_days) }}" required>
-            @error('delivery_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        {{-- Pickup Available --}}
+        {{-- Hidden fallback so unchecked submits 0 --}}
+        <input type="hidden" name="pickup_available" value="0">
+
+        <div class="form-check form-switch mt-3">
+            <input
+              class="form-check-input @error('pickup_available') is-invalid @enderror"
+              type="checkbox"
+              id="pickup_available"
+              name="pickup_available"
+              value="1"
+              {{ old('pickup_available', $shippingProfile->pickup_available) ? 'checked' : '' }}
+            >
+            <label class="form-check-label" for="pickup_available">
+                Pickup Available
+            </label>
+            @error('pickup_available')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
         </div>
 
-        <div class="form-check mb-3">
-            <input type="checkbox" id="pickup_available" name="pickup_available" class="form-check-input" {{ old('pickup_available', $shippingProfile->pickup_available) ? 'checked' : '' }}>
-            <label for="pickup_available" class="form-check-label">Pickup Available</label>
+        {{-- Form Actions --}}
+        <div class="mt-4">
+            <button type="submit" class="btn btn-success">Update Profile</button>
+            <a href="{{ route('shipping_profiles.index') }}" class="btn btn-secondary ms-2">Cancel</a>
         </div>
-
-        <button type="submit" class="btn btn-primary">Update Profile</button>
-        <a href="{{ route('shipping_profiles.index') }}" class="btn btn-secondary ms-2">Cancel</a>
     </form>
 </div>
 @endsection
