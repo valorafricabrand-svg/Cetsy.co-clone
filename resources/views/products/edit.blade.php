@@ -55,20 +55,33 @@
           </div>
 
           <!-- Category -->
-          <div class="col-md-6">
-            <label for="category_id" class="form-label fw-semibold">Category</label>
-            <select id="category_id" name="category_id"
-                    class="form-select @error('category_id') is-invalid @enderror" required>
-              <option value="">Select category</option>
-              @foreach($categories as $cat)
-                <option value="{{ $cat->id }}"
-                  @selected(old('category_id',$product->category_id)==$cat->id)>
-                  {{ $cat->name }}
-                </option>
-              @endforeach
-            </select>
-            @error('category_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
+<div class="col-md-6">
+  <label for="category_id" class="form-label fw-semibold">Category</label>
+  <select id="category_id" name="category_id"
+          class="form-select @error('category_id') is-invalid @enderror"
+          required>
+    <option value="">Select category</option>
+
+    @foreach($categories as $parent)
+      @if($parent->children->isNotEmpty())
+        <optgroup label="{{ $parent->name }}">
+          @foreach($parent->children as $child)
+            <option value="{{ $child->id }}"
+              @selected(old('category_id', $product->category_id) == $child->id)>
+              {{ $child->name }}
+            </option>
+          @endforeach
+        </optgroup>
+      @endif
+    @endforeach
+
+  </select>
+  @error('category_id')
+    <div class="invalid-feedback">{{ $message }}</div>
+  @enderror
+</div>
+
+
 
           <!-- Description -->
           <div class="col-12">
