@@ -1,3 +1,5 @@
+{{-- resources/views/shipping_profiles/index.blade.php --}}
+
 @extends('layouts.app')
 
 @section('content')
@@ -19,8 +21,8 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Country</th>
-                    <th>Base Rate (KES)</th>
+                    <th>Shipping to Country</th>
+                    <th>Base Rate ({{ get_currency() }})</th>
                     <th>Delivery Days</th>
                     <th>Pickup Available</th>
                     <th>Actions</th>
@@ -30,7 +32,9 @@
                 @foreach($profiles as $profile)
                     <tr>
                         <td>{{ $profile->name }}</td>
-                        <td>{{ strtoupper($profile->country) }}</td>
+                        <td>
+                            {{ optional($profile->country)->name ?? '—' }}
+                        </td>
                         <td>{{ number_format($profile->base_rate, 2) }}</td>
                         <td>{{ $profile->delivery_days }}</td>
                         <td>
@@ -42,10 +46,16 @@
                         </td>
                         <td>
                             <a href="{{ route('shipping_profiles.edit', $profile) }}" class="btn btn-sm btn-warning">Edit</a>
-                            <form action="{{ route('shipping_profiles.destroy', $profile) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Delete this shipping profile?');">
+                            <form action="{{ route('shipping_profiles.destroy', $profile) }}"
+                                  method="POST"
+                                  class="d-inline-block"
+                                  onsubmit="return confirm('Delete this shipping profile?');"
+                            >
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    Delete
+                                </button>
                             </form>
                         </td>
                     </tr>

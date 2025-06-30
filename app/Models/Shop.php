@@ -106,7 +106,7 @@ class Shop extends Model
             // Create a default shipping profile with base_rate = 0
             $shop->shippingProfiles()->create([
                 'name'             => 'Default Shipping',
-                'country'          => $shop->country,
+                'country_id'          => "",
                 'base_rate'        => 0,
                 'delivery_days'    => 0,
                 'pickup_available' => false,
