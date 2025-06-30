@@ -20,6 +20,7 @@ public function create()
         return redirect()->route('seller.shops.show', auth()->user()->shop->slug)
             ->with('info', 'You already have a shop.');
     }
+    
     $countries = Country::all();
 
     return view('shops.create', compact('countries'));
