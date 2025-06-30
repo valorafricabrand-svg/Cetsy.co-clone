@@ -2,12 +2,18 @@
 
 @section('content')
 <div class="content">
-  <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">Edit Listing</h2>
-    <a href="{{ route('products.index') }}" class="btn btn-outline-secondary">
-      <i class="fas fa-arrow-left me-1"></i> Back to Products
-    </a>
-  </div>
+    <div>
+        <a href="{{ route('products.index') }}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i> Back to Products
+        </a>
+        <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
+            <i class="fas fa-plus me-1"></i> Add New Listing
+        </a>
+    </div>
+</div>
+
 
   {{-- Validation Errors --}}
   @if ($errors->any())

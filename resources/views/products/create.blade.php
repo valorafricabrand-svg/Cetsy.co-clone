@@ -248,11 +248,11 @@
         </div>
         {{-- Shipping to Country --}}
         <div class="mb-3">
-          <label for="country_id" class="form-label">Shipping to Country <span class="text-danger">*</span></label>
+          <label for="country_id" class="form-label">Shipping to {{ setting('region') }} <span class="text-danger">*</span></label>
           <select id="country_id" name="country_id"
                   class="form-select @error('country_id') is-invalid @enderror"
                   required>
-            <option value="">Select country</option>
+            <option value="">Select {{ setting('region') }}</option>
             @foreach($countries as $country)
               <option value="{{ $country->id }}"
                 {{ old('country_id') == $country->id ? 'selected' : '' }}>
