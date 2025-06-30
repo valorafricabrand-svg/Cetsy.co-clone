@@ -95,6 +95,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
+    Route::post('/listing/{order}/wallet',     // URL:  /orders/123/wallet
+            [WalletController::class,'payListing'])
+     ->name('listing.wallet.pay');
+
     Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
 
     Route::post('/cart/update-shipping-selection', [CartController::class, 'updateShippingSelection'])->name('cart.updateShippingSelection');

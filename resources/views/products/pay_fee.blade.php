@@ -1,63 +1,121 @@
 {{-- resources/views/listings/checkout.blade.php --}}
 @extends('layouts.app')
-@section('title','Process Payment')
+@section('title', 'Process Payment')
 
 {{-- -------------------------------------------------------------------
  |  INLINE STYLES  (Bootstrap 5.3 utilities everywhere else)
 -------------------------------------------------------------------- --}}
 @section('styles')
 <style>
-    .checkout-page   { background:#f8f9fa;min-height:100vh }
-    .card.glass      { backdrop-filter:blur(6px);background:rgba(255,255,255,.85);border-radius:12px }
+    :root{
+        --accent:#0275d8;
+        --accent-dark:#025aa5;
+    }
+    .checkout-page{
+        background:#f8f9fa;
+        min-height:100vh;
+        display:flex;
+        align-items:center;
+    }
+    .card.glass{
+        backdrop-filter:blur(6px);
+        background:rgba(255,255,255,.85);
+        border-radius:1rem;
+    }
     @media (prefers-color-scheme:dark){
+        .checkout-page{background:#121212;}
         .card.glass{background:rgba(35,35,35,.55);}
     }
-    .btn-primary     { background:#0275d8;border-color:#0275d8 }
-    .btn-primary:hover{ background:#025aa5;border-color:#025aa5 }
+    .btn-primary{
+        background:var(--accent);
+        border-color:var(--accent);
+    }
+    .btn-primary:hover,
+    .btn-primary:focus{
+        background:var(--accent-dark);
+        border-color:var(--accent-dark);
+    }
 </style>
 @endsection
 
 {{-- -------------------------------------------------------------------
- |  PHP HELPERS  – amount formatted exactly as PayPal expects
+ |  PHP HELPERS  – amount exactly as PayPal & humans expect
 -------------------------------------------------------------------- --}}
 @php
-    $currency = $order->currency ?? 'USD';
-    $zeroDecimal = ['BIF','CLP','DJF','GNF','JPY','KMF','KRW','MGA',
-                    'PYG','RWF','UGX','VND','VUV','XAF','XOF','XPF'];
+    $currency       = $order->currency ?? 'USD';
+    $zeroDecimal    = ['BIF','CLP','DJF','GNF','JPY','KMF','KRW','MGA',
+                       'PYG','RWF','UGX','VND','VUV','XAF','XOF','XPF'];
 
-    $rawAmount    = (float) $order->category?->listing_fee;
-    $paypalAmount = in_array($currency, $zeroDecimal)
-        ? (string) intval(round($rawAmount))          // e.g. 70 → "70"
-        : number_format($rawAmount, 2, '.', '');      // e.g. 70 → "70.00"
+    $rawAmount      = (float) ($order->category?->listing_fee ?? 0);
+    $paypalAmount   = in_array($currency, $zeroDecimal)
+        ? (string) intval(round($rawAmount))          // 70 → "70"
+        : number_format($rawAmount, 2, '.', '');      // 70 → "70.00"
+
+    $displayAmount  = in_array($currency, $zeroDecimal)
+        ? number_format($rawAmount, 0)
+        : number_format($rawAmount, 2);
+
+    /** ----------------------------------------------------------------
+     *  USER WALLET
+     *  wallet() already returns the numeric balance
+     *  -------------------------------------------------------------- */
+    $walletBalance  = auth()->check()
+        ? (float) (wallet() ?? 0)
+        : 0.0;
 @endphp
 
 {{-- -------------------------------------------------------------------
  |  MAIN CONTENT
 -------------------------------------------------------------------- --}}
 @section('content')
-<div class="content checkout-page d-flex align-items-center">
+<div class="checkout-page w-100">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-lg-6">
+            <div class="col-12 col-md-10 col-lg-6 col-xl-5">
 
                 <div class="card shadow-sm border-0 glass">
                     <div class="card-body p-5">
 
-                        <h2 class="text-center fw-semibold mb-3">Process Your Payment</h2>
-                        <p class="text-muted text-center mb-4">
-                            Pay securely with PayPal or major credit / debit cards.
+                        <h1 class="h3 fw-bold text-center mb-3">Complete Your Payment</h1>
+                        <p class="text-center text-body-secondary mb-4">
+                            Secure checkout powered by PayPal.<br class="d-none d-md-block">
+                            Pay with your PayPal balance or any major debit / credit card.
                         </p>
 
                         {{-- Amount display --}}
-                        <div class="alert alert-info text-center fw-semibold">
-                            Amount&nbsp;:&nbsp; {{ $currency }} {{ number_format($rawAmount, 2) }}
+                        <div class="alert alert-info text-center fw-semibold" role="alert">
+                            Amount&nbsp;:&nbsp; {{ $currency }} {{ $displayAmount }}
                         </div>
 
-                        {{-- PayPal / Card button --}}
-                        <div id="paypal-button-container" class="text-center mb-3"></div>
+                        {{-- 1️⃣  WALLET BUTTON (visible only if balance > 0) --}}
+                        @if($walletBalance > 0)
+                            <form
+                                action="{{ route('listing.wallet.pay', $order->id) }}"
+                                method="POST"
+                                class="d-grid gap-2 mb-3"
+                            >
+                                @csrf
+                                <button type="submit" class="btn btn-primary">
+                                    Pay via Wallet
+                                    <small class="fw-normal">
+                                        ({{ $currency }} {{ number_format($walletBalance, 2) }})
+                                    </small>
+                                </button>
+                            </form>
+                        @endif
+
+                        {{-- 2️⃣  PAYPAL BUTTON --}}
+                        <div id="paypal-button-container" class="d-grid gap-2 mb-3"></div>
 
                         {{-- Result / error placeholder --}}
-                        <div id="generic-result" class="text-center mt-3 fw-semibold text-danger"></div>
+                        <div id="generic-result" class="text-center fw-semibold"></div>
+
+                        {{-- Optional cancel link --}}
+                        <p class="text-center mt-4 small">
+                            <a href="{{ url()->previous() }}" class="text-decoration-none text-muted">
+                                <i class="bi bi-arrow-left-circle"></i> Cancel&nbsp;and&nbsp;return
+                            </a>
+                        </p>
 
                     </div>
                 </div>
@@ -69,51 +127,57 @@
 @endsection
 
 {{-- -------------------------------------------------------------------
- |  SCRIPTS  – jQuery + PayPal SDK + button config
+ |  SCRIPTS  – PayPal SDK + button config (vanilla JS, no jQuery)
 -------------------------------------------------------------------- --}}
 @section('scripts')
-<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-
-{{-- Sandbox key “sb” for dev; replace with real in .env / config --}}
-<script src="https://www.paypal.com/sdk/js?client-id=sb&currency={{ $currency }}"></script>
+<script
+    src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.client_id', 'sb') }}&currency={{ $currency }}"
+    data-sdk-integration-source="button-factory"
+    data-partner-attribution-id="LaravelApp"
+></script>
 
 <script>
-$(function () {
+document.addEventListener('DOMContentLoaded', () => {
+    const resultBlock = document.getElementById('generic-result');
 
     paypal.Buttons({
 
-        style:{
-            layout :'vertical',
-            color  :'blue',
-            shape  :'rect',
-            label  :'paypal'
+        style: {
+            layout : 'vertical',
+            color  : 'blue',
+            shape  : 'rect',
+            label  : 'paypal',
+            tagline: false
         },
 
-        /* 1️⃣ Create PayPal order */
-        createOrder: (_, actions) => {
-            return actions.order.create({
-                purchase_units:[{
-                    amount:{ value:'{{ $paypalAmount }}' }
-                }]
-            });
+        /* 1️⃣  Create the PayPal order */
+        createOrder: (_data, actions) => actions.order.create({
+            purchase_units: [{
+                amount: { value: '{{ $paypalAmount }}' }
+            }]
+        }),
+
+        /* 2️⃣  Capture & redirect */
+        onApprove: (_data, actions) => {
+            resultBlock.textContent = '';
+            return actions.order.capture()
+                .then(() => window.location.href = @json(route('success_deposit_fee', $order->id)));
         },
 
-        /* 2️⃣ Capture & redirect */
-        onApprove: (_, actions) => {
-            $('#generic-result').empty();
-            return actions.order.capture().then(() => {
-                window.location = @json(route('success_deposit_fee',$order->id));
-            });
+        /* 3️⃣  Handle cancellations */
+        onCancel: () => {
+            resultBlock.className = 'text-warning fw-semibold';
+            resultBlock.textContent = 'Payment cancelled – you can try again.';
         },
 
-        /* 3️⃣ Error handler */
+        /* 4️⃣  Handle errors */
         onError: err => {
             console.error(err);
-            $('#generic-result').text('PayPal error: ' + err.message);
+            resultBlock.className = 'text-danger fw-semibold';
+            resultBlock.textContent = 'Unable to process payment: ' + (err?.message ?? 'Unknown error');
         }
 
     }).render('#paypal-button-container');
-
 });
 </script>
 @endsection
