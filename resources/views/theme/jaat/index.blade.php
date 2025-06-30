@@ -55,8 +55,6 @@
   </div>
 </section>
 
-
-
 {{-- ───────────────── Trending Categories ───────────────── --}}
 <section class="py-6">
   <div class="container">
@@ -76,7 +74,6 @@
                   {{ $cat->name }}
                 </div>
               @endif
-              {{-- Overlay --}}
               <div class="position-absolute bottom-0 start-0 end-0 py-1 bg-dark bg-opacity-50 text-white text-center small fw-medium">
                 {{ $cat->name }}
               </div>
@@ -87,8 +84,6 @@
     </div>
   </div>
 </section>
-
-
 
 {{-- ───────────────── Featured Products ───────────────── --}}
 <section class="bg-light py-6">
@@ -124,16 +119,11 @@
               </h5>
               <p class="text-success fw-bold mb-3">KES {{ number_format($product->price,2) }}</p>
               <div class="mt-auto d-flex justify-content-between">
-                <a href="{{ route('listing.show', $product) }}" class="small text-muted">View</a>
-                <form method="POST" action="{{ route('cart.add') }}" x-data="{busy:false}" @submit="busy=true">
-                  @csrf
-                  <input type="hidden" name="product_id" value="{{ $product->id }}">
-                  <button class="btn btn-success btn-sm" :disabled="busy">
-                    <i class="fa-solid fa-cart-plus"></i>
-                    <span x-show="!busy">Add</span>
-                    <span x-show="busy" class="spinner-border spinner-border-sm"></span>
-                  </button>
-                </form>
+              
+                <a href="{{ route('listing.show', $product) }}"
+                   class="btn btn-outline-success btn-sm">
+                  <i class="fa-solid fa-eye me-1"></i> View Listing
+                </a>
               </div>
             </div>
           </div>
@@ -144,8 +134,6 @@
     </div>
   </div>
 </section>
-
-
 
 {{-- ───────────────── Trending Services ───────────────── --}}
 <section class="py-6">
@@ -176,16 +164,11 @@
               <h5 class="card-title text-truncate mb-1">{{ $service->name }}</h5>
               <p class="text-success fw-bold mb-3">KES {{ number_format($service->price,2) }}</p>
               <div class="mt-auto d-flex justify-content-between">
-                <a href="{{ route('listing.show', $service) }}" class="small text-muted">View</a>
-                <form method="POST" action="{{ route('cart.add') }}" x-data="{busy:false}" @submit="busy=true">
-                  @csrf
-                  <input type="hidden" name="product_id" value="{{ $service->id }}">
-                  <button class="btn btn-success btn-sm" :disabled="busy">
-                    <i class="fa-solid fa-cart-plus"></i>
-                    <span x-show="!busy">Add</span>
-                    <span x-show="busy" class="spinner-border spinner-border-sm"></span>
-                  </button>
-                </form>
+              
+                <a href="{{ route('listing.show', $service) }}"
+                   class="btn btn-outline-success btn-sm">
+                  <i class="fa-solid fa-eye me-1"></i> View Listing
+                </a>
               </div>
             </div>
           </div>

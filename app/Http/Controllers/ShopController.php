@@ -101,7 +101,7 @@ public function showPublic($id)
         ->latest()
         ->paginate(12);
 
-    return view('theme.shop', compact('shop', 'products'));
+    return themed_view('shop', compact('shop', 'products'));
 }
 
 
