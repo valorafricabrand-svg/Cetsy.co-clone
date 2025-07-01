@@ -1,15 +1,5 @@
-<IfModule mod_rewrite.c>
-  # Default file(s) to serve for directories
-  DirectoryIndex index.php index.html
+DirectoryIndex index.php
 
-  RewriteEngine On
-  RewriteBase /
-
-  # 1) If the request maps to a real file or directory—serve it directly.
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
-
-  # 2) Otherwise, rewrite into public/ (your Laravel front controller)
-  RewriteRule ^(.*)$ public/$1 [L]
-</IfModule>
+RewriteEngine On 
+RewriteRule ^$ public/index.php [L]
+RewriteRule ^((?!public/).*)$ public/$1 [L,NC]

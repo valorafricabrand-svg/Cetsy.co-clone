@@ -1,231 +1,148 @@
+{{-- resources/views/cart/index.blade.php --}}
 @extends('layouts.frontapp')
 
+@section('title', 'Your Cart')
+
 @section('main')
-<section class="cart-page py-5 bg-light" x-data="cartComponent()" x-init="init()">
-    <div class="container">
-        @if (session('success'))
-            <div class="alert alert-success">{!! session('success') !!}</div>
-        @endif
+<section class="cart-page py-5 bg-light" x-data>
+  <div class="container">
+    @if(session('success'))
+      <div class="alert alert-success">{!! session('success') !!}</div>
+    @endif
+    @if(session('error'))
+      <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
 
-        @if (session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
+    @php $cart = session('cart', []); @endphp
 
-        @if ($errors->any())
-            <div class="alert alert-danger">
-                <ul class="mb-0">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+    @if(empty($cart))
+      <div class="text-center py-5">
+        <h3>Your cart is empty</h3>
+        <a href="{{ url()->previous() }}" class="btn btn-primary mt-3">Continue Shopping</a>
+      </div>
+    @else
+      <form method="POST" action="{{ route('cart.updateShippingSelection') }}">
+        @csrf
 
-        @if($cart && count($cart) > 0)
-            <form action="{{ route('cart.updateShippingSelection') }}" method="POST" id="shippingSelectionForm" @submit.prevent="submitForm">
-                @csrf
-                <div class="table-responsive">
-                    <table class="table table-bordered cart-table align-middle">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Price</th>
-                                <th style="width: 140px;">Quantity</th>
-                                <th>Shipping Profile</th>
-                                <th>Shipping Cost</th>
-                                <th>Total</th>
-                                <th>Remove</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-for="(item, index) in items" :key="item.id">
-                                <tr>
-                                    {{-- Hidden inputs --}}
-                                    <input type="hidden" :name="`product_ids[]`" :value="item.id">
-                                    <input type="hidden" :name="`quantities[]`" :value="item.quantity">
+        <div class="table-responsive mb-4">
+          <table class="table table-bordered align-middle text-center">
+            <thead class="table-light">
+              <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Shipping</th>
+                <th>Subtotal</th>
+                <th>Remove</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($cart as $item)
+                @php
+                  // find the selected profile or default to a zero-rate placeholder
+                  $selectedProfile = collect($item['shipping_profiles'])
+                                      ->firstWhere('id', $item['selected_shipping_profile_id']);
+                  $shippingRate = $selectedProfile['base_rate'] ?? 0;
+                  $lineTotal    = ($item['price'] + $shippingRate) * $item['quantity'];
+                @endphp
 
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-3" x-text="item.photo ? '' : 'No Image'">
-                                                <img :src="item.photo ? `{{ url('/') }}/storage/${item.photo}` : ''" :alt="item.name" width="80" x-show="item.photo">
-                                            </div>
-                                            <div x-text="item.name"></div>
-                                        </div>
-                                    </td>
-                                    <td x-text="currency + ' ' + formatPrice(item.price)"></td>
-                                  <td>
-    <div class="d-flex align-items-center justify-content-center">
-        <button 
-            type="button" 
-            @click="changeQuantity(index, -1)" 
-            class="btn btn-sm btn-outline-secondary me-2" 
-            title="Decrease quantity" 
-            :disabled="item.quantity <= 1"
-        >-</button>
+                <tr>
+                  <td class="d-flex align-items-center gap-3">
+                    @if(! empty($item['photo']))
+                      <img src="{{ $item['photo'] }}" alt="" width="60" height="60" class="rounded">
+                    @endif
+                    <span>{{ $item['name'] }}</span>
+                  </td>
+                  <td>KES {{ number_format($item['price'], 2) }}</td>
+                  <td>
+                    <div class="d-flex justify-content-center align-items-center gap-1">
+                      <form action="{{ route('cart.update') }}" method="POST" class="d-inline">
+                        @csrf
+                        <input type="hidden" name="id" value="{{ $item['id'] }}">
+                        <input type="hidden" name="action" value="decrease">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" @if($item['quantity'] <= 1) disabled @endif>–</button>
+                      </form>
 
-        <input 
-            type="text" 
-            :value="item.quantity" 
-            readonly 
-            class="form-control form-control-sm text-center" 
-            style="width: 60px;" 
-        />
+                      <span class="px-2">{{ $item['quantity'] }}</span>
 
-        <button 
-            type="button" 
-            @click="changeQuantity(index, 1)" 
-            class="btn btn-sm btn-outline-secondary ms-2" 
-            title="Increase quantity"
-        >+</button>
-    </div>
-</td>
+                      <form action="{{ route('cart.update') }}" method="POST" class="d-inline">
+                        @csrf
+                        <input type="hidden" name="id" value="{{ $item['id'] }}">
+                        <input type="hidden" name="action" value="increase">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">+</button>
+                      </form>
+                    </div>
+                  </td>
+                  <td>
+                 @php
+    // Turn the raw array into a collection
+    $profiles = collect($item['shipping_profiles']);
 
-                                    <td>
-                                        <select 
-                                            :name="`shipping_profile_ids[${index}]`" 
-                                            class="form-select form-select-sm" 
-                                             
-                                            x-model.number="item.selected_shipping_profile_id"
-                                            @change="updateShippingCost(index)"
-                                        >
-                                            <template x-for="profile in item.shipping_profiles" :key="profile.id">
-                                                <option :value="profile.id" x-text="`${profile.name} - KES ${formatPrice(profile.base_rate)}`"></option>
-                                            </template>
-                                        </select>
-                                    </td>
-                                    <td x-text="currency + ' ' + formatPrice(item.shippingCost)" :id="`shipping-cost-${index}`"></td>
-                                    <td x-text="currency + ' ' + formatPrice(itemTotal(item))"></td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-danger" @click="removeItem(index)" title="Remove item">&times;</button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
+    // Pull out the selected profile
+    $selected = $profiles->firstWhere('id', $item['selected_shipping_profile_id']);
 
-                <div class="d-flex justify-content-end mt-4">
-                    <ul class="list-group w-50">
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Subtotal</span>
-                            <span x-text="currency + ' ' + formatPrice(subtotal)"></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Shipping Cost</span>
-                            <span x-text="currency + ' ' + formatPrice(totalShipping)"></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between fw-bold">
-                            <span>Total</span>
-                            <span x-text="currency + ' ' + formatPrice(grandTotal)"></span>
-                        </li>
-                    </ul>
-                </div>
+    // Everything else
+    $others   = $profiles->where('id', '!=', $item['selected_shipping_profile_id']);
 
-                <div class="mt-3 text-end">
-                    <button type="submit" class="btn btn-primary btn-lg">Update Shipping & Proceed to Checkout</button>
-                </div>
-            </form>
-        @else
-            <div class="text-center py-5">
-                <h4>Your cart is empty</h4>
-                <a href="{{ route('listings') }}" class="btn btn-primary">Return to Shop</a>
-            </div>
-        @endif
-    </div>
+    // Build an ordered list: selected first (if it exists), then the rest
+    $ordered  = $selected
+               ? collect([$selected])->merge($others)
+               : $profiles;
+@endphp
+
+<select name="shipping_profile_ids[{{ $item['id'] }}]"
+        class="form-select form-select-sm">
+  @foreach($ordered as $profile)
+    <option value="{{ $profile['id'] }}"
+      @if($profile['id'] === $item['selected_shipping_profile_id']) selected @endif>
+      {{ $profile['name'] }} (KES {{ number_format($profile['base_rate'], 2) }})
+    </option>
+  @endforeach
+</select>
+
+                  </td>
+                  <td>KES {{ number_format($lineTotal, 2) }}</td>
+                  <td>
+                    <form action="{{ route('cart.remove') }}" method="POST">
+                      @csrf
+                      <input type="hidden" name="id" value="{{ $item['id'] }}">
+                      <button type="submit" class="btn btn-sm btn-danger">&times;</button>
+                    </form>
+                  </td>
+                </tr>
+              @endforeach
+            </tbody>
+
+            <tfoot class="table-light">
+              <tr>
+                <th colspan="4" class="text-end">Total:</th>
+                <th colspan="2">
+                  @php
+                    $total = collect($cart)->sum(function($item) {
+                      $profile    = collect($item['shipping_profiles'])
+                                      ->firstWhere('id', $item['selected_shipping_profile_id']);
+                      $rate       = $profile['base_rate'] ?? 0;
+                      return ($item['price'] + $rate) * $item['quantity'];
+                    });
+                  @endphp
+                  KES {{ number_format($total, 2) }}
+                </th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <input type="hidden" name="return_to" value="checkout.show">
+
+        <div class="d-flex justify-content-between">
+          <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">Continue Shopping</a>
+          <div>
+            <button type="submit" class="btn btn-outline-primary me-2">Update Shipping</button>
+            <a href="{{ route('cart.checkout') }}" class="btn btn-primary">Proceed to Checkout</a>
+          </div>
+        </div>
+      </form>
+    @endif
+  </div>
 </section>
-
-<script>
-    function cartComponent() {
-        return {
-            currency: '{{ get_currency() }}',
-            items: @json(array_values($cart)),
-
-            init() {
-                this.items.forEach((item, index) => {
-                    this.updateShippingCost(index);
-                });
-            },
-
-            changeQuantity(index, delta) {
-                const item = this.items[index];
-                const newQty = item.quantity + delta;
-                if (newQty < 1) return;
-
-                // Update quantity locally
-                item.quantity = newQty;
-                this.updateShippingCost(index);
-
-                // Send update to backend
-                fetch("{{ route('cart.update') }}", {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id: item.id,
-                        action: delta > 0 ? 'increase' : 'decrease'
-                    })
-                }).then(res => {
-                    if (!res.ok) throw new Error('Failed to update cart');
-                    return res.json();
-                }).catch(() => {
-                    alert('Error updating cart. Please reload the page.');
-                });
-            },
-
-            updateShippingCost(index) {
-                const item = this.items[index];
-                const selectedProfile = item.shipping_profiles.find(p => p.id === item.selected_shipping_profile_id);
-                item.shippingCost = selectedProfile ? selectedProfile.base_rate * item.quantity : 0;
-            },
-
-            itemTotal(item) {
-                return (item.price * item.quantity) + (item.shippingCost || 0);
-            },
-
-            get subtotal() {
-                return this.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-            },
-
-            get totalShipping() {
-                return this.items.reduce((sum, item) => sum + (item.shippingCost || 0), 0);
-            },
-
-            get grandTotal() {
-                return this.subtotal + this.totalShipping;
-            },
-
-            removeItem(index) {
-                if (!confirm('Remove this product?')) return;
-
-                const item = this.items[index];
-
-                fetch("{{ route('cart.remove') }}", {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ id: item.id })
-                }).then(res => {
-                    if (!res.ok) throw new Error('Failed to remove item');
-                    this.items.splice(index, 1);
-                }).catch(() => {
-                    alert('Error removing item. Please reload the page.');
-                });
-            },
-
-            submitForm() {
-                this.$el.submit();
-            },
-
-            formatPrice(value) {
-                return parseFloat(value).toFixed(2);
-            }
-        }
-    }
-</script>
 @endsection
