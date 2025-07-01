@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -52,63 +53,75 @@ class Product extends Model
         'email',
         'location',
         'tags',
-
         'is_active',
         'listing_paid_at',
-        'next_due_date'
-        
-
+        'next_due_date',
     ];
 
-   
-
+    /**
+     * A product belongs to a shop.
+     */
     public function shop()
     {
         return $this->belongsTo(Shop::class);
     }
 
+    /**
+     * A product belongs to a category.
+     */
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
+    /**
+     * A product can have multiple media items.
+     */
     public function media()
     {
         return $this->hasMany(Media::class);
     }
 
+    /**
+     * Use the slug for route model binding.
+     */
     public function getRouteKeyName(): string
     {
         return 'slug';
     }
 
+    /**
+     * A product can have many variants.
+     */
     public function variants()
     {
         return $this->hasMany(ProductVariant::class);
     }
 
+    /**
+     * Track views for analytics.
+     */
+    public function views()
+    {
+        return $this->hasMany(ProductView::class);
+    }
 
-        public function views()
-{
-    return $this->hasMany(ProductView::class);
-}
+    /**
+     * Digital products can have multiple downloadable files.
+     */
+    public function digitalFiles()
+    {
+        return $this->hasMany(DigitalFile::class);
+    }
 
-
-// Product.php
-
-public function digitalFiles()
-{
-    return $this->hasMany(DigitalFile::class);
-}
-
-
-public function shippingProfiles()
-{
-    return $this->belongsToMany(ShippingProfile::class, 'product_shipping')
-                ->withPivot('is_default')
-                ->withTimestamps();
-}
-
-
-
+    /**
+     * A product can belong to many shipping profiles.
+     * Pivot contains `is_default` and timestamps.
+     */
+    public function shippingProfiles()
+    {
+        return $this->belongsToMany(ShippingProfile::class, 'product_shipping')
+                    ->withPivot('is_default')
+                    ->withTimestamps();
+    }
 }

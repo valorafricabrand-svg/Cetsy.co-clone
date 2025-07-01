@@ -93,16 +93,16 @@
           <div class="card h-100 shadow-sm border-0">
             <a href="{{ route('listing.show', $product) }}">
               @if($img = $product->media->first())
-                <img 
-                  src="{{ asset('storage/'.$img->url) }}" 
-                  alt="{{ $product->name }}" 
-                  class="card-img-top" 
+                <img
+                  src="{{ asset('storage/'.$img->url) }}"
+                  alt="{{ $product->name }}"
+                  class="card-img-top"
                   style="height:200px; object-fit:cover;"
                   loading="lazy"
                 >
               @else
-                <div 
-                  class="bg-secondary text-white d-flex align-items-center justify-content-center" 
+                <div
+                  class="bg-secondary text-white d-flex align-items-center justify-content-center"
                   style="height:200px;"
                 >
                   No Image
@@ -115,31 +115,16 @@
                   {{ $product->name }}
                 </a>
               </h5>
-              <p class="card-text text-success fw-bold mb-3">KES {{ number_format($product->price, 2) }}</p>
-              <div class="mt-auto d-flex justify-content-between align-items-center">
-                <a href="{{ route('listing.show', $product) }}" class="small text-decoration-none text-muted">
-                  View Details
+              <p class="card-text text-success fw-bold mb-3">
+                {{ get_currency() }} {{ number_format($product->price, 2) }}
+              </p>
+              <div class="mt-auto">
+                <a href="{{ route('listing.show', $product) }}"
+                   class="btn btn-outline-success w-100 d-flex justify-content-center align-items-center gap-2"
+                   aria-label="View {{ $product->name }}">
+                  <span>View Listing</span>
+                  <i class="fas fa-eye"></i>
                 </a>
-                <form 
-                  method="POST" 
-                  action="{{ route('cart.add') }}" 
-                  x-data="{ busy: false }" 
-                  @submit="busy = true"
-                >
-                  @csrf
-                  <input type="hidden" name="product_id" value="{{ $product->id }}">
-                  <input type="hidden" name="quantity" value="1">
-                  <button 
-                    type="submit" 
-                    class="btn btn-success btn-sm" 
-                    :disabled="busy"
-                    aria-label="Add {{ $product->name }} to cart"
-                  >
-                    <i class="fas fa-cart-plus"></i>
-                    <span x-show="!busy">Add</span>
-                    <span x-show="busy" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                  </button>
-                </form>
               </div>
             </div>
           </div>
@@ -167,16 +152,16 @@
           <div class="card h-100 shadow-sm border-0">
             <a href="{{ route('listing.show', $service) }}">
               @if($img = $service->media->first())
-                <img 
-                  src="{{ asset('storage/'.$img->url) }}" 
-                  alt="{{ $service->name }}" 
-                  class="card-img-top" 
+                <img
+                  src="{{ asset('storage/'.$img->url) }}"
+                  alt="{{ $service->name }}"
+                  class="card-img-top"
                   style="height:200px; object-fit:cover;"
                   loading="lazy"
                 >
               @else
-                <div 
-                  class="bg-secondary text-white d-flex align-items-center justify-content-center" 
+                <div
+                  class="bg-secondary text-white d-flex align-items-center justify-content-center"
                   style="height:200px;"
                 >
                   No Image
@@ -189,31 +174,16 @@
                   {{ $service->name }}
                 </a>
               </h5>
-              <p class="card-text text-success fw-bold mb-3">KES {{ number_format($service->price, 2) }}</p>
-              <div class="mt-auto d-flex justify-content-between align-items-center">
-                <a href="{{ route('listing.show', $service) }}" class="small text-decoration-none text-muted">
-                  View Details
+              <p class="card-text text-success fw-bold mb-3">
+                {{ get_currency() }} {{ number_format($service->price, 2) }}
+              </p>
+              <div class="mt-auto">
+                <a href="{{ route('listing.show', $service) }}"
+                   class="btn btn-outline-success w-100 d-flex justify-content-center align-items-center gap-2"
+                   aria-label="View {{ $service->name }}">
+                  <span>View Listing</span>
+                  <i class="fas fa-eye"></i>
                 </a>
-                <form 
-                  method="POST" 
-                  action="{{ route('cart.add') }}" 
-                  x-data="{ busy: false }" 
-                  @submit="busy = true"
-                >
-                  @csrf
-                  <input type="hidden" name="product_id" value="{{ $service->id }}">
-                  <input type="hidden" name="quantity" value="1">
-                  <button 
-                    type="submit" 
-                    class="btn btn-success btn-sm" 
-                    :disabled="busy"
-                    aria-label="Add {{ $service->name }} to cart"
-                  >
-                    <i class="fas fa-cart-plus"></i>
-                    <span x-show="!busy">Add</span>
-                    <span x-show="busy" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                  </button>
-                </form>
               </div>
             </div>
           </div>
@@ -225,7 +195,7 @@
   </div>
 </section>
 
-
+<!-- Featured Digital Downloads -->
 <section class="bg-light py-5">
   <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -240,16 +210,16 @@
           <div class="card h-100 shadow-sm border-0">
             <a href="{{ route('listing.show', $product) }}">
               @if($img = $product->media->first())
-                <img 
-                  src="{{ asset('storage/'.$img->url) }}" 
-                  alt="{{ $product->name }}" 
-                  class="card-img-top" 
+                <img
+                  src="{{ asset('storage/'.$img->url) }}"
+                  alt="{{ $product->name }}"
+                  class="card-img-top"
                   style="height:200px; object-fit:cover;"
                   loading="lazy"
                 >
               @else
-                <div 
-                  class="bg-secondary text-white d-flex align-items-center justify-content-center" 
+                <div
+                  class="bg-secondary text-white d-flex align-items-center justify-content-center"
                   style="height:200px;"
                 >
                   No Image
@@ -262,31 +232,16 @@
                   {{ $product->name }}
                 </a>
               </h5>
-              <p class="card-text text-success fw-bold mb-3">KES {{ number_format($product->price, 2) }}</p>
-              <div class="mt-auto d-flex justify-content-between align-items-center">
-                <a href="{{ route('listing.show', $product) }}" class="small text-decoration-none text-muted">
-                  View Details
+              <p class="card-text text-success fw-bold mb-3">
+                {{ get_currency() }} {{ number_format($product->price, 2) }}
+              </p>
+              <div class="mt-auto">
+                <a href="{{ route('listing.show', $product) }}"
+                   class="btn btn-outline-success w-100 d-flex justify-content-center align-items-center gap-2"
+                   aria-label="View {{ $product->name }}">
+                  <span>View Listing</span>
+                  <i class="fas fa-eye"></i>
                 </a>
-                <form 
-                  method="POST" 
-                  action="{{ route('cart.add') }}" 
-                  x-data="{ busy: false }" 
-                  @submit="busy = true"
-                >
-                  @csrf
-                  <input type="hidden" name="product_id" value="{{ $product->id }}">
-                  <input type="hidden" name="quantity" value="1">
-                  <button 
-                    type="submit" 
-                    class="btn btn-success btn-sm" 
-                    :disabled="busy"
-                    aria-label="Add {{ $product->name }} to cart"
-                  >
-                    <i class="fas fa-cart-plus"></i>
-                    <span x-show="!busy">Add</span>
-                    <span x-show="busy" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                  </button>
-                </form>
               </div>
             </div>
           </div>
@@ -299,6 +254,7 @@
     </div>
   </div>
 </section>
+
 
 <!-- About the company section -->
 <section class="about-home py-5 bg-white">
