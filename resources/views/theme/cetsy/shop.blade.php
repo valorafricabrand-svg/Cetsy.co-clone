@@ -127,18 +127,16 @@
                     {{ $product->name }}
                   </a>
                 </h6>
-                <p class="text-success fw-bold mb-3">KES {{ number_format($product->price, 2) }}</p>
-                <div class="mt-auto d-flex justify-content-between align-items-center">
-                  <a href="{{ route('listing.show', $product) }}" class="text-muted small">View</a>
-                  <form method="POST" action="{{ route('cart.add') }}" x-data="{ busy: false }" @submit="busy = true">
-                    @csrf
-                    <input type="hidden" name="product_id" value="{{ $product->id }}">
-                    <input type="hidden" name="quantity" value="1">
-                    <button type="submit" class="btn btn-success btn-sm rounded-circle p-2" :disabled="busy">
-                      <i class="fas fa-cart-plus" x-show="!busy"></i>
-                      <span x-show="busy" class="spinner-border spinner-border-sm" role="status"></span>
-                    </button>
-                  </form>
+                <p class="text-success fw-bold mb-3">
+                  {{ get_currency() }} {{ number_format($product->price, 2) }}
+                </p>
+                <div class="mt-auto d-flex justify-content-center">
+                  <a href="{{ route('listing.show', $product) }}"
+                     class="btn btn-outline-success btn-sm w-100 d-flex justify-content-center align-items-center gap-2"
+                     aria-label="View {{ $product->name }}">
+                    <span>View Listing</span>
+                    <i class="fas fa-eye"></i>
+                  </a>
                 </div>
               </div>
             </div>
@@ -154,5 +152,6 @@
     @endif
   </div>
 </section>
+
 
 @endsection

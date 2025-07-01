@@ -68,6 +68,7 @@ Route::prefix('cart')->name('cart.')->group(function () {
 
 
 
+
 // Wishlist
 Route::get('/wishlist', [ProductController::class, 'wishlist'])->name('wishlist');
 
