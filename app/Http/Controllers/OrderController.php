@@ -586,4 +586,26 @@ public function process(Order $order)
 
     return back()->with('success', 'Order marked as processing.');
 }
+
+
+
+    public function cancel(Request $request, Order $order)
+    {
+        
+
+        // Allow cancellation only before the order is shipped
+        if (! in_array($order->status, [
+                Order::STATUS_PENDING,
+                Order::STATUS_PROCESSING,
+            ])) {
+            return back()->with('error', 'This order can no longer be cancelled.');
+        }
+
+        $order->update(['status' => Order::STATUS_CANCELLED]);
+
+        // TODO: trigger refund / notifications here if required
+
+        return back()->with('success', 'Your order was cancelled successfully.');
+    }
+
 }

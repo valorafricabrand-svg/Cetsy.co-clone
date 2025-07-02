@@ -100,6 +100,15 @@ Route::middleware('auth')->group(function () {
             [WalletController::class,'payListing'])
      ->name('listing.wallet.pay');
 
+    Route::post('/order/{order}/wallet',     // URL:  /orders/123/wallet
+            [WalletController::class,'payOrder'])
+     ->name('order.wallet.pay');
+
+ Route::patch(
+        '/account/orders/{order}/cancel',
+        [OrderController::class, 'cancel']
+    )->name('orders.cancel');
+
     Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
 
     Route::post('/cart/update-shipping-selection', [CartController::class, 'updateShippingSelection'])->name('cart.updateShippingSelection');
