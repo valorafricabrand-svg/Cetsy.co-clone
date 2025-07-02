@@ -7,10 +7,10 @@
 └───────────────────────────────────────────── --}}
 @section('styles')
 <style>
-  .checkout-page {background:#f8f9fa;min-height:100vh}
-  .card.glass    {backdrop-filter:blur(6px);background:rgba(255,255,255,.85);border-radius:12px}
+  .checkout-page{background:#f8f9fa;min-height:100vh}
+  .card.glass   {backdrop-filter:blur(6px);background:rgba(255,255,255,.85);border-radius:12px}
   @media (prefers-color-scheme:dark){.card.glass{background:rgba(35,35,35,.55)}}
-  .btn-primary   {background:#0275d8;border-color:#0275d8}
+  .btn-primary  {background:#0275d8;border-color:#0275d8}
   .btn-primary:hover{background:#025aa5;border-color:#025aa5}
 </style>
 @endsection
@@ -19,26 +19,30 @@
 |  PHP HELPERS – amounts exactly as PayPal needs
 └───────────────────────────────────────────── --}}
 @php
-  $currency   = $order->currency ?? 'USD';
+  $currency    = $order->currency ?? 'USD';
 
   // PayPal "zero-decimal" currencies
   $zeroDecimal = ['BIF','CLP','DJF','GNF','JPY','KMF','KRW','MGA',
                   'PYG','RWF','UGX','VND','VUV','XAF','XOF','XPF'];
 
   // Base order total
-  $orderTotal = (float) $order->total_amount;
+  $orderTotal  = (float) $order->total_amount;
 
-  // PayPal fee (example 3.98 % -> 0.0398) – adjust if your account has a better rate
+  // PayPal fee (e.g. 3.98 %)
   $transactionFeePercent = setting('paypal_transaction_fee_percent');
   $transactionFee        = round($orderTotal * $transactionFeePercent, 2);
 
-  // Grand total charged to the buyer
+  // Grand total the buyer pays
   $grandTotal            = $orderTotal + $transactionFee;
 
-  // Amount string PayPal expects
-  $paypalAmount = in_array($currency, $zeroDecimal)
+  // PayPal-formatted amount string
+  $paypalAmount = in_array($currency,$zeroDecimal)
       ? (string) intval(round($grandTotal))
       : number_format($grandTotal, 2, '.', '');
+
+  // Shopper wallet balance & ability to cover
+  $walletBalance = wallet();
+  $canPayWithWallet = $walletBalance >= $grandTotal;
 @endphp
 
 {{-- ──────────────────────────────────────────────
@@ -55,7 +59,7 @@
 
             <h2 class="text-center fw-semibold mb-3">Process Your Payment</h2>
             <p class="text-muted text-center mb-4">
-              Pay securely with PayPal or a major credit / debit card.
+              Pay securely with PayPal, a major card, or your in-site wallet.
             </p>
 
             {{-- ── Amount breakdown ───────────────────────────── --}}
@@ -65,7 +69,8 @@
                 <span>{{ $currency }} {{ number_format($orderTotal,2) }}</span>
               </li>
               <li class="list-group-item d-flex justify-content-between">
-                <span>PayPal&nbsp;Transaction&nbsp;Fee&nbsp;<small class="text-muted">(3.98 %)</small></span>
+                <span>PayPal&nbsp;Transaction&nbsp;Fee&nbsp;
+                  <small class="text-muted">({{ $transactionFeePercent * 100 }} %)</small></span>
                 <span>{{ $currency }} {{ number_format($transactionFee,2) }}</span>
               </li>
               <li class="list-group-item d-flex justify-content-between fw-bold">
@@ -74,10 +79,42 @@
               </li>
             </ul>
 
-            {{-- PayPal / Card button --}}
+            {{-- ── 1️⃣  WALLET OPTION ─────────────────────────── --}}
+            @if($walletBalance > 0)
+              <form action="{{ route('order.wallet.pay', $order->id) }}"
+                    method="POST"
+                    class="d-grid gap-2 mb-3">
+                @csrf
+                <button type="submit"
+                        class="btn btn-primary {{ $canPayWithWallet ? '' : 'disabled' }}"
+                        @disabled(!$canPayWithWallet)>
+                  Pay via Wallet
+                  <small class="fw-normal">
+                    ({{ $currency }} {{ number_format($walletBalance,2) }})
+                  </small>
+                </button>
+              </form>
+
+              @unless($canPayWithWallet)
+                <div class="alert alert-warning small d-flex align-items-center gap-2 mb-3">
+                  <i class="fas fa-exclamation-circle"></i>
+                  <span>
+                    Wallet balance is insufficient — please deposit funds, then click
+                    “Pay via Wallet” again.
+                  </span>
+                </div>
+                <a href="{{ route('wallet.deposit.form') }}"
+                   class="btn btn-success d-flex align-items-center gap-2 mb-4">
+                  <i class="fas fa-plus"></i>
+                  Deposit&nbsp;Funds
+                </a>
+              @endunless
+            @endif
+
+            {{-- ── 2️⃣  PayPal / Card button ─────────────────── --}}
             <div id="paypal-button-container" class="text-center mb-3"></div>
 
-            {{-- Result / error placeholder --}}
+            {{-- Error placeholder --}}
             <div id="generic-result" class="text-center mt-3 fw-semibold text-danger"></div>
 
           </div>
@@ -95,46 +132,44 @@
 @section('scripts')
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
-{{-- Sandbox key “sb” for dev; replace with real client-ID in production --}}
+{{-- Sandbox key “sb” for dev; replace with live client-ID in production --}}
 <script src="https://www.paypal.com/sdk/js?client-id={{ setting('paypal_client_id') }}&currency={{ $currency }}"></script>
 
 <script>
 $(function () {
 
-  paypal.Buttons({
+    paypal.Buttons({
 
-    /* Styling */
-    style:{
-      layout :'vertical',
-      color  :'blue',
-      shape  :'rect',
-      label  :'paypal'
-    },
+      /* Styling */
+      style:{
+        layout :'vertical',
+        color  :'blue',
+        shape  :'rect',
+        label  :'paypal'
+      },
 
-    /* 1️⃣  Create PayPal order */
-    createOrder: (_, actions) => {
-      return actions.order.create({
-        purchase_units:[{
-          amount:{ value:'{{ $paypalAmount }}' }
-        }]
-      });
-    },
+      /* 1️⃣  Create PayPal order */
+      createOrder: (_, actions) => actions.order.create({
+          purchase_units:[{
+              amount:{ value:'{{ $paypalAmount }}' }
+          }]
+      }),
 
-    /* 2️⃣  Capture & redirect */
-    onApprove: (_, actions) => {
-      $('#generic-result').empty();
-      return actions.order.capture().then(() => {
-        window.location = @json(route('success_deposit',$order->id));
-      });
-    },
+      /* 2️⃣  Capture & redirect */
+      onApprove: (_, actions) => {
+          $('#generic-result').empty();
+          return actions.order.capture().then(() => {
+              window.location = @json(route('success_deposit',$order->id));
+          });
+      },
 
-    /* 3️⃣  Error handler */
-    onError: err => {
-      console.error(err);
-      $('#generic-result').text('PayPal error: ' + (err.message || 'Unexpected error'));
-    }
+      /* 3️⃣  Error handler */
+      onError: err => {
+          console.error(err);
+          $('#generic-result').text('PayPal error: ' + (err.message || 'Unexpected error'));
+      }
 
-  }).render('#paypal-button-container');
+    }).render('#paypal-button-container');
 
 });
 </script>

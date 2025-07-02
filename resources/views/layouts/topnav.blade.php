@@ -24,9 +24,10 @@
       
 
                         <li class="nav-item dropdown">
-                            <a class="nav-link lh-1 pe-0" id="navbarDropdownUser" href="#!" role="button" data-bs-toggle="dropdown"
+                        
+                        <a class="nav-link lh-1 pe-0" id="navbarDropdownUser" href="#!" role="button" data-bs-toggle="dropdown"
                             aria-haspopup="true" aria-expanded="false">
-                            <span class="fs-8">{{ shop() }}</span>
+                            <span class="fs-8">{{ Auth::user()->name }}</span>
                             <i class="fas fa-angle-down"></i>
                         </a>
 
@@ -38,43 +39,10 @@
                                     <div class="avatar avatar-xl">
                                         <img class="rounded-circle" src="{{ Auth::user()->get_gravatar(150) }}" alt="" />
                                     </div>
-                                    <h6 class="mt-2 text-body-emphasis">{{ shop() }} </h6>
+                                    <h6 class="mt-2 text-body-emphasis">{{ Auth::user()->name }} - {{ Auth::user()->id }} </h6>
                                 </div>
                             </div>
-                            <div>
-                                @if(Auth::user()->isSeller())
-                                @if(Auth::user()->package && package(Auth::user()->package)->name == "Basic")
-                                <div class="help-box text-center">
-                                    <p class="mb-3 mt-2 text-muted">
-                                        <strong>{{ package(Auth::user()->package)->name }}</strong><br>
-                                        Upgrade your plan and get the most out of Fedhatrac
-                                    </p>
-                                    <div class="mt-3">
-                                        <a href="{{ url('subscribe') }}" class="btn btn-success">Upgrade now</a>
-                                    </div>
-                                </div>
-                                @endif
-                                @endif
-
-                                <ul class="nav d-flex flex-column mb-2 pb-1">
-                                    @if(Auth::user()->isSeller() && Auth::user()->tenant_id)
-                                    <li class="nav-item">
-                                        <a class="nav-link px-3 d-block" href="{{ route('settings.index') }}">
-                                            <span class="me-2 text-body align-bottom" data-feather="pie-chart"></span>Account settings
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link px-3 d-block" href="{{ route('communications.top_sms') }}">
-                                            <span class="me-2 text-body align-bottom" data-feather="pie-chart"></span>SMS Balance
-                                            <span class="badge bg-secondary" style="font-size: 0.85rem;">
-                                                {{ wallet(Auth::user()->tenant_id) }}
-                                            </span>
-                                        </a>
-                                    </li>
-                                
-                                    @endif
-                                </ul>
-                            </div>
+                          
                             <div class="card-footer p-0 border-top border-translucent">
                                 <ul class="nav d-flex flex-column my-3">
                                     @if(Auth::user()->isSeller())
@@ -96,7 +64,7 @@
                                 <div class="px-3">
                                     
 
-                                      <form method="POST" action="{{ route('logout') }}">
+            <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="btn btn-phoenix-secondary d-flex flex-center w-100"><span class="me-2" data-feather="log-out"></span> Log Out</button>
               </form>
