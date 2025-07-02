@@ -7,41 +7,59 @@
 <div class="content">
   <div class="container-xxl">
 
-    {{-- ===== HEADER ===== --}}
-    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-start align-items-md-center gap-3 mb-4">
-      <h2 class="mb-0 text-success fw-semibold">
-        <i class="bi bi-receipt-cutoff me-1"></i>
-        Order&nbsp;#{{ $order->id }}&nbsp;Details
-      </h2>
+{{-- ===== HEADER ===== --}}
+<div class="border-bottom pb-3 mb-4">
 
-      <div class="btn-toolbar gap-2">
-        <a href="{{ route('orders.chat.show', $order->id) }}"
-           class="btn btn-outline-info btn-sm d-flex align-items-center gap-1">
-          <i class="bi bi-chat-dots"></i> Messages
+@include('account.stepper')
+
+
+  <div
+    class="d-flex flex-column flex-md-row justify-content-md-between
+           align-items-start align-items-md-center gap-3">
+
+    {{-- Title --}}
+    <h2 class="mb-0 text-success fw-semibold d-flex align-items-center gap-1">
+      <i class="bi bi-receipt-cutoff"></i>
+      Order&nbsp;#{{ $order->id }}&nbsp;Details
+    </h2>
+
+    {{-- Action buttons --}}
+    <div class="btn-toolbar flex-wrap gap-2">
+
+      @if($order->status === \App\Models\Order::STATUS_PENDING)
+        <a href="{{ route('pay_now', $order->id) }}"
+           class="btn btn-primary btn-lg d-flex align-items-center gap-2 px-4 py-2">
+          <i class="bi bi-credit-card fs-5"></i>
+          <span>Pay&nbsp;Now</span>
         </a>
+      @endif
 
-        <a href="{{ route('account.orders') }}"
-           class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-          <i class="bi bi-arrow-left-circle"></i> Back
-        </a>
+      <a href="{{ route('orders.chat.show', $order->id) }}"
+         class="btn btn-outline-info btn-lg d-flex align-items-center gap-2 px-4 py-2">
+        <i class="bi bi-chat-dots fs-5"></i>
+        <span>Messages</span>
+      </a>
 
-        @if($order->status === \App\Models\Order::STATUS_PENDING)
-          <a href="{{ route('pay_now', $order->id) }}"
-             class="btn btn-primary btn-sm d-flex align-items-center gap-1">
-            <i class="bi bi-credit-card"></i> Pay&nbsp;Now
-          </a>
-        @endif
+      <a href="{{ route('account.orders') }}"
+         class="btn btn-outline-secondary btn-lg d-flex align-items-center gap-2 px-4 py-2">
+        <i class="bi bi-arrow-left-circle fs-5"></i>
+        <span>Back</span>
+      </a>
 
-        @if($order->status === \App\Models\Order::STATUS_SHIPPED)
-          <button class="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
-                  data-bs-toggle="modal"
-                  data-bs-target="#deliverModal-{{ $order->id }}">
-            <i class="bi bi-check2-circle"></i> Mark Delivered
-          </button>
-          @include('seller.orders.modals.delivered')
-        @endif
-      </div>
+      @if($order->status === \App\Models\Order::STATUS_SHIPPED)
+        <button class="btn btn-outline-success btn-lg d-flex align-items-center gap-2 px-4 py-2"
+                data-bs-toggle="modal"
+                data-bs-target="#deliverModal-{{ $order->id }}">
+          <i class="bi bi-check2-circle fs-5"></i>
+          <span>Mark&nbsp;Delivered</span>
+        </button>
+        @include('seller.orders.modals.delivered')
+      @endif
+
     </div>
+  </div>
+</div>
+
 
     {{-- ===== SHOP DETAILS ===== --}}
     @if($order->shop)
