@@ -58,9 +58,21 @@
                                         </a>
                                     </h3>
 
-                                    <p class="fw-bold text-success mb-3">
-                                        {{ get_currency() }} {{ number_format($product->price, 2) }}
-                                    </p>
+                                 @if(!empty($product->discount_price) && $product->discount_price < $product->price)
+  <div class="d-flex align-items-baseline gap-3 mb-3">
+    <span class="fw-bold text-success">
+      {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
+    </span>
+    <span class="text-muted text-decoration-line-through">
+      {{ get_currency() }} {{ number_format($product->price, 2) }}
+    </span>
+  </div>
+@else
+  <p class="fw-bold text-success mb-3">
+    {{ get_currency() }} {{ number_format($product->price, 2) }}
+  </p>
+@endif
+
 
                                     {{-- View Listing --}}
                                     <div class="mt-auto">

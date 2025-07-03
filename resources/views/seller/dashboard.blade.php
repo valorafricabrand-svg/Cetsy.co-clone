@@ -54,7 +54,7 @@
                     'href'  => route('products.index')
                 ],
                 [
-                    'value' => 'KES '.number_format(wallet(),2),
+                    'value' => get_currency().number_format(wallet(),2),
                     'label' => 'Wallet Balance',
                     'icon'  => 'fas fa-wallet',
                     'class' => 'text-success',
@@ -113,7 +113,7 @@
                                   class="position-absolute end-0 bottom-0 m-2">
                                 @csrf
                                 <button class="btn btn-sm brand-bg shadow-sm">
-                                    Pay KES {{ number_format($fee,2) }}
+                                    Pay {{ get_currency() }} {{ number_format($fee,2) }}
                                 </button>
                             </form>
                         @endif
@@ -141,12 +141,12 @@
                             {{-- Price --}}
                             <p class="fw-bold mb-3">
                                 @if($product->discount_price)
-                                    <span class="text-danger me-1">KES {{ number_format($product->discount_price) }}</span>
+                                    <span class="text-danger me-1">{{ get_currency() }} {{ number_format($product->discount_price) }}</span>
                                     <small class="text-muted text-decoration-line-through">
-                                        KES {{ number_format($product->price) }}
+                                        {{ get_currency() }} {{ number_format($product->price) }}
                                     </small>
                                 @else
-                                    KES {{ number_format($product->price) }}
+                                    {{ get_currency() }} {{ number_format($product->price) }}
                                 @endif
                             </p>
 

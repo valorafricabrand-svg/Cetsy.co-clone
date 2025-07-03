@@ -94,7 +94,7 @@
 
           <!-- Price & Discount -->
           <div class="col-md-6">
-            <label for="price" class="form-label fw-semibold">Price (KES)</label>
+            <label for="price" class="form-label fw-semibold">Price ({{ get_currency() }})</label>
             <input type="number" id="price" name="price"
                    class="form-control @error('price') is-invalid @enderror"
                    value="{{ old('price', $product->price) }}" required min="0" step="0.01">
@@ -146,7 +146,7 @@
                         {{ $profile->name }}
                       </label>
                       <div class="small text-muted">
-                        KES {{ number_format($profile->base_rate,2) }} · 
+                        {{ get_currency() }} {{ number_format($profile->base_rate,2) }} · 
                         {{ $profile->delivery_days }} day{{ $profile->delivery_days>1?'s':'' }}
                         @if($profile->pickup_available)
                           <span class="badge bg-success ms-2">Pickup</span>

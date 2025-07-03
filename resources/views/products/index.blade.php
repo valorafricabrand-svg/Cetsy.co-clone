@@ -58,13 +58,13 @@
                             <p class="fw-bold mb-3">
                                 @if($product->discount_price)
                                     <span class="text-danger me-2">
-                                        KES {{ number_format($product->discount_price) }}
+                                        {{ get_currency() }} {{ number_format($product->discount_price) }}
                                     </span>
                                     <span class="text-muted text-decoration-line-through">
-                                        KES {{ number_format($product->price) }}
+                                        {{ get_currency() }} {{ number_format($product->price) }}
                                     </span>
                                 @else
-                                    <span>KES {{ number_format($product->price) }}</span>
+                                    <span>{{ get_currency() }} {{ number_format($product->price) }}</span>
                                 @endif
                             </p>
 
