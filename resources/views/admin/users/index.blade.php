@@ -46,6 +46,11 @@
                             <td>{{ $user->user_type }}</td>
                             <td>{{ $user->is_active ? 'Active' : 'Inactive' }}</td>
                             <td class="text-end">
+                            <a href="{{ route('admin.sellers.login-as', $user->id) }}" 
+                                               class="btn btn-sm btn-outline-success me-2"
+                                               onclick="return confirm('Are you sure you want to login as this seller?')">
+                                                <i class="fas fa-user-secret me-1"></i> Login as Seller
+                                            </a>
                                 <a href="{{ route('admin.users.show', $user) }}" class="btn btn-sm btn-outline-secondary me-1">
                                     <i class="fas fa-eye"></i>
                                 </a>
