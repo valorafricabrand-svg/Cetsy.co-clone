@@ -26,7 +26,7 @@
               </div>
               <p class="mb-1">
                 <span class="me-3"><strong>Items:</strong> {{ $order->items->count() }}</span>
-                <span><strong>Total:</strong> KES {{ number_format($order->total_amount, 2) }}</span>
+                <span><strong>Total:</strong> {{ get_currency() }} {{ number_format($order->total_amount, 2) }}</span>
               </p>
               <small>
                 <strong>Status:</strong>

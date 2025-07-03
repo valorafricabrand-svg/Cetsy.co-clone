@@ -29,7 +29,7 @@
                         @php
                             $row = $orders->firstItem() + $loop->index;
                             $qtyTotal = $order->items->sum('quantity');
-                            $symbol = config('app.currency_symbol', 'KES');
+                            $symbol = get_currency();
                         @endphp
 
                         <tr>

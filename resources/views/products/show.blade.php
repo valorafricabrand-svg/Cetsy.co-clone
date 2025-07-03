@@ -51,10 +51,10 @@
             {{-- Price --}}
             <div class="mb-2">
                 @if ($product->discount_price)
-                    <span class="h4 text-danger me-2">KES {{ number_format($product->discount_price) }}</span>
-                    <span class="text-muted text-decoration-line-through">KES {{ number_format($product->price) }}</span>
+                    <span class="h4 text-danger me-2">{{ get_currency() }} {{ number_format($product->discount_price) }}</span>
+                    <span class="text-muted text-decoration-line-through">{{ get_currency() }} {{ number_format($product->price) }}</span>
                 @else
-                    <span class="h4">KES {{ number_format($product->price) }}</span>
+                    <span class="h4">{{ get_currency() }} {{ number_format($product->price) }}</span>
                 @endif
             </div>
 
@@ -85,7 +85,7 @@
                 <form method="POST" action="{{ route('products.pay-fee', $product) }}" class="d-inline">
                     @csrf
                     <button class="btn btn-success">
-                        Pay Listing Fee (KES {{ number_format($fee, 2) }})
+                        Pay Listing Fee ({{ get_currency() }} {{ number_format($fee, 2) }})
                     </button>
                 </form>
             @endunless

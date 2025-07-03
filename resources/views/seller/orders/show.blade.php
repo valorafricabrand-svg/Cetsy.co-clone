@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $symbol = config('app.currency_symbol', 'KES');
+    $symbol = get_currency();
 @endphp
 
 <div class="content">
@@ -306,7 +306,7 @@
                                         <input type="hidden" name="order_items[{{ $item->id }}][id]" value="{{ $item->id }}">
                                         <select name="order_items[{{ $item->id }}][shipping_profile_id]" class="form-select" >
                                             @foreach($item->product->shippingProfiles as $profile)
-                                                <option value="{{ $profile->id }}" @selected($item->shipping_profile_id == $profile->id)>{{ $profile->name }} (KES {{ number_format($profile->base_rate, 2) }})</option>
+                                                <option value="{{ $profile->id }}" @selected($item->shipping_profile_id == $profile->id)>{{ $profile->name }} ({{ get_currency() }} {{ number_format($profile->base_rate, 2) }})</option>
                                             @endforeach
                                         </select>
                                     </td>
