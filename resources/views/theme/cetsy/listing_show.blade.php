@@ -68,9 +68,20 @@
       <div class="col-lg-5" data-aos="fade-left">
         <div class="position-lg-sticky" style="top: 1rem;">
           <h1 class="h2 fw-bold">{{ $product->name }}</h1>
-          <p class="h4 text-success fw-semibold mb-2">
-            {{ get_currency() }} {{ number_format($product->price, 2) }}
-          </p>
+       @if(!empty($product->discount_price) && $product->discount_price < $product->price)
+  <div class="d-flex align-items-baseline gap-3">
+    <span class="h4 text-success fw-semibold mb-0">
+      {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
+    </span>
+    <span class="h6 text-muted text-decoration-line-through mb-0">
+      {{ get_currency() }} {{ number_format($product->price, 2) }}
+    </span>
+  </div>
+@else
+  <p class="h4 text-success fw-semibold mb-2">
+    {{ get_currency() }} {{ number_format($product->price, 2) }}
+  </p>
+@endif
 
           {{-- Status & Shop --}}
           <div class="mb-3 d-flex flex-wrap gap-2">
