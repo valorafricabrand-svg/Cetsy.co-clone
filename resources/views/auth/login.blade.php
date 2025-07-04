@@ -44,7 +44,7 @@
               </div>
 
               {{-- Password --}}
-              <div class="form-floating mb-4">
+              <div class="form-floating mb-4 position-relative">
                 <input
                   type="password"
                   class="form-control @error('password') is-invalid @enderror"
@@ -54,6 +54,12 @@
                   autocomplete="current-password"
                   required>
                 <label for="password">Password</label>
+                {{-- Toggle icon --}}
+                <span id="togglePassword"
+                      class="position-absolute top-50 end-0 translate-middle-y pe-3"
+                      style="cursor:pointer;">
+                  <i class="fa-solid fa-eye text-secondary"></i>
+                </span>
                 @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
               </div>
 
@@ -98,3 +104,22 @@
   </div>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('togglePassword');
+    const pwd    = document.getElementById('password');
+
+    toggle.addEventListener('click', () => {
+      // Switch input type
+      const type = pwd.getAttribute('type') === 'password' ? 'text' : 'password';
+      pwd.setAttribute('type', type);
+
+      // Switch icon
+      toggle.querySelector('i').classList.toggle('fa-eye');
+      toggle.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+  });
+</script>
+@endpush
