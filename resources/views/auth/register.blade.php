@@ -12,7 +12,9 @@
 
           {{-- Header --}}
           <div class="card-header text-center bg-success bg-gradient py-4">
-            <h2 class="h4 fw-bold text-white mb-0">Create Your {{ config('app.name') }} Account</h2>
+            <h2 class="h4 fw-bold text-white mb-0">
+              Create Your {{ config('app.name') }} Account
+            </h2>
           </div>
 
           {{-- Body --}}
@@ -20,28 +22,18 @@
             <form method="POST" action="{{ route('register') }}" class="needs-validation" novalidate>
               @csrf
 
-              {{-- Account Type (segmented toggle) --}}
+              {{-- Account Type --}}
               <div class="mb-4">
                 <label class="form-label">Account Type</label>
                 <div class="btn-group w-100" role="group">
-                  <input
-                    type="radio"
-                    class="btn-check"
-                    name="role"
-                    id="role-buyer"
-                    value="buyer"
-                    {{ old('role','buyer')=='buyer' ? 'checked' : '' }}>
+                  <input class="btn-check" type="radio" name="role" id="role-buyer" value="buyer"
+                         {{ old('role','buyer')=='buyer' ? 'checked' : '' }}>
                   <label class="btn btn-outline-success" for="role-buyer">
                     <i class="fa-solid fa-bag-shopping me-1"></i> Buyer
                   </label>
 
-                  <input
-                    type="radio"
-                    class="btn-check"
-                    name="role"
-                    id="role-seller"
-                    value="seller"
-                    {{ old('role')=='seller' ? 'checked' : '' }}>
+                  <input class="btn-check" type="radio" name="role" id="role-seller" value="seller"
+                         {{ old('role')=='seller' ? 'checked' : '' }}>
                   <label class="btn btn-outline-success" for="role-seller">
                     <i class="fa-solid fa-store me-1"></i> Seller
                   </label>
@@ -51,59 +43,38 @@
 
               {{-- Name --}}
               <div class="form-floating mb-4">
-                <input
-                  type="text"
-                  class="form-control @error('name') is-invalid @enderror"
-                  id="name"
-                  name="name"
-                  placeholder="John Doe"
-                  value="{{ old('name') }}"
-                  required>
+                <input type="text" class="form-control @error('name') is-invalid @enderror" id="name"
+                       name="name" placeholder="John Doe" value="{{ old('name') }}" required>
                 <label for="name">Your Name</label>
                 @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
               </div>
 
               {{-- Email --}}
               <div class="form-floating mb-4">
-                <input
-                  type="email"
-                  class="form-control @error('email') is-invalid @enderror"
-                  id="email"
-                  name="email"
-                  placeholder="name@example.com"
-                  value="{{ old('email') }}"
-                  required>
+                <input type="email" class="form-control @error('email') is-invalid @enderror" id="email"
+                       name="email" placeholder="name@example.com" value="{{ old('email') }}" required>
                 <label for="email">Email Address</label>
                 @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
               </div>
 
               {{-- Phone --}}
               <div class="form-floating mb-4">
-                <input
-                  type="text"
-                  class="form-control @error('phone') is-invalid @enderror"
-                  id="phone"
-                  name="phone"
-                  placeholder="+254 7xx xxx xxx"
-                  value="{{ old('phone') }}"
-                  required>
+                <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone"
+                       name="phone" placeholder="+254 7xx xxx xxx" value="{{ old('phone') }}" required>
                 <label for="phone">Phone</label>
                 @error('phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
               </div>
 
-              {{-- Country (Select2) --}}
+              {{-- Country --}}
               <div class="mb-4">
                 <label for="country_id" class="form-label">Country</label>
-                <select
-                  id="country_id"
-                  name="country_id"
-                  class="form-select @error('country_id') is-invalid @enderror"
-                  data-control="select2"
-                  data-placeholder="Select country"
-                  required>
+                <select id="country_id" name="country_id"
+                        class="form-select @error('country_id') is-invalid @enderror"
+                        data-control="select2" required>
                   <option></option>
                   @foreach($countries as $country)
-                    <option value="{{ $country->id }}" {{ old('country_id')==$country->id ? 'selected' : '' }}>
+                    <option value="{{ $country->id }}"
+                            {{ old('country_id')==$country->id ? 'selected' : '' }}>
                       {{ $country->name }}
                     </option>
                   @endforeach
@@ -111,35 +82,91 @@
                 @error('country_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
               </div>
 
-              {{-- Password --}}
-              <div class="form-floating mb-4">
+<div class="form-floating mb-4 position-relative">
+  <input
+    type="password"
+    class="form-control"
+    id="password"
+    name="password"
+    placeholder="Password"
+    required>
+  <label for="password">Password</label>
+
+  <button type="button"
+          class="toggle-password btn position-absolute top-50 end-0 translate-middle-y pe-3"
+          data-target="#password"
+          aria-label="Show password"
+          style="background: transparent; border: none; cursor: pointer;">
+    <i class="fa-solid fa-eye"></i>
+  </button>
+</div>
+
+<div class="form-floating mb-4 position-relative">
+  <input
+    type="password"
+    class="form-control"
+    id="password_confirmation"
+    name="password_confirmation"
+    placeholder="Confirm Password"
+    required>
+  <label for="password_confirmation">Confirm Password</label>
+
+  <button type="button"
+          class="toggle-password btn position-absolute top-50 end-0 translate-middle-y pe-3"
+          data-target="#password_confirmation"
+          aria-label="Show password"
+          style="background: transparent; border: none; cursor: pointer;">
+    <i class="fa-solid fa-eye"></i>
+  </button>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.addEventListener('click', e => {
+    const btn = e.target.closest('.toggle-password');
+    if (!btn) return;
+    e.preventDefault();
+
+    const targetSelector = btn.getAttribute('data-target');
+    const input = document.querySelector(targetSelector);
+    if (!input) return;
+
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.querySelector('i').classList.remove('fa-eye');
+      btn.querySelector('i').classList.add('fa-eye-slash');
+      btn.setAttribute('aria-label', 'Hide password');
+    } else {
+      input.type = 'password';
+      btn.querySelector('i').classList.remove('fa-eye-slash');
+      btn.querySelector('i').classList.add('fa-eye');
+      btn.setAttribute('aria-label', 'Show password');
+    }
+  });
+});
+</script>
+
+
+              {{-- Accept Terms --}}
+              <div class="form-check mb-4">
                 <input
-                  type="password"
-                  class="form-control @error('password') is-invalid @enderror"
-                  id="password"
-                  name="password"
-                  placeholder="Password"
-                  autocomplete="new-password"
+                  class="form-check-input @error('terms') is-invalid @enderror"
+                  type="checkbox"
+                  id="terms"
+                  name="terms"
+                  value="1"
+                  {{ old('terms') ? 'checked' : '' }}
                   required>
-                <label for="password">Password</label>
-                @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                <label class="form-check-label small" for="terms">
+                  I agree to the
+                  <a href="{{ url('/terms') }}" target="_blank" class="text-success">Terms of Service</a>
+                  and
+                  <a href="{{ url('/privacy') }}" target="_blank" class="text-success">Privacy Policy</a>
+                </label>
+                @error('terms') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
               </div>
 
-              {{-- Confirm Password --}}
-              <div class="form-floating mb-4">
-                <input
-                  type="password"
-                  class="form-control @error('password_confirmation') is-invalid @enderror"
-                  id="password_confirmation"
-                  name="password_confirmation"
-                  placeholder="Repeat Password"
-                  autocomplete="new-password"
-                  required>
-                <label for="password_confirmation">Confirm Password</label>
-                @error('password_confirmation') <div class="invalid-feedback">{{ $message }}</div> @enderror
-              </div>
-
-              {{-- Action Buttons --}}
+              {{-- Submit --}}
               <div class="d-flex justify-content-between align-items-center">
                 <a href="{{ route('login') }}" class="text-success small">Already have an account?</a>
                 <button type="submit" class="btn btn-success px-4">
@@ -152,28 +179,44 @@
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 @endsection
 
 @push('styles')
-<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/select2.min.css" rel="stylesheet" />
+
 <style>
-  .select2-container--default .select2-selection--single{
-    height: 45px; border:1px solid #ced4da; border-radius:.375rem;
+  .select2-container--default .select2-selection--single {
+    height: 45px;
+    border: 1px solid #ced4da;
+    border-radius: .375rem;
   }
-  .select2-selection__rendered{ line-height:45px }
-  .select2-selection__arrow{ height:45px }
+  .select2-selection__rendered {
+    line-height: 45px;
+  }
+  .select2-selection__arrow {
+    height: 45px;
+  }
+  .toggle-password {
+    z-index: 5;
+    cursor: pointer;
+  }
+  .toggle-password i {
+    pointer-events: none;
+  }
 </style>
 @endpush
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/select2.min.js" defer></script>
+
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    $('#country_id').select2({
-      theme: 'bootstrap-5',
-      placeholder: $(this).data('placeholder')
-    });
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Select2
+  $('#country_id').select2({
+    theme: 'bootstrap-5',
+    placeholder: 'Select country'
   });
+
+});
 </script>
 @endpush
