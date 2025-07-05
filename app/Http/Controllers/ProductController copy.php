@@ -142,7 +142,8 @@ class ProductController extends Controller
     {
 
         $product = Product::whereSlug($slug)->first();
-        return view('products.show', compact('product'));
+        $isFavorited = auth()->check() && auth()->user()->favorites()->where('product_id', $product->id)->exists();
+        return view('products.show', compact('product', 'isFavorited'));
         
     }
 
