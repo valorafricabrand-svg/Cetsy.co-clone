@@ -50,6 +50,20 @@ class WishlistController extends Controller
             \Log::error('Failed to send wishlist notification email: ' . $e->getMessage());
         }
 
+        // Send confirmation email to buyer
+        try {
+            if ($product && $request->user()) {
+                Mail::to($request->user()->email)
+                    ->send(new \App\Mail\ProductWishlistedBuyerMail(
+                        $product,
+                        $request->user(),
+                        $product->shop->user
+                    ));
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to send wishlist confirmation email to buyer: ' . $e->getMessage());
+        }
+
         return back()->with('success', 'Added to Favorites!');
     }
 

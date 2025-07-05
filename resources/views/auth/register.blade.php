@@ -155,14 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
                   id="terms"
                   name="terms"
                   value="1"
-                  {{ old('terms') ? 'checked' : '' }}
-                  required>
+                  {{ old('terms') ? 'checked' : '' }}>
                 <label class="form-check-label small" for="terms">
                   I agree to the
                   <a href="{{ url('/terms') }}" target="_blank" class="text-success">Terms of Service</a>
                   and
                   <a href="{{ url('/privacy') }}" target="_blank" class="text-success">Privacy Policy</a>
                 </label>
+                <div id="terms-error" class="invalid-feedback d-block" style="display:none;"></div>
                 @error('terms') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
               </div>
 
@@ -210,13 +210,39 @@ document.addEventListener('DOMContentLoaded', () => {
 @push('scripts')
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
   // Initialize Select2
   $('#country_id').select2({
     theme: 'bootstrap-5',
     placeholder: 'Select country'
   });
 
+  // Terms checkbox validation
+  const form = document.querySelector('form.needs-validation');
+  const terms = document.getElementById('terms');
+  const errorDiv = document.getElementById('terms-error');
+
+  form.addEventListener('submit', function(e) {
+    if (!terms.checked) {
+      e.preventDefault();
+      errorDiv.textContent = "You must agree to the Terms of Service and Privacy Policy.";
+      errorDiv.style.display = "block";
+      terms.classList.add('is-invalid');
+      terms.focus();
+    } else {
+      errorDiv.textContent = "";
+      errorDiv.style.display = "none";
+      terms.classList.remove('is-invalid');
+    }
+  });
+
+  terms.addEventListener('change', function() {
+    if (terms.checked) {
+      errorDiv.textContent = "";
+      errorDiv.style.display = "none";
+      terms.classList.remove('is-invalid');
+    }
+  });
 });
 </script>
 @endpush

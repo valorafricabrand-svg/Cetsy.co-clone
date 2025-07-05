@@ -163,4 +163,24 @@ class User extends Authenticatable
 
         return $url;
     }
+
+    public function favorites()
+    {
+        return $this->belongsToMany(
+            \App\Models\Product::class,
+            'wish_list',
+            'user_id',
+            'product_id'
+        );
+    }
+
+    public function offers()
+    {
+        return $this->belongsToMany(
+            \App\Models\Product::class,
+            'offers',
+            'buyer_id',
+            'product_id'
+        );
+    }
 }

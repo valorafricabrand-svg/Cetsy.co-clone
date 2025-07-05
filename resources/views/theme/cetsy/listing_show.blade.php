@@ -104,7 +104,7 @@
               @csrf
               <input type="hidden" name="product_id" value="{{ $product->id }}">
               <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Add to favourites">
-                <i class="fa-regular fa-heart"></i>
+                <i class="fa-regular fa-heart{{ $isFavorited ? ' text-danger fa-solid' : '' }}"></i>
               </button>
             </form>
             <button class="btn btn-outline-secondary" @click="share" data-bs-toggle="tooltip" title="Copy link">

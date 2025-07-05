@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Product Added to Favorites</title>
+    <title>Added to Your Favorites!</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -51,37 +51,29 @@
 </head>
 <body>
     <div class="header">
-        <h2>🎉 Great News!</h2>
-        <p>Your product has been added to someone's Favorites!</p>
+        <span class="icon">💚</span>
+        <h2>Added to Your Favorites!</h2>
+        <div style="font-size:1.1rem;opacity:0.95;">You just favorited a product on Cetsy!</div>
     </div>
 
     <div class="content">
-        <p>Hello <strong>{{ $shopOwner->name }}</strong>,</p>
-
-            <p>We're excited to let you know that your product <strong>"{{ $product->name }}"</strong> has been added to a customer's Favorites!</p>
+        <div class="congrats">Way to go, {{ $buyer->name }}! 🎉</div>
+        <div>You've just added <strong>"{{ $product->name }}"</strong> to your favorites. Keep track of all the products you love in one place.</div>
 
         <div class="product-info">
-            <h3>Product Details:</h3>
+            <h3>Product Details</h3>
             <p><strong>Product Name:</strong> {{ $product->name }}</p>
             <p><strong>Price:</strong> {{ get_currency() }} {{ number_format($product->price, 2) }}</p>
-            <p><strong>Added by:</strong> {{ $wishlister->name }}</p>
+            <p><strong>Seller:</strong> {{ $seller->name }}</p>
             <p><strong>Date Added:</strong> {{ now()->format('F j, Y \a\t g:i A') }}</p>
         </div>
-
-        <p>This is a great opportunity to:</p>
-        <ul>
-            <li>Consider offering a special discount to encourage purchase</li>
-            <li>Update your product listing with better images or descriptions</li>
-            <li>Check if your inventory is sufficient</li>
-            <li>Engage with potential customers</li>
-        </ul>
 
         <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="btn">View Product</a>
     </div>
 
     <div class="footer">
-        <p>Thank you for being part of our marketplace!</p>
+        <p>Thank you for being part of our green community! 🌱</p>
         <p>Best regards,<br>The Cetsy Team</p>
     </div>
 </body>
-</html> 
+</html>

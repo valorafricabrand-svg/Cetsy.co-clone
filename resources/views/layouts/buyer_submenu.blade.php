@@ -78,6 +78,25 @@
                 @endif
             </a>
         </div>
+
+        <div class="mb-2">
+            <a
+                href="{{ route('buyer.favorites') }}"
+                class="nav-link d-flex align-items-center mt-2 {{ $active('buyer.favorites') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
+            >
+                <i class="fas fa-heart me-2 text-success"></i>
+                Favorites
+            </a>
+        </div>
+        <div class="mb-2">
+            <a
+                href="{{ route('buyer.offers') }}"
+                class="nav-link d-flex align-items-center mt-2 {{ $active('buyer.offers') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
+            >
+                <i class="fas fa-heart me-2 text-success"></i>
+                Offers
+            </a>
+        </div>
         <!-- Profiles -->
         <div class="mb-2">
             <a

@@ -176,6 +176,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/addresses', [AccountController::class, 'addresses'])->name('addresses');
         Route::get('/logout', [AccountController::class, 'logout'])->name('logout');
     });
+
+    Route::get('buyer/favorites', [ProductController::class, 'favorites'])->name('buyer.favorites');
+    Route::get('buyer/offers', [ProductController::class, 'offers'])->name('buyer.offers');
+    
 });
 
 /*

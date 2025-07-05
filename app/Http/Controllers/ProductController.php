@@ -280,14 +280,29 @@ public function update(Request $request, Product $product)
                 'ip'        => request()->ip(),
             ]);
         }
+        $isFavorited = auth()->check() && auth()->user()->favorites()->where('product_id', $product->id)->exists();
 
-        return themed_view('listing_show', compact('product'));
+        return themed_view('listing_show', compact('product', 'isFavorited'));
     }
 
     public function wishlist()
     {
         $wishlistItems = Wishlist::where('user_id', Auth::id())->get();
         return view('buyer.wishlist', compact('wishlistItems'));
+    }
+
+    public function favorites()
+    {
+        $favorites = auth()->user()->favorites()->get();
+        return view('buyer.favorites', compact('favorites'));
+    }
+
+    public function offers()
+    {
+        // Fetch offers made by the buyer
+        $offers = \App\Models\Offer::where('buyer_id', Auth::id())->with('product')->latest()->get();
+
+        return view('buyer.offers', compact('offers'));
     }
 
     public function listings()

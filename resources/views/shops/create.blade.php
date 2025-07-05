@@ -82,7 +82,7 @@
         value="{{ $code }}"
         {{ old('currency') === $code ? 'selected' : '' }}
       >
-        {{ $name }} ({{ $code }})
+        ({{ $code }})
       </option>
     @endforeach
   </select>
@@ -183,23 +183,24 @@
   </div>
 </div>
 
-{{-- Bootstrap validation script --}}
-@push('scripts')
+<!-- Ensure jQuery is loaded before Select2 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-  (function () {
-    'use strict'
-    var forms = document.querySelectorAll('.needs-validation')
-    Array.prototype.slice.call(forms).forEach(function (form) {
-      form.addEventListener('submit', function (event) {
-        if (!form.checkValidity()) {
-          event.preventDefault()
-          event.stopPropagation()
-        }
-        form.classList.add('was-validated')
-      }, false)
-    })
-  })()
+document.addEventListener('DOMContentLoaded', function() {
+  $('#currency').select2({
+    placeholder: 'Select a currency',
+    width: '100%',
+    minimumResultsForSearch: 0 // Always show search box
+  });
+  $('#country').select2({
+    placeholder: 'Select country',
+    width: '100%',
+    minimumResultsForSearch: 0 // Always show search box
+  });
+});
 </script>
-@endpush
 
 @endsection
