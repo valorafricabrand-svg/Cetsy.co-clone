@@ -37,7 +37,7 @@
                         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                             <div class="card h-100 border-0 shadow-sm">
                                 {{-- Cover image (4×3) --}}
-                                <a href="{{ route('products.show', $product) }}" class="ratio ratio-4x3 rounded-top overflow-hidden">
+                                <a href="{{ route('listing.show', $product) }}" class="ratio ratio-4x3 rounded-top overflow-hidden">
                                     @if ($img = $product->media->first())
                                         <img src="{{ asset('storage/' . $img->url) }}"
                                              alt="{{ $product->name }}"
@@ -52,7 +52,7 @@
                                 {{-- Card body --}}
                                 <div class="card-body d-flex flex-column">
                                     <h3 class="h6 mb-1 text-truncate">
-                                        <a href="{{ route('products.show', $product) }}"
+                                        <a href="{{ route('listing.show', $product) }}"
                                            class="text-dark text-decoration-none">
                                             {{ $product->name }}
                                         </a>
@@ -64,7 +64,7 @@
 
                                     {{-- View Product --}}
                                     <div class="mt-auto">
-                                        <a href="{{ route('products.show', $product) }}"
+                                        <a href="{{ route('listing.show', $product) }}"
                                            class="btn btn-outline-primary w-100 d-flex justify-content-center align-items-center gap-2"
                                            aria-label="View {{ $product->name }}">
                                             <span>View Product</span>
