@@ -77,7 +77,7 @@ function shop(){
  }
 
 
-   if (! function_exists('setting')) {
+if (! function_exists('setting')) {
     /**
      * Retrieve a setting value by key (column name), or return default.
      *
@@ -134,6 +134,10 @@ if (! function_exists('theme')) {
 
        
     }
+
+
+
+
 
 
     function currencies(){
