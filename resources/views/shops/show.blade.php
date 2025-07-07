@@ -31,6 +31,14 @@
     @endif
   </div>
 
+  {{-- Announcement --}}
+  @if(!empty($shop->announcement))
+    <div class="alert alert-info mb-4">
+      <i class="fas fa-bullhorn me-2"></i>
+      {{ $shop->announcement }}
+    </div>
+  @endif
+
   {{-- Flash --}}
   @if(session('success'))
     <div class="alert alert-success">
@@ -59,6 +67,8 @@
       </div>
     </div>
   @endif
+
+ 
 
   {{-- Preferences --}}
   <div class="card mb-4">
@@ -184,6 +194,16 @@
       <p class="mb-0">{{ $shop->city }}, {{ $shop->postal }}</p>
     </div>
   </div>
+
+  {{-- Shop Policies --}}
+  @if(!empty($shop->policies))
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Shop Policies</h5>
+        <p class="card-text">{!! nl2br(e($shop->policies)) !!}</p>
+      </div>
+    </div>
+  @endif
 
   {{-- Security --}}
   <div class="card mb-4">

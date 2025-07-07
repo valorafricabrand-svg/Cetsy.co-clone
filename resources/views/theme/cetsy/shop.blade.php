@@ -4,25 +4,72 @@
 
 <!-- Shop Hero Section -->
 <section class="py-5 bg-white border-bottom">
-  <div class="container d-flex flex-column flex-lg-row align-items-center justify-content-between gap-4">
-    <div class="d-flex align-items-center gap-3">
-      @if($shop->logo_url)
-        <img src="{{ $shop->logo_url }}" alt="{{ $shop->name }} logo"
-             class="rounded-circle shadow-sm border"
-             style="width: 80px; height: 80px; object-fit: cover;">
-      @endif
-      <div>
-        <h1 class="h4 fw-bold mb-1">{{ $shop->name }}</h1>
-        <span class="text-muted">Owned by {{ $shop->user->name }}</span>
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-9 d-flex align-items-center gap-4">
+        @if($shop->logo_url)
+          <img src="{{ $shop->logo_url }}" alt="{{ $shop->name }} logo"
+               class="rounded-circle shadow-sm border"
+               style="width: 80px; height: 80px; object-fit: cover;">
+        @endif
+        <div>
+          <h1 class="h4 fw-bold mb-1">{{ $shop->name }}</h1>
+          <span class="text-muted d-block mb-2">Owned by {{ $shop->user->name }}</span>
+          <!-- Reviews and Rating -->
+          @php
+            $averageRating = $shop->reviews()->avg('rating') ?? 0;
+            $reviewCount = $shop->reviews()->count();
+          @endphp
+          @if($reviewCount > 0)
+            <a href="{{ route('shop.reviews', $shop) }}" class="text-decoration-none">
+              <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center me-2">
+                  @for($i = 1; $i <= 5; $i++)
+                    @if($i <= $averageRating)
+                      <i class="fas fa-star text-warning" style="font-size: 16px;"></i>
+                    @elseif($i - $averageRating < 1 && $i - $averageRating > 0)
+                      <i class="fas fa-star-half-alt text-warning" style="font-size: 16px;"></i>
+                    @else
+                      <i class="far fa-star text-muted" style="font-size: 16px;"></i>
+                    @endif
+                  @endfor
+                </div>
+                <span class="fw-semibold text-dark">{{ number_format($averageRating, 1) }}</span>
+                <span class="text-muted">({{ $reviewCount }} {{ Str::plural('review', $reviewCount) }})</span>
+              </div>
+            </a>
+          @else
+            <div class="d-flex align-items-center gap-2">
+              <div class="d-flex align-items-center me-2">
+                @for($i = 1; $i <= 5; $i++)
+                  <i class="far fa-star text-muted" style="font-size: 16px;"></i>
+                @endfor
+              </div>
+              <span class="text-muted">No reviews yet</span>
+            </div>
+          @endif
+        </div>
+      </div>
+      <div class="col-lg-3 text-lg-end mt-3 mt-lg-0">
+        @if(Auth::id() === $shop->user_id)
+          <a href="{{ route('seller.shops.edit', $shop) }}" class="btn btn-outline-success rounded-pill">
+            <i class="fas fa-edit me-1"></i> Edit Shop
+          </a>
+        @endif
       </div>
     </div>
-    @if(Auth::id() === $shop->user_id)
-      <a href="{{ route('seller.shops.edit', $shop) }}" class="btn btn-outline-success rounded-pill">
-        <i class="fas fa-edit me-1"></i> Edit Shop
-      </a>
-    @endif
   </div>
 </section>
+
+<!-- Shop Announcement -->
+@if(!empty($shop->announcement))
+  <div class="container mt-4">
+    <div class="alert alert-info shadow-sm">
+      <i class="fas fa-bullhorn me-2"></i>
+      {{ $shop->announcement }}
+    </div>
+  </div>
+@endif
 
 <!-- Flash Message -->
 @if(session('success'))
@@ -54,7 +101,7 @@
   <div class="container">
     <div class="row g-4">
       <!-- About the Shop -->
-      <div class="col-lg-6">
+      <div class="col-lg-12">
         <div class="card shadow-sm h-100 border-0">
           <div class="card-header bg-white fw-semibold border-bottom">About This Shop</div>
           <div class="card-body">
@@ -67,8 +114,10 @@
         </div>
       </div>
 
+      
+
       <!-- Preferences -->
-      <div class="col-lg-6">
+      <div class="col-lg-12">
         <div class="card shadow-sm h-100 border-0">
           <div class="card-header bg-white fw-semibold border-bottom">Shop Preferences</div>
           <div class="card-body row">
@@ -78,7 +127,7 @@
             </div>
             <div class="col-sm-6 mb-3">
               <strong>Country:</strong><br>
-              <span class="text-muted">{{ $shop->country ?? 'N/A' }}</span>
+              <span class="text-muted">{{ country_name($shop->country) ?? 'N/A' }}</span>
             </div>
             <div class="col-sm-6 mb-3">
               <strong>Currency:</strong><br>
@@ -86,9 +135,15 @@
             </div>
             <div class="col-12">
               <strong>Shop URL:</strong><br>
-              <a href="{{ route('shop.show', $shop) }}" class="text-success text-decoration-none">
-                {{ url('shop/' . $shop->slug) }}
-              </a>
+              <div class="d-flex align-items-center gap-2">
+                
+                <button type="button" 
+                        class="btn btn-outline-success btn-sm" 
+                        onclick="copyShopUrl('{{ url('shop/' . $shop->slug) }}')"
+                        title="Copy shop URL">
+                  <i class="fas fa-share-alt"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -183,5 +238,69 @@
   </div>
 </section>
 
+@if(!empty($shop->policies))
+  <div class="container my-5 text-center">
+    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#shopPoliciesModal">
+      <i class="fas fa-file-alt me-1"></i> View Shop Policies
+    </button>
+  </div>
+
+  <!-- Shop Policies Modal -->
+  <div class="modal fade" id="shopPoliciesModal" tabindex="-1" aria-labelledby="shopPoliciesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="shopPoliciesModalLabel">Shop Policies</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="text-start">
+            {!! nl2br(e($shop->policies)) !!}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+@endif
 
 @endsection
+
+@push('scripts')
+<script>
+function copyShopUrl(url) {
+    // Create a temporary input element
+    const tempInput = document.createElement('input');
+    tempInput.value = url;
+    document.body.appendChild(tempInput);
+    
+    // Select and copy the text
+    tempInput.select();
+    tempInput.setSelectionRange(0, 99999); // For mobile devices
+    
+    try {
+        document.execCommand('copy');
+        
+        // Show success feedback
+        const button = event.target.closest('button');
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.classList.remove('btn-outline-success');
+        button.classList.add('btn-success');
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-success');
+        }, 2000);
+        
+    } catch (err) {
+        console.error('Failed to copy URL: ', err);
+        alert('Failed to copy URL. Please copy manually.');
+    }
+    
+    // Clean up
+    document.body.removeChild(tempInput);
+}
+</script>
+@endpush

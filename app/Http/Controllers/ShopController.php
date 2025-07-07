@@ -153,6 +153,8 @@ public function update(Request $request, Shop $shop)
         'enable_2fa'     => ['required','boolean'],
         'logo'           => ['nullable','image','max:2048'],
         'featured_image' => ['nullable','image','max:2048'],
+        'announcement'   => ['nullable','string','max:1000'],
+        'policies'       => ['nullable','string'],
     ]);
 
     // Slug uniqueness fallback if someone cleared it
