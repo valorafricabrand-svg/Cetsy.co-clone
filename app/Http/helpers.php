@@ -77,7 +77,7 @@ function shop(){
  }
 
 
-   if (! function_exists('setting')) {
+if (! function_exists('setting')) {
     /**
      * Retrieve a setting value by key (column name), or return default.
      *
@@ -111,14 +111,6 @@ if (! function_exists('theme')) {
 }
 
 
- function country_name($id){
-    $country = Country::find($id);
-    return $country->name;
- }
-
-
-
-
     function themed_view(string $view, array $data = [])
     {
        
@@ -131,6 +123,13 @@ if (! function_exists('theme')) {
 
        
     }
+
+
+     function country_name($id){
+    $country = Country::find($id);
+    return $country->name;
+ }
+
 
 
     function currencies(){
