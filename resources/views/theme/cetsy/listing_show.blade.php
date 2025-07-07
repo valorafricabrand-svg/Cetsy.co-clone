@@ -62,6 +62,8 @@
             @endforeach
           </div>
         @endif
+
+        <div class="mb-4 text-muted small">{!! $product->description !!}</div>
       </div>
 
       {{-- Details --}}
@@ -69,15 +71,15 @@
         <div class="position-lg-sticky" style="top: 1rem;">
           <h1 class="h2 fw-bold">{{ $product->name }}</h1>
        @if(!empty($product->discount_price) && $product->discount_price < $product->price)
-  <div class="d-flex align-items-baseline gap-3">
-    <span class="h4 text-success fw-semibold mb-0">
-      {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
-    </span>
-    <span class="h6 text-muted text-decoration-line-through mb-0">
-      {{ get_currency() }} {{ number_format($product->price, 2) }}
-    </span>
-  </div>
-@else
+    <div class="d-flex align-items-baseline gap-3">
+      <span class="h4 text-success fw-semibold mb-0">
+        {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
+      </span>
+      <span class="h6 text-muted text-decoration-line-through mb-0">
+        {{ get_currency() }} {{ number_format($product->price, 2) }}
+      </span>
+    </div>
+  @else
   <p class="h4 text-success fw-semibold mb-2">
     {{ get_currency() }} {{ number_format($product->price, 2) }}
   </p>
@@ -119,7 +121,7 @@
           </div>
 
           {{-- Description --}}
-          <div class="mb-4 text-muted small">{!! $product->description !!}</div>
+          <div class="mb-4 text-muted small">{!! Str::limit($product->description, 250) !!}</div>
 
           {{-- Category --}}
           <p class="mb-2">

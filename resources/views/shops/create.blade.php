@@ -129,8 +129,31 @@
 
            
 
-            {{-- 3) Share Your Billing Info --}}
-            <h5 class="mt-4">3. Share Your Billing Info</h5>
+            {{-- 3) Shop Images --}}
+            <h5 class="mt-4">3. Shop Images</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label for="logo" class="form-label">Logo (optional)</label>
+                <input 
+                  id="logo" name="logo" type="file"
+                  accept="image/*"
+                  class="form-control"
+                >
+                <div class="form-text">Upload your shop logo. Recommended size: 200x200 pixels.</div>
+              </div>
+              <div class="col-md-6">
+                <label for="featured_image" class="form-label">Featured Image (optional)</label>
+                <input 
+                  id="featured_image" name="featured_image" type="file"
+                  accept="image/*"
+                  class="form-control"
+                >
+                <div class="form-text">This image will be displayed prominently on your shop page. Recommended size: 1200x400 pixels.</div>
+              </div>
+            </div>
+
+            {{-- 4) Share Your Billing Info --}}
+            <h5 class="mt-4">4. Share Your Billing Info</h5>
             <div class="row g-3 mb-4">
               <div class="col-12">
                 <label for="address" class="form-label">Street Address <span class="text-danger">*</span></label>

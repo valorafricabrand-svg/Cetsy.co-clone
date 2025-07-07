@@ -112,8 +112,11 @@ if (! function_exists('theme')) {
 
 
  function country_name($id){
+    if (!$id) {
+        return 'N/A';
+    }
     $country = Country::find($id);
-    return $country->name;
+    return $country ? $country->name : 'N/A';
  }
 
 
