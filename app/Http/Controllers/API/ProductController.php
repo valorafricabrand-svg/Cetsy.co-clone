@@ -13,12 +13,24 @@ class ProductController extends Controller
     /**
      * Display a listing of products.
      */
-    public function index()
-    {
-        $products = Product::latest()->get();
+public function index(Request $request)
+{
+    $query = Product::query();
 
-        return response()->json($products);
+    if ($request->filled('min_price')) {
+        $query->where('price', '>=', $request->min_price);
     }
+
+    if ($request->filled('max_price')) {
+        $query->where('price', '<=', $request->max_price);
+    }
+
+    if ($request->filled('keyword')) {
+        $query->where('name', 'like', '%' . $request->keyword . '%');
+    }
+
+    return $query->latest()->paginate(10);
+}
 
     /**
      * Store a newly created product in storage.

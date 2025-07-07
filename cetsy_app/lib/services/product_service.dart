@@ -1,19 +1,41 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
-import '../config/constants.dart';
 import '../models/product.dart';
+import '../config/constants.dart';
 
 class ProductService {
-  static Future<List<Product>> fetchProducts() async {
-    final url = Uri.parse('${Constants.baseUrl}/products');
-    final response = await http.get(url, headers: {
+  static Future<List<Product>> fetchProducts({
+    int page = 1,
+    String? keyword,
+    double? minPrice,
+    double? maxPrice,
+  }) async {
+    final queryParams = {
+      'page': page.toString(),
+      if (keyword != null && keyword.isNotEmpty) 'search': keyword,
+      if (minPrice != null) 'min_price': minPrice.toString(),
+      if (maxPrice != null) 'max_price': maxPrice.toString(),
+    };
+
+    final uri = Uri.parse("${Constants.baseUrl}/products")
+        .replace(queryParameters: queryParams);
+
+    final response = await http.get(uri, headers: {
       'Accept': 'application/json',
     });
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body)['data'] ?? jsonDecode(response.body);
-      return data.map((item) => Product.fromJson(item)).toList();
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is List) {
+        return decoded.map((item) => Product.fromJson(item)).toList();
+      } else if (decoded is Map && decoded['data'] is List) {
+        return (decoded['data'] as List)
+            .map((item) => Product.fromJson(item))
+            .toList();
+      } else {
+        throw Exception("Unexpected product format.");
+      }
     } else {
       throw Exception("Failed to load products");
     }

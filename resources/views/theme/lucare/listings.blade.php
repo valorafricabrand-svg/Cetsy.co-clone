@@ -1,16 +1,16 @@
-{{-- resources/views/listings/index.blade.php --}}
-@extends('layouts.frontapp')
+{{-- resources/views/products/index.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 
 {{-- SEO-friendly page title --}}
-@section('title', 'Marketplace – Products, Services & Digital Goods')
+@section('title', 'Lucare – Shop Skincare, Cosmetics & Wellness')
 
 @section('main')
     {{-- ────────── Header / Hero ────────── --}}
-    <section class="bg-success text-white py-5">
+    <section class="bg-primary text-white py-5">
         <div class="container text-center">
-            <h1 class="display-5 fw-bold mb-2 text-white">All Listings</h1>
+            <h1 class="display-5 fw-bold mb-2 text-white">All Products</h1>
             <p class="lead mb-0">
-                Browse our global marketplace for physical products, professional services, and instant digital downloads.
+                Discover Lucare’s curated selection of skincare, cosmetics, and wellness essentials—delivered nationwide.
             </p>
         </div>
     </section>
@@ -22,48 +22,41 @@
                 @forelse ($products as $product)
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                         <div class="card h-100 border-0 shadow-sm">
-
                             {{-- Cover 4 × 3 image --}}
-                            <a href="{{ route('listing.show', $product) }}" class="ratio ratio-4x3">
+                            <a href="{{ route('products.show', $product) }}" class="ratio ratio-4x3 rounded-top overflow-hidden">
                                 @if ($img = $product->media->first())
                                     <img
                                         src="{{ asset('storage/' . $img->url) }}"
                                         alt="{{ $product->name }}"
-                                        class="object-fit-cover rounded-top">
+                                        class="w-100 h-100 object-fit-cover">
                                 @else
                                     <img
-                                        src="{{ asset('assets/img/placeholder.svg') }}"
+                                        src="{{ asset('assets/images/placeholder-beauty.svg') }}"
                                         alt="No image available"
-                                        class="object-fit-cover rounded-top">
+                                        class="w-100 h-100 object-fit-cover">
                                 @endif
                             </a>
 
                             {{-- Card body --}}
                             <div class="card-body d-flex flex-column">
                                 <h2 class="h6 mb-1 text-truncate">
-                                    <a href="{{ route('listing.show', $product) }}"
+                                    <a href="{{ route('products.show', $product) }}"
                                        class="text-dark text-decoration-none">
                                         {{ $product->name }}
                                     </a>
                                 </h2>
 
-                                <p class="fw-bold text-success mb-3">
+                                <p class="fw-bold text-primary mb-3">
                                     KES {{ number_format($product->price, 2) }}
                                 </p>
 
                                 <div class="mt-auto">
-                                    <form method="POST" action="{{ route('cart.add') }}">
-                                        @csrf
-                                        <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                        <input type="hidden" name="quantity" value="1">
-
-                                        <button type="submit"
-                                                class="btn btn-outline-success w-100 d-flex justify-content-center align-items-center gap-2"
-                                                aria-label="Add {{ $product->name }} to cart">
-                                            <span>Add to Cart</span>
-                                            <i class="fas fa-cart-plus"></i>
-                                        </button>
-                                    </form>
+                                    <a href="{{ route('products.show', $product) }}"
+                                       class="btn btn-outline-primary w-100 d-flex justify-content-center align-items-center gap-2"
+                                       aria-label="View {{ $product->name }}">
+                                        <span>View Product</span>
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -72,7 +65,7 @@
                     {{-- Empty state --}}
                     <div class="col-12 text-center text-muted py-5">
                         <i class="fas fa-box-open fa-2x mb-3"></i>
-                        <p class="mb-0">No listings available right now. Please check back soon!</p>
+                        <p class="mb-0">No products available right now. Please check back soon!</p>
                     </div>
                 @endforelse
             </div>
