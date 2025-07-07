@@ -47,49 +47,51 @@
         <div class="card-body row g-3">
           <div class="col-md-4">
             <label for="language" class="form-label">Language <span class="text-danger">*</span></label>
-            <select name="language" id="language" class="form-select" required>
-              <!-- <option disabled selected>Select language</option> -->
-              <option value="English" {{ old('language', $shop->language)=='English' ? 'selected':'' }}>{{$shop->language}}</option>
-             
+            <select name="language" id="language" required class="form-select">
+              <option value="" disabled selected>Select language</option>
+              <option value="English" {{ old('language', $shop->language)=='English'?'selected':'' }}>English</option>
+              <option value="Swahili" {{ old('language', $shop->language)=='Swahili'?'selected':'' }}>Swahili</option>
             </select>
+            <div class="invalid-feedback">Please select a language.</div>
           </div>
           <div class="col-md-4">
             <label for="country" class="form-label">Country <span class="text-danger">*</span></label>
-            <select name="country" id="country" class="form-select" required>
-              <option value="{{$shop->country}}" {{ old('country', $shop->country)=='United States' ? 'selected':'' }}>{{country_name($shop->country)}}</option>
+            <select name="country" id="country" required class="form-select">
+              <option value="" disabled selected>Select country</option>
               @foreach($countries as $country)
-                <option value="{{$country->id}}" {{ old('country', $shop->country)=='United States' ? 'selected':'' }}>{{country_name($country->id)}}</option>
+                <option value="{{ $country->id }}" {{ old('country', $shop->country)==$country->id?'selected':'' }}>{{ $country->name }}</option>
               @endforeach
             </select>
+            <div class="invalid-feedback">Please select a country.</div>
           </div>
- <div class="col-md-4">
-  <label for="currency" class="form-label">
-    Currency <span class="text-danger">*</span>
-  </label>
-  <select
-    id="currency"
-    name="currency"
-    class="form-select @error('currency') is-invalid @enderror"
-    required
-  >
-    <option value="" disabled {{ old('currency', $shop->currency) ? '' : 'selected' }}>
-      Select a currency
-    </option>
-    @foreach(currencies() as $code => $name)
-      <option
-        value="{{ $code }}"
-        {{ old('currency', $shop->currency) === $code ? 'selected' : '' }}
-      >
-        {{ $name }} ({{ $code }})
-      </option>
-    @endforeach
-  </select>
-  @error('currency')
-    <div class="invalid-feedback">{{ $message }}</div>
-  @else
-    <div class="invalid-feedback">Please select a currency.</div>
-  @enderror
-</div>
+          <div class="col-md-4">
+            <label for="currency" class="form-label">
+              Currency <span class="text-danger">*</span>
+            </label>
+            <select
+              id="currency"
+              name="currency"
+              class="form-select @error('currency') is-invalid @enderror"
+              required
+            >
+              <option value="" disabled {{ old('currency', $shop->currency) ? '' : 'selected' }}>
+                Select a currency
+              </option>
+              @foreach(currencies() as $code => $name)
+                <option
+                  value="{{ $code }}"
+                  {{ old('currency', $shop->currency) === $code ? 'selected' : '' }}
+                >
+                  ({{ $code }})
+                </option>
+              @endforeach
+            </select>
+            @error('currency')
+              <div class="invalid-feedback">{{ $message }}</div>
+            @else
+              <div class="invalid-feedback">Please select a currency.</div>
+            @enderror
+          </div>
 
         </div>
       </div>
@@ -113,9 +115,19 @@
         </div>
       </div>
 
-      
+      {{-- 3) Shop Description --}}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">3. Describe Your Shop</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="bio" class="form-label">Shop Description <span class="text-danger">*</span></label>
+            <textarea id="bio" name="bio" class="form-control" rows="4" required>{{ old('bio', $shop->bio) }}</textarea>
+            <div class="form-text">Tell customers about your shop and what makes it special.</div>
+          </div>
+        </div>
+      </div>
 
-      {{-- 3) Billing Info --}}
+      {{-- 4) Billing Info --}}
       <div class="card mb-4">
         <div class="card-header fw-semibold">4. Share Your Billing Info</div>
         <div class="card-body">
@@ -136,7 +148,7 @@
         </div>
       </div>
 
-      {{-- 4) Security --}}
+      {{-- 5) Security --}}
       <div class="card mb-4">
         <div class="card-header fw-semibold">5. Your Shop Security</div>
         <div class="card-body">
@@ -159,13 +171,46 @@
               </div>
             @endif
           </div>
+
+          <div class="mt-4">
+            <label for="featured_image" class="form-label">Featured Image (optional)</label>
+            <input class="form-control" type="file" id="featured_image" name="featured_image" accept="image/*">
+            <div class="form-text">This image will be displayed prominently on your shop page. Recommended size: 1200x400 pixels.</div>
+            @if($shop->featured_image)
+              <div class="mt-2">
+                <img src="{{ asset('storage/' . $shop->featured_image) }}" alt="featured image" class="img-fluid rounded" style="max-width: 300px; max-height: 150px; object-fit: cover;">
+              </div>
+            @endif
+          </div>
         </div>
       </div>
 
       {{-- Submit --}}
       <div class="text-end">
+        <a href="{{ route('seller.shops.show', $shop) }}" class="btn btn-secondary px-4">Cancel</a>
         <button type="submit" class="btn btn-primary px-4">Save Changes</button>
       </div>
     </form>
 </div>
+
+<!-- Ensure jQuery is loaded before Select2 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  $('#currency').select2({
+    placeholder: 'Select a currency',
+    width: '100%',
+    minimumResultsForSearch: 0 // Always show search box
+  });
+  $('#country').select2({
+    placeholder: 'Select country',
+    width: '100%',
+    minimumResultsForSearch: 0 // Always show search box
+  });
+});
+</script>
+
 @endsection

@@ -34,6 +34,25 @@
   </div>
 @endif
 
+<!-- Featured Image Section -->
+@if($shop->featured_image)
+<section class="py-4 bg-white">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <img 
+          src="{{ asset('storage/' . $shop->featured_image) }}" 
+          alt="{{ $shop->name }} featured image"
+          class="w-100 rounded"
+          style="height: 300px; object-fit: cover;"
+        >
+      </div>
+    </div>
+  </div>
+</section>
+@endif
+
+<!-- Shop Overview -->
 <!-- Store Overview -->
 <section class="py-5 bg-light">
   <div class="container">

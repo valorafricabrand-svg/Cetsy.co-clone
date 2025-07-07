@@ -38,6 +38,18 @@
     </div>
   @endif
 
+  {{-- Featured Image --}}
+  @if($shop->featured_image_url)
+    <div class="mb-4">
+      <img 
+        src="{{ asset('storage/' . $shop->featured_image) }}" 
+        alt="{{ $shop->name }} featured image"
+        class="w-100 rounded"
+        style="height: 300px; object-fit: cover;"
+      >
+    </div>
+  @endif
+
   {{-- Bio --}}
   @if($shop->bio)
     <div class="card mb-4">

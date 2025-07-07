@@ -111,6 +111,17 @@ if (! function_exists('theme')) {
 }
 
 
+ function country_name($id){
+    if (!$id) {
+        return 'N/A';
+    }
+    $country = Country::find($id);
+    return $country ? $country->name : 'N/A';
+ }
+
+
+
+
     function themed_view(string $view, array $data = [])
     {
        
@@ -125,10 +136,7 @@ if (! function_exists('theme')) {
     }
 
 
-     function country_name($id){
-    $country = Country::find($id);
-    return $country->name;
- }
+
 
 
 
