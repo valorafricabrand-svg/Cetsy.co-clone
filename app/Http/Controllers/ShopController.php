@@ -34,13 +34,14 @@ public function create()
     {
         $data = $request->validate([
             // 1) Shop preferences
-            'language'         => 'required|string|in:English',
+            'language'         => 'required|string|in:English,Swahili',
             'country'          => 'required|string|exists:countries,id',
             'currency'         => 'required|string',
 
             // 2) Name & slug
             'name'             => 'required|string|max:255',
             'slug'             => 'nullable|string|max:255|unique:shops,slug',
+            'bio'              => 'required|string|max:1000',
 
             // 4) Billing info
             'address'          => 'required|string|max:255',
@@ -51,6 +52,7 @@ public function create()
 
             // Optional logo
             'logo'             => 'nullable|image|max:2048',
+            'featured_image'   => 'nullable|image|max:2048',
         ]);
 
         // Auto-generate slug if blank
@@ -66,6 +68,13 @@ public function create()
             $data['logo'] = $request->file('logo')
                                    ->store('shops/logos', 'public');
         }
+
+        // Handle featured image upload
+        if ($request->file('featured_image')) {
+            $path = $request->file('featured_image')->store('shops/featured_images','public');
+            $data['featured_image'] = $path;
+        }
+        
 
         // We don't persist the password field
         unset($data['password']);
@@ -131,17 +140,19 @@ public function update(Request $request, Shop $shop)
 
     // Validate just the editable fields
     $data = $request->validate([
-        'language'       => 'required|string|in:English',
+        'language'       => 'required|string|in:English,Swahili',
         'country'        => 'required|string|exists:countries,id',
         'currency'       => 'required|string',
         'name'           => 'required|string|max:255',
         'slug'           => 'required|string|max:255|unique:shops,slug,' . $shop->id,
+        'bio'            => 'required|string|max:1000',
         'address'        => 'required|string|max:255',
         'city'           => 'required|string|max:100',
         'postal'         => 'required|string|max:20',
         'password'       => ['required','current_password'],
         'enable_2fa'     => ['required','boolean'],
         'logo'           => ['nullable','image','max:2048'],
+        'featured_image' => ['nullable','image','max:2048'],
     ]);
 
     // Slug uniqueness fallback if someone cleared it
@@ -156,6 +167,12 @@ public function update(Request $request, Shop $shop)
     if ($request->hasFile('logo')) {
         $data['logo'] = $request->file('logo')
                                ->store('shops/logos','public');
+    }
+
+    // Featured image upload
+    if ($request->file('featured_image')) {
+        $path = $request->file('featured_image')->store('shops/featured_images','public');
+        $data['featured_image'] = $path;
     }
 
     // Remove password from data

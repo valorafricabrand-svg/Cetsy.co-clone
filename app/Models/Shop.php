@@ -65,6 +65,7 @@ class Shop extends Model
         'slug',
         'bio',
         'logo',
+        'featured_image',
 
         // Section 3: payment
         'bank_account',
@@ -137,6 +138,18 @@ class Shop extends Model
     }
 
     /**
+     * Accessor: full public URL for the shop featured image.
+     *
+     * @return string|null
+     */
+    public function getFeaturedImageUrlAttribute(): ?string
+    {
+        return $this->featured_image
+            ? Storage::disk('public')->url($this->featured_image)
+            : null;
+    }
+
+    /**
      * A shop belongs to a single user.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -193,5 +206,13 @@ class Shop extends Model
         return Order::whereHas('items.product', function (Builder $query) {
             $query->where('shop_id', $this->id);
         });
+    }
+
+    /**
+     * A shop can have multiple media items.
+     */
+    public function media()
+    {
+        return $this->hasMany(Media::class);
     }
 }
