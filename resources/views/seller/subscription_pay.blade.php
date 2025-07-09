@@ -29,6 +29,10 @@
     $paypalAmount = in_array($currency, $zeroDecimal)
         ? (string) intval(round($rawAmount))          // e.g. 70 → "70"
         : number_format($rawAmount, 2, '.', '');      // e.g. 70 → "70.00"
+
+    // Shopper wallet balance & ability to cover
+    $walletBalance = wallet();
+    $canPayWithWallet = $walletBalance >= $rawAmount;
 @endphp
 
 {{-- -------------------------------------------------------------------
@@ -45,7 +49,7 @@
 
                         <h2 class="text-center fw-semibold mb-3">Process Subscription Payment</h2>
                         <p class="text-muted text-center mb-4">
-                            Pay securely with PayPal or major credit / debit cards.
+                            Pay securely with PayPal, a major card, or your in-site wallet.
                         </p>
 
                         {{-- Amount display --}}
@@ -53,7 +57,39 @@
                             Amount&nbsp;:&nbsp; {{ $currency }} {{ number_format($rawAmount, 2) }}
                         </div>
 
-                        {{-- PayPal / Card button --}}
+                        {{-- ── 1️⃣  WALLET OPTION ─────────────────────────── --}}
+                        @if($walletBalance > 0)
+                          <form action="{{ route('seller.subscription.wallet.pay') }}"
+                                method="POST"
+                                class="d-grid gap-2 mb-3">
+                            @csrf
+                            <button type="submit"
+                                    class="btn btn-primary {{ $canPayWithWallet ? '' : 'disabled' }}"
+                                    @disabled(!$canPayWithWallet)>
+                              Pay via Wallet
+                              <small class="fw-normal">
+                                ({{ $currency }} {{ number_format($walletBalance,2) }})
+                              </small>
+                            </button>
+                          </form>
+
+                          @unless($canPayWithWallet)
+                            <div class="alert alert-warning small d-flex align-items-center gap-2 mb-3">
+                              <i class="fas fa-exclamation-circle"></i>
+                              <span>
+                                Wallet balance is insufficient — please deposit funds, then click
+                                "Pay via Wallet" again.
+                              </span>
+                            </div>
+                            <a href="{{ route('wallet.deposit.form') }}"
+                               class="btn btn-success d-flex align-items-center gap-2 mb-4">
+                              <i class="fas fa-plus"></i>
+                              Deposit&nbsp;Funds
+                            </a>
+                          @endunless
+                        @endif
+
+                        {{-- ── 2️⃣  PayPal / Card button ─────────────────── --}}
                         <div id="paypal-button-container" class="text-center mb-3"></div>
 
                         {{-- Result / error placeholder --}}
@@ -116,4 +152,4 @@ $(function () {
 
 });
 </script>
-@endsection 
+@endsection
