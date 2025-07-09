@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Review;
 
 /**
  * Class Shop
@@ -66,6 +67,8 @@ class Shop extends Model
         'bio',
         'logo',
         'featured_image',
+        'announcement',
+        'policies',
 
         // Section 3: payment
         'bank_account',
@@ -214,5 +217,15 @@ class Shop extends Model
     public function media()
     {
         return $this->hasMany(Media::class);
+    }
+
+    /**
+     * All reviews for this shop.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
     }
 }

@@ -157,6 +157,7 @@ Route::middleware('auth')->group(function () {
 
     // Reviews
     Route::post('/orders/{order}/items/{item}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])->name('orders.items.reviews.store');
+    Route::get('/shops/{shop}/reviews', [\App\Http\Controllers\ReviewController::class, 'shopReviews'])->name('shop.reviews');
 
     // Wallet
     Route::prefix('wallet')->name('wallet.')->group(function () {
@@ -254,6 +255,7 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
 
     Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription');
     Route::post('subscription', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
+    Route::post('subscription/wallet', [SubscriptionController::class, 'walletPay'])->name('subscription.wallet.pay');
     Route::get('subscription/success/{id}', [SubscriptionController::class, 'successDeposit'])->name('subscription.success');
     Route::post('subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 
@@ -277,6 +279,8 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
 
     // Payment Methods
     Route::resource('payment-methods', \App\Http\Controllers\Seller\PaymentMethodController::class);
+
+    Route::resource('shop-posts', \App\Http\Controllers\ShopPostController::class);
 });
 
 /*

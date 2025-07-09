@@ -127,6 +127,30 @@
         </div>
       </div>
 
+      {{-- 3b) Shop Announcement --}}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">3b. Shop Announcement</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="announcement" class="form-label">Shop Announcement</label>
+            <textarea id="announcement" name="announcement" class="form-control" rows="2">{{ old('announcement', $shop->announcement) }}</textarea>
+            <div class="form-text">This announcement will appear at the top of your shop page.</div>
+          </div>
+        </div>
+      </div>
+
+      {{-- 3c) Shop Policies --}}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">3c. Shop Policies</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="policies" class="form-label">Shop Policies</label>
+            <textarea id="policies" name="policies" class="form-control" rows="3">{{ old('policies', $shop->policies) }}</textarea>
+            <div class="form-text">Describe your shop's return, shipping, and other important policies.</div>
+          </div>
+        </div>
+      </div>
+
       {{-- 4) Billing Info --}}
       <div class="card mb-4">
         <div class="card-header fw-semibold">4. Share Your Billing Info</div>

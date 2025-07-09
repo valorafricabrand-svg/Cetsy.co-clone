@@ -41,7 +41,7 @@ public function create()
             // 2) Name & slug
             'name'             => 'required|string|max:255',
             'slug'             => 'nullable|string|max:255|unique:shops,slug',
-            'bio'              => 'required|string|max:1000',
+            'bio'              => 'nullable|string|max:1000',
 
             // 4) Billing info
             'address'          => 'required|string|max:255',
@@ -145,7 +145,7 @@ public function update(Request $request, Shop $shop)
         'currency'       => 'required|string',
         'name'           => 'required|string|max:255',
         'slug'           => 'required|string|max:255|unique:shops,slug,' . $shop->id,
-        'bio'            => 'required|string|max:1000',
+        'bio'            => 'nullable|string|max:1000',
         'address'        => 'required|string|max:255',
         'city'           => 'required|string|max:100',
         'postal'         => 'required|string|max:20',
@@ -153,6 +153,8 @@ public function update(Request $request, Shop $shop)
         'enable_2fa'     => ['required','boolean'],
         'logo'           => ['nullable','image','max:2048'],
         'featured_image' => ['nullable','image','max:2048'],
+        'announcement'   => ['nullable','string','max:1000'],
+        'policies'       => ['nullable','string'],
     ]);
 
     // Slug uniqueness fallback if someone cleared it
