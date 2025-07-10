@@ -35,10 +35,10 @@ class ProductVariation extends Model
     public function values()
     {
         return $this->belongsToMany(
-            ProductOptionValue::class,
-            'product_variation_value',        // pivot table
-            'product_variation_id',
-            'product_option_value_id'
+            \App\Models\CategoryAttributeValue::class,
+            'product_variation_value',           // pivot table
+            'product_variation_id',              // this model’s FK on pivot
+            'category_attribute_value_id'        // related model’s FK on pivot
         )->withTimestamps();
     }
 

@@ -234,6 +234,15 @@
       </div>
     @endif
 
+
+
+
+@include('products._variation', ['product' => $product])
+
+
+
+
+
     {{-- Existing Images --}}
     <div class="card mb-4 shadow-sm">
       <div class="card-header bg-light">
@@ -253,22 +262,28 @@
 
 
                         <!-- Feature / Un-feature -->
-{{-- inside the <div class="card-footer"> for each $media --}}
+@php
+    // Build the full URL for this media item
+    $mediaUrl = asset('storage/' . $media->url);
+    // Check if this is the featured image
+    $isFeatured = $product->featured_image === $mediaUrl;
+@endphp
+
 <form action="{{ route('products.setFeaturedImage', $product) }}"
       method="POST"
       class="d-inline">
     @csrf
     @method('PATCH')
 
+    {{-- Pass only the relative path; the controller will prepend asset('storage/') --}}
     <input type="hidden" name="featured_image" value="{{ $media->url }}">
 
     <button type="submit"
-            class="btn btn-sm {{ $product->featured_image === $media->url
-                ? 'btn-outline-warning'
-                : 'btn-outline-success' }}">
-        {{ $product->featured_image === $media->url ? 'Featured' : 'Make Featured' }}
+            class="btn btn-sm {{ $isFeatured ? 'btn-outline-warning' : 'btn-outline-success' }}">
+        {{ $isFeatured ? 'Featured' : 'Make Featured' }}
     </button>
 </form>
+
 
 
 

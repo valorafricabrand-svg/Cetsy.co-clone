@@ -13,4 +13,15 @@ class CategoryAttributeValue extends Model
     {
         return $this->belongsTo(CategoryAttribute::class,'category_attribute_id');
     }
+
+
+    public function variations()
+{
+    return $this->belongsToMany(
+        \App\Models\ProductVariation::class,
+        'product_variation_value',
+        'category_attribute_value_id',
+        'product_variation_id'
+    )->withTimestamps();
+}
 }

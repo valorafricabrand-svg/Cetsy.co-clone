@@ -5,7 +5,7 @@ use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController
+    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController
 };
 
 use App\Http\Controllers\Admin\{
@@ -113,6 +113,22 @@ Route::middleware('auth')->group(function () {
         '/account/orders/{order}/cancel',
         [OrderController::class, 'cancel']
     )->name('orders.cancel');
+
+
+// Add new variation to a product
+Route::post('products/{product}/variations', [VariationController::class, 'store'])
+     ->name('variations.store');
+
+// Update an existing variation
+Route::patch('variations/{variation}', [VariationController::class, 'update'])
+     ->name('variations.update');
+
+// Delete a variation
+Route::delete(
+    'variations/{variation}',
+    [VariationController::class, 'destroy']
+)->name('variations.destroy');
+
 
     Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
 
