@@ -7,28 +7,44 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
+
 class CategoryController extends Controller
 {
     
-    /**
-     * Public: Display a listing of top‐level categories.
-     */
-// app/Http/Controllers/Admin/CategoryController.php
-public function index()
+
+
+public function index(Request $request)
 {
-    /** 
-     * Grab only top-level categories (parent_id = null) 
-     * and eager-load their children, already ordered.
-     */
-    $parents = Category::with(['children' => function ($q) {
-            $q->orderBy('name');
-        }])
+    // Grab the query string, if any (e.g. /admin/categories?q=shoes)
+    $search = trim($request->input('q'));
+
+    $parents = Category::with([
+            'children' => function ($q) use ($search) {
+                // Always order children alphabetically …
+                $q->orderBy('name');
+
+                // … and, when searching, keep only the children that match.
+                if ($search !== '') {
+                    $q->where('name', 'like', "%{$search}%");
+                }
+            }
+        ])
         ->whereNull('parent_id')
+        ->when($search !== '', function ($q) use ($search) {
+            /* Show a top-level (parent) row if:
+               1) the parent’s own name matches   OR
+               2) at least one of its children matches. */
+            $q->where('name', 'like', "%{$search}%")
+               ->orWhereHas('children', function ($q2) use ($search) {
+                   $q2->where('name', 'like', "%{$search}%");
+               });
+        })
         ->orderBy('name')
         ->get();
 
     return view('categories.index', compact('parents'));
 }
+
 
 
     /**
@@ -123,9 +139,9 @@ public function show(Category $category)
 
         $category->update($data);
 
-        return redirect()
-            ->route('categories.index')
-            ->with('success', 'Category updated successfully!');
+      
+
+          return back()->with('success','Category updated.');
     }
 
     /**

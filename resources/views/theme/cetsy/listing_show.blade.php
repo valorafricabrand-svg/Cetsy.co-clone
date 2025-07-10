@@ -98,7 +98,7 @@
           <div class="mb-3 d-flex flex-wrap gap-2">
             <span class="badge bg-success bg-opacity-10 text-success">
               <i class="fa-solid fa-store me-1"></i>
-              <a href="{{ route('shop.show', $product->shop->id) }}" class="text-success text-decoration-none">
+              <a href="{{ route('shop.show', $product->shop->slug) }}" class="text-success text-decoration-none">
                 {{ $product->shop->name }}
               </a>
             </span>
