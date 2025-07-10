@@ -22,9 +22,17 @@
         @endif
       @endforeach
 
-      <a href="{{ route('admin.categories.index') }}" class="btn btn-outline-secondary mb-4">
-        ← Back to list
-      </a>
+      {{-- NAV BUTTONS --}}
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{{ route('admin.categories.index') }}" class="btn btn-outline-secondary">
+          ← Back to list
+        </a>
+
+        {{-- NEW: Edit Category button --}}
+        <a href="{{ route('admin.categories.edit', $category) }}" class="btn btn-primary">
+          ✎ Edit Category
+        </a>
+      </div>
 
       {{-- Category card --}}
       <div class="card shadow-sm mb-5">

@@ -12,13 +12,33 @@
   <div class="py-6">
     <div class="container-lg">
 
+      {{-- flash --}}
       @includeWhen(session('success'), 'partials.alert-success', ['msg'=>session('success')])
 
-      <div class="d-flex justify-content-end mb-4">
-        <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
+      {{-- TOP BAR ------------------------------------------------------------ --}}
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        {{-- search --}}
+        <form action="{{ route('admin.categories.index') }}" method="GET" class="w-100 w-md-auto mb-3 mb-md-0">
+          <div class="input-group">
+            <input type="text"
+                   name="q"
+                   value="{{ request('q') }}"
+                   placeholder="Search categories…"
+                   class="form-control"
+                   autocomplete="off">
+            <button class="btn btn-outline-secondary" type="submit">Search</button>
+            @if(request()->filled('q'))
+              <a href="{{ route('admin.categories.index') }}" class="btn btn-outline-danger">×</a>
+            @endif
+          </div>
+        </form>
+
+        {{-- new category --}}
+        <a href="{{ route('admin.categories.create') }}" class="btn btn-primary ms-md-3">
           + New Category
         </a>
       </div>
+      {{-- /TOP BAR ----------------------------------------------------------- --}}
 
       @if($parents->isEmpty())
         <p class="text-muted">No categories found.</p>
@@ -37,17 +57,15 @@
                 </tr>
               </thead>
               <tbody>
+                {{-- PARENTS --}}
+                @foreach($parents as $parent)
+                  @include('categories._row', ['cat'=>$parent, 'isChild'=>false])
 
-              {{-- PARENTS --}}
-              @foreach($parents as $parent)
-                @include('categories._row', ['cat'=>$parent,'isChild'=>false])
-
-                {{-- CHILDREN --}}
-                @foreach($parent->children as $child)
-                  @include('categories._row', ['cat'=>$child,'isChild'=>true])
+                  {{-- CHILDREN --}}
+                  @foreach($parent->children as $child)
+                    @include('categories._row', ['cat'=>$child, 'isChild'=>true])
+                  @endforeach
                 @endforeach
-              @endforeach
-
               </tbody>
             </table>
           </div>
