@@ -44,4 +44,6 @@ class ShippingProfile extends Model
         return $this->belongsTo(Country::class);
     }
 
+    
+
 }

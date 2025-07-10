@@ -94,7 +94,7 @@
             <a href="{{ route('listing.show', $product) }}">
               @if($img = $product->media->first())
                 <img
-                  src="{{ asset('storage/'.$img->url) }}"
+                  src="{{ asset( $product->featured_image ?? 'storage/' . $img->url ) }}"
                   alt="{{ $product->name }}"
                   class="card-img-top"
                   style="height:200px; object-fit:cover;"
@@ -165,7 +165,7 @@
             <a href="{{ route('listing.show', $service) }}">
               @if($img = $service->media->first())
                 <img
-                  src="{{ asset('storage/'.$img->url) }}"
+                  src="{{ asset( $product->featured_image ?? 'storage/' . $img->url ) }}"
                   alt="{{ $service->name }}"
                   class="card-img-top"
                   style="height:200px; object-fit:cover;"
@@ -235,7 +235,7 @@
             <a href="{{ route('listing.show', $product) }}">
               @if($img = $product->media->first())
                 <img
-                  src="{{ asset('storage/'.$img->url) }}"
+                  src="{{ asset( $product->featured_image ?? 'storage/' . $img->url ) }}"
                   alt="{{ $product->name }}"
                   class="card-img-top"
                   style="height:200px; object-fit:cover;"

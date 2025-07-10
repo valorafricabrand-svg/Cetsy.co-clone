@@ -47,4 +47,11 @@ public function childrenRecursive()
     return $this->children()->with('childrenRecursive');
 }
 
+
+public function attributes()
+{
+    return $this->hasMany(CategoryAttribute::class);
+}
+
+
 }

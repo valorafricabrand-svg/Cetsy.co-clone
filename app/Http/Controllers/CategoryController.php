@@ -13,24 +13,32 @@ class CategoryController extends Controller
     /**
      * Public: Display a listing of top‐level categories.
      */
-    public function index()
-    {
-        $categories = Category::whereNull('parent_id')
-            ->orderBy('name')
-            ->get();
+// app/Http/Controllers/Admin/CategoryController.php
+public function index()
+{
+    /** 
+     * Grab only top-level categories (parent_id = null) 
+     * and eager-load their children, already ordered.
+     */
+    $parents = Category::with(['children' => function ($q) {
+            $q->orderBy('name');
+        }])
+        ->whereNull('parent_id')
+        ->orderBy('name')
+        ->get();
 
-        return view('categories.index', compact('categories'));
-    }
+    return view('categories.index', compact('parents'));
+}
+
 
     /**
      * Public: Redirect to products filtered by this category.
      */
-    public function show(Category $category)
-    {
-        return redirect()->route('products.index', [
-            'category_id' => $category->id,
-        ]);
-    }
+public function show(Category $category)
+{
+    return view('categories.show', compact('category'));
+}
+
 
     /**
      * Admin: Show the form for creating a new category.
@@ -150,6 +158,21 @@ public function categoryShow($slug)
             ->withQueryString();
     return themed_view('show_category', compact('category', 'products'));
 }
+
+
+
+// app/Http/Controllers/CategoryController.php
+public function attributeTemplate($id)
+{
+
+$category = Category::find($id);
+    return response()->json(
+        $category->attributes()
+                 ->with('values:id,category_attribute_id,value')
+                 ->get(['id','name'])
+    );
+}
+
 
 
 }

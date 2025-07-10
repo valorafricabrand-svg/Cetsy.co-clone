@@ -183,4 +183,9 @@ class User extends Authenticatable
             'product_id'
         );
     }
+
+    public function productReviews()
+{
+    return $this->hasMany(ProductReview::class);
+}
 }
