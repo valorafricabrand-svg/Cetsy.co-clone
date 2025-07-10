@@ -59,7 +59,7 @@
                 </td>
 
                 {{-- Unit price --}}
-                <td>KES {{ number_format($item['price'],2) }}</td>
+                <td>{{ get_currency() }} {{ number_format($item['price'],2) }}</td>
 
                 {{-- Quantity controls --}}
                 <td>
@@ -101,14 +101,14 @@
                       <option value="{{ $profile['id'] }}"
                           @selected($profile['id']===$item['selected_shipping_profile_id'])>
                         {{ $profile['name'] }}
-                        (KES {{ number_format($profile['base_rate'],2) }})
+                        ({{ get_currency() }} {{ number_format($profile['base_rate'],2) }})
                       </option>
                     @endforeach
                   </select>
                 </td>
 
                 {{-- Line total = (price + rate) × qty --}}
-                <td>KES {{ number_format($lineTotal,2) }}</td>
+                <td>{{ get_currency() }} {{ number_format($lineTotal,2) }}</td>
 
                 {{-- Remove button --}}
                 <td>
@@ -134,7 +134,7 @@
               @endphp
               <tr>
                 <th colspan="4" class="text-end">Total:</th>
-                <th colspan="2">KES {{ number_format($grand,2) }}</th>
+                <th colspan="2">{{ get_currency() }} {{ number_format($grand,2) }}</th>
               </tr>
             </tfoot>
           </table>
