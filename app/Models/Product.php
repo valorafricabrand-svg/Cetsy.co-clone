@@ -56,6 +56,8 @@ class Product extends Model
         'is_active',
         'listing_paid_at',
         'next_due_date',
+        'featured_image',
+        'country_id',
     ];
 
     /**
@@ -124,4 +126,42 @@ class Product extends Model
                     ->withPivot('is_default')
                     ->withTimestamps();
     }
+
+
+    public function reviews()
+{
+    return $this->hasMany(ProductReview::class);
+}
+
+/* Optional shortcuts */
+public function scopeWithAvgRating($query)
+{
+    return $query->withAvg('reviews', 'rating')
+                 ->withCount('reviews');
+}
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class);
+    }
+
+  public function faqs()
+    {
+        return $this->hasMany(ProductFaq::class);
+    }
+
+
+    // app/Models/Product.php
+
+public function options()
+{
+    return $this->hasMany(ProductOption::class);
+}
+
+public function variations()
+{
+    return $this->hasMany(ProductVariation::class);
+}
+
+
 }

@@ -125,6 +125,35 @@
                    accept=".zip,.pdf,.mp3,.mp4,.docx,.xlsx,.pptx">
             @error('digital_file') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
+{{-- Country --}}
+<div class="mb-3">
+  <label for="country_id" class="form-label fw-semibold">Country of origin</label>
+
+  <select id="country_id"
+          name="country_id"
+          class="form-select form-select-lg @error('country_id') is-invalid @enderror"
+          required>
+
+      {{-- Disabled placeholder --}}
+      <option value=""
+              disabled
+              {{ old('country_id', $product->country_id ?? '') === '' ? 'selected' : '' }}>
+          Choose a country
+      </option>
+
+      {{-- Country options --}}
+      @foreach ($countries as $country)
+          <option value="{{ $country->id }}"
+                  @selected(old('country_id', $product->country_id ?? null) == $country->id)>
+              {{ $country->name }}
+          </option>
+      @endforeach
+  </select>
+
+  @error('country_id')
+      <div class="invalid-feedback">{{ $message }}</div>
+  @enderror
+</div>
 
           <!-- Shipping Profiles -->
           <div class="col-12" id="shippingProfilesSection" style="display:none;">
@@ -221,6 +250,28 @@
                        data-bs-toggle="modal" data-bs-target="#imageModal"
                        data-img-url="{{ asset('storage/'.$media->url) }}">
                   <div class="card-footer text-center py-2">
+
+
+                        <!-- Feature / Un-feature -->
+{{-- inside the <div class="card-footer"> for each $media --}}
+<form action="{{ route('products.setFeaturedImage', $product) }}"
+      method="POST"
+      class="d-inline">
+    @csrf
+    @method('PATCH')
+
+    <input type="hidden" name="featured_image" value="{{ $media->url }}">
+
+    <button type="submit"
+            class="btn btn-sm {{ $product->featured_image === $media->url
+                ? 'btn-outline-warning'
+                : 'btn-outline-success' }}">
+        {{ $product->featured_image === $media->url ? 'Featured' : 'Make Featured' }}
+    </button>
+</form>
+
+
+
                     <form action="{{ route('media.destroy',$media) }}" method="POST" onsubmit="return confirm('Remove image?')">
                       @csrf @method('DELETE')
                       <button class="btn btn-sm btn-outline-danger">
