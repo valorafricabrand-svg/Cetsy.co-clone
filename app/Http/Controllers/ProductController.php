@@ -51,7 +51,7 @@ class ProductController extends Controller
 }
 
 
-public function store(Request $request)
+public function store(Request $request): RedirectResponse
 {
     $user = Auth::user();
 
@@ -60,6 +60,7 @@ public function store(Request $request)
             ->with('warning', 'You must create a shop before listing products.');
     }
 
+    // 1) validate everything, including variations[*]
     $data = $request->validate([
         'name'                       => 'required|string|max:255',
         'type'                       => 'required|in:physical,digital,service',
@@ -74,46 +75,57 @@ public function store(Request $request)
         'shipping_profiles.*'        => 'exists:shipping_profiles,id',
         'default_shipping_profile'   => 'required_if:type,physical|exists:shipping_profiles,id',
         'country_id'                 => 'nullable|exists:countries,id',
+
+        // new: variations from your Alpine form
+        'variations'                 => 'nullable|array',
+        'variations.*.sku'           => 'required_with:variations|string|max:255',
+        'variations.*.price'         => 'required_with:variations|numeric|min:0',
+        'variations.*.stock'         => 'required_with:variations|integer|min:0',
+        'variations.*.values'        => 'required_with:variations|array|min:1',
+        'variations.*.values.*'      => 'required_with:variations|exists:category_attribute_values,id',
     ]);
 
-    // Ensure default is among selected
+    // 2) ensure default shipping profile  (unchanged)
     if ($data['type'] === 'physical'
-        && ! in_array($data['default_shipping_profile'], $data['shipping_profiles'])) {
+        && ! in_array($data['default_shipping_profile'], $data['shipping_profiles'], true)
+    ) {
         return back()
             ->withInput()
             ->withErrors(['default_shipping_profile' => 'Default must be one of the selected shipping profiles.']);
     }
 
-    // Create product
+    // 3) create the Product
     $product = new Product();
     $product->shop_id                     = $user->shop->id;
     $product->name                        = $data['name'];
     $product->slug                        = Str::slug($data['name']) . '-' . uniqid();
     $product->type                        = $data['type'];
     $product->category_id                 = $data['category_id'] ?? null;
-    $product->country_id                 = $data['country_id'] ?? null;
+    $product->country_id                  = $data['country_id'] ?? null;
     $product->description                 = $data['description'] ?? null;
     $product->price                       = $data['price'];
     $product->discount_price              = $data['discount_price'] ?? null;
-    $product->stock                       = $data['type'] === 'physical' ? ($data['stock'] ?? 0) : null;
+    $product->stock                       = $data['type'] === 'physical'
+                                            ? ($data['stock'] ?? 0)
+                                            : null;
     $product->default_shipping_profile_id = $data['type'] === 'physical'
                                             ? $data['default_shipping_profile']
                                             : null;
     $product->is_active                   = false;
     $product->save();
 
-    // Sync shipping profiles if physical
+    // 4) sync shipping profiles if physical
     if ($data['type'] === 'physical') {
         $syncData = [];
-        foreach ($data['shipping_profiles'] as $profileId) {
-            $syncData[$profileId] = [
-                'is_default' => $profileId == $data['default_shipping_profile'],
+        foreach ($data['shipping_profiles'] as $pid) {
+            $syncData[$pid] = [
+                'is_default' => $pid == $data['default_shipping_profile'],
             ];
         }
         $product->shippingProfiles()->sync($syncData);
     }
 
-    // Upload images
+    // 5) upload images
     if ($request->hasFile('media')) {
         foreach ($request->file('media') as $file) {
             $path = $file->store('products', 'public');
@@ -121,77 +133,91 @@ public function store(Request $request)
         }
     }
 
-    // Handle digital file
+    // 6) handle digital file
     if ($data['type'] === 'digital' && $request->hasFile('digital_file')) {
         $disk = 'local';
         $file = $request->file('digital_file');
-
-        // No old files to delete on create
-
-        $path     = $file->store('digital-files', $disk);
+        $path = $file->store('digital-files', $disk);
         $filename = $file->getClientOriginalName();
-
         $product->digitalFiles()->create([
             'filename' => $filename,
             'filepath' => $path,
         ]);
     }
 
+    // 7) create variations (if any)
+    if (! empty($data['variations']) && is_array($data['variations'])) {
+        foreach ($data['variations'] as $varData) {
+            // create the variation row
+            $variation = $product->variations()->create([
+                'sku'   => $varData['sku'],
+                'price' => $varData['price'],
+                'stock' => $varData['stock'],
+            ]);
+            // link it to the chosen attribute-values
+            $variation->values()->sync($varData['values']);
+        }
+    }
+
+    // 8) redirect to edit with success
     return redirect()
         ->route('products.edit', $product)
         ->with('success', 'Product created successfully! You can now add more details or activate it.');
 }
 
-public function edit(Product $product)
-{
-    // 1. Get the current user’s shop and its shipping profiles
-    $shop = Auth::user()->shop;
-    $shippingProfiles = $shop->shippingProfiles()->get();
+ public function edit(Product $product)
+    {
+        // 1. Get the current user’s shop and its shipping profiles
+        $shop = Auth::user()->shop;
+        $shippingProfiles = $shop->shippingProfiles;
 
-    // 2. Determine which profiles are assigned and which is default
-    $assignedProfiles = $product
-        ->shippingProfiles()
-        ->pluck('shipping_profile_id')
-        ->toArray();
+        // 2. Determine which profiles are assigned and which is default
+        $assignedProfiles = $product
+            ->shippingProfiles()
+            ->pluck('shipping_profile_id')
+            ->toArray();
 
-    $defaultProfileId = $product
-        ->shippingProfiles()
-        ->wherePivot('is_default', true)
-        ->pluck('shipping_profile_id')
-        ->first();
+        $defaultProfileId = $product
+            ->shippingProfiles()
+            ->wherePivot('is_default', true)
+            ->pluck('shipping_profile_id')
+            ->first();
 
-    // 3. Dropdown data for categories and countries
-    $categories = Category::orderBy('name')->get();
-    $countries  = Country::orderBy('name')->get();
+        // 3. Dropdown data for categories and countries
+        $categories = Category::orderBy('name')->get();
+        $countries  = Country::orderBy('name')->get();
 
-    // 4. Load variations → values (only real columns)
-    $product->load([
-        'variations.values:id,product_option_id,value',
-    ]);
+        // 4. Eager-load variations → values, and category → attributes → values
+        $product->load([
+            // for each variation, load its CategoryAttributeValue rows
+            'variations.values:id,category_attribute_id,value',
+            // for the category’s attribute picker, load each attribute’s values
+            'category.attributes.values:id,category_attribute_id,value',
+        ]);
 
-    // 5. Build JS payload for existing variations
-    $existingVariationsForJs = $product->variations
-        ->map(fn($v) => [
-            'key'      => (string) now()->timestamp . random_int(1, 9999),
-            'id'       => $v->id,
-            'valueIds' => $v->values->pluck('id')->all(),
-            'sku'      => $v->sku,
-            'price'    => (float) $v->price,
-            'stock'    => (int)   $v->stock,
-        ])
-        ->all();
+        // 5. Build JS payload for existing variations
+        $existingVariationsForJs = $product->variations
+            ->map(fn($v) => [
+                'key'      => now()->timestamp . random_int(1000, 9999),
+                'id'       => $v->id,
+                'valueIds' => $v->values->pluck('id')->all(),
+                'sku'      => $v->sku,
+                'price'    => (float) $v->price,
+                'stock'    => (int)   $v->stock,
+            ])
+            ->all();
 
-    // 6. Return the edit view with all data
-    return view('products.edit', [
-        'product'                 => $product,
-        'shippingProfiles'        => $shippingProfiles,
-        'assignedProfiles'        => $assignedProfiles,
-        'defaultProfileId'        => $defaultProfileId,
-        'categories'              => $categories,
-        'countries'               => $countries,
-        'existingVariationsForJs' => $existingVariationsForJs,
-    ]);
-}
+        // 6. Render the edit view
+        return view('products.edit', [
+            'product'                 => $product,
+            'shippingProfiles'        => $shippingProfiles,
+            'assignedProfiles'        => $assignedProfiles,
+            'defaultProfileId'        => $defaultProfileId,
+            'categories'              => $categories,
+            'countries'               => $countries,
+            'existingVariationsForJs' => $existingVariationsForJs,
+        ]);
+    }
 
 
 
