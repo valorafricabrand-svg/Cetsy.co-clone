@@ -5,7 +5,7 @@ use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController
+    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController
 };
 
 use App\Http\Controllers\Admin\{
@@ -15,7 +15,8 @@ use App\Http\Controllers\Admin\{
     SettingsController as AdminSetting,
     PayoutRequestController as AdminPayoutRequestController,
     PaymentController,
-    PaymentTypeController
+    PaymentTypeController,
+    CategoryAttributeController
 };
 
 use App\Http\Controllers\Seller\{
@@ -66,6 +67,10 @@ Route::prefix('cart')->name('cart.')->group(function () {
 
 });
 
+// routes/web.php
+Route::get('/categories/{id}/attribute-template',
+    [CategoryController::class, 'attributeTemplate']
+)->name('categories.attributeTemplate');
 
 
 
@@ -108,6 +113,22 @@ Route::middleware('auth')->group(function () {
         '/account/orders/{order}/cancel',
         [OrderController::class, 'cancel']
     )->name('orders.cancel');
+
+
+// Add new variation to a product
+Route::post('products/{product}/variations', [VariationController::class, 'store'])
+     ->name('variations.store');
+
+// Update an existing variation
+Route::patch('variations/{variation}', [VariationController::class, 'update'])
+     ->name('variations.update');
+
+// Delete a variation
+Route::delete(
+    'variations/{variation}',
+    [VariationController::class, 'destroy']
+)->name('variations.destroy');
+
 
     Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
 
@@ -154,7 +175,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders/{order}/chat', [OrderMessageController::class, 'show'])->name('orders.chat.show');
     Route::get('/orders/{order}/chat/messages', [OrderMessageController::class, 'fetch'])->name('orders.chat.fetch');
     Route::post('/orders/{order}/chat', [OrderMessageController::class, 'send'])->name('orders.chat.send');
-
+Route::patch(
+    '/products/{product}/set-featured-image',
+    [ProductController::class, 'setFeaturedImage']
+)->name('products.setFeaturedImage');
     // Reviews
     Route::post('/orders/{order}/items/{item}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])->name('orders.items.reviews.store');
     Route::get('/shops/{shop}/reviews', [\App\Http\Controllers\ReviewController::class, 'shopReviews'])->name('shop.reviews');
@@ -201,6 +225,20 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
     Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
+
+            /* create (store) — needs the parent category id */
+        Route::post('/categories/{category}/attributes',
+            [CategoryAttributeController::class, 'store']
+        )->name('categories.attributes.store');
+
+        /* update + destroy — shallow, no category prefix */
+        Route::put('/category-attributes/{attribute}',
+            [CategoryAttributeController::class, 'update']
+        )->name('category-attributes.update');
+
+        Route::delete('/category-attributes/{attribute}',
+            [CategoryAttributeController::class, 'destroy']
+        )->name('category-attributes.destroy');
     Route::resource('categories', CategoryController::class);
 
     Route::get('kyc', [KycController::class, 'index'])->name('kyc.index');

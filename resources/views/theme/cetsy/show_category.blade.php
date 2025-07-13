@@ -39,7 +39,7 @@
                                 {{-- Cover image (4 × 3) --}}
                                 <a href="{{ route('listing.show', $product) }}" class="ratio ratio-4x3">
                                     @if ($img = $product->media->first())
-                                        <img src="{{ asset('storage/' . $img->url) }}"
+                                        <img src="{{ asset( $product->featured_image ?? 'storage/' . $img->url ) }}"
                                              alt="{{ $product->name }}"
                                              class="object-fit-cover rounded-top">
                                     @else

@@ -183,7 +183,7 @@
               <a href="{{ route('listing.show', $product) }}" class="text-decoration-none">
                 @if($img = $product->media->first())
                   <img 
-                    src="{{ asset('storage/'.$img->url) }}" 
+                    src="{{ asset( $product->featured_image ?? 'storage/' . $img->url ) }}" 
                     alt="{{ $product->name }}" 
                     class="card-img-top"
                     style="height: 200px; object-fit: cover;"

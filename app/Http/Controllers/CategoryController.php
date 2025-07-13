@@ -7,30 +7,54 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
+
 class CategoryController extends Controller
 {
     
-    /**
-     * Public: Display a listing of top‐level categories.
-     */
-    public function index()
-    {
-        $categories = Category::whereNull('parent_id')
-            ->orderBy('name')
-            ->get();
 
-        return view('categories.index', compact('categories'));
-    }
+
+public function index(Request $request)
+{
+    // Grab the query string, if any (e.g. /admin/categories?q=shoes)
+    $search = trim($request->input('q'));
+
+    $parents = Category::with([
+            'children' => function ($q) use ($search) {
+                // Always order children alphabetically …
+                $q->orderBy('name');
+
+                // … and, when searching, keep only the children that match.
+                if ($search !== '') {
+                    $q->where('name', 'like', "%{$search}%");
+                }
+            }
+        ])
+        ->whereNull('parent_id')
+        ->when($search !== '', function ($q) use ($search) {
+            /* Show a top-level (parent) row if:
+               1) the parent’s own name matches   OR
+               2) at least one of its children matches. */
+            $q->where('name', 'like', "%{$search}%")
+               ->orWhereHas('children', function ($q2) use ($search) {
+                   $q2->where('name', 'like', "%{$search}%");
+               });
+        })
+        ->orderBy('name')
+        ->get();
+
+    return view('categories.index', compact('parents'));
+}
+
+
 
     /**
      * Public: Redirect to products filtered by this category.
      */
-    public function show(Category $category)
-    {
-        return redirect()->route('products.index', [
-            'category_id' => $category->id,
-        ]);
-    }
+public function show(Category $category)
+{
+    return view('categories.show', compact('category'));
+}
+
 
     /**
      * Admin: Show the form for creating a new category.
@@ -115,9 +139,9 @@ class CategoryController extends Controller
 
         $category->update($data);
 
-        return redirect()
-            ->route('categories.index')
-            ->with('success', 'Category updated successfully!');
+      
+
+          return back()->with('success','Category updated.');
     }
 
     /**
@@ -150,6 +174,21 @@ public function categoryShow($slug)
             ->withQueryString();
     return themed_view('show_category', compact('category', 'products'));
 }
+
+
+
+// app/Http/Controllers/CategoryController.php
+public function attributeTemplate($id)
+{
+
+$category = Category::find($id);
+    return response()->json(
+        $category->attributes()
+                 ->with('values:id,category_attribute_id,value')
+                 ->get(['id','name'])
+    );
+}
+
 
 
 }

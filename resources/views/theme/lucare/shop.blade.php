@@ -129,7 +129,7 @@
         @foreach($products as $product)
           <div class="col">
             <div class="card h-100 shadow-sm border-0 product-card">
-              <a href="{{ route('products.show', $product) }}" class="text-decoration-none">
+              <a href="{{ route('listing.show', $product) }}" class="text-decoration-none">
                 @if($img = $product->media->first())
                   <img 
                     src="{{ asset('storage/'.$img->url) }}" 
@@ -145,13 +145,13 @@
               </a>
               <div class="card-body d-flex flex-column">
                 <h6 class="card-title text-truncate">
-                  <a href="{{ route('products.show', $product) }}" class="text-dark text-decoration-none">
+                  <a href="{{ route('listing.show', $product) }}" class="text-dark text-decoration-none">
                     {{ $product->name }}
                   </a>
                 </h6>
                 <p class="text-primary fw-bold mb-3">KES {{ number_format($product->price, 2) }}</p>
                 <div class="mt-auto d-flex justify-content-center">
-                  <a href="{{ route('products.show', $product) }}"
+                  <a href="{{ route('listing.show', $product) }}"
                      class="btn btn-outline-primary btn-sm rounded-pill px-3">
                     <i class="fas fa-eye me-1"></i> View
                   </a>

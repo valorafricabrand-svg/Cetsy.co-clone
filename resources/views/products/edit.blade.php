@@ -6,7 +6,7 @@
     <h2 class="mb-0">Edit Listing</h2>
     <div>
         <a href="{{ route('products.index') }}" class="btn btn-outline-secondary me-2">
-            <i class="fas fa-arrow-left me-1"></i> Back to Products
+            <i class="fas fa-arrow-left me-1"></i> Back to Listings
         </a>
         <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
             <i class="fas fa-plus me-1"></i> Add New Listing
@@ -34,7 +34,7 @@
         <div class="row g-4">
           <!-- Name -->
           <div class="col-12">
-            <label for="name" class="form-label fw-semibold">Product Name</label>
+            <label for="name" class="form-label fw-semibold">Listing Name</label>
             <input type="text" id="name" name="name"
                    class="form-control @error('name') is-invalid @enderror"
                    value="{{ old('name', $product->name) }}" required autofocus>
@@ -43,7 +43,7 @@
 
           <!-- Type -->
           <div class="col-md-6">
-            <label for="type" class="form-label fw-semibold">Product Type</label>
+            <label for="type" class="form-label fw-semibold">Listing Type</label>
             <select id="type" name="type"
                     class="form-select @error('type') is-invalid @enderror" required>
               <option value="">Choose type</option>
@@ -125,6 +125,35 @@
                    accept=".zip,.pdf,.mp3,.mp4,.docx,.xlsx,.pptx">
             @error('digital_file') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
+{{-- Country --}}
+<div class="mb-3">
+  <label for="country_id" class="form-label fw-semibold">Country of origin</label>
+
+  <select id="country_id"
+          name="country_id"
+          class="form-select form-select-lg @error('country_id') is-invalid @enderror"
+          required>
+
+      {{-- Disabled placeholder --}}
+      <option value=""
+              disabled
+              {{ old('country_id', $product->country_id ?? '') === '' ? 'selected' : '' }}>
+          Choose a country
+      </option>
+
+      {{-- Country options --}}
+      @foreach ($countries as $country)
+          <option value="{{ $country->id }}"
+                  @selected(old('country_id', $product->country_id ?? null) == $country->id)>
+              {{ $country->name }}
+          </option>
+      @endforeach
+  </select>
+
+  @error('country_id')
+      <div class="invalid-feedback">{{ $message }}</div>
+  @enderror
+</div>
 
           <!-- Shipping Profiles -->
           <div class="col-12" id="shippingProfilesSection" style="display:none;">
@@ -205,6 +234,15 @@
       </div>
     @endif
 
+
+
+
+@include('products._variation', ['product' => $product])
+
+
+
+
+
     {{-- Existing Images --}}
     <div class="card mb-4 shadow-sm">
       <div class="card-header bg-light">
@@ -221,6 +259,34 @@
                        data-bs-toggle="modal" data-bs-target="#imageModal"
                        data-img-url="{{ asset('storage/'.$media->url) }}">
                   <div class="card-footer text-center py-2">
+
+
+                        <!-- Feature / Un-feature -->
+@php
+    // Build the full URL for this media item
+    $mediaUrl = asset('storage/' . $media->url);
+    // Check if this is the featured image
+    $isFeatured = $product->featured_image === $mediaUrl;
+@endphp
+
+<form action="{{ route('products.setFeaturedImage', $product) }}"
+      method="POST"
+      class="d-inline">
+    @csrf
+    @method('PATCH')
+
+    {{-- Pass only the relative path; the controller will prepend asset('storage/') --}}
+    <input type="hidden" name="featured_image" value="{{ $media->url }}">
+
+    <button type="submit"
+            class="btn btn-sm {{ $isFeatured ? 'btn-outline-warning' : 'btn-outline-success' }}">
+        {{ $isFeatured ? 'Featured' : 'Make Featured' }}
+    </button>
+</form>
+
+
+
+
                     <form action="{{ route('media.destroy',$media) }}" method="POST" onsubmit="return confirm('Remove image?')">
                       @csrf @method('DELETE')
                       <button class="btn btn-sm btn-outline-danger">

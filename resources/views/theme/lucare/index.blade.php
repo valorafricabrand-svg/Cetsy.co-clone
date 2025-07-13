@@ -24,7 +24,7 @@
         </p>
 
         <div class="d-flex flex-column flex-sm-row justify-content-center justify-content-lg-start gap-3 mb-5">
-          <a href="{{ route('products.index') }}"
+          <a href="{{ route('listings') }}"
              class="btn btn-primary btn-lg rounded-pill shadow px-4">
             <i class="fa-solid fa-shop me-2"></i>Shop Now
           </a>
@@ -66,7 +66,7 @@
     <div class="row row-cols-2 row-cols-sm-3 row-cols-md-6 g-3" data-aos="fade-up">
       @foreach($categories as $cat)
         <div class="col">
-          <a href="{{ route('categories.show', $cat->slug) }}" class="text-decoration-none">
+          <a href="{{ route('category.show', $cat->slug) }}" class="text-decoration-none">
             <div class="ratio ratio-1x1 position-relative rounded-3 overflow-hidden category-card">
               @if($cat->image)
                 <img src="{{ asset('storage/'.$cat->image) }}"
@@ -103,7 +103,7 @@
       @forelse($featuredProducts as $product)
         <div class="col" data-aos="zoom-in">
           <div class="card h-100 border-0 shadow-sm product-card">
-            <a href="{{ route('products.show', $product) }}" class="d-block">
+            <a href="{{ route('listing.show', $product) }}" class="d-block">
               @if($img = $product->media->first())
                 <img src="{{ asset('storage/'.$img->url) }}"
                      alt="{{ $product->name }}"
@@ -118,11 +118,11 @@
             </a>
             <div class="card-body d-flex flex-column">
               <h5 class="card-title text-truncate mb-1">
-                <a href="{{ route('products.show', $product) }}" class="text-dark">{{ $product->name }}</a>
+                <a href="{{ route('listing.show', $product) }}" class="text-dark">{{ $product->name }}</a>
               </h5>
               <p class="text-primary fw-bold mb-3">KES {{ number_format($product->price,2) }}</p>
               <div class="mt-auto d-flex justify-content-between">
-                <a href="{{ route('products.show', $product) }}"
+                <a href="{{ route('listing.show', $product) }}"
                    class="btn btn-outline-primary btn-sm">
                   <i class="fa-solid fa-eye me-1"></i> View
                 </a>

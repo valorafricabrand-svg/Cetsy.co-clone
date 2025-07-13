@@ -154,4 +154,18 @@ class ProductController extends Controller
     return view('theme.listings', compact('products'));
 }
 
+
+    public function toggleFeatured(Product $product): RedirectResponse
+    {
+        $product->is_featured = ! $product->is_featured;
+        $product->save();
+
+        return back()->with(
+            'success',
+            $product->is_featured
+                ? 'Product has been marked as featured.'
+                : 'Product has been un-featured.'
+        );
+    }
+
 }

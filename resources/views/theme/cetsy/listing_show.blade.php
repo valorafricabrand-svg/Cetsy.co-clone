@@ -10,8 +10,8 @@
          qty: 1,
          busy: false,
          shippingProfileId: {{ $product->shippingProfiles->firstWhere('is_default', true)->id ?? 'null' }},
-         share() {
-           navigator.clipboard.writeText('{{ url()->current() }}')
+         share(url) {
+           navigator.clipboard.writeText(url)
              .then(() => toast('Link copied to clipboard!'))
              .catch(() => toast('Unable to copy link','danger'));
          }
@@ -26,7 +26,7 @@
     @endif
 
     <div class="row g-lg-5">
-      {{-- Gallery --}}
+      {{-- GALLERY ------------------------------------------------------- --}}
       <div class="col-lg-7" data-aos="fade-right">
         <div id="productCarousel" class="carousel slide shadow-sm rounded-4 overflow-hidden mb-3" data-bs-ride="carousel">
           <div class="carousel-inner">
@@ -39,7 +39,6 @@
               </div>
             @endforeach
           </div>
-
           @if($product->media->count() > 1)
             <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
               <span class="carousel-control-prev-icon"></span>
@@ -62,45 +61,53 @@
             @endforeach
           </div>
         @endif
-
-        <div class="mb-4 text-muted small">{!! $product->description !!}</div>
       </div>
 
-      {{-- Details --}}
+      {{-- DETAILS (sticky) --------------------------------------------- --}}
       <div class="col-lg-5" data-aos="fade-left">
         <div class="position-lg-sticky" style="top: 1rem;">
           <h1 class="h2 fw-bold">{{ $product->name }}</h1>
-       @if(!empty($product->discount_price) && $product->discount_price < $product->price)
-    <div class="d-flex align-items-baseline gap-3">
-      <span class="h4 text-success fw-semibold mb-0">
-        {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
-      </span>
-      <span class="h6 text-muted text-decoration-line-through mb-0">
-        {{ get_currency() }} {{ number_format($product->price, 2) }}
-      </span>
-    </div>
-  @else
-  <p class="h4 text-success fw-semibold mb-2">
-    {{ get_currency() }} {{ number_format($product->price, 2) }}
-  </p>
-@endif
 
-          {{-- Status & Shop --}}
+          {{-- Ratings --}}
+          <div class="mb-2">
+            @for($i=1; $i<=5; $i++)
+              <i class="fa-star{{ $i <= round($product->avg_rating ?? 0) ? ' fa-solid text-warning' : ' fa-regular text-muted' }}"></i>
+            @endfor
+            <small class="ms-1 text-muted">
+              ({{ $product->reviews_count ?? 0 }} reviews)
+            </small>
+          </div>
+
+          {{-- Pricing --}}
+          @if(!empty($product->discount_price) && $product->discount_price < $product->price)
+            <div class="d-flex align-items-baseline gap-3">
+              <span class="h4 text-success fw-semibold mb-0">
+                {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
+              </span>
+              <span class="h6 text-muted text-decoration-line-through mb-0">
+                {{ get_currency() }} {{ number_format($product->price, 2) }}
+              </span>
+            </div>
+          @else
+            <p class="h4 text-success fw-semibold mb-2">
+              {{ get_currency() }} {{ number_format($product->price, 2) }}
+            </p>
+          @endif
+
+          {{-- Shop & Stock badges --}}
           <div class="mb-3 d-flex flex-wrap gap-2">
             <span class="badge bg-success bg-opacity-10 text-success">
               <i class="fa-solid fa-store me-1"></i>
-              <a href="{{ route('shop.show', $product->shop) }}" class="text-success text-decoration-none">
+              <a href="{{ route('shop.show', $product->shop->slug) }}" class="text-success text-decoration-none">
                 {{ $product->shop->name }}
               </a>
             </span>
-            @if($product->stock > 0)
-              <span class="badge bg-primary bg-opacity-10 text-primary">In Stock</span>
-            @else
-              <span class="badge bg-danger bg-opacity-10 text-danger">Out of Stock</span>
-            @endif
+            <span class="badge {{ $product->stock > 0 ? 'bg-primary bg-opacity-10 text-primary' : 'bg-danger bg-opacity-10 text-danger' }}">
+              {{ $product->stock > 0 ? 'In Stock' : 'Out of Stock' }}
+            </span>
           </div>
 
-          {{-- Quick actions --}}
+          {{-- Quick-action buttons --}}
           <div class="d-flex flex-wrap gap-2 mb-4">
             <form method="POST" action="{{ route('favorites.toggle') }}">
               @csrf
@@ -109,8 +116,8 @@
                 <i class="fa-regular fa-heart{{ $isFavorited ? ' text-danger fa-solid' : '' }}"> </i> Favourites
               </button>
             </form>
-            <button class="btn btn-outline-secondary" @click="share" data-bs-toggle="tooltip" title="Copy link">
-              <i class="fa-solid fa-share-nodes"></i> Share
+            <button class="btn btn-outline-secondary" @click="share('{{ url()->current() }}')" data-bs-toggle="tooltip" title="Copy link">
+              <i class="fa-solid fa-share-nodes"></i>
             </button>
             <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#offerModal">
               <i class="fa-solid fa-hand-holding-dollar me-1"></i>Make an offer
@@ -120,8 +127,17 @@
             </button>
           </div>
 
-          {{-- Description --}}
-          <div class="mb-4 text-muted small">{!! Str::limit($product->description, 250) !!}</div>
+          {{-- Highlights (bullet list) --}}
+          @if($product->highlights)
+            <ul class="list-unstyled mb-4 small">
+              @foreach($product->highlights as $highlight)
+                <li class="d-flex mb-1">
+                  <i class="fa-solid fa-check text-success me-2"></i>
+                  <span>{{ $highlight }}</span>
+                </li>
+              @endforeach
+            </ul>
+          @endif
 
           {{-- Category --}}
           <p class="mb-2">
@@ -136,8 +152,15 @@
             @endif
           </p>
 
+          {{-- Country of origin --}}
+          @if($product->country)
+            <p class="mb-4 small text-muted">
+              <i class="fa-solid fa-globe-africa me-1"></i>Made in {{ $product->country->name }}
+            </p>
+          @endif
+
+          {{-- ADD-TO-CART BLOCK (physical/digital) --}}
           @if($product->type !== 'service')
-            {{-- Physical or Digital Product --}}
             <div class="border rounded-4 p-4 bg-light-subtle">
               {{-- Quantity --}}
               <div class="mb-3 d-flex align-items-center gap-2">
@@ -148,7 +171,7 @@
                 <button class="btn btn-outline-secondary btn-sm" @click="qty++">+</button>
               </div>
 
-              {{-- Shipping --}}
+              {{-- Shipping profile --}}
               @if($product->shippingProfiles->count())
                 <div class="mb-3">
                   <label class="form-label fw-semibold">Shipping</label>
@@ -186,7 +209,7 @@
               </div>
             </div>
           @else
-            {{-- Service Listing --}}
+            {{-- Service Listing notice --}}
             <div class="card border-info border-start-4 shadow-sm mb-4">
               <div class="card-body d-flex flex-wrap align-items-center gap-3">
                 <div class="bg-info bg-opacity-10 text-info rounded-circle d-flex align-items-center justify-content-center"
@@ -210,9 +233,126 @@
               </div>
             </div>
           @endif
+
+          {{-- Social share --}}
+          <div class="mt-3 small">
+            <span class="me-1">Share:</span>
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" target="_blank">
+              <i class="fa-brands fa-facebook fa-lg text-primary"></i>
+            </a>
+            <a href="https://twitter.com/intent/tweet?url={{ urlencode(url()->current()) }}" class="mx-2" target="_blank">
+              <i class="fa-brands fa-x-twitter fa-lg"></i>
+            </a>
+            <a href="https://pinterest.com/pin/create/button/?url={{ urlencode(url()->current()) }}&media={{ asset('storage/'.$product->featured_image) }}&description={{ urlencode($product->name) }}" target="_blank">
+              <i class="fa-brands fa-pinterest fa-lg text-danger"></i>
+            </a>
+          </div>
         </div>
       </div>
     </div>
+
+    {{-- DESCRIPTION TABS ------------------------------------------------ --}}
+    <ul class="nav nav-tabs mt-5" id="itemTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="desc-tab" data-bs-toggle="tab" data-bs-target="#desc-pane" type="button">
+          Description
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="shipping-tab" data-bs-toggle="tab" data-bs-target="#shipping-pane" type="button">
+          Shipping & Returns
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-pane" type="button">
+          Reviews ({{ $product->reviews_count ?? 0 }})
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="faq-tab" data-bs-toggle="tab" data-bs-target="#faq-pane" type="button">
+          FAQs
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content bg-white p-4 border-bottom border-start border-end rounded-bottom-4 shadow-sm" id="itemTabContent">
+      {{-- Description Pane --}}
+      <div class="tab-pane fade show active" id="desc-pane" role="tabpanel">
+        {!! $product->description !!}
+      </div>
+
+      {{-- Shipping & Returns Pane --}}
+      <div class="tab-pane fade" id="shipping-pane" role="tabpanel">
+        <h5 class="fw-semibold mb-3">Shipping policies</h5>
+        <p class="small text-muted">{{ $shopPolicies->shipping ?? 'Shipping details coming soon.' }}</p>
+        <h5 class="fw-semibold mt-4 mb-3">Returns & exchanges</h5>
+        <p class="small text-muted">{{ $shopPolicies->returns ?? 'Returns policy coming soon.' }}</p>
+      </div>
+
+      {{-- Reviews Pane --}}
+      <div class="tab-pane fade" id="reviews-pane" role="tabpanel">
+        @forelse($reviews as $review)
+          <div class="border-bottom py-3">
+            <div class="d-flex align-items-center mb-1">
+              @for($i=1; $i<=5; $i++)
+                <i class="fa-star{{ $i <= $review->rating ? ' fa-solid text-warning' : ' fa-regular text-muted' }} me-1"></i>
+              @endfor
+              <small class="text-muted ms-auto">{{ $review->created_at->diffForHumans() }}</small>
+            </div>
+            <p class="small mb-0">{{ $review->comment }}</p>
+            <div class="small text-muted mt-1">{{ $review->user->name }}</div>
+          </div>
+        @empty
+          <p class="text-muted small mb-0">No reviews yet.</p>
+        @endforelse
+      </div>
+
+      {{-- FAQ Pane --}}
+      <div class="tab-pane fade" id="faq-pane" role="tabpanel">
+        <div class="accordion" id="faqAccordion">
+          @forelse($faqs as $i => $faq)
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="faqHeading{{ $i }}">
+                <button class="accordion-button {{ $i ? 'collapsed' : '' }}" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#faqCollapse{{ $i }}">
+                  {{ $faq->question }}
+                </button>
+              </h2>
+              <div id="faqCollapse{{ $i }}" class="accordion-collapse collapse {{ $i ? '' : 'show' }}"
+                   data-bs-parent="#faqAccordion">
+                <div class="accordion-body small">{{ $faq->answer }}</div>
+              </div>
+            </div>
+          @empty
+            <p class="text-muted small mb-0">Seller hasn’t added any FAQs yet.</p>
+          @endforelse
+        </div>
+      </div>
+    </div>
+
+    {{-- CAROUSELS -------------------------------------------------------- --}}
+    @if($moreFromShop->count())
+      <h3 class="h5 fw-bold mt-5 mb-3">More from {{ $product->shop->name }}</h3>
+      <div class="row g-3">
+        @foreach($moreFromShop as $item)
+          <div class="col-6 col-md-3 col-lg-2">
+            @include('theme.'.theme().'.partials.product-card', ['item' => $item])
+          </div>
+        @endforeach
+      </div>
+    @endif
+
+    @if($relatedProducts->count())
+      <h3 class="h5 fw-bold mt-5 mb-3">Related items</h3>
+      <div class="row g-3">
+        @foreach($relatedProducts as $item)
+          <div class="col-6 col-md-3 col-lg-2">
+            @include('theme.'.theme().'.partials.product-card', ['item' => $item])
+          </div>
+        @endforeach
+      </div>
+    @endif
+
   </div>
 </section>
 

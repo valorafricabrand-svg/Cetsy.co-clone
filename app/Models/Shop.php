@@ -228,4 +228,10 @@ class Shop extends Model
     {
         return $this->hasMany(Review::class);
     }
+
+
+       public function policies()
+    {
+        return $this->hasOne(ShopPolicy::class);
+    }
 }

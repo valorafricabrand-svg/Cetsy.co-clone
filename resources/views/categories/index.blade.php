@@ -1,9 +1,10 @@
+{{-- resources/views/admin/categories/index.blade.php --}}
 @extends('layouts.app')
 
 @section('header')
-<h2 class="font-semibold text-xl text-gray-800 leading-tight">
-    {{ __('Categories') }}
-</h2>
+  <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+      {{ __('Categories') }}
+  </h2>
 @endsection
 
 @section('content')
@@ -11,63 +12,60 @@
   <div class="py-6">
     <div class="container-lg">
 
-      @if(session('success'))
-        <div class="alert alert-success mb-4" role="alert">
-          {{ session('success') }}
-        </div>
-      @endif
+      {{-- flash --}}
+      @includeWhen(session('success'), 'partials.alert-success', ['msg'=>session('success')])
 
-      <div class="d-flex justify-content-end mb-4">
-        <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
+      {{-- TOP BAR ------------------------------------------------------------ --}}
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        {{-- search --}}
+        <form action="{{ route('admin.categories.index') }}" method="GET" class="w-100 w-md-auto mb-3 mb-md-0">
+          <div class="input-group">
+            <input type="text"
+                   name="q"
+                   value="{{ request('q') }}"
+                   placeholder="Search categories…"
+                   class="form-control"
+                   autocomplete="off">
+            <button class="btn btn-outline-secondary" type="submit">Search</button>
+            @if(request()->filled('q'))
+              <a href="{{ route('admin.categories.index') }}" class="btn btn-outline-danger">×</a>
+            @endif
+          </div>
+        </form>
+
+        {{-- new category --}}
+        <a href="{{ route('admin.categories.create') }}" class="btn btn-primary ms-md-3">
           + New Category
         </a>
       </div>
+      {{-- /TOP BAR ----------------------------------------------------------- --}}
 
-      @if($categories->isEmpty())
+      @if($parents->isEmpty())
         <p class="text-muted">No categories found.</p>
       @else
         <div class="card shadow-sm">
-          <div class="card-body">
-            <table class="table table-bordered table-striped">
+          <div class="card-body p-0">
+            <table class="table table-bordered table-striped mb-0">
               <thead class="table-light">
                 <tr>
-                  <th scope="col">Image</th>
-                  <th scope="col">Name</th>
-                  <th scope="col">Slug</th>
-                  <th scope="col">Parent</th>
-                  <th scope="col">listing fee</th>
-                  <th scope="col">Actions</th>
+                  <th style="width:70px">Image</th>
+                  <th>Name</th>
+                  <th>Slug</th>
+                  <th>Parent</th>
+                  <th>Listing Fee</th>
+                  <th class="text-end" style="width:220px">Actions</th>
                 </tr>
               </thead>
               <tbody>
-              @foreach($categories as $cat)
-                <tr>
-                  <td class="text-center">
-                    @if($cat->image)
-                      <img src="{{ asset('storage/'.$cat->image) }}"
-                           class="img-fluid rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
-                    @else
-                      <span class="text-muted">—</span>
-                    @endif
-                  </td>
-                  <td>{{ $cat->name }}</td>
-                  <td>{{ $cat->slug }}</td>
-                  <td>{{ $cat->parent?->name ?? '—' }}</td>
-                  <td>{{ $cat->listing_fee }}</td>
-                  <td class="text-end">
-                    <a href="{{ route('admin.categories.edit', $cat) }}" class="btn btn-sm btn-warning">
-                      Edit
-                    </a>
-                    <form action="{{ route('admin.categories.destroy', $cat) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this category?');">
-                      @csrf
-                      @method('DELETE')
-                      <button type="submit" class="btn btn-sm btn-danger">
-                        Delete
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-              @endforeach
+                {{-- PARENTS --}}
+                @foreach($parents as $parent)
+                  @include('categories._row', ['cat'=>$parent, 'isChild'=>false])
+
+                  {{-- CHILDREN --}}
+                  @foreach($parent->children as $child)
+                    @include('categories._row', ['cat'=>$child, 'isChild'=>true])
+                  @endforeach
+                @endforeach
               </tbody>
             </table>
           </div>
