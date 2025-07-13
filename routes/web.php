@@ -341,6 +341,12 @@ Route::middleware('auth')->prefix('buyer')->name('buyer.')->group(function () {
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('messages', [MessageController::class, 'buyerIndex'])->name('messages.index');
     Route::get('messages/{conversationId}', [MessageController::class, 'show'])->name('messages.show');
+    
+    // Buyer Offer Management
+    Route::get('offers/available-products', [App\Http\Controllers\Buyer\OfferController::class, 'getAvailableProducts'])->name('offers.available-products');
+    Route::post('offers/{productId}/create', [App\Http\Controllers\Buyer\OfferController::class, 'createNewOffer'])->name('offers.create');
+    Route::get('offers/{offerId}/details', [App\Http\Controllers\Buyer\OfferController::class, 'showDetails'])->name('offers.details');
+    Route::post('offers/{offerId}/respond', [App\Http\Controllers\Buyer\OfferController::class, 'respondToCounterOffer'])->name('offers.respond');
 });
 
 /*
