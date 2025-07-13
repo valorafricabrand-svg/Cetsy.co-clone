@@ -6,7 +6,7 @@
     <h2 class="mb-0">Edit Listing</h2>
     <div>
         <a href="{{ route('products.index') }}" class="btn btn-outline-secondary me-2">
-            <i class="fas fa-arrow-left me-1"></i> Back to Products
+            <i class="fas fa-arrow-left me-1"></i> Back to Listings
         </a>
         <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
             <i class="fas fa-plus me-1"></i> Add New Listing
@@ -34,7 +34,7 @@
         <div class="row g-4">
           <!-- Name -->
           <div class="col-12">
-            <label for="name" class="form-label fw-semibold">Product Name</label>
+            <label for="name" class="form-label fw-semibold">Listing Name</label>
             <input type="text" id="name" name="name"
                    class="form-control @error('name') is-invalid @enderror"
                    value="{{ old('name', $product->name) }}" required autofocus>
@@ -43,7 +43,7 @@
 
           <!-- Type -->
           <div class="col-md-6">
-            <label for="type" class="form-label fw-semibold">Product Type</label>
+            <label for="type" class="form-label fw-semibold">Listing Type</label>
             <select id="type" name="type"
                     class="form-select @error('type') is-invalid @enderror" required>
               <option value="">Choose type</option>

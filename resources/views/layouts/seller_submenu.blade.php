@@ -7,10 +7,25 @@
     $pendingPayouts = \App\Models\PayoutRequest::where('user_id', Auth::id())
                          ->where('status','pending')->count();
     $formatMoney    = fn($amt) => number_format($amt,2);
-    // Unread messages count
-    $unreadMessages = \App\Models\Message::where('receiver_id', Auth::id())
-        ->where('is_read', false)
+    // Unread messages count for seller's products
+    $shop = Auth::user()->shop;
+    $unreadMessages = 0;
+    $favoritesCount = 0;
+    if ($shop) {
+        $productIds = $shop->products()->pluck('id');
+        $unreadMessages = \App\Models\Message::whereIn('product_id', $productIds)
+            ->where('receiver_id', Auth::id())
+            ->where('is_read', false)
+            ->count();
+        
+            // Favorites count for seller's products
+    $favoritesCount = \App\Models\Wishlist::whereIn('product_id', $productIds)->count();
+    
+    // Pending offers count for seller's products
+    $pendingOffers = \App\Models\Offer::whereIn('product_id', $productIds)
+        ->where('status', 'pending')
         ->count();
+    }
   @endphp
 
   <style>
@@ -162,6 +177,17 @@
           'label'=>'Messages',
           'unread'=>$unreadMessages
         ],
+        [
+          'url'=>route('seller.offers.index'),
+          'icon'=>'fas fa-hand-holding-dollar',
+          'label'=>'My Offers',
+          'count'=>$pendingOffers
+        ],
+        [
+          'url'=>route('seller.favorites.index'),
+          'icon'=>'fas fa-heart',
+          'label'=>'My Favorites',
+        ],
         ['url'=>route('shipping_profiles.index'),'icon'=>'fas fa-truck-fast','label'=>'Shipping'],
         ['url'=>route('seller.analytics.index'),'icon'=>'fas fa-chart-line','label'=>'Analytics'],
       ] as $item)
@@ -175,6 +201,9 @@
             <span class="fw-medium">{{ $item['label'] }}</span>
             @if(isset($item['unread']) && $item['unread'])
               <span class="badge badge-unread">{{ $item['unread'] }}</span>
+            @endif
+            @if(isset($item['count']) && $item['count'])
+              <span class="badge badge-pending rounded-pill ms-auto">{{ $item['count'] }}</span>
             @endif
             @if(str_starts_with($currentUrl, $item['url']))
               <i class="fas fa-chevron-right ms-auto"></i>

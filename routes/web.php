@@ -310,10 +310,19 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
     Route::get('buyers/{buyer}', [BuyerController::class, 'show'])->name('buyers.show');
 
     Route::resource('offers', App\Http\Controllers\Seller\OfferController::class);
+    Route::post('offers/{offer}/accept', [App\Http\Controllers\Seller\OfferController::class, 'accept'])->name('offers.accept');
+    Route::post('offers/{offer}/decline', [App\Http\Controllers\Seller\OfferController::class, 'decline'])->name('offers.decline');
+    Route::post('offers/{offer}/counter', [App\Http\Controllers\Seller\OfferController::class, 'counterOffer'])->name('offers.counter');
+    Route::post('offers/bulk-action', [App\Http\Controllers\Seller\OfferController::class, 'bulkAction'])->name('offers.bulk-action');
 
     Route::get('messages', [App\Http\Controllers\Seller\MessageController::class, 'index'])->name('messages.index');
-    Route::get('messages/{message}', [App\Http\Controllers\Seller\MessageController::class, 'show'])->name('messages.show');
-    Route::post('messages/{message}/reply', [App\Http\Controllers\Seller\MessageController::class, 'reply'])->name('messages.reply');
+    Route::get('messages/{conversationId}', [App\Http\Controllers\Seller\MessageController::class, 'show'])->name('messages.show');
+    Route::post('messages/{conversationId}/reply', [App\Http\Controllers\Seller\MessageController::class, 'reply'])->name('messages.reply');
+    Route::post('messages/{message}/mark-read', [App\Http\Controllers\Seller\MessageController::class, 'markAsRead'])->name('messages.mark-read');
+    Route::post('messages/bulk-mark-read', [App\Http\Controllers\Seller\MessageController::class, 'bulkMarkAsRead'])->name('messages.bulk-mark-read');
+
+    // Favorites
+    Route::get('favorites', [App\Http\Controllers\Seller\FavoriteController::class, 'index'])->name('favorites.index');
 
     // Payment Methods
     Route::resource('payment-methods', \App\Http\Controllers\Seller\PaymentMethodController::class);
@@ -331,11 +340,7 @@ Route::middleware('auth')->prefix('buyer')->name('buyer.')->group(function () {
     Route::get('orders/{order}', [AccountController::class, 'orderDetails'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('messages', [MessageController::class, 'buyerIndex'])->name('messages.index');
-    Route::get('messages/{message}', [MessageController::class, 'show'])->name('messages.show');
-
-    Route::get('/messages/{message}/chat', [MessageController::class, 'show'])->name('messages.chat.show');
-    Route::get('/messages/{message}/chat/messages', [MessageController::class, 'fetch'])->name('messages.chat.fetch');
-    Route::post('/messages/{message}/chat', [MessageController::class, 'send'])->name('messages.chat.send');
+    Route::get('messages/{conversationId}', [MessageController::class, 'show'])->name('messages.show');
 });
 
 /*

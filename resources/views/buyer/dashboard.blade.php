@@ -43,7 +43,7 @@
                         <div class="mb-3">
                             <i class="fas fa-heart fa-3x text-success"></i>
                         </div>
-                        <h5 class="fw-bold text-success">Wishlist</h5>
+                        <h5 class="fw-bold text-success">Favourites</h5>
                         <p class="fs-5 text-muted mb-0">
                             {{ $wishlistCount }} {{ Str::plural('Item', $wishlistCount) }}
                         </p>
