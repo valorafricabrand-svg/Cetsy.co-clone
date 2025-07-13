@@ -119,10 +119,17 @@
       <div class="card mb-4">
         <div class="card-header fw-semibold">3. Describe Your Shop</div>
         <div class="card-body">
-          <div class="mb-3">
+          <!-- <div class="mb-3">
             <label for="bio" class="form-label">Shop Description <span class="text-danger">*</span></label>
             <textarea id="bio" name="bio" class="form-control" rows="4" required>{{ old('bio', $shop->bio) }}</textarea>
             <div class="form-text">Tell customers about your shop and what makes it special.</div>
+          </div> -->
+          <div class="col-12">
+            <label for="bio" class="form-label fw-semibold">Shop Description</label>
+            <textarea id="bio" name="bio"
+                      class="form-control @error('bio') is-invalid @enderror"
+                      rows="6">{{ old('bio', $shop->bio) }}</textarea>
+            @error('bio') <div class="text-danger mt-1">{{ $message }}</div> @enderror
           </div>
         </div>
       </div>
@@ -133,7 +140,7 @@
         <div class="card-body">
           <div class="mb-3">
             <label for="announcement" class="form-label">Shop Announcement</label>
-            <textarea id="announcement" name="announcement" class="form-control" rows="2">{{ old('announcement', $shop->announcement) }}</textarea>
+            <textarea id="bio" name="announcement" class="form-control" rows="2">{{ old('announcement', $shop->announcement) }}</textarea>
             <div class="form-text">This announcement will appear at the top of your shop page.</div>
           </div>
         </div>
@@ -145,7 +152,7 @@
         <div class="card-body">
           <div class="mb-3">
             <label for="policies" class="form-label">Shop Policies</label>
-            <textarea id="policies" name="policies" class="form-control" rows="3">{{ old('policies', $shop->policies) }}</textarea>
+            <textarea id="bio" name="policies" class="form-control" rows="3">{{ old('policies', $shop->policies) }}</textarea>
             <div class="form-text">Describe your shop's return, shipping, and other important policies.</div>
           </div>
         </div>
@@ -235,6 +242,71 @@ document.addEventListener('DOMContentLoaded', function() {
     minimumResultsForSearch: 0 // Always show search box
   });
 });
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
+<script>
+  // TinyMCE
+  tinymce.init({
+    selector: '#bio',
+    plugins: 'image link media code fullscreen',
+    toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
+    menubar: false,
+    height: 300
+  });
+
+  // Toggle sections
+  document.getElementById('type').addEventListener('change', function(){
+    const show = { digital: ['digitalFileSection'], physical: ['stockSection','shippingProfilesSection'] };
+    ['stockSection','digitalFileSection','shippingProfilesSection'].forEach(id=>{
+      document.getElementById(id).style.display = show[this.value]?.includes(id) ? 'block' : 'none';
+    });
+  });
+  window.addEventListener('DOMContentLoaded', ()=> {
+    document.getElementById('type').dispatchEvent(new Event('change'));
+  });
+
+  // Auto-default when checkbox toggled
+  document.addEventListener('change', e=>{
+    if(!e.target.matches('input[name="shipping_profiles[]"]')) return;
+    const id = e.target.value;
+    if(e.target.checked){
+      document.getElementById('default_'+id).checked = true;
+    } else if(document.getElementById('default_'+id).checked){
+      const next = document.querySelector('input[name="shipping_profiles[]"]:checked');
+      if(next) document.getElementById('default_'+next.value).checked = true;
+    }
+  });
+
+  // Alpine.js: Image Upload + Sortable
+  function imageUploadSortable(){
+    return {
+      previews: [], idCounter:0, sortable:null,
+      handleFiles(files){ Array.from(files).forEach(f=> this.previewFile(f)); },
+      previewFile(file){
+        let reader=new FileReader();
+        reader.onload=e=>{
+          this.previews.push({id:this.idCounter++,url:e.target.result,fileObject:file});
+          this.$nextTick(()=> this.initSortable());
+        };
+        reader.readAsDataURL(file);
+      },
+      removeFile(i){ this.previews.splice(i,1); },
+      handleDrop(e){ if(e.dataTransfer.files.length) this.handleFiles(e.dataTransfer.files); },
+      initSortable(){
+        if(this.sortable) this.sortable.destroy();
+        this.sortable = Sortable.create(document.getElementById('previewList'), {
+          animation:150,
+          onEnd:evt=>{
+            let m=this.previews.splice(evt.oldIndex,1)[0];
+            this.previews.splice(evt.newIndex,0,m);
+          }
+        });
+      }
+    }
+  }
 </script>
 
 @endsection
