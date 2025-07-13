@@ -3,8 +3,8 @@
 @section('content')
 <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 30px;">
-        <h2 style="color: #dc3545; margin-bottom: 10px;">❌ Counter Offer Declined</h2>
-        <p style="color: #666; font-size: 16px;">A buyer has declined your counter offer.</p>
+        <h2 style="color: #17a2b8; margin-bottom: 10px;">🔄 New Counter Offer Received!</h2>
+        <p style="color: #666; font-size: 16px;">A buyer has made a counter offer to your product.</p>
     </div>
 
     <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
@@ -25,7 +25,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
             <div>
                 <strong style="color: #666;">Counter Offer Price:</strong>
-                <div style="font-size: 18px; font-weight: bold; color: #dc3545;">{{ $offer->formatted_price }}</div>
+                <div style="font-size: 18px; font-weight: bold; color: #17a2b8;">{{ $offer->formatted_price }}</div>
             </div>
             <div>
                 <strong style="color: #666;">Original Price:</strong>
@@ -44,13 +44,13 @@
     <div style="text-align: center; margin-top: 30px;">
         <a href="{{ route('seller.offers.index') }}" 
            style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-            View All Offers
+            Respond to Counter Offer
         </a>
     </div>
 
     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 14px;">
-        <p>Don't worry! You can still negotiate with other buyers or adjust your pricing strategy.</p>
-        <p>Consider reviewing your pricing or making a new counter offer to other interested buyers.</p>
+        <p>You can accept, decline, or make another counter offer to continue the negotiation.</p>
+        <p>Quick responses often lead to successful sales!</p>
     </div>
 </div>
 @endsection 

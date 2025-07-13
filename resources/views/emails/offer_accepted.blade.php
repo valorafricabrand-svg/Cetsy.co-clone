@@ -1,64 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offer Accepted</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #28a745; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
-        .product-card { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #dee2e6; }
-        .price { font-size: 24px; font-weight: bold; color: #28a745; }
-        .btn { display: inline-block; padding: 12px 24px; background: #007bff; color: white; text-decoration: none; border-radius: 6px; margin: 10px 0; }
-        .footer { text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🎉 Your Offer Has Been Accepted!</h1>
-        </div>
-        
-        <div class="content">
-            <p>Hello <strong>{{ $buyer->name }}</strong>,</p>
-            
-            <p>Great news! The seller has accepted your offer for the following product:</p>
-            
-            <div class="product-card">
-                <h3>{{ $product->name }}</h3>
-                <p><strong>Your Offer:</strong> <span class="price">{{ get_currency() }} {{ number_format($offer->offer_price, 2) }}</span></p>
-                <p><strong>Seller:</strong> {{ $seller->name }}</p>
-                <p><strong>Date Accepted:</strong> {{ now()->format('d M Y, H:i') }}</p>
-            </div>
-            
-            <p>Your offer has been accepted and the seller is ready to proceed with the transaction. You can now:</p>
-            
-            <ul>
-                <li>Contact the seller to arrange payment and delivery</li>
-                <li>Review the product details and seller information</li>
-                <li>Complete the transaction through the platform</li>
-            </ul>
-            
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" class="btn">
-                    View Product Details
-                </a>
-            </div>
-            
-            <p>If you have any questions about this transaction, please don't hesitate to contact our support team.</p>
-            
-            <p>Thank you for using our platform!</p>
-            
-            <p>Best regards,<br>
-            <strong>The {{ config('app.name') }} Team</strong></p>
-        </div>
-        
-        <div class="footer">
-            <p>This email was sent to {{ $buyer->email }}</p>
-            <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
-        </div>
+@extends('emails.layout')
+
+@section('content')
+<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="color: #28a745; margin-bottom: 10px;">🎉 Counter Offer Accepted!</h2>
+        <p style="color: #666; font-size: 16px;">Great news! A buyer has accepted your counter offer.</p>
     </div>
-</body>
-</html> 
+
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h3 style="color: #333; margin-bottom: 15px;">Offer Details</h3>
+        
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            @if($offer->product->media && $offer->product->media->count() > 0)
+                <img src="{{ $offer->product->media->first()->getUrl() }}" 
+                     alt="{{ $offer->product->name }}" 
+                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; margin-right: 15px;">
+            @endif
+            <div>
+                <h4 style="margin: 0; color: #333;">{{ $offer->product->name }}</h4>
+                <p style="margin: 5px 0; color: #666;">{{ $offer->product->shop->name ?? 'Unknown Shop' }}</p>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div>
+                <strong style="color: #666;">Accepted Price:</strong>
+                <div style="font-size: 18px; font-weight: bold; color: #28a745;">{{ $offer->formatted_price }}</div>
+            </div>
+            <div>
+                <strong style="color: #666;">Original Price:</strong>
+                <div style="font-size: 18px; font-weight: bold; color: #333;">{{ get_currency() }} {{ number_format($offer->product->price, 2) }}</div>
+            </div>
+        </div>
+
+        @if($offer->buyer_notes)
+            <div style="background: white; padding: 15px; border-radius: 6px; margin-top: 15px;">
+                <strong style="color: #666;">Buyer's Message:</strong>
+                <p style="margin: 5px 0; color: #333;">{{ $offer->buyer_notes }}</p>
+            </div>
+        @endif
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{{ route('seller.offers.index') }}" 
+           style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            View Offer Details
+        </a>
+    </div>
+
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 14px;">
+        <p>This offer has been accepted and is ready for processing.</p>
+        <p>Please contact the buyer to arrange the transaction details.</p>
+    </div>
+</div>
+@endsection 
