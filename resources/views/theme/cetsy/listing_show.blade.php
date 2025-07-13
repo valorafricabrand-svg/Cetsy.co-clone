@@ -106,17 +106,17 @@
               @csrf
               <input type="hidden" name="product_id" value="{{ $product->id }}">
               <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Add to favourites">
-                <i class="fa-regular fa-heart{{ $isFavorited ? ' text-danger fa-solid' : '' }}"></i>
+                <i class="fa-regular fa-heart{{ $isFavorited ? ' text-danger fa-solid' : '' }}"> </i> Favourites
               </button>
             </form>
             <button class="btn btn-outline-secondary" @click="share" data-bs-toggle="tooltip" title="Copy link">
-              <i class="fa-solid fa-share-nodes"></i>
+              <i class="fa-solid fa-share-nodes"></i> Share
             </button>
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#offerModal">
-              <i class="fa-solid fa-hand-holding-dollar me-1"></i>Offer
+            <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#offerModal">
+              <i class="fa-solid fa-hand-holding-dollar me-1"></i>Make an offer
             </button>
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#messageModal">
-              <i class="fa-regular fa-comments me-1"></i>Message
+            <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#messageModal">
+              <i class="fa-regular fa-comments me-1"></i>Message seller
             </button>
           </div>
 

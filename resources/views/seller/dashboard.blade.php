@@ -48,7 +48,7 @@
                 ],
                 [
                     'value' => $total_products,
-                    'label' => 'Total Products',
+                    'label' => 'Total Listings',
                     'icon'  => 'fas fa-box-open',
                     'class' => 'text-info',
                     'href'  => route('products.index')

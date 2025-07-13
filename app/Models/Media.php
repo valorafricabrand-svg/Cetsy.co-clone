@@ -14,4 +14,14 @@ class Media extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    /**
+     * Get the full URL for the media file
+     *
+     * @return string
+     */
+    public function getUrl()
+    {
+        return asset('storage/' . $this->url);
+    }
 }

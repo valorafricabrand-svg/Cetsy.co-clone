@@ -38,7 +38,6 @@ public function index()
     $products = Product::where('shop_id', $shopId)
         ->orderBy('created_at', 'desc')
         ->with('category')
-        ->take(5)
         ->get();
 
     $total_orders = $user->orders()->count();
