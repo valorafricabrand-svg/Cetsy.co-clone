@@ -461,10 +461,58 @@ public function listing(string $slug)
 
     public function offers()
     {
-        // Fetch offers made by the buyer
-        $offers = \App\Models\Offer::where('buyer_id', Auth::id())->with('product')->latest()->get();
+        $user = Auth::user();
+        
+        // Get all offers made by the buyer with related data
+        $offers = \App\Models\Offer::where('buyer_id', $user->id)
+            ->with([
+                'product.media',
+                'product.shop.user',
+                'counterOffers' => function($query) {
+                    $query->orderBy('created_at', 'desc');
+                }
+            ])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('product_id')
+            ->map(function($productOffers) {
+                // Prefer accepted, then pending, then latest by created_at
+                $latestOffer = $productOffers->where('status', 'accepted')->first()
+                    ?? $productOffers->where('status', 'pending')->first()
+                    ?? $productOffers->sortByDesc('created_at')->first();
+                
+                // Get offer history for this product
+                $offerHistory = $productOffers->flatMap(function($offer) {
+                    return $offer->getOfferHistory();
+                })->sortBy('created_at');
+                
+                return [
+                    'product' => $latestOffer->product,
+                    'latest_offer' => $latestOffer,
+                    'offer_history' => $offerHistory,
+                    'total_offers' => $productOffers->count(),
+                    'has_counter_offers' => $productOffers->where('is_counter_offer', true)->count() > 0,
+                    'status_summary' => $this->getOfferStatusSummary($productOffers)
+                ];
+            });
 
         return view('buyer.offers', compact('offers'));
+    }
+
+    private function getOfferStatusSummary($offers)
+    {
+        $summary = [
+            'pending' => 0,
+            'accepted' => 0,
+            'declined' => 0,
+            'expired' => 0
+        ];
+
+        foreach ($offers as $offer) {
+            $summary[$offer->status]++;
+        }
+
+        return $summary;
     }
 
     public function listings()

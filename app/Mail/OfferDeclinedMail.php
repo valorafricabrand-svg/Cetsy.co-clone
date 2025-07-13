@@ -9,27 +9,19 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Offer;
-use App\Models\Product;
-use App\Models\User;
 
 class OfferDeclinedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $offer;
-    public $product;
-    public $seller;
-    public $buyer;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Offer $offer, Product $product, User $seller, User $buyer)
+    public function __construct(Offer $offer)
     {
         $this->offer = $offer;
-        $this->product = $product;
-        $this->seller = $seller;
-        $this->buyer = $buyer;
     }
 
     /**
@@ -38,7 +30,7 @@ class OfferDeclinedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Offer Update - Your Offer Has Been Declined',
+            subject: 'Your Counter Offer Has Been Declined',
         );
     }
 
@@ -49,12 +41,6 @@ class OfferDeclinedMail extends Mailable
     {
         return new Content(
             view: 'emails.offer_declined',
-            with: [
-                'offer' => $this->offer,
-                'product' => $this->product,
-                'seller' => $this->seller,
-                'buyer' => $this->buyer,
-            ],
         );
     }
 
