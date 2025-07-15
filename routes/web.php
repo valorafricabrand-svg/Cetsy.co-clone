@@ -130,6 +130,18 @@ Route::delete(
 )->name('variations.destroy');
 
 
+
+
+// Bulk create variations for a product
+Route::post(
+    'products/{product}/variations/bulk',
+    [VariationController::class, 'bulkStore']
+)->name('variations.bulkStore');
+
+
+
+
+
     Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
 
     Route::post('/cart/update-shipping-selection', [CartController::class, 'updateShippingSelection'])->name('cart.updateShippingSelection');
