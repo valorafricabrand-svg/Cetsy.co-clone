@@ -9,10 +9,8 @@
         <table class="table table-bordered mb-0">
           <thead class="table-light">
             <tr>
-              @foreach($product->category->attributes as $attr)
-                <th>{{ $attr->name }}</th>
-              @endforeach
-              <th>SKU</th>
+              <th>Type</th>
+              <th>Option</th>
               <th>Price</th>
               <th>Stock</th>
               <th class="text-end">Actions</th>
@@ -21,13 +19,8 @@
           <tbody>
             @foreach($product->variations as $var)
               <tr>
-                @foreach($product->category->attributes as $attr)
-                  @php 
-                    $val = $var->values->firstWhere('category_attribute_id', $attr->id);
-                  @endphp
-                  <td>{{ $val->value ?? '—' }}</td>
-                @endforeach
-                <td>{{ $var->sku }}</td>
+                <td>{{ $var->type }}</td>
+                <td>{{ $var->variation_option }}</td>
                 <td>{{ get_currency() }}{{ number_format($var->price,2) }}</td>
                 <td>{{ $var->stock }}</td>
                 <td class="text-end">
@@ -71,25 +64,17 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          @foreach($product->category->attributes as $attr)
-            <div class="mb-3">
-              <label class="form-label">{{ $attr->name }}</label>
-              <select name="values[{{ $attr->id }}]" class="form-select" required>
-                <option value="">Choose {{ $attr->name }}</option>
-                @foreach($attr->values as $val)
-                  <option value="{{ $val->id }}"
-                    @if($var->values->pluck('id')->contains($val->id)) selected @endif>
-                    {{ $val->value }}
-                  </option>
-                @endforeach
-              </select>
-            </div>
-          @endforeach
-
           <div class="mb-3">
-            <label class="form-label">SKU</label>
-            <input name="sku"
-                   value="{{ $var->sku }}"
+            <label class="form-label">Type</label>
+            <input name="type"
+                   value="{{ $var->type }}"
+                   class="form-control"
+                   required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Option</label>
+            <input name="variation_option"
+                   value="{{ $var->variation_option }}"
                    class="form-control"
                    required>
           </div>
@@ -126,66 +111,79 @@
   </div>
 @endforeach
 
-{{-- ADD NEW VARIATION FORM --}}
+{{-- ADD MULTIPLE VARIATIONS FORM --}}
 <div class="card mb-5 shadow-sm">
-  <div class="card-header bg-light"><h5>Add New Variation</h5></div>
-  <form class="card-body"
-        action="{{ route('variations.store', $product) }}"
-        method="POST">
-    @csrf
+  <div class="card-header bg-light"><h5>Add New Variations</h5></div>
+  <div class="card-body">
+    <form id="bulkVariationsForm"
+          action="{{ route('variations.bulkStore', $product) }}"
+          method="POST">
+      @csrf
 
-    <div class="row g-3 mb-3">
-      @foreach($product->category->attributes as $attr)
-        <div class="col-md-4">
-          <label class="form-label">{{ $attr->name }}</label>
-          <select name="values[{{ $attr->id }}]"
-                  class="form-select @error('values.' . $attr->id) is-invalid @enderror"
-                  required>
-            <option value="">Choose {{ $attr->name }}</option>
-            @foreach($attr->values as $val)
-              <option value="{{ $val->id }}"
-                @selected(old('values.' . $attr->id) == $val->id)>
-                {{ $val->value }}
-              </option>
-            @endforeach
-          </select>
-          @error('values.' . $attr->id)
-            <div class="invalid-feedback">{{ $message }}</div>
-          @enderror
+      <div id="variationRows">
+        <div class="variation-row row g-3 mb-3">
+          <div class="col-md-3">
+            <label class="form-label">Type</label>
+            <input name="variations[0][type]"
+                   class="form-control"
+                   placeholder="e.g. Color"
+                   required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Option</label>
+            <input name="variations[0][variation_option]"
+                   class="form-control"
+                   placeholder="e.g. Red"
+                   required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Price</label>
+            <input name="variations[0][price]"
+                   type="number"
+                   step="0.01"
+                   class="form-control"
+                   required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Stock</label>
+            <input name="variations[0][stock]"
+                   type="number"
+                   class="form-control"
+                   required>
+          </div>
         </div>
-      @endforeach
-    </div>
+      </div>
 
-    <div class="row g-3 mb-3">
-      <div class="col-md-4">
-        <label class="form-label">SKU</label>
-        <input name="sku"
-               value="{{ old('sku') }}"
-               class="form-control @error('sku') is-invalid @enderror"
-               required>
-        @error('sku') <div class="invalid-feedback">{{ $message }}</div> @enderror
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Price</label>
-        <input name="price"
-               type="number"
-               step="0.01"
-               value="{{ old('price') }}"
-               class="form-control @error('price') is-invalid @enderror"
-               required>
-        @error('price') <div class="invalid-feedback">{{ $message }}</div> @enderror
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Stock</label>
-        <input name="stock"
-               type="number"
-               value="{{ old('stock') }}"
-               class="form-control @error('stock') is-invalid @enderror"
-               required>
-        @error('stock') <div class="invalid-feedback">{{ $message }}</div> @enderror
-      </div>
-    </div>
+      <button type="button"
+              id="addRowBtn"
+              class="btn btn-outline-primary mb-3">
+        <i class="fas fa-plus me-1"></i> Add Another Variation
+      </button>
 
-    <button type="submit" class="btn btn-outline-success">Add Variation</button>
-  </form>
+      <button type="submit" class="btn btn-success">Save All Variations</button>
+    </form>
+  </div>
 </div>
+
+{{-- Bulk Variation JS --}}
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    let rowContainer = document.getElementById('variationRows');
+    let addRowBtn = document.getElementById('addRowBtn');
+
+    addRowBtn.addEventListener('click', () => {
+      let rows = rowContainer.querySelectorAll('.variation-row');
+      let index = rows.length;
+      let newRow = rows[0].cloneNode(true);
+
+      newRow.querySelectorAll('input').forEach(input => {
+        let name = input.getAttribute('name');
+        let updated = name.replace(/\[\d+\]/, `[${index}]`);
+        input.setAttribute('name', updated);
+        input.value = '';
+      });
+
+      rowContainer.appendChild(newRow);
+    });
+  });
+</script>
