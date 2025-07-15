@@ -54,7 +54,7 @@
                           class="btn btn-sm {{ $product->featured_image === $media->url
                               ? 'btn-outline-warning'
                               : 'btn-outline-success' }}">
-                    {{ $product->featured_image === $media->url ? 'Featured' : 'Make Featured' }}
+                    {{ $product->featured_image === $media->url ? 'Featured' : 'Make as primary image' }}
                   </button>
                 </form>
 
