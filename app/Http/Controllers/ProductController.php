@@ -42,128 +42,130 @@ class ProductController extends Controller
 
     // (Optional) if you want to pre-select a default:
     $defaultProfileId = old('default_shipping_profile', null);
+    $processingTimes  = ProcessingTime::orderBy('days')->get();
   $countries = Country::orderBy('name')->get();
     return view('products.create', compact(
         'categories',
         'shippingProfiles',
         'defaultProfileId',
-        'countries'
+        'countries',
+        'processingTimes'
     ));
 }
 
 public function store(Request $request)
-    {
-        $user = Auth::user();
+{
+    $user = Auth::user();
 
-        if (! $user->shop) {
-            return redirect()->route('shops.create')
-                             ->with('warning', 'You must create a shop before listing products.');
+    if (! $user->shop) {
+        return redirect()->route('shops.create')
+                         ->with('warning', 'You must create a shop before listing products.');
+    }
+
+    $data = $request->validate([
+        'name'                        => 'required|string|max:255',
+        'type'                        => 'required|in:physical,digital,service',
+        'description'                 => 'nullable|string',
+        'category_id'                 => 'nullable|exists:categories,id',
+        'price'                       => 'required|numeric|min:0',
+        'discount_price'              => 'nullable|numeric|min:0|lt:price',
+        'stock'                       => 'nullable|integer|min:0',
+        'media.*'                     => 'nullable|image|max:5120',
+        'digital_file'                => 'nullable|file|max:10240',
+        'shipping_profiles'           => 'required_if:type,physical|array|min:1',
+        'shipping_profiles.*'         => 'exists:shipping_profiles,id',
+        'default_shipping_profile'    => 'required_if:type,physical|exists:shipping_profiles,id',
+        'country_id'                  => 'nullable|exists:countries,id',
+
+        // new fields
+        'origin_postal_code'          => 'nullable|string|max:20',
+        'processing_time_id'          => 'nullable|exists:processing_times,id',
+
+        // variations
+        'variations'                  => 'nullable|array',
+        'variations.*.type'           => 'required_with:variations|string|max:255',
+        'variations.*.variation_option' => 'required_with:variations|string|max:255',
+        'variations.*.price'          => 'required_with:variations|numeric|min:0',
+        'variations.*.stock'          => 'required_with:variations|integer|min:0',
+    ]);
+
+    // ensure default shipping profile is one of the selected
+    if ($data['type']==='physical'
+        && ! in_array($data['default_shipping_profile'], $data['shipping_profiles'] ?? [])) {
+        return back()
+            ->withInput()
+            ->withErrors(['default_shipping_profile' => 'Default must be one of the selected shipping profiles.']);
+    }
+
+    // 1. Create the product
+    $product = new Product();
+    $product->shop_id                     = $user->shop->id;
+    $product->name                        = $data['name'];
+    $product->slug                        = Str::slug($data['name']).'-'.uniqid();
+    $product->type                        = $data['type'];
+    $product->category_id                 = $data['category_id'] ?? null;
+    $product->country_id                  = $data['country_id'] ?? null;
+    $product->origin_postal_code          = $data['origin_postal_code'] ?? null;
+    $product->processing_time_id          = $data['processing_time_id'] ?? null;
+    $product->description                 = $data['description'] ?? null;
+    $product->price                       = $data['price'];
+    $product->discount_price              = $data['discount_price'] ?? null;
+    $product->stock                       = $data['type']==='physical' ? ($data['stock'] ?? 0) : null;
+    $product->default_shipping_profile_id = $data['type']==='physical'
+                                            ? $data['default_shipping_profile']
+                                            : null;
+    $product->is_active                   = false;
+    $product->save();
+
+    // 2. Sync shipping profiles
+    if ($data['type']==='physical') {
+        $sync = [];
+        foreach ($data['shipping_profiles'] as $pid) {
+            $sync[$pid] = [
+                'is_default' => $pid == $data['default_shipping_profile'],
+            ];
         }
+        $product->shippingProfiles()->sync($sync);
+    }
 
-        $data = $request->validate([
-            'name'                     => 'required|string|max:255',
-            'type'                     => 'required|in:physical,digital,service',
-            'description'              => 'nullable|string',
-            'category_id'              => 'nullable|exists:categories,id',
-            'price'                    => 'required|numeric|min:0',
-            'discount_price'           => 'nullable|numeric|min:0|lt:price',
-            'stock'                    => 'nullable|integer|min:0',
-            'media.*'                  => 'nullable|image|max:5120',
-            'digital_file'             => 'nullable|file|max:10240',
-            'shipping_profiles'        => 'required_if:type,physical|array|min:1',
-            'shipping_profiles.*'      => 'exists:shipping_profiles,id',
-            'default_shipping_profile' => 'required_if:type,physical|exists:shipping_profiles,id',
-            'country_id'               => 'nullable|exists:countries,id',
+    // 3. Upload images
+    if ($request->hasFile('media')) {
+        foreach ($request->file('media') as $file) {
+            $path = $file->store('products','public');
+            $product->media()->create(['url'=>$path]);
+        }
+    }
 
-            // ←— NEW: handle variations block
-            'variations'                  => 'nullable|array',
-            'variations.*.sku'            => ['required_with:variations','string','max:255','distinct'],
-            'variations.*.price'          => 'required_with:variations|numeric|min:0',
-            'variations.*.stock'          => 'required_with:variations|integer|min:0',
-            'variations.*.values'         => 'required_with:variations|array|min:1',
-            'variations.*.values.*'       => [
-                'required','integer',
-                // ensure each value ID belongs to a CategoryAttribute for this category
-                Rule::exists('category_attribute_values','id')->whereIn('category_attribute_id', function($q) use($request) {
-                    $q->select('id')
-                      ->from('category_attributes')
-                      ->where('category_id', $request->input('category_id'));
-                }),
-            ],
+    // 4. Handle digital file
+    if ($data['type']==='digital' && $request->hasFile('digital_file')) {
+        $disk = 'local';
+        $file = $request->file('digital_file');
+        $path = $file->store('digital-files',$disk);
+        $product->digitalFiles()->create([
+            'filename' => $file->getClientOriginalName(),
+            'filepath' => $path,
         ]);
+    }
 
-        // ensure default shipping profile is one of the selected
-        if ($data['type']==='physical'
-            && ! in_array($data['default_shipping_profile'], $data['shipping_profiles'] ?? [])) {
-            return back()
-                ->withInput()
-                ->withErrors(['default_shipping_profile' => 'Default must be one of the selected shipping profiles.']);
-        }
-
-        // 1. Create the product
-        $product = new Product();
-        $product->shop_id                     = $user->shop->id;
-        $product->name                        = $data['name'];
-        $product->slug                        = Str::slug($data['name']).'-'.uniqid();
-        $product->type                        = $data['type'];
-        $product->category_id                 = $data['category_id'] ?? null;
-        $product->country_id                  = $data['country_id'] ?? null;
-        $product->description                 = $data['description'] ?? null;
-        $product->price                       = $data['price'];
-        $product->discount_price              = $data['discount_price'] ?? null;
-        $product->stock                       = $data['type']==='physical' ? ($data['stock'] ?? 0) : null;
-        $product->default_shipping_profile_id = $data['type']==='physical'
-                                                ? $data['default_shipping_profile']
-                                                : null;
-        $product->is_active                   = false;
-        $product->save();
-
-        // 2. Sync shipping profiles
-        if ($data['type']==='physical') {
-            $sync = [];
-            foreach ($data['shipping_profiles'] as $pid) {
-                $sync[$pid] = [
-                    'is_default' => $pid == $data['default_shipping_profile'],
-                ];
-            }
-            $product->shippingProfiles()->sync($sync);
-        }
-
-        // 3. Upload images
-        if ($request->hasFile('media')) {
-            foreach ($request->file('media') as $file) {
-                $path = $file->store('products','public');
-                $product->media()->create(['url'=>$path]);
-            }
-        }
-
-        // 4. Handle digital file
-        if ($data['type']==='digital' && $request->hasFile('digital_file')) {
-            $disk = 'local';
-            $file = $request->file('digital_file');
-            $path = $file->store('digital-files',$disk);
-            $product->digitalFiles()->create([
-                'filename' => $file->getClientOriginalName(),
-                'filepath' => $path,
+    // 5. Create variations if any
+    if (! empty($data['variations'])) {
+        foreach ($data['variations'] as $v) {
+            $product->variations()->create([
+                'type'             => $v['type'],
+                'variation_option' => $v['variation_option'],
+                'price'            => $v['price'],
+                'stock'            => $v['stock'],
             ]);
         }
-
-        // ←— 5. Create variations if any were submitted
-        if (! empty($data['variations'])) {
-            foreach ($data['variations'] as $v) {
-                $variation = $product->variations()->create([
-                    'sku'   => $v['sku'],
-                    'price' => $v['price'],
-                    'stock' => $v['stock'],
-                ]);
-                $variation->values()->sync($v['values']);
-            }
-        }
-
-        return redirect()
-            ->route('products.edit',$product)
-            ->with('success','Product created successfully! You can now add more details or activate it.');
     }
+
+    return redirect()
+        ->route('products.edit',$product)
+        ->with('success','Product created successfully! You can now add more details or activate it.');
+}
+
+
+
 
 
  public function edit(Product $product)
@@ -208,6 +210,7 @@ public function store(Request $request)
             ])
             ->all();
 
+    $processingTimes  = ProcessingTime::orderBy('days')->get();
         // 6. Render the edit view
         return view('products.edit', [
             'product'                 => $product,
@@ -217,6 +220,7 @@ public function store(Request $request)
             'categories'              => $categories,
             'countries'               => $countries,
             'existingVariationsForJs' => $existingVariationsForJs,
+            'processingTimes'         => $processingTimes,
         ]);
     }
 
@@ -239,105 +243,109 @@ public function update(Request $request, Product $product)
         'default_shipping_profile'  => 'required_if:type,physical|exists:shipping_profiles,id',
         'country_id'                => 'nullable|exists:countries,id',
 
-        // Relaxed variation rules
-        'variations'                => 'nullable|array',
-        'variations.*.id'           => 'nullable|integer',
-        'variations.*.sku'          => 'required|string|max:255',
-        'variations.*.price'        => 'required|numeric|min:0',
-        'variations.*.stock'        => 'required|integer|min:0',
-        'variations.*.values'       => 'required|array|min:1',
-        'variations.*.values.*'     => 'required|integer',
+        // new origin & processing fields
+        'origin_postal_code'        => 'nullable|string|max:20',
+        'processing_time_id'        => 'nullable|exists:processing_times,id',
+
+        // manual variations
+        'variations'                     => 'nullable|array',
+        'variations.*.id'                => 'nullable|integer|exists:product_variations,id',
+        'variations.*.type'              => 'required_with:variations|string|max:255',
+        'variations.*.variation_option'  => 'required_with:variations|string|max:255',
+        'variations.*.price'             => 'required_with:variations|numeric|min:0',
+        'variations.*.stock'             => 'required_with:variations|integer|min:0',
     ]);
 
-    // Update basic product fields
-    $product->name             = $data['name'];
-    $product->slug             = Str::slug($data['name']) . '-' . uniqid();
-    $product->type             = $data['type'];
-    $product->category_id      = $data['category_id'];
-    $product->country_id       = $data['country_id'] ?? null;
-    $product->description      = $data['description'] ?? null;
-    $product->price            = $data['price'];
-    $product->discount_price   = $data['discount_price'] ?? null;
-    $product->stock            = $data['type'] === 'physical'
-                                  ? ($data['stock'] ?? 0)
-                                  : null;
-    $product->save();
+    // 1) Update core product
+    $product->update([
+        'name'                        => $data['name'],
+        'slug'                        => Str::slug($data['name']).'-'.uniqid(),
+        'type'                        => $data['type'],
+        'category_id'                 => $data['category_id'],
+        'country_id'                  => $data['country_id'] ?? null,
+        'origin_postal_code'          => $data['origin_postal_code'] ?? null,
+        'processing_time_id'          => $data['processing_time_id'] ?? null,
+        'description'                 => $data['description'] ?? null,
+        'price'                       => $data['price'],
+        'discount_price'              => $data['discount_price'] ?? null,
+        'stock'                       => $data['type'] === 'physical'
+                                            ? ($data['stock'] ?? 0)
+                                            : null,
+    ]);
 
-    // Media uploads
+    // 2) Sync shipping profiles
+    if ($data['type'] === 'physical') {
+        $sync = [];
+        foreach ($data['shipping_profiles'] as $pid) {
+            $sync[$pid] = ['is_default' => $pid == $data['default_shipping_profile']];
+        }
+        $product->shippingProfiles()->sync($sync);
+    } else {
+        $product->shippingProfiles()->detach();
+    }
+
+    // 3) Handle media uploads
     if ($request->hasFile('media')) {
         foreach ($request->file('media') as $file) {
-            $path = $file->store('products', 'public');
-            $product->media()->create(['url' => $path]);
+            $path = $file->store('products','public');
+            $product->media()->create(['url'=>$path]);
         }
     }
 
-    // Digital files
-    $disk = 'local';
+    // 4) Digital files logic
     if ($data['type'] === 'digital' && $request->hasFile('digital_file')) {
-        foreach ($product->digitalFiles as $oldFile) {
-            Storage::disk($disk)->delete($oldFile->filepath);
-            $oldFile->delete();
-        }
+        Storage::disk('local')
+            ->delete($product->digitalFiles->pluck('filepath')->all());
+        $product->digitalFiles()->delete();
+
         $file = $request->file('digital_file');
-        $path = $file->store('digital-files', $disk);
+        $path = $file->store('digital-files','local');
         $product->digitalFiles()->create([
             'filename' => $file->getClientOriginalName(),
             'filepath' => $path,
         ]);
     } elseif ($data['type'] !== 'digital') {
-        foreach ($product->digitalFiles as $oldFile) {
-            Storage::disk($disk)->delete($oldFile->filepath);
-            $oldFile->delete();
-        }
+        Storage::disk('local')
+            ->delete($product->digitalFiles->pluck('filepath')->all());
+        $product->digitalFiles()->delete();
     }
 
-    // Shipping profiles
-    if ($data['type'] === 'physical') {
-        $syncData = collect($data['shipping_profiles'])
-            ->mapWithKeys(fn($pid) => [
-                $pid => ['is_default' => $pid == $data['default_shipping_profile']],
-            ])->toArray();
-        $product->shippingProfiles()->sync($syncData);
-    } else {
-        $product->shippingProfiles()->detach();
-    }
-
-    // Sync Variations
+    // 5) Sync manual variations
     $submittedIds = collect($data['variations'] ?? [])
         ->pluck('id')
         ->filter()
-        ->map(fn($id) => (int)$id)
+        ->map(fn($i) => (int)$i)
         ->all();
 
-    // Remove deleted variations
+    // delete removed
     $product->variations()
             ->whereNotIn('id', $submittedIds)
-            ->each(fn($v) => $v->delete());
+            ->delete();
 
-    // Upsert variations
-    foreach ($data['variations'] ?? [] as $varData) {
-        if (!empty($varData['id'])) {
-            $variation = ProductVariation::find($varData['id']);
+    // upsert remaining
+    foreach ($data['variations'] ?? [] as $v) {
+        if (!empty($v['id']) && $variation = $product->variations()->find($v['id'])) {
             $variation->update([
-                'sku'   => $varData['sku'],
-                'price' => $varData['price'],
-                'stock' => $varData['stock'],
+                'type'             => $v['type'],
+                'variation_option' => $v['variation_option'],
+                'price'            => $v['price'],
+                'stock'            => $v['stock'],
             ]);
         } else {
-            $variation = $product->variations()->create([
-                'sku'   => $varData['sku'],
-                'price' => $varData['price'],
-                'stock' => $varData['stock'],
+            $product->variations()->create([
+                'type'             => $v['type'],
+                'variation_option' => $v['variation_option'],
+                'price'            => $v['price'],
+                'stock'            => $v['stock'],
             ]);
         }
-        // Sync option-value links
-        $variation->values()->sync($varData['values']);
     }
 
     return redirect()
         ->route('products.edit', $product)
         ->with('success', 'Product updated successfully!');
 }
+
 
 
 
