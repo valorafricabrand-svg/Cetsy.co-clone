@@ -62,7 +62,7 @@ class MessageController extends Controller
                 $query->where('sender_id', $user->id)
                       ->orWhere('receiver_id', $user->id);
             })
-            ->with(['product', 'sender', 'receiver'])
+            ->with(['product.shop', 'sender.shop', 'receiver.shop'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->groupBy(function($message) use ($user) {
@@ -75,10 +75,12 @@ class MessageController extends Controller
                 $latestMessage = $messages->first();
                 $otherUserId = $latestMessage->sender_id == $user->id ? $latestMessage->receiver_id : $latestMessage->sender_id;
                 $otherUser = $latestMessage->sender_id == $user->id ? $latestMessage->receiver : $latestMessage->sender;
-                
+                // Get shop info for the other user (seller)
+                $shop = $otherUser->shop;
                 return [
                     'latest_message' => $latestMessage,
                     'other_user' => $otherUser,
+                    'shop' => $shop,
                     'product' => $latestMessage->product,
                     'unread_count' => $messages->where('receiver_id', $user->id)->where('is_read', false)->count(),
                     'total_messages' => $messages->count(),
@@ -147,8 +149,9 @@ class MessageController extends Controller
 
         $otherUser = User::find($otherUserId);
         $product = Product::find($productId);
+        $shop = $product && $product->shop ? $product->shop : ($otherUser ? $otherUser->shop : null);
 
-        return view('buyer.messages.show', compact('messages', 'otherUser', 'product', 'conversationId'));
+        return view('buyer.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'shop'));
     }
 
     public function sellerIndex(Request $request)
