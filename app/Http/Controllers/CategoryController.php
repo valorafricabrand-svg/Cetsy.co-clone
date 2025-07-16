@@ -200,7 +200,7 @@ public function byType(string $type)
     $map = [
       'physical' => 'products',
       'service'  => 'services',
-      'digital'  => 'digital downloads',
+      'digital'  => 'digital',
     ];
     $listingType = $map[$type] ?? null;
     if (! $listingType) {
