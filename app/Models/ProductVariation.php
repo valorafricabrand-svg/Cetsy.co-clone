@@ -16,6 +16,8 @@ class ProductVariation extends Model
         'price',
         'stock',
         'image',
+                'type',
+        'variation_option',
     ];
 
     protected $casts = [
