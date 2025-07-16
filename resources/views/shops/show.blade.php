@@ -14,10 +14,7 @@
           style="width: 64px; height: 64px; object-fit: cover;"
         >
         @else
-        <div class="rounded-circle me-3"
-          style="width: 64px; height: 64px; object-fit: cover;">
-          <i class="fas fa-store fa-2x text-success"></i>
-        </div>
+        
         <img
           src="{{ asset('assets/images/default-logo.png') }}"
           alt="{{ $shop->name }} logo"

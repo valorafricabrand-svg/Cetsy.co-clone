@@ -25,7 +25,20 @@
     $zeroDecimal = ['BIF','CLP','DJF','GNF','JPY','KMF','KRW','MGA',
                     'PYG','RWF','UGX','VND','VUV','XAF','XOF','XPF'];
 
-    $rawAmount    = (float) config('subscription.monthly_fee', 1000);
+    // Get the selected plan from session or request
+    $plan = session('selected_subscription_plan', request('plan', 'monthly'));
+    
+    // Calculate subscription fee based on plan
+    if ($plan === 'yearly') {
+        $rawAmount = (float) config('subscription.yearly_fee', 50);
+        $planName = 'Yearly';
+        $duration = '1 year';
+    } else {
+        $rawAmount = (float) config('subscription.monthly_fee', 5);
+        $planName = 'Monthly';
+        $duration = '1 month';
+    }
+    
     $paypalAmount = in_array($currency, $zeroDecimal)
         ? (string) intval(round($rawAmount))          // e.g. 70 → "70"
         : number_format($rawAmount, 2, '.', '');      // e.g. 70 → "70.00"
@@ -52,9 +65,13 @@
                             Pay securely with PayPal, a major card, or your in-site wallet.
                         </p>
 
-                        {{-- Amount display --}}
-                        <div class="alert alert-info text-center fw-semibold">
-                            Amount&nbsp;:&nbsp; {{ $currency }} {{ number_format($rawAmount, 2) }}
+                        {{-- Plan and Amount display --}}
+                        <div class="alert alert-info text-center">
+                            <div class="fw-semibold mb-1">{{ $planName }} Plan</div>
+                            <div class="small text-muted mb-2">Duration: {{ $duration }}</div>
+                            <div class="fw-semibold">
+                                Amount: {{ $currency }} {{ number_format($rawAmount, 2) }}
+                            </div>
                         </div>
 
                         {{-- ── 1️⃣  WALLET OPTION ─────────────────────────── --}}
@@ -63,6 +80,7 @@
                                 method="POST"
                                 class="d-grid gap-2 mb-3">
                             @csrf
+                            <input type="hidden" name="plan" value="{{ $plan }}">
                             <button type="submit"
                                     class="btn btn-primary {{ $canPayWithWallet ? '' : 'disabled' }}"
                                     @disabled(!$canPayWithWallet)>
@@ -138,7 +156,7 @@ $(function () {
         onApprove: (_, actions) => {
             $('#generic-result').empty();
             return actions.order.capture().then(() => {
-                window.location = @json(route('seller.subscription.success', auth()->id()));
+                window.location = @json(route('seller.subscription.success', auth()->id())) + '?plan={{ $plan }}';
             });
         },
 

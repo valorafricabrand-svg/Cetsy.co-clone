@@ -30,15 +30,31 @@ class SubscriptionController extends Controller
 
     public function subscribe(Request $request)
     {
+        $plan = $request->input('plan', 'monthly');
+        
+        // Store the selected plan in session for payment processing
+        session(['selected_subscription_plan' => $plan]);
+        
         // Redirect to payment processing page instead of direct subscription creation
-        return view('seller.subscription_pay');
+        return view('seller.subscription_pay', compact('plan'));
     }
 
     public function walletPay(Request $request)
     {
         $user = Auth::user();
         $shop = Shop::where('user_id', $user->id)->first();
-        $subscriptionFee = config('subscription.monthly_fee', 1000);
+        
+        // Get the selected plan from session or request
+        $plan = session('selected_subscription_plan', $request->input('plan', 'monthly'));
+        
+        // Calculate subscription fee based on plan
+        if ($plan === 'yearly') {
+            $subscriptionFee = config('subscription.yearly_fee', 50);
+            $duration = 365; // days
+        } else {
+            $subscriptionFee = config('subscription.monthly_fee', 5);
+            $duration = 30; // days
+        }
 
         // Check if user has sufficient wallet balance
         $walletBalance = wallet();
@@ -76,7 +92,7 @@ class SubscriptionController extends Controller
             'balance'    => 0,
             'reference'  => $localTxId,
             'method'     => 'wallet',
-            'description'=> 'Subscription payment via wallet',
+            'description'=> ucfirst($plan) . ' subscription payment via wallet',
         ]);
 
         // Create new subscription
@@ -84,17 +100,21 @@ class SubscriptionController extends Controller
             'user_id' => $user->id,
             'status' => 'active',
             'start_date' => now(),
-            'end_date' => now()->addMonth(),
+            'end_date' => now()->addDays($duration),
             'amount' => $subscriptionFee,
             'payment_method' => 'wallet',
-            'transaction_id' => $localTxId
+            'transaction_id' => $localTxId,
+            'notes' => ucfirst($plan) . ' subscription plan'
         ]);
 
         $subscription->save();
 
+        // Clear the session
+        session()->forget('selected_subscription_plan');
+
         return redirect()
             ->route('seller.dashboard')
-            ->with('success', 'Your subscription has been activated successfully!');
+            ->with('success', 'Your ' . ucfirst($plan) . ' subscription has been activated successfully!');
     }
 
     public function successDeposit(Request $request, $id)
@@ -103,15 +123,28 @@ class SubscriptionController extends Controller
         $user = \App\Models\User::findOrFail($id);
         $shop = Shop::where('user_id', $user->id)->first();
 
+        // Get the selected plan from session or request
+        $plan = session('selected_subscription_plan', $request->get('plan', 'monthly'));
+        
+        // Calculate subscription fee and duration based on plan
+        if ($plan === 'yearly') {
+            $subscriptionFee = config('subscription.yearly_fee', 100);
+            $duration = 365; // days
+        } else {
+            $subscriptionFee = config('subscription.monthly_fee', 10);
+            $duration = 30; // days
+        }
+
         // Create new subscription
         $subscription = new Subscription([
             'user_id' => $user->id,
             'status' => 'active',
             'start_date' => now(),
-            'end_date' => now()->addMonth(),
-            'amount' => config('subscription.monthly_fee', 1000),
+            'end_date' => now()->addDays($duration),
+            'amount' => $subscriptionFee,
             'payment_method' => $request->get('method', 'paypal'),
-            'transaction_id' => $request->get('transaction_id', uniqid())
+            'transaction_id' => $request->get('transaction_id', uniqid()),
+            'notes' => ucfirst($plan) . ' subscription plan'
         ]);
 
         $subscription->save();
@@ -131,7 +164,7 @@ class SubscriptionController extends Controller
         $paymentData = [
             'user_id'               => $user->id,
             'shop_id'               => $shop ? $shop->id : null,
-            'total_amount'          => config('subscription.monthly_fee', 5),
+            'total_amount'          => $subscriptionFee,
             'payment_method'        => $method,
             'payment_status'        => 'successful',
             'status'                => '3', // Completed
@@ -143,9 +176,12 @@ class SubscriptionController extends Controller
         // Create the payment record
         $payment = Payment::create($paymentData);
 
+        // Clear the session
+        session()->forget('selected_subscription_plan');
+
         return redirect()
             ->route('seller.dashboard')
-            ->with('success', 'Your subscription has been activated successfully!');
+            ->with('success', 'Your ' . ucfirst($plan) . ' subscription has been activated successfully!');
     }
 
     public function cancel()
