@@ -187,8 +187,7 @@ Route::post(
     // Products
     Route::resource('products', ProductController::class);
 
-    Route::resource('shipping_profiles', ShippingProfileController::class)
-        ->except(['show']);
+   
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
@@ -297,16 +296,25 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
 /*
 |--------------------------------------------------------------------------
-| Seller Routes
+| Seller Routes - Subscription Management (No Active Subscription Required)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
+
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::resource('deals', DealController::class)
          ->only(['index','create','store']);
 
-       // Shop (one-shop-per-user logic)
+    // Subscription management - accessible without active subscription
+    Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription');
+    Route::post('subscription', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
+    Route::post('subscription/wallet', [SubscriptionController::class, 'walletPay'])->name('subscription.wallet.pay');
+    Route::get('subscription/success/{id}', [SubscriptionController::class, 'successDeposit'])->name('subscription.success');
+    Route::post('subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+
+
+    // Shop Management
     Route::get('/shop/index', [ShopController::class, 'index'])->name('shops.index');
     Route::get('/shop/create', [ShopController::class, 'create'])->name('shop.create');
     Route::post('/shop', [ShopController::class, 'store'])->name('shops.store');
@@ -314,39 +322,51 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
     Route::get('/shops/{shop}/edit', [ShopController::class, 'edit'])->name('shops.edit');
     Route::patch('/shops/{shop}', [ShopController::class, 'update'])->name('shops.update');
 
+});
 
+/*
+|--------------------------------------------------------------------------
+| Seller Routes - Active Subscription Required
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
+    // Dashboard & Analytics
+    Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
+    Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
+    
+    // Order Management
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('order/payments', [OrderController::class, 'orderPayments'])->name('orders.payments');
     Route::patch('orders/{order}/process', [OrderController::class, 'process'])->name('orders.process');
     Route::post('orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
-    
 
-    Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription');
-    Route::post('subscription', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
-    Route::post('subscription/wallet', [SubscriptionController::class, 'walletPay'])->name('subscription.wallet.pay');
-    Route::get('subscription/success/{id}', [SubscriptionController::class, 'successDeposit'])->name('subscription.success');
-    Route::post('subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
-
+    Route::resource('shipping_profiles', ShippingProfileController::class)
+    ->except(['show']);
+    // KYC Management
     Route::get('kyc', [KycController::class, 'show'])->name('kyc');
     Route::post('kyc', [KycController::class, 'submit'])->name('kyc.submit');
 
+    // Payout Management
     Route::get('payouts', [PayoutRequestController::class, 'index'])->name('payouts.index');
     Route::post('payouts', [PayoutRequestController::class, 'store'])->name('payouts.store');
 
+    // Services
     Route::resource('services', ServiceController::class);
 
-    // Buyers
+    // Buyer Management
     Route::get('buyers', [BuyerController::class, 'index'])->name('buyers.index');
     Route::get('buyers/{buyer}', [BuyerController::class, 'show'])->name('buyers.show');
 
+    // Offer Management
     Route::resource('offers', App\Http\Controllers\Seller\OfferController::class);
     Route::post('offers/{offer}/accept', [App\Http\Controllers\Seller\OfferController::class, 'accept'])->name('offers.accept');
     Route::post('offers/{offer}/decline', [App\Http\Controllers\Seller\OfferController::class, 'decline'])->name('offers.decline');
     Route::post('offers/{offer}/counter', [App\Http\Controllers\Seller\OfferController::class, 'counterOffer'])->name('offers.counter');
     Route::post('offers/bulk-action', [App\Http\Controllers\Seller\OfferController::class, 'bulkAction'])->name('offers.bulk-action');
 
+    // Message Management
     Route::get('messages', [App\Http\Controllers\Seller\MessageController::class, 'index'])->name('messages.index');
     Route::get('messages/{conversationId}', [App\Http\Controllers\Seller\MessageController::class, 'show'])->name('messages.show');
     Route::post('messages/{conversationId}/reply', [App\Http\Controllers\Seller\MessageController::class, 'reply'])->name('messages.reply');
@@ -359,6 +379,7 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
     // Payment Methods
     Route::resource('payment-methods', \App\Http\Controllers\Seller\PaymentMethodController::class);
 
+    // Shop Posts
     Route::resource('shop-posts', \App\Http\Controllers\ShopPostController::class);
 });
 

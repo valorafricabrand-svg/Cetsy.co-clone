@@ -166,6 +166,43 @@
           </a>
         </li>
 
+        {{-- Simple Notifications Bell --}}
+        @auth
+          @php
+            // Get unread message count for current user
+            $unreadMessages = 0;
+            if (auth()->user()->isSeller()) {
+              // For sellers: count messages for their products
+              $shop = auth()->user()->shop;
+              if ($shop) {
+                $productIds = $shop->products()->pluck('id');
+                $unreadMessages = \App\Models\Message::whereIn('product_id', $productIds)
+                  ->where('receiver_id', auth()->id())
+                  ->where('is_read', false)
+                  ->count();
+              }
+            } else {
+              // For buyers: count messages they received
+              $unreadMessages = \App\Models\Message::where('receiver_id', auth()->id())
+                ->where('is_read', false)
+                ->count();
+            }
+          @endphp
+          
+          <li class="nav-item me-3">
+            <a href="{{ auth()->user()->isSeller() ? route('seller.messages.index') : route('buyer.messages.index') }}" 
+               class="nav-link position-relative text-dark" 
+               title="Messages">
+              <i class="fas fa-bell fa-lg"></i>
+              @if($unreadMessages > 0)
+                <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+                  {{ $unreadMessages > 99 ? '99+' : $unreadMessages }}
+                </span>
+              @endif
+            </a>
+          </li>
+        @endauth
+
         {{-- Authentication Links --}}
         @guest
           <li class="nav-item">
@@ -287,7 +324,7 @@
 /* ——— Layout ——— */
 .dropdown-menu                { min-width:230px; border-radius:.5rem; box-shadow:0 .5rem 1rem rgba(0,0,0,.08); }
 .dropdown-submenu>.dropdown-menu{
-  top:-0.25rem;               /* 1 — tiny offset so corners don’t overlap */
+  top:-0.25rem;               /* 1 — tiny offset so corners don't overlap */
   left:100%;
   margin-left:.15rem;
 }
@@ -347,33 +384,6 @@ document.addEventListener('DOMContentLoaded',()=>{
       }
     });
   });
-
-  // Hover open (desktop) & keep flip logic
-  if(window.matchMedia('(hover:hover)').matches){
-    document.querySelectorAll('.dropdown-submenu').forEach(li=>{
-      li.addEventListener('mouseenter',()=>{
-        const sub = li.querySelector(':scope > .dropdown-menu');
-        if(sub){
-          sub.classList.add('show'); li.classList.add('show');
-          const rect = sub.getBoundingClientRect();
-          if(rect.right > window.innerWidth){
-            sub.style.left='auto'; sub.style.right='100%';
-          }
-        }
-      });
-      li.addEventListener('mouseleave',()=>{
-        li.classList.remove('show');
-        li.querySelectorAll('.dropdown-menu').forEach(m=>m.classList.remove('show'));
-        li.querySelectorAll('.dropdown-menu').forEach(m=>{m.style.left='';m.style.right='';});
-      });
-    });
-  }
-
-  // Close on outside click or Esc
-  const closeAll=()=>document.querySelectorAll('.dropdown-menu.show,.dropdown-submenu.show')
-                      .forEach(el=>{el.classList.remove('show');el.style.left='';el.style.right='';});
-  document.addEventListener('click',e=>{ if(!e.target.closest('nav')) closeAll(); });
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
 });
 </script>
 @endpush

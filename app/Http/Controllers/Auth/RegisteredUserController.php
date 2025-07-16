@@ -54,10 +54,10 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         // If seller, redirect to subscription page
-        // if ($user->user_type === 'seller') {
-        //     return redirect()->route('seller.subscription')
-        //         ->with('info', 'Please subscribe to start selling on our platform.');
-        // }
+        if ($user->user_type === 'seller') {
+            return redirect()->route('seller.subscription')
+                ->with('info', 'Please subscribe to start selling on our platform.');
+        }
 
         return redirect()->route('dashboard');
     }

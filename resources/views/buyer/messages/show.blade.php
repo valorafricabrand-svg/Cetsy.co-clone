@@ -2,7 +2,7 @@
 
 @section('header')
     <h2 class="fw-semibold fs-3 text-dark">
-        Conversation with {{ $otherUser->name ?? 'Seller' }}
+        Conversation with {{ $shop ? $shop->name : ($otherUser->name ?? 'Seller') }}
         @if($product)
             <span class="badge bg-secondary ms-2">{{ $product->name }}</span>
         @endif
@@ -47,10 +47,10 @@
                             <div class="d-flex align-items-center">
                                 <div class="avatar bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2" 
                                      style="width: 40px; height: 40px; font-size: 1.1rem;">
-                                    {{ strtoupper(substr($otherUser->name ?? 'U', 0, 1)) }}
+                                    {{ strtoupper(substr(($shop ? $shop->name : ($otherUser->name ?? 'U')), 0, 1)) }}
                                 </div>
                                 <div>
-                                    <h6 class="mb-0">{{ $otherUser->name ?? 'Unknown' }}</h6>
+                                    <h6 class="mb-0">{{ $shop ? $shop->name : ($otherUser->name ?? 'Unknown') }}</h6>
                                     <small class="text-muted">{{ $messages->count() }} message{{ $messages->count() > 1 ? 's' : '' }}</small>
                                 </div>
                             </div>
@@ -66,7 +66,7 @@
                                 <div class="d-inline-block p-3 rounded {{ $message->sender_id == auth()->id() ? 'bg-success text-white' : 'bg-light' }}" 
                                      style="max-width: 75%;">
                                     <div class="d-flex align-items-center mb-1">
-                                        <strong class="me-2">{{ $message->sender->name ?? 'Unknown' }}</strong>
+                                        <strong class="me-2">{{ $message->sender->shop->name ?? 'Unknown' }}</strong>
                                         <small class="{{ $message->sender_id == auth()->id() ? 'text-white-50' : 'text-muted' }}">
                                             {{ $message->created_at->format('M d, H:i') }}
                                         </small>

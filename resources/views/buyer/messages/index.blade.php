@@ -50,7 +50,7 @@
                                             </div>
                                             <div class="flex-grow-1">
                                                 <div class="fw-bold mb-0" style="font-size:1.1rem;">
-                                                    {{ $conversation['other_user']->name ?? 'Unknown' }}
+                                                    {{ $conversation['shop'] ? $conversation['shop']->name : ($conversation['other_user']->name ?? 'Unknown') }}
                                                     @if($conversation['unread_count'] > 0)
                                                         <span class="badge bg-danger ms-1">{{ $conversation['unread_count'] }}</span>
                                                     @endif
