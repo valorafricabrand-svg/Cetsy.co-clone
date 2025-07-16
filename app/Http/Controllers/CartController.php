@@ -175,7 +175,7 @@ class CartController extends Controller
                 'id'                           => $product->id,
                 'name'                         => $product->name,
                 'quantity'                     => $quantity,
-                'price'                        => $product->price,
+                'price'                        => $product->discounted_price,
                 'size_id'                      => $sizeId,
                 'photo'                        => $product->media->first()?->url,
                 'shipping_profiles'            => $product->shippingProfiles

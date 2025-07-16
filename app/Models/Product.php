@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 
 class Product extends Model
 {
@@ -20,7 +22,7 @@ class Product extends Model
         'status',
         'product_type',
         'condition',
-        'discount_price',
+        'discount_percent',
         'low_stock',
         'download_file',
         'download_limit',
@@ -58,6 +60,7 @@ class Product extends Model
         'next_due_date',
         'featured_image',
         'country_id',
+        'renewal_type'
     ];
 
     /**
@@ -162,6 +165,48 @@ public function variations()
 {
     return $this->hasMany(ProductVariation::class);
 }
+
+
+
+    /** Deals pivot */
+    public function deals()
+    {
+        return $this->belongsToMany(Deal::class);
+    }
+
+    /** Returns the active deal (site‑wide or for this product) */
+    public function activeDeal()
+    {
+        $now = Carbon::now();
+        return Deal::where('starts_at', '<=', $now)
+                   ->where('ends_at', '>=', $now)
+                   ->where(function($q) {
+                       $q->where('applies_to_all', true)
+                         ->orWhereHas('products', fn($qb) =>
+                             $qb->where('products.id', $this->id)
+                         );
+                   })
+                   ->first();
+    }
+
+    /** Final price after either product % or active deal % */
+    public function getDiscountedPriceAttribute()
+    {
+        $base = $this->price;
+
+        // 1️⃣ product‑level %
+        if ($this->discount_percent) {
+            return round($base * (1 - $this->discount_percent / 100), 2);
+        }
+
+        // 2️⃣ one‑off deal %
+        if ($deal = $this->activeDeal()) {
+            return round($base * (1 - $deal->discount_percent / 100), 2);
+        }
+
+        // 3️⃣ no discount
+        return $base;
+    }
 
 
 }

@@ -171,6 +171,7 @@
         ['url'=>route('seller.shop.create'),'icon'=>'fas fa-store','label'=>'My Shop'],
         ['url'=>route('seller.shop-posts.index'),'icon'=>'fas fa-newspaper','label'=>'Shop Posts'],
         ['url'=>route('seller.buyers.index'),'icon'=>'fas fa-users','label'=>'My Buyers'],
+         ['url'=>route('seller.deals.index'),'icon'=>'fas fa-users','label'=>'My Deals'],
         [
           'url'=>route('seller.messages.index'),
           'icon'=>'fas fa-comments',

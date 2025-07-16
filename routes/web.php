@@ -5,7 +5,7 @@ use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController
+    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController
 };
 
 use App\Http\Controllers\Admin\{
@@ -94,6 +94,14 @@ Route::post('/success-deposit-fee/{id}', [ProductController::class, 'successDepo
 Route::get('/success-deposit-invoice/{id}', [OrderController::class, 'successDepositInvoice'])->name('success_deposit_invoice');
 Route::resource('shipping-profiles', ShippingProfileController::class)
      ->only(['store']);
+
+
+     // routes/web.php
+
+
+
+
+
 /*
 |--------------------------------------------------------------------------
 | Authenticated Routes
@@ -102,6 +110,9 @@ Route::resource('shipping-profiles', ShippingProfileController::class)
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+// routes/web.php
+Route::patch('products/{product}/renewal', [ProductController::class, 'updateRenewal'])
+     ->name('products.updateRenewal');
 
     Route::post('/listing/{order}/wallet',     // URL:  /orders/123/wallet
             [WalletController::class,'payListing'])
@@ -292,7 +303,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
-
+    Route::resource('deals', DealController::class)
+         ->only(['index','create','store']);
 
        // Shop (one-shop-per-user logic)
     Route::get('/shop/index', [ShopController::class, 'index'])->name('shops.index');
