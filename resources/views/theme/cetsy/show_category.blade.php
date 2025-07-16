@@ -11,9 +11,11 @@
         <div class="position-absolute top-0 start-0 w-100 h-100 bg-success bg-opacity-75 d-flex align-items-center justify-content-center">
             <div class="text-center text-white px-3">
                 <h1 class="display-5 fw-bold text-white">{{ $category->name }}</h1>
-                <p class="lead mb-0">
-                    {{ $category->description ?? 'Explore a wide range of physical products, professional services and digital goods in this category.' }}
-                </p>
+               <p class="lead mb-0">
+  {{ $category->description 
+     ?? 'Explore a wide range of ' . $category->listing_type .' for '.$category->name }}
+</p>
+
             </div>
         </div>
     </div>

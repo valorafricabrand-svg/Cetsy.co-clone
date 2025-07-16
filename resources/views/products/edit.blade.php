@@ -28,27 +28,29 @@
   @endif
 
   <form action="{{ route('products.update', $product) }}"
-        method="POST"
-        enctype="multipart/form-data"
+        method="POST" enctype="multipart/form-data"
         x-data="listingForm()"
         x-init="init()"
         @submit.prevent="$el.submit()"
   >
     @csrf @method('PUT')
 
-    {{-- Listing Details --}}
+    {{-- ───────────────────────────────────────────────────────────────────────────────
+       Listing Details
+    ─────────────────────────────────────────────────────────────────────────────── --}}
     <div class="card mb-4 shadow-sm">
       <div class="card-header bg-success text-white">
         <h4 class="mb-0">Edit Listing Details</h4>
       </div>
       <div class="card-body p-4">
         <div class="row g-4">
+
           {{-- Name --}}
           <div class="col-12">
             <label for="name" class="form-label fw-semibold">Listing Name</label>
             <input type="text" id="name" name="name"
                    class="form-control @error('name') is-invalid @enderror"
-                   value="{{ old('name', $product->name) }}" required autofocus>
+                   value="{{ old('name',$product->name) }}" required autofocus>
             @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
 
@@ -56,7 +58,9 @@
           <div class="col-md-6">
             <label for="type" class="form-label fw-semibold">Listing Type</label>
             <select id="type" name="type" x-model="type"
-                    class="form-select @error('type') is-invalid @enderror" required>
+                    @change="loadCategories()"
+                    class="form-select @error('type') is-invalid @enderror"
+                    required>
               <option value="">Choose type</option>
               <option value="physical" @selected(old('type',$product->type)=='physical')>Physical</option>
               <option value="digital"  @selected(old('type',$product->type)=='digital')>Digital</option>
@@ -69,20 +73,10 @@
           <div class="col-md-6">
             <label for="category_id" class="form-label fw-semibold">Category</label>
             <select id="category_id" name="category_id" x-model="categoryId"
-                    class="form-select @error('category_id') is-invalid @enderror" required>
+                    class="form-select @error('category_id') is-invalid @enderror"
+                    required>
               <option value="">Choose category</option>
-              @foreach($categories as $parent)
-                @if($parent->children->isNotEmpty())
-                  <optgroup label="{{ $parent->name }}">
-                    @foreach($parent->children as $child)
-                      <option value="{{ $child->id }}"
-                        @selected(old('category_id',$product->category_id)==$child->id)>
-                        {{ $child->name }}
-                      </option>
-                    @endforeach
-                  </optgroup>
-                @endif
-              @endforeach
+              {{-- filled by Alpine.js --}}
             </select>
             @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
@@ -129,15 +123,15 @@
             @error('digital_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
 
-          {{-- Country of Origin --}}
+          {{-- Country --}}
           <div class="col-md-6">
             <label for="country_id" class="form-label fw-semibold">Country of Origin</label>
             <select id="country_id" name="country_id"
                     class="form-select @error('country_id') is-invalid @enderror" required>
-              <option value="" disabled {{ old('country_id',$product->country_id)==''?'selected':'' }}>Choose a country</option>
+              <option value="" disabled>Choose a country</option>
               @foreach($countries as $country)
                 <option value="{{ $country->id }}"
-                        @selected(old('country_id',$product->country_id)==$country->id)>
+                  @selected(old('country_id',$product->country_id)==$country->id)>
                   {{ $country->name }}
                 </option>
               @endforeach
@@ -145,7 +139,7 @@
             @error('country_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
 
-          {{-- Origin Postal Code --}}
+          {{-- Postal Code --}}
           <div class="col-md-6">
             <label for="origin_postal_code" class="form-label fw-semibold">Origin Postal Code</label>
             <input type="text" id="origin_postal_code" name="origin_postal_code"
@@ -159,10 +153,10 @@
             <label for="processing_time_id" class="form-label fw-semibold">Processing Time</label>
             <select id="processing_time_id" name="processing_time_id"
                     class="form-select @error('processing_time_id') is-invalid @enderror">
-              <option value="" disabled {{ old('processing_time_id',$product->processing_time_id)==''?'selected':'' }}>Choose a processing time</option>
+              <option value="" disabled>Choose a processing time</option>
               @foreach($processingTimes as $pt)
                 <option value="{{ $pt->id }}"
-                        @selected(old('processing_time_id',$product->processing_time_id)==$pt->id)>
+                  @selected(old('processing_time_id',$product->processing_time_id)==$pt->id)>
                   {{ $pt->name }} — {{ $pt->days }} day{{ $pt->days>1?'s':'' }}
                 </option>
               @endforeach
@@ -214,7 +208,7 @@
       </div>
     </div>
 
-    {{-- Save Changes Button --}}
+    {{-- Save Changes --}}
     <div class="d-grid mb-5">
       <button type="submit" class="btn btn-success btn-lg rounded-pill">
         <i class="fas fa-save me-1"></i> Save Changes
@@ -225,9 +219,7 @@
   {{-- Existing Digital Files --}}
   @if($product->digitalFiles->count())
     <div class="card mb-4 shadow-sm">
-      <div class="card-header bg-light">
-        <h5 class="mb-0">Current Digital Files</h5>
-      </div>
+      <div class="card-header bg-light"><h5>Current Digital Files</h5></div>
       <ul class="list-group list-group-flush">
         @foreach($product->digitalFiles as $file)
           <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -236,9 +228,7 @@
             </a>
             <form action="{{ route('digital-files.destroy',$file) }}" method="POST" onsubmit="return confirm('Delete this file?')">
               @csrf @method('DELETE')
-              <button class="btn btn-sm btn-outline-danger">
-                <i class="fas fa-trash"></i>
-              </button>
+              <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
             </form>
           </li>
         @endforeach
@@ -258,8 +248,7 @@
           @foreach($product->media as $media)
             <div class="col-6 col-sm-4 col-md-3">
               <div class="card">
-                <img src="{{ asset('storage/'.$media->url) }}"
-                     class="card-img-top"
+                <img src="{{ asset('storage/'.$media->url) }}" class="card-img-top"
                      style="height:140px;object-fit:cover;"
                      data-bs-toggle="modal"
                      data-bs-target="#imageModal"
@@ -267,19 +256,16 @@
                 <div class="card-footer text-center py-2">
                   @php
                     $mediaUrl = asset('storage/'.$media->url);
-                    $isFeatured = $product->featured_image=== $mediaUrl;
+                    $isFeatured = $product->featured_image === $mediaUrl;
                   @endphp
-                  <form action="{{ route('products.setFeaturedImage',$product) }}"
-                        method="POST" class="d-inline">
+                  <form action="{{ route('products.setFeaturedImage',$product) }}" method="POST" class="d-inline">
                     @csrf @method('PATCH')
                     <input type="hidden" name="featured_image" value="{{ $media->url }}">
-                    <button type="submit"
-                            class="btn btn-sm {{ $isFeatured?'btn-outline-warning':'btn-outline-success' }}">
+                    <button type="submit" class="btn btn-sm {{ $isFeatured?'btn-outline-warning':'btn-outline-success' }}">
                       {{ $isFeatured?'Featured':'Make as primary image' }}
                     </button>
                   </form>
-                  <form action="{{ route('media.destroy',$media) }}"
-                        method="POST" class="d-inline" onsubmit="return confirm('Remove image?')">
+                  <form action="{{ route('media.destroy',$media) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove image?')">
                     @csrf @method('DELETE')
                     <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                   </form>
@@ -297,16 +283,10 @@
   {{-- Upload & Preview New Images --}}
   <div x-data="imageUploadSortable()" class="card shadow-sm mb-5">
     <div class="card-header bg-light"><h5>Upload & Preview New Images</h5></div>
-    <form action="{{ route('media.upload',$product) }}"
-          method="POST"
-          enctype="multipart/form-data"
-          class="card-body">
+    <form action="{{ route('media.upload',$product) }}" method="POST" enctype="multipart/form-data" class="card-body">
       @csrf
       <div class="border border-dashed rounded-3 py-5 text-center mb-4"
-           @click="$refs.fileInput.click()"
-           @drop.prevent="handleDrop"
-           @dragover.prevent
-           style="cursor:pointer;">
+           @click="$refs.fileInput.click()" @drop.prevent="handleDrop" @dragover.prevent style="cursor:pointer;">
         <p class="text-muted mb-0">Drag & drop images here or click to select</p>
         <input type="file" multiple accept="image/*" class="d-none" x-ref="fileInput"
                @change="handleFiles($event.target.files)" name="media[]">
@@ -318,9 +298,7 @@
               <div class="position-relative rounded overflow-hidden" style="height:140px;">
                 <img :src="file.url" class="w-100 h-100 object-fit-cover">
                 <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
-                        @click.prevent="removeFile(i)">
-                  <i class="fas fa-times"></i>
-                </button>
+                        @click.prevent="removeFile(i)"><i class="fas fa-times"></i></button>
               </div>
             </div>
           </template>
@@ -351,80 +329,108 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
 <script>
-  // TinyMCE init
-  tinymce.init({
-    selector: '#description',
-    plugins: 'image link media code fullscreen',
-    toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
-    menubar: false,
-    height: 300
-  });
+// TinyMCE
+tinymce.init({
+  selector: '#description',
+  plugins: 'image link media code fullscreen',
+  toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
+  menubar: false,
+  height: 300
+});
 
-  // Toggle stock/digital/shipping sections
-  document.getElementById('type').addEventListener('change', function(){
-    const show = { digital:['digitalFileSection'], physical:['stockSection','shippingProfilesSection'] };
-    ['stockSection','digitalFileSection','shippingProfilesSection'].forEach(id=>{
-      document.getElementById(id).style.display = show[this.value]?.includes(id)?'block':'none';
-    });
-  });
-  window.addEventListener('DOMContentLoaded', ()=>{
-    document.getElementById('type').dispatchEvent(new Event('change'));
-  });
+// Show/hide stock, digital, shipping sections when type changes
+function toggleSections() {
+  const t = document.getElementById('type').value;
+  document.getElementById('stockSection').style.display = (t==='physical') ? 'block' : 'none';
+  document.getElementById('digitalFileSection').style.display = (t==='digital')  ? 'block' : 'none';
+  document.getElementById('shippingProfilesSection').style.display = (t==='physical') ? 'block' : 'none';
+}
+document.getElementById('type').addEventListener('change', toggleSections);
+window.addEventListener('DOMContentLoaded', toggleSections);
 
-  // Auto-default shipping profile
-  document.addEventListener('change', e=>{
-    if(!e.target.matches('input[name="shipping_profiles[]"]')) return;
-    const id=e.target.value;
-    if(e.target.checked) {
-      document.getElementById('default_'+id).checked=true;
-    } else if(document.getElementById('default_'+id).checked) {
-      const next=document.querySelector('input[name="shipping_profiles[]"]:checked');
-      if(next) document.getElementById('default_'+next.value).checked=true;
+// Auto‐choose default shipping profile if only one checked
+document.addEventListener('change', e=>{
+  if (!e.target.matches('input[name="shipping_profiles[]"]')) return;
+  const id = e.target.value;
+  if (e.target.checked) {
+    document.getElementById('default_'+id).checked = true;
+  } else if (document.getElementById('default_'+id).checked) {
+    const next = document.querySelector('input[name="shipping_profiles[]"]:checked');
+    if (next) document.getElementById('default_'+next.value).checked = true;
+  }
+});
+
+// Sortable previews for new images
+function imageUploadSortable(){
+  return {
+    previews: [], idCounter:0, sortable:null,
+    handleFiles(files){ [...files].forEach(f=> this.previewFile(f)); },
+    previewFile(file){
+      const r = new FileReader();
+      r.onload = e=>{
+        this.previews.push({id:this.idCounter++,url:e.target.result,fileObject:file});
+        this.$nextTick(()=>this.initSortable());
+      };
+      r.readAsDataURL(file);
+    },
+    removeFile(i){ this.previews.splice(i,1); },
+    handleDrop(e){ if(e.dataTransfer.files.length) this.handleFiles(e.dataTransfer.files); },
+    initSortable(){
+      if(this.sortable) this.sortable.destroy();
+      this.sortable = Sortable.create(document.getElementById('previewList'), {
+        animation:150,
+        onEnd:evt=>{
+          const m = this.previews.splice(evt.oldIndex,1)[0];
+          this.previews.splice(evt.newIndex,0,m);
+        }
+      });
     }
-  });
+  }
+}
 
-  // Alpine image upload + sortable
-  function imageUploadSortable(){
-    return {
-      previews:[], idCounter:0, sortable:null,
-      handleFiles(files){ Array.from(files).forEach(f=> this.previewFile(f)); },
-      previewFile(file){
-        let r=new FileReader();
-        r.onload=e=>{
-          this.previews.push({id:this.idCounter++,url:e.target.result,fileObject:file});
-          this.$nextTick(()=>this.initSortable());
-        };
-        r.readAsDataURL(file);
-      },
-      removeFile(i){ this.previews.splice(i,1); },
-      handleDrop(e){ if(e.dataTransfer.files.length) this.handleFiles(e.dataTransfer.files); },
-      initSortable(){
-        if(this.sortable) this.sortable.destroy();
-        this.sortable=Sortable.create(document.getElementById('previewList'), {
-          animation:150,
-          onEnd:evt=>{
-            const m=this.previews.splice(evt.oldIndex,1)[0];
-            this.previews.splice(evt.newIndex,0,m);
-          }
+// Alpine form for dynamic category + variations
+function listingForm(){
+  return {
+    type: '{{ old('type',$product->type) }}',
+    categoryId: '{{ old('category_id',$product->category_id) }}',
+    variations: @json($existingVariationsForJs),
+    variationType:'', variationOption:'',
+    init(){ 
+      // initial category load
+      this.loadCategories();
+      // hide/show sections
+      toggleSections();
+    },
+    async loadCategories(){
+      const sel = document.getElementById('category_id');
+      sel.innerHTML = '<option>Loading…</option>';
+      if(!this.type){
+        sel.innerHTML = '<option value="">Choose category</option>';
+        return;
+      }
+      try {
+        const res = await fetch(`/api/categories/by-type/${encodeURIComponent(this.type)}`);
+        if(!res.ok) throw '';
+        const cats = await res.json();
+        sel.innerHTML = '<option value="">Choose category</option>';
+        cats.forEach(c=> {
+          const o = document.createElement('option');
+          o.value = c.id; o.text = c.name;
+          if(String(c.id)===this.categoryId) o.selected=true;
+          sel.append(o);
         });
+      } catch {
+        sel.innerHTML = '<option>Error loading</option>';
       }
+    },
+    addManualVariation(){
+      this.variations.push({ key:Date.now(), type:this.variationType, option:this.variationOption });
+      this.variationType=''; this.variationOption='';
     }
   }
-
-  // Alpine listingForm for variations
-  function listingForm(){
-    return {
-      type:'{{ old('type',$product->type) }}',
-      categoryId:'{{ old('category_id',$product->category_id) }}',
-      variations:@json($existingVariationsForJs),
-      variationType:'', variationOption:'',
-      init(){ this.$watch('type',v=>{ if(v!=='physical') this.variations=[]; }); },
-      addManualVariation(){
-        this.variations.push({ key:Date.now(), type:this.variationType, option:this.variationOption });
-        this.variationType=''; this.variationOption='';
-      }
-    }
-  }
+}
 </script>
 @endpush
