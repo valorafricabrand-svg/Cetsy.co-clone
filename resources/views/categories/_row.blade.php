@@ -26,7 +26,7 @@
     </td>
 
     {{-- Slug / Parent / Fee --}}
-    <td>{{ $cat->slug }}</td>
+ <td>{{ ucfirst($parent->listing_type) }}</td>
     <td>{{ $cat->parent?->name ?? '—' }}</td>
     <td>{{ get_currency() }} {{ number_format($cat->listing_fee, 2) }}</td>
 

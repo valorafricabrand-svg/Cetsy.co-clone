@@ -68,35 +68,38 @@ public function show(Category $category)
     /**
      * Admin: Store a newly created category in storage, with featured image.
      */
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'name'      => 'required|string|max:255|unique:categories,name',
-            'slug'      => 'nullable|string|max:255|unique:categories,slug',
-            'parent_id' => 'nullable|exists:categories,id',
-            'image'     => 'nullable|image|max:20480',
-            'listing_fee' => 'nullable|numeric|min:0',
-        ]);
+public function store(Request $request)
+{
+    $data = $request->validate([
+        'name'          => 'required|string|max:255|unique:categories,name',
+        'slug'          => 'nullable|string|max:255|unique:categories,slug',
+        'parent_id'     => 'nullable|exists:categories,id',
+        'listing_type'  => 'required|in:products,services,digital',
+        'description'   => 'nullable|string|max:1000',
+        'listing_fee'   => 'nullable|numeric|min:0',
+        'image'         => 'nullable|image|max:20480',
+    ]);
 
-        // Auto-generate slug if blank, ensure uniqueness
-        if (empty($data['slug'])) {
-            $data['slug'] = Str::slug($data['name']);
-            if (Category::where('slug', $data['slug'])->exists()) {
-                $data['slug'] .= '-' . time();
-            }
+    // Auto‐slug if blank
+    if (empty($data['slug'])) {
+        $data['slug'] = Str::slug($data['name']);
+        if (Category::where('slug', $data['slug'])->exists()) {
+            $data['slug'] .= '-' . time();
         }
-
-        // Handle featured image upload
-        if ($file = $request->file('image')) {
-            $data['image'] = $file->store('categories/images', 'public');
-        }
-
-        Category::create($data);
-
-        return redirect()
-            ->route('categories.index')
-            ->with('success', 'Category created successfully!');
     }
+
+    // Handle featured image upload
+    if ($file = $request->file('image')) {
+        $data['image'] = $file->store('categories/images', 'public');
+    }
+
+    Category::create($data);
+
+    return redirect()
+        ->route('admin.categories.index')
+        ->with('success', 'Category created successfully!');
+}
+
 
     /**
      * Admin: Show the form for editing the specified category.
@@ -113,36 +116,35 @@ public function show(Category $category)
     /**
      * Admin: Update the specified category in storage, including featured image.
      */
-    public function update(Request $request, Category $category)
-    {
-        $data = $request->validate([
-            'name'      => "required|string|max:255|unique:categories,name,{$category->id}",
-            'slug'      => "nullable|string|max:255|unique:categories,slug,{$category->id}",
-            'parent_id' => 'nullable|exists:categories,id',
-            'image'     => 'nullable|image|max:2048',
-            'listing_fee' => 'nullable|numeric|min:0',
-        ]);
+public function update(Request $request, Category $category)
+{
+    $data = $request->validate([
+        'name'          => "required|string|max:255|unique:categories,name,{$category->id}",
+        'slug'          => "nullable|string|max:255|unique:categories,slug,{$category->id}",
+        'parent_id'     => 'nullable|exists:categories,id',
+        'listing_type'  => 'required|in:products,services,digital',
+        'description'   => 'nullable|string|max:1000',
+        'listing_fee'   => 'nullable|numeric|min:0',
+        'image'         => 'nullable|image|max:20480',
+    ]);
 
-        // Auto-generate slug if blank
-        if (empty($data['slug'])) {
-            $data['slug'] = Str::slug($data['name']);
-        }
-
-        // Replace featured image if a new one was uploaded
-        if ($file = $request->file('image')) {
-            // Remove old image
-            if ($category->image) {
-                Storage::disk('public')->delete($category->image);
-            }
-            $data['image'] = $file->store('categories/images', 'public');
-        }
-
-        $category->update($data);
-
-      
-
-          return back()->with('success','Category updated.');
+    // Auto‐slug if blank
+    if (empty($data['slug'])) {
+        $data['slug'] = Str::slug($data['name']);
     }
+
+    // Replace featured image if uploaded
+    if ($file = $request->file('image')) {
+        if ($category->image) {
+            Storage::disk('public')->delete($category->image);
+        }
+        $data['image'] = $file->store('categories/images', 'public');
+    }
+
+    $category->update($data);
+
+    return back()->with('success', 'Category updated successfully!');
+}
 
     /**
      * Admin: Remove the specified category from storage along with its image.
@@ -188,6 +190,32 @@ $category = Category::find($id);
                  ->get(['id','name'])
     );
 }
+
+
+// app/Http/Controllers/CategoryController.php
+
+public function byType(string $type)
+{
+    // Map your form types to listing_type values in the database
+    $map = [
+      'physical' => 'products',
+      'service'  => 'services',
+      'digital'  => 'digital downloads',
+    ];
+    $listingType = $map[$type] ?? null;
+    if (! $listingType) {
+        return response()->json([], 400);
+    }
+
+    // Fetch parents and their children
+    $categories = Category::where('listing_type', $listingType)
+                       ->whereNotNull('parent_id')
+                       ->orderBy('name')
+                       ->get(['id','name']);
+
+    return response()->json($categories);
+}
+
 
 
 
