@@ -29,6 +29,9 @@
               <h3 class="h5">Active Subscription</h3>
               <p class="mb-0">
                 Your subscription is active until <strong>{{ $subscription->end_date->format('F j, Y') }}</strong>
+                @if($subscription->notes)
+                  <br><small class="text-muted">Plan: {{ $subscription->notes }}</small>
+                @endif
               </p>
             </div>
 
@@ -47,34 +50,107 @@
               </p>
             </div>
 
-            <div class="card border mb-4">
-              <div class="card-body">
-                <h3 class="h5 mb-3">Monthly Subscription</h3>
-                <p class="display-6 fw-bold mb-4">
-                  USD {{ number_format(config('subscription.monthly_fee', 5), 2) }}
-                </p>
+            <div class="row">
+              <!-- Monthly Plan -->
+              <div class="col-md-6 mb-4">
+                <div class="card border h-100">
+                  <div class="card-body d-flex flex-column">
+                    <div class="text-center mb-3">
+                      <h3 class="h5 mb-2">Monthly Plan</h3>
+                      <p class="display-6 fw-bold mb-2">
+                        USD {{ number_format(config('subscription.monthly_fee', 5), 2) }}
+                      </p>
+                      <small class="text-muted">per month</small>
+                    </div>
 
-                <ul class="list-unstyled mb-4">
-                  <li class="d-flex align-items-start mb-2">
-                    <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
-                    <span>Access to seller dashboard</span>
-                  </li>
-                  <li class="d-flex align-items-start mb-2">
-                    <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
-                    <span>List unlimited products</span>
-                  </li>
-                  <li class="d-flex align-items-start">
-                    <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
-                    <span>Process orders and payments</span>
-                  </li>
-                </ul>
+                    <ul class="list-unstyled mb-4 flex-grow-1">
+                      <li class="d-flex align-items-start mb-2">
+                        <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
+                        <span>Access to seller dashboard</span>
+                      </li>
+                      <li class="d-flex align-items-start mb-2">
+                        <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
+                        <span>List unlimited products</span>
+                      </li>
+                      <li class="d-flex align-items-start mb-2">
+                        <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
+                        <span>Process orders and payments</span>
+                      </li>
+                      <li class="d-flex align-items-start mb-2">
+                        <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
+                        <span>Access analytics and reports</span>
+                      </li>
+                      <li class="d-flex align-items-start">
+                        <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
+                        <span>KYC verification support</span>
+                      </li>
+                    </ul>
 
-                <form action="{{ route('seller.subscription.subscribe') }}" method="POST">
-                  @csrf
-                  <button type="submit" class="btn btn-success w-100">
-                    Subscribe Now
-                  </button>
-                </form>
+                    <form action="{{ route('seller.subscription.subscribe') }}" method="POST">
+                      @csrf
+                      <input type="hidden" name="plan" value="monthly">
+                      <button type="submit" class="btn btn-outline-primary w-100">
+                        Choose Monthly Plan
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Yearly Plan -->
+              <div class="col-md-6 mb-4">
+                <div class="card border h-100 position-relative">
+                  <div class="position-absolute top-0 start-50 translate-middle-x">
+                    <span class="badge bg-success px-3 py-2 rounded-pill">
+                      Save {{ config('subscription.yearly_discount_percent', 17) }}%
+                    </span>
+                  </div>
+                  <div class="card-body d-flex flex-column">
+                    <div class="text-center mb-3">
+                      <h3 class="h5 mb-2">Yearly Plan</h3>
+                      <p class="display-6 fw-bold mb-2">
+                        USD {{ number_format(config('subscription.yearly_fee', 50), 2) }}
+                      </p>
+                      <small class="text-muted">per year</small>
+                      <div class="mt-2">
+                        <small class="text-decoration-line-through text-muted">
+                          USD {{ number_format(config('subscription.monthly_fee', 5) * 12, 2) }}
+                        </small>
+                      </div>
+                    </div>
+
+                    <ul class="list-unstyled mb-4 flex-grow-1">
+                      <li class="d-flex align-items-start mb-2">
+                        <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
+                        <span>All monthly features included</span>
+                      </li>
+                      <li class="d-flex align-items-start mb-2">
+                        <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
+                        <span>Priority customer support</span>
+                      </li>
+                      <li class="d-flex align-items-start mb-2">
+                        <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
+                        <span>Advanced analytics dashboard</span>
+                      </li>
+                      <li class="d-flex align-items-start mb-2">
+                        <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
+                        <span>Early access to new features</span>
+                      </li>
+                      <li class="d-flex align-items-start">
+                        <i class="bi bi-check-circle-fill text-success fs-5 me-2"></i>
+                        <span>Dedicated account manager</span>
+                      </li>
+                    </ul>
+
+                    <form action="{{ route('seller.subscription.subscribe') }}" method="POST">
+                      @csrf
+                      <input type="hidden" name="plan" value="yearly">
+                      <button type="submit" class="btn btn-success w-100">
+                        Choose Yearly Plan
+                      </button>
+                    </form>
+                  </div>
+                </div>
               </div>
             </div>
 

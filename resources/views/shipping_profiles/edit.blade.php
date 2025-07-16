@@ -6,7 +6,7 @@
 <div class="content">
     <h2>Edit Shipping Profile</h2>
 
-    <form action="{{ route('shipping_profiles.update', $shippingProfile) }}" method="POST">
+    <form action="{{ route('seller.shipping_profiles.update', $shippingProfile) }}" method="POST">
         @csrf
         @method('PUT')
 

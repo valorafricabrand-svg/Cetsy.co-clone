@@ -10,7 +10,9 @@ return [
     |
     */
 
-    'monthly_fee' => env('SUBSCRIPTION_MONTHLY_FEE', 5),
+    'monthly_fee' => env('SUBSCRIPTION_MONTHLY_FEE', 10),
+    'yearly_fee' => env('SUBSCRIPTION_YEARLY_FEE', 100),
+    'yearly_discount_percent' => env('SUBSCRIPTION_YEARLY_DISCOUNT', 17), // 17% discount for yearly
 
     /*
     |--------------------------------------------------------------------------

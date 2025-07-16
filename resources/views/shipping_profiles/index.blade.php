@@ -6,7 +6,7 @@
 <div class="content">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Shipping Profiles</h2>
-        <a href="{{ route('shipping_profiles.create') }}" class="btn btn-primary">Add Shipping Profile</a>
+        <a href="{{ route('seller.shipping_profiles.create') }}" class="btn btn-primary">Add Shipping Profile</a>
     </div>
 
     @if(session('success'))
@@ -45,8 +45,8 @@
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('shipping_profiles.edit', $profile) }}" class="btn btn-sm btn-warning">Edit</a>
-                            <form action="{{ route('shipping_profiles.destroy', $profile) }}"
+                            <a href="{{ route('seller.shipping_profiles.edit', $profile) }}" class="btn btn-sm btn-warning">Edit</a>
+                            <form action="{{ route('seller.shipping_profiles.destroy', $profile) }}"
                                   method="POST"
                                   class="d-inline-block"
                                   onsubmit="return confirm('Delete this shipping profile?');"
@@ -65,7 +65,7 @@
 
         {{ $profiles->links() }}
     @else
-        <p>No shipping profiles found. <a href="{{ route('shipping_profiles.create') }}">Create one now.</a></p>
+        <p>No shipping profiles found. <a href="{{ route('seller.shipping_profiles.create') }}">Create one now.</a></p>
     @endif
 </div>
 @endsection
