@@ -11,6 +11,7 @@
     $shop = Auth::user()->shop;
     $unreadMessages = 0;
     $favoritesCount = 0;
+    $pendingOffers = 0;
     if ($shop) {
         $productIds = $shop->products()->pluck('id');
         $unreadMessages = \App\Models\Message::whereIn('product_id', $productIds)

@@ -38,6 +38,7 @@ class DashboardController extends Controller
         // Fetch offers made by the buyer
         $offers = \App\Models\Offer::where('buyer_id', Auth::id())->with('product')->latest()->get();
 
+        
         return view('buyer.dashboard', compact(
             'ordersCount',
             'wishlistCount',

@@ -16,7 +16,7 @@
       @endif
       <div>
         <h1 class="h3 mb-0">{{ $shop->name }}</h1>
-        <small class="text-muted">Owned by {{ $shop->user->name }}</small>
+        <!-- <small class="text-muted">Owned by {{ $shop->user->name }}</small> -->
       </div>
     </div>
     {{-- View Payment Methods --}}
