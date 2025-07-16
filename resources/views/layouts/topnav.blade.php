@@ -19,7 +19,41 @@
 
                     <ul class="navbar-nav navbar-nav-icons flex-row">
 
-
+                        {{-- Simple Notifications Bell --}}
+                        @php
+                            // Get unread message count for current user
+                            $unreadMessages = 0;
+                            if (auth()->user()->isSeller()) {
+                                // For sellers: count messages for their products
+                                $shop = auth()->user()->shop;
+                                if ($shop) {
+                                    $productIds = $shop->products()->pluck('id');
+                                    $unreadMessages = \App\Models\Message::whereIn('product_id', $productIds)
+                                        ->where('receiver_id', auth()->id())
+                                        ->where('is_read', false)
+                                        ->count();
+                                }
+                            } else {
+                                // For buyers: count messages they received
+                                $unreadMessages = \App\Models\Message::where('sender_id', auth()->id())
+                                    ->where('is_read', false)
+                                    ->count();
+                            }
+                        @endphp
+                        
+                        <li class="nav-item me-2">
+                            
+                            <a href="{{ auth()->user()->isSeller() ? route('seller.messages.index') : route('buyer.messages.index') }}" 
+                               class="nav-link position-relative" 
+                               title="Messages">
+                                <i class="fas fa-bell fa-lg"></i>
+                                @if($unreadMessages > 0)
+                                    <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+                                        {{ $unreadMessages > 99 ? '99+' : $unreadMessages }}
+                                    </span>
+                                @endif
+                            </a>
+                        </li>
 
       
 

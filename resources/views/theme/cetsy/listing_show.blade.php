@@ -116,9 +116,9 @@
                 <i class="fa-regular fa-heart{{ $isFavorited ? ' text-danger fa-solid' : '' }}"> </i> Favourites
               </button>
             </form>
-            <button class="btn btn-outline-secondary" @click="share('{{ url()->current() }}')" data-bs-toggle="tooltip" title="Copy link">
+            <!-- <button class="btn btn-outline-secondary" @click="share('{{ url()->current() }}')" data-bs-toggle="tooltip" title="Copy link">
               <i class="fa-solid fa-share-nodes"></i>
-            </button>
+            </button> -->
             <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#offerModal">
               <i class="fa-solid fa-hand-holding-dollar me-1"></i>Make an offer
             </button>

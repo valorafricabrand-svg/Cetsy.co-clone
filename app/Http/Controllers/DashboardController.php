@@ -21,7 +21,6 @@ class DashboardController extends Controller
         if ($user->isSeller()) {
             return redirect()->route('seller.dashboard');
         }
-
         // Default to buyer
         return redirect()->route('buyer.dashboard');
     }

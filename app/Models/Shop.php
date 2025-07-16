@@ -81,6 +81,33 @@ class Shop extends Model
 
         // Section 5: security
         'enable_2fa',
+
+        // Section 6: social media
+        'facebook_url',
+        'instagram_url',
+        'twitter_url',
+        'youtube_url',
+        'website_url',
+
+        // Section 7: customization
+        'primary_color',
+        'secondary_color',
+        'custom_css',
+        'banner_text',
+        'banner_color',
+
+        // Section 8: features
+        'show_sales_count',
+        'show_member_since',
+        'show_social_links',
+        'show_banner',
+
+        // Section 9: contact & policies
+        'contact_email',
+        'contact_phone',
+        'shipping_info',
+        'return_policy',
+        'privacy_policy',
     ];
 
     /**
