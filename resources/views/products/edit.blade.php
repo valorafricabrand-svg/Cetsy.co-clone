@@ -343,18 +343,10 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
 <script>
-// TinyMCE
-tinymce.init({
-  selector: '#description',
-  plugins: 'image link media code fullscreen',
-  toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
-  menubar: false,
-  height: 300
-});
+
 
 // Show/hide stock, digital, shipping sections when type changes
 function toggleSections() {
@@ -448,4 +440,62 @@ function listingForm(){
   }
 }
 </script>
+
+
+        <!-- Include TinyMCE from the local directory -->
+    <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
+<script>
+tinymce.init({
+  selector: '#description',
+  height: 400,
+  min_height: 400,
+  menubar: true,
+
+  /* Enable extra plugins for styling */
+  plugins: [
+    'advlist autolink lists link image charmap print preview anchor',
+    'searchreplace visualblocks code fullscreen',
+    'insertdatetime media table paste code help wordcount',
+    'formatpainter',        /* copy/paste formatting */
+    'lineheight',           /* adjust line spacing */
+    'textcolor'             /* font color */
+  ],
+
+  /* Add font‑size, font‑family, line‑height and Format Painter to toolbar */
+  toolbar: [
+    'undo redo | formatpainter | fontselect fontsizeselect |', 
+    'lineheightselect | bold italic underline strikethrough forecolor backcolor |',
+    'alignleft aligncenter alignright alignjustify |',
+    'bullist numlist outdent indent | removeformat | link image media | code'
+  ].join(' '),
+
+  /* Define your available fonts and sizes */
+  font_formats: [
+    'Arial=arial,helvetica,sans-serif;', 
+    'Courier New=courier new,courier,monospace;', 
+    'Georgia=georgia,palatino,serif;', 
+    'Tahoma=tahoma,arial,helvetica,sans-serif;', 
+    'Times New Roman=times new roman,times,serif;', 
+    'Verdana=verdana,geneva,sans-serif'
+  ].join(' '),
+
+  fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt',
+
+  /* Enable the lineheight dropdown (requires lineheight plugin) */
+  lineheight_formats: '1 1.2 1.5 1.8 2 3',
+
+  /* Let browser context menu & keyboard shortcuts continue to work */
+  browser_contextmenu: true,
+  contextmenu: 'link image inserttable | cell row column',
+
+  branding: false,
+  content_css: '{{ asset("css/tinymce-content.css") }}',
+  content_style: 'body { min-height:400px !important; }',
+
+  setup(editor) {
+    editor.on('change', () => editor.save());
+  }
+});
+</script>
+
 @endpush
