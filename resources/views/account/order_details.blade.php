@@ -143,6 +143,7 @@
               <thead class="table-light text-nowrap">
                 <tr>
                   <th>#</th>
+                  <th>Image</th>
                   <th>Product</th>
                   <th>Variation</th>
                   <th>Qty</th>
@@ -170,6 +171,24 @@
 
                   <tr>
                     <td>{{ $loop->iteration }}</td>
+                      <td>
+        @if($item->product->featured_image)
+  <img 
+    src="{{ $item->product->featured_image }}"
+    alt="{{ $item->name }}"
+    class="img-fluid rounded"
+    style="max-width:100px; height:auto; object-fit:cover;"
+  >
+@else
+  <img 
+    src="{{ asset('storage/' . ($item->product->media->first()->url ?? 'placeholder.jpg')) }}"
+    alt="{{ $item->product->name }}"
+    class="img-fluid rounded"
+    style="max-width:100px; height:auto; object-fit:cover;"
+  >
+@endif
+
+                                </td>
                     <td>{{ optional($item->product)->name ?? 'N/A' }}</td>
                     <td>{{ $item->variation_details ?? '-' }}</td>
                     <td>{{ $item->quantity }}</td>

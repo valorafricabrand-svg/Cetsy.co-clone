@@ -112,15 +112,7 @@
                 <!-- scrollbar removed-->
                 <div class="navbar-vertical-content">
                     <ul class="navbar-nav flex-column" id="navbarVerticalNav">
-  @if(Auth::user()->isSeller())
-    <!-- Always visible Search Tenant Form -->
-    <form class="d-flex flex-grow-1 mx-2" action="{{ url('user.search') }}" method="GET">
-        <input class="form-control me-2" type="search" name="query" placeholder="Search products" aria-label="Search products">
-        <button class="btn btn-outline-success" type="submit">
-            <i class="fas fa-search"></i>
-        </button>
-    </form>
-@endif
+
 
                         <li class="nav-item">
                        
