@@ -2,7 +2,7 @@
 <div class="modal fade" id="newProfileModal" tabindex="-1"
      aria-labelledby="newProfileLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form  action="{{ route('shipping_profiles.store') }}"
+    <form  action="{{ route('seller.shipping_profiles.store') }}"
            method="POST" class="modal-content">
       @csrf
 
