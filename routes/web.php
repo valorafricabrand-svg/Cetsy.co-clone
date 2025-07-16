@@ -83,12 +83,14 @@ Route::get('/bconfirm-payment/{id}', [MpesaController::class, 'checkStatus']);
 
 // Payment routes
 Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_now');
+
 Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
       ->name('products.pay-fee');
 
+
 Route::get('/pay-now-invoice/{total}', [OrderController::class, 'payNowInvoice'])->name('pay_now_invoice');
 Route::get('/success-deposit/{id}', [OrderController::class, 'successDeposit'])->name('success_deposit');
-Route::get('/success-deposit-fee/{id}', [ProductController::class, 'successDeposit'])->name('success_deposit_fee');
+Route::post('/success-deposit-fee/{id}', [ProductController::class, 'successDeposit'])->name('success_deposit_fee');
 Route::get('/success-deposit-invoice/{id}', [OrderController::class, 'successDepositInvoice'])->name('success_deposit_invoice');
 Route::resource('shipping-profiles', ShippingProfileController::class)
      ->only(['store']);
@@ -113,6 +115,12 @@ Route::middleware('auth')->group(function () {
         '/account/orders/{order}/cancel',
         [OrderController::class, 'cancel']
     )->name('orders.cancel');
+
+ Route::post(
+    '/products/{product}/status',
+    [ProductController::class, 'changeStatus']
+)->name('products.changeStatus');
+
 
 
 // Add new variation to a product

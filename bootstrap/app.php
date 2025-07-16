@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\EnsureSellerKycIsVerified;
 use App\Http\Middleware\EnsureUserIsSeller;
+use Illuminate\Console\Scheduling\Schedule;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,6 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         \App\Console\Commands\DeactivateExpiredSubscriptions::class,
     ])
+    ->withSchedule(function (Schedule $schedule) {
+        // Define your scheduled tasks here
+        $schedule->command('products:pause-expired')->everyMinute();
+    })
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

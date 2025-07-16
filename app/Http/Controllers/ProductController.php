@@ -18,6 +18,12 @@ use App\Models\ShippingPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;   
 
+
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Session;
+
+
+
 class ProductController extends Controller
 {
     public function index()
@@ -541,62 +547,89 @@ public function listing(string $slug)
     }
 
 
-      public function payFee(Request $request, Product $product)
-    {
-         
-        return view('products.pay_fee', ['order' => $product]);
+ // in App\Http\Controllers\ProductController.php
+// In your controller:
+public function payFee(Request $request, Product $product)
+{
+    $request->validate([
+        'plan' => ['required','in:monthly,4months'],
+    ]);
+    // … compute $fee, $label, $due …
+    return view('products.pay_fee', [
+        'order'        => $product,
+        'plan'         => $request->plan,      // pass it here
+        'fourMonthFee' => $product->category->listing_fee,
+        'monthlyFee'   => $product->category->listing_fee / 4,
+        'walletBalance'=> auth()->check() ? wallet() : 0,
+    ]);
+}
+
+
+
+
+          // In App\Http\Controllers\ProductController.php
+
+
+
+public function successDeposit(Request $request, $id)
+{
+    // 1) Retrieve the product or 404
+    $product = Product::findOrFail($id);
+
+    // 2) Validate the plan
+    $plan = $request->input('plan', '4months');
+    if (! in_array($plan, ['monthly','4months'])) {
+        $plan = '4months';
     }
 
-
-               public function successDeposit(Request $request, $id)
-    {
-        // Retrieve the order/invoice
-        $product = Product::findOrFail($id);
-
-          $product->update([
-            'is_active'        => 1,
-            'listing_paid_at'  => now(),     // add this column if desired
-            'next_due_date'   => now()->addMonth(4), 
-        ]);
-
-        // Determine payment method: default to 'paypal'
-        $method = $request->get('method', 'paypal');
-
-        // Prepare a unique local transaction ID if not provided
-        // (e.g., PayPal flow might not send one; MPESA flow might include its own)
-        $localTxId = $request->get('transaction_id');
-        if (!$localTxId) {
-            do {
-                $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
-            } while (Payment::where('local_transaction_id', $localTxId)->exists());
-        }
-
-        // Determine currency sign dynamically
-        // (assume order has a currency column; fallback to 'USD')
-        $currency = $order->currency ?? 'USD';
-
-        // Build the payment data array
-        $paymentData = [
-            
-           
-            'shop_id'              => $product->shop_id,
-            'total_amount'         => $product->category?->listing_fee,
-            'payment_method'       => $method,
-            'status'               => '3',
-            'currency'             => $currency,
-            'local_transaction_id' => $localTxId,
-            'payment_name' => 'listing_fee',
-        ];
-
-
-        // Create the payment record
-        $payment = Payment::create($paymentData);
-
-      
-        return redirect()
-            ->route('products.show', $product)
-            ->with('success', 'Your payment has been received.');
+    // 3) Compute fee & next due date
+    $fourMonthFee = (float) $product->category->listing_fee;
+    if ($plan === 'monthly') {
+        $fee     = $fourMonthFee / 4;
+        $nextDue = now()->addMonth();
+    } else {
+        $fee     = $fourMonthFee;
+        $nextDue = now()->addMonths(4);
     }
+
+    // 4) Activate the product and set due date
+    $product->update([
+        'is_active'      => true,
+        'listing_paid_at'=> now(),
+        'next_due_date'  => $nextDue,
+    ]);
+
+    // 5) Determine payment method
+    $via = $request->input('via', 'paypal');
+
+    // 6) Generate a unique local transaction ID
+    $localTx = $request->input('transaction_id');
+    if (! $localTx) {
+        do {
+            $localTx = 'TRAN_' . time() . Str::upper(Str::random(6));
+        } while (Payment::where('local_transaction_id', $localTx)->exists());
+    }
+
+    // 7) Record the payment
+    Payment::create([
+        'shop_id'              => $product->shop_id,
+        'total_amount'         => $fee,
+        'payment_method'       => $via,
+        'status'               => '3',    // completed
+        'currency'             => $product->currency ?? 'USD',
+        'local_transaction_id' => $localTx,
+        'payment_name'         => 'listing_fee',
+    ]);
+
+    // 8) Show a dedicated success page
+    return view('products.success_deposit_fee', [
+        'product' => $product,
+        'plan'    => $plan,
+        'amount'  => $fee,
+        'nextDue' => $nextDue,
+    ]);
+}
+
 
 
     public function setFeaturedImage(
@@ -620,6 +653,30 @@ public function listing(string $slug)
         // 4. Bounce back with feedback.
         return back()->with('success', 'Featured image updated.');
     }
+
+
+public function changeStatus(Request $request, Product $product)
+{
+    $data = $request->validate([
+        'status' => ['required','in:1,2'],
+    ]);
+
+    // If trying to publish (1) but next_due_date is past, block:
+    if ($data['status']==1 && Carbon::now()->gt($product->next_due_date)) {
+        return back()
+             ->with('warning', 'Your listing has expired — please renew before publishing.');
+    }
+
+    $product->update(['is_active' => $data['status']]);
+
+    $msg = $data['status']==1
+         ? 'Listing has been published.'
+         : 'Listing has been paused.';
+
+    return redirect()
+        ->route('products.show',$product)
+        ->with('success',$msg);
+}
 
 
 }
