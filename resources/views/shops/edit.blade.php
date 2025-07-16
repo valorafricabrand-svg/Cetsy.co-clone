@@ -196,9 +196,9 @@
           <div class="mt-4">
             <label for="logo" class="form-label">Logo (optional)</label>
             <input class="form-control" type="file" id="logo" name="logo" accept="image/*">
-            @if($shop->logo_url)
+            @if($shop->logo)
               <div class="mt-2">
-                <img src="{{ $shop->logo_url }}" alt="logo" class="rounded-circle" width="50" height="50">
+                <img src="{{ asset('storage/' . $shop->logo) }}" alt="logo" class="rounded-circle" width="50" height="50">
               </div>
             @endif
           </div>

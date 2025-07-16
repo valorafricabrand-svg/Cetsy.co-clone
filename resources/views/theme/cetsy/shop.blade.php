@@ -7,8 +7,8 @@
   <div class="container">
     <div class="row align-items-center">
       <div class="col-lg-9 d-flex align-items-center gap-4">
-        @if($shop->logo_url)
-          <img src="{{ $shop->logo_url }}" alt="{{ $shop->name }} logo"
+        @if($shop->logo)
+          <img src="{{ asset('storage/' . $shop->logo) }}" alt="{{ $shop->name }} logo"
                class="rounded-circle shadow-sm border"
                style="width: 80px; height: 80px; object-fit: cover;">
         @else
@@ -91,7 +91,7 @@
         @else
           <div class="d-flex gap-2 justify-content-lg-end">
             <button class="btn btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#messageModal">
-              <i class="fas fa-comment me-1"></i> Contact
+              <i class="fas fa-comment me-1"></i> Message Seller
             </button>
             
             <div class="dropdown">
