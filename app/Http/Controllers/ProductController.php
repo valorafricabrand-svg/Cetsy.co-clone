@@ -1,29 +1,33 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Payment;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\ListingFeeType;
+use App\Models\Country;
+use App\Models\Wishlist;
+use App\Models\ProcessingTime;
+use App\Services\Shared\GetShippingService;
+use App\Models\ShippingPeriod;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\Rule;   
 
 class ProductController extends Controller
 {
-  
-
-    public function index(Request $request)
+    public function index()
     {
-        $query = Product::with('category','media')
-            ->where('shop_id', Auth::user()->shop->id)
-            ->latest();
+        $shopId = auth()->user()->shop->id;
 
-        if ($search = $request->input('search')) {
-            $query->where('name', 'like', "%{$search}%");
-        }
-
-        $products = $query->paginate(20)->withQueryString();
+        $products = Product::with('media')
+            ->where('shop_id', $shopId)
+            ->latest()
+            ->paginate(12);
 
         return view('products.index', compact('products'));
     }
@@ -166,25 +170,32 @@ public function store(Request $request)
 
  public function edit(Product $product)
     {
-        abort_if($product->shop_id !== Auth::user()->shop->id, 403);
+        // 1. Get the current user’s shop and its shipping profiles
+        $shop = Auth::user()->shop;
+        $shippingProfiles = $shop->shippingProfiles;
 
+        // 2. Determine which profiles are assigned and which is default
+        $assignedProfiles = $product
+            ->shippingProfiles()
+            ->pluck('shipping_profile_id')
+            ->toArray();
+
+        $defaultProfileId = $product
+            ->shippingProfiles()
+            ->wherePivot('is_default', true)
+            ->pluck('shipping_profile_id')
+            ->first();
+
+        // 3. Dropdown data for categories and countries
         $categories = Category::orderBy('name')->get();
-        return view('products.edit', compact('product','categories'));
-    }
+        $countries  = Country::orderBy('name')->get();
 
-    public function update(Request $request, Product $product)
-    {
-        abort_if($product->shop_id !== Auth::user()->shop->id, 403);
-
-        $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'slug'        => "nullable|string|max:255|unique:products,slug,{$product->id}",
-            'category_id' => 'nullable|exists:categories,id',
-            'description' => 'nullable|string',
-            'price'       => 'required|numeric|min:0',
-            'stock'       => 'required|integer|min:0',
-            'status'      => 'required|in:draft,active,archived',
-            'images.*'    => 'nullable|image|max:2048',
+        // 4. Eager-load variations → values, and category → attributes → values
+        $product->load([
+            // for each variation, load its CategoryAttributeValue rows
+            'variations.values:id,category_attribute_id,value',
+            // for the category’s attribute picker, load each attribute’s values
+            'category.attributes.values:id,category_attribute_id,value',
         ]);
 
         // 5. Build JS payload for existing variations
@@ -279,6 +290,7 @@ public function update(Request $request, Product $product)
             $path = $file->store('products','public');
             $product->media()->create(['url'=>$path]);
         }
+    }
 
     // 4) Digital files logic
     if ($data['type'] === 'digital' && $request->hasFile('digital_file')) {
@@ -337,6 +349,7 @@ public function update(Request $request, Product $product)
 
 
 
+
     public function destroy(Product $product)
     {
         abort_if($product->shop_id !== Auth::user()->shop->id, 403);
@@ -353,39 +366,260 @@ public function update(Request $request, Product $product)
 
     public function show(Product $product)
     {
-        // Optional public view
+        $product->load('media');
         return view('products.show', compact('product'));
     }
 
-
-        public function listing($slug)
-    {
-
-        $product = Product::whereSlug($slug)->first();
-        $isFavorited = auth()->check() && auth()->user()->favorites()->where('product_id', $product->id)->exists();
-        return view('products.show', compact('product', 'isFavorited'));
-        
-    }
-
-
-    public function listings()
+public function listing(string $slug)
 {
-    $products = Product::with('media')->latest()->paginate(16);
-    return view('theme.listings', compact('products'));
+    /* ------------------------------------------------------------
+     | 1.  Fetch the product with everything the view needs
+     |------------------------------------------------------------ */
+    $product = Product::with([
+            'media',
+            'category:id,name,slug',
+            'country:id,name',
+            // ➜ keep only real columns that exist in shipping_profiles
+            'shippingProfiles:id,name,base_rate',
+            'shop:id,name,user_id,slug',
+            'shop.policies:shop_id,shipping,returns',
+        ])
+        ->withCount('reviews')
+        ->withAvg('reviews', 'rating')
+        ->whereSlug($slug)
+        ->firstOrFail();
+
+    /* ------------------------------------------------------------
+     | 2.  Record a view (logged-in users and guests)
+     |------------------------------------------------------------ */
+    $product->views()->create([
+        'viewer_id' => Auth::id(),   // null for guests
+        'ip'        => request()->ip(),
+    ]);
+
+    /* ------------------------------------------------------------
+     | 3.  Per-viewer data
+     |------------------------------------------------------------ */
+    $isFavorited = Auth::check()
+        && Auth::user()
+               ->favorites()
+               ->where('product_id', $product->id)
+               ->exists();
+
+    /* ------------------------------------------------------------
+     | 4.  Extra data blocks for the Etsy-style page
+     |------------------------------------------------------------ */
+    $reviews = $product->reviews()
+                       ->with('user:id,name')
+                       ->latest()
+                       ->take(20)
+                       ->get();
+
+    $faqs = $product->faqs()->latest()->get();
+
+    $shopPolicies = $product->shop->policies
+        ?? (object) ['shipping' => null, 'returns' => null];
+
+    $moreFromShop = $product->shop->products()
+        ->where('id', '!=', $product->id)
+        ->latest()
+        ->take(8)
+        ->get();
+
+    $relatedProducts = Product::where('category_id', $product->category_id)
+        ->where('id', '!=', $product->id)
+        ->latest()
+        ->take(8)
+        ->get();
+
+    /* ------------------------------------------------------------
+     | 5.  Default shipping profile ID for the view (pivot field)
+     |------------------------------------------------------------ */
+    $defaultProfileId = optional(
+        $product->shippingProfiles->firstWhere('pivot.is_default', true)
+            ?? $product->shippingProfiles->first()      // fallback
+    )->id;
+
+    /* ------------------------------------------------------------
+     | 6.  Render
+     |------------------------------------------------------------ */
+    return themed_view('listing_show', [
+        'product'          => $product,
+        'isFavorited'      => $isFavorited,
+        'reviews'          => $reviews,
+        'faqs'             => $faqs,
+        'shopPolicies'     => $shopPolicies,
+        'moreFromShop'     => $moreFromShop,
+        'relatedProducts'  => $relatedProducts,
+        'defaultProfileId' => $defaultProfileId,
+    ]);
 }
 
-
-    public function toggleFeatured(Product $product): RedirectResponse
+    public function wishlist()
     {
-        $product->is_featured = ! $product->is_featured;
-        $product->save();
-
-        return back()->with(
-            'success',
-            $product->is_featured
-                ? 'Product has been marked as featured.'
-                : 'Product has been un-featured.'
-        );
+        $wishlistItems = Wishlist::where('user_id', Auth::id())->get();
+        return view('buyer.wishlist', compact('wishlistItems'));
     }
+
+    public function favorites()
+    {
+        $favorites = auth()->user()->favorites()->get();
+        return view('buyer.favorites', compact('favorites'));
+    }
+
+    public function offers()
+    {
+        $user = Auth::user();
+        
+        // Get all offers made by the buyer with related data
+        $offers = \App\Models\Offer::where('buyer_id', $user->id)
+            ->with([
+                'product.media',
+                'product.shop.user',
+                'counterOffers' => function($query) {
+                    $query->orderBy('created_at', 'desc');
+                }
+            ])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('product_id')
+            ->map(function($productOffers) {
+                // Prefer accepted, then pending, then latest by created_at
+                $latestOffer = $productOffers->where('status', 'accepted')->first()
+                    ?? $productOffers->where('status', 'pending')->first()
+                    ?? $productOffers->sortByDesc('created_at')->first();
+                
+                // Get offer history for this product
+                $offerHistory = $productOffers->flatMap(function($offer) {
+                    return $offer->getOfferHistory();
+                })->sortBy('created_at');
+                
+                return [
+                    'product' => $latestOffer->product,
+                    'latest_offer' => $latestOffer,
+                    'offer_history' => $offerHistory,
+                    'total_offers' => $productOffers->count(),
+                    'has_counter_offers' => $productOffers->where('is_counter_offer', true)->count() > 0,
+                    'status_summary' => $this->getOfferStatusSummary($productOffers)
+                ];
+            });
+
+        return view('buyer.offers', compact('offers'));
+    }
+
+    private function getOfferStatusSummary($offers)
+    {
+        $summary = [
+            'pending' => 0,
+            'accepted' => 0,
+            'declined' => 0,
+            'expired' => 0
+        ];
+
+        foreach ($offers as $offer) {
+            $summary[$offer->status]++;
+        }
+
+        return $summary;
+    }
+
+    public function listings()
+    {
+        $products = Product::with('media')->latest()->paginate(16);
+        return themed_view('listings', compact('products'));
+    }
+
+    public function search(Request $request)
+    {
+        $q = $request->input('q');
+
+        $products = Product::where('name', 'like', "%{$q}%")
+            ->orWhere('description', 'like', "%{$q}%")
+            ->paginate(12);
+
+        return themed_view('listings', compact('products'))->with('q', $q);
+    }
+
+
+      public function payFee(Request $request, Product $product)
+    {
+         
+        return view('products.pay_fee', ['order' => $product]);
+    }
+
+
+               public function successDeposit(Request $request, $id)
+    {
+        // Retrieve the order/invoice
+        $product = Product::findOrFail($id);
+
+          $product->update([
+            'is_active'        => 1,
+            'listing_paid_at'  => now(),     // add this column if desired
+            'next_due_date'   => now()->addMonth(4), 
+        ]);
+
+        // Determine payment method: default to 'paypal'
+        $method = $request->get('method', 'paypal');
+
+        // Prepare a unique local transaction ID if not provided
+        // (e.g., PayPal flow might not send one; MPESA flow might include its own)
+        $localTxId = $request->get('transaction_id');
+        if (!$localTxId) {
+            do {
+                $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
+            } while (Payment::where('local_transaction_id', $localTxId)->exists());
+        }
+
+        // Determine currency sign dynamically
+        // (assume order has a currency column; fallback to 'USD')
+        $currency = $order->currency ?? 'USD';
+
+        // Build the payment data array
+        $paymentData = [
+            
+           
+            'shop_id'              => $product->shop_id,
+            'total_amount'         => $product->category?->listing_fee,
+            'payment_method'       => $method,
+            'status'               => '3',
+            'currency'             => $currency,
+            'local_transaction_id' => $localTxId,
+            'payment_name' => 'listing_fee',
+        ];
+
+
+        // Create the payment record
+        $payment = Payment::create($paymentData);
+
+      
+        return redirect()
+            ->route('products.show', $product)
+            ->with('success', 'Your payment has been received.');
+    }
+
+
+    public function setFeaturedImage(
+        Request $request,
+        Product $product
+    ): RedirectResponse {
+        // 1. Validate – must be a non-empty string, ≤255 chars.
+        $validated = $request->validate([
+            'featured_image' => ['required', 'string', 'max:255'],
+        ]);
+
+        // 2. Build a full URL if what you receive is a relative path.
+        //    (If your form already posts the full URL, remove asset().)
+        $fullUrl = asset('storage/' . ltrim($validated['featured_image'], '/'));
+
+        // 3. Persist to DB.
+        $product->update([
+            'featured_image' => $fullUrl,
+        ]);
+
+        // 4. Bounce back with feedback.
+        return back()->with('success', 'Featured image updated.');
+    }
+
 
 }
