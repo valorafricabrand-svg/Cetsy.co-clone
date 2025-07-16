@@ -6,9 +6,16 @@
 
   {{-- Thumbnail --}}
   <div class="ratio ratio-1x1 rounded-top overflow-hidden">
-    <img src="{{ asset('storage/' . ($item->featured_image ?? $item->media->first()->url ?? 'placeholder.jpg')) }}"
+    @if($item->featured_image)
+      <img src="{{ $item->featured_image }}"
          alt="{{ $item->name }}"
          class="w-100 h-100 object-fit-cover">
+    @else
+  <img src="{{ asset('storage/' . ($item->media->first()->url ?? 'placeholder.jpg')) }}"
+         alt="{{ $item->name }}"
+         class="w-100 h-100 object-fit-cover">
+    @endif
+  
   </div>
 
   <div class="card-body p-2 d-flex flex-column">
@@ -28,19 +35,27 @@
     </div>
 
     {{-- Price --}}
-    <div class="mt-auto">
-      @if($item->discount_price && $item->discount_price < $item->price)
-        <span class="fw-semibold text-success">
-          {{ get_currency() }} {{ number_format($item->discount_price, 2) }}
-        </span>
-        <span class="small text-muted text-decoration-line-through">
-          {{ get_currency() }} {{ number_format($item->price, 2) }}
-        </span>
-      @else
-        <span class="fw-semibold text-success">
-          {{ get_currency() }} {{ number_format($item->price, 2) }}
-        </span>
-      @endif
-    </div>
+ @php
+    $basePrice = $item->price;
+    $finalPrice = $item->discounted_price;
+@endphp
+
+@if($finalPrice < $basePrice)
+  <div class="d-flex align-items-baseline gap-3 mb-3">
+    <span class="fw-bold text-success">
+      {{ get_currency() }} {{ number_format($finalPrice, 2) }}
+    </span>
+    <span class="text-muted text-decoration-line-through">
+      {{ get_currency() }} {{ number_format($basePrice, 2) }}
+    </span>
+  </div>
+@else
+  <p class="fw-bold text-success mb-3">
+    {{ get_currency() }} {{ number_format($basePrice, 2) }}
+  </p>
+@endif
+
+
+
   </div>
 </a>

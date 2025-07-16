@@ -16,36 +16,36 @@
       </p>
       <div class="d-flex justify-content-center justify-content-lg-start gap-3 mb-4">
         <a href="{{ route('listings') }}"
-           class="btn btn-success btn-lg rounded-pill shadow-sm px-4">
-          Shop Now
-        </a>
-        <a href="#features"
-           class="btn btn-outline-success btn-lg rounded-pill shadow-sm px-4">
-          Learn More
-        </a>
-      </div>
-      <div class="d-flex flex-wrap gap-4 align-items-center justify-content-center justify-content-lg-start small text-secondary">
-        <div class="d-flex align-items-center">
-          <i class="fas fa-shield-alt fs-5 me-2 text-success"></i>
-          <span>Secure &amp; Trusted</span>
-        </div>
-        <div class="d-flex align-items-center">
-          <i class="fas fa-cogs fs-5 me-2 text-success"></i>
-          <span>Custom Orders Available</span>
-        </div>
-      </div>
+        class="btn btn-success btn-lg rounded-pill shadow-sm px-4">
+        Shop Now
+      </a>
+      <a href="#features"
+      class="btn btn-outline-success btn-lg rounded-pill shadow-sm px-4">
+      Learn More
+    </a>
+  </div>
+  <div class="d-flex flex-wrap gap-4 align-items-center justify-content-center justify-content-lg-start small text-secondary">
+    <div class="d-flex align-items-center">
+      <i class="fas fa-shield-alt fs-5 me-2 text-success"></i>
+      <span>Secure &amp; Trusted</span>
     </div>
-
-    <!-- Hero Image -->
-    <div class="mt-5 mt-lg-0 text-center flex-shrink-0">
-      <img
-        src="{{ asset('assets/images/illustrator.webp') }}"
-        alt="World map with shopping icons"
-        class="img-fluid rounded-lg shadow"
-        style="max-width: 600px;"
-      >
+    <div class="d-flex align-items-center">
+      <i class="fas fa-cogs fs-5 me-2 text-success"></i>
+      <span>Custom Orders Available</span>
     </div>
   </div>
+</div>
+
+<!-- Hero Image -->
+<div class="mt-5 mt-lg-0 text-center flex-shrink-0">
+  <img
+  src="{{ asset('assets/images/illustrator.webp') }}"
+  alt="World map with shopping icons"
+  class="img-fluid rounded-lg shadow"
+  style="max-width: 600px;"
+  >
+</div>
+</div>
 </section>
 
 <!-- Trending Categories -->
@@ -54,25 +54,25 @@
     <h2 class="h3 fw-bold mb-4">Trending Categories</h2>
     <div class="row row-cols-2 row-cols-sm-3 row-cols-md-6 g-3">
       @foreach($categories as $cat)
-        <div class="col">
-          <a href="{{ route('category.show', $cat->slug) }}" class="text-decoration-none">
-            <div class="ratio ratio-1x1 bg-secondary rounded overflow-hidden">
-              @if($cat->image)
-                <img 
-                  src="{{ asset('storage/'.$cat->image) }}" 
-                  alt="{{ $cat->name }}" 
-                  class="w-100 h-100" 
-                  style="object-fit:cover;"
-                >
-              @else
-                <div class="d-flex align-items-center justify-content-center h-100 text-white fw-semibold">
-                  {{ $cat->name }}
-                </div>
-              @endif
+      <div class="col">
+        <a href="{{ route('category.show', $cat->slug) }}" class="text-decoration-none">
+          <div class="ratio ratio-1x1 bg-secondary rounded overflow-hidden">
+            @if($cat->image)
+            <img 
+            src="{{ asset('storage/'.$cat->image) }}" 
+            alt="{{ $cat->name }}" 
+            class="w-100 h-100" 
+            style="object-fit:cover;"
+            >
+            @else
+            <div class="d-flex align-items-center justify-content-center h-100 text-white fw-semibold">
+              {{ $cat->name }}
             </div>
-            <p class="mt-2 text-center text-dark small mb-0">{{ $cat->name }}</p>
-          </a>
-        </div>
+            @endif
+          </div>
+          <p class="mt-2 text-center text-dark small mb-0">{{ $cat->name }}</p>
+        </a>
+      </div>
       @endforeach
     </div>
   </div>
@@ -88,66 +88,17 @@
       </a>
     </div>
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-      @forelse($featuredProducts as $product)
-        <div class="col">
-          <div class="card h-100 shadow-sm border-0">
-            <a href="{{ route('listing.show', $product) }}">
-              @if($img = $product->media->first())
-                <img
-                  src="{{ asset( $product->featured_image ?? 'storage/' . $img->url ) }}"
-                  alt="{{ $product->name }}"
-                  class="card-img-top"
-                  style="height:200px; object-fit:cover;"
-                  loading="lazy"
-                >
-              @else
-                <div
-                  class="bg-secondary text-white d-flex align-items-center justify-content-center"
-                  style="height:200px;"
-                >
-                  No Image
-                </div>
-              @endif
-            </a>
-            <div class="card-body d-flex flex-column">
-              <h5 class="card-title text-truncate">
-                <a href="{{ route('listing.show', $product) }}" class="text-dark text-decoration-none" title="{{ $product->name }}">
-                  {{ $product->name }}
-                </a>
-              </h5>
-           @if(!empty($product->discount_price) && $product->discount_price < $product->price)
-  <div class="d-flex align-items-baseline gap-3 mb-3">
-    <span class="fw-bold text-success">
-      {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
-    </span>
-    <span class="text-muted text-decoration-line-through">
-      {{ get_currency() }} {{ number_format($product->price, 2) }}
-    </span>
-  </div>
-@else
-  <p class="fw-bold text-success mb-3">
-    {{ get_currency() }} {{ number_format($product->price, 2) }}
-  </p>
-@endif
-
-              <div class="mt-auto">
-                <a href="{{ route('listing.show', $product) }}"
-                   class="btn btn-outline-success w-100 d-flex justify-content-center align-items-center gap-2"
-                   aria-label="View {{ $product->name }}">
-                  <span>View Listing</span>
-                  <i class="fas fa-eye"></i>
-                </a>
-              </div>
-            </div>
+      @forelse($featuredProducts as $item)
+   <div class="col-6 col-md-3 col-lg-3">
+            @include('theme.'.theme().'.partials.product-card', ['item' => $item])
           </div>
-        </div>
-      @empty
-        <div class="col-12 text-center text-muted">
-          No featured products at this time.
-        </div>
-      @endforelse
-    </div>
+  @empty
+  <div class="col-12 text-center text-muted">
+    No featured products at this time.
   </div>
+  @endforelse
+</div>
+</div>
 </section>
 
 <!-- Most Trending Services -->
@@ -159,64 +110,15 @@
     </header>
 
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-      @forelse($services as $service)
-        <div class="col">
-          <div class="card h-100 shadow-sm border-0">
-            <a href="{{ route('listing.show', $service) }}">
-              @if($img = $service->media->first())
-                <img
-                  src="{{ asset( $product->featured_image ?? 'storage/' . $img->url ) }}"
-                  alt="{{ $service->name }}"
-                  class="card-img-top"
-                  style="height:200px; object-fit:cover;"
-                  loading="lazy"
-                >
-              @else
-                <div
-                  class="bg-secondary text-white d-flex align-items-center justify-content-center"
-                  style="height:200px;"
-                >
-                  No Image
-                </div>
-              @endif
-            </a>
-            <div class="card-body d-flex flex-column">
-              <h5 class="card-title text-truncate">
-                <a href="{{ route('listing.show', $service) }}" class="text-dark text-decoration-none" title="{{ $service->name }}">
-                  {{ $service->name }}
-                </a>
-              </h5>
-            @if(!empty($product->discount_price) && $product->discount_price < $product->price)
-  <div class="d-flex align-items-baseline gap-3 mb-3">
-    <span class="fw-bold text-success">
-      {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
-    </span>
-    <span class="text-muted text-decoration-line-through">
-      {{ get_currency() }} {{ number_format($product->price, 2) }}
-    </span>
-  </div>
-@else
-  <p class="fw-bold text-success mb-3">
-    {{ get_currency() }} {{ number_format($product->price, 2) }}
-  </p>
-@endif
-
-              <div class="mt-auto">
-                <a href="{{ route('listing.show', $service) }}"
-                   class="btn btn-outline-success w-100 d-flex justify-content-center align-items-center gap-2"
-                   aria-label="View {{ $service->name }}">
-                  <span>View Listing</span>
-                  <i class="fas fa-eye"></i>
-                </a>
-              </div>
-            </div>
+      @forelse($services as $item)
+       <div class="col-6 col-md-3 col-lg-3">
+            @include('theme.'.theme().'.partials.product-card', ['item' => $item])
           </div>
-        </div>
-      @empty
-        <p class="col-12 text-center text-muted fs-5 fw-medium">No services available.</p>
-      @endforelse
-    </div>
-  </div>
+  @empty
+  <p class="col-12 text-center text-muted fs-5 fw-medium">No services available.</p>
+  @endforelse
+</div>
+</div>
 </section>
 
 <!-- Featured Digital Downloads -->
@@ -229,103 +131,54 @@
       </a>
     </div>
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-      @forelse($featuredDigitals as $product)
-        <div class="col">
-          <div class="card h-100 shadow-sm border-0">
-            <a href="{{ route('listing.show', $product) }}">
-              @if($img = $product->media->first())
-                <img
-                  src="{{ asset( $product->featured_image ?? 'storage/' . $img->url ) }}"
-                  alt="{{ $product->name }}"
-                  class="card-img-top"
-                  style="height:200px; object-fit:cover;"
-                  loading="lazy"
-                >
-              @else
-                <div
-                  class="bg-secondary text-white d-flex align-items-center justify-content-center"
-                  style="height:200px;"
-                >
-                  No Image
-                </div>
-              @endif
-            </a>
-            <div class="card-body d-flex flex-column">
-              <h5 class="card-title text-truncate">
-                <a href="{{ route('listing.show', $product) }}" class="text-dark text-decoration-none" title="{{ $product->name }}">
-                  {{ $product->name }}
-                </a>
-              </h5>
-            @if(!empty($product->discount_price) && $product->discount_price < $product->price)
-  <div class="d-flex align-items-baseline gap-3 mb-3">
-    <span class="fw-bold text-success">
-      {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
-    </span>
-    <span class="text-muted text-decoration-line-through">
-      {{ get_currency() }} {{ number_format($product->price, 2) }}
-    </span>
-  </div>
-@else
-  <p class="fw-bold text-success mb-3">
-    {{ get_currency() }} {{ number_format($product->price, 2) }}
-  </p>
-@endif
-
-              <div class="mt-auto">
-                <a href="{{ route('listing.show', $product) }}"
-                   class="btn btn-outline-success w-100 d-flex justify-content-center align-items-center gap-2"
-                   aria-label="View {{ $product->name }}">
-                  <span>View Listing</span>
-                  <i class="fas fa-eye"></i>
-                </a>
-              </div>
-            </div>
+      @forelse($featuredDigitals as $item)
+       <div class="col-6 col-md-3 col-lg-3">
+            @include('theme.'.theme().'.partials.product-card', ['item' => $item])
           </div>
-        </div>
-      @empty
-        <div class="col-12 text-center text-muted">
-          No featured products at this time.
-        </div>
-      @endforelse
-    </div>
+  @empty
+  <div class="col-12 text-center text-muted">
+    No featured products at this time.
   </div>
+  @endforelse
+</div>
+</div>
 </section>
 
 
 <!-- About the company section -->
 <section class="about-home py-5 bg-white">
-    <div class="container">
-        <div class="row justify-content-center text-center mb-5">
-            <div class="col-10 col-lg-8">
-                <h2>Who is Cetsy?</h2>
-                <h5 class="text-warning fw-normal mb-3">Who is Cetsy? "Cetsy" is a Malagasy word which means, "that's it"</h5>
-                <h4>Your global market place where one can find almost everything from everyone, everywhere.</h4>
-            </div>
-        </div>
-
-        <div class="row gy-4">
-            <div class="col-md-6 col-lg-4">
-                <div class="h-100 p-3 border rounded shadow-sm">
-                    <h3><a href="{{ url('/about') }}" class="text-decoration-none">How we started</a></h3>
-                    <p>Cetsy is a global e-commerce Marketplace, founded in 2021 with the intent to better connect all global markets. It is a privately held company based in Ohio USA, which allows for the sale of nearly any item that a seller can legally sell in his /her geographical region/country or state.</p>
-                </div>
-            </div>
-
-            <div class="col-md-6 col-lg-4">
-                <div class="h-100 p-3 border rounded shadow-sm">
-                    <h3><a href="#" class="text-decoration-none">What we do</a></h3>
-                    <p>We connect buyers and sellers globally within Cetsy Marketplace, while offering multiple secure payment solutions to cater to the many needs of our Buyers and we rarely limit the creativity of our Sellers. <a href="/about" class="text-warning fw-bold">Read More</a></p>
-                </div>
-            </div>
-
-            <div class="col-md-6 col-lg-4">
-                <div class="h-100 p-3 border rounded shadow-sm">
-                    <h3><a href="/login" class="text-decoration-none">Start Now</a></h3>
-                    <p>To become a Cetsy Seller in just a few simple steps, please review the Cetsy Seller Agreement which outlines what we expect from our Sellers and what you as a Seller, can expect from Cetsy. Should you have further questions or require assistance, feel free to email us, or reach us on LIVE CHAT.</p>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-10 col-lg-8">
+        <h2>Who is Cetsy?</h2>
+        <h5 class="text-warning fw-normal mb-3">Who is Cetsy? "Cetsy" is a Malagasy word which means, "that's it"</h5>
+        <h4>Your global market place where one can find almost everything from everyone, everywhere.</h4>
+      </div>
     </div>
+
+    <div class="row gy-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="h-100 p-3 border rounded shadow-sm">
+          <h3><a href="{{ url('/about') }}" class="text-decoration-none">How we started</a></h3>
+          <p>Cetsy is a global e-commerce Marketplace, founded in 2021 with the intent to better connect all global markets. It is a privately held company based in Ohio USA, which allows for the sale of nearly any item that a seller can legally sell in his /her geographical region/country or state.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="h-100 p-3 border rounded shadow-sm">
+          <h3><a href="#" class="text-decoration-none">What we do</a></h3>
+          <p>We connect buyers and sellers globally within Cetsy Marketplace, while offering multiple secure payment solutions to cater to the many needs of our Buyers and we rarely limit the creativity of our Sellers. <a href="/about" class="text-warning fw-bold">Read More</a></p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="h-100 p-3 border rounded shadow-sm">
+          <h3><a href="/login" class="text-decoration-none">Start Now</a></h3>
+          <p>To become a Cetsy Seller in just a few simple steps, please review the Cetsy Seller Agreement which outlines what we expect from our Sellers and what you as a Seller, can expect from Cetsy. Should you have further questions or require assistance, feel free to email us, or reach us on LIVE CHAT.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 @endsection

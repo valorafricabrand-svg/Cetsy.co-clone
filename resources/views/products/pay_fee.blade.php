@@ -21,7 +21,7 @@
     $currency      = $order->currency ?? 'USD';
     $zeroDecimal   = ['BIF','CLP','DJF','GNF','JPY','KMF','KRW','MGA','PYG','RWF','UGX','VND','VUV','XAF','XOF','XPF'];
     $fourMonthFee  = (float)($order->category?->listing_fee ?? 0);
-    $monthlyFee    = $fourMonthFee / 4;
+    $monthlyFee    = $fourMonthFee / 3;
     $walletBalance = auth()->check() ? (float)(wallet() ?? 0) : 0;
 @endphp
 

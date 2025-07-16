@@ -98,13 +98,23 @@
                  value="{{ old('price') }}" required>
           @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">Discount Price</label>
-          <input type="number" name="discount_price" step="0.01" min="0"
-                 class="form-control @error('discount_price') is-invalid @enderror"
-                 value="{{ old('discount_price') }}">
-          @error('discount_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
-        </div>
+     <div class="col-md-6">
+  <label class="form-label fw-semibold">% Discount</label>
+  <input
+    type="number"
+    name="discount_percent"
+    step="1"
+    min="1"
+    max="100"
+    class="form-control @error('discount_percent') is-invalid @enderror"
+    value="{{ old('discount_percent') }}"
+    required
+  >
+  @error('discount_percent')
+    <div class="invalid-feedback">{{ $message }}</div>
+  @enderror
+</div>
+
       </div>
 
       {{-- 6) Variations (physical only) --}}

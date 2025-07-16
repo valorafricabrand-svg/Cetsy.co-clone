@@ -4,11 +4,18 @@
 @section('content')
 <div class="content">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Edit Listing</h2>
+    <h2 class="mb-0 tex">Edit Listing</h2>
     <div>
       <a href="{{ route('products.index') }}" class="btn btn-outline-secondary me-2">
         <i class="fas fa-arrow-left me-1"></i> Back to Listings
       </a>
+
+        <a href="{{ route('products.show', $product) }}"
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </a>
+
+
       <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
         <i class="fas fa-plus me-1"></i> Add New Listing
       </a>
@@ -39,9 +46,7 @@
        Listing Details
     ─────────────────────────────────────────────────────────────────────────────── --}}
     <div class="card mb-4 shadow-sm">
-      <div class="card-header bg-success text-white">
-        <h4 class="mb-0">Edit Listing Details</h4>
-      </div>
+     
       <div class="card-body p-4">
         <div class="row g-4">
 
@@ -97,13 +102,23 @@
                    value="{{ old('price',$product->price) }}" required>
             @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
-          <div class="col-md-6">
-            <label for="discount_price" class="form-label fw-semibold">Discount Price</label>
-            <input type="number" id="discount_price" name="discount_price" step="0.01" min="0"
-                   class="form-control @error('discount_price') is-invalid @enderror"
-                   value="{{ old('discount_price',$product->discount_price) }}">
-            @error('discount_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
-          </div>
+      <div class="col-md-6">
+  <label for="discount_percent" class="form-label fw-semibold">% Discount</label>
+  <input
+    type="number"
+    id="discount_percent"
+    name="discount_percent"
+    step="1"
+    min="1"
+    max="100"
+    class="form-control @error('discount_percent') is-invalid @enderror"
+    value="{{ old('discount_percent', $product->discount_percent) }}"
+  >
+  @error('discount_percent')
+    <div class="invalid-feedback">{{ $message }}</div>
+  @enderror
+</div>
+
 
           {{-- Stock --}}
           <div class="col-md-6" id="stockSection">
