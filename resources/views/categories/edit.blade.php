@@ -3,7 +3,7 @@
 
 @section('header')
   <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-      {{ __('Edit Category') }}
+    {{ __('Edit Category') }}
   </h2>
 @endsection
 
@@ -29,45 +29,50 @@
       </div>
     @endif
 
-    <form action="{{ route('admin.categories.update', $category) }}"
-          method="POST"
-          enctype="multipart/form-data"
-          x-data="{
-            name:'{{ addslashes($category->name) }}',
-            slug:'{{ addslashes($category->slug) }}'
-          }"
-          @input.debounce.500ms="
-            slug = name
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g,'-')
-              .replace(/(^-|-$)/g,'')
-          ">
-
+    <form
+      action="{{ route('admin.categories.update', $category) }}"
+      method="POST"
+      enctype="multipart/form-data"
+      x-data="{
+        name:'{{ addslashes($category->name) }}',
+        slug:'{{ addslashes($category->slug) }}'
+      }"
+      @input.debounce.500ms="
+        slug = name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g,'-')
+          .replace(/(^-|-$)/g,'')
+      "
+    >
       @csrf
       @method('PUT')
 
       <!-- Category Name -->
       <div class="mb-4">
         <label for="name" class="form-label">Name</label>
-        <input id="name"
-               x-model="name"
-               name="name"
-               type="text"
-               class="form-control"
-               value="{{ old('name', $category->name) }}"
-               required>
+        <input
+          id="name"
+          x-model="name"
+          name="name"
+          type="text"
+          class="form-control"
+          value="{{ old('name', $category->name) }}"
+          required
+        >
       </div>
 
       <!-- Category Slug -->
       <div class="mb-4">
         <label for="slug" class="form-label">Slug</label>
-        <input id="slug"
-               x-model="slug"
-               name="slug"
-               type="text"
-               class="form-control bg-light"
-               value="{{ old('slug', $category->slug) }}"
-               readonly>
+        <input
+          id="slug"
+          x-model="slug"
+          name="slug"
+          type="text"
+          class="form-control bg-light"
+          value="{{ old('slug', $category->slug) }}"
+          readonly
+        >
       </div>
 
       <!-- Parent Category Selection -->
@@ -76,32 +81,66 @@
         <select id="parent_id" name="parent_id" class="form-select">
           <option value="">— None —</option>
           @foreach($parents as $p)
-            <option value="{{ $p->id }}"
-              @selected(old('parent_id', $category->parent_id) == $p->id)>
+            <option
+              value="{{ $p->id }}"
+              @selected(old('parent_id', $category->parent_id) == $p->id)
+            >
               {{ $p->name }}
             </option>
           @endforeach
         </select>
       </div>
 
+      <!-- Listing Type -->
+      <div class="mb-4">
+        <label for="listing_type" class="form-label">Listing Type</label>
+        <select id="listing_type" name="listing_type" class="form-select" required>
+          <option value="products" @selected(old('listing_type', $category->listing_type)=='products')>
+            Products
+          </option>
+          <option value="services" @selected(old('listing_type', $category->listing_type)=='services')>
+            Services
+          </option>
+          <option value="digital" @selected(old('listing_type', $category->listing_type)=='digital')>
+            Digital Downloads
+          </option>
+        </select>
+      </div>
+
       <!-- Listing Fee -->
       <div class="mb-4">
         <label for="listing_fee" class="form-label">Listing Fee</label>
-        <input id="listing_fee"
-               name="listing_fee"
-               type="number"
-               step="0.01"
-               class="form-control"
-               value="{{ old('listing_fee', $category->listing_fee) }}">
+        <input
+          id="listing_fee"
+          name="listing_fee"
+          type="number"
+          step="0.01"
+          class="form-control"
+          value="{{ old('listing_fee', $category->listing_fee) }}"
+        >
+      </div>
+
+      <!-- Description -->
+      <div class="mb-4">
+        <label for="description" class="form-label">Description</label>
+        <textarea
+          id="description"
+          name="description"
+          rows="3"
+          class="form-control"
+        >{{ old('description', $category->description) }}</textarea>
+        <div class="form-text">Optional—briefly describe this category.</div>
       </div>
 
       <!-- Current Featured Image -->
       <div class="mb-4">
         <label class="form-label">Current Featured Image</label><br>
         @if($category->image)
-          <img src="{{ asset('storage/' . $category->image) }}"
-               class="img-fluid rounded"
-               style="max-width: 150px;">
+          <img
+            src="{{ asset('storage/' . $category->image) }}"
+            class="img-fluid rounded"
+            style="max-width: 150px;"
+          >
         @else
           <span class="text-muted">No image uploaded.</span>
         @endif
@@ -110,7 +149,13 @@
       <!-- Replace Image -->
       <div class="mb-6">
         <label for="image" class="form-label">Replace Image</label>
-        <input id="image" name="image" type="file" accept="image/*" class="form-control">
+        <input
+          id="image"
+          name="image"
+          type="file"
+          accept="image/*"
+          class="form-control"
+        >
       </div>
 
       <!-- Submit Button -->
@@ -118,7 +163,6 @@
         Update Category
       </button>
     </form>
-
   </div>
 </div>
 @endsection

@@ -50,7 +50,7 @@
                 <tr>
                   <th style="width:70px">Image</th>
                   <th>Name</th>
-                  <th>Slug</th>
+                  <th>Type</th>
                   <th>Parent</th>
                   <th>Listing Fee</th>
                   <th class="text-end" style="width:220px">Actions</th>
