@@ -66,7 +66,7 @@
                                 <div class="d-inline-block p-3 rounded {{ $message->sender_id == auth()->id() ? 'bg-success text-white' : 'bg-light' }}" 
                                      style="max-width: 75%;">
                                     <div class="d-flex align-items-center mb-1">
-                                        <strong class="me-2">{{ $message->sender->name ?? 'Unknown' }}</strong>
+                                        <strong class="me-2">{{ $message->sender->shop->name ?? 'Unknown' }}</strong>
                                         <small class="{{ $message->sender_id == auth()->id() ? 'text-white-50' : 'text-muted' }}">
                                             {{ $message->created_at->format('M d, H:i') }}
                                         </small>
