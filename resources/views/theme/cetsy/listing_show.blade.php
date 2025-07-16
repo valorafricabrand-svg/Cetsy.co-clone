@@ -78,21 +78,25 @@
             </small>
           </div>
 
-          {{-- Pricing --}}
-          @if(!empty($product->discount_price) && $product->discount_price < $product->price)
-            <div class="d-flex align-items-baseline gap-3">
-              <span class="h4 text-success fw-semibold mb-0">
-                {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
-              </span>
-              <span class="h6 text-muted text-decoration-line-through mb-0">
-                {{ get_currency() }} {{ number_format($product->price, 2) }}
-              </span>
-            </div>
-          @else
-            <p class="h4 text-success fw-semibold mb-2">
-              {{ get_currency() }} {{ number_format($product->price, 2) }}
-            </p>
-          @endif
+ @php
+    $basePrice = $product->price;
+    $finalPrice = $product->discounted_price;
+@endphp
+
+@if($finalPrice < $basePrice)
+  <div class="d-flex align-items-baseline gap-3 mb-3">
+    <span class="fw-bold text-success">
+      {{ get_currency() }} {{ number_format($finalPrice, 2) }}
+    </span>
+    <span class="text-muted text-decoration-line-through">
+      {{ get_currency() }} {{ number_format($basePrice, 2) }}
+    </span>
+  </div>
+@else
+  <p class="fw-bold text-success mb-3">
+    {{ get_currency() }} {{ number_format($basePrice, 2) }}
+  </p>
+@endif
 
           {{-- Shop & Stock badges --}}
           <div class="mb-3 d-flex flex-wrap gap-2">
@@ -102,9 +106,12 @@
                 {{ $product->shop->name }}
               </a>
             </span>
-            <span class="badge {{ $product->stock > 0 ? 'bg-primary bg-opacity-10 text-primary' : 'bg-danger bg-opacity-10 text-danger' }}">
+
+             @if($product->type == 'physical')
+             <span class="badge {{ $product->stock > 0 ? 'bg-primary bg-opacity-10 text-primary' : 'bg-danger bg-opacity-10 text-danger' }}">
               {{ $product->stock > 0 ? 'In Stock' : 'Out of Stock' }}
-            </span>
+            </span> 
+            @endif
           </div>
 
           {{-- Quick-action buttons --}}
@@ -335,7 +342,7 @@
       <h3 class="h5 fw-bold mt-5 mb-3">More from {{ $product->shop->name }}</h3>
       <div class="row g-3">
         @foreach($moreFromShop as $item)
-          <div class="col-6 col-md-3 col-lg-2">
+          <div class="col-6 col-md-3 col-lg-3">
             @include('theme.'.theme().'.partials.product-card', ['item' => $item])
           </div>
         @endforeach
@@ -346,7 +353,7 @@
       <h3 class="h5 fw-bold mt-5 mb-3">Related items</h3>
       <div class="row g-3">
         @foreach($relatedProducts as $item)
-          <div class="col-6 col-md-3 col-lg-2">
+          <div class="col-6 col-md-3 col-lg-3">
             @include('theme.'.theme().'.partials.product-card', ['item' => $item])
           </div>
         @endforeach

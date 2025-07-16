@@ -131,7 +131,7 @@ public function storeOrder(Request $request)
             $itemsByShop[$product->shop_id][] = [
                 'product' => $product,
                 'quantity' => $item['quantity'],
-                'price' => $product->price,
+                'price' => $product->discounted_price,
             ];
         }
 
