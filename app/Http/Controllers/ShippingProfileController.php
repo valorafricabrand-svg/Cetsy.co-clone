@@ -51,7 +51,7 @@ class ShippingProfileController extends Controller
         $data['shop_id'] = $shop->id;
         ShippingProfile::create($data);
 
-        return redirect()->route('shipping_profiles.index')
+        return redirect()->route('seller.shipping_profiles.index')
                          ->with('success', 'Shipping profile created successfully.');
     }
 
@@ -76,7 +76,7 @@ class ShippingProfileController extends Controller
 
         $shippingProfile->update($data);
 
-        return redirect()->route('shipping_profiles.index')
+        return redirect()->route('seller.shipping_profiles.index')
                          ->with('success', 'Shipping profile updated successfully.');
     }
 
@@ -85,7 +85,7 @@ class ShippingProfileController extends Controller
         $this->authorizeShop($shippingProfile);
         $shippingProfile->delete();
 
-        return redirect()->route('shipping_profiles.index')
+        return redirect()->route('seller.shipping_profiles.index')
                          ->with('success', 'Shipping profile deleted successfully.');
     }
 

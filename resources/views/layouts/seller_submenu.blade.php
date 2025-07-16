@@ -189,7 +189,7 @@
           'icon'=>'fas fa-heart',
           'label'=>'My Favorites',
         ],
-        ['url'=>route('shipping_profiles.index'),'icon'=>'fas fa-truck-fast','label'=>'Shipping'],
+        ['url'=>route('seller.shipping_profiles.index'),'icon'=>'fas fa-truck-fast','label'=>'Shipping'],
         ['url'=>route('seller.analytics.index'),'icon'=>'fas fa-chart-line','label'=>'Analytics'],
       ] as $item)
         <div class="nav-item {{ str_starts_with($currentUrl, $item['url']) ? 'active' : '' }}">

@@ -6,7 +6,7 @@
 <div class="content">
     <h2>Create Shipping Profile</h2>
 
-    <form action="{{ route('shipping_profiles.store') }}" method="POST" class="mt-4">
+    <form action="{{ route('seller.shipping_profiles.store') }}" method="POST" class="mt-4">
         @csrf
 
         {{-- Profile Name --}}
@@ -106,7 +106,7 @@
 
         {{-- Form Actions --}}
         <button type="submit" class="btn btn-success">Create Profile</button>
-        <a href="{{ route('shipping_profiles.index') }}" class="btn btn-secondary ms-2">Cancel</a>
+        <a href="{{ route('seller.shipping_profiles.index') }}" class="btn btn-secondary ms-2">Cancel</a>
     </form>
 </div>
 @endsection
