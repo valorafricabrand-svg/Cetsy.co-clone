@@ -6,9 +6,20 @@
   {{-- Header: Logo + Name + Edit Button --}}
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div class="d-flex align-items-center">
-      @if($shop->logo_url)
+      @if($shop->logo)
         <img
-          src="{{ $shop->logo_url }}"
+          src="{{ asset('storage/' . $shop->logo) }}"
+          alt="{{ $shop->name }} logo"
+          class="rounded-circle me-3"
+          style="width: 64px; height: 64px; object-fit: cover;"
+        >
+        @else
+        <div class="rounded-circle me-3"
+          style="width: 64px; height: 64px; object-fit: cover;">
+          <i class="fas fa-store fa-2x text-success"></i>
+        </div>
+        <img
+          src="{{ asset('assets/images/default-logo.png') }}"
           alt="{{ $shop->name }} logo"
           class="rounded-circle me-3"
           style="width: 64px; height: 64px; object-fit: cover;"
