@@ -117,65 +117,82 @@ public function handlePayPalDeposit(Request $request)
  }
 
 
-                public function payListing(Request $request, $id)
-    {
-        // Retrieve the order/invoice
-        $product = Product::findOrFail($id);
-
-          $product->update([
-            'is_active'        => 1,
-            'listing_paid_at'  => now(),     // add this column if desired
-            'next_due_date'   => now()->addMonth(4), 
-        ]);
-
-        // Determine payment method: default to 'paypal'
-        $method = $request->get('method', 'paypal');
-
-        // Prepare a unique local transaction ID if not provided
-        // (e.g., PayPal flow might not send one; MPESA flow might include its own)
-        $localTxId = $request->get('transaction_id');
-        if (!$localTxId) {
-            do {
-                $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
-            } while (Payment::where('local_transaction_id', $localTxId)->exists());
-        }
-
-        // Determine currency sign dynamically
-        // (assume order has a currency column; fallback to 'USD')
-        $currency = $order->currency ?? 'USD';
-        $listing_fee = $product->category?->listing_fee;
-        // Build the payment data array
-        $paymentData = [
-            
            
-            'shop_id'              => $product->shop_id,
-            'total_amount'         => $product->category?->listing_fee,
-            'payment_method'       => $method,
-            'status'               => '3',
-            'currency'             => $currency,
-            'local_transaction_id' => $localTxId,
-            'payment_name' => 'listing_fee',
-        ];
+
+
+public function payListing(Request $request, $id)
+{
+    // 1) Fetch the product
+    $product = Product::findOrFail($id);
+
+    // 2) Validate plan & via
+    $data = $request->validate([
+        'plan' => ['required', 'in:monthly,4months'],
+        'via'  => ['required', 'in:wallet,paypal'],
+    ]);
+
+    // 3) Compute fee & next due date
+    $fourMonthFee = (float) $product->category->listing_fee;
+    if ($data['plan'] === 'monthly') {
+        $fee     = $fourMonthFee / 4;
+        $nextDue = now()->addMonth();
+    } else {
+        $fee     = $fourMonthFee;
+        $nextDue = now()->addMonths(4);
+    }
+
+    // 4) Activate product & set due date
+    $product->update([
+        'is_active'       => true,
+        'listing_paid_at' => now(),
+        'next_due_date'   => $nextDue,
+    ]);
+
+    // 5) Build a unique local transaction ID
+    $localTxId = $request->input('transaction_id');
+    if (! $localTxId) {
+        do {
+            $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
+        } while (Payment::where('local_transaction_id', $localTxId)->exists());
+    }
+
+    // 6) If paying via wallet, record a Wallet debit
+    if ($data['via'] === 'wallet') {
+        $currentBalance = Wallet::where('user_id', Auth::id())
+                                ->latest('created_at')
+                                ->value('balance') ?? 0;
 
         Wallet::create([
-            'user_id'    => Auth::id(),
-            'credit'     => 0,
-            'debit'      => $listing_fee,
-            'balance'    => 0, // Optional: recalculate after insert
-            'reference'  => strtoupper(uniqid('TXN-')),
-            'method'     => $request->method,
-            'description'=> 'Manual deposit via ' . ucfirst($request->method),
+            'user_id'     => Auth::id(),
+            'credit'      => 0,
+            'debit'       => $fee,
+            'balance'     => $currentBalance - $fee,
+            'reference'   => strtoupper(uniqid('TXN-')),
+            'method'      => 'wallet',
+            'description' => "Listing fee ({$data['plan']})",
         ]);
-
-
-        // Create the payment record
-        $payment = Payment::create($paymentData);
-
-      
-        return redirect()
-            ->route('products.show', $product)
-            ->with('success', 'Your payment has been received.');
     }
+
+    // 7) Record the Payment
+    Payment::create([
+        'shop_id'              => $product->shop_id,
+        'total_amount'         => $fee,
+        'payment_method'       => $data['via'],
+        'status'               => '3',  // completed
+        'currency'             => $product->currency ?? 'USD',
+        'local_transaction_id' => $localTxId,
+        'payment_name'         => 'listing_fee',
+    ]);
+
+    // 8) Redirect with success
+   return view('products.success_deposit_fee', [
+        'product' => $product,
+        'plan'    => $data['plan'],
+        'amount'  => $fee,
+        'nextDue' => $nextDue,
+    ]);
+}
+
 
 
 

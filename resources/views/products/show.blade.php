@@ -3,114 +3,156 @@
 
 @section('content')
 <div class="content">
-    <div class="row g-4">
-        {{-- ───────── Image Carousel ───────── --}}
-        <div class="col-lg-6">
-            @if ($product->media->count())
-                <div id="productCarousel" class="carousel slide border rounded-4 shadow-sm" data-bs-ride="carousel">
-                    <div class="carousel-inner">
-                        @foreach ($product->media as $i => $media)
-                            <div class="carousel-item @if($i===0) active @endif">
-                                <img src="{{ asset('storage/'.$media->url) }}"
-                                     class="d-block w-100 rounded-4"
-                                     style="max-height:400px;object-fit:cover;"
-                                     alt="{{ $product->name }}">
-                            </div>
-                        @endforeach
-                    </div>
-                    <button class="carousel-control-prev" type="button"
-                            data-bs-target="#productCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon"></span>
-                    </button>
-                    <button class="carousel-control-next" type="button"
-                            data-bs-target="#productCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon"></span>
-                    </button>
-                </div>
-            @else
-                <div class="border rounded-4 d-flex align-items-center justify-content-center text-muted"
-                     style="height:300px;">
-                    No product image available.
-                </div>
-            @endif
+  <div class="row gx-5 gy-4">
+    {{-- ───────── Image Carousel ───────── --}}
+    <div class="col-lg-6">
+      @if($product->media->count())
+        <div id="productCarousel" class="carousel slide rounded-4 shadow-sm border" data-bs-ride="carousel">
+          <div class="carousel-inner">
+            @foreach($product->media as $i => $media)
+              <div class="carousel-item @if($i===0) active @endif">
+                <img src="{{ asset('storage/'.$media->url) }}"
+                     class="d-block w-100 rounded-4"
+                     style="height:400px; object-fit:cover;"
+                     alt="{{ $product->name }}">
+              </div>
+            @endforeach
+          </div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+          </button>
         </div>
-
-        {{-- ───────── Details ───────── --}}
-        <div class="col-lg-6">
-            <h2 class="mb-2 d-flex align-items-center gap-2">
-                {{ $product->name }}
-                @unless($product->is_active)
-                    <span class="badge bg-warning text-dark">Inactive</span>
-                @endunless
-            </h2>
-
-            <p class="text-muted">
-                Type: <span class="badge bg-primary">{{ ucfirst($product->type) }}</span>
-            </p>
-
-            {{-- Price --}}
-            <div class="mb-2">
-                @if ($product->discount_price)
-                    <span class="h4 text-danger me-2">{{ get_currency() }} {{ number_format($product->discount_price) }}</span>
-                    <span class="text-muted text-decoration-line-through">{{ get_currency() }} {{ number_format($product->price) }}</span>
-                @else
-                    <span class="h4">{{ get_currency() }} {{ number_format($product->price) }}</span>
-                @endif
-            </div>
-
-            {{-- Listing dates if active --}}
-            @if ($product->is_active)
-                <p class="text-muted small mb-3">
-                    Listed on: {{$product->listing_paid_at }}<br>
-                    Next due:  {{ $product->next_due_date }}
-                </p>
-            @endif
-
-            {{-- Stock --}}
-            @if (!is_null($product->stock))
-                <p><strong>Stock:</strong> {{ $product->stock }}</p>
-            @endif
-
-            {{-- Pay listing fee if inactive --}}
-            @unless ($product->is_active)
-                <div class="alert alert-warning d-flex align-items-center gap-2">
-                    <i class="fas fa-info-circle"></i>
-                    This listing is inactive. Pay the listing fee to publish it.
-                </div>
-
-                @php
-                    $fee = $product->category?->listing_fee ?? 0;
-                @endphp
-
-                <form method="POST" action="{{ route('products.pay-fee', $product) }}" class="d-inline">
-                    @csrf
-                    <button class="btn btn-success">
-                        Pay Listing Fee ({{ get_currency() }} {{ number_format($fee, 2) }})
-                    </button>
-                </form>
-            @endunless
-
-            {{-- Action buttons --}}
-            <div class="mt-4">
-                <a href="{{ route('products.edit', $product) }}"
-                   class="btn btn-outline-secondary me-2">
-                    <i class="fas fa-edit me-1"></i> Edit
-                </a>
-                <a href="{{ route('products.index') }}" class="btn btn-outline-dark">
-                    <i class="fas fa-arrow-left me-1"></i> Back to Products
-                </a>
-            </div>
+      @else
+        <div class="d-flex align-items-center justify-content-center border rounded-4 text-muted" style="height:400px;">
+          No image available
         </div>
+      @endif
     </div>
 
-    {{-- Description --}}
-    @if ($product->description)
-        <div class="mt-5">
-            <h5>Description</h5>
-            <div class="border rounded p-3 bg-light">
-                {!! $product->description !!}
-            </div>
+    {{-- ───────── Product Details ───────── --}}
+    <div class="col-lg-6 d-flex flex-column">
+      {{-- Title & Status Badge --}}
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">{{ $product->name }}</h2>
+        @php
+          switch($product->is_active) {
+            case 0: $label='Pending'; $class='warning'; break;
+            case 1: $label='Active';  $class='success'; break;
+            case 2: $label='Paused';  $class='secondary'; break;
+            default:$label='Closed';  $class='dark'; break;
+          }
+        @endphp
+        <span class="badge bg-{{ $class }} text-uppercase">{{ $label }}</span>
+      </div>
+
+      {{-- Pause / Publish Toggle --}}
+      @if(in_array($product->is_active, [1,2]))
+        <form method="POST" action="{{ route('products.changeStatus', $product) }}" class="mb-3">
+          @csrf
+          <input type="hidden" name="status" value="{{ $product->is_active === 1 ? 2 : 1 }}">
+          <button type="submit" class="btn 
+            @if($product->is_active === 1) btn-outline-warning 
+            @else btn-outline-success 
+            @endif
+          ">
+            <i class="fas fa-{{ $product->is_active===1 ? 'pause' : 'play' }} me-1"></i>
+            {{ $product->is_active===1 ? 'Pause' : 'Publish' }}
+          </button>
+        </form>
+      @endif
+
+      {{-- Type & Price --}}
+      <p class="mb-2 text-muted">
+        <i class="fas fa-box me-1"></i>
+        <strong>Type:</strong> {{ ucfirst($product->type) }}
+      </p>
+      <div class="mb-3">
+        @if($product->discount_price)
+          <span class="h4 text-danger me-2">
+            {{ get_currency() }}{{ number_format($product->discount_price,2) }}
+          </span>
+          <span class="text-muted text-decoration-line-through">
+            {{ get_currency() }}{{ number_format($product->price,2) }}
+          </span>
+        @else
+          <span class="h4">{{ get_currency() }}{{ number_format($product->price,2) }}</span>
+        @endif
+      </div>
+
+      {{-- Listing Dates --}}
+      @if($product->is_active===1)
+        <ul class="list-unstyled mb-3 text-muted small">
+          <li>
+            <i class="fas fa-calendar-plus me-1"></i>
+            <strong>Listed on:</strong>
+            {{ \Carbon\Carbon::parse($product->listing_paid_at)->toDayDateTimeString() }}
+          </li>
+          <li>
+            <i class="fas fa-calendar-check me-1"></i>
+            <strong>Next due:</strong>
+            {{ \Carbon\Carbon::parse($product->next_due_date)->toFormattedDateString() }}
+          </li>
+        </ul>
+      @endif
+
+      {{-- Stock --}}
+      @if(! is_null($product->stock))
+        <p class="mb-3"><i class="fas fa-layer-group me-1"></i><strong>Stock:</strong> {{ $product->stock }}</p>
+      @endif
+
+      {{-- Listing Fee Prompt --}}
+      @if($product->is_active !== 1)
+        <div class="alert alert-warning d-flex align-items-center mb-4">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          This listing isn’t live yet. Pay the fee below to activate it.
         </div>
-    @endif
+
+        @php
+          $baseFee    = $product->category?->listing_fee ?? 0;
+          $monthlyFee = $baseFee / 4;
+        @endphp
+
+        <div class="d-flex gap-2 mb-4">
+          <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+            @csrf<input type="hidden" name="plan" value="monthly">
+            <button class="btn btn-outline-success">
+              Pay Monthly<br>
+              <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
+            </button>
+          </form>
+          <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+            @csrf<input type="hidden" name="plan" value="4months">
+            <button class="btn btn-success">
+              Pay 4‑Month<br>
+              <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>
+            </button>
+          </form>
+        </div>
+      @endif
+
+      {{-- Action Links --}}
+      <div class="mt-auto">
+        <a href="{{ route('products.edit', $product) }}" class="btn btn-outline-secondary me-2">
+          <i class="fas fa-edit me-1"></i> Edit
+        </a>
+        <a href="{{ route('products.index') }}" class="btn btn-outline-dark">
+          <i class="fas fa-arrow-left me-1"></i> Back
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {{-- Description --}}
+  @if($product->description)
+    <div class="mt-5">
+      <h5>Description</h5>
+      <div class="p-4 bg-light border rounded">
+        {!! $product->description !!}
+      </div>
+    </div>
+  @endif
 </div>
 @endsection
