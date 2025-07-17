@@ -20,7 +20,6 @@
 
   <!-- Social Meta Section -->
   @section('social-meta')
-    <!-- Open Graph Meta Tags -->
     <meta property="og:title"
           content="@yield('title', 'Jaat | Kenya’s Marketplace for Handmade & Locally-Made Products')">
     <meta property="og:description"
@@ -33,7 +32,6 @@
     <meta property="og:locale" content="en_KE">
     <meta property="og:site_name" content="Jaat">
 
-    <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title"
           content="@yield('title', 'Jaat | Kenya’s Marketplace for Handmade & Locally-Made Products')">
@@ -63,31 +61,14 @@
   <link href="{{ asset('assets/css/theme.min.css') }}" rel="stylesheet">
   <link href="{{ asset('assets/css/user.min.css') }}" rel="stylesheet">
 
-  <!-- Scripts -->
-  <script src="{{ asset('vendors/simplebar/simplebar.min.js') }}" defer></script>
+  <!-- Config & RTL -->
   <script src="{{ asset('assets/js/config.js') }}" defer></script>
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      var phoenixIsRTL = window.config.config.phoenixIsRTL;
-      if (phoenixIsRTL) {
-        document.querySelector('html').setAttribute('dir', 'rtl');
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.config.config.phoenixIsRTL) {
+        document.documentElement.setAttribute('dir', 'rtl');
       }
     });
-  </script>
-
-  <!-- Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Jaat",
-    "url": "https://jaat.co.ke",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://jaat.co.ke/search?q={search_term_string}",
-      "query-input": "required name=search_term_string"
-    }
-  }
   </script>
 
   <!-- Inline Styles -->
@@ -103,20 +84,14 @@
 </head>
 
 <body style="--phoenix-scroll-margin-top: 1.2rem;">
-  <!-- ===============================================-->
-  <!--    Main Content-->
-  <!-- ===============================================-->
-  <main class="main" id="top">
+  <main id="top" class="main">
     <div class="bg-body-emphasis" data-navbar-shadow-on-scroll="true">
       {{-- Navbar --}}
       <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
-          {{-- Brand --}}
           <a class="navbar-brand" href="{{ url('/') }}">
-            <img src="{{ setting('logo_url') }}" style="height: 60px;" alt="Jaat logo">
+            <img src="{{ setting('logo_url') }}" style="height:60px" alt="Jaat">
           </a>
-
-          {{-- Mobile toggle --}}
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                   data-bs-target="#mainNavbar" aria-controls="mainNavbar"
                   aria-expanded="false" aria-label="Toggle navigation">
@@ -133,40 +108,29 @@
               </button>
             </form>
 
-            {{-- Cart + User --}}
+            {{-- Cart & Auth --}}
             <ul class="navbar-nav ms-auto align-items-center" x-data="cartDropdown()" x-init="fetchCart()">
-              {{-- Cart --}}
-              @php $cartCount = count(session('cart', [])); @endphp
+              @php $count = count(session('cart', [])); @endphp
               <li class="nav-item me-3">
                 <a href="{{ route('cart.view') }}" class="nav-link position-relative text-dark">
                   <i class="fas fa-shopping-cart fa-lg"></i>
-                  @if($cartCount)
+                  @if($count)
                     <span class="badge bg-success position-absolute top-0 start-100 translate-middle">
-                      {{ $cartCount }}
+                      {{ $count }}
                     </span>
                   @endif
                 </a>
               </li>
 
-              {{-- Authentication Links --}}
               @guest
-                <li class="nav-item">
-                  <a class="nav-link" href="{{ route('login') }}">Log In</a>
-                </li>
-                <li class="nav-item">
-                  <a class="btn btn-success btn-sm" href="{{ route('register') }}">
-                    Sign Up
-                  </a>
-                </li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">Log In</a></li>
+                <li class="nav-item"><a class="btn btn-success btn-sm" href="{{ route('register') }}">Sign Up</a></li>
               @else
                 @if(auth()->user()->shop)
                   <li class="nav-item">
-                    <a class="nav-link" href="{{ route('seller.shops.show', auth()->user()->shop) }}">
-                      My Shop
-                    </a>
+                    <a class="nav-link" href="{{ route('seller.shops.show', auth()->user()->shop) }}">My Shop</a>
                   </li>
                 @endif
-
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button"
                      data-bs-toggle="dropdown" aria-expanded="false">
@@ -194,161 +158,137 @@
       @php
         $mainCategories = \App\Models\Category::with('childrenRecursive')
             ->whereNull('parent_id')->orderBy('id')->get();
-
-        $renderCats = function ($nodes) use (&$renderCats){
-            foreach($nodes as $cat){
-                $kids = $cat->childrenRecursive;
-                $has  = $kids->isNotEmpty();
-                echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
-                echo   '<a class="dropdown-item d-flex justify-content-between align-items-center"'.
-                       ' href="'.($has?'#':route('category.show',$cat->slug)).'">';
-                echo     e($cat->name);
-                if($has) echo '<i class="fas fa-chevron-right ms-2 rotate"></i>';
-                echo   '</a>';
-                if($has){
-                    echo '<ul class="dropdown-menu">'.PHP_EOL;
-                    $renderCats($kids);
-                    echo '</ul>'.PHP_EOL;
-                }
-                echo '</li>'.PHP_EOL;
+        $renderCats = function($nodes) use (&$renderCats) {
+          foreach ($nodes as $cat) {
+            $kids = $cat->childrenRecursive;
+            $has  = $kids->isNotEmpty();
+            echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
+            echo   '<a class="dropdown-item d-flex justify-content-between align-items-center"'
+                 .' href="'.($has?'#':route('category.show',$cat->slug)).'">'
+                 .e($cat->name).
+                 ($has?'<i class="fas fa-chevron-right ms-2 rotate"></i>':'').
+                 '</a>';
+            if($has){
+              echo '<ul class="dropdown-menu">'.PHP_EOL;
+              $renderCats($kids);
+              echo '</ul>'.PHP_EOL;
             }
+            echo '</li>'.PHP_EOL;
+          }
         };
       @endphp
 
       @if($mainCategories->isNotEmpty())
-      <nav class="bg-success">
-        <div class="container">
-          <ul class="nav flex-wrap">
-            @foreach($mainCategories as $main)
-              <li class="nav-item dropdown">
-                <a class="nav-link text-white" href="#" id="catDD{{ $main->id }}" data-bs-toggle="dropdown">
-                  {{ $main->name }}
-                  @if($main->childrenRecursive->isNotEmpty()) <i class="fas fa-chevron-down ms-1 rotate"></i>@endif
-                </a>
-
-                @if($main->childrenRecursive->isNotEmpty())
-                  <ul class="dropdown-menu">
-                    {!! $renderCats($main->childrenRecursive) !!}
-                  </ul>
-                @endif
-              </li>
-            @endforeach
-          </ul>
-        </div>
-      </nav>
+        <nav class="bg-success">
+          <div class="container">
+            <ul class="nav flex-wrap">
+              @foreach($mainCategories as $main)
+                <li class="nav-item dropdown">
+                  <a class="nav-link text-white" href="#" id="catDD{{ $main->id }}" data-bs-toggle="dropdown">
+                    {{ $main->name }}
+                    @if($main->childrenRecursive->isNotEmpty())
+                      <i class="fas fa-chevron-down ms-1 rotate"></i>
+                    @endif
+                  </a>
+                  @if($main->childrenRecursive->isNotEmpty())
+                    <ul class="dropdown-menu">{!! $renderCats($main->childrenRecursive) !!}</ul>
+                  @endif
+                </li>
+              @endforeach
+            </ul>
+          </div>
+        </nav>
       @endif
 
       @push('styles')
-      <style>
-      /* ——— Layout ——— */
-      .dropdown-menu                { min-width:230px; border-radius:.5rem; box-shadow:0 .5rem 1rem rgba(0,0,0,.08); }
-      .dropdown-submenu>.dropdown-menu{
-        top:-0.25rem;               /* 1 — tiny offset so corners don’t overlap */
-        left:100%;
-        margin-left:.15rem;
-      }
-      .dropdown-submenu.no-children > a .rotate{display:none}
-
-      /* ——— Hover/active styles ——— */
-      .dropdown-item:hover,
-      .dropdown-item:focus         { background:#eaf7ef; color:#198754; }
-      .rotate                       { transition:.25s transform; }
-      .dropdown-submenu.show   > a .rotate,
-      .nav-item.dropdown.show  > a .rotate{ transform:rotate(90deg); }
-
-      /* ——— Ensure stacking & scrolling ——— */
-      .dropdown-menu               { max-height:72vh; overflow:auto; z-index:1055; }
-
-      /* Desktop hover open */
-      @media (min-width:992px){
-        .nav-item.dropdown:hover   >.dropdown-menu { display:block; }
-        .dropdown-submenu:hover    >.dropdown-menu { display:block; }
-      }
-      </style>
+        <style>
+          .dropdown-menu { min-width:230px; border-radius:.5rem; box-shadow:0 .5rem 1rem rgba(0,0,0,.08); }
+          .dropdown-submenu>.dropdown-menu { top:-.25rem; left:100%; margin-left:.15rem; }
+          .dropdown-submenu.no-children > a .rotate { display:none; }
+          .dropdown-item:hover, .dropdown-item:focus { background:#eaf7ef; color:#198754; }
+          .rotate { transition:.25s transform; }
+          .dropdown-submenu.show > a .rotate,
+          .nav-item.dropdown.show > a .rotate { transform:rotate(90deg); }
+          .dropdown-menu { max-height:72vh; overflow:auto; z-index:1055; }
+          @media (min-width:992px){
+            .nav-item.dropdown:hover > .dropdown-menu,
+            .dropdown-submenu:hover > .dropdown-menu { display:block; }
+          }
+        </style>
       @endpush
 
       @push('scripts')
-      <script>
-      document.addEventListener('DOMContentLoaded',()=>{
-
-        /* ---------- Toggle / flip logic ---------- */
-        document.querySelectorAll('.dropdown-submenu > a').forEach(anchor=>{
-          anchor.addEventListener('click',e=>{
-            const sub = anchor.nextElementSibling;
-            if(sub && sub.classList.contains('dropdown-menu')){
-              e.preventDefault();
-              const parentLi = anchor.parentElement;
-              const already = parentLi.classList.toggle('show');
-              sub.classList.toggle('show', already);
-
-              // 2 — Flip left if overflowing viewport
-              if(already){
-                const rect = sub.getBoundingClientRect();
-                if(rect.right > window.innerWidth){
-                  sub.style.left = 'auto';
-                  sub.style.right = '100%';
-                }else{
-                  sub.style.left = '100%';
-                  sub.style.right = 'auto';
-                }
-              }
-
-              // Hide open siblings
-              parentLi.parentElement.querySelectorAll(':scope > .dropdown-submenu.show').forEach(li=>{
-                if(li!==parentLi){
-                  li.classList.remove('show');
-                  li.querySelectorAll('.dropdown-menu.show').forEach(m=>m.classList.remove('show'));
+        <script>
+          document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.dropdown-submenu > a').forEach(anchor => {
+              anchor.addEventListener('click', e => {
+                const sub = anchor.nextElementSibling;
+                if(sub && sub.classList.contains('dropdown-menu')){
+                  e.preventDefault();
+                  const parentLi = anchor.parentElement;
+                  const open = parentLi.classList.toggle('show');
+                  sub.classList.toggle('show', open);
+                  if(open){
+                    const rect = sub.getBoundingClientRect();
+                    if(rect.right > window.innerWidth){
+                      sub.style.left = 'auto'; sub.style.right = '100%';
+                    }
+                  }
+                  parentLi.parentElement.querySelectorAll('.dropdown-submenu.show').forEach(li => {
+                    if(li !== parentLi){
+                      li.classList.remove('show');
+                      li.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+                    }
+                  });
                 }
               });
+            });
+            if(window.matchMedia('(hover:hover)').matches){
+              document.querySelectorAll('.dropdown-submenu').forEach(li => {
+                li.addEventListener('mouseenter', () => {
+                  const sub = li.querySelector('.dropdown-menu');
+                  if(sub){
+                    sub.classList.add('show'); li.classList.add('show');
+                    const rect = sub.getBoundingClientRect();
+                    if(rect.right > window.innerWidth){
+                      sub.style.left='auto'; sub.style.right='100%';
+                    }
+                  }
+                });
+                li.addEventListener('mouseleave', () => {
+                  li.classList.remove('show');
+                  li.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+                });
+              });
             }
-          });
-        });
-
-        // Hover open (desktop) & keep flip logic
-        if(window.matchMedia('(hover:hover)').matches){
-          document.querySelectorAll('.dropdown-submenu').forEach(li=>{
-            li.addEventListener('mouseenter',()=>{
-              const sub = li.querySelector(':scope > .dropdown-menu');
-              if(sub){
-                sub.classList.add('show'); li.classList.add('show');
-                const rect = sub.getBoundingClientRect();
-                if(rect.right > window.innerWidth){
-                  sub.style.left='auto'; sub.style.right='100%';
-                }
+            document.addEventListener('click', e => {
+              if(!e.target.closest('nav')){
+                document.querySelectorAll('.dropdown-menu.show,.dropdown-submenu.show')
+                  .forEach(el => el.classList.remove('show'));
               }
             });
-            li.addEventListener('mouseleave',()=>{
-              li.classList.remove('show');
-              li.querySelectorAll('.dropdown-menu').forEach(m=>m.classList.remove('show'));
-              li.querySelectorAll('.dropdown-menu').forEach(m=>{m.style.left='';m.style.right='';});
+            document.addEventListener('keydown', e => {
+              if(e.key==='Escape'){
+                document.querySelectorAll('.dropdown-menu.show,.dropdown-submenu.show')
+                  .forEach(el => el.classList.remove('show'));
+              }
             });
           });
-        }
-
-        // Close on outside click or Esc
-        const closeAll=()=>document.querySelectorAll('.dropdown-menu.show,.dropdown-submenu.show')
-                            .forEach(el=>{el.classList.remove('show');el.style.left='';el.style.right='';});
-        document.addEventListener('click',e=>{ if(!e.target.closest('nav')) closeAll(); });
-        document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
-      });
-      </script>
+        </script>
       @endpush
+
     </div>
 
-    {{-- Page-specific content --}}
+    {{-- Main Content --}}
     @yield('main')
 
-    <!-- Footer Section -->
+    {{-- Footer --}}
     @php $settings = \App\Models\Setting::first(); @endphp
     <footer class="bg-dark text-white pt-5">
       <div class="container px-3 px-sm-5">
         <div class="row gx-4 gy-5">
-
-          <!-- Sellers -->
           <div class="col-6 col-md-3">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading">
-              Sellers
-            </h4>
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2">Sellers</h4>
             <ul class="list-unstyled mb-0">
               @foreach([
                 'Become a Seller'    => url('/become-seller'),
@@ -358,19 +298,13 @@
                 'Seller Tips'        => url('/seller-tips'),
               ] as $label => $link)
                 <li class="mb-2">
-                  <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
-                    {{ $label }}
-                  </a>
+                  <a href="{{ $link }}" class="text-white-50 text-decoration-none">{{ $label }}</a>
                 </li>
               @endforeach
             </ul>
           </div>
-
-          <!-- Buyers -->
           <div class="col-6 col-md-3">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading">
-              Buyers
-            </h4>
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2">Buyers</h4>  
             <ul class="list-unstyled mb-0">
               @foreach([
                 'Buyer Tips'         => url('/buyer-tips'),
@@ -378,55 +312,31 @@
                 'Terms & Conditions' => url('/buyer-terms'),
               ] as $label => $link)
                 <li class="mb-2">
-                  <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
-                    {{ $label }}
-                  </a>
+                  <a href="{{ $link }}" class="text-white-50 text-decoration-none">{{ $label }}</a>
                 </li>
               @endforeach
             </ul>
           </div>
-
-          <!-- About -->
           <div class="col-6 col-md-3">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading">
-              About
-            </h4>
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2">About</h4>
             <ul class="list-unstyled mb-0">
               @foreach([
                 'About ' . config('app.name') => url('/about'),
                 'House Rules & Policy'        => url('/house-policy'),
               ] as $label => $link)
                 <li class="mb-2">
-                  <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
-                    {{ $label }}
-                  </a>
+                  <a href="{{ $link }}" class="text-white-50 text-decoration-none">{{ $label }}</a>
                 </li>
               @endforeach
             </ul>
           </div>
-
-          <!-- Support -->
           <div class="col-6 col-md-3">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading">
-              Support
-            </h4>
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2">Support</h4>
             <ul class="list-unstyled mb-4">
-              <li class="mb-2">
-                <a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">
-                  Reach Us
-                </a>
-              </li>
-              <li class="text-white-50 mb-1 footer-text">
-                <strong>Email:</strong>
-                <a href="mailto:{{ $settings->email }}" class="text-white">{{ $settings->email }}</a>
-              </li>
-              <li class="text-white-50 footer-text">
-                <strong>Phone:</strong>
-                <a href="tel:{{ $settings->phone }}" class="text-white">{{ $settings->phone }}</a>
-              </li>
+              <li class="mb-2"><a href="{{ url('/contact') }}" class="text-white-50 text-decoration-none">Reach Us</a></li>
+              <li class="text-white-50 mb-1"><strong>Email:</strong> <a href="mailto:{{ $settings->email }}" class="text-white">{{ $settings->email }}</a></li>
+              <li class="text-white-50"><strong>Phone:</strong> <a href="tel:{{ $settings->phone }}" class="text-white">{{ $settings->phone }}</a></li>
             </ul>
-
-            <!-- Social Icons -->
             <div class="d-flex gap-4">
               @foreach([
                 'facebook_url'  => 'fab fa-facebook-f',
@@ -436,63 +346,46 @@
                 'tiktok_url'    => 'fab fa-tiktok',
               ] as $key => $icon)
                 @if(!empty($settings->{$key}))
-                  <a href="{{ $settings->{$key} }}" target="_blank"
-                     aria-label="{{ ucfirst(str_replace('_url','',$key)) }}"
-                     class="footer-link social-icon">
+                  <a href="{{ $settings->{$key} }}" target="_blank" aria-label="{{ ucfirst(str_replace('_url','',$key)) }}" class="text-white">
                     <i class="{{ $icon }}"></i>
                   </a>
                 @endif
               @endforeach
             </div>
           </div>
-
         </div>
-
         <div class="mt-5 pt-4 border-top border-secondary text-center">
-          <p class="mb-0 text-white-50 footer-text">
-            &copy; {{ date('Y') }} {{ config('app.name') }} — All rights reserved.
-          </p>
+          <p class="mb-0">&copy; {{ date('Y') }} {{ config('app.name') }} — All rights reserved.</p>
         </div>
       </div>
     </footer>
 
     @push('styles')
-    <style>
-      footer,
-      .footer-text,
-      .footer-link,
-      .footer-heading { font-size: 15px !important; }
-      .footer-heading { font-weight: 600; }
-      .footer-link { display: inline-block; transition: color .2s ease-in-out; }
-      .footer-link:hover { color: #fff !important; text-decoration: none; }
-      .social-icon i { font-size: 18px; }
-    </style>
+      <style>
+        footer,
+        .footer-text,
+        .footer-link,
+        .footer-heading { font-size:15px!important; }
+        .footer-heading { font-weight:600; }
+        .footer-link { display:inline-block; transition:color .2s; }
+        .footer-link:hover { color:#fff!important; text-decoration:none; }
+        .social-icon i { font-size:18px; }
+      </style>
     @endpush
+
   </main>
 
-  <!-- ===============================================-->
-  <!--    JavaScripts-->
-  <!-- ===============================================-->
+  <!-- Scripts -->
   <script src="{{ asset('vendors/popper/popper.min.js') }}"></script>
   <script src="{{ asset('vendors/bootstrap/bootstrap.min.js') }}"></script>
-  <script src="{{ asset('vendors/anchorjs/anchor.min.js') }}"></script>
-  <script src="{{ asset('vendors/is/is.min.js') }}"></script>
   <script src="{{ asset('vendors/fontawesome/all.min.js') }}"></script>
-  <script src="{{ asset('vendors/lodash/lodash.min.js') }}"></script>
-  <script src="{{ asset('vendors/list.js/list.min.js') }}"></script>
-  <script src="{{ asset('vendors/feather-icons/feather.min.js') }}"></script>
-  <script src="{{ asset('vendors/dayjs/dayjs.min.js') }}"></script>
-  <script src="{{ asset('vendors/mapbox-gl/mapbox-gl.js') }}"></script>
   <script src="{{ asset('assets/js/phoenix.js') }}"></script>
-  <script src="{{ asset('vendors/isotope-layout/isotope.pkgd.min.js') }}"></script>
-  <script src="{{ asset('vendors/imagesloaded/imagesloaded.pkgd.min.js') }}"></script>
-  <script src="{{ asset('vendors/isotope-packery/packery-mode.pkgd.min.js') }}"></script>
-  <script src="{{ asset('vendors/bigpicture/BigPicture.js') }}"></script>
   <script src="{{ asset('vendors/countup/countUp.umd.js') }}"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDbaQGvhe7Af-uOMJz68NWHnO34UjjE7Lo&amp;callback=initMap" async></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDbaQGvhe7Af-uOMJz68NWHnO34UjjE7Lo&callback=initMap" async></script>
   <script src="https://smtpjs.com/v3/smtp.js" defer></script>
 
   @yield('scripts')
+  @stack('styles')
   @stack('scripts')
 </body>
 </html>
