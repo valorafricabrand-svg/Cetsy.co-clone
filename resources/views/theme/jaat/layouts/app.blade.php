@@ -86,6 +86,58 @@
 <body style="--phoenix-scroll-margin-top: 1.2rem;">
   <main id="top" class="main">
     <div class="bg-body-emphasis" data-navbar-shadow-on-scroll="true">
+
+{{-- Top Contact Bar --}}
+<header class="bg-success border-bottom py-2">
+  <div class="container d-flex justify-content-end align-items-center gap-4">
+    {{-- Phone --}}
+    <div class="d-flex align-items-center">
+      <i class="fas fa-phone-alt text-white me-1"></i>
+      <small class="text-white fw-semibold">{{ setting('phone') ?? 'N/A' }}</small>
+    </div>
+
+    {{-- Email --}}
+    <div class="d-flex align-items-center">
+      <i class="fas fa-envelope text-white me-1"></i>
+      <a href="mailto:{{ $shop->email ?? '#' }}" class="text-white fw-semibold text-decoration-none">
+        {{ setting('email') ?? 'info@example.com' }}
+      </a>
+    </div>
+
+    {{-- Social Media --}}
+    <div class="d-flex align-items-center gap-2">
+      @if(!empty(setting('facebook_url')))
+        <a href="{{ setting('facebook_url') }}" target="_blank" class="text-white">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+      @endif
+
+      @if(!empty(setting('x_url')))
+        <a href="{{ setting('x_url') }}" target="_blank" class="text-white">
+          <i class="fab fa-twitter"></i>
+        </a>
+      @endif
+
+      @if(!empty(setting('instagram_url')))
+        <a href="{{ setting('instagram_url') }}" target="_blank" class="text-white">
+          <i class="fab fa-instagram"></i>
+        </a>
+      @endif
+      @if(!empty(setting('linkedin_url')))
+        <a href="{{ setting('linkedin_url') }}" target="_blank" class="text-white">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+      @endif
+      @if(!empty(setting('tiktok_url')))
+        <a href="{{ setting('tiktok_url') }}" target="_blank" class="text-white">
+          <i class="fab fa-tiktok"></i>
+        </a>
+      @endif
+    </div>
+  </div>
+</header>
+
+
       {{-- Navbar --}}
       <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
