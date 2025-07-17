@@ -108,7 +108,7 @@
   <!-- ===============================================-->
   <main class="main" id="top">
     <div class="bg-body-emphasis" data-navbar-shadow-on-scroll="true">
-      {{-- resources/views/layouts/partials/navbar.blade.php --}}
+      {{-- Navbar --}}
       <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
           {{-- Brand --}}
@@ -124,7 +124,6 @@
           </button>
 
           <div class="collapse navbar-collapse" id="mainNavbar">
-
             {{-- Search --}}
             <form class="d-flex me-3 flex-grow-1" method="GET" action="{{ route('search') }}">
               <input class="form-control flex-grow-1" type="search" name="q"
@@ -191,150 +190,149 @@
         </div>
       </nav>
 
-{{-- ================ Responsive Multi-level Category Nav ================ --}}
-@php
-  $mainCategories = \App\Models\Category::with('childrenRecursive')
-      ->whereNull('parent_id')->orderBy('id')->get();
+      {{-- Category Nav --}}
+      @php
+        $mainCategories = \App\Models\Category::with('childrenRecursive')
+            ->whereNull('parent_id')->orderBy('id')->get();
 
-  $renderCats = function ($nodes) use (&$renderCats){
-      foreach($nodes as $cat){
-          $kids = $cat->childrenRecursive;
-          $has  = $kids->isNotEmpty();
-          echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
-          echo   '<a class="dropdown-item d-flex justify-content-between align-items-center"'.
-                 ' href="'.($has?'#':route('category.show',$cat->slug)).'">';
-          echo     e($cat->name);
-          if($has) echo '<i class="fas fa-chevron-right ms-2 rotate"></i>';
-          echo   '</a>';
-          if($has){
-              echo '<ul class="dropdown-menu">'.PHP_EOL;
-              $renderCats($kids);
-              echo '</ul>'.PHP_EOL;
-          }
-          echo '</li>'.PHP_EOL;
+        $renderCats = function ($nodes) use (&$renderCats){
+            foreach($nodes as $cat){
+                $kids = $cat->childrenRecursive;
+                $has  = $kids->isNotEmpty();
+                echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
+                echo   '<a class="dropdown-item d-flex justify-content-between align-items-center"'.
+                       ' href="'.($has?'#':route('category.show',$cat->slug)).'">';
+                echo     e($cat->name);
+                if($has) echo '<i class="fas fa-chevron-right ms-2 rotate"></i>';
+                echo   '</a>';
+                if($has){
+                    echo '<ul class="dropdown-menu">'.PHP_EOL;
+                    $renderCats($kids);
+                    echo '</ul>'.PHP_EOL;
+                }
+                echo '</li>'.PHP_EOL;
+            }
+        };
+      @endphp
+
+      @if($mainCategories->isNotEmpty())
+      <nav class="bg-success">
+        <div class="container">
+          <ul class="nav flex-wrap">
+            @foreach($mainCategories as $main)
+              <li class="nav-item dropdown">
+                <a class="nav-link text-white" href="#" id="catDD{{ $main->id }}" data-bs-toggle="dropdown">
+                  {{ $main->name }}
+                  @if($main->childrenRecursive->isNotEmpty()) <i class="fas fa-chevron-down ms-1 rotate"></i>@endif
+                </a>
+
+                @if($main->childrenRecursive->isNotEmpty())
+                  <ul class="dropdown-menu">
+                    {!! $renderCats($main->childrenRecursive) !!}
+                  </ul>
+                @endif
+              </li>
+            @endforeach
+          </ul>
+        </div>
+      </nav>
+      @endif
+
+      @push('styles')
+      <style>
+      /* ——— Layout ——— */
+      .dropdown-menu                { min-width:230px; border-radius:.5rem; box-shadow:0 .5rem 1rem rgba(0,0,0,.08); }
+      .dropdown-submenu>.dropdown-menu{
+        top:-0.25rem;               /* 1 — tiny offset so corners don’t overlap */
+        left:100%;
+        margin-left:.15rem;
       }
-  };
-@endphp
+      .dropdown-submenu.no-children > a .rotate{display:none}
 
-@if($mainCategories->isNotEmpty())
-<nav class="bg-success">
-  <div class="container">
-    <ul class="nav flex-wrap">
-      @foreach($mainCategories as $main)
-        <li class="nav-item dropdown">
-          <a class="nav-link text-white" href="#" id="catDD{{ $main->id }}" data-bs-toggle="dropdown">
-            {{ $main->name }}
-            @if($main->childrenRecursive->isNotEmpty()) <i class="fas fa-chevron-down ms-1 rotate"></i>@endif
-          </a>
+      /* ——— Hover/active styles ——— */
+      .dropdown-item:hover,
+      .dropdown-item:focus         { background:#eaf7ef; color:#198754; }
+      .rotate                       { transition:.25s transform; }
+      .dropdown-submenu.show   > a .rotate,
+      .nav-item.dropdown.show  > a .rotate{ transform:rotate(90deg); }
 
-          @if($main->childrenRecursive->isNotEmpty())
-            <ul class="dropdown-menu">
-              {!! $renderCats($main->childrenRecursive) !!}
-            </ul>
-          @endif
-        </li>
-      @endforeach
-    </ul>
-  </div>
-</nav>
-@endif
+      /* ——— Ensure stacking & scrolling ——— */
+      .dropdown-menu               { max-height:72vh; overflow:auto; z-index:1055; }
 
-@push('styles')
-<style>
-/* ——— Layout ——— */
-.dropdown-menu                { min-width:230px; border-radius:.5rem; box-shadow:0 .5rem 1rem rgba(0,0,0,.08); }
-.dropdown-submenu>.dropdown-menu{
-  top:-0.25rem;               /* 1 — tiny offset so corners don’t overlap */
-  left:100%;
-  margin-left:.15rem;
-}
-.dropdown-submenu.no-children > a .rotate{display:none}
+      /* Desktop hover open */
+      @media (min-width:992px){
+        .nav-item.dropdown:hover   >.dropdown-menu { display:block; }
+        .dropdown-submenu:hover    >.dropdown-menu { display:block; }
+      }
+      </style>
+      @endpush
 
-/* ——— Hover/active styles ——— */
-.dropdown-item:hover,
-.dropdown-item:focus         { background:#eaf7ef; color:#198754; }
-.rotate                       { transition:.25s transform; }
-.dropdown-submenu.show   > a .rotate,
-.nav-item.dropdown.show  > a .rotate{ transform:rotate(90deg); }
+      @push('scripts')
+      <script>
+      document.addEventListener('DOMContentLoaded',()=>{
 
-/* ——— Ensure stacking & scrolling ——— */
-.dropdown-menu               { max-height:72vh; overflow:auto; z-index:1055; }
+        /* ---------- Toggle / flip logic ---------- */
+        document.querySelectorAll('.dropdown-submenu > a').forEach(anchor=>{
+          anchor.addEventListener('click',e=>{
+            const sub = anchor.nextElementSibling;
+            if(sub && sub.classList.contains('dropdown-menu')){
+              e.preventDefault();
+              const parentLi = anchor.parentElement;
+              const already = parentLi.classList.toggle('show');
+              sub.classList.toggle('show', already);
 
-/* Desktop hover open */
-@media (min-width:992px){
-  .nav-item.dropdown:hover   >.dropdown-menu { display:block; }
-  .dropdown-submenu:hover    >.dropdown-menu { display:block; }
-}
-</style>
-@endpush
+              // 2 — Flip left if overflowing viewport
+              if(already){
+                const rect = sub.getBoundingClientRect();
+                if(rect.right > window.innerWidth){
+                  sub.style.left = 'auto';
+                  sub.style.right = '100%';
+                }else{
+                  sub.style.left = '100%';
+                  sub.style.right = 'auto';
+                }
+              }
 
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded',()=>{
-
-  /* ---------- Toggle / flip logic ---------- */
-  document.querySelectorAll('.dropdown-submenu > a').forEach(anchor=>{
-    anchor.addEventListener('click',e=>{
-      const sub = anchor.nextElementSibling;
-      if(sub && sub.classList.contains('dropdown-menu')){
-        e.preventDefault();
-        const parentLi = anchor.parentElement;
-        const already = parentLi.classList.toggle('show');
-        sub.classList.toggle('show', already);
-
-        // 2 — Flip left if overflowing viewport
-        if(already){
-          const rect = sub.getBoundingClientRect();
-          if(rect.right > window.innerWidth){
-            sub.style.left = 'auto';
-            sub.style.right = '100%';
-          }else{
-            sub.style.left = '100%';
-            sub.style.right = 'auto';
-          }
-        }
-
-        // Hide open siblings
-        parentLi.parentElement.querySelectorAll(':scope > .dropdown-submenu.show').forEach(li=>{
-          if(li!==parentLi){
-            li.classList.remove('show');
-            li.querySelectorAll('.dropdown-menu.show').forEach(m=>m.classList.remove('show'));
-          }
+              // Hide open siblings
+              parentLi.parentElement.querySelectorAll(':scope > .dropdown-submenu.show').forEach(li=>{
+                if(li!==parentLi){
+                  li.classList.remove('show');
+                  li.querySelectorAll('.dropdown-menu.show').forEach(m=>m.classList.remove('show'));
+                }
+              });
+            }
+          });
         });
-      }
-    });
-  });
 
-  // Hover open (desktop) & keep flip logic
-  if(window.matchMedia('(hover:hover)').matches){
-    document.querySelectorAll('.dropdown-submenu').forEach(li=>{
-      li.addEventListener('mouseenter',()=>{
-        const sub = li.querySelector(':scope > .dropdown-menu');
-        if(sub){
-          sub.classList.add('show'); li.classList.add('show');
-          const rect = sub.getBoundingClientRect();
-          if(rect.right > window.innerWidth){
-            sub.style.left='auto'; sub.style.right='100%';
-          }
+        // Hover open (desktop) & keep flip logic
+        if(window.matchMedia('(hover:hover)').matches){
+          document.querySelectorAll('.dropdown-submenu').forEach(li=>{
+            li.addEventListener('mouseenter',()=>{
+              const sub = li.querySelector(':scope > .dropdown-menu');
+              if(sub){
+                sub.classList.add('show'); li.classList.add('show');
+                const rect = sub.getBoundingClientRect();
+                if(rect.right > window.innerWidth){
+                  sub.style.left='auto'; sub.style.right='100%';
+                }
+              }
+            });
+            li.addEventListener('mouseleave',()=>{
+              li.classList.remove('show');
+              li.querySelectorAll('.dropdown-menu').forEach(m=>m.classList.remove('show'));
+              li.querySelectorAll('.dropdown-menu').forEach(m=>{m.style.left='';m.style.right='';});
+            });
+          });
         }
-      });
-      li.addEventListener('mouseleave',()=>{
-        li.classList.remove('show');
-        li.querySelectorAll('.dropdown-menu').forEach(m=>m.classList.remove('show'));
-        li.querySelectorAll('.dropdown-menu').forEach(m=>{m.style.left='';m.style.right='';});
-      });
-    });
-  }
 
-  // Close on outside click or Esc
-  const closeAll=()=>document.querySelectorAll('.dropdown-menu.show,.dropdown-submenu.show')
-                      .forEach(el=>{el.classList.remove('show');el.style.left='';el.style.right='';});
-  document.addEventListener('click',e=>{ if(!e.target.closest('nav')) closeAll(); });
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
-});
-</script>
-@endpush
-
+        // Close on outside click or Esc
+        const closeAll=()=>document.querySelectorAll('.dropdown-menu.show,.dropdown-submenu.show')
+                            .forEach(el=>{el.classList.remove('show');el.style.left='';el.style.right='';});
+        document.addEventListener('click',e=>{ if(!e.target.closest('nav')) closeAll(); });
+        document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
+      });
+      </script>
+      @endpush
     </div>
 
     {{-- Page-specific content --}}
@@ -464,16 +462,12 @@ document.addEventListener('DOMContentLoaded',()=>{
       .footer-text,
       .footer-link,
       .footer-heading { font-size: 15px !important; }
-
       .footer-heading { font-weight: 600; }
-
       .footer-link { display: inline-block; transition: color .2s ease-in-out; }
       .footer-link:hover { color: #fff !important; text-decoration: none; }
-
       .social-icon i { font-size: 18px; }
     </style>
     @endpush
-
   </main>
 
   <!-- ===============================================-->
