@@ -233,166 +233,17 @@
           <!-- Grid View -->
           <div id="gridView" class="view-mode">
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-              @foreach($products as $product)
-                <div class="col product-item" 
-                     data-price="{{ $product->price }}" 
-                     data-type="{{ $product->type }}"
-                     data-rating="{{ $product->reviews()->avg('rating') ?? 0 }}">
-                  <div class="card h-100 shadow-sm border-0 product-hover">
-                    <div class="position-relative">
-                      <a href="{{ route('listing.show', $product) }}" class="text-decoration-none">
-                        @if($img = $product->media->first())
-                          <img 
-                            src="{{ asset( $product->featured_image ?? 'storage/' . $img->url ) }}" 
-                            alt="{{ $product->name }}" 
-                            class="card-img-top"
-                            style="height: 200px; object-fit: cover;"
-                            loading="lazy">
-                        @else
-                          <div class="bg-secondary d-flex justify-content-center align-items-center text-white" style="height: 200px;">
-                            <i class="fas fa-image fa-2x"></i>
-                          </div>
-                        @endif
-                      </a>
-                      @if(!empty($product->discount_price) && $product->discount_price < $product->price)
-                        <div class="position-absolute top-0 start-0 m-2">
-                          <span class="badge bg-danger">Sale</span>
-                        </div>
-                      @endif
-                      <div class="position-absolute top-0 end-0 m-2">
-                        <button class="btn btn-sm btn-light rounded-circle" onclick="addToWishlist({{ $product->id }})" title="Add to Wishlist">
-                          <i class="far fa-heart"></i>
-                        </button>
-                      </div>
-                    </div>
-                    <div class="card-body d-flex flex-column">
-                      <h6 class="card-title text-truncate">
-                        <a href="{{ route('listing.show', $product) }}" class="text-dark text-decoration-none">
-                          {{ $product->name }}
-                        </a>
-                      </h6>
-                      @if(!empty($product->discount_price) && $product->discount_price < $product->price)
-                        <div class="d-flex align-items-baseline gap-2 mb-2">
-                          <span class="fw-bold text-success">
-                            {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
-                          </span>
-                          <span class="text-muted text-decoration-line-through small">
-                            {{ get_currency() }} {{ number_format($product->price, 2) }}
-                          </span>
-                        </div>
-                      @else
-                        <p class="fw-bold text-success mb-2">
-                          {{ get_currency() }} {{ number_format($product->price, 2) }}
-                        </p>
-                      @endif
-                      
-                      <!-- Product Rating -->
-                      @php
-                        $productRating = $product->reviews()->avg('rating') ?? 0;
-                        $productReviewCount = $product->reviews()->count();
-                      @endphp
-                      @if($productReviewCount > 0)
-                        <div class="d-flex align-items-center gap-1 mb-2">
-                          <div class="d-flex align-items-center">
-                            @for($i = 1; $i <= 5; $i++)
-                              @if($i <= $productRating)
-                                <i class="fas fa-star text-warning" style="font-size: 12px;"></i>
-                              @else
-                                <i class="far fa-star text-muted" style="font-size: 12px;"></i>
-                              @endif
-                            @endfor
-                          </div>
-                          <span class="text-muted small">({{ $productReviewCount }})</span>
-                        </div>
-                      @endif
+              @foreach($products as $item)
 
-                      <div class="mt-auto d-flex gap-2">
-                        <a href="{{ route('listing.show', $product) }}"
-                           class="btn btn-outline-success btn-sm flex-grow-1 d-flex justify-content-center align-items-center gap-2"
-                           aria-label="View {{ $product->name }}">
-                          <span>View</span>
-                          <i class="fas fa-eye"></i>
-                        </a>
-                        <button class="btn btn-outline-primary btn-sm" onclick="addToCart({{ $product->id }})" title="Add to Cart">
-                          <i class="fas fa-cart-plus"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+               <div class="col-6 col-md-3 col-lg-3">
+            @include('theme.'.theme().'.partials.product-card', ['item' => $item])
+          </div>
+
               @endforeach
             </div>
           </div>
 
-          <!-- List View -->
-          <div id="listView" class="view-mode d-none">
-            <div class="row">
-              @foreach($products as $product)
-                <div class="col-12 mb-3 product-item" 
-                     data-price="{{ $product->price }}" 
-                     data-type="{{ $product->type }}"
-                     data-rating="{{ $product->reviews()->avg('rating') ?? 0 }}">
-                  <div class="card border-0 shadow-sm">
-                    <div class="row g-0">
-                      <div class="col-md-3">
-                        <a href="{{ route('listing.show', $product) }}" class="text-decoration-none">
-                          @if($img = $product->media->first())
-                            <img 
-                              src="{{ asset( $product->featured_image ?? 'storage/' . $img->url ) }}" 
-                              alt="{{ $product->name }}" 
-                              class="img-fluid rounded-start"
-                              style="height: 150px; object-fit: cover; width: 100%;"
-                              loading="lazy">
-                          @else
-                            <div class="bg-secondary d-flex justify-content-center align-items-center text-white rounded-start" style="height: 150px;">
-                              <i class="fas fa-image fa-2x"></i>
-                            </div>
-                          @endif
-                        </a>
-                      </div>
-                      <div class="col-md-9">
-                        <div class="card-body">
-                          <div class="d-flex justify-content-between align-items-start">
-                            <div class="flex-grow-1">
-                              <h5 class="card-title">
-                                <a href="{{ route('listing.show', $product) }}" class="text-dark text-decoration-none">
-                                  {{ $product->name }}
-                                </a>
-                              </h5>
-                              <p class="card-text text-muted small">{{ Str::limit($product->description, 150) }}</p>
-                              
-                              @if(!empty($product->discount_price) && $product->discount_price < $product->price)
-                                <div class="d-flex align-items-baseline gap-2 mb-2">
-                                  <span class="fw-bold text-success fs-5">
-                                    {{ get_currency() }} {{ number_format($product->discount_price, 2) }}
-                                  </span>
-                                  <span class="text-muted text-decoration-line-through">
-                                    {{ get_currency() }} {{ number_format($product->price, 2) }}
-                                  </span>
-                                </div>
-                              @else
-                                <p class="fw-bold text-success fs-5 mb-2">
-                                  {{ get_currency() }} {{ number_format($product->price, 2) }}
-                                </p>
-                              @endif
-                            </div>
-                            <div class="d-flex flex-column gap-2">
-                              <button class="btn btn-outline-secondary btn-sm" onclick="addToWishlist({{ $product->id }})" title="Add to Wishlist">
-                                <i class="far fa-heart"></i>
-                              </button>
-                              <button class="btn btn-outline-primary btn-sm" onclick="addToCart({{ $product->id }})" title="Add to Cart">
-                                <i class="fas fa-cart-plus"></i>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              @endforeach
-            </div>
-          </div>
+        
 
           @if($products->hasPages())
             <div class="mt-4 d-flex justify-content-center">
@@ -560,10 +411,10 @@
   <div class="modal-dialog">
     <form class="modal-content" method="POST" action="{{ route('messages.store') }}">
       @csrf
-      <input type="hidden" name="receiver_id" value="{{ $product->shop->user_id }}">
-      <input type="hidden" name="product_id" value="{{ $product->id }}">
+      <input type="hidden" name="receiver_id" value="{{ $shop->user_id }}">
+      <input type="hidden" name="product_id" value="{{ $shop->user_id }}">
       <div class="modal-header">
-        <h5 class="modal-title" id="messageModalLabel">Message Seller – {{ $product->shop->name }}</h5>
+        <h5 class="modal-title" id="messageModalLabel">Message Seller</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
