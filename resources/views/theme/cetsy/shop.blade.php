@@ -1,312 +1,295 @@
-@extends('layouts.frontapp')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('main')
-
 <!-- Shop Hero Section -->
 <section class="py-5 bg-white border-bottom">
   <div class="container">
     <div class="row align-items-center">
       <div class="col-lg-9 d-flex align-items-center gap-4">
-        @if($shop->logo)
-          <img src="{{ asset('storage/' . $shop->logo) }}" alt="{{ $shop->name }} logo"
-               class="rounded-circle shadow-sm border"
-               style="width: 80px; height: 80px; object-fit: cover;">
-        @else
-          <img src="{{ asset('assets/images/cetsy_feture_logo.jpg') }}" alt="{{ $shop->name }} logo"
-               class="rounded-circle shadow-sm border"
-               style="width: 80px; height: 80px; object-fit: cover;">
-        @endif
+        {{-- Shop Logo --}}
+        <img src="{{ asset($shop->logo ? 'storage/' . $shop->logo : 'assets/images/cetsy_feture_logo.jpg') }}"
+             alt="{{ $shop->name }} logo"
+             class="rounded-circle shadow-sm border"
+             style="width:80px; height:80px; object-fit:cover;">
+
         <div class="flex-grow-1">
           <h1 class="h4 fw-bold mb-1">{{ $shop->name }}</h1>
           <span class="text-muted d-block mb-2">{{ country_name($shop->country) }}</span>
-          
-          <!-- Shop Stats -->
+
+          {{-- Shop Stats --}}
           @php
-            $totalSales = $shop->orderItems()->whereHas('order', function($q) {
-              $q->where('status', 'completed');
-            })->count();
-            $totalProducts = $shop->products()->where('is_active', true)->count();
-            $memberSince = $shop->created_at->diffForHumans();
-            $averageRating = $shop->reviews()->avg('rating') ?? 0;
-            $reviewCount = $shop->reviews()->count();
+            $totalSales     = $shop->orderItems()->whereRelation('order', 'status', 'completed')->count();
+            $totalProducts  = $shop->products()->where('is_active', true)->count();
+            $memberSince    = $shop->created_at->diffForHumans();
+            $averageRating  = $shop->reviews()->avg('rating') ?? 0;
+            $reviewCount    = $shop->reviews()->count();
           @endphp
-          
-          <div class="d-flex align-items-center gap-4 mb-3">
+          <div class="d-flex flex-wrap align-items-center gap-4 mb-3">
             <div class="d-flex align-items-center gap-2">
               <i class="fas fa-shopping-bag text-success"></i>
-              <span class="text-muted">{{ $totalSales }} sales</span>
+              <small class="text-muted">{{ $totalSales }} sales</small>
             </div>
             <div class="d-flex align-items-center gap-2">
               <i class="fas fa-box text-primary"></i>
-              <span class="text-muted">{{ $totalProducts }} items</span>
+              <small class="text-muted">{{ $totalProducts }} items</small>
             </div>
             <div class="d-flex align-items-center gap-2">
               <i class="fas fa-calendar text-info"></i>
-              <span class="text-muted">{{ $memberSince }} on Cetsy</span>
+              <small class="text-muted">Since {{ $memberSince }}</small>
             </div>
-            @if($reviewCount > 0)
+            @if($reviewCount)
               <div class="d-flex align-items-center gap-2">
                 <i class="fas fa-star text-warning"></i>
-                <span class="text-muted">{{ number_format($averageRating, 1) }} ({{ $reviewCount }})</span>
+                <small class="text-muted">{{ number_format($averageRating,1) }} ({{ $reviewCount }})</small>
               </div>
             @endif
           </div>
 
-          <!-- Reviews and Rating -->
-          @if($reviewCount > 0)
-            <a href="#reviews" class="text-decoration-none" data-bs-toggle="tab">
+          {{-- Reviews & Stars --}}
+          <div>
+            @if($reviewCount)
+              <a href="#reviews" class="text-decoration-none">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="d-flex align-items-center">
+                    @for($i=1; $i<=5; $i++)
+                      @if($i <= floor($averageRating))
+                        <i class="fas fa-star text-warning" style="font-size:16px;"></i>
+                      @elseif($i - $averageRating < 1)
+                        <i class="fas fa-star-half-alt text-warning" style="font-size:16px;"></i>
+                      @else
+                        <i class="far fa-star text-muted" style="font-size:16px;"></i>
+                      @endif
+                    @endfor
+                  </div>
+                  <small class="fw-semibold text-dark">{{ number_format($averageRating,1) }}</small>
+                  <small class="text-muted">({{ $reviewCount }} reviews)</small>
+                </div>
+              </a>
+            @else
               <div class="d-flex align-items-center gap-2">
-                <div class="d-flex align-items-center me-2">
-                  @for($i = 1; $i <= 5; $i++)
-                    @if($i <= $averageRating)
-                      <i class="fas fa-star text-warning" style="font-size: 16px;"></i>
-                    @elseif($i - $averageRating < 1 && $i - $averageRating > 0)
-                      <i class="fas fa-star-half-alt text-warning" style="font-size: 16px;"></i>
-                    @else
-                      <i class="far fa-star text-muted" style="font-size: 16px;"></i>
-                    @endif
+                <div class="d-flex align-items-center">
+                  @for($i=1; $i<=5; $i++)
+                    <i class="far fa-star text-muted" style="font-size:16px;"></i>
                   @endfor
                 </div>
-                <span class="fw-semibold text-dark">{{ number_format($averageRating, 1) }}</span>
-                <span class="text-muted">({{ $reviewCount }} {{ Str::plural('review', $reviewCount) }})</span>
+                <small class="text-muted">No reviews yet</small>
               </div>
-            </a>
-          @else
-            <div class="d-flex align-items-center gap-2">
-              <div class="d-flex align-items-center me-2">
-                @for($i = 1; $i <= 5; $i++)
-                  <i class="far fa-star text-muted" style="font-size: 16px;"></i>
-                @endfor
-              </div>
-              <span class="text-muted">No reviews yet</span>
-            </div>
-          @endif
+            @endif
+          </div>
         </div>
       </div>
+
+      {{-- Action Buttons --}}
       <div class="col-lg-3 text-lg-end mt-3 mt-lg-0">
         @if(Auth::id() === $shop->user_id)
           <a href="{{ route('seller.shops.edit', $shop) }}" class="btn btn-outline-success rounded-pill">
             <i class="fas fa-edit me-1"></i> Edit Shop
           </a>
         @else
-          <div class="d-flex gap-2 justify-content-lg-end">
+          <div class="d-flex justify-content-lg-end gap-2">
             <button class="btn btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#messageModal">
               <i class="fas fa-comment me-1"></i> Message Seller
             </button>
-            
             <div class="dropdown">
-              <button class="btn btn-outline-secondary rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown">
+              <button class="btn btn-outline-secondary rounded-pill dropdown-toggle" data-bs-toggle="dropdown">
                 <i class="fas fa-share-alt"></i>
               </button>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" onclick="shareOnFacebook()"><i class="fab fa-facebook me-2"></i>Facebook</a></li>
-                <li><a class="dropdown-item" href="#" onclick="shareOnTwitter()"><i class="fab fa-twitter me-2"></i>Twitter</a></li>
-                <li><a class="dropdown-item" href="#" onclick="shareOnWhatsApp()"><i class="fab fa-whatsapp me-2"></i>WhatsApp</a></li>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#" onclick="shareOn('facebook')">
+                  <i class="fab fa-facebook me-2"></i> Facebook
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="shareOn('twitter')">
+                  <i class="fab fa-twitter me-2"></i> Twitter
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="shareOn('whatsapp')">
+                  <i class="fab fa-whatsapp me-2"></i> WhatsApp
+                </a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#" onclick="copyShopUrl('{{ url('shop/' . $shop->slug) }}')"><i class="fas fa-link me-2"></i>Copy Link</a></li>
+                <li><a class="dropdown-item" href="#" onclick="copyShopUrl('{{ url("shop/{$shop->slug}") }}')">
+                  <i class="fas fa-link me-2"></i> Copy Link
+                </a></li>
               </ul>
             </div>
           </div>
         @endif
       </div>
+
     </div>
   </div>
 </section>
 
-<!-- Shop Navigation -->
+{{-- Navigation Tabs --}}
 <section class="bg-white border-bottom">
   <div class="container">
-    <nav class="nav nav-tabs border-0">
-      <a class="nav-link active" href="#items" data-bs-toggle="tab">Items</a>
-      <a class="nav-link" href="#reviews" data-bs-toggle="tab">Reviews</a>
-      <a class="nav-link" href="#about" data-bs-toggle="tab">About</a>
-      <a class="nav-link" href="#policies" data-bs-toggle="tab">Shop Policies</a>
-    </nav>
+    <ul class="nav nav-tabs nav-fill border-0">
+      @foreach(['items'=>'Items','reviews'=>'Reviews','about'=>'About','policies'=>'Policies'] as $id=>$label)
+        <li class="nav-item">
+          <a class="nav-link @if($loop->first) active @endif" href="#{{ $id }}" data-bs-toggle="tab">{{ $label }}</a>
+        </li>
+      @endforeach
+    </ul>
   </div>
 </section>
 
-<!-- Shop Announcement -->
-@if(!empty($shop->announcement))
+{{-- Announcement & Flash --}}
+@if($shop->announcement)
   <div class="container mt-4">
     <div class="alert alert-info shadow-sm border-0">
-      <i class="fas fa-bullhorn me-2"></i>
-      {{ $shop->announcement }}
+      <i class="fas fa-bullhorn me-2"></i>{{ $shop->announcement }}
     </div>
   </div>
 @endif
-
-<!-- Flash Message -->
 @if(session('success'))
   <div class="container mt-4">
     <div class="alert alert-success shadow-sm border-0">{{ session('success') }}</div>
   </div>
 @endif
 
-<!-- Featured Image Section -->
+{{-- Featured Image --}}
 @if($shop->featured_image)
-<section class="py-4 bg-white">
-  <div class="container">
-    <div class="row">
-      <div class="col-12">
-        <img 
-          src="{{ asset('storage/' . $shop->featured_image) }}" 
-          alt="{{ $shop->name }} featured image"
-          class="w-100 rounded shadow-sm"
-          style="height: 300px; object-fit: cover;"
-        >
-      </div>
+  <section class="py-4 bg-white">
+    <div class="container">
+      <img src="{{ asset('storage/' . $shop->featured_image) }}"
+           alt="Featured image for {{ $shop->name }}"
+           class="w-100 rounded shadow-sm"
+           style="height:300px; object-fit:cover;">
     </div>
-  </div>
-</section>
+  </section>
 @endif
 
-<!-- Tab Content -->
 <div class="tab-content">
-  <!-- Items Tab -->
+
+  {{-- Items Tab --}}
   <div class="tab-pane fade show active" id="items">
     <section class="py-5 bg-light">
       <div class="container">
-        <!-- Advanced Filters -->
-        <div class="card border-0 shadow-sm mb-4">
-          <div class="card-body">
-            <div class="row g-3">
-              <div class="col-md-3">
-                <label class="form-label small fw-semibold">Price Range</label>
-                <select class="form-select form-select-sm" id="priceFilter">
-                  <option value="">Any Price</option>
-                  <option value="0-10">Under $10</option>
-                  <option value="10-25">$10 - $25</option>
-                  <option value="25-50">$25 - $50</option>
-                  <option value="50-100">$50 - $100</option>
-                  <option value="100+">Over $100</option>
-                </select>
-              </div>
-              <div class="col-md-3" style="display: none;">
-                <label class="form-label small fw-semibold">Sort By</label>
-                <select class="form-select form-select-sm" id="sortFilter">
-                  <option value="newest">Most Recent</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="rating">Best Rated</option>
-                  <option value="popular">Most Popular</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label small fw-semibold">Product Type</label>
-                <select class="form-select form-select-sm" id="typeFilter">
-                  <option value="">All Types</option>
-                  <option value="physical">Physical</option>
-                  <option value="digital">Digital</option>
-                  <option value="service">Service</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label small fw-semibold">View</label>
-                <div class="btn-group btn-group-sm w-100" role="group">
-                  <input type="radio" class="btn-check" name="viewMode" id="gridView" value="grid" checked>
-                  <label class="btn btn-outline-secondary" for="gridView">
-                    <i class="fas fa-th"></i>
-                  </label>
-                  <input type="radio" class="btn-check" name="viewMode" id="listView" value="list">
-                  <label class="btn btn-outline-secondary" for="listView">
-                    <i class="fas fa-list"></i>
-                  </label>
-                </div>
-              </div>
+        {{-- Filters & Controls --}}
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+          <div class="d-flex flex-wrap gap-3">
+            <div>
+              <small class="form-label fw-semibold">Price</small>
+              <select id="priceFilter" class="form-select form-select-sm">
+                <option value="">All</option>
+                <option value="0-10">Under $10</option>
+                <option value="10-25">$10–25</option>
+                <option value="25-50">$25–50</option>
+                <option value="50-100">$50–100</option>
+                <option value="100+">Over $100</option>
+              </select>
+            </div>
+            <div>
+              <small class="form-label fw-semibold">Type</small>
+              <select id="typeFilter" class="form-select form-select-sm">
+                <option value="">All Types</option>
+                <option value="physical">Physical</option>
+                <option value="digital">Digital</option>
+                <option value="service">Service</option>
+              </select>
+            </div>
+            <div>
+              <small class="form-label fw-semibold">Sort By</small>
+              <select id="sortFilter" class="form-select form-select-sm">
+                <option value="newest">Newest</option>
+                <option value="price-low">Price: Low → High</option>
+                <option value="price-high">Price: High → Low</option>
+                <option value="rating">Top Rated</option>
+              </select>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <span class="small text-muted">
+              {{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }} of {{ $products->total() }}
+            </span>
+            <div class="btn-group btn-group-sm" role="group">
+              <input type="radio" class="btn-check" name="viewMode" id="viewGrid" value="grid" autocomplete="off" checked>
+              <label class="btn btn-outline-secondary" for="viewGrid"><i class="fas fa-th"></i></label>
+              <input type="radio" class="btn-check" name="viewMode" id="viewList" value="list" autocomplete="off">
+              <label class="btn btn-outline-secondary" for="viewList"><i class="fas fa-list"></i></label>
             </div>
           </div>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2 class="h5 fw-bold text-dark">All items ({{ $products->total() }})</h2>
-          <div class="d-flex align-items-center gap-2">
-            <span class="text-muted small">Showing {{ $products->firstItem() ?? 0 }}-{{ $products->lastItem() ?? 0 }} of {{ $products->total() }}</span>
-          </div>
+        {{-- Grid View --}}
+        <div id="gridView" class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+          @forelse($products as $product)
+            <div class="col product-item" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ $product->average_rating }}">
+              @include('theme.'.theme().'.partials.product-card', ['item'=>$product])
+            </div>
+          @empty
+            <div class="col-12">
+              <div class="alert alert-info border-0 shadow-sm">
+                <i class="fas fa-info-circle me-2"></i>No products listed.
+              </div>
+            </div>
+          @endforelse
         </div>
 
-        @if($products->isEmpty())
-          <div class="alert alert-info shadow-sm border-0">
-            <i class="fas fa-info-circle me-2"></i>
-            This shop has not listed any products yet.
-          </div>
-        @else
-          <!-- Grid View -->
-          <div id="gridView" class="view-mode">
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-              @foreach($products as $item)
-
-               <div class="col-6 col-md-3 col-lg-3">
-            @include('theme.'.theme().'.partials.product-card', ['item' => $item])
-          </div>
-
-              @endforeach
+        {{-- List View --}}
+        <div id="listView" class="list-group d-none">
+          @foreach($products as $product)
+            <div class="list-group-item product-item d-flex align-items-center" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ $product->average_rating }}">
+              <img src="{{ $product->featured_image }}" alt="{{ $product->name }}" class="rounded" style="width:80px; height:80px; object-fit:cover;">
+              <div class="ms-3 flex-grow-1">
+                <h6 class="mb-1">{{ $product->name }}</h6>
+                <small class="text-muted">${{ number_format($product->price,2) }}</small>
+              </div>
+              <button class="btn btn-sm btn-success" onclick="addToCart({{ $product->id }})">
+                <i class="fas fa-cart-plus"></i>
+              </button>
             </div>
+          @endforeach
+        </div>
+
+        {{-- Pagination --}}
+        @if($products->hasPages())
+          <div class="mt-4 d-flex justify-content-center">
+            {{ $products->links('pagination::bootstrap-5') }}
           </div>
-
-        
-
-          @if($products->hasPages())
-            <div class="mt-4 d-flex justify-content-center">
-              {{ $products->links('pagination::bootstrap-5') }}
-            </div>
-          @endif
         @endif
       </div>
     </section>
   </div>
 
-  <!-- Reviews Tab -->
+  {{-- Reviews Tab --}}
   <div class="tab-pane fade" id="reviews">
     <section class="py-5 bg-light">
       <div class="container">
         <div class="row">
           <div class="col-lg-8">
-            <h3 class="h5 fw-bold mb-4">Shop Reviews</h3>
-            @if($reviewCount > 0)
-              @foreach($shop->reviews()->latest()->paginate(10) as $review)
-                <div class="card mb-3 border-0 shadow-sm">
-                  <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                      <div class="d-flex align-items-center me-2">
-                        @for($i = 1; $i <= 5; $i++)
-                          @if($i <= $review->rating)
-                            <i class="fas fa-star text-warning"></i>
-                          @else
-                            <i class="far fa-star text-muted"></i>
-                          @endif
-                        @endfor
-                      </div>
-                      <span class="fw-semibold">{{ $review->user->name }}</span>
-                      <span class="text-muted ms-2">{{ $review->created_at->diffForHumans() }}</span>
+            <h3 class="h5 fw-bold mb-4">Reviews</h3>
+            @forelse($shop->reviews()->latest()->paginate(10) as $review)
+              <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex align-items-center mb-2">
+                    <div class="me-3">
+                      @for($i=1;$i<=5;$i++)
+                        <i class="fa{{ $i <= $review->rating ? 's' : 'r' }} fa-star text-warning"></i>
+                      @endfor
                     </div>
-                    <p class="mb-0 text-secondary">{{ $review->comment }}</p>
+                    <div>
+                      <strong>{{ $review->user->name }}</strong>
+                      <small class="text-muted ms-2">{{ $review->created_at->diffForHumans() }}</small>
+                    </div>
                   </div>
+                  <p class="mb-0 text-secondary">{{ $review->comment }}</p>
                 </div>
-              @endforeach
-            @else
-              <div class="alert alert-info border-0">
-                <i class="fas fa-info-circle me-2"></i>
-                No reviews yet for this shop.
               </div>
-            @endif
+            @empty
+              <div class="alert alert-info border-0">
+                <i class="fas fa-info-circle me-2"></i>No reviews yet.
+              </div>
+            @endforelse
           </div>
           <div class="col-lg-4">
-            <div class="card border-0 shadow-sm">
-              <div class="card-body">
-                <h5 class="card-title">Review Summary</h5>
-                <div class="text-center mb-3">
-                  <div class="display-6 fw-bold text-warning">{{ number_format($averageRating, 1) }}</div>
-                  <div class="d-flex justify-content-center mb-2">
-                    @for($i = 1; $i <= 5; $i++)
-                      @if($i <= $averageRating)
-                        <i class="fas fa-star text-warning"></i>
-                      @else
-                        <i class="far fa-star text-muted"></i>
-                      @endif
-                    @endfor
-                  </div>
-                  <span class="text-muted">{{ $reviewCount }} {{ Str::plural('review', $reviewCount) }}</span>
+            <div class="card shadow-sm">
+              <div class="card-body text-center">
+                <div class="display-6 fw-bold text-warning">{{ number_format($averageRating,1) }}</div>
+                <div class="mb-2">
+                  @for($i=1;$i<=5;$i++)
+                    <i class="fa{{ $i <= floor($averageRating) ? 's' : 'r' }} fa-star text-warning"></i>
+                  @endfor
                 </div>
+                <small class="text-muted">{{ $reviewCount }} reviews</small>
               </div>
             </div>
           </div>
@@ -315,65 +298,42 @@
     </section>
   </div>
 
-  <!-- About Tab -->
+  {{-- About Tab --}}
   <div class="tab-pane fade" id="about">
     <section class="py-5 bg-light">
       <div class="container">
         <div class="row g-4">
-          <!-- About the Shop -->
           <div class="col-lg-8">
-            <div class="card shadow-sm h-100 border-0">
-              <div class="card-header bg-white fw-semibold border-bottom">About This Shop</div>
+            <div class="card shadow-sm h-100">
+              <div class="card-header bg-white fw-semibold">About This Shop</div>
               <div class="card-body">
-                @if($shop->bio)
-                  <p class="mb-0 text-secondary">{{ $shop->bio }}</p>
-                @else
-                  <p class="text-muted mb-0">This shop has not provided a description yet.</p>
-                @endif
+                {!! $shop->bio ? '<p class="text-secondary mb-0">'.e($shop->bio).'</p>' : '<p class="text-muted mb-0">No description provided.</p>' !!}
               </div>
             </div>
           </div>
-
-          <!-- Shop Details -->
           <div class="col-lg-4">
-            <div class="card shadow-sm h-100 border-0">
-              <div class="card-header bg-white fw-semibold border-bottom">Shop Details</div>
+            <div class="card shadow-sm h-100">
+              <div class="card-header bg-white fw-semibold">Shop Details</div>
               <div class="card-body">
-                <div class="mb-3">
-                  <strong>Language:</strong><br>
-                  <span class="text-muted">{{ $shop->language ?? 'N/A' }}</span>
-                </div>
-                <div class="mb-3">
-                  <strong>Country:</strong><br>
-                  <span class="text-muted">{{ country_name($shop->country) ?? 'N/A' }}</span>
-                </div>
-                <div class="mb-3">
-                  <strong>Currency:</strong><br>
-                  <span class="text-muted">{{ $shop->currency ?? 'N/A' }}</span>
-                </div>
-                <div class="mb-3">
-                  <strong>Shop URL:</strong><br>
-                  <div class="d-flex align-items-center gap-2">
-                    <!-- <code class="small">{{ url('shop/' . $shop->slug) }}</code> -->
-                    <button type="button" 
-                            class="btn btn-outline-success btn-sm" 
-                            onclick="copyShopUrl('{{ url('shop/' . $shop->slug) }}')"
-                            title="Copy shop URL">
-                      <i class="fas fa-share-alt"></i>
-                    </button>
-                  </div>
-                </div>
+                <p class="mb-2"><strong>Language:</strong> <span class="text-muted">{{ $shop->language ?? 'N/A' }}</span></p>
+                <p class="mb-2"><strong>Country:</strong> <span class="text-muted">{{ country_name($shop->country) }}</span></p>
+                <p class="mb-2"><strong>Currency:</strong> <span class="text-muted">{{ $shop->currency ?? 'N/A' }}</span></p>
+                <p class="mb-0"><strong>Shop URL:</strong>
+                  <button class="btn btn-outline-success btn-sm ms-2" onclick="copyShopUrl('{{ url("shop/{$shop->slug}") }}')" data-bs-toggle="tooltip" title="Copy URL">
+                    <i class="fas fa-link"></i>
+                  </button>
+                </p>
               </div>
             </div>
           </div>
 
-          <!-- Billing Address -->
+          {{-- Billing Address --}}
           <div class="col-12">
-            <div class="card shadow-sm border-0">
-              <div class="card-header bg-white fw-semibold border-bottom">Billing Address</div>
+            <div class="card shadow-sm">
+              <div class="card-header bg-white fw-semibold">Billing Address</div>
               <div class="card-body">
                 <p class="mb-1 text-secondary">{{ $shop->address ?? 'N/A' }}</p>
-                <p class="mb-0 text-secondary">{{ $shop->city ?? '' }}{{ $shop->postal ? ', ' . $shop->postal : '' }}</p>
+                <p class="mb-0 text-secondary">{{ $shop->city }}{{ $shop->postal ? ', ' . $shop->postal : '' }}</p>
               </div>
             </div>
           </div>
@@ -382,258 +342,134 @@
     </section>
   </div>
 
-  <!-- Policies Tab -->
+  {{-- Policies Tab --}}
   <div class="tab-pane fade" id="policies">
     <section class="py-5 bg-light">
       <div class="container">
-        @if(!empty($shop->policies))
-          <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white fw-semibold border-bottom">Shop Policies</div>
+        @if($shop->policies)
+          <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Shop Policies</div>
             <div class="card-body">
-              <div class="text-start">
-                {!! nl2br(e($shop->policies)) !!}
-              </div>
+              {!! nl2br(e($shop->policies)) !!}
             </div>
           </div>
         @else
           <div class="alert alert-info border-0">
-            <i class="fas fa-info-circle me-2"></i>
-            This shop has not provided any policies yet.
+            <i class="fas fa-info-circle me-2"></i>No policies available.
           </div>
         @endif
       </div>
     </section>
   </div>
+
 </div>
 
 {{-- Message Modal --}}
 <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form class="modal-content" method="POST" action="{{ route('messages.store') }}">
+    <form class="modal-content" action="{{ route('messages.store') }}" method="POST">
       @csrf
       <input type="hidden" name="receiver_id" value="{{ $shop->user_id }}">
-      <input type="hidden" name="product_id" value="{{ $shop->user_id }}">
       <div class="modal-header">
         <h5 class="modal-title" id="messageModalLabel">Message Seller</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <label for="messageBody" class="form-label">Your message</label>
-        <textarea id="messageBody" name="message" rows="4" class="form-control" required></textarea>
+        <label for="messageBody" class="form-label">Your Message</label>
+        <textarea id="messageBody" name="message" class="form-control" rows="4" required></textarea>
       </div>
       <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Send Message</button>
+        <button type="submit" class="btn btn-primary">Send</button>
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
       </div>
     </form>
   </div>
 </div>
-
 @endsection
-
-@push('scripts')
-<script>
-// Filter and sort functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const priceFilter = document.getElementById('priceFilter');
-    const sortFilter = document.getElementById('sortFilter');
-    const typeFilter = document.getElementById('typeFilter');
-    const viewModeInputs = document.querySelectorAll('input[name="viewMode"]');
-    
-    // View mode toggle
-    viewModeInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            const gridView = document.getElementById('gridView');
-            const listView = document.getElementById('listView');
-            
-            if (this.value === 'grid') {
-                gridView.classList.remove('d-none');
-                listView.classList.add('d-none');
-            } else {
-                gridView.classList.add('d-none');
-                listView.classList.remove('d-none');
-            }
-        });
-    });
-    
-    // Filter functionality
-    function filterProducts() {
-        const priceRange = priceFilter.value;
-        const productType = typeFilter.value;
-        const products = document.querySelectorAll('.product-item');
-        
-        products.forEach(product => {
-            const price = parseFloat(product.dataset.price);
-            const type = product.dataset.type;
-            let show = true;
-            
-            // Price filter
-            if (priceRange) {
-                const [min, max] = priceRange.split('-').map(p => p === '+' ? Infinity : parseFloat(p));
-                if (price < min || (max !== Infinity && price > max)) {
-                    show = false;
-                }
-            }
-            
-            // Type filter
-            if (productType && type !== productType) {
-                show = false;
-            }
-            
-            product.style.display = show ? 'block' : 'none';
-        });
-    }
-    
-    // Sort functionality
-    function sortProducts() {
-        const sortBy = sortFilter.value;
-        const container = document.querySelector('.row');
-        const products = Array.from(document.querySelectorAll('.product-item'));
-        
-        products.sort((a, b) => {
-            const priceA = parseFloat(a.dataset.price);
-            const priceB = parseFloat(b.dataset.price);
-            const ratingA = parseFloat(a.dataset.rating);
-            const ratingB = parseFloat(b.dataset.rating);
-            
-            switch(sortBy) {
-                case 'price-low':
-                    return priceA - priceB;
-                case 'price-high':
-                    return priceB - priceA;
-                case 'rating':
-                    return ratingB - ratingA;
-                default:
-                    return 0;
-            }
-        });
-        
-        products.forEach(product => container.appendChild(product));
-    }
-    
-    priceFilter.addEventListener('change', filterProducts);
-    typeFilter.addEventListener('change', filterProducts);
-    sortFilter.addEventListener('change', sortProducts);
-});
-
-function copyShopUrl(url) {
-    const tempInput = document.createElement('input');
-    tempInput.value = url;
-    document.body.appendChild(tempInput);
-    
-    tempInput.select();
-    tempInput.setSelectionRange(0, 99999);
-    
-    try {
-        document.execCommand('copy');
-        
-        const button = event.target.closest('button');
-        const originalIcon = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i>';
-        button.classList.remove('btn-outline-success');
-        button.classList.add('btn-success');
-        
-        setTimeout(() => {
-            button.innerHTML = originalIcon;
-            button.classList.remove('btn-success');
-            button.classList.add('btn-outline-success');
-        }, 2000);
-        
-    } catch (err) {
-        console.error('Failed to copy URL: ', err);
-        alert('Failed to copy URL. Please copy manually.');
-    }
-    
-    document.body.removeChild(tempInput);
-}
-
-function contactShop() {
-    alert('Contact functionality will be implemented here');
-}
-
-function followShop() {
-    alert('Follow functionality will be implemented here');
-}
-
-function addToWishlist(productId) {
-    // Implement wishlist functionality
-    alert('Add to wishlist functionality will be implemented here');
-}
-
-function addToCart(productId) {
-    // Implement cart functionality
-    alert('Add to cart functionality will be implemented here');
-}
-
-function shareOnFacebook() {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent('Check out this amazing shop on Cetsy!');
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank');
-}
-
-function shareOnTwitter() {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent('Check out this amazing shop on Cetsy!');
-    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
-}
-
-function shareOnWhatsApp() {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent('Check out this amazing shop on Cetsy!');
-    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
-}
-
-// Initialize tooltips
-document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
-</script>
-@endpush
 
 @push('styles')
 <style>
-.product-hover {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.product-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
-}
-
-.nav-tabs .nav-link {
-    border: none;
-    color: #6c757d;
-    font-weight: 500;
-    padding: 1rem 1.5rem;
-}
-
-.nav-tabs .nav-link.active {
-    color: #198754;
-    background: none;
-    border-bottom: 2px solid #198754;
-}
-
-.nav-tabs .nav-link:hover {
-    color: #198754;
-    border-color: transparent;
-}
-
-.btn-check:checked + .btn-outline-secondary {
-    background-color: #198754;
-    border-color: #198754;
-    color: white;
-}
-
-.view-mode {
-    transition: opacity 0.3s ease;
-}
-
-.view-mode.d-none {
-    opacity: 0;
-}
+  .product-item:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.1); }
+  .nav-tabs .nav-link { border: none; padding:1rem; font-weight:500; color:#6c757d; }
+  .nav-tabs .nav-link.active { color:#198754; border-bottom:2px solid #198754; }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const filters = {
+      price: document.getElementById('priceFilter'),
+      type: document.getElementById('typeFilter'),
+      sort: document.getElementById('sortFilter'),
+      grid: document.getElementById('viewGrid'),
+      list: document.getElementById('viewList')
+    };
+    const gridView = document.getElementById('gridView');
+    const listView = document.getElementById('listView');
+
+    function items() {
+      return Array.from(document.querySelectorAll('.product-item'));
+    }
+
+    function applyFilters() {
+      items().forEach(el => {
+        let show = true;
+        const price = parseFloat(el.dataset.price);
+        const type = el.dataset.type;
+        const [min, max] = filters.price.value.split('-').map(x=>x==='+'?Infinity:parseFloat(x));
+
+        if (filters.price.value && !(price >= min && (max===Infinity||price <= max))) show = false;
+        if (filters.type.value && type !== filters.type.value) show = false;
+        el.style.display = show ? '' : 'none';
+      });
+    }
+
+    function applySort() {
+      const sorted = items().filter(el => el.style.display !== 'none');
+      const parent = gridView;
+      sorted.sort((a,b) => {
+        const aP = parseFloat(a.dataset.price), bP = parseFloat(b.dataset.price);
+        const aR = parseFloat(a.dataset.rating), bR = parseFloat(b.dataset.rating);
+        switch(filters.sort.value) {
+          case 'price-low': return aP - bP;
+          case 'price-high': return bP - aP;
+          case 'rating': return bR - aR;
+          default: return 0;
+        }
+      });
+      sorted.forEach(el => parent.appendChild(el));
+    }
+
+    [filters.price, filters.type, filters.sort].forEach(el => el.addEventListener('change', () => {
+      applyFilters(); applySort();
+    }));
+
+    filters.grid.addEventListener('change', () => {
+      gridView.classList.remove('d-none');
+      listView.classList.add('d-none');
+    });
+    filters.list.addEventListener('change', () => {
+      gridView.classList.add('d-none');
+      listView.classList.remove('d-none');
+    });
+
+    window.shareOn = (platform) => {
+      const url = encodeURIComponent(location.href);
+      const text = encodeURIComponent('Check out this shop on Cetsy!');
+      const routes = {
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+        twitter:  `https://twitter.com/intent/tweet?url=${url}&text=${text}`,
+        whatsapp: `https://wa.me/?text=${text}%20${url}`
+      };
+      window.open(routes[platform], '_blank');
+    };
+
+    window.copyShopUrl = (url) => {
+      navigator.clipboard.writeText(url)
+        .then(() => alert('Shop URL copied!'))
+        .catch(() => alert('Copy failed, please try manually.'));
+    };
+  });
+</script>
 @endpush

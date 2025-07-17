@@ -53,125 +53,78 @@
     </div>
   </section>
 
-  {{-- ───────────────── Trending Categories ───────────────── --}}
-  <section class="py-6">
-    <div class="container">
-      <h2 class="h3 fw-bold mb-4 text-center text-lg-start">Trending Categories</h2>
-      <div class="row row-cols-2 row-cols-sm-3 row-cols-md-6 g-3" data-aos="fade-up">
-        @foreach($categories as $cat)
-          <div class="col">
-            <a href="{{ route('category.show', $cat->slug) }}" class="text-decoration-none">
-              <div class="ratio ratio-1x1 position-relative rounded-3 overflow-hidden category-card">
-                @if($cat->image)
-                  <img src="{{ asset('storage/'.$cat->image) }}"
-                       alt="{{ $cat->name }}"
-                       class="w-100 h-100 object-fit-cover">
-                @else
-                  <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-success text-white fw-semibold">
-                    {{ $cat->name }}
-                  </div>
-                @endif
-                <div class="position-absolute bottom-0 start-0 end-0 py-1 bg-dark bg-opacity-50 text-white text-center small fw-medium">
-                  {{ $cat->name }}
-                </div>
-              </div>
-            </a>
+ <!-- Trending Categories -->
+<section class="py-5">
+  <div class="container">
+    <h2 class="h3 fw-bold mb-4">Trending Categories</h2>
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-6 g-3">
+      @foreach($categories as $cat)
+      <div class="col">
+        <a href="{{ route('category.show', $cat->slug) }}" class="text-decoration-none">
+          <div class="ratio ratio-1x1 bg-secondary rounded overflow-hidden">
+            @if($cat->image)
+            <img 
+            src="{{ asset('storage/'.$cat->image) }}" 
+            alt="{{ $cat->name }}" 
+            class="w-100 h-100" 
+            style="object-fit:cover;"
+            >
+            @else
+            <div class="d-flex align-items-center justify-content-center h-100 text-white fw-semibold">
+              {{ $cat->name }}
+            </div>
+            @endif
           </div>
-        @endforeach
-      </div>
-    </div>
-  </section>
-
-  {{-- ───────────────── Featured Products ───────────────── --}}
-  <section class="bg-light py-6">
-    <div class="container">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="h3 fw-bold mb-0">Featured for You</h2>
-        <a href="{{ route('listings') }}" class="text-success small fw-semibold">
-          See All <i class="fa-solid fa-arrow-right-long ms-1"></i>
+          <p class="mt-2 text-center text-dark small mb-0">{{ $cat->name }}</p>
         </a>
       </div>
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-        @forelse($featuredProducts as $product)
-          <div class="col" data-aos="zoom-in">
-            <div class="card h-100 border-0 shadow-sm product-card">
-              <a href="{{ route('listing.show', $product) }}" class="d-block">
-                @if($img = $product->media->first())
-                  <img src="{{ asset('storage/'.$img->url) }}"
-                       alt="{{ $product->name }}"
-                       class="card-img-top"
-                       style="height: 200px; object-fit: cover;"
-                       loading="lazy">
-                @else
-                  <div class="bg-secondary h-100 d-flex align-items-center justify-content-center text-white" style="height: 200px;">
-                    No Image
-                  </div>
-                @endif
-              </a>
-              <div class="card-body d-flex flex-column">
-                <h5 class="card-title text-truncate mb-1">
-                  <a href="{{ route('listing.show', $product) }}" class="text-dark">{{ $product->name }}</a>
-                </h5>
-                <p class="text-success fw-bold mb-3">KES {{ number_format($product->price, 2) }}</p>
-                <div class="mt-auto">
-                  <a href="{{ route('listing.show', $product) }}"
-                     class="btn btn-outline-success btn-sm">
-                    <i class="fa-solid fa-eye me-1"></i> View Listing
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        @empty
-          <div class="col-12 text-center text-muted">No featured products yet.</div>
-        @endforelse
-      </div>
+      @endforeach
     </div>
-  </section>
+  </div>
+</section>
 
-  {{-- ───────────────── Trending Services ───────────────── --}}
-  <section class="py-6">
-    <div class="container">
-      <header class="text-center mb-4">
-        <h2 class="display-6 fw-bold">Most Trending Services</h2>
-        <p class="text-muted">Recently viewed &amp; more</p>
-      </header>
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-        @forelse($services as $service)
-          <div class="col" data-aos="zoom-in">
-            <div class="card h-100 border-0 shadow-sm">
-              <a href="{{ route('listing.show', $service) }}">
-                @if($img = $service->media->first())
-                  <img src="{{ asset('storage/'.$img->url) }}"
-                       alt="{{ $service->name }}"
-                       class="card-img-top"
-                       style="height: 200px; object-fit: cover;"
-                       loading="lazy">
-                @else
-                  <div class="bg-secondary d-flex align-items-center justify-content-center text-white" style="height: 200px;">
-                    No Image
-                  </div>
-                @endif
-              </a>
-              <div class="card-body d-flex flex-column">
-                <h5 class="card-title text-truncate mb-1">{{ $service->name }}</h5>
-                <p class="text-success fw-bold mb-3">KES {{ number_format($service->price, 2) }}</p>
-                <div class="mt-auto">
-                  <a href="{{ route('listing.show', $service) }}"
-                     class="btn btn-outline-success btn-sm">
-                    <i class="fa-solid fa-eye me-1"></i> View Listing
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        @empty
-          <div class="col-12 text-center text-muted fs-5 fw-medium">No services available.</div>
-        @endforelse
-      </div>
+<!-- Featured Products -->
+<section class="bg-light py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="h3 fw-bold mb-0">Featured products for You</h2>
+      <a href="{{ route('listings') }}" class="text-success text-decoration-none small">
+        See All Products
+      </a>
     </div>
-  </section>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+      @forelse($featuredProducts as $item)
+   <div class="col-6 col-md-3 col-lg-3">
+            @include('theme.'.theme().'.partials.product-card', ['item' => $item])
+          </div>
+  @empty
+  <div class="col-12 text-center text-muted">
+    No featured products at this time.
+  </div>
+  @endforelse
+</div>
+</div>
+</section>
 
+<!-- Most Trending Services -->
+<section class="py-5 bg-white">
+  <div class="container max-w-7xl mx-auto px-4">
+    <header class="mb-4 text-center">
+      <h2 class="display-5 fw-bold text-dark">Most Trending Services</h2>
+      <p class="text-muted mt-2">Recently viewed & more</p>
+    </header>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+      @forelse($services as $item)
+       <div class="col-6 col-md-3 col-lg-3">
+            @include('theme.'.theme().'.partials.product-card', ['item' => $item])
+          </div>
+  @empty
+  <p class="col-12 text-center text-muted fs-5 fw-medium">No services available.</p>
+  @endforelse
+</div>
+</div>
+</section>
   {{-- ───────────────── About Jaat ───────────────── --}}
   <section class="py-6 bg-white">
     <div class="container">
