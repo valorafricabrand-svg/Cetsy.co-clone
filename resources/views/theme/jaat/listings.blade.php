@@ -1,5 +1,5 @@
 {{-- resources/views/listings/index.blade.php --}}
-@extends('layouts.frontapp')
+@extends('theme.'.theme().'.layouts.app')
 
 {{-- SEO-friendly page title --}}
 @section('title', 'Marketplace – Products, Services & Digital Goods')
