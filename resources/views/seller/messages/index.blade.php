@@ -42,7 +42,7 @@
     {{-- Filter Section --}}
     <div class="card shadow border-0 mb-3">
         <div class="card-body p-3">
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
                 <div class="d-flex align-items-center">
                     <i class="bi bi-funnel me-2 text-muted"></i>
                     <span class="text-muted small">Filter:</span>
@@ -62,6 +62,20 @@
                         <i class="bi bi-x-circle me-1"></i>Clear Product Filter
                     </a>
                 @endif
+                <form method="GET" action="" class="ms-auto d-flex align-items-center gap-2 flex-wrap" style="max-width:350px;">
+                    <input type="hidden" name="filter" value="{{ request('filter') }}">
+                    <input type="hidden" name="product" value="{{ request('product') }}">
+                    <input type="text" name="search" value="{{ request('search') }}" class="form-control form-control-sm" placeholder="Search user, product, or message...">
+                    <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i> Search</button>
+                    @if(request('search'))
+                        <a href="{{ request()->fullUrlWithQuery(['search' => '']) }}"
+                           class="btn btn-outline-secondary btn-sm"
+                           style="min-width:32px; margin-left:2px;"
+                           title="Clear search">
+                            <i class="bi bi-x"></i> Clear
+                        </a>
+                    @endif
+                </form>
             </div>
         </div>
     </div>

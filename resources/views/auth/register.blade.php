@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   value="1"
                   {{ old('terms') ? 'checked' : '' }}>
                 <label class="form-check-label small" for="terms">
-                  I agree to the Cetsy user agreements
+                  I agree to the Cetsy User Agreement
                   <!-- <a href="{{ url('/terms') }}" target="_blank" class="text-success">Terms of Service</a>
                   and
                   <a href="{{ url('/privacy') }}" target="_blank" class="text-success">Privacy Policy</a>. -->

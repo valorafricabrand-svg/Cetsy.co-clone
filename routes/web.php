@@ -185,7 +185,13 @@ Route::post(
  
 
     // Products
-    Route::resource('products', ProductController::class);
+    Route::get('products/create', [ProductController::class, 'create'])
+        ->middleware('kyc.after.two.sales')
+        ->name('products.create');
+    Route::post('products', [ProductController::class, 'store'])
+        ->middleware('kyc.after.two.sales')
+        ->name('products.store');
+    Route::resource('products', ProductController::class)->except(['create', 'store'])->middleware('kyc.after.two.sales');
 
    
     // Checkout

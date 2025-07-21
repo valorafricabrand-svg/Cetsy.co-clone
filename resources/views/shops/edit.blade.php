@@ -125,11 +125,11 @@
             <div class="form-text">Tell customers about your shop and what makes it special.</div>
           </div> -->
           <div class="col-12">
-            <label for="bio" class="form-label fw-semibold">Shop Description</label>
-            <textarea id="bio" name="bio"
-                      class="form-control @error('bio') is-invalid @enderror"
-                      rows="6">{{ old('bio', $shop->bio) }}</textarea>
-            @error('bio') <div class="text-danger mt-1">{{ $message }}</div> @enderror
+          <label for="bio" class="form-label fw-semibold">Description</label>
+            <textarea id="bio" name="bi" rows="6"
+                      class="form-control @error('bio') is-invalid @enderror">{{ old('bio',$shop->bio) }}</textarea>
+            @error('bio')<div class="text-danger mt-1">{{ $message }}</div>@enderror
+            
           </div>
         </div>
       </div>
@@ -252,6 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
   tinymce.init({
     selector: '#bio',
     plugins: 'image link media code fullscreen',
+    toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
     toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
     menubar: false,
     height: 300

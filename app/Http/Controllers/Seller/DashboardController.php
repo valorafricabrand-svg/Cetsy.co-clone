@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\Wishlist;
 use App\Models\WalletTransaction;
 use App\Models\Product;
+use App\Models\Offer;
 
 use Illuminate\Support\Facades\Auth;
 
@@ -51,7 +52,13 @@ public function index()
     $total_orders = $orders->count();
     $total_products = $products->count();
 
-    return view('seller.dashboard', compact('orders', 'products', 'total_orders', 'total_products'));
+    // Offer counts for this seller's products
+    $productIds = $products->pluck('id');
+    $total_offers = Offer::whereIn('product_id', $productIds)->count();
+    $accepted_offers = Offer::whereIn('product_id', $productIds)->where('status', 'accepted')->count();
+    $declined_offers = Offer::whereIn('product_id', $productIds)->where('status', 'declined')->count();
+
+    return view('seller.dashboard', compact('orders', 'products', 'total_orders', 'total_products', 'total_offers', 'accepted_offers', 'declined_offers'));
 }
 
 
