@@ -475,7 +475,7 @@
               <div class="card-header bg-white fw-semibold border-bottom">About This Shop</div>
               <div class="card-body">
                 @if($shop->bio)
-                  <p class="mb-0 text-secondary">{{ $shop->bio }}</p>
+                  <p class="mb-0 text-secondary">{!! $shop->bio !!}</p>
                 @else
                   <p class="text-muted mb-0">This shop has not provided a description yet.</p>
                 @endif
@@ -588,6 +588,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const sortFilter = document.getElementById('sortFilter');
     const typeFilter = document.getElementById('typeFilter');
     const viewModeInputs = document.querySelectorAll('input[name="viewMode"]');
+    
+    // Auto-scroll to tab content when tab is clicked
+    const navTabs = document.querySelectorAll('.nav-tabs .nav-link');
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Get the target tab content
+            const targetId = this.getAttribute('href');
+            const targetContent = document.querySelector(targetId);
+            
+            if (targetContent) {
+                // Smooth scroll to the tab content
+                targetContent.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start',
+                    inline: 'nearest'
+                });
+                
+                // Add a small delay to ensure the scroll happens before the tab switch
+                setTimeout(() => {
+                    // Trigger the tab switch
+                    const tabTrigger = new bootstrap.Tab(this);
+                    tabTrigger.show();
+                }, 100);
+            }
+        });
+    });
     
     // View mode toggle
     viewModeInputs.forEach(input => {

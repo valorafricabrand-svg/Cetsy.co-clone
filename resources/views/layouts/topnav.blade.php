@@ -32,6 +32,32 @@
     }
     // Wishlist
     $wishlistCount = method_exists($user, 'wishlistItems') ? $user->wishlistItems()->count() : 0;
+    
+    // Orders
+    $ordersCount = 0;
+    if ($role === 'seller') {
+        $shop = $user->shop;
+        $productIds = $shop ? $shop->products()->pluck('id') : [];
+        $ordersCount = $shop ? \App\Models\Order::whereIn('id', function($query) use ($productIds) {
+            $query->select('order_id')
+                  ->from('order_items')
+                  ->whereIn('product_id', $productIds);
+        })->where('status', 'pending')->count() : 0;
+    } else {
+        $ordersCount = \App\Models\Order::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->count();
+    }
+    
+    // Cart
+    $cartCount = 0;
+    if ($role === 'seller') {
+        $shop = $user->shop;
+        $productIds = $shop ? $shop->products()->pluck('id') : [];
+        $cartCount = $shop ? \App\Models\CartItem::whereIn('product_id', $productIds)->count() : 0;
+    } else {
+        $cartCount = $user->cart ? $user->cart->items()->count() : 0;
+    }
 
     $navItems = [
         'seller' => [
@@ -40,6 +66,18 @@
                 'icon' => 'fas fa-bell',
                 'route' => route('seller.messages.index'),
                 'badge' => $messagesCount,
+            ],
+            [
+                'label' => 'Orders',
+                'icon' => 'fas fa-shopping-bag',
+                'route' => route('orders.index'),
+                'badge' => $ordersCount,
+            ],
+            [
+                'label' => 'Cart',
+                'icon' => 'fas fa-shopping-cart',
+                'route' => route('cart.view'),
+                'badge' => $cartCount,
             ],
             [
                 'label' => 'Offers',
@@ -60,6 +98,18 @@
                 'icon' => 'fas fa-bell',
                 'route' => route('buyer.messages.index'),
                 'badge' => $messagesCount,
+            ],
+            [
+                'label' => 'Orders',
+                'icon' => 'fas fa-shopping-bag',
+                'route' => route('account.orders'),
+                'badge' => $ordersCount,
+            ],
+            [
+                'label' => 'Cart',
+                'icon' => 'fas fa-shopping-cart',
+                'route' => route('cart.view'),
+                'badge' => $cartCount,
             ],
             [
                 'label' => 'Offers',

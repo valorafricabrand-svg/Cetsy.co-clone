@@ -71,7 +71,7 @@
     <div class="card mb-4">
       <div class="card-body">
         <h5 class="card-title">About This Shop</h5>
-        <p class="card-text">{{ $shop->bio }}</p>
+        <p class="card-text">{!! $shop->bio !!}</p>
       </div>
     </div>
   @endif

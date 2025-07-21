@@ -23,6 +23,39 @@
         font-size:.75rem;padding:.15rem .5rem;
         border-radius:.25rem;background:#ffc107;color:#000;
     }
+
+    /* Improved summary card styles */
+    .summary-card {
+        border-radius: 1.25rem !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        padding: 1.5rem 1rem 1.2rem 1rem;
+        min-height: 140px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+    }
+    .summary-card .icon {
+        font-size: 2.1rem;
+        margin-bottom: 0.5rem;
+    }
+    .summary-card .card-value {
+        font-size: 1.45rem;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+        line-height: 1.1;
+    }
+    .summary-card .card-label {
+        font-size: 0.98rem;
+        color: #6c757d;
+        font-weight: 400;
+        margin-top: 0.1rem;
+    }
+    .summary-card .card-value small {
+        font-size: 0.95rem;
+        font-weight: 400;
+    }
 </style>
 
 <div class="content">
@@ -61,11 +94,11 @@
                     'href'  => route('wallet.index')
                 ],
                 [
-                    'value' => 0,
-                    'label' => 'Active / Inactive',
-                    'icon'  => 'fas fa-toggle-on',
+                    'value' => $total_offers . "<small class='text-success ms-1' title='Accepted'>(".$accepted_offers." ✓)</small> <small class='text-danger ms-1' title='Declined'>(".$declined_offers." ✗)</small>",
+                    'label' => 'Offers Received',
+                    'icon'  => 'fas fa-handshake',
                     'class' => 'text-primary',
-                    'href'  => route('products.index')
+                    'href'  => route('seller.offers.index')
                 ],
             ];
         @endphp
@@ -73,14 +106,12 @@
         @foreach($cards as $c)
             <div class="col-6 col-md-3">
                 <a href="{{ $c['href'] }}" class="text-decoration-none text-dark">
-                    <div class="card hover-lift shadow-sm border-0">
-                        <div class="card-body text-center">
-                            <div class="mb-2">
-                                <i class="{{ $c['icon'] }} fa-xl {{ $c['class'] }}"></i>
-                            </div>
-                            <div class="fs-4 fw-semibold">{{ $c['value'] }}</div>
-                            <div class="text-muted small">{{ $c['label'] }}</div>
+                    <div class="card summary-card hover-lift border-0">
+                        <div class="icon {{ $c['class'] }}">
+                            <i class="{{ $c['icon'] }}"></i>
                         </div>
+                        <div class="card-value">{!! $c['value'] !!}</div>
+                        <div class="card-label">{{ $c['label'] }}</div>
                     </div>
                 </a>
             </div>
