@@ -72,14 +72,14 @@ class OfferController extends Controller
         // Get summary statistics
         $allOffers = Offer::whereIn('product_id', $productIds);
         $stats = [
-            'total' => $allOffers->count(),
-            'pending' => $allOffers->where('status', 'pending')->count(),
-            'accepted' => $allOffers->where('status', 'accepted')->count(),
-            'declined' => $allOffers->where('status', 'declined')->count(),
-            'expired' => $allOffers->where('status', 'expired')->count(),
-            'total_value' => $allOffers->sum('offer_price'),
-            'avg_value' => $allOffers->avg('offer_price'),
-            'this_month' => $allOffers->whereMonth('created_at', now()->month)->count(),
+            'total' => (clone $allOffers)->count(),
+            'pending' => (clone $allOffers)->where('status', 'pending')->count(),
+            'accepted' => (clone $allOffers)->where('status', 'accepted')->count(),
+            'declined' => (clone $allOffers)->where('status', 'declined')->count(),
+            'expired' => (clone $allOffers)->where('status', 'expired')->count(),
+            'total_value' => (clone $allOffers)->sum('offer_price'),
+            'avg_value' => (clone $allOffers)->avg('offer_price'),
+            'this_month' => (clone $allOffers)->whereMonth('created_at', now()->month)->count(),
         ];
 
         // Get products for filter dropdown

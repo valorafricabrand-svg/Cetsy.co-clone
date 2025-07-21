@@ -71,6 +71,20 @@ class MessageController extends Controller
             });
         }
 
+        // Search by user, product, or message
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+            $conversations = $conversations->filter(function($conversation) use ($search) {
+                $userMatch = $conversation['other_user'] && (
+                    str_contains(strtolower($conversation['other_user']->name), $search) ||
+                    str_contains(strtolower($conversation['other_user']->email), $search)
+                );
+                $productMatch = $conversation['product'] && str_contains(strtolower($conversation['product']->name), $search);
+                $messageMatch = $conversation['latest_message'] && str_contains(strtolower($conversation['latest_message']->body), $search);
+                return $userMatch || $productMatch || $messageMatch;
+            });
+        }
+
         return view('seller.messages.index', compact('conversations'));
     }
 

@@ -23,6 +23,18 @@
                             <div class="card-body">
                                 <h5 class="card-title">Conversations</h5>
                                 <p class="card-text">Here you can see all your conversations with sellers about specific products.</p>
+                                <form method="GET" action="" class="d-flex align-items-center gap-2 flex-wrap mt-2" style="max-width:400px;">
+                                    <input type="text" name="search" value="{{ request('search') }}" class="form-control form-control-sm" placeholder="Search user, product, or message...">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i> Search</button>
+                                    @if(request('search'))
+                                        <a href="{{ request()->fullUrlWithQuery(['search' => '']) }}"
+                                           class="btn btn-outline-secondary btn-sm"
+                                           style="min-width:32px; margin-left:2px;"
+                                           title="Clear search">
+                                            <i class="bi bi-x"></i> Clear
+                                        </a>
+                                    @endif
+                                </form>
                             </div>
                         </div>
                     </div>

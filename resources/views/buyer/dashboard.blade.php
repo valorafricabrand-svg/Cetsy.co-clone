@@ -53,14 +53,14 @@
 
             {{-- OFFERS --}}
             <div class="col-md-3">
-                <a href="#offers-section" class="card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
+                <a href="{{ route('buyer.offers') }}" class="card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
                     <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
                         <div class="mb-3">
                             <i class="fas fa-hand-holding-dollar fa-3x text-info"></i>
                         </div>
                         <h5 class="fw-bold text-info">Offers</h5>
                         <p class="fs-5 text-muted mb-0">
-                            {{ $offers->count() }} {{ Str::plural('Offer', $offers->count()) }}
+                            {!! $total_offers . " <small class='text-success ms-1' title='Accepted'>(".$accepted_offers." ✓)</small> <small class='text-danger ms-1' title='Declined'>(".$declined_offers." ✗)</small>" !!}
                         </p>
                     </div>
                 </a>

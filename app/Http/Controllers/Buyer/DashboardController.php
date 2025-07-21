@@ -38,7 +38,11 @@ class DashboardController extends Controller
         // Fetch offers made by the buyer
         $offers = \App\Models\Offer::where('buyer_id', Auth::id())->with('product')->latest()->get();
 
-        
+        // Offer stats for the buyer
+        $total_offers = (clone $offers)->count();
+        $accepted_offers = \App\Models\Offer::where('buyer_id', Auth::id())->where('status', 'accepted')->count();
+        $declined_offers = \App\Models\Offer::where('buyer_id', Auth::id())->where('status', 'declined')->count();
+
         return view('buyer.dashboard', compact(
             'ordersCount',
             'wishlistCount',
@@ -46,7 +50,10 @@ class DashboardController extends Controller
             'recentOrders',
             'recommendedProducts',
             'favoriteProducts',
-            'offers'
+            'offers',
+            'total_offers',
+            'accepted_offers',
+            'declined_offers'
         ));
     }
 }
