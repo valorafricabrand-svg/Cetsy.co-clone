@@ -1,4 +1,3 @@
-{{-- resources/views/products/show.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
@@ -70,20 +69,29 @@
         <strong>Type:</strong> {{ ucfirst($product->type) }}
       </p>
       <div class="mb-3">
-        @if($product->discount_price)
-          <span class="h4 text-danger me-2">
-            {{ get_currency() }}{{ number_format($product->discount_price,2) }}
-          </span>
-          <span class="text-muted text-decoration-line-through">
-            {{ get_currency() }}{{ number_format($product->price,2) }}
-          </span>
+        @php
+          $basePrice  = $product->price;
+          $finalPrice = $product->discounted_price;
+        @endphp
+
+        @if($finalPrice < $basePrice)
+          <div class="d-flex align-items-baseline gap-3 mb-3">
+            <span class="fw-bold text-success">
+              {{ get_currency() }} {{ number_format($finalPrice, 2) }}
+            </span>
+            <span class="text-muted text-decoration-line-through">
+              {{ get_currency() }} {{ number_format($basePrice, 2) }}
+            </span>
+          </div>
         @else
-          <span class="h4">{{ get_currency() }}{{ number_format($product->price,2) }}</span>
+          <p class="fw-bold text-success mb-3">
+            {{ get_currency() }} {{ number_format($basePrice, 2) }}
+          </p>
         @endif
       </div>
 
       {{-- Listing Dates --}}
-      @if($product->is_active===1)
+      @if($product->is_active === 1)
         <ul class="list-unstyled mb-3 text-muted small">
           <li>
             <i class="fas fa-calendar-plus me-1"></i>
@@ -98,9 +106,39 @@
         </ul>
       @endif
 
+      {{-- Renewal Type (toggle only when active) --}}
+      <div class="mb-4">
+        <strong>Renewal:</strong>
+        @if($product->is_active === 1)
+          <form method="POST" action="{{ route('products.updateRenewal', $product) }}"
+                class="d-inline-flex align-items-center">
+            @csrf
+            @method('PATCH')
+            <select name="renewal_type"
+                    class="form-select form-select-sm me-2 @error('renewal_type') is-invalid @enderror"
+                    onchange="this.form.submit()">
+              <option value="automatic" {{ $product->renewal_type === 'automatic' ? 'selected' : '' }}>
+                Automatic
+              </option>
+              <option value="manual" {{ $product->renewal_type === 'manual' ? 'selected' : '' }}>
+                Manual
+              </option>
+            </select>
+            @error('renewal_type')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
+          </form>
+        @else
+          <span class="text-muted">{{ ucfirst($product->renewal_type) }}</span>
+        @endif
+      </div>
+
       {{-- Stock --}}
       @if(! is_null($product->stock))
-        <p class="mb-3"><i class="fas fa-layer-group me-1"></i><strong>Stock:</strong> {{ $product->stock }}</p>
+        <p class="mb-3">
+          <i class="fas fa-layer-group me-1"></i>
+          <strong>Stock:</strong> {{ $product->stock }}
+        </p>
       @endif
 
       {{-- Listing Fee Prompt --}}
@@ -112,19 +150,21 @@
 
         @php
           $baseFee    = $product->category?->listing_fee ?? 0;
-          $monthlyFee = $baseFee / 4;
+          $monthlyFee = $baseFee / 3;
         @endphp
 
         <div class="d-flex gap-2 mb-4">
           <form method="POST" action="{{ route('products.pay-fee', $product) }}">
-            @csrf<input type="hidden" name="plan" value="monthly">
+            @csrf
+            <input type="hidden" name="plan" value="monthly">
             <button class="btn btn-outline-success">
               Pay Monthly<br>
               <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
             </button>
           </form>
           <form method="POST" action="{{ route('products.pay-fee', $product) }}">
-            @csrf<input type="hidden" name="plan" value="4months">
+            @csrf
+            <input type="hidden" name="plan" value="4months">
             <button class="btn btn-success">
               Pay 4‑Month<br>
               <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>

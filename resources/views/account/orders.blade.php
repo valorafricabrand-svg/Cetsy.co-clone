@@ -76,7 +76,7 @@
 
       {{-- Pagination --}}
       <div class="d-flex justify-content-center">
-        {{ $orders->withQueryString()->links() }}
+          {{ $orders->links('pagination::bootstrap-5') }}
       </div>
     @else
       {{-- Empty state --}}

@@ -74,7 +74,7 @@ public function store(Request $request)
         'description'                 => 'nullable|string',
         'category_id'                 => 'nullable|exists:categories,id',
         'price'                       => 'required|numeric|min:0',
-        'discount_price'              => 'nullable|numeric|min:0|lt:price',
+        'discount_percent'            => 'nullable|integer|between:1,100',
         'stock'                       => 'nullable|integer|min:0',
         'media.*'                     => 'nullable|image|max:5120',
         'digital_file'                => 'nullable|file|max:10240',
@@ -115,7 +115,7 @@ public function store(Request $request)
     $product->processing_time_id          = $data['processing_time_id'] ?? null;
     $product->description                 = $data['description'] ?? null;
     $product->price                       = $data['price'];
-    $product->discount_price              = $data['discount_price'] ?? null;
+    $product->discount_percent              = $data['discount_percent'] ?? null;
     $product->stock                       = $data['type']==='physical' ? ($data['stock'] ?? 0) : null;
     $product->default_shipping_profile_id = $data['type']==='physical'
                                             ? $data['default_shipping_profile']
@@ -240,7 +240,7 @@ public function update(Request $request, Product $product)
         'description'               => 'nullable|string',
         'category_id'               => 'required|exists:categories,id',
         'price'                     => 'required|numeric|min:0',
-        'discount_price'            => 'nullable|numeric|min:0|lt:price',
+         'discount_percent' => 'nullable|integer|between:1,100',
         'stock'                     => 'nullable|integer|min:0',
         'media.*'                   => 'nullable|image|max:5120',
         'digital_file'              => 'nullable|file|max:10240',
@@ -273,7 +273,7 @@ public function update(Request $request, Product $product)
         'processing_time_id'          => $data['processing_time_id'] ?? null,
         'description'                 => $data['description'] ?? null,
         'price'                       => $data['price'],
-        'discount_price'              => $data['discount_price'] ?? null,
+        'discount_percent'              => $data['discount_percent'] ?? null,
         'stock'                       => $data['type'] === 'physical'
                                             ? ($data['stock'] ?? 0)
                                             : null,
@@ -559,7 +559,7 @@ public function payFee(Request $request, Product $product)
         'order'        => $product,
         'plan'         => $request->plan,      // pass it here
         'fourMonthFee' => $product->category->listing_fee,
-        'monthlyFee'   => $product->category->listing_fee / 4,
+        'monthlyFee'   => $product->category->listing_fee / 3,
         'walletBalance'=> auth()->check() ? wallet() : 0,
     ]);
 }
@@ -677,6 +677,22 @@ public function changeStatus(Request $request, Product $product)
         ->route('products.show',$product)
         ->with('success',$msg);
 }
+
+
+// app/Http/Controllers/ProductController.php
+public function updateRenewal(Request $request, Product $product)
+{
+    
+
+    $data = $request->validate([
+        'renewal_type' => 'required|in:automatic,manual',
+    ]);
+
+    $product->update($data);
+
+    return back()->with('success', 'Renewal type updated.');
+}
+
 
 
 }

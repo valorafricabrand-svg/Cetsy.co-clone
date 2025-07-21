@@ -1,0 +1,79 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Deal;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+
+class DealController extends Controller
+{
+    public function index()
+    {
+        // Only show this seller’s deals
+        $deals = Deal::where('shop_id', shop_id())
+                     ->latest()
+                     ->paginate(20);
+
+        return view('seller.deals.index', compact('deals'));
+    }
+
+    public function create()
+    {
+        // Only fetch products belonging to this shop
+        $products = Product::where('shop_id', shop_id())
+                           ->orderBy('name')
+                           ->get();
+
+        return view('seller.deals.create', compact('products'));
+    }
+
+ public function store(Request $request)
+    {
+        // 1. Validate
+        $validated = $request->validate([
+            'name'             => 'required|string|max:255',
+            'discount_percent' => 'required|integer|between:1,100',
+            'starts_at'        => 'required|date',
+            'ends_at'          => 'required|date|after:starts_at',
+            'product_ids'      => 'array',
+            'product_ids.*'    => 'exists:products,id',
+        ]);
+
+        // Ensure applies_to_all is boolean
+        $validated['applies_to_all'] = $request->boolean('applies_to_all');
+
+        // Parse datetimes
+        $validated['starts_at'] = Carbon::parse($validated['starts_at']);
+        $validated['ends_at']   = Carbon::parse($validated['ends_at']);
+
+        // Associate to current shop
+        $validated['shop_id'] = shop_id();
+
+        // 2. Create the deal
+        $deal = Deal::create($validated);
+
+        // 3. Determine affected products
+        if ($validated['applies_to_all']) {
+            // All this shop's products
+            $affected = Product::where('shop_id', shop_id())->pluck('id')->toArray();
+        } else {
+            // Only selected ones, but ensure they actually belong to this shop
+            $allowed = Product::where('shop_id', shop_id())->pluck('id')->toArray();
+            $affected = array_intersect($request->input('product_ids', []), $allowed);
+            // Sync the pivot so you can still use Deal->products()
+            $deal->products()->sync($affected);
+        }
+
+        // 4. Mass‑update the products.discount_percent column
+        if (count($affected)) {
+            Product::whereIn('id', $affected)
+                   ->update(['discount_percent' => $validated['discount_percent']]);
+        }
+
+        return redirect()
+            ->route('seller.deals.index')
+            ->with('success', 'Deal created and product discounts updated.');
+    }
+}
