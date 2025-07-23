@@ -25,4 +25,29 @@ class Kyc extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+
+      public function scopeStatus($query, $status)
+    {
+        return $status ? $query->where('status', $status) : $query;
+    }
+
+
+        public function scopeSearch($q, $term)
+    {
+        if (!$term) return $q;
+
+        return $q->where(function ($sub) use ($term) {
+            $sub->where('id_number', 'like', "%{$term}%")
+                ->orWhere('email', 'like', "%{$term}%")
+                ->orWhere('phone', 'like', "%{$term}%")
+                ->orWhere('first_name', 'like', "%{$term}%")
+                ->orWhere('last_name', 'like', "%{$term}%")
+                ->orWhere('id', $term)
+                ->orWhereHas('user', function ($u) use ($term) {
+                    $u->where('name', 'like', "%{$term}%")
+                      ->orWhere('email', 'like', "%{$term}%");
+                });
+        });
+    }
 }

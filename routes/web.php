@@ -252,7 +252,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
 
-
+ Route::patch('kyc/bulk', [KycController::class, 'bulk'])->name('kyc.bulk');
     Route::resource('users', UserController::class);
     Route::post('users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');

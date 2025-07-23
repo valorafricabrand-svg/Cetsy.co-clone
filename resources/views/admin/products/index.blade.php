@@ -180,7 +180,9 @@
 
         {{-- Pagination --}}
         <div class="mt-4">
-            {{ $products->withQueryString()->links() }}
+          
+
+              {{ $products->links('pagination::bootstrap-5') }}
         </div>
     @else
         <div class="card shadow-sm">
