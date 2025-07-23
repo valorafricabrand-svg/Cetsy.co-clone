@@ -60,7 +60,9 @@
                     </tbody>
                 </table>
             </div>
-            <div class="card-footer">{{ $payments->links() }}</div>
+            <div class="card-footer">
+{{ $payments->links('pagination::bootstrap-5') }}
+            </div>
         </div>
 
     </div>
