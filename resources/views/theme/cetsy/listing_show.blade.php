@@ -25,7 +25,15 @@
       </div>
     @endif
 
+
+
+
     <div class="row g-lg-5">
+
+
+
+
+
       {{-- GALLERY ------------------------------------------------------- --}}
       <div class="col-lg-7" data-aos="fade-right">
         <div id="productCarousel" class="carousel slide shadow-sm rounded-4 overflow-hidden mb-3" data-bs-ride="carousel">

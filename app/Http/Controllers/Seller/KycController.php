@@ -76,10 +76,34 @@ class KycController extends Controller
         }
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $pendingKycs = Kyc::where('status', 'pending')->paginate(10);
-        return view('admin.kyc.index', compact('pendingKycs'));
+        
+
+        $perPage   = (int) $request->input('per_page', 10);
+        $status    = $request->input('status', 'pending');
+        $search    = $request->input('q');
+        $sortField = $request->input('sort', 'created_at');
+        $sortDir   = $request->input('dir', 'desc');
+
+        $allowedSorts = ['id','created_at','status','id_number'];
+        if (! in_array($sortField, $allowedSorts, true)) $sortField = 'created_at';
+        $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
+
+        $kycs = Kyc::with('user:id,name,email')
+            ->status($status)
+            ->search($search)
+            ->orderBy($sortField, $sortDir)
+            ->paginate($perPage)
+            ->appends($request->query());
+
+        $counts = Kyc::selectRaw("status, COUNT(*) as total")
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return view('admin.kyc.index', compact(
+            'kycs','counts','status','search','perPage','sortField','sortDir'
+        ));
     }
 
     public function update(Request $request, Kyc $kyc)
@@ -126,5 +150,34 @@ class KycController extends Controller
     public function showDetails(Kyc $kyc)
     {
         return view('admin.kyc.show', compact('kyc'));
+    }
+
+       public function bulk(Request $request)
+    {
+        $request->validate([
+            'ids_json'    => 'required|string',
+            'status'      => 'required|in:approved,rejected,pending',
+            'admin_notes' => 'nullable|string',
+        ]);
+
+        $ids = json_decode($request->input('ids_json', '[]'), true);
+        if (!is_array($ids) || empty($ids)) {
+            return back()->with('error', 'No records selected.');
+        }
+
+        // authorize – tweak to your role logic
+        if (!auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($ids, $request) {
+            Kyc::whereIn('id', $ids)->update([
+                'status'      => $request->status,
+                'admin_notes' => $request->admin_notes,
+                'updated_at'  => now(),
+            ]);
+        });
+
+        return back()->with('success', 'KYC records updated: '.count($ids));
     }
 }
