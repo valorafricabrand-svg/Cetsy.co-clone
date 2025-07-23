@@ -16,7 +16,8 @@ use App\Http\Controllers\Admin\{
     PayoutRequestController as AdminPayoutRequestController,
     PaymentController,
     PaymentTypeController,
-    CategoryAttributeController
+    CategoryAttributeController,
+    AdminWalletController
 };
 
 use App\Http\Controllers\Seller\{
@@ -250,6 +251,9 @@ Route::patch(
 */
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
+
+Route::resource('wallets', AdminWalletController::class)->except(['create','store']);
+        Route::delete('wallets/bulk', [AdminWalletController::class, 'bulk'])->name('wallets.bulk');
 
 
  Route::patch('kyc/bulk', [KycController::class, 'bulk'])->name('kyc.bulk');
