@@ -72,6 +72,15 @@ function shop(){
   }
 
 
+     function admin_wallet() {
+
+     $walletBalance = \App\Models\Wallet::selectRaw('SUM(credit - debit) as balance')
+                            ->value('balance') ?? 0;
+
+        return $walletBalance;
+  }
+
+
   function get_currency() {
     return 'USD';
  }

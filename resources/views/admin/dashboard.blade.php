@@ -16,6 +16,22 @@
 
     <div class="content">
         <div class="row row-cols-1 row-cols-md-3 g-4">
+
+             <div class="col">
+    <div class="card h-100 shadow-sm position-relative">
+        <div class="card-body text-center">
+            <h5 class="card-title mb-2">Amount in Wallets</h5>
+            <p class="display-6 mb-0">
+                {{ get_currency() }} {{ admin_wallet() }}
+            </p>
+
+            {{-- Invisible link that makes the whole card clickable --}}
+            <a href="{{ route('admin.wallets.index') }}" class="stretched-link"></a>
+        </div>
+    </div>
+</div>
+
+
             
             <div class="col">
                 <div class="card h-100 shadow-sm">
@@ -29,8 +45,8 @@
             <div class="col">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body text-center">
-                        <h5 class="card-title">Total Orders</h5>
-                        <p class="display-6 mb-0">{{ \App\Models\Order::count() }}</p>
+                        <h5 class="card-title">Total Active Listing</h5>
+                        <p class="display-6 mb-0">{{ \App\Models\Product::where('is_active', '1')->count() }}</p>
                     </div>
                 </div>
             </div>

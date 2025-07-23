@@ -59,19 +59,29 @@ public function show(Order $order)
      */
 
 
-    public function orderPayments()
-    {
-        $shop = Shop::where('user_id', Auth::user()->id)->first();
-        
-        $payments = Payment::whereShopId($shop->id)
-            ->get();
-
-        return view('seller.orders.payments', [
-            'payments' => $payments
-        ]);
-
-
+public function orderPayments(Request $request)
+{
+    // Get the current user's shop (fail gracefully if none)
+    $shop = Shop::firstWhere('user_id', Auth::id());
+    if (! $shop) {
+        return back()->withErrors('You don’t have a shop yet. Please create one first.');
     }
+
+    // Build query with optional filters + safe pagination
+    $payments = Payment::query()
+        ->where('shop_id', $shop->id)
+        ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+        ->when($request->filled('method'), fn ($q) => $q->where('method', $request->method))
+        ->orderByDesc('id')        // or ->latest('id') if you don’t store paid_at
+        ->paginate($request->integer('per_page', 20))
+        ->withQueryString();
+
+    return view('seller.orders.payments', [
+        'payments' => $payments,
+        'shop'     => $shop,
+    ]);
+}
+
 
     /**
      * Store a newly created order with validation.
