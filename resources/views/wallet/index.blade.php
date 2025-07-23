@@ -179,7 +179,8 @@
 
             {{-- Pagination --}}
             <div class="mt-4">
-                {{ $transactions->withQueryString()->links() }}
+      
+                  {{ $transactions->links('pagination::bootstrap-5') }}
             </div>
 
         </div>
