@@ -85,9 +85,6 @@
                                     class="btn btn-primary {{ $canPayWithWallet ? '' : 'disabled' }}"
                                     @disabled(!$canPayWithWallet)>
                               Pay via Wallet
-                              <small class="fw-normal">
-                                ({{ $currency }} {{ number_format($walletBalance,2) }})
-                              </small>
                             </button>
                           </form>
 

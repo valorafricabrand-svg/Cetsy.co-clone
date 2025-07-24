@@ -24,6 +24,7 @@
                     <th>Shipping to {{ setting('region') }}</th>
                     <th>Base Rate ({{ get_currency() }})</th>
                     <th>Delivery Days</th>
+                    <th>Processing Time</th>
                     <th>Pickup Available</th>
                     <th>Actions</th>
                 </tr>
@@ -32,11 +33,17 @@
                 @foreach($profiles as $profile)
                     <tr>
                         <td>{{ $profile->name }}</td>
-                        <td>
-                            {{ optional($profile->country)->name ?? '—' }}
-                        </td>
+                        <td>{{ optional($profile->country)->name ?? '—' }}</td>
                         <td>{{ number_format($profile->base_rate, 2) }}</td>
                         <td>{{ $profile->delivery_days }}</td>
+                        <td>
+                            @if($profile->processingTime)
+                                {{ $profile->processingTime->label }}
+                                ({{ $profile->processingTime->days }} day{{ $profile->processingTime->days > 1 ? 's' : '' }})
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td>
                             @if($profile->pickup_available)
                                 <span class="badge bg-success">Yes</span>
@@ -49,8 +56,7 @@
                             <form action="{{ route('seller.shipping_profiles.destroy', $profile) }}"
                                   method="POST"
                                   class="d-inline-block"
-                                  onsubmit="return confirm('Delete this shipping profile?');"
-                            >
+                                  onsubmit="return confirm('Delete this shipping profile?');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-danger">

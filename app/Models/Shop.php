@@ -136,7 +136,7 @@ class Shop extends Model
         static::created(function (Shop $shop): void {
             // Create a default shipping profile with base_rate = 0
             $shop->shippingProfiles()->create([
-                'name'             => 'Default Shipping',
+                'name'             => 'Domestic Shipping',
                 'country_id'          => "",
                 'base_rate'        => 0,
                 'delivery_days'    => 0,

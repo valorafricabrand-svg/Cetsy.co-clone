@@ -1,11 +1,10 @@
 <?php
 
-// app/Http/Controllers/ShippingProfileController.php
-
 namespace App\Http\Controllers;
 
 use App\Models\ShippingProfile;
 use App\Models\Country;
+use App\Models\ProcessingTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,13 +13,13 @@ class ShippingProfileController extends Controller
     public function index()
     {
         $shop = Auth::user()->shop;
-        if (!$shop) {
+        if (! $shop) {
             return redirect()->route('shops.create')
                              ->with('error', 'Please create a shop first.');
         }
 
         $profiles = ShippingProfile::where('shop_id', $shop->id)
-                                   ->with('country')
+                                   ->with(['country', 'processingTime'])
                                    ->paginate(10);
 
         return view('shipping_profiles.index', compact('profiles'));
@@ -28,38 +27,43 @@ class ShippingProfileController extends Controller
 
     public function create()
     {
-        $countries = Country::orderBy('name')->get();
-        return view('shipping_profiles.create', compact('countries'));
+        $countries       = Country::orderBy('name')->get();
+        $processingTimes = ProcessingTime::orderBy('days')->get();
+
+        return view('shipping_profiles.create', compact('countries','processingTimes'));
     }
 
     public function store(Request $request)
     {
         $shop = Auth::user()->shop;
-        if (!$shop) {
+        if (! $shop) {
             return redirect()->route('shops.create')
                              ->with('error', 'Please create a shop first.');
         }
 
         $data = $request->validate([
-            'name'             => 'required|string|max:255',
-            'country_id'       => 'required|exists:countries,id',
-            'base_rate'        => 'required|numeric|min:0',
-            'delivery_days'    => 'required|integer|min:0',
-            'pickup_available' => 'nullable|boolean',
+            'name'               => 'required|string|max:255',
+            'country_id' => 'nullable|exists:countries,id',
+            'base_rate'          => 'required|numeric|min:0',
+            'delivery_days'      => 'required|integer|min:0',
+            'processing_time_id' => 'nullable|integer|exists:processing_times,id',
+            'pickup_available'   => 'nullable|boolean',
         ]);
 
         $data['shop_id'] = $shop->id;
         ShippingProfile::create($data);
 
-        return redirect()->route('seller.shipping_profiles.index')
-                         ->with('success', 'Shipping profile created successfully.');
+        return back()->with('success', 'Shipping profile created successfully.');
     }
 
     public function edit(ShippingProfile $shippingProfile)
     {
         $this->authorizeShop($shippingProfile);
-        $countries = Country::orderBy('name')->get();
-        return view('shipping_profiles.edit', compact('shippingProfile', 'countries'));
+
+        $countries       = Country::orderBy('name')->get();
+        $processingTimes = ProcessingTime::orderBy('days')->get();
+
+        return view('shipping_profiles.edit', compact('shippingProfile','countries','processingTimes'));
     }
 
     public function update(Request $request, ShippingProfile $shippingProfile)
@@ -67,11 +71,12 @@ class ShippingProfileController extends Controller
         $this->authorizeShop($shippingProfile);
 
         $data = $request->validate([
-            'name'             => 'required|string|max:255',
-            'country_id'       => 'required|exists:countries,id',
-            'base_rate'        => 'required|numeric|min:0',
-            'delivery_days'    => 'required|integer|min:0',
-            'pickup_available' => 'nullable|boolean',
+            'name'               => 'required|string|max:255',
+           'country_id' => 'nullable|exists:countries,id',
+            'base_rate'          => 'required|numeric|min:0',
+            'delivery_days'      => 'required|integer|min:0',
+            'processing_time_id' => 'nullable|integer|exists:processing_times,id',
+            'pickup_available'   => 'nullable|boolean',
         ]);
 
         $shippingProfile->update($data);
@@ -92,7 +97,7 @@ class ShippingProfileController extends Controller
     protected function authorizeShop(ShippingProfile $profile)
     {
         $shop = Auth::user()->shop;
-        if (!$shop || $profile->shop_id !== $shop->id) {
+        if (! $shop || $profile->shop_id !== $shop->id) {
             abort(403, 'Unauthorized action.');
         }
     }
