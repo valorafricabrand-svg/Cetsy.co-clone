@@ -148,7 +148,7 @@
                                     @if($product->is_active == 1)
                                         <span class="badge bg-success">Active</span>
                                     @elseif($product->is_active == 2)
-                                        <span class="badge bg-warning">Suspended</span>
+                                        <span class="badge bg-warning">Pause</span>
                                     @else
                                         <span class="badge bg-secondary">Inactive</span>
                                     @endif
@@ -240,9 +240,9 @@
                         
                         <div class="mb-3">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="status" id="suspended{{ $product->id }}" value="2" {{ $product->is_active == 2 ? 'checked' : '' }}>
-                                <label class="form-check-label" for="suspended{{ $product->id }}">
-                                    <span class="badge bg-warning me-2">Suspended</span>
+                                <input class="form-check-input" type="radio" name="status" id="pause{{ $product->id }}" value="2" {{ $product->is_active == 2 ? 'checked' : '' }}>
+                                <label class="form-check-label" for="pause{{ $product->id }}">
+                                    <span class="badge bg-warning me-2">Pause</span>
                                     Product is temporarily unavailable (admin action required)
                                 </label>
                             </div>
@@ -254,7 +254,7 @@
                             @if($product->is_active == 1)
                                 <span class="badge bg-success">Active</span>
                             @elseif($product->is_active == 2)
-                                <span class="badge bg-warning">Suspended</span>
+                                <span class="badge bg-warning">Pause</span>
                             @else
                                 <span class="badge bg-secondary">Inactive</span>
                             @endif

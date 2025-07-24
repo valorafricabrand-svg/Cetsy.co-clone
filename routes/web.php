@@ -5,7 +5,7 @@ use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController
+    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, ProductReportController
 };
 
 use App\Http\Controllers\Admin\{
@@ -16,7 +16,8 @@ use App\Http\Controllers\Admin\{
     PayoutRequestController as AdminPayoutRequestController,
     PaymentController,
     PaymentTypeController,
-    CategoryAttributeController
+    CategoryAttributeController,
+    ProductReportController as AdminProductReportController
 };
 
 use App\Http\Controllers\Seller\{
@@ -86,6 +87,9 @@ Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_no
 
 Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
       ->name('products.pay-fee');
+
+// Product Reports
+Route::post('/product-reports', [ProductReportController::class, 'store'])->name('product-reports.store');
 
 
 Route::get('/pay-now-invoice/{total}', [OrderController::class, 'payNowInvoice'])->name('pay_now_invoice');
@@ -283,7 +287,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
-
+    
+    
     Route::post('subscriptions/deactivate-expired', [AdminSubscriptionController::class, 'deactivateExpired'])->name('subscriptions.deactivate-expired');
 
     Route::prefix('payout-requests')->name('payouts.')->controller(AdminPayoutRequestController::class)->group(function () {
@@ -298,13 +303,18 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
 //Payment Types
     Route::resource('payment-types', PaymentTypeController::class);
+
+    // Product Reports
+    Route::get('product-reports', [AdminProductReportController::class, 'index'])->name('product-reports.index');
+    Route::put('product-reports/{id}', [AdminProductReportController::class, 'update'])->name('product-reports.update');
+
 });
 
 /*
 |--------------------------------------------------------------------------
 | Seller Routes - Subscription Management (No Active Subscription Required)
 |--------------------------------------------------------------------------
-*/
+
 Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
 
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
