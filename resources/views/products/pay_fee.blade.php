@@ -76,7 +76,7 @@
                 <input type="hidden" name="plan" value="">
                 <input type="hidden" name="via"  value="wallet">
                 <button type="submit" class="btn btn-primary">
-                  Pay via Wallet ({{ $currency }}<span x-text="format(walletBalance)"></span>)
+                  Pay via Wallet 
                 </button>
               </form>
             </template>
