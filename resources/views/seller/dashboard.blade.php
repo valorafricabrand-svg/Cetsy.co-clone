@@ -72,6 +72,15 @@
                 <i class="fas fa-umbrella-beach me-2"></i>Enable Holiday Mode
             </button>
         @endif
+  
+
+
+     <div class="d-flex justify-content-between align-items-center mb-4">
+        
+        <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
+            <i class="fas fa-plus me-1"></i> Add New Listing
+        </a>
+    </div>
     </div>
 
     {{-- ───────── Summary Cards ───────── --}}

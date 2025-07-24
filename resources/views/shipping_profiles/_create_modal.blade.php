@@ -1,4 +1,5 @@
 {{-- resources/views/shipping_profiles/_create_modal.blade.php --}}
+
 <div class="modal fade" id="newProfileModal" tabindex="-1"
      aria-labelledby="newProfileLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -22,23 +23,27 @@
 
         {{-- SHIP-TO COUNTRY --}}
         <div class="mb-3">
-          <label class="form-label">Ships to {{ setting('region') }} <span class="text-danger">*</span></label>
+          <label class="form-label">
+            Ships to {{ setting('region') }} <small class="text-muted">(leave blank for Worldwide)</small>
+          </label>
           <select name="country_id"
-                  class="form-select @error('country_id') is-invalid @enderror" required>
-            <option value="">Select {{ setting('region') }}</option>
+                  class="form-select @error('country_id') is-invalid @enderror">
+            <option value="">Worldwide</option>
             @foreach($countries as $country)
-              <option value="{{ $country->id }}" @selected(old('country_id')==$country->id)>
-                {{ $country->name }} ({{ $country->iso_code }})
+              <option value="{{ $country->id }}" @selected(old('country_id') == $country->id)>
+                {{ $country->name }}
               </option>
             @endforeach
           </select>
           @error('country_id') <div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
 
-        {{-- RATE & DAYS --}}
+        {{-- BASE RATE & DELIVERY DAYS --}}
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label">Base Rate ({{ get_currency() }}) <span class="text-danger">*</span></label>
+            <label class="form-label">
+              Base Rate ({{ get_currency() }}) <span class="text-danger">*</span>
+            </label>
             <input  type="number" name="base_rate" min="0" step="0.01"
                     value="{{ old('base_rate') }}"
                     class="form-control @error('base_rate') is-invalid @enderror" required>
@@ -53,11 +58,30 @@
           </div>
         </div>
 
+        {{-- PROCESSING TIME --}}
+        <div class="mb-3 mt-3">
+          <label class="form-label">Processing Time <span class="text-danger">*</span></label>
+          <select name="processing_time_id"
+                  class="form-select @error('processing_time_id') is-invalid @enderror"
+                  required>
+            <option value="">Select processing time</option>
+            @foreach($processingTimes as $pt)
+              <option value="{{ $pt->id }}" @selected(old('processing_time_id') == $pt->id)>
+                {{ $pt->label }} ({{ $pt->days }} day{{ $pt->days>1?'s':'' }})
+              </option>
+            @endforeach
+          </select>
+          @error('processing_time_id') <div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
+
         {{-- PICKUP SWITCH --}}
         <input type="hidden" name="pickup_available" value="0">
         <div class="form-check form-switch mt-3">
-          <input  type="checkbox" class="form-check-input @error('pickup_available') is-invalid @enderror"
-                  id="pickup_available" name="pickup_available" value="1"
+          <input  type="checkbox"
+                  class="form-check-input @error('pickup_available') is-invalid @enderror"
+                  id="pickup_available"
+                  name="pickup_available"
+                  value="1"
                   {{ old('pickup_available') ? 'checked' : '' }}>
           <label class="form-check-label" for="pickup_available">Pickup available</label>
           @error('pickup_available') <div class="invalid-feedback d-block">{{ $message }}</div>@enderror
