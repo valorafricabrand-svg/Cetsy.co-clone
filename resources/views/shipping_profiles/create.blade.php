@@ -27,14 +27,15 @@
 
         {{-- Shipping to Country --}}
         <div class="mb-3">
-            <label for="country_id" class="form-label">Shipping to {{ setting('region') }} <span class="text-danger">*</span></label>
+            <label for="country_id" class="form-label">
+                Shipping to {{ setting('region') }} (leave blank for Worldwide)
+            </label>
             <select
                 id="country_id"
                 name="country_id"
                 class="form-select @error('country_id') is-invalid @enderror"
-                required
             >
-                <option value="">Select {{ setting('region') }}</option>
+                <option value="">Worldwide</option>
                 @foreach($countries as $country)
                     <option
                         value="{{ $country->id }}"
@@ -84,8 +85,31 @@
             </div>
         </div>
 
+        {{-- Processing Time --}}
+        <div class="mb-3">
+            <label for="processing_time_id" class="form-label">Processing Time <span class="text-danger">*</span></label>
+            <select
+                id="processing_time_id"
+                name="processing_time_id"
+                class="form-select @error('processing_time_id') is-invalid @enderror"
+                required
+            >
+                <option value="">Select processing time</option>
+                @foreach($processingTimes as $pt)
+                    <option
+                        value="{{ $pt->id }}"
+                        {{ old('processing_time_id') == $pt->id ? 'selected' : '' }}
+                    >
+                        {{ $pt->label }} ({{ $pt->days }} day{{ $pt->days > 1 ? 's' : '' }})
+                    </option>
+                @endforeach
+            </select>
+            @error('processing_time_id')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+
         {{-- Pickup Available --}}
-        {{-- Hidden fallback so unchecked submits 0 --}}
         <input type="hidden" name="pickup_available" value="0">
         <div class="form-check form-switch mb-4">
             <input

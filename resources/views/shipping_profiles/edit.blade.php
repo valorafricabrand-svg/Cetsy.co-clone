@@ -26,16 +26,15 @@
             @enderror
         </div>
 
-        {{-- Shipping to Country --}}
+        {{-- Shipping to Country (nullable; blank = Worldwide) --}}
         <div class="mb-3">
-            <label for="country_id" class="form-label">Shipping to Country <span class="text-danger">*</span></label>
+            <label for="country_id" class="form-label">Shipping to Country <small class="text-muted">(leave blank for Worldwide)</small></label>
             <select
               id="country_id"
               name="country_id"
               class="form-select @error('country_id') is-invalid @enderror"
-              required
             >
-                <option value="">Select country</option>
+                <option value="">Worldwide</option>
                 @foreach($countries as $country)
                     <option
                       value="{{ $country->id }}"
@@ -85,10 +84,32 @@
             </div>
         </div>
 
-        {{-- Pickup Available --}}
-        {{-- Hidden fallback so unchecked submits 0 --}}
-        <input type="hidden" name="pickup_available" value="0">
+        {{-- Processing Time --}}
+        <div class="mb-3 mt-4">
+            <label for="processing_time_id" class="form-label">Processing Time <span class="text-danger">*</span></label>
+            <select
+              id="processing_time_id"
+              name="processing_time_id"
+              class="form-select @error('processing_time_id') is-invalid @enderror"
+              required
+            >
+                <option value="">Select processing time</option>
+                @foreach($processingTimes as $pt)
+                    <option
+                      value="{{ $pt->id }}"
+                      {{ old('processing_time_id', $shippingProfile->processing_time_id) == $pt->id ? 'selected' : '' }}
+                    >
+                      {{ $pt->name }} ({{ $pt->days }} day{{ $pt->days > 1 ? 's' : '' }})
+                    </option>
+                @endforeach
+            </select>
+            @error('processing_time_id')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
 
+        {{-- Pickup Available --}}
+        <input type="hidden" name="pickup_available" value="0">
         <div class="form-check form-switch mt-3">
             <input
               class="form-check-input @error('pickup_available') is-invalid @enderror"
@@ -109,7 +130,7 @@
         {{-- Form Actions --}}
         <div class="mt-4">
             <button type="submit" class="btn btn-success">Update Profile</button>
-            <a href="{{ route('shipping_profiles.index') }}" class="btn btn-secondary ms-2">Cancel</a>
+            <a href="{{ route('seller.shipping_profiles.index') }}" class="btn btn-secondary ms-2">Cancel</a>
         </div>
     </form>
 </div>
