@@ -317,7 +317,7 @@
               <i class="fa-brands fa-pinterest fa-lg text-danger"></i>
             </a>
             <button class="btn btn-link text-decoration-none p-0 ms-2" data-bs-toggle="modal" data-bs-target="#reportModal" title="Report this listing">
-              <i class="fa-solid fa-flag fa-lg text-muted"></i>
+              <i class="fa-solid fa-flag fa-lg text-muted"></i>Report
             </button>
           </div>
         </div>
