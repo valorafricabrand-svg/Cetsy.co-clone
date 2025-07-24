@@ -5,7 +5,7 @@ use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, ProductReportController
+    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController
 };
 
 use App\Http\Controllers\Admin\{
@@ -17,7 +17,8 @@ use App\Http\Controllers\Admin\{
     PaymentController,
     PaymentTypeController,
     CategoryAttributeController,
-    ProductReportController as AdminProductReportController
+    ProductReportController as AdminProductReportController,
+    AdminWalletController
 };
 
 use App\Http\Controllers\Seller\{
@@ -255,8 +256,11 @@ Route::patch(
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
+Route::resource('wallets', AdminWalletController::class)->except(['create','store']);
+        Route::delete('wallets/bulk', [AdminWalletController::class, 'bulk'])->name('wallets.bulk');
 
 
+ Route::patch('kyc/bulk', [KycController::class, 'bulk'])->name('kyc.bulk');
     Route::resource('users', UserController::class);
     Route::post('users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
@@ -314,13 +318,18 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 |--------------------------------------------------------------------------
 | Seller Routes - Subscription Management (No Active Subscription Required)
 |--------------------------------------------------------------------------
-
+*/
 Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
 
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::resource('deals', DealController::class)
          ->only(['index','create','store']);
+
+    Route::get ('/products/pricing/bulk', [BulkPriceController::class, 'create'])
+        ->name('products.pricing.bulk');
+    Route::post('/products/pricing/bulk', [BulkPriceController::class, 'store'])
+        ->name('products.pricing.bulk.store');
 
     // Subscription management - accessible without active subscription
     Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription');

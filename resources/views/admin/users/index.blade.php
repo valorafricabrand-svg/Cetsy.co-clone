@@ -88,7 +88,9 @@
 
         {{-- Pagination --}}
         <div class="mt-3">
-            {{ $users->withQueryString()->links() }}
+      
+
+               {{ $users->links('pagination::bootstrap-5') }}
         </div>
     @else
         <div class="alert alert-info">

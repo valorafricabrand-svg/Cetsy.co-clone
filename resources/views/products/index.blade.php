@@ -24,12 +24,19 @@
                     {{-- position-relative lets us place the badge --}}
                     <div class="card position-relative h-100 shadow-sm border-0 rounded-4">
 
-                        {{-- Inactive badge --}}
-                        @if(! $product->is_active)
-                            <span class="badge bg-warning text-dark position-absolute top-0 start-0 m-2">
-                                Inactive
-                            </span>
-                        @endif
+                     
+
+                         @php
+          switch($product->is_active) {
+            case 0: $label='Pending'; $class='warning'; break;
+            case 1: $label='Active';  $class='success'; break;
+            case 2: $label='Paused';  $class='secondary'; break;
+            default:$label='Closed';  $class='dark'; break;
+          }
+        @endphp
+        <span class="badge bg-{{ $class }} text-white position-absolute top-0 start-0 m-2">{{ $label }}</span>
+
+
 
                         {{-- Image --}}
                         @if($img = $product->media->first())
