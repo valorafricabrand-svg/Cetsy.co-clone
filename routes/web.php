@@ -5,7 +5,8 @@ use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController
+    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController,
+    ProductReportController
 };
 
 use App\Http\Controllers\Admin\{
