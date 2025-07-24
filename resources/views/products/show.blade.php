@@ -143,15 +143,60 @@
       @endif
 
       {{-- Listing Fee Prompt --}}
-{{-- Listing Fee Prompt / Suspension Notice --}}
+{{-- Listing Fee / Renewal / Suspension Prompt --}}
+@php
+    use Carbon\Carbon;
+@endphp
+
 @if($product->is_active === 3)
+    {{-- Suspended --}}
     <div class="alert alert-danger d-flex align-items-center mb-4">
         <i class="fas fa-ban me-2"></i>
         This listing has been suspended. Please contact the administrator for assistance.
     </div>
+
 @elseif($product->is_active === 2)
-    {{-- Paused: do not show subscription options --}}
+    {{-- Paused --}}
+    @if($product->next_due_date && Carbon::parse($product->next_due_date)->lte(Carbon::now()))
+        {{-- Subscription expired: allow renewal --}}
+        <div class="alert alert-warning d-flex align-items-center mb-4">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Your subscription expired on {{ Carbon::parse($product->next_due_date)->format('M d, Y') }}. Renew below to reactivate your listing.
+        </div>
+
+        @php
+            $baseFee    = $product->category?->listing_fee ?? 0;
+            $monthlyFee = $baseFee / 3;
+        @endphp
+
+        <div class="d-flex gap-2 mb-4">
+            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+                @csrf
+                <input type="hidden" name="plan" value="monthly">
+                <button class="btn btn-outline-success">
+                    Renew Monthly<br>
+                    <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
+                </button>
+            </form>
+            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+                @csrf
+                <input type="hidden" name="plan" value="4months">
+                <button class="btn btn-success">
+                    Renew 4‑Month<br>
+                    <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>
+                </button>
+            </form>
+        </div>
+    @else
+        {{-- Paused but not yet due --}}
+        <div class="alert alert-info d-flex align-items-center mb-4">
+            <i class="fas fa-pause me-2"></i>
+            This listing is paused. It will automatically become eligible for renewal on {{ Carbon::parse($product->next_due_date)->format('M d, Y') }}.
+        </div>
+    @endif
+
 @elseif($product->is_active !== 1)
+    {{-- Not active / pending --}}
     <div class="alert alert-warning d-flex align-items-center mb-4">
         <i class="fas fa-exclamation-triangle me-2"></i>
         This listing isn’t live yet. Pay the fee below to activate it.
