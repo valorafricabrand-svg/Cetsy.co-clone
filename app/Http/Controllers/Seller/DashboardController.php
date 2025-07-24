@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\Offer;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -58,11 +59,64 @@ public function index()
     $accepted_offers = Offer::whereIn('product_id', $productIds)->where('status', 'accepted')->count();
     $declined_offers = Offer::whereIn('product_id', $productIds)->where('status', 'declined')->count();
 
-    return view('seller.dashboard', compact('orders', 'products', 'total_orders', 'total_products', 'total_offers', 'accepted_offers', 'declined_offers'));
+    // Check holiday mode status
+    $activeProducts = Product::where('shop_id', $shopId)->where('is_active', 1)->count();
+    $pausedProducts = Product::where('shop_id', $shopId)->where('is_active', 2)->count();
+    $isHolidayMode = $pausedProducts > 0 && $activeProducts == 0;
+
+    return view('seller.dashboard', compact('orders', 'products', 'total_orders', 'total_products', 'total_offers', 'accepted_offers', 'declined_offers', 'isHolidayMode', 'activeProducts', 'pausedProducts'));
 }
 
+/**
+ * Enable holiday mode by pausing all active products
+ *
+ * @param Request $request
+ * @return \Illuminate\Http\RedirectResponse
+ */
+public function enableHolidayMode(Request $request)
+{
+    $user = Auth::user();
+    
+    if (!$user->shop) {
+        return redirect()->route('seller.shop.create')
+            ->with('warning', 'Please create a shop to continue.');
+    }
+    
+    $shopId = $user->shop->id;
+    
+    // Update all active products (is_active = 1) to paused status (is_active = 2)
+    $updatedCount = Product::where('shop_id', $shopId)
+        ->where('is_active', 1)
+        ->update(['is_active' => 2]);
+    
+    return redirect()->route('seller.dashboard')
+        ->with('success', "Holiday mode enabled! {$updatedCount} active products have been paused.");
+}
 
-
-
+/**
+ * Disable holiday mode by reactivating all paused products
+ *
+ * @param Request $request
+ * @return \Illuminate\Http\RedirectResponse
+ */
+public function disableHolidayMode(Request $request)
+{
+    $user = Auth::user();
+    
+    if (!$user->shop) {
+        return redirect()->route('seller.shop.create')
+            ->with('warning', 'Please create a shop to continue.');
+    }
+    
+    $shopId = $user->shop->id;
+    
+    // Update all paused products (is_active = 2) back to active status (is_active = 1)
+    $updatedCount = Product::where('shop_id', $shopId)
+        ->where('is_active', 2)
+        ->update(['is_active' => 1]);
+    
+    return redirect()->route('seller.dashboard')
+        ->with('success', "Holiday mode disabled! {$updatedCount} paused products have been reactivated.");
+}
 
 }

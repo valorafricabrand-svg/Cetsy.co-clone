@@ -358,6 +358,10 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     // Dashboard & Analytics
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+    
+    // Holiday Mode
+    Route::post('holiday-mode/enable', [SellerDashboard::class, 'enableHolidayMode'])->name('holiday-mode.enable');
+    Route::post('holiday-mode/disable', [SellerDashboard::class, 'disableHolidayMode'])->name('holiday-mode.disable');
 
     
     // Order Management
