@@ -51,6 +51,11 @@
         'url'   => route('admin.payments.index'),
         'icon'  => 'fas fa-shopping-cart',
       ],
+      [
+        'label' => 'Product Reports',
+        'url'   => route('admin.product-reports.index'),
+        'icon'  => 'fas fa-flag',
+      ],
     ];
   @endphp
 

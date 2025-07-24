@@ -86,35 +86,50 @@ public function depositForm()
 
 public function handlePayPalDeposit(Request $request)
 {
-
     $request->validate([
         'amount' => 'required|numeric|min:1',
     ]);
 
     try {
-
-        Wallet::create([
+        // Create wallet transaction
+        $wallet = Wallet::create([
             'user_id'     => Auth::id(),
             'credit'      => $request->amount,
             'debit'       => 0,
             'balance'     => 0, // Optionally recalculate this later
             'reference'   => strtoupper(uniqid('TXN-')),
             'method'      => 'paypal',
-            'description' => 'Manual deposit via ' . ucfirst($request->method),
+            'description' => 'Manual deposit via PayPal',
         ]);
+
+        // Send success email to user
+        try {
+            $user = Auth::user();
+            \Mail::to($user->email)->send(new \App\Mail\WalletDepositSuccessMail(
+                $user,
+                $wallet,
+                $request->amount,
+                $wallet->reference
+            ));
+        } catch (\Exception $emailException) {
+            // Log email sending error but don't fail the deposit process
+            \Log::error('Failed to send wallet deposit success email: ' . $emailException->getMessage(), [
+                'user_id' => Auth::id(),
+                'wallet_id' => $wallet->id,
+                'amount' => $request->amount,
+                'exception' => $emailException
+            ]);
+        }
 
         return response()->json(['success' => true]);
 
     } catch (\Exception $e) {
-
         return response()->json([
             'success' => false,
             'error'   => 'Something went wrong. ' . $e->getMessage()
         ], 500);
-
     }
-
- }
+}
 
 
            
