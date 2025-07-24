@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\{
     PaymentController,
     PaymentTypeController,
     CategoryAttributeController,
+    ProductReportController as AdminProductReportController,
     AdminWalletController
 };
 
@@ -87,6 +88,9 @@ Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_no
 
 Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
       ->name('products.pay-fee');
+
+// Product Reports
+Route::post('/product-reports', [ProductReportController::class, 'store'])->name('product-reports.store');
 
 
 Route::get('/pay-now-invoice/{total}', [OrderController::class, 'payNowInvoice'])->name('pay_now_invoice');
@@ -287,7 +291,8 @@ Route::resource('wallets', AdminWalletController::class)->except(['create','stor
 
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
-
+    
+    
     Route::post('subscriptions/deactivate-expired', [AdminSubscriptionController::class, 'deactivateExpired'])->name('subscriptions.deactivate-expired');
 
     Route::prefix('payout-requests')->name('payouts.')->controller(AdminPayoutRequestController::class)->group(function () {
@@ -302,6 +307,11 @@ Route::resource('wallets', AdminWalletController::class)->except(['create','stor
     Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
 //Payment Types
     Route::resource('payment-types', PaymentTypeController::class);
+
+    // Product Reports
+    Route::get('product-reports', [AdminProductReportController::class, 'index'])->name('product-reports.index');
+    Route::put('product-reports/{id}', [AdminProductReportController::class, 'update'])->name('product-reports.update');
+
 });
 
 /*
