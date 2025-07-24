@@ -254,7 +254,7 @@
   {{-- Variations Partial --}}
   @include('products._variation',['product'=>$product])
 
-  {{-- Current Images --}}
+    {{-- Current Images --}}
   <div class="card mb-4 shadow-sm">
     <div class="card-header bg-light"><h5>Current Images</h5></div>
     <div class="card-body">
@@ -294,41 +294,13 @@
       @endif
     </div>
   </div>
+  
+  @include('products._edit_media')
 
-  {{-- Upload & Preview New Images --}}
-  <div x-data="imageUploadSortable()" class="card shadow-sm mb-5">
-    <div class="card-header bg-light"><h5>Upload & Preview New Images</h5></div>
-    <form action="{{ route('media.upload',$product) }}" method="POST" enctype="multipart/form-data" class="card-body">
-      @csrf
-      <div class="border border-dashed rounded-3 py-5 text-center mb-4"
-           @click="$refs.fileInput.click()" @drop.prevent="handleDrop" @dragover.prevent style="cursor:pointer;">
-        <p class="text-muted mb-0">Drag & drop images here or click to select</p>
-        <input type="file" multiple accept="image/*" class="d-none" x-ref="fileInput"
-               @change="handleFiles($event.target.files)" name="media[]">
-      </div>
-      <template x-if="previews.length">
-        <div class="row g-3 mb-4" id="previewList">
-          <template x-for="(file,i) in previews" :key="file.id">
-            <div class="col-6 col-sm-4 col-md-3">
-              <div class="position-relative rounded overflow-hidden" style="height:140px;">
-                <img :src="file.url" class="w-100 h-100 object-fit-cover">
-                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
-                        @click.prevent="removeFile(i)"><i class="fas fa-times"></i></button>
-              </div>
-            </div>
-          </template>
-        </div>
-      </template>
-      <div class="d-grid">
-        <button class="btn btn-primary rounded-pill">
-          <i class="fas fa-upload me-1"></i> Upload Images
-        </button>
-      </div>
-    </form>
-  </div>
+
 </div>
 
-{{-- Image Preview Modal --}}
+  {{-- Image Preview Modal --}}
 <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 bg-transparent">
@@ -339,6 +311,7 @@
     </div>
   </div>
 </div>
+
 @endsection
 
 @push('scripts')
