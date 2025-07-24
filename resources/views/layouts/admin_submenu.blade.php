@@ -56,6 +56,11 @@
         'url'   => route('admin.product-reports.index'),
         'icon'  => 'fas fa-flag',
       ],
+      [
+        'label' => 'Reviews',
+        'url'   => route('admin.reviews.index'),
+        'icon'  => 'fas fa-star',
+      ],
     ];
   @endphp
 

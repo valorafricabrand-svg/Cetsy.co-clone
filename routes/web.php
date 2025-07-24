@@ -292,6 +292,7 @@ Route::resource('wallets', AdminWalletController::class)->except(['create','stor
 
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
+    Route::get('reviews', [\App\Http\Controllers\Admin\ReviewController::class, 'index'])->name('reviews.index');
     
     
     Route::post('subscriptions/deactivate-expired', [AdminSubscriptionController::class, 'deactivateExpired'])->name('subscriptions.deactivate-expired');
