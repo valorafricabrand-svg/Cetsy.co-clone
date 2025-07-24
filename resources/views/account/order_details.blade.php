@@ -173,24 +173,26 @@
                     <td>{{ $loop->iteration }}</td>
                       <td>
         @if($item->product->featured_image)
+          <a href="{{ route('listing.show', $item->product->slug) }}" target="_blank">
   <img 
     src="{{ $item->product->featured_image }}"
     alt="{{ $item->name }}"
     class="img-fluid rounded"
     style="max-width:100px; height:auto; object-fit:cover;"
-  >
+  ></a>
 @else
+  <a href="{{ route('listing.show', $item->product->slug) }}" target="_blank">
   <img 
     src="{{ asset('storage/' . ($item->product->media->first()->url ?? 'placeholder.jpg')) }}"
     alt="{{ $item->product->name }}"
     class="img-fluid rounded"
     style="max-width:100px; height:auto; object-fit:cover;"
-  >
+  ></a>
 @endif
 
                                 </td>
                     <td>{{ optional($item->product)->name ?? 'N/A' }}</td>
-                    <td>{{ $item->variation_details ?? '-' }}</td>
+                    <td>{{ $item->variation->type ?? '-' }} : {{ $item->variation->variation_option ?? '-' }} </td>
                     <td>{{ $item->quantity }}</td>
                     <td>{{ get_currency() }} {{ number_format($item->price,2) }}</td>
                     <td>{{ $profile }}</td>

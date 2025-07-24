@@ -4,17 +4,33 @@
 @section('title', $product->name .' – Item Details')
 
 @section('main')
+@php
+    /* Build a flat list from ProductVariations so we can force ONE choice only */
+    $flatVariations = collect($product->productVariations ?? $product->variations ?? [])
+        ->map(function ($v) {
+            return [
+                'id'    => $v->id,
+                'type'  => $v->type ?: 'Option',
+                'opt'   => $v->variation_option ?? $v->name ?? 'Value',
+                'price' => (float) ($v->price ?? $v->price_override ?? 0),
+                'stock' => (int) ($v->stock ?? 0),
+                'sku'   => $v->sku ?? null,
+                'img'   => $v->image ? asset('storage/'.$v->image) : null,
+            ];
+        });
+
+    // Group ONLY for display headers; radios still share ONE name="product_variation_id"
+    $groupedVariations = $flatVariations->groupBy('type');
+@endphp
+
 <section class="py-6" style="background:#f8faf9">
   <div class="container"
        x-data="{
          qty: 1,
          busy: false,
          shippingProfileId: {{ $product->shippingProfiles->firstWhere('is_default', true)->id ?? 'null' }},
-         share(url) {
-           navigator.clipboard.writeText(url)
-             .then(() => toast('Link copied to clipboard!'))
-             .catch(() => toast('Unable to copy link','danger'));
-         }
+         dec(){ this.qty = Math.max(1, this.qty-1) },
+         inc(){ this.qty++ }
        }">
 
     {{-- Flash --}}
@@ -25,15 +41,7 @@
       </div>
     @endif
 
-
-
-
     <div class="row g-lg-5">
-
-
-
-
-
       {{-- GALLERY ------------------------------------------------------- --}}
       <div class="col-lg-7" data-aos="fade-right">
         <div id="productCarousel" class="carousel slide shadow-sm rounded-4 overflow-hidden mb-3" data-bs-ride="carousel">
@@ -86,25 +94,25 @@
             </small>
           </div>
 
- @php
-    $basePrice = $product->price;
-    $finalPrice = $product->discounted_price;
-@endphp
+          @php
+            $basePrice  = $product->price;
+            $finalPrice = $product->discounted_price;
+          @endphp
 
-@if($finalPrice < $basePrice)
-  <div class="d-flex align-items-baseline gap-3 mb-3">
-    <span class="fw-bold text-success">
-      {{ get_currency() }} {{ number_format($finalPrice, 2) }}
-    </span>
-    <span class="text-muted text-decoration-line-through">
-      {{ get_currency() }} {{ number_format($basePrice, 2) }}
-    </span>
-  </div>
-@else
-  <p class="fw-bold text-success mb-3">
-    {{ get_currency() }} {{ number_format($basePrice, 2) }}
-  </p>
-@endif
+          @if($finalPrice < $basePrice)
+            <div class="d-flex align-items-baseline gap-3 mb-3">
+              <span class="fw-bold text-success">
+                {{ get_currency() }} {{ number_format($finalPrice, 2) }}
+              </span>
+              <span class="text-muted text-decoration-line-through">
+                {{ get_currency() }} {{ number_format($basePrice, 2) }}
+              </span>
+            </div>
+          @else
+            <p class="fw-bold text-success mb-3">
+              {{ get_currency() }} {{ number_format($basePrice, 2) }}
+            </p>
+          @endif
 
           {{-- Shop & Stock badges --}}
           <div class="mb-3 d-flex flex-wrap gap-2">
@@ -115,10 +123,10 @@
               </a>
             </span>
 
-             @if($product->type == 'physical')
-             <span class="badge {{ $product->stock > 0 ? 'bg-primary bg-opacity-10 text-primary' : 'bg-danger bg-opacity-10 text-danger' }}">
-              {{ $product->stock > 0 ? 'In Stock' : 'Out of Stock' }}
-            </span> 
+            @if($product->type == 'physical')
+              <span class="badge {{ $product->stock > 0 ? 'bg-primary bg-opacity-10 text-primary' : 'bg-danger bg-opacity-10 text-danger' }}">
+                {{ $product->stock > 0 ? 'In Stock' : 'Out of Stock' }}
+              </span>
             @endif
           </div>
 
@@ -131,9 +139,6 @@
                 <i class="fa-regular fa-heart{{ $isFavorited ? ' text-danger fa-solid' : '' }}"> </i> Favourites
               </button>
             </form>
-            <!-- <button class="btn btn-outline-secondary" @click="share('{{ url()->current() }}')" data-bs-toggle="tooltip" title="Copy link">
-              <i class="fa-solid fa-share-nodes"></i>
-            </button> -->
             <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#offerModal">
               <i class="fa-solid fa-hand-holding-dollar me-1"></i>Make an offer
             </button>
@@ -142,7 +147,7 @@
             </button>
           </div>
 
-          {{-- Highlights (bullet list) --}}
+          {{-- Highlights --}}
           @if($product->highlights)
             <ul class="list-unstyled mb-4 small">
               @foreach($product->highlights as $highlight)
@@ -167,30 +172,73 @@
             @endif
           </p>
 
-          {{-- Country of origin --}}
+          {{-- Country --}}
           @if($product->country)
             <p class="mb-4 small text-muted">
-              <i class="fa-solid fa-globe-africa me-1"></i>Made in {{ $product->country->name }}
+              <i class="fa-solid fa-globe-africa me-1"></i>Ship from {{ $product->country->name }}
             </p>
           @endif
 
-          {{-- ADD-TO-CART BLOCK (physical/digital) --}}
+          {{-- ADD-TO-CART BLOCK ----------------------------------------- --}}
           @if($product->type !== 'service')
             <div class="border rounded-4 p-4 bg-light-subtle">
+
+              {{-- Variations: ONE radio required --}}
+              @if($groupedVariations->isNotEmpty())
+                <div class="mb-3">
+                  <label class="form-label fw-semibold d-block">Select Variation</label>
+
+                  @foreach($groupedVariations as $type => $options)
+                    <div class="mb-2">
+                      <span class="small text-muted d-block mb-1">{{ $type }}</span>
+                      <div class="d-flex flex-column gap-2">
+                        @foreach($options as $opt)
+                          <label class="border rounded-3 p-2 d-flex align-items-start gap-2 {{ $opt['stock'] <= 0 ? 'opacity-50' : 'cursor-pointer' }}">
+                            <input type="radio"
+                                   name="product_variation_id"
+                                   value="{{ $opt['id'] }}"
+                                   class="form-check-input mt-1"
+                                   form="addCartForm"
+                                   {{ $opt['stock'] <= 0 ? 'disabled' : '' }}
+                                   required>
+                            <div class="flex-grow-1">
+                              <span class="fw-semibold">{{ $opt['opt'] }}</span>
+                              @if($opt['sku'])
+                                <span class="badge bg-secondary bg-opacity-25 text-secondary ms-2">SKU: {{ $opt['sku'] }}</span>
+                              @endif
+                              @if($opt['price'] != 0)
+                                <span class="d-block small text-primary fw-semibold">
+                                  {{ get_currency() }} {{ number_format($opt['price'], 2) }}
+                                </span>
+                              @endif
+                              @if($opt['stock'] <= 0)
+                                <span class="badge bg-danger bg-opacity-25 text-danger">Out of stock</span>
+                              @endif
+                            </div>
+                            @if($opt['img'])
+                              <img src="{{ $opt['img'] }}" alt="{{ $opt['opt'] }}" style="width:52px;height:52px;object-fit:cover" class="rounded">
+                            @endif
+                          </label>
+                        @endforeach
+                      </div>
+                    </div>
+                  @endforeach
+                </div>
+              @endif
+
               {{-- Quantity --}}
               <div class="mb-3 d-flex align-items-center gap-2">
                 <span class="fw-semibold">Qty</span>
-                <button class="btn btn-outline-secondary btn-sm"
-                        @click="qty = Math.max(1, qty - 1)" :disabled="qty <= 1">−</button>
+                <button class="btn btn-outline-secondary btn-sm" @click="dec()" :disabled="qty <= 1">−</button>
                 <input type="text" class="form-control text-center" style="width:60px" :value="qty" readonly>
-                <button class="btn btn-outline-secondary btn-sm" @click="qty++">+</button>
+                <button class="btn btn-outline-secondary btn-sm" @click="inc()">+</button>
               </div>
 
-              {{-- Shipping profile --}}
+              {{-- Shipping --}}
               @if($product->shippingProfiles->count())
                 <div class="mb-3">
                   <label class="form-label fw-semibold">Shipping</label>
-                  <select class="form-select" x-model="shippingProfileId">
+                  <select class="form-select" x-model="shippingProfileId" form="addCartForm">
                     @foreach($product->shippingProfiles as $profile)
                       <option value="{{ $profile->id }}">
                         {{ $profile->name }} – {{ get_currency() }} {{ number_format($profile->base_rate, 2) }}
@@ -200,23 +248,30 @@
                 </div>
               @endif
 
-              {{-- Add to Cart / Buy Now --}}
+              {{-- Forms --}}
               <div class="d-grid gap-2">
-                <form method="POST" action="{{ route('cart.add') }}" @submit.prevent="busy = true; $el.submit()">
+                {{-- Add to Cart --}}
+                <form id="addCartForm" method="POST" action="{{ route('cart.add') }}"
+                      @submit.prevent="busy = true; $el.submit()">
                   @csrf
                   <input type="hidden" name="product_id" value="{{ $product->id }}">
                   <input type="hidden" name="quantity" :value="qty">
                   <input type="hidden" name="shipping_profile_id" :value="shippingProfileId">
+                  {{-- product_variation_id comes from the radio above --}}
                   <button type="submit" class="btn btn-success btn-lg w-100" :disabled="busy">
                     <i class="fa-solid fa-cart-plus me-1"></i>Add to Cart
                   </button>
                 </form>
 
-                <form method="POST" action="{{ route('cart.buy') }}" @submit.prevent="busy = true; $el.submit()">
+                {{-- Buy Now --}}
+                <form id="buyNowForm" method="POST" action="{{ route('cart.buy') }}"
+                      @submit.prevent="busy = true; $el.submit()">
                   @csrf
                   <input type="hidden" name="product_id" value="{{ $product->id }}">
                   <input type="hidden" name="quantity" :value="qty">
                   <input type="hidden" name="shipping_profile_id" :value="shippingProfileId">
+                  <input type="hidden" name="product_variation_id" value=""
+                         x-init="$watch(() => document.querySelector('input[name=product_variation_id]:checked')?.value, v => $el.value = v);">
                   <button type="submit" class="btn btn-primary btn-lg w-100" :disabled="busy">
                     <i class="fa-solid fa-bolt me-1"></i>Buy Now
                   </button>
@@ -224,7 +279,7 @@
               </div>
             </div>
           @else
-            {{-- Service Listing notice --}}
+            {{-- Service notice --}}
             <div class="card border-info border-start-4 shadow-sm mb-4">
               <div class="card-body d-flex flex-wrap align-items-center gap-3">
                 <div class="bg-info bg-opacity-10 text-info rounded-circle d-flex align-items-center justify-content-center"
@@ -249,7 +304,7 @@
             </div>
           @endif
 
-          {{-- Social share --}}
+          {{-- Share --}}
           <div class="mt-3 small">
             <span class="me-1">Share:</span>
             <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" target="_blank">
@@ -291,12 +346,10 @@
     </ul>
 
     <div class="tab-content bg-white p-4 border-bottom border-start border-end rounded-bottom-4 shadow-sm" id="itemTabContent">
-      {{-- Description Pane --}}
       <div class="tab-pane fade show active" id="desc-pane" role="tabpanel">
         {!! $product->description !!}
       </div>
 
-      {{-- Shipping & Returns Pane --}}
       <div class="tab-pane fade" id="shipping-pane" role="tabpanel">
         <h5 class="fw-semibold mb-3">Shipping policies</h5>
         <p class="small text-muted">{{ $shopPolicies->shipping ?? 'Shipping details coming soon.' }}</p>
@@ -304,7 +357,6 @@
         <p class="small text-muted">{{ $shopPolicies->returns ?? 'Returns policy coming soon.' }}</p>
       </div>
 
-      {{-- Reviews Pane --}}
       <div class="tab-pane fade" id="reviews-pane" role="tabpanel">
         @forelse($reviews as $review)
           <div class="border-bottom py-3">
@@ -322,7 +374,6 @@
         @endforelse
       </div>
 
-      {{-- FAQ Pane --}}
       <div class="tab-pane fade" id="faq-pane" role="tabpanel">
         <div class="accordion" id="faqAccordion">
           @forelse($faqs as $i => $faq)
@@ -345,7 +396,7 @@
       </div>
     </div>
 
-    {{-- CAROUSELS -------------------------------------------------------- --}}
+    {{-- MORE FROM SHOP -------------------------------------------------- --}}
     @if($moreFromShop->count())
       <h3 class="h5 fw-bold mt-5 mb-3">More from {{ $product->shop->name }}</h3>
       <div class="row g-3">
@@ -357,6 +408,7 @@
       </div>
     @endif
 
+    {{-- RELATED --------------------------------------------------------- --}}
     @if($relatedProducts->count())
       <h3 class="h5 fw-bold mt-5 mb-3">Related items</h3>
       <div class="row g-3">
@@ -423,18 +475,19 @@
       integrity="sha384-PU0QFv1kXlz9BM/UX5EwyV/ivxVMolZTUsjoeetfYxNdUswzqnMHipjInu6bcVCc"
       crossorigin="anonymous">
 <style>
-  .thumb.active,
-  .thumb:hover { border:2px solid #198754!important }
+  .thumb.active, .thumb:hover { border:2px solid #198754!important }
   .carousel-inner img { transition:.4s }
 </style>
 @endpush
 
 @push('scripts')
+<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"
         integrity="sha384-xKDJcyOgCjL2mK9ZcYnmQgSJvMREh4baN4GckSbnREV7mY4T0kT2LSpJxErL8xP8"
-        crossorigin="anonymous">
-</script>
+        crossorigin="anonymous"></script>
 <script>
+  document.addEventListener('DOMContentLoaded', () => AOS.init({ duration:800, once:true }));
+
   const toast = (msg, type = 'success') => {
     const el = document.createElement('div');
     el.className = `toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3`;
@@ -445,6 +498,5 @@
     document.body.appendChild(el);
     new bootstrap.Toast(el,{delay:3000}).show();
   };
-  document.addEventListener('DOMContentLoaded', () => AOS.init({ duration:800, once:true }));
 </script>
 @endpush

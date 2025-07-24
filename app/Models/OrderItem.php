@@ -46,4 +46,10 @@ class OrderItem extends Model
     {
         return $this->belongsTo(ShippingProfile::class, 'shipping_profile_id');
     }
+
+
+     public function variation()
+    {
+        return $this->belongsTo(ProductVariation::class, 'product_variation_id');
+    }
 }

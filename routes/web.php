@@ -5,7 +5,7 @@ use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController
+    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController
 };
 
 use App\Http\Controllers\Admin\{
@@ -315,6 +315,11 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::resource('deals', DealController::class)
          ->only(['index','create','store']);
+
+    Route::get ('/products/pricing/bulk', [BulkPriceController::class, 'create'])
+        ->name('products.pricing.bulk');
+    Route::post('/products/pricing/bulk', [BulkPriceController::class, 'store'])
+        ->name('products.pricing.bulk.store');
 
     // Subscription management - accessible without active subscription
     Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription');
