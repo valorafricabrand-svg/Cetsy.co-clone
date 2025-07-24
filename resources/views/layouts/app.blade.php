@@ -71,6 +71,7 @@
 
     @yield('page-css')
       @yield('styles')
+      @stack('styles')
 
     @if(get_option('additional_css'))
     <style type="text/css">
@@ -288,6 +289,7 @@
 @yield('page-js')
 @yield('scripts')
 @stack('scripts')
+
 
 @if(get_option('additional_js') && get_option('additional_js') !== 'additional_js' )
 {!! get_option('additional_js') !!}}

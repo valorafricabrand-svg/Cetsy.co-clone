@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\ProductVariation;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
 class CartController extends Controller
@@ -14,32 +16,27 @@ class CartController extends Controller
      */
     public function addToCart(Request $request): RedirectResponse
     {
-
-
-
         $data = $this->validateCartData($request);
-
         $this->addItemToSessionCart($data);
 
         $link    = route('cart.view');
         $message = 'Product added to cart successfully! '
                  . '<a href="'. $link .'" class="text-decoration-underline">View Cart</a>';
 
-        return redirect()->back()->with('success', $message);
+        return back()->with('success', $message);
     }
 
     /**
-     * "Buy Now": add to cart then redirect straight to checkout.
+     * "Buy Now": add to cart then go to cart/checkout.
      */
     public function addToBuy(Request $request): RedirectResponse
     {
         $data = $this->validateCartData($request);
-
         $this->addItemToSessionCart($data);
 
         return redirect()
-               ->route('cart.view')
-               ->with('success', 'Proceeding to checkout...');
+            ->route('cart.view')
+            ->with('success', 'Proceeding to checkout...');
     }
 
     /**
@@ -52,27 +49,35 @@ class CartController extends Controller
     }
 
     /**
-     * Update product quantity in cart (increase/decrease).
+     * Update quantity of a cart row.
      */
-    public function updateCart(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
+    public function updateCart(Request $request): RedirectResponse|JsonResponse
     {
         $request->validate([
-            'id'     => 'required|integer',
-            'action' => 'required|in:increase,decrease',
+            'row_id' => 'required|string',
+            'action' => 'required|in:increase,decrease,set',
+            'qty'    => 'nullable|integer|min:1',
         ]);
 
         $cart = session()->get('cart', []);
 
-        if (! isset($cart[$request->id])) {
+        if (! isset($cart[$request->row_id])) {
             return $request->expectsJson()
                 ? response()->json(['success' => false, 'message' => 'Item not in cart.'], 404)
                 : redirect()->route('cart.view')->withErrors('Item not in cart.');
         }
 
-        match ($request->action) {
-            'increase' => $cart[$request->id]['quantity']++,
-            'decrease' => $this->decreaseOrRemove($cart, $request->id),
-        };
+        switch ($request->action) {
+            case 'increase':
+                $cart[$request->row_id]['quantity']++;
+                break;
+            case 'decrease':
+                $this->decreaseOrRemove($cart, $request->row_id);
+                break;
+            case 'set':
+                $cart[$request->row_id]['quantity'] = max(1, (int) $request->qty);
+                break;
+        }
 
         session()->put('cart', $cart);
 
@@ -84,20 +89,20 @@ class CartController extends Controller
     }
 
     /**
-     * Update shipping profile selections for items in the cart.
+     * Update shipping profile selections for rows.
      */
     public function updateShippingSelection(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'shipping_profile_ids' => 'required|array',
+            'shipping_profile_ids'   => 'required|array',
             'shipping_profile_ids.*' => 'integer|exists:shipping_profiles,id',
         ]);
 
         $cart = session()->get('cart', []);
 
-        foreach ($cart as $productId => &$item) {
-            if (isset($data['shipping_profile_ids'][$productId])) {
-                $item['selected_shipping_profile_id'] = (int) $data['shipping_profile_ids'][$productId];
+        foreach ($cart as $rowId => &$item) {
+            if (isset($data['shipping_profile_ids'][$rowId])) {
+                $item['selected_shipping_profile_id'] = (int) $data['shipping_profile_ids'][$rowId];
             }
         }
         unset($item);
@@ -105,21 +110,21 @@ class CartController extends Controller
         session()->put('cart', $cart);
 
         return redirect()
-               ->route('cart.checkout')
-               ->with('success', 'Shipping selections updated – proceed to checkout.');
+            ->route('cart.checkout')
+            ->with('success', 'Shipping selections updated – proceed to checkout.');
     }
 
     /**
-     * Remove product from cart.
+     * Remove a row from the cart.
      */
     public function removeFromCart(Request $request): RedirectResponse
     {
-        $request->validate(['id' => 'required|integer']);
+        $request->validate(['row_id' => 'required|string']);
 
         $cart = session()->get('cart', []);
 
-        if (isset($cart[$request->id])) {
-            unset($cart[$request->id]);
+        if (isset($cart[$request->row_id])) {
+            unset($cart[$request->row_id]);
             session()->put('cart', $cart);
         }
 
@@ -127,7 +132,7 @@ class CartController extends Controller
     }
 
     /**
-     * Display the checkout page.
+     * Checkout page.
      */
     public function checkout(): View
     {
@@ -135,56 +140,63 @@ class CartController extends Controller
         return view('checkout.index', compact('cart'));
     }
 
-    /**
-     * Validate the request data for adding/updating cart items.
-     */
+    /* -----------------------------------------------------------------
+     | Internals
+     | ----------------------------------------------------------------- */
+
     private function validateCartData(Request $request): array
     {
         return $request->validate([
-            'product_id'          => 'required|integer|exists:products,id',
-            'quantity'            => 'nullable|integer|min:1',
-            'size_id'             => 'nullable|integer',
-            'shipping_profile_id' => 'nullable|integer|exists:shipping_profiles,id',
+            'product_id'           => 'required|integer|exists:products,id',
+            'product_variation_id' => 'nullable|integer|exists:product_variations,id',
+            'quantity'             => 'nullable|integer|min:1',
+            'shipping_profile_id'  => 'nullable|integer|exists:shipping_profiles,id',
         ]);
     }
 
-    /**
-     * Centralized logic for adding or updating an item in the session cart.
-     */
     private function addItemToSessionCart(array $data): void
     {
-        $product = Product::with('shippingProfiles', 'media')
-                          ->findOrFail($data['product_id']);
+        /** @var Product $product */
+        $product = Product::with(['shippingProfiles', 'media'])->findOrFail($data['product_id']);
 
-        $quantity = $data['quantity'] ?? 1;
-        $sizeId   = $data['size_id'] ?? null;
-        $defaultProfileId = $product->shippingProfiles
-                                    ->firstWhere('is_default', true)?->id;
-        $chosenProfile = $data['shipping_profile_id'] 
-                         ?? $defaultProfileId;
+        /** @var ProductVariation|null $variation */
+        $variation = null;
+        if (!empty($data['product_variation_id'])) {
+            $variation = ProductVariation::where('product_id', $product->id)
+                                         ->findOrFail($data['product_variation_id']);
+        }
+
+        $qty              = $data['quantity'] ?? 1;
+        $defaultProfileId = $product->shippingProfiles->firstWhere('is_default', true)?->id;
+        $chosenProfile    = $data['shipping_profile_id'] ?? $defaultProfileId;
+
+        // Unique row id (product-only or product-variation combo)
+        $rowId = $product->id . ($variation ? '-'.$variation->id : '');
 
         $cart = session()->get('cart', []);
 
-        if (isset($cart[$product->id])) {
-            // Already in cart: bump quantity and update profile
-            $cart[$product->id]['quantity'] += $quantity;
-            $cart[$product->id]['selected_shipping_profile_id'] = $chosenProfile;
+        if (isset($cart[$rowId])) {
+            $cart[$rowId]['quantity'] += $qty;
+            $cart[$rowId]['selected_shipping_profile_id'] = $chosenProfile;
         } else {
-            // New item in cart
-            $cart[$product->id] = [
-                'id'                           => $product->id,
+            $price = $this->resolvePrice($product, $variation); // use variation if available else product
+
+            $cart[$rowId] = [
+                'row_id'                       => $rowId,
+                'product_id'                   => $product->id,
+                'product_variation_id'         => $variation?->id,
                 'name'                         => $product->name,
-                'quantity'                     => $quantity,
-                'price'                        => $product->discounted_price,
-                'size_id'                      => $sizeId,
-                'photo'                        => $product->media->first()?->url,
+                'variation'                    => $variation?->name ?? $variation?->variation_option ?? null,
+                'quantity'                     => $qty,
+                'price'                        => $price,
+                'photo'                        => $this->resolvePhoto($product, $variation),
                 'shipping_profiles'            => $product->shippingProfiles
-                                                     ->map(fn($p) => [
-                                                         'id'         => $p->id,
-                                                         'name'       => $p->name,
-                                                         'base_rate'  => $p->base_rate,
-                                                         'is_default' => $p->is_default,
-                                                     ])->toArray(),
+                                                        ->map(fn($p) => [
+                                                            'id'         => $p->id,
+                                                            'name'       => $p->name,
+                                                            'base_rate'  => $p->base_rate,
+                                                            'is_default' => $p->is_default,
+                                                        ])->toArray(),
                 'selected_shipping_profile_id' => $chosenProfile,
             ];
         }
@@ -193,14 +205,45 @@ class CartController extends Controller
     }
 
     /**
-     * Decrease quantity or remove item if it drops below 1.
+     * Prefer variation price; else product discounted price, else product price.
      */
-    private function decreaseOrRemove(array &$cart, int $id): void
+    private function resolvePrice(Product $product, ?ProductVariation $variation): float
     {
-        $cart[$id]['quantity']--;
+        if ($variation) {
+            // common fields to check
+            if (!is_null($variation->price)) {
+                return (float) $variation->price;
+            }
+            if (!is_null($variation->price_override ?? null)) {
+                return (float) $variation->price_override;
+            }
+            if (isset($variation->price_diff) && $variation->price_diff != 0) {
+                return (float) ($product->discounted_price ?? $product->price) + (float) $variation->price_diff;
+            }
+        }
 
-        if ($cart[$id]['quantity'] < 1) {
-            unset($cart[$id]);
+        return (float) ($product->discounted_price ?? $product->price);
+    }
+
+    /**
+     * Choose best image: variation image > product first media > null.
+     */
+    private function resolvePhoto(Product $product, ?ProductVariation $variation): ?string
+    {
+        if ($variation && $variation->image) {
+            return asset('storage/'.$variation->image);
+        }
+
+        $first = $product->media->first()?->url;
+        return $first ? asset('storage/'.$first) : null;
+    }
+
+    private function decreaseOrRemove(array &$cart, string $rowId): void
+    {
+        $cart[$rowId]['quantity']--;
+
+        if ($cart[$rowId]['quantity'] < 1) {
+            unset($cart[$rowId]);
         }
     }
 }

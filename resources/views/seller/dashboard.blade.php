@@ -137,17 +137,15 @@
                     <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift position-relative">
 
                         {{-- Inactive & pay badge --}}
-                        @if(! $product->is_active)
-                            <span class="status-badge">Inactive</span>
-                            @php $fee = $product->category->listing_fee ?? 0; @endphp
-                            <form method="POST" action="{{ route('products.pay-fee',$product) }}"
-                                  class="position-absolute end-0 bottom-0 m-2">
-                                @csrf
-                                <button class="btn btn-sm brand-bg shadow-sm">
-                                    Pay {{ get_currency() }} {{ number_format($fee,2) }}
-                                </button>
-                            </form>
-                        @endif
+                           @php
+          switch($product->is_active) {
+            case 0: $label='Pending'; $class='warning'; break;
+            case 1: $label='Active';  $class='success'; break;
+            case 2: $label='Paused';  $class='secondary'; break;
+            default:$label='Closed';  $class='dark'; break;
+          }
+        @endphp
+        <span class="badge bg-{{ $class }} text-white position-absolute top-0 start-0 m-2">{{ $label }}</span>
 
                         {{-- Image --}}
                         @if($img = $product->media->first())
