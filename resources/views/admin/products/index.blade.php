@@ -21,7 +21,7 @@
             <form method="GET" action="{{ route('admin.products.index') }}" class="row g-3">
                 <div class="col-md-4">
                     <label for="search" class="form-label">Search Products</label>
-                    <input type="text" id="search" name="search" class="form-control" 
+                    <input type="text" id="search" name="search" class="form-control"
                            value="{{ request('search') }}" placeholder="Search by name or description...">
                 </div>
                 <div class="col-md-3">
@@ -81,6 +81,16 @@
                     </thead>
                     <tbody>
                         @foreach($products as $product)
+                            @php
+                                $statusMap = [
+                                    0 => ['Inactive',  'secondary'],
+                                    1 => ['Active',    'success'],
+                                    2 => ['Paused',    'warning'],
+                                    3 => ['Suspended', 'secondary'],
+                                ];
+                                [$label, $class] = $statusMap[$product->is_active] 
+                                    ?? ['Closed', 'dark'];
+                            @endphp
                             <tr>
                                 <th scope="row">
                                     {{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}
@@ -88,12 +98,12 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         @if($product->media->count() > 0)
-                                            <img src="{{ Storage::url($product->media->first()->url) }}" 
-                                                 alt="{{ $product->name }}" 
-                                                 class="rounded me-3" 
+                                            <img src="{{ Storage::url($product->media->first()->url) }}"
+                                                 alt="{{ $product->name }}"
+                                                 class="rounded me-3"
                                                  style="width: 50px; height: 50px; object-fit: cover;">
                                         @else
-                                            <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
+                                            <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center"
                                                  style="width: 50px; height: 50px;">
                                                 <i class="fas fa-image text-muted"></i>
                                             </div>
@@ -101,11 +111,7 @@
                                         <div>
                                             <h6 class="mb-0">{{ Str::limit($product->name, 40) }}</h6>
                                             <small class="text-muted">
-                                                @if($product->category)
-                                                    {{ $product->category->name }}
-                                                @else
-                                                    No Category
-                                                @endif
+                                                {{ $product->category->name ?? 'No Category' }}
                                             </small>
                                         </div>
                                     </div>
@@ -123,8 +129,7 @@
                                 <td>
                                     @if($product->discount_price)
                                         <div>
-                                            <span class="text-danger fw-bold">KES {{ number_format($product->discount_price) }}</span>
-                                            <br>
+                                            <span class="text-danger fw-bold">KES {{ number_format($product->discount_price) }}</span><br>
                                             <small class="text-muted text-decoration-line-through">
                                                 KES {{ number_format($product->price) }}
                                             </small>
@@ -145,13 +150,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($product->is_active == 1)
-                                        <span class="badge bg-success">Active</span>
-                                    @elseif($product->is_active == 2)
-                                        <span class="badge bg-warning">Pause</span>
-                                    @else
-                                        <span class="badge bg-secondary">Inactive</span>
-                                    @endif
+                                    <span class="badge bg-{{ $class }}">{{ $label }}</span>
                                 </td>
                                 <td>
                                     <small class="text-muted">
@@ -162,11 +161,9 @@
                                     <a href="{{ route('admin.products.show', $product) }}" class="btn btn-sm btn-outline-secondary me-1" title="View">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    
-                                    {{-- Status Management Button --}}
-                                    <button type="button" class="btn btn-sm btn-outline-primary me-1" 
+                                    <button type="button" class="btn btn-sm btn-outline-primary me-1"
                                             title="Manage Status"
-                                            data-bs-toggle="modal" 
+                                            data-bs-toggle="modal"
                                             data-bs-target="#statusModal{{ $product->id }}">
                                         <i class="fas fa-cog"></i>
                                     </button>
@@ -180,9 +177,7 @@
 
         {{-- Pagination --}}
         <div class="mt-4">
-          
-
-              {{ $products->links('pagination::bootstrap-5') }}
+            {{ $products->links('pagination::bootstrap-5') }}
         </div>
     @else
         <div class="card shadow-sm">
@@ -203,13 +198,13 @@
 
 {{-- Status Management Modals --}}
 @foreach($products as $product)
+   @foreach($products as $product)
+    <!-- Status Management Modal -->
     <div class="modal fade" id="statusModal{{ $product->id }}" tabindex="-1" aria-labelledby="statusModalLabel{{ $product->id }}" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="statusModalLabel{{ $product->id }}">
-                        Manage Product Status
-                    </h5>
+                    <h5 class="modal-title" id="statusModalLabel{{ $product->id }}">Manage Product Status</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form action="{{ route('admin.products.toggle-status', $product) }}" method="POST">
@@ -219,7 +214,8 @@
                             <h6 class="fw-bold">{{ $product->name }}</h6>
                             <p class="text-muted mb-3">Select the new status for this product:</p>
                         </div>
-                        
+
+                        <!-- Inactive -->
                         <div class="mb-3">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="status" id="inactive{{ $product->id }}" value="0" {{ $product->is_active == 0 ? 'checked' : '' }}>
@@ -229,7 +225,8 @@
                                 </label>
                             </div>
                         </div>
-                        
+
+                        <!-- Active -->
                         <div class="mb-3">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="status" id="active{{ $product->id }}" value="1" {{ $product->is_active == 1 ? 'checked' : '' }}>
@@ -239,27 +236,42 @@
                                 </label>
                             </div>
                         </div>
-                        
+
+                        <!-- Paused -->
                         <div class="mb-3">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="status" id="pause{{ $product->id }}" value="2" {{ $product->is_active == 2 ? 'checked' : '' }}>
                                 <label class="form-check-label" for="pause{{ $product->id }}">
-                                    <span class="badge bg-warning me-2">Pause</span>
+                                    <span class="badge bg-warning me-2">Paused</span>
                                     Product is temporarily unavailable (admin action required)
                                 </label>
                             </div>
                         </div>
-                        
+
+                        <!-- Suspended -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="status" id="suspended{{ $product->id }}" value="3" {{ $product->is_active == 3 ? 'checked' : '' }}>
+                                <label class="form-check-label" for="suspended{{ $product->id }}">
+                                    <span class="badge bg-secondary me-2">Suspended</span>
+                                    Product is suspended until further notice
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
-                            <strong>Current Status:</strong> 
-                            @if($product->is_active == 1)
-                                <span class="badge bg-success">Active</span>
-                            @elseif($product->is_active == 2)
-                                <span class="badge bg-warning">Pause</span>
-                            @else
-                                <span class="badge bg-secondary">Inactive</span>
-                            @endif
+                            <strong>Current Status:</strong>
+                            @php
+                                $statusMap = [
+                                    0 => ['Inactive',  'secondary'],
+                                    1 => ['Active',    'success'],
+                                    2 => ['Paused',    'warning'],
+                                    3 => ['Suspended', 'secondary'],
+                                ];
+                                [$label, $class] = $statusMap[$product->is_active] ?? ['Closed', 'dark'];
+                            @endphp
+                            <span class="badge bg-{{ $class }}">{{ $label }}</span>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -272,5 +284,7 @@
             </div>
         </div>
     </div>
+@endforeach
+
 @endforeach
 @endsection
