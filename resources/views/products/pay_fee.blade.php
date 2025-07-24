@@ -82,7 +82,7 @@
             </template>
 
             {{-- 4) PayPal --}}
-            <div id="paypal-button-container" class="d-grid gap-2 mb-3"></div>
+            <!-- <div id="paypal-button-container" class="d-grid gap-2 mb-3"></div> -->
             <div id="generic-result" class="text-center fw-semibold"></div>
 
             <p class="text-center mt-4 small">
