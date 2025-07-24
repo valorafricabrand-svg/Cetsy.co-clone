@@ -89,7 +89,7 @@ public function enableHolidayMode(Request $request)
         ->where('is_active', 1)
         ->update(['is_active' => 2]);
     
-    return redirect()->route('seller.dashboard')
+    return redirect()->route('seller.shops.show', $user->shop)
         ->with('success', "Holiday mode enabled! {$updatedCount} active products have been paused.");
 }
 
@@ -115,7 +115,7 @@ public function disableHolidayMode(Request $request)
         ->where('is_active', 2)
         ->update(['is_active' => 1]);
     
-    return redirect()->route('seller.dashboard')
+    return redirect()->route('seller.shops.show', $user->shop)
         ->with('success', "Holiday mode disabled! {$updatedCount} paused products have been reactivated.");
 }
 
