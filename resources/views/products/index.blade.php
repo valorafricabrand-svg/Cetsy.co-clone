@@ -31,6 +31,7 @@
             case 0: $label='Pending'; $class='warning'; break;
             case 1: $label='Active';  $class='success'; break;
             case 2: $label='Paused';  $class='secondary'; break;
+            case 3: $label='Suspended';  $class='secondary'; break;
             default:$label='Closed';  $class='dark'; break;
           }
         @endphp

@@ -108,7 +108,7 @@ class ProductController extends Controller
     public function toggleStatus(Request $request, Product $product)
     {
         $request->validate([
-            'status' => 'required|in:0,1,2',
+            'status' => 'required|in:0,1,2,3',
         ]);
 
         $status = (int) $request->input('status');
