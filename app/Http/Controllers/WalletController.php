@@ -148,6 +148,7 @@ public function payListing(Request $request, $id)
 
     // 3) Compute fee & next due date
     $fourMonthFee = (float) $product->category->listing_fee;
+    
     if ($data['plan'] === 'monthly') {
         $fee     = $fourMonthFee / 4;
         $nextDue = now()->addMonth();
@@ -173,6 +174,7 @@ public function payListing(Request $request, $id)
 
     // 6) If paying via wallet, record a Wallet debit
     if ($data['via'] === 'wallet') {
+
         $currentBalance = Wallet::where('user_id', Auth::id())
                                 ->latest('created_at')
                                 ->value('balance') ?? 0;
