@@ -15,7 +15,8 @@ class Offer extends Model
         'is_counter_offer',
         'original_offer_id',
         'seller_notes',
-        'buyer_notes'
+        'buyer_notes',
+        'order_id'
     ];
 
     protected $casts = [
@@ -51,6 +52,10 @@ class Offer extends Model
 
     public function seller() {
         return $this->product->shop->user ?? null;
+    }
+
+    public function order() {
+        return $this->belongsTo(Order::class);
     }
 
     // Scopes for filtering
@@ -124,7 +129,7 @@ class Offer extends Model
 
     public function getIsNegotiableAttribute()
     {
-        return $this->status === 'pending' && !$this->is_counter_offer;
+        return $this->status === 'pending';
     }
 
     // Status check methods
@@ -171,7 +176,7 @@ class Offer extends Model
 
     public function canBeCountered()
     {
-        return $this->status === 'pending' && !$this->is_counter_offer;
+        return $this->status === 'pending';
     }
 
     public function getOriginalOffer()

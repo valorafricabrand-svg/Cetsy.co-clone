@@ -482,6 +482,7 @@ public function listing(string $slug)
             ->with([
                 'product.media',
                 'product.shop.user',
+                'order', // Include order relationship
                 'counterOffers' => function($query) {
                     $query->orderBy('created_at', 'desc');
                 }
