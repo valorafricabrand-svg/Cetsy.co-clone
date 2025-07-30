@@ -97,7 +97,11 @@ public function create()
     {
         $paymentMethods = PaymentMethod::where('shop_id', $shop->id)->get();
         $subscription = $shop->user->subscription;
-        return view('shops.show', compact('shop', 'paymentMethods', 'subscription'));
+        // Holiday mode logic
+        $activeProducts = $shop->products()->where('is_active', 1)->count();
+        $pausedProducts = $shop->products()->where('is_active', 2)->count();
+        $isHolidayMode = $pausedProducts > 0 && $activeProducts == 0;
+        return view('shops.show', compact('shop', 'paymentMethods', 'subscription', 'isHolidayMode', 'activeProducts', 'pausedProducts'));
     }
 
 

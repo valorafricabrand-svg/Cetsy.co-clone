@@ -63,15 +63,7 @@
     {{-- ───────── Header ───────── --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h4 fw-semibold mb-0">General Report</h2>
-        @if($isHolidayMode)
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#disableHolidayModeModal">
-                <i class="fas fa-play me-2"></i>Disable Holiday Mode
-            </button>
-        @else
-            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#enableHolidayModeModal">
-                <i class="fas fa-umbrella-beach me-2"></i>Enable Holiday Mode
-            </button>
-        @endif
+        {{-- Remove holiday mode button and modals from here --}}
   
 
 
@@ -225,71 +217,4 @@
     @endif
 </div>
 
-{{-- Enable Holiday Mode Modal --}}
-<div class="modal fade" id="enableHolidayModeModal" tabindex="-1" aria-labelledby="enableHolidayModeModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="enableHolidayModeModalLabel">
-                    <i class="fas fa-umbrella-beach text-warning me-2"></i>Enable Holiday Mode
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-3">This action will pause all your active products, effectively putting your shop in holiday mode.</p>
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Warning:</strong> All active products will be paused and won't be visible to buyers until you manually reactivate them.
-                </div>
-                <p class="text-muted small mb-0">
-                    <i class="fas fa-info-circle me-1"></i>
-                    You can reactivate individual products from your product listings page.
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form action="{{ route('seller.holiday-mode.enable') }}" method="POST" class="d-inline">
-                    @csrf
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-umbrella-beach me-2"></i>Enable Holiday Mode
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- Disable Holiday Mode Modal --}}
-<div class="modal fade" id="disableHolidayModeModal" tabindex="-1" aria-labelledby="disableHolidayModeModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="disableHolidayModeModalLabel">
-                    <i class="fas fa-play text-success me-2"></i>Disable Holiday Mode
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-3">This action will reactivate all your paused products, bringing your shop back online.</p>
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <strong>Great!</strong> All paused products will be reactivated and visible to buyers again.
-                </div>
-                <p class="text-muted small mb-0">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Your shop will be fully operational once holiday mode is disabled.
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form action="{{ route('seller.holiday-mode.disable') }}" method="POST" class="d-inline">
-                    @csrf
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-play me-2"></i>Disable Holiday Mode
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
