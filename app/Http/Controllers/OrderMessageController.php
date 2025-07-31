@@ -48,6 +48,13 @@ class OrderMessageController extends Controller
             'body'    => $data['body'],
         ]);
 
+        // Create activity record for the seller
+        Activity::create([
+            'user_id' => $order->shop->user->id,
+            'is_read' => false,
+            'description' => 'You received a new message from ' . auth()->user()->name
+        ]);
+
         return response()->json([
             'id'         => $msg->id,
             'body'       => $msg->body,

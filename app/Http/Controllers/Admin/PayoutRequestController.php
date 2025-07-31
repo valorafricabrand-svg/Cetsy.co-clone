@@ -7,6 +7,7 @@ use App\Models\PayoutRequest;
 use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Activity;
 
 class PayoutRequestController extends Controller
 {
@@ -64,6 +65,13 @@ class PayoutRequestController extends Controller
             ]);
         });
 
+        // Create activity record for the seller
+        Activity::create([
+            'user_id' => $payout->user_id,
+            'is_read' => false,
+            'description' => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been rejected'
+        ]);
+
         // (optionally) notify seller …
 
         return back()->with('success','Payout rejected & amount refunded.');
@@ -82,6 +90,13 @@ class PayoutRequestController extends Controller
             'status'        => 'paid',
             'meta->txn_reference' => $request->txn_reference,
             'paid_at'       => now(),          // add nullable column if desired
+        ]);
+
+        // Create activity record for the seller
+        Activity::create([
+            'user_id' => $payout->user_id,
+            'is_read' => false,
+            'description' => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been marked as paid'
         ]);
 
         // (optionally) notify seller …

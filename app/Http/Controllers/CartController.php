@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
+use App\Models\Activity;
+use Illuminate\Support\Facades\Auth;    
 use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
@@ -23,6 +25,13 @@ class CartController extends Controller
         $link    = route('cart.view');
         $message = 'Product added to cart successfully! '
                  . '<a href="'. $link .'" class="text-decoration-underline">View Cart</a>';
+
+        // Create activity record for the seller
+        Activity::create([
+            'user_id' => Auth::id(),
+            'is_read' => false,
+            'description' => 'You added a product to your cart'
+        ]);
 
         return back()->with('success', $message);
     }
@@ -128,6 +137,13 @@ class CartController extends Controller
             unset($cart[$request->row_id]);
             session()->put('cart', $cart);
         }
+
+        // Create activity record for the seller
+        Activity::create([
+            'user_id' => Auth::id(),
+            'is_read' => false,
+            'description' => 'You removed a product from your cart'
+        ]);
 
         return redirect()->route('cart.view')->with('success', 'Product removed from cart successfully!');
     }

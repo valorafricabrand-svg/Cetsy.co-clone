@@ -6,10 +6,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Offer;
 use App\Models\Product;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Shop;
 use App\Mail\OfferAcceptedMail;
 use App\Mail\OfferDeclinedMail;
 use App\Mail\CounterOfferMail;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use App\Models\Activity;
 
 class OfferController extends Controller
 {
@@ -123,36 +128,138 @@ class OfferController extends Controller
             return back()->with('warning', 'This offer cannot be accepted.');
         }
 
-        // Update offer status
-        $offer->update(['status' => 'accepted']);
-
-        // Send email notification to buyer
-        $emailSent = false;
         try {
-            Mail::to($offer->buyer->email)
-                ->send(new OfferAcceptedMail($offer, $offer->product, $user, $offer->buyer));
-            $emailSent = true;
-            \Log::info('Offer accepted email sent successfully', [
-                'offer_id' => $offer->id,
-                'buyer_email' => $offer->buyer->email,
-                'seller_id' => $user->id
-            ]);
+            DB::beginTransaction();
+
+            // Update offer status
+            $offer->update(['status' => 'accepted']);
+
+            // Create order from the accepted offer
+            $order = $this->createOrderFromOffer($offer);
+
+            DB::commit();
+
+            // Send email notification to buyer
+            $emailSent = false;
+            try {
+                Mail::to($offer->buyer->email)
+                    ->send(new OfferAcceptedMail($offer, $order));
+                $emailSent = true;
+                \Log::info('Offer accepted email sent successfully', [
+                    'offer_id' => $offer->id,
+                    'buyer_email' => $offer->buyer->email,
+                    'seller_id' => $user->id,
+                    'order_id' => $order->id
+                ]);
+
+                // Create activity record for the buyer
+                Activity::create([
+                    'user_id' => $offer->buyer->id,
+                    'is_read' => false,
+                    'description' => 'You received a new offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . $offer->buyer->name
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send offer accepted email', [
+                    'offer_id' => $offer->id,
+                    'buyer_email' => $offer->buyer->email,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            $message = 'Offer accepted successfully. Order #' . $order->id . ' has been created.';
+            if ($emailSent) {
+                $message .= ' The buyer has been notified via email.';
+            } else {
+                $message .= ' Email notification failed to send.';
+            }
+
+            return back()->with('success', $message);
+
         } catch (\Exception $e) {
-            \Log::error('Failed to send offer accepted email', [
+            DB::rollBack();
+            \Log::error('Failed to accept offer and create order', [
                 'offer_id' => $offer->id,
-                'buyer_email' => $offer->buyer->email,
                 'error' => $e->getMessage()
             ]);
+            return back()->with('error', 'Failed to accept offer. Please try again.');
         }
+    }
 
-        $message = 'Offer accepted successfully.';
-        if ($emailSent) {
-            $message .= ' The buyer has been notified via email.';
-        } else {
-            $message .= ' Email notification failed to send.';
-        }
+    /**
+     * Create an order from an accepted offer
+     */
+    private function createOrderFromOffer(Offer $offer)
+    {
+        $buyer = $offer->buyer;
+        $product = $offer->product;
+        $shop = $product->shop;
 
-        return back()->with('success', $message);
+        // Create the order
+        $order = new Order();
+        $order->user_id = $buyer->id;
+        $order->shop_id = $shop->id;
+        
+        // Set customer details
+        $order->full_name = $buyer->name;
+        $order->email = $buyer->email;
+        $order->phone = $buyer->phone ?? 'N/A';
+        
+        // Set shipping address (use buyer's default address if available, otherwise use basic info)
+        $order->shipping_country_id = $buyer->country_id ?? 1; // Default to first country
+        $order->shipping_address_1 = $buyer->address ?? 'Address to be provided';
+        $order->shipping_address_2 = null;
+        $order->shipping_city = $buyer->city ?? 'City to be provided';
+        $order->shipping_state = null;
+        $order->shipping_postal_code = null;
+        
+        // Set billing same as shipping for now
+        $order->billing_same_as_shipping = true;
+        $order->billing_country_id = $order->shipping_country_id;
+        $order->billing_address_1 = $order->shipping_address_1;
+        $order->billing_address_2 = $order->shipping_address_2;
+        $order->billing_city = $order->shipping_city;
+        $order->billing_state = $order->shipping_state;
+        $order->billing_postal_code = $order->shipping_postal_code;
+        
+        // Set order details
+        $order->shipping_method = 'standard';
+        $order->payment_method = 'pending';
+        $order->order_notes = "Order created from accepted offer #{$offer->id}";
+        
+        // Calculate totals
+        $subtotal = $offer->offer_price;
+        $shippingCost = 0; // Default shipping cost, can be calculated based on shipping profile
+        $totalAmount = $subtotal + $shippingCost;
+        
+        $order->subtotal = $subtotal;
+        $order->shipping_cost = $shippingCost;
+        $order->total_amount = $totalAmount;
+        $order->status = 'pending';
+        
+        $order->save();
+
+        // Create order item
+        $orderItem = new OrderItem();
+        $orderItem->order_id = $order->id;
+        $orderItem->product_id = $product->id;
+        $orderItem->product_variation_id = null; // No variation for now
+        $orderItem->quantity = 1; // Default to 1 quantity
+        $orderItem->price = $offer->offer_price;
+        $orderItem->shipping_profile_id = null; // Default shipping profile
+        $orderItem->shipping_cost = $shippingCost;
+        $orderItem->save();
+
+        // Link the order back to the offer
+        $offer->update(['order_id' => $order->id]);
+
+        // Create activity record for the buyer
+        Activity::create([
+            'user_id' => $buyer->id,
+            'is_read' => false,
+            'description' => 'You received a new order from ' . $shop->user->name
+        ]);
+
+        return $order;
     }
 
     public function decline($id, Request $request)
@@ -193,6 +300,13 @@ class OfferController extends Controller
                 'buyer_email' => $offer->buyer->email,
                 'seller_id' => $user->id
             ]);
+
+            // Create activity record for the buyer
+            Activity::create([
+                'user_id' => $offer->buyer->id,
+                'is_read' => false,
+                'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' has been declined'
+            ]);
         } catch (\Exception $e) {
             \Log::error('Failed to send offer declined email', [
                 'offer_id' => $offer->id,
@@ -204,6 +318,7 @@ class OfferController extends Controller
         $message = 'Offer declined successfully.';
         if ($emailSent) {
             $message .= ' The buyer has been notified via email.';
+
         } else {
             $message .= ' Email notification failed to send.';
         }
@@ -262,6 +377,13 @@ class OfferController extends Controller
                 'seller_id' => $user->id,
                 'counter_price' => $data['counter_price']
             ]);
+
+            // Create activity record for the buyer
+            Activity::create([
+                'user_id' => $offer->buyer->id,
+                'is_read' => false,
+                'description' => 'You received a new offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . $offer->buyer->name
+            ]);
         } catch (\Exception $e) {
             \Log::error('Failed to send counter offer email', [
                 'offer_id' => $offer->id,
@@ -305,57 +427,96 @@ class OfferController extends Controller
 
         $processed = 0;
         $emailsSent = 0;
+        $ordersCreated = 0;
         
-        foreach ($offers as $offer) {
-            switch ($data['action']) {
-                case 'accept':
-                    if ($offer->canBeAccepted()) {
-                        $offer->update(['status' => 'accepted']);
-                        
-                        // Send email notification
-                        try {
-                            Mail::to($offer->buyer->email)
-                                ->send(new OfferAcceptedMail($offer, $offer->product, $user, $offer->buyer));
-                            $emailsSent++;
-                        } catch (\Exception $e) {
-                            \Log::error('Failed to send offer accepted email: ' . $e->getMessage());
+        try {
+            DB::beginTransaction();
+            
+            foreach ($offers as $offer) {
+                switch ($data['action']) {
+                    case 'accept':
+                        if ($offer->canBeAccepted()) {
+                            // Update offer status
+                            $offer->update(['status' => 'accepted']);
+                            
+                            // Create order from the accepted offer
+                            $order = $this->createOrderFromOffer($offer);
+                            $ordersCreated++;
+                            
+                            // Send email notification
+                            try {
+                                Mail::to($offer->buyer->email)
+                                    ->send(new OfferAcceptedMail($offer, $order));
+
+                                // Create activity record for the buyer
+                                Activity::create([
+                                    'user_id' => $offer->buyer->id,
+                                    'is_read' => false,
+                                    'description' => "Your offer of $" . number_format($offer->offer_price, 2) . " for " . $offer->product->name . " has been accepted"
+                                ]);
+                                $emailsSent++;
+                            } catch (\Exception $e) {
+                                \Log::error('Failed to send offer accepted email: ' . $e->getMessage());
+                            }
+                            
+                            $processed++;
                         }
+                        break;
                         
-                        $processed++;
-                    }
-                    break;
-                    
-                case 'decline':
-                    if ($offer->canBeDeclined()) {
-                        $offer->update([
-                            'status' => 'declined',
-                            'seller_notes' => $data['reason'] ?? null,
-                        ]);
-                        
-                        // Send email notification
-                        try {
-                            Mail::to($offer->buyer->email)
-                                ->send(new OfferDeclinedMail($offer, $offer->product, $user, $offer->buyer));
-                            $emailsSent++;
-                        } catch (\Exception $e) {
-                            \Log::error('Failed to send offer declined email: ' . $e->getMessage());
+                    case 'decline':
+                        if ($offer->canBeDeclined()) {
+                            $offer->update([
+                                'status' => 'declined',
+                                'seller_notes' => $data['reason'] ?? null,
+                            ]);
+                            
+                            // Send email notification
+                            try {
+                                Mail::to($offer->buyer->email)
+                                    ->send(new OfferDeclinedMail($offer, $offer->product, $user, $offer->buyer));
+                                $emailsSent++;
+
+                                // Create activity record for the buyer
+                                Activity::create([
+                                    'user_id' => $offer->buyer->id,
+                                    'is_read' => false,
+                                    'description' => "Your offer of $" . number_format($offer->offer_price, 2) . " for " . $offer->product->name . " has been declined"
+                                ]);
+                            } catch (\Exception $e) {
+                                \Log::error('Failed to send offer declined email: ' . $e->getMessage());
+                            }
+                            
+                            $processed++;
                         }
+                        break;
                         
-                        $processed++;
-                    }
-                    break;
-                    
-                case 'expire':
-                    if ($offer->isPending()) {
-                        $offer->update(['status' => 'expired']);
-                        $processed++;
-                    }
-                    break;
+                    case 'expire':
+                        if ($offer->isPending()) {
+                            $offer->update(['status' => 'expired']);
+                            $processed++;
+                        }
+                        break;
+                }
             }
+            
+            DB::commit();
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Failed to process bulk offer actions', [
+                'action' => $data['action'],
+                'offer_ids' => $data['offer_ids'],
+                'error' => $e->getMessage()
+            ]);
+            return back()->with('error', 'Failed to process bulk actions. Please try again.');
         }
 
         $action = ucfirst($data['action']);
         $message = "{$processed} offers {$data['action']}ed successfully.";
+        
+        if ($ordersCreated > 0) {
+            $message .= " {$ordersCreated} orders created.";
+        }
         
         if ($emailsSent > 0) {
             $message .= " {$emailsSent} email notifications sent.";

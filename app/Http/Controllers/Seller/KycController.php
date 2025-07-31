@@ -63,6 +63,13 @@ class KycController extends Controller
             $kyc->admin_notes = null;
             $kyc->save();
 
+            // Create activity record for the seller
+            Activity::create([
+                'user_id' => $user->id,
+                'is_read' => false,
+                'description' => 'You submitted a new KYC application'
+            ]);
+
             \DB::commit();
             return redirect()->route('seller.kyc')->with('success', 'KYC submitted. We will review your documents soon.');
         } catch (\Throwable $e) {
@@ -123,6 +130,13 @@ class KycController extends Controller
             // Try to send the email, but don't fail the transaction if mail fails
             try {
                 Mail::to($kyc->user->email)->send(new KycStatusMail($validated['status'], $validated['admin_notes'] ?? null));
+
+                // Create activity record for the seller
+                Activity::create([
+                    'user_id' => $kyc->user->id,
+                    'is_read' => false,
+                    'description' => 'Your KYC application has been ' . $validated['status']
+                ]);
             } catch (\Throwable $mailException) {
                 Log::error('Failed to send KYC status email', [
                     'user_id' => $kyc->user->id,

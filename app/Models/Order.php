@@ -99,6 +99,11 @@ public function payments() {
         return $this->belongsTo(Shop::class);
     }
 
+    public function offer()
+    {
+        return $this->hasOne(Offer::class);
+    }
+
 
     public function messages()
 {

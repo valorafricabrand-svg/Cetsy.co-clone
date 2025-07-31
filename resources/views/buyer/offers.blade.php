@@ -140,9 +140,24 @@
                         @if($offerData['latest_offer']->status === 'accepted')
                             <div class="alert alert-success d-flex align-items-center mb-4 p-3 shadow-sm accepted-offer-alert">
                                 <i class="bi bi-patch-check-fill fs-3 me-3 text-success"></i>
-                                <div>
-                                    <strong>Congratulations!</strong> Your offer was <b>accepted</b> by the seller.<br>
+                                <div class="flex-grow-1">
+                                    <strong class="text-success">Congratulations!</strong> Your offer was <b>accepted</b> by the seller.<br>
                                     <span class="small text-success">You can now proceed to checkout or contact the seller for next steps.</span>
+                                    
+                                    @if($offerData['latest_offer']->order)
+                                        <div class="mt-3 p-3 bg-white rounded border">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong class="text-success">Order #{{ $offerData['latest_offer']->order->id }} Created</strong><br>
+                                                    <small class="text-muted">Total: {{ get_currency() }} {{ number_format($offerData['latest_offer']->order->total_amount, 2) }}</small>
+                                                </div>
+                                                <a href="{{ route('pay_now', $offerData['latest_offer']->order->id) }}" 
+                                                   class="btn btn-success btn-sm">
+                                                    <i class="bi bi-credit-card me-1"></i>Pay Now
+                                                </a>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         @endif
@@ -236,6 +251,17 @@
                                         onclick="respondToCounterOffer({{ $offerData['latest_offer']->id }})">
                                     <i class="bi bi-check-circle me-1"></i>Respond
                                 </button>
+                            @endif
+                            
+                            @if($offerData['latest_offer']->status === 'accepted' && $offerData['latest_offer']->order)
+                                <a href="{{ route('pay_now', $offerData['latest_offer']->order->id) }}" 
+                                   class="btn btn-success btn-sm">
+                                    <i class="bi bi-credit-card me-1"></i>Pay Now
+                                </a>
+                                <a href="{{ route('buyer.orders.show', $offerData['latest_offer']->order->id) }}" 
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-receipt me-1"></i>View Order
+                                </a>
                             @endif
                         </div>
                     </div>
