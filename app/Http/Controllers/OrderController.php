@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use App\Models\Activity;
 use Illuminate\Support\Facades\Notification;
 
 class OrderController extends Controller
@@ -66,6 +67,139 @@ class OrderController extends Controller
         ]);
     }
 
+            // ----- Compute shop totals FIRST -----
+            $shopSubtotal  = 0;
+            $shopShipTotal = 0;
+
+            foreach ($rows as $r) {
+                $qty   = $r['quantity'];
+                $price = $r['price'];
+
+                $profiles   = collect($r['profiles']);
+                $selProfId  = $r['ship_prof'];
+                $selProfile = $profiles->firstWhere('id', $selProfId);
+
+                $unitShip   = $selProfile['base_rate'] ?? 0;
+                $lineShip   = $unitShip * $qty;
+                $lineSub    = $price * $qty;
+
+                $shopSubtotal  += $lineSub;
+                $shopShipTotal += $lineShip;
+            }
+
+            // Create & fill order (all required fields present)
+            $order = new \App\Models\Order();
+            $order->user_id    = auth()->id();
+            $order->shop_id    = $shopId;
+
+            $order->full_name  = $validated['full_name'];
+            $order->email      = $validated['email'];
+            $order->phone      = $validated['phone'];
+
+            $order->shipping_country_id  = $validated['shipping_country'];
+            $order->shipping_address_1   = $validated['shipping_address_1'];
+            $order->shipping_address_2   = $validated['shipping_address_2'] ?? null;
+            $order->shipping_city        = $validated['shipping_city'];
+            $order->shipping_state       = $validated['shipping_state'] ?? null;
+            $order->shipping_postal_code = $validated['shipping_postal_code'] ?? null;
+
+            if ($validated['billing_same_as_shipping']) {
+                $order->billing_same_as_shipping = true;
+                $order->billing_country_id       = $order->shipping_country_id;
+                $order->billing_address_1        = $order->shipping_address_1;
+                $order->billing_address_2        = $order->shipping_address_2;
+                $order->billing_city             = $order->shipping_city;
+                $order->billing_state            = $order->shipping_state;
+                $order->billing_postal_code      = $order->shipping_postal_code;
+            } else {
+                $order->billing_same_as_shipping = false;
+                $order->billing_country_id       = $validated['billing_country'] ?? null;
+                $order->billing_address_1        = $validated['billing_address_1'] ?? null;
+                $order->billing_address_2        = $validated['billing_address_2'] ?? null;
+                $order->billing_city             = $validated['billing_city'] ?? null;
+                $order->billing_state            = $validated['billing_state'] ?? null;
+                $order->billing_postal_code      = $validated['billing_postal_code'] ?? null;
+            }
+
+            $order->shipping_method = 'standard';
+            $order->payment_method  = 'paypal';
+            $order->order_notes     = $validated['order_notes'] ?? null;
+            $order->promo_code      = $validated['promo_code'] ?? null;
+
+            // REQUIRED totals
+            $order->subtotal      = $shopSubtotal;
+            $order->shipping_cost = $shopShipTotal;
+            $order->total_amount  = $shopSubtotal + $shopShipTotal;
+
+            $order->status        = 'pending';
+            $order->save();
+
+            // OrderItems
+            foreach ($rows as $r) {
+                $qty    = $r['quantity'];
+                $price  = $r['price'];
+
+                $profiles   = collect($r['profiles']);
+                $selProfId  = $r['ship_prof'];
+                $selProfile = $profiles->firstWhere('id', $selProfId);
+
+                $unitShip = $selProfile['base_rate'] ?? 0;
+                $lineShip = $unitShip * $qty;
+
+                $orderItem = new \App\Models\OrderItem();
+                $orderItem->order_id             = $order->id;
+                $orderItem->product_id           = $r['product']->id;
+                $orderItem->product_variation_id = $r['variation'];
+                $orderItem->quantity             = $qty;
+                $orderItem->price                = $price;
+                $orderItem->shipping_profile_id  = $selProfId;
+                $orderItem->shipping_cost        = $lineShip;
+                $orderItem->save();
+            }
+
+            $orders[] = $order;
+        }
+
+        DB::commit();
+
+        // Empty cart
+        $request->session()->forget('cart');
+
+        // Emails
+        foreach ($orders as $order) {
+            $order->load(['items.product', 'shop.user']);
+            $buyer     = auth()->user();
+            $shopOwner = $order->shop->user;
+
+            \Mail::to($shopOwner->email)->send(new \App\Mail\OrderCreatedShopOwnerMail($order, $shopOwner, $buyer, $order->shop));
+            \Mail::to($buyer->email)->send(new \App\Mail\OrderCreatedBuyerMail($order, $buyer, $order->shop));
+
+            // Create activity record for the seller
+            Activity::create([
+                'user_id' => $shopOwner->id,
+                'is_read' => false,
+                'description' => 'You received a new order from ' . $buyer->name
+            ]);
+
+            // Create activity record for the buyer
+            Activity::create([
+                'user_id' => $buyer->id,
+                'is_read' => false,
+                'description' => 'You placed a new order'
+            ]);
+        }
+
+        return redirect()
+            ->route('buyer.orders.show', $orders[0]->id)
+            ->with('success', 'Your orders have been placed successfully! Please proceed to payment.');
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+
+        \Log::error('Order creation failed: '.$e->getMessage(), [
+            'user_id' => auth()->id(),
+            'cart'    => $request->session()->get('cart'),
+            'trace'   => $e->getTraceAsString(),
     /**
      * Buyer: place order from cart.
      */

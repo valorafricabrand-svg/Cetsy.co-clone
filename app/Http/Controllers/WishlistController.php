@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Mail\ProductWishlistedMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use App\Models\Activity;
 
 class WishlistController extends Controller
 {
@@ -44,6 +45,13 @@ class WishlistController extends Controller
                         $request->user(),
                         $product->shop->user
                     ));
+
+                // Create activity record for the seller
+                Activity::create([
+                    'user_id' => $product->shop->user->id,
+                    'is_read' => false,
+                    'description' => 'You received a new wishlist for ' . $product->name . ' from ' . $request->user()->name
+                ]);
             }
         } catch (\Exception $e) {
             // Log the error but don't break the user experience
@@ -59,6 +67,13 @@ class WishlistController extends Controller
                         $request->user(),
                         $product->shop->user
                     ));
+
+                // Create activity record for the buyer
+                Activity::create([
+                    'user_id' => $request->user()->id,
+                    'is_read' => false,
+                    'description' => 'You added ' . $product->name . ' to your wishlist'
+                ]);
             }
         } catch (\Exception $e) {
             \Log::error('Failed to send wishlist confirmation email to buyer: ' . $e->getMessage());

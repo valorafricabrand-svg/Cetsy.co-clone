@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Product;
 use App\Mail\MessageReceivedMail;
 use Illuminate\Support\Facades\Mail;
+use App\Models\Activity;
 
 class MessageController extends Controller
 {
@@ -177,6 +178,13 @@ class MessageController extends Controller
         $message->is_read = true;
         $message->save();
 
+        // Create activity record for the buyer
+        Activity::create([
+            'user_id' => $message->receiver_id,
+            'is_read' => false,
+            'description' => 'You received a new message from ' . $message->sender->name
+        ]);
+
         return back()->with('success', 'Message marked as read.');
     }
 
@@ -198,6 +206,13 @@ class MessageController extends Controller
             ->where('receiver_id', $user->id) // Only messages where seller is the receiver
             ->where('is_read', false)
             ->update(['is_read' => true]);
+
+        // Create activity record for the buyer
+        Activity::create([
+            'user_id' => $message->receiver_id,
+            'is_read' => false,
+            'description' => 'You received a new message from ' . $message->sender->name
+        ]);
 
         return back()->with('success', "Successfully marked {$updatedCount} message(s) as read.");
     }
@@ -250,6 +265,13 @@ class MessageController extends Controller
                         $user, // Seller
                         $buyer
                     ));
+
+                // Create activity record for the buyer
+                Activity::create([
+                    'user_id' => $buyer->id,
+                    'is_read' => false,
+                    'description' => $replyMessage['body'],
+                ]);
             }
         } catch (\Exception $e) {
             // Log the error but don't break the user experience

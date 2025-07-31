@@ -9,19 +9,22 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Offer;
+use App\Models\Order;
 
 class OfferAcceptedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $offer;
+    public $order;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Offer $offer)
+    public function __construct(Offer $offer, Order $order = null)
     {
         $this->offer = $offer;
+        $this->order = $order;
     }
 
     /**
@@ -30,7 +33,7 @@ class OfferAcceptedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your Counter Offer Has Been Accepted!',
+            subject: 'Your Offer Has Been Accepted!',
         );
     }
 

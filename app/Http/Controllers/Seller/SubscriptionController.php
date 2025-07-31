@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use App\Models\Activity;
 
 class SubscriptionController extends Controller
 {
@@ -179,6 +180,13 @@ class SubscriptionController extends Controller
         // Clear the session
         session()->forget('selected_subscription_plan');
 
+        // Create activity record for the seller
+        Activity::create([
+            'user_id' => $user->id,
+            'is_read' => false,
+            'description' => 'You activated a new ' . ucfirst($plan) . ' subscription'
+        ]);
+
         return redirect()
             ->route('seller.dashboard')
             ->with('success', 'Your ' . ucfirst($plan) . ' subscription has been activated successfully!');
@@ -193,6 +201,13 @@ class SubscriptionController extends Controller
             $subscription->update([
                 'status' => 'cancelled',
                 'notes' => 'Cancelled by user on ' . now()->toDateString()
+            ]);
+
+            // Create activity record for the seller
+            Activity::create([
+                'user_id' => $user->id,
+                'is_read' => false,
+                'description' => 'You cancelled your ' . ucfirst($plan) . ' subscription'
             ]);
         }
 
