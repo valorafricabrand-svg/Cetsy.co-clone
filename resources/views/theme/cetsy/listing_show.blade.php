@@ -5,22 +5,42 @@
 
 @section('main')
 @php
-    /* Build a flat list from ProductVariations so we can force ONE choice only */
-    $flatVariations = collect($product->productVariations ?? $product->variations ?? [])
-        ->map(function ($v) {
-            return [
-                'id'    => $v->id,
-                'type'  => $v->type ?: 'Option',
-                'opt'   => $v->variation_option ?? $v->name ?? 'Value',
-                'price' => (float) ($v->price ?? $v->price_override ?? 0),
-                'stock' => (int) ($v->stock ?? 0),
-                'sku'   => $v->sku ?? null,
-                'img'   => $v->image ? asset('storage/'.$v->image) : null,
-            ];
-        });
+    // Make sure everything needed by the page is in memory
+    $product->loadMissing(
+        'variationTypes.options',               // Product → hasMany VariationType → hasMany VariationOption
+        'variations.options.variationType',     // Product → hasMany Variant → belongsToMany VariationOption (with variationType eager-loaded)
+        'shippingProfiles', 'media', 'shop', 'category', 'country'
+    );
 
-    // Group ONLY for display headers; radios still share ONE name="product_variation_id"
-    $groupedVariations = $flatVariations->groupBy('type');
+    // Build the dropdown data: one <select> per variation type
+    $typesData = $product->variationTypes
+        ->map(fn($t) => [
+            'id'      => $t->id,
+            'name'    => $t->name,
+            'options' => $t->options->map(fn($o) => ['id'=>$o->id,'value'=>$o->value])->values(),
+        ])->values();
+
+    // Build the combination data: each variant maps type_id -> option_id
+    $variantsData = $product->variations
+        ->map(function ($v) {
+            $byType = $v->options->mapWithKeys(
+                fn($o) => [$o->variation_type_id => $o->id]
+            )->toArray();
+
+            return [
+                'id'     => $v->id,
+                'price'  => (float) $v->price,
+                'byType' => $byType,
+            ];
+        })->values();
+
+    // Price header (base/discount)
+    $basePrice  = (float) ($product->price ?? 0);
+    $finalPrice = (float) ($product->discounted_price ?? $basePrice);
+
+    // Default shipping profile: prefer controller-provided $defaultProfileId, then pivot default, then first
+    $defaultShipId = ($defaultProfileId ?? null)
+        ?? optional($product->shippingProfiles->firstWhere('pivot.is_default', true) ?? $product->shippingProfiles->first())->id;
 @endphp
 
 <section class="py-6" style="background:#f8faf9">
@@ -28,7 +48,7 @@
        x-data="{
          qty: 1,
          busy: false,
-         shippingProfileId: {{ $product->shippingProfiles->firstWhere('is_default', true)->id ?? 'null' }},
+         shippingProfileId: {{ $defaultShipId ? (int)$defaultShipId : 'null' }},
          dec(){ this.qty = Math.max(1, this.qty-1) },
          inc(){ this.qty++ }
        }">
@@ -84,21 +104,16 @@
         <div class="position-lg-sticky" style="top: 1rem;">
           <h1 class="h2 fw-bold">{{ $product->name }}</h1>
 
-          {{-- Ratings --}}
+          {{-- Ratings (using withAvg in controller -> reviews_avg_rating) --}}
           <div class="mb-2">
+            @php $avg = round($product->reviews_avg_rating ?? 0); @endphp
             @for($i=1; $i<=5; $i++)
-              <i class="fa-star{{ $i <= round($product->avg_rating ?? 0) ? ' fa-solid text-warning' : ' fa-regular text-muted' }}"></i>
+              <i class="fa-star{{ $i <= $avg ? ' fa-solid text-warning' : ' fa-regular text-muted' }}"></i>
             @endfor
-            <small class="ms-1 text-muted">
-              ({{ $product->reviews_count ?? 0 }} reviews)
-            </small>
+            <small class="ms-1 text-muted">({{ $product->reviews_count ?? 0 }} reviews)</small>
           </div>
 
-          @php
-            $basePrice  = $product->price;
-            $finalPrice = $product->discounted_price;
-          @endphp
-
+          {{-- Base/discount price (selected variant price shows inside picker) --}}
           @if($finalPrice < $basePrice)
             <div class="d-flex align-items-baseline gap-3 mb-3">
               <span class="fw-bold text-success">
@@ -130,13 +145,13 @@
             @endif
           </div>
 
-          {{-- Quick-action buttons --}}
+          {{-- Quick-actions --}}
           <div class="d-flex flex-wrap gap-2 mb-4">
             <form method="POST" action="{{ route('favorites.toggle') }}">
               @csrf
               <input type="hidden" name="product_id" value="{{ $product->id }}">
               <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Add to favourites">
-                <i class="fa-regular fa-heart{{ $isFavorited ? ' text-danger fa-solid' : '' }}"> </i> Favourites
+                <i class="fa-regular fa-heart{{ $isFavorited ? ' text-danger fa-solid' : '' }}"></i> Favourites
               </button>
             </form>
             <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#offerModal">
@@ -181,64 +196,49 @@
 
           {{-- ADD-TO-CART BLOCK ----------------------------------------- --}}
           @if($product->type !== 'service')
-            <div class="border rounded-4 p-4 bg-light-subtle">
+            <div class="border rounded-4 p-4 bg-light-subtle"
+                 x-data="variantPicker({
+                   types: @json($typesData),
+                   variants: @json($variantsData),
+                   basePrice: {{ $finalPrice > 0 ? $finalPrice : $basePrice }},
+                   currency: @json(get_currency())
+                 })"
+                 x-init="init()">
 
-              {{-- Variations: ONE radio required --}}
-              @if($groupedVariations->isNotEmpty())
+              {{-- Variation dropdowns --}}
+              <template x-for="t in types" :key="t.id">
                 <div class="mb-3">
-                  <label class="form-label fw-semibold d-block">Select Variation</label>
-
-                  @foreach($groupedVariations as $type => $options)
-                    <div class="mb-2">
-                      <span class="small text-muted d-block mb-1">{{ $type }}</span>
-                      <div class="d-flex flex-column gap-2">
-                        @foreach($options as $opt)
-                          <label class="border rounded-3 p-2 d-flex align-items-start gap-2 {{ $opt['stock'] <= 0 ? 'opacity-50' : 'cursor-pointer' }}">
-                            <input type="radio"
-                                   name="product_variation_id"
-                                   value="{{ $opt['id'] }}"
-                                   class="form-check-input mt-1"
-                                   form="addCartForm"
-                                   {{ $opt['stock'] <= 0 ? 'disabled' : '' }}
-                                   required>
-                            <div class="flex-grow-1">
-                              <span class="fw-semibold">{{ $opt['opt'] }}</span>
-                              @if($opt['sku'])
-                                <span class="badge bg-secondary bg-opacity-25 text-secondary ms-2">SKU: {{ $opt['sku'] }}</span>
-                              @endif
-                              @if($opt['price'] != 0)
-                                <span class="d-block small text-primary fw-semibold">
-                                  {{ get_currency() }} {{ number_format($opt['price'], 2) }}
-                                </span>
-                              @endif
-                              @if($opt['stock'] <= 0)
-                                <span class="badge bg-danger bg-opacity-25 text-danger">Out of stock</span>
-                              @endif
-                            </div>
-                            @if($opt['img'])
-                              <img src="{{ $opt['img'] }}" alt="{{ $opt['opt'] }}" style="width:52px;height:52px;object-fit:cover" class="rounded">
-                            @endif
-                          </label>
-                        @endforeach
-                      </div>
-                    </div>
-                  @endforeach
+                  <label class="form-label text-uppercase small fw-bold" x-text="t.name"></label>
+                  <select class="form-select"
+                          x-model="selected[t.id]"
+                          @change="onChange()">
+                    <option value="">Select</option>
+                    <template x-for="o in filteredOptions(t.id)" :key="o.id">
+                      <option :value="o.id" x-text="o.value"></option>
+                    </template>
+                  </select>
                 </div>
-              @endif
+              </template>
+
+              {{-- Dynamic price for selected variant (falls back to basePrice) --}}
+              <div class="mb-3" x-show="types.length > 0">
+                <span class="fw-semibold">Price:</span>
+                <span class="fw-bold text-primary" x-text="priceFormatted()"></span>
+              </div>
 
               {{-- Quantity --}}
               <div class="mb-3 d-flex align-items-center gap-2">
                 <span class="fw-semibold">Qty</span>
-                <button class="btn btn-outline-secondary btn-sm" @click="dec()" :disabled="qty <= 1">−</button>
-                <input type="text" class="form-control text-center" style="width:60px" :value="qty" readonly>
-                <button class="btn btn-outline-secondary btn-sm" @click="inc()">+</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" @click="$root.dec()" :disabled="$root.qty <= 1">−</button>
+                <input type="text" class="form-control text-center" style="width:60px" :value="$root.qty" readonly>
+                <button type="button" class="btn btn-outline-secondary btn-sm" @click="$root.inc()">+</button>
               </div>
 
               {{-- Shipping --}}
               @if($product->shippingProfiles->count())
                 <div class="mb-3">
                   <label class="form-label fw-semibold">Shipping</label>
-                  <select class="form-select" x-model="shippingProfileId" form="addCartForm">
+                  <select class="form-select" x-model="$root.shippingProfileId" form="addCartForm">
                     @foreach($product->shippingProfiles as $profile)
                       <option value="{{ $profile->id }}">
                         {{ $profile->name }} – {{ get_currency() }} {{ number_format($profile->base_rate, 2) }}
@@ -252,27 +252,28 @@
               <div class="d-grid gap-2">
                 {{-- Add to Cart --}}
                 <form id="addCartForm" method="POST" action="{{ route('cart.add') }}"
-                      @submit.prevent="busy = true; $el.submit()">
+                      @submit.prevent="$root.busy = true; $el.submit()">
                   @csrf
                   <input type="hidden" name="product_id" value="{{ $product->id }}">
-                  <input type="hidden" name="quantity" :value="qty">
-                  <input type="hidden" name="shipping_profile_id" :value="shippingProfileId">
-                  {{-- product_variation_id comes from the radio above --}}
-                  <button type="submit" class="btn btn-success btn-lg w-100" :disabled="busy">
+                  <input type="hidden" name="quantity" :value="$root.qty">
+                  <input type="hidden" name="shipping_profile_id" :value="$root.shippingProfileId">
+                  <input type="hidden" name="product_variation_id" :value="currentVariantId">
+                  <button type="submit" class="btn btn-success btn-lg w-100"
+                          :disabled="!canSubmit() || $root.busy">
                     <i class="fa-solid fa-cart-plus me-1"></i>Add to Cart
                   </button>
                 </form>
 
                 {{-- Buy Now --}}
                 <form id="buyNowForm" method="POST" action="{{ route('cart.buy') }}"
-                      @submit.prevent="busy = true; $el.submit()">
+                      @submit.prevent="$root.busy = true; $el.submit()">
                   @csrf
                   <input type="hidden" name="product_id" value="{{ $product->id }}">
-                  <input type="hidden" name="quantity" :value="qty">
-                  <input type="hidden" name="shipping_profile_id" :value="shippingProfileId">
-                  <input type="hidden" name="product_variation_id" value=""
-                         x-init="$watch(() => document.querySelector('input[name=product_variation_id]:checked')?.value, v => $el.value = v);">
-                  <button type="submit" class="btn btn-primary btn-lg w-100" :disabled="busy">
+                  <input type="hidden" name="quantity" :value="$root.qty">
+                  <input type="hidden" name="shipping_profile_id" :value="$root.shippingProfileId">
+                  <input type="hidden" name="product_variation_id" :value="currentVariantId">
+                  <button type="submit" class="btn btn-primary btn-lg w-100"
+                          :disabled="!canSubmit() || $root.busy">
                     <i class="fa-solid fa-bolt me-1"></i>Buy Now
                   </button>
                 </form>
@@ -288,9 +289,7 @@
                 </div>
                 <div class="flex-grow-1">
                   <h6 class="mb-1 fw-semibold text-info">Service Listing</h6>
-                  <p class="mb-0 small text-muted">
-                    This is a <strong>service</strong>. Contact the seller below for quotes.
-                  </p>
+                  <p class="mb-0 small text-muted">This is a <strong>service</strong>. Contact the seller below for quotes.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                   <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#messageModal">
@@ -483,7 +482,7 @@
       </div>
       <div class="modal-body">
         <p class="text-muted small mb-3">Help us keep our community safe by reporting listings that violate our policies.</p>
-        
+
         <div class="mb-3">
           <label for="reportReason" class="form-label">Reason for report</label>
           <select name="reason" id="reportReason" class="form-select" required>
@@ -495,7 +494,7 @@
             <option value="other">Other</option>
           </select>
         </div>
-        
+
         <div class="mb-3">
           <label for="reportDescription" class="form-label">Please provide details</label>
           <textarea name="description" id="reportDescription" rows="4" class="form-control" placeholder="Please describe the issue in detail..." required></textarea>
@@ -529,15 +528,76 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => AOS.init({ duration:800, once:true }));
 
-  const toast = (msg, type = 'success') => {
-    const el = document.createElement('div');
-    el.className = `toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3`;
-    el.setAttribute('role','alert');
-    el.setAttribute('aria-live','assertive');
-    el.setAttribute('aria-atomic','true');
-    el.innerHTML = `<div class="d-flex"><div class="toast-body">${msg}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
-    document.body.appendChild(el);
-    new bootstrap.Toast(el,{delay:3000}).show();
-  };
+  /* ---------- Etsy-like variant picker: per-type dropdowns with combo filtering ---------- */
+  function variantPicker({ types, variants, basePrice, currency }) {
+    return {
+      types, variants, basePrice, currency,
+      selected: {},              // { [typeId]: optionId (string) }
+      currentVariantId: null,
+      currentVariantPrice: null,
+
+      init() {
+        // Initialize empty selections
+        this.types.forEach(t => this.$set(this.selected, t.id, ''));
+      },
+
+      onChange() {
+        // If not all selections chosen, clear current variant
+        const allChosen = this.types.every(t => String(this.selected[t.id] || '') !== '');
+        if (!allChosen) {
+          this.currentVariantId = null;
+          this.currentVariantPrice = null;
+          return;
+        }
+
+        // Try to find an exact variant that matches all chosen options
+        const match = this.variants.find(v =>
+          this.types.every(t => String(v.byType[t.id] || '') === String(this.selected[t.id]))
+        );
+
+        if (match) {
+          this.currentVariantId = match.id;
+          this.currentVariantPrice = match.price;
+        } else {
+          this.currentVariantId = null;
+          this.currentVariantPrice = null;
+        }
+      },
+
+      filteredOptions(typeId) {
+        // If nothing else selected, show all options for this type
+        const chosen = { ...this.selected }; delete chosen[typeId];
+        const anyOther = Object.values(chosen).some(v => String(v || '') !== '');
+        const t = this.types.find(x => x.id === typeId);
+        if (!t) return [];
+
+        if (!anyOther) return t.options;
+
+        // Else: show only options that appear in a variant compatible with other picks
+        const allowed = new Set();
+        this.variants.forEach(v => {
+          const othersMatch = Object.entries(chosen)
+            .filter(([tid, val]) => String(val || '') !== '')
+            .every(([tid, val]) => String(v.byType[tid] || '') === String(val));
+          if (othersMatch && v.byType[typeId]) {
+            allowed.add(String(v.byType[typeId]));
+          }
+        });
+        return t.options.filter(o => allowed.has(String(o.id)));
+      },
+
+      priceFormatted() {
+        const p = this.currentVariantPrice ?? this.basePrice ?? 0;
+        return `${this.currency} ${Number(p).toFixed(2)}`;
+      },
+
+      canSubmit() {
+        // If there are no variation types, allow purchase with base price
+        if (this.types.length === 0) return true;
+        // Otherwise require a valid variant match
+        return !!this.currentVariantId;
+      }
+    }
+  }
 </script>
 @endpush

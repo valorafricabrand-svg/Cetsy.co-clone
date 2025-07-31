@@ -10,11 +10,9 @@
         <i class="fas fa-arrow-left me-1"></i> Back to Listings
       </a>
 
-        <a href="{{ route('products.show', $product) }}"
-                                   class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-eye me-1"></i> View
-                                </a>
-
+      <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-eye me-1"></i> View
+      </a>
 
       <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
         <i class="fas fa-plus me-1"></i> Add New Listing
@@ -46,7 +44,6 @@
        Listing Details
     ─────────────────────────────────────────────────────────────────────────────── --}}
     <div class="card mb-4 shadow-sm">
-     
       <div class="card-body p-4">
         <div class="row g-4">
 
@@ -102,25 +99,25 @@
                    value="{{ old('price',$product->price) }}" required>
             @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
-      <div class="col-md-6">
-  <label for="discount_percent" class="form-label fw-semibold">% Discount</label>
-  <input
-    type="number"
-    id="discount_percent"
-    name="discount_percent"
-    step="1"
-    min="1"
-    max="100"
-    class="form-control @error('discount_percent') is-invalid @enderror"
-    value="{{ old('discount_percent', $product->discount_percent) }}"
-  >
-  @error('discount_percent')
-    <div class="invalid-feedback">{{ $message }}</div>
-  @enderror
-</div>
 
+          <div class="col-md-6">
+            <label for="discount_percent" class="form-label fw-semibold">% Discount</label>
+            <input
+              type="number"
+              id="discount_percent"
+              name="discount_percent"
+              step="1"
+              min="1"
+              max="100"
+              class="form-control @error('discount_percent') is-invalid @enderror"
+              value="{{ old('discount_percent', $product->discount_percent) }}"
+            >
+            @error('discount_percent')
+              <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+          </div>
 
-          {{-- Stock --}}
+          {{-- Stock (Physical only) --}}
           <div class="col-md-6" id="stockSection">
             <label for="stock" class="form-label fw-semibold">Stock Quantity</label>
             <input type="number" id="stock" name="stock" min="0" step="1"
@@ -129,7 +126,7 @@
             @error('stock')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
 
-          {{-- Digital File --}}
+          {{-- Digital File (Digital only) --}}
           <div class="col-md-6" id="digitalFileSection" style="display:none;">
             <label for="digital_file" class="form-label fw-semibold">Digital File</label>
             <input type="file" id="digital_file" name="digital_file"
@@ -179,7 +176,7 @@
             @error('processing_time_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
 
-          {{-- Shipping Profiles --}}
+          {{-- Shipping Profiles (Physical only) --}}
           <div class="col-12" id="shippingProfilesSection" style="display:none;">
             <label class="form-label fw-semibold">Shipping Profiles</label>
             <div class="row gy-3">
@@ -251,10 +248,9 @@
     </div>
   @endif
 
-  {{-- Variations Partial --}}
+  {{-- Variations section intentionally omitted per your request --}}
   @include('products._variation',['product'=>$product])
-
-    {{-- Current Images --}}
+  {{-- Current Images --}}
   <div class="card mb-4 shadow-sm">
     <div class="card-header bg-light"><h5>Current Images</h5></div>
     <div class="card-body">
@@ -263,11 +259,13 @@
           @foreach($product->media as $media)
             <div class="col-6 col-sm-4 col-md-3">
               <div class="card">
-                <img src="{{ asset('storage/'.$media->url) }}" class="card-img-top"
+                <img src="{{ asset('storage/'.$media->url) }}"
+                     class="card-img-top"
                      style="height:140px;object-fit:cover;"
                      data-bs-toggle="modal"
                      data-bs-target="#imageModal"
-                     data-img-url="{{ asset('storage/'.$media->url) }}">
+                     data-img-url="{{ asset('storage/'.$media->url) }}"
+                     alt="Product image">
                 <div class="card-footer text-center py-2">
                   @php
                     $mediaUrl = asset('storage/'.$media->url);
@@ -294,24 +292,21 @@
       @endif
     </div>
   </div>
-  
+
   @include('products._edit_media')
-
-
 </div>
 
-  {{-- Image Preview Modal --}}
+{{-- Image Preview Modal --}}
 <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 bg-transparent">
       <div class="modal-body p-0">
-        <img src="" id="modalImage" class="w-100 rounded">
+        <img src="" id="modalImage" class="w-100 rounded" alt="Preview">
       </div>
       <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
     </div>
   </div>
 </div>
-
 @endsection
 
 @push('scripts')
@@ -319,19 +314,17 @@
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
 <script>
-
-
 // Show/hide stock, digital, shipping sections when type changes
 function toggleSections() {
-  const t = document.getElementById('type').value;
-  document.getElementById('stockSection').style.display = (t==='physical') ? 'block' : 'none';
-  document.getElementById('digitalFileSection').style.display = (t==='digital')  ? 'block' : 'none';
+  const t = document.getElementById('type')?.value || '';
+  document.getElementById('stockSection').style.display            = (t==='physical') ? 'block' : 'none';
+  document.getElementById('digitalFileSection').style.display      = (t==='digital')  ? 'block' : 'none';
   document.getElementById('shippingProfilesSection').style.display = (t==='physical') ? 'block' : 'none';
 }
-document.getElementById('type').addEventListener('change', toggleSections);
+document.getElementById('type')?.addEventListener('change', toggleSections);
 window.addEventListener('DOMContentLoaded', toggleSections);
 
-// Auto‐choose default shipping profile if only one checked
+// Auto-choose default shipping profile if only one checked / keep one default selected
 document.addEventListener('change', e=>{
   if (!e.target.matches('input[name="shipping_profiles[]"]')) return;
   const id = e.target.value;
@@ -343,7 +336,7 @@ document.addEventListener('change', e=>{
   }
 });
 
-// Sortable previews for new images
+// Sortable previews for new images (used in products._edit_media if it hooks into this)
 function imageUploadSortable(){
   return {
     previews: [], idCounter:0, sortable:null,
@@ -371,21 +364,18 @@ function imageUploadSortable(){
   }
 }
 
-// Alpine form for dynamic category + variations
+// Alpine form for dynamic category loading (no variants on this page)
 function listingForm(){
   return {
     type: '{{ old('type',$product->type) }}',
     categoryId: '{{ old('category_id',$product->category_id) }}',
-    variations: @json($existingVariationsForJs),
-    variationType:'', variationOption:'',
-    init(){ 
-      // initial category load
+    init(){
       this.loadCategories();
-      // hide/show sections
       toggleSections();
     },
     async loadCategories(){
       const sel = document.getElementById('category_id');
+      if(!sel) return;
       sel.innerHTML = '<option>Loading…</option>';
       if(!this.type){
         sel.innerHTML = '<option value="">Choose category</option>';
@@ -393,82 +383,70 @@ function listingForm(){
       }
       try {
         const res = await fetch(`/api/categories/by-type/${encodeURIComponent(this.type)}`);
-        if(!res.ok) throw '';
+        if(!res.ok) throw new Error();
         const cats = await res.json();
         sel.innerHTML = '<option value="">Choose category</option>';
         cats.forEach(c=> {
           const o = document.createElement('option');
           o.value = c.id; o.text = c.name;
-          if(String(c.id)===this.categoryId) o.selected=true;
+          if(String(c.id)===String(this.categoryId)) o.selected=true;
           sel.append(o);
         });
       } catch {
-        sel.innerHTML = '<option>Error loading</option>';
+        sel.innerHTML = '<option>Error loading categories</option>';
       }
     },
-    addManualVariation(){
-      this.variations.push({ key:Date.now(), type:this.variationType, option:this.variationOption });
-      this.variationType=''; this.variationOption='';
-    }
   }
 }
+
+// Bootstrap 5 image preview modal wiring
+document.getElementById('imageModal')?.addEventListener('show.bs.modal', function (event) {
+  const trigger = event.relatedTarget;
+  if (!trigger) return;
+  const url = trigger.getAttribute('data-img-url');
+  const img = document.getElementById('modalImage');
+  if (img && url) img.src = url;
+});
 </script>
 
-
-        <!-- Include TinyMCE from the local directory -->
-    <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
+<!-- Include TinyMCE from the local directory -->
+<script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
 <script>
 tinymce.init({
   selector: '#description',
   height: 400,
   min_height: 400,
   menubar: true,
-
-  /* Enable extra plugins for styling */
   plugins: [
     'advlist autolink lists link image charmap print preview anchor',
     'searchreplace visualblocks code fullscreen',
     'insertdatetime media table paste code help wordcount',
-    'formatpainter',        /* copy/paste formatting */
-    'lineheight',           /* adjust line spacing */
-    'textcolor'             /* font color */
+    'formatpainter', 'lineheight', 'textcolor'
   ],
-
-  /* Add font‑size, font‑family, line‑height and Format Painter to toolbar */
   toolbar: [
-    'undo redo | formatpainter | fontselect fontsizeselect |', 
+    'undo redo | formatpainter | fontselect fontsizeselect |',
     'lineheightselect | bold italic underline strikethrough forecolor backcolor |',
     'alignleft aligncenter alignright alignjustify |',
     'bullist numlist outdent indent | removeformat | link image media | code'
   ].join(' '),
-
-  /* Define your available fonts and sizes */
   font_formats: [
-    'Arial=arial,helvetica,sans-serif;', 
-    'Courier New=courier new,courier,monospace;', 
-    'Georgia=georgia,palatino,serif;', 
-    'Tahoma=tahoma,arial,helvetica,sans-serif;', 
-    'Times New Roman=times new roman,times,serif;', 
+    'Arial=arial,helvetica,sans-serif;',
+    'Courier New=courier new,courier,monospace;',
+    'Georgia=georgia,palatino,serif;',
+    'Tahoma=tahoma,arial,helvetica,sans-serif;',
+    'Times New Roman=times new roman,times,serif;',
     'Verdana=verdana,geneva,sans-serif'
   ].join(' '),
-
   fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt',
-
-  /* Enable the lineheight dropdown (requires lineheight plugin) */
   lineheight_formats: '1 1.2 1.5 1.8 2 3',
-
-  /* Let browser context menu & keyboard shortcuts continue to work */
   browser_contextmenu: true,
   contextmenu: 'link image inserttable | cell row column',
-
   branding: false,
   content_css: '{{ asset("css/tinymce-content.css") }}',
   content_style: 'body { min-height:400px !important; }',
-
   setup(editor) {
     editor.on('change', () => editor.save());
   }
 });
 </script>
-
 @endpush
