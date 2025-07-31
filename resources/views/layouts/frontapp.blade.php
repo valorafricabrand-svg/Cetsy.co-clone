@@ -92,16 +92,6 @@
 
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('cartDropdown', () => ({
-                items: [],
-                fetchCart() {
-                    // Replace with AJAX logic if cart items need to be fetched dynamically
-                }
-            }));
-        });
-    </script>
 </head>
 
 <body style="--phoenix-scroll-margin-top: 1.2rem;">
