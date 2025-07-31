@@ -204,7 +204,11 @@ Route::delete('variation-options/{option}', [VariationController::class, 'destro
     Route::post('products', [ProductController::class, 'store'])
         ->middleware('kyc.after.two.sales')
         ->name('products.store');
-    Route::resource('products', ProductController::class)->except(['create', 'store'])->middleware('kyc.after.two.sales');
+    Route::resource('products', ProductController::class)
+        ->except(['create', 'store'])
+        ->middleware('kyc.after.two.sales');
+    Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate'])
+        ->name('products.duplicate');
 
    
     // Checkout

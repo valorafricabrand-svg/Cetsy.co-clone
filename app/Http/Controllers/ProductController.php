@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use App\Models\ListingFeeType;
 use App\Models\Country;
 use App\Models\Wishlist;
@@ -357,6 +358,35 @@ public function update(Request $request, Product $product)
         $product->delete();
 
         return back()->with('success', 'Product deleted successfully!');
+    }
+
+    public function duplicate(Product $product)
+    {
+        abort_if($product->shop_id !== Auth::user()->shop->id, 403);
+
+        $newProduct = null;
+        DB::transaction(function () use ($product, &$newProduct) {
+            $newProduct = $product->replicate();
+            $newProduct->name = $product->name . ' (Copy)';
+            $newProduct->slug = Str::slug($newProduct->name) . '-' . Str::random(6);
+            $newProduct->is_active = 0;
+            $newProduct->save();
+
+            foreach ($product->media as $media) {
+                $newProduct->media()->create($media->replicate()->toArray());
+            }
+
+            foreach ($product->variants as $variant) {
+                $newProduct->variants()->create($variant->replicate()->toArray());
+            }
+
+            foreach ($product->digitalFiles as $file) {
+                $newProduct->digitalFiles()->create($file->replicate()->toArray());
+            }
+        });
+
+        return redirect()->route('products.edit', $newProduct)
+            ->with('success', 'Product duplicated successfully!');
     }
 
     public function show(Product $product)
