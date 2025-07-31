@@ -77,7 +77,7 @@
                             </p>
 
                             {{-- Actions --}}
-                            <div class="mt-auto d-flex justify-content-between">
+                            <div class="mt-auto d-flex gap-2">
                                 <a href="{{ route('products.show', $product) }}"
                                    class="btn btn-outline-primary btn-sm">
                                     <i class="fas fa-eye me-1"></i> View
@@ -86,6 +86,12 @@
                                    class="btn btn-outline-secondary btn-sm">
                                     <i class="fas fa-edit me-1"></i> Edit
                                 </a>
+                                <form action="{{ route('products.duplicate', $product) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-copy me-1"></i> Duplicate
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
