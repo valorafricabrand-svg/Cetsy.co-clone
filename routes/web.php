@@ -210,6 +210,7 @@ Route::delete('variation-options/{option}', [VariationController::class, 'destro
     Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate'])
         ->name('products.duplicate');
 
+   Route::post('media/{media}/crop', [MediaController::class,'crop'])->name('media.crop');
    
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');

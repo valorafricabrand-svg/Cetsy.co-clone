@@ -250,48 +250,7 @@
 
   {{-- Variations section intentionally omitted per your request --}}
   @include('products._variation',['product'=>$product])
-  {{-- Current Images --}}
-  <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-light"><h5>Current Images</h5></div>
-    <div class="card-body">
-      @if($product->media->count())
-        <div class="row g-3">
-          @foreach($product->media as $media)
-            <div class="col-6 col-sm-4 col-md-3">
-              <div class="card">
-                <img src="{{ asset('storage/'.$media->url) }}"
-                     class="card-img-top"
-                     style="height:140px;object-fit:cover;"
-                     data-bs-toggle="modal"
-                     data-bs-target="#imageModal"
-                     data-img-url="{{ asset('storage/'.$media->url) }}"
-                     alt="Product image">
-                <div class="card-footer text-center py-2">
-                  @php
-                    $mediaUrl = asset('storage/'.$media->url);
-                    $isFeatured = $product->featured_image === $mediaUrl;
-                  @endphp
-                  <form action="{{ route('products.setFeaturedImage',$product) }}" method="POST" class="d-inline">
-                    @csrf @method('PATCH')
-                    <input type="hidden" name="featured_image" value="{{ $media->url }}">
-                    <button type="submit" class="btn btn-sm {{ $isFeatured?'btn-outline-warning':'btn-outline-success' }}">
-                      {{ $isFeatured?'Featured':'Make as primary image' }}
-                    </button>
-                  </form>
-                  <form action="{{ route('media.destroy',$media) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove image?')">
-                    @csrf @method('DELETE')
-                    <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                  </form>
-                </div>
-              </div>
-            </div>
-          @endforeach
-        </div>
-      @else
-        <p class="text-muted">No images uploaded yet.</p>
-      @endif
-    </div>
-  </div>
+
 
   @include('products._edit_media')
 </div>

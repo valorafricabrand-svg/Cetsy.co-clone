@@ -1,6 +1,8 @@
 {{-- resources/views/checkout/index.blade.php --}}
 @extends('layouts.frontapp')
 
+@section('title','Checkout')
+
 @section('main')
 <style>
     .form-control, .form-select {
@@ -23,14 +25,23 @@
 
 <section class="checkout-page py-5" style="margin-top:100px;">
     <div class="container">
-
-        {{-- Errors --}}
+        {{-- Validation Errors --}}
         @if ($errors->any())
             <div class="alert alert-danger">
                 <strong>There were some problems with your input:</strong>
                 <ul class="mb-0 mt-2">
-                    @foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
                 </ul>
+            </div>
+        @endif
+
+        {{-- Exception Detail --}}
+        @if (session('error_exception'))
+            <div class="alert alert-danger">
+                <strong>Technical error:</strong>
+                <pre class="mb-0">{{ session('error_exception') }}</pre>
             </div>
         @endif
 
@@ -42,7 +53,6 @@
                 <div class="col-lg-7 order-lg-1">
                     <h4 class="mb-4">Billing & Shipping Details</h4>
                     <div class="row g-3">
-
                         {{-- Full Name --}}
                         <div class="col-md-6">
                             <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
@@ -50,7 +60,6 @@
                                    value="{{ old('full_name', $user->name ?? '') }}" required>
                             @error('full_name')<div class="text-danger">{{ $message }}</div>@enderror
                         </div>
-
                         {{-- Email --}}
                         <div class="col-md-6">
                             <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
@@ -58,7 +67,6 @@
                                    value="{{ old('email', $user->email ?? '') }}" required>
                             @error('email')<div class="text-danger">{{ $message }}</div>@enderror
                         </div>
-
                         {{-- Phone --}}
                         <div class="col-md-6">
                             <label for="phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
@@ -66,7 +74,6 @@
                                    value="{{ old('phone', $user->phone ?? '') }}" required>
                             @error('phone')<div class="text-danger">{{ $message }}</div>@enderror
                         </div>
-
                         {{-- Country --}}
                         <div class="col-md-6">
                             <label for="shipping_country" class="form-label">Country <span class="text-danger">*</span></label>
@@ -81,23 +88,20 @@
                             </select>
                             @error('shipping_country')<div class="text-danger">{{ $message }}</div>@enderror
                         </div>
-
-                        {{-- Address 1 --}}
+                        {{-- Address Line 1 --}}
                         <div class="col-12">
                             <label for="shipping_address_1" class="form-label">Address Line 1 <span class="text-danger">*</span></label>
                             <input type="text" id="shipping_address_1" name="shipping_address_1" class="form-control"
                                    value="{{ old('shipping_address_1') }}" required>
                             @error('shipping_address_1')<div class="text-danger">{{ $message }}</div>@enderror
                         </div>
-
-                        {{-- Address 2 --}}
+                        {{-- Address Line 2 --}}
                         <div class="col-12">
                             <label for="shipping_address_2" class="form-label">Address Line 2</label>
                             <input type="text" id="shipping_address_2" name="shipping_address_2" class="form-control"
                                    value="{{ old('shipping_address_2') }}">
                             @error('shipping_address_2')<div class="text-danger">{{ $message }}</div>@enderror
                         </div>
-
                         {{-- City --}}
                         <div class="col-md-6">
                             <label for="shipping_city" class="form-label">City/Town <span class="text-danger">*</span></label>
@@ -105,7 +109,6 @@
                                    value="{{ old('shipping_city') }}" required>
                             @error('shipping_city')<div class="text-danger">{{ $message }}</div>@enderror
                         </div>
-
                         {{-- State --}}
                         <div class="col-md-6">
                             <label for="shipping_state" class="form-label">State/Province/Region</label>
@@ -113,8 +116,7 @@
                                    value="{{ old('shipping_state') }}">
                             @error('shipping_state')<div class="text-danger">{{ $message }}</div>@enderror
                         </div>
-
-                        {{-- Postal --}}
+                        {{-- Postal Code --}}
                         <div class="col-md-6">
                             <label for="shipping_postal_code" class="form-label">Postal/ZIP Code</label>
                             <input type="text" id="shipping_postal_code" name="shipping_postal_code" class="form-control"
@@ -143,48 +145,44 @@
                             <h5 class="mb-3">Billing Address</h5>
 
                             <div class="col-md-6">
-                                <label for="billing_country" class="form-label">Billing Country</label>
+                                <label for="billing_country" class="form-label">Country</label>
                                 <select id="billing_country" name="billing_country" class="form-select">
                                     <option value="">Select Country</option>
                                     @foreach(\App\Models\Country::orderBy('name')->get() as $country)
-                                        <option value="{{ $country->id }}" @selected(old('billing_country') == $country->id)>
+                                        <option value="{{ $country->id }}"
+                                            @selected(old('billing_country') == $country->id)>
                                             {{ $country->name }}
                                         </option>
                                     @endforeach
                                 </select>
                                 @error('billing_country')<div class="text-danger">{{ $message }}</div>@enderror
                             </div>
-
                             <div class="col-12 mt-2">
-                                <label for="billing_address_1" class="form-label">Billing Address Line 1</label>
+                                <label for="billing_address_1" class="form-label">Address Line 1</label>
                                 <input type="text" id="billing_address_1" name="billing_address_1" class="form-control"
                                        value="{{ old('billing_address_1') }}">
                                 @error('billing_address_1')<div class="text-danger">{{ $message }}</div>@enderror
                             </div>
-
                             <div class="col-12 mt-2">
-                                <label for="billing_address_2" class="form-label">Billing Address Line 2</label>
+                                <label for="billing_address_2" class="form-label">Address Line 2</label>
                                 <input type="text" id="billing_address_2" name="billing_address_2" class="form-control"
                                        value="{{ old('billing_address_2') }}">
                                 @error('billing_address_2')<div class="text-danger">{{ $message }}</div>@enderror
                             </div>
-
                             <div class="col-md-6 mt-2">
-                                <label for="billing_city" class="form-label">Billing City</label>
+                                <label for="billing_city" class="form-label">City/Town</label>
                                 <input type="text" id="billing_city" name="billing_city" class="form-control"
                                        value="{{ old('billing_city') }}">
                                 @error('billing_city')<div class="text-danger">{{ $message }}</div>@enderror
                             </div>
-
                             <div class="col-md-6 mt-2">
-                                <label for="billing_state" class="form-label">Billing State</label>
+                                <label for="billing_state" class="form-label">State/Province/Region</label>
                                 <input type="text" id="billing_state" name="billing_state" class="form-control"
                                        value="{{ old('billing_state') }}">
                                 @error('billing_state')<div class="text-danger">{{ $message }}</div>@enderror
                             </div>
-
                             <div class="col-md-6 mt-2">
-                                <label for="billing_postal_code" class="form-label">Billing Postal Code</label>
+                                <label for="billing_postal_code" class="form-label">Postal/ZIP Code</label>
                                 <input type="text" id="billing_postal_code" name="billing_postal_code" class="form-control"
                                        value="{{ old('billing_postal_code') }}">
                                 @error('billing_postal_code')<div class="text-danger">{{ $message }}</div>@enderror
@@ -193,14 +191,14 @@
 
                         <hr class="my-4">
 
-                        {{-- Order notes --}}
+                        {{-- Order Notes --}}
                         <div class="col-12 mt-3">
                             <label for="order_notes" class="form-label">Order Notes</label>
                             <textarea id="order_notes" name="order_notes" class="form-control" rows="3">{{ old('order_notes') }}</textarea>
                             @error('order_notes')<div class="text-danger">{{ $message }}</div>@enderror
                         </div>
 
-                        {{-- Promo code --}}
+                        {{-- Promo Code --}}
                         <div class="col-12 mt-3">
                             <label for="promo_code" class="form-label">Promo Code</label>
                             <input type="text" id="promo_code" name="promo_code" class="form-control" value="{{ old('promo_code') }}">
@@ -214,68 +212,53 @@
                     <div class="sticky-summary bg-white p-4 shadow-sm rounded">
                         <h4 class="mb-4">Your Order</h4>
 
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th class="text-end">Price</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        <ul class="list-group mb-3">
+                            @php
+                                $subtotal = 0;
+                                $totalShipping = 0;
+                            @endphp
+
+                            @foreach ($cart as $rowId => $item)
                                 @php
-                                    $subtotal = 0;
-                                    $totalShipping = 0;
+                                    $qty      = $item['quantity'];
+                                    $price    = $item['price'];
+                                    $profiles = collect($item['shipping_profiles'] ?? []);
+                                    $sel      = $profiles->firstWhere('id', $item['selected_shipping_profile_id'] ?? null);
+                                    $rate     = $sel['base_rate'] ?? 0;
+
+                                    $lineSubtotal = $price * $qty;
+                                    $lineShipping = $rate * $qty;
+
+                                    $subtotal     += $lineSubtotal;
+                                    $totalShipping += $lineShipping;
                                 @endphp
 
-                                @foreach ($cart as $rowId => $item)
-                                    @php
-                                        $qty   = $item['quantity'] ?? 1;
-                                        $price = $item['price'] ?? 0;
-                                        $shippingProfiles = $item['shipping_profiles'] ?? [];
-                                        $selectedShippingProfileId = $item['selected_shipping_profile_id'] ?? null;
-                                        $shippingProfile = collect($shippingProfiles)->firstWhere('id', $selectedShippingProfileId);
-                                        $shippingCost = $shippingProfile ? ($shippingProfile['base_rate'] * $qty) : 0;
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div>
+                                        {{ $item['name'] }}
+                                        @if(!empty($item['variation_summary']))
+                                            <br><small class="text-muted">{{ $item['variation_summary'] }}</small>
+                                        @endif
+                                        <div class="mt-1">× {{ $qty }}</div>
+                                    </div>
+                                    <div>{{ get_currency() }} {{ number_format($lineSubtotal, 2) }}</div>
+                                </li>
+                            @endforeach
+                        </ul>
 
-                                        $lineTotal = $price * $qty;
-                                        $subtotal += $lineTotal;
-                                        $totalShipping += $shippingCost;
-                                    @endphp
-
-                                    <tr>
-                                        <td>
-                                            {{ $item['name'] }} 
-                                            @if(!empty($item['variation'])) <br><small class="text-muted">{{ $item['variation'] }}</small> @endif
-                                            × {{ $qty }}
-                                        </td>
-                                        <td class="text-end">{{ get_currency() }} {{ number_format($lineTotal, 2) }}</td>
-                                    </tr>
-
-                                    {{-- Hidden arrays for order creation --}}
-                                    <input type="hidden" name="rows[{{ $rowId }}][product_id]" value="{{ $item['product_id'] }}">
-                                    <input type="hidden" name="rows[{{ $rowId }}][product_variation_id]" value="{{ $item['product_variation_id'] ?? '' }}">
-                                    <input type="hidden" name="rows[{{ $rowId }}][quantity]" value="{{ $qty }}">
-                                    <input type="hidden" name="rows[{{ $rowId }}][price]" value="{{ $price }}">
-                                    <input type="hidden" name="rows[{{ $rowId }}][shipping_profile_id]" value="{{ $selectedShippingProfileId }}">
-                                @endforeach
-
-                                <tr>
-                                    <td><strong>Subtotal</strong></td>
-                                    <td class="text-end"><strong>{{ get_currency() }} {{ number_format($subtotal, 2) }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Shipping Cost</strong></td>
-                                    <td class="text-end"><strong>{{ get_currency() }} {{ number_format($totalShipping, 2) }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Total</strong></td>
-                                    <td class="text-end"><strong>{{ get_currency() }} {{ number_format($subtotal + $totalShipping, 2) }}</strong></td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <input type="hidden" name="subtotal" value="{{ $subtotal }}">
-                        <input type="hidden" name="shipping_total" value="{{ $totalShipping }}">
-                        <input type="hidden" name="total" value="{{ $subtotal + $totalShipping }}">
+                        <div class="mb-2 d-flex justify-content-between">
+                            <span>Subtotal</span>
+                            <strong>{{ get_currency() }} {{ number_format($subtotal, 2) }}</strong>
+                        </div>
+                        <div class="mb-2 d-flex justify-content-between">
+                            <span>Shipping</span>
+                            <strong>{{ get_currency() }} {{ number_format($totalShipping, 2) }}</strong>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <span><strong>Total</strong></span>
+                            <strong>{{ get_currency() }} {{ number_format($subtotal + $totalShipping, 2) }}</strong>
+                        </div>
 
                         <div class="d-grid gap-2 mt-4">
                             <button type="submit" class="btn btn-success btn-lg">Place Your Order</button>
@@ -294,7 +277,7 @@
 </section>
 
 <script>
-    function toggleBillingAddress(checked){
+    function toggleBillingAddress(checked) {
         document.getElementById('billing_address_fields').style.display = checked ? 'none' : 'block';
     }
 </script>
