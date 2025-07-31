@@ -97,6 +97,9 @@
               class="m-0"
               onsubmit="return confirm('Are you sure you want to cancel this order?');">
             @csrf @method('PATCH')
+            <div class="mb-2">
+                <textarea name="cancel_reason" class="form-control" rows="3" placeholder="Reason for cancellation" required></textarea>
+            </div>
             <button type="submit"
                     class="btn btn-outline-danger btn-lg d-flex align-items-center gap-2 px-4 py-2">
                 <i class="fas fa-times-circle fs-5"></i>

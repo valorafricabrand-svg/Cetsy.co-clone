@@ -18,7 +18,7 @@ return new class extends Migration
            Assumes payout_requests.wallet_id points to wallets.id
            and wallets.user_id holds the seller ID
         ----------------------------------------------------*/
-        if (Schema::hasColumn('payout_requests', 'wallet_id')) {
+        if (Schema::hasColumn('payout_requests', 'wallet_id') && DB::getDriverName() !== 'sqlite') {
             DB::statement("
                 UPDATE payout_requests pr
                 JOIN   wallets w ON w.id = pr.wallet_id
