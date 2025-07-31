@@ -196,7 +196,7 @@
 
           {{-- ADD-TO-CART BLOCK ----------------------------------------- --}}
           @if($product->type !== 'service')
-            <div class="border rounded-4 p-4 bg-light-subtle"
+            <div class="border rounded-4 p-4 bg-light-subtle shadow-sm"
                  x-data="variantPicker({
                    types: @json($typesData),
                    variants: @json($variantsData),
@@ -238,7 +238,7 @@
               @if($product->shippingProfiles->count())
                 <div class="mb-3">
                   <label class="form-label fw-semibold">Shipping</label>
-                  <select class="form-select" x-model="$root.shippingProfileId" form="addCartForm">
+                  <select class="form-select" x-model="$root.shippingProfileId">
                     @foreach($product->shippingProfiles as $profile)
                       <option value="{{ $profile->id }}">
                         {{ $profile->name }} – {{ get_currency() }} {{ number_format($profile->base_rate, 2) }}
@@ -537,8 +537,8 @@
       currentVariantPrice: null,
 
       init() {
-        // Initialize empty selections
-        this.types.forEach(t => this.$set(this.selected, t.id, ''));
+        // Initialize empty selections for each variation type
+        this.types.forEach(t => this.selected[t.id] = '');
       },
 
       onChange() {
