@@ -14,6 +14,7 @@ use App\Models\ProductVariation;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class OrderController extends Controller
 {
@@ -587,8 +588,6 @@ public function process(Order $order)
 
     public function cancel(Request $request, Order $order)
     {
-        
-
         // Allow cancellation only before the order is shipped
         if (! in_array($order->status, [
                 Order::STATUS_PENDING,
@@ -597,9 +596,31 @@ public function process(Order $order)
             return back()->with('error', 'This order can no longer be cancelled.');
         }
 
-        $order->update(['status' => Order::STATUS_CANCELLED]);
+        $data = $request->validate([
+            'cancel_reason' => 'required|string|max:1000',
+        ]);
 
-        // TODO: trigger refund / notifications here if required
+        DB::transaction(function () use ($order, $data) {
+            $order->update([
+                'status' => Order::STATUS_REFUNDED,
+                'cancel_reason' => $data['cancel_reason'],
+            ]);
+
+            Wallet::create([
+                'user_id'   => $order->user_id,
+                'credit'    => $order->total_amount,
+                'debit'     => 0,
+                'balance'   => 0, // Recalculated elsewhere if needed
+                'reference' => 'refund_'.$order->id,
+                'description' => 'Order refund',
+            ]);
+        });
+
+        $order->load(['user', 'shop.user']);
+        $buyer  = $order->user;
+        $seller = $order->shop->user;
+
+        Notification::send([$buyer, $seller], new \App\Notifications\OrderCancelledNotification($order));
 
         return back()->with('success', 'Your order was cancelled successfully.');
     }
