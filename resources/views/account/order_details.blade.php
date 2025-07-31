@@ -7,59 +7,57 @@
 <div class="content">
   <div class="container-xxl">
 
-{{-- ===== HEADER ===== --}}
-<div class="border-bottom pb-3 mb-4">
+    {{-- ===== HEADER ===== --}}
+    <div class="border-bottom pb-3 mb-4">
 
-@include('account.stepper')
+      @include('account.stepper')
 
+      <div
+        class="d-flex flex-column flex-md-row justify-content-md-between
+               align-items-start align-items-md-center gap-3">
 
-  <div
-    class="d-flex flex-column flex-md-row justify-content-md-between
-           align-items-start align-items-md-center gap-3">
+        {{-- Title --}}
+        <h2 class="mb-0 text-success fw-semibold d-flex align-items-center gap-1">
+          <i class="bi bi-receipt-cutoff"></i>
+          Order&nbsp;#{{ $order->id }}&nbsp;Details
+        </h2>
 
-    {{-- Title --}}
-    <h2 class="mb-0 text-success fw-semibold d-flex align-items-center gap-1">
-      <i class="bi bi-receipt-cutoff"></i>
-      Order&nbsp;#{{ $order->id }}&nbsp;Details
-    </h2>
+        {{-- Action buttons --}}
+        <div class="btn-toolbar flex-wrap gap-2">
 
-    {{-- Action buttons --}}
-    <div class="btn-toolbar flex-wrap gap-2">
+          @if($order->status === \App\Models\Order::STATUS_PENDING)
+            <a href="{{ route('pay_now', $order->id) }}"
+               class="btn btn-primary btn-lg d-flex align-items-center gap-2 px-4 py-2">
+              <i class="bi bi-credit-card fs-5"></i>
+              <span>Pay&nbsp;Now</span>
+            </a>
+          @endif
 
-      @if($order->status === \App\Models\Order::STATUS_PENDING)
-        <a href="{{ route('pay_now', $order->id) }}"
-           class="btn btn-primary btn-lg d-flex align-items-center gap-2 px-4 py-2">
-          <i class="bi bi-credit-card fs-5"></i>
-          <span>Pay&nbsp;Now</span>
-        </a>
-      @endif
+          <a href="{{ route('orders.chat.show', $order->id) }}"
+             class="btn btn-outline-info btn-lg d-flex align-items-center gap-2 px-4 py-2">
+            <i class="bi bi-chat-dots fs-5"></i>
+            <span>Messages</span>
+          </a>
 
-      <a href="{{ route('orders.chat.show', $order->id) }}"
-         class="btn btn-outline-info btn-lg d-flex align-items-center gap-2 px-4 py-2">
-        <i class="bi bi-chat-dots fs-5"></i>
-        <span>Messages</span>
-      </a>
+          <a href="{{ route('account.orders') }}"
+             class="btn btn-outline-secondary btn-lg d-flex align-items-center gap-2 px-4 py-2">
+            <i class="bi bi-arrow-left-circle fs-5"></i>
+            <span>Back</span>
+          </a>
 
-      <a href="{{ route('account.orders') }}"
-         class="btn btn-outline-secondary btn-lg d-flex align-items-center gap-2 px-4 py-2">
-        <i class="bi bi-arrow-left-circle fs-5"></i>
-        <span>Back</span>
-      </a>
+          @if($order->status === \App\Models\Order::STATUS_SHIPPED)
+            <button class="btn btn-outline-success btn-lg d-flex align-items-center gap-2 px-4 py-2"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deliverModal-{{ $order->id }}">
+              <i class="bi bi-check2-circle fs-5"></i>
+              <span>Mark&nbsp;Delivered</span>
+            </button>
+            @include('seller.orders.modals.delivered')
+          @endif
 
-      @if($order->status === \App\Models\Order::STATUS_SHIPPED)
-        <button class="btn btn-outline-success btn-lg d-flex align-items-center gap-2 px-4 py-2"
-                data-bs-toggle="modal"
-                data-bs-target="#deliverModal-{{ $order->id }}">
-          <i class="bi bi-check2-circle fs-5"></i>
-          <span>Mark&nbsp;Delivered</span>
-        </button>
-        @include('seller.orders.modals.delivered')
-      @endif
-
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-
 
     {{-- ===== SHOP DETAILS ===== --}}
     @if($order->shop)
@@ -76,7 +74,9 @@
             @if($order->shop->address)
               <div class="col-12"><span class="fw-semibold">Address:</span><br>{{ $order->shop->address }}</div>
             @endif
-            <div class="col-12 col-md-6"><span class="fw-semibold">Owner:</span> {{ optional($order->shop->user)->name ?? 'N/A' }}</div>
+            <div class="col-12 col-md-6">
+              <span class="fw-semibold">Owner:</span> {{ optional($order->shop->user)->name ?? 'N/A' }}
+            </div>
           </div>
         </div>
       </div>
@@ -91,17 +91,37 @@
           </div>
           <div class="card-body small">
             <ul class="list-group list-group-flush">
-              <li class="list-group-item px-0 d-flex justify-content-between"><span class="fw-semibold">Tracking No:</span><span>{{ $order->tracking_no ?? 'N/A' }}</span></li>
-              <li class="list-group-item px-0 d-flex justify-content-between"><span class="fw-semibold">Courier:</span><span>{{ $order->courier ?? 'N/A' }}</span></li>
-              <li class="list-group-item px-0 d-flex justify-content-between"><span class="fw-semibold">Quantity:</span><span>{{ $order->items->sum('quantity') }}</span></li>
-              <li class="list-group-item px-0 d-flex justify-content-between"><span class="fw-semibold">Subtotal:</span><span>{{ get_currency() }} {{ number_format($order->subtotal,2) }}</span></li>
-              <li class="list-group-item px-0 d-flex justify-content-between"><span class="fw-semibold">Shipping Fee:</span><span>{{ get_currency() }} {{ number_format($order->shipping_cost,2) }}</span></li>
-              <li class="list-group-item px-0 d-flex justify-content-between"><span class="fw-semibold">Total Amount:</span><span class="fw-bold">{{ get_currency() }} {{ number_format($order->total_amount,2) }}</span></li>
+              <li class="list-group-item px-0 d-flex justify-content-between">
+                <span class="fw-semibold">Tracking No:</span><span>{{ $order->tracking_no ?? 'N/A' }}</span>
+              </li>
+              <li class="list-group-item px-0 d-flex justify-content-between">
+                <span class="fw-semibold">Courier:</span><span>{{ $order->courier ?? 'N/A' }}</span>
+              </li>
+              <li class="list-group-item px-0 d-flex justify-content-between">
+                <span class="fw-semibold">Quantity:</span><span>{{ $order->items->sum('quantity') }}</span>
+              </li>
+              <li class="list-group-item px-0 d-flex justify-content-between">
+                <span class="fw-semibold">Subtotal:</span>
+                <span>{{ get_currency() }} {{ number_format($order->subtotal,2) }}</span>
+              </li>
+              <li class="list-group-item px-0 d-flex justify-content-between">
+                <span class="fw-semibold">Shipping Fee:</span>
+                <span>{{ get_currency() }} {{ number_format($order->shipping_cost,2) }}</span>
+              </li>
+              <li class="list-group-item px-0 d-flex justify-content-between">
+                <span class="fw-semibold">Total Amount:</span>
+                <span class="fw-bold">{{ get_currency() }} {{ number_format($order->total_amount,2) }}</span>
+              </li>
               <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
                 <span class="fw-semibold">Status:</span>
-                <span class="badge {{ $order->getStatusBadgeClass() }} px-3 py-2 text-uppercase">{{ ucfirst($order->status) }}</span>
+                <span class="badge {{ $order->getStatusBadgeClass() }} px-3 py-2 text-uppercase">
+                  {{ ucfirst($order->status) }}
+                </span>
               </li>
-              <li class="list-group-item px-0 d-flex justify-content-between"><span class="fw-semibold">Created:</span><span>{{ $order->created_at->format('d M Y, h:i A') }}</span></li>
+              <li class="list-group-item px-0 d-flex justify-content-between">
+                <span class="fw-semibold">Created:</span>
+                <span>{{ $order->created_at->format('d M Y, h:i A') }}</span>
+              </li>
             </ul>
           </div>
         </div>
@@ -115,22 +135,37 @@
           </div>
           <div class="card-body small">
             <ul class="list-group list-group-flush">
-              <li class="list-group-item px-0"><span class="fw-semibold">Name:</span> {{ $order->full_name }}</li>
-              <li class="list-group-item px-0"><span class="fw-semibold">Email:</span> {{ $order->email }}</li>
-              <li class="list-group-item px-0"><span class="fw-semibold">Phone:</span> {{ $order->phone }}</li>
+              <li class="list-group-item px-0">
+                <span class="fw-semibold">Name:</span> {{ $order->full_name }}
+              </li>
+              <li class="list-group-item px-0">
+                <span class="fw-semibold">Email:</span> {{ $order->email }}
+              </li>
+              <li class="list-group-item px-0">
+                <span class="fw-semibold">Phone:</span> {{ $order->phone }}
+              </li>
               <li class="list-group-item px-0">
                 <span class="fw-semibold">Shipping Address:</span>
-                <address class="mb-0">{{ $order->shipping_address_1 }}<br>@if($order->shipping_address_2){{ $order->shipping_address_2 }}<br>@endif{{ $order->shipping_city }}, {{ $order->shipping_state }}<br>{{ $order->shipping_postal_code }}</address>
+                <address class="mb-0">
+                  {{ $order->shipping_address_1 }}<br>
+                  @if($order->shipping_address_2){{ $order->shipping_address_2 }}<br>@endif
+                  {{ $order->shipping_city }}, {{ $order->shipping_state }}<br>
+                  {{ $order->shipping_postal_code }}
+                </address>
               </li>
-              <li class="list-group-item px-0"><span class="fw-semibold">Shipping Method:</span> {{ ucfirst($order->shipping_method) }}</li>
-              <li class="list-group-item px-0"><span class="fw-semibold">Payment Method:</span> {{ ucfirst($order->payment_method) }}</li>
+              <li class="list-group-item px-0">
+                <span class="fw-semibold">Shipping Method:</span> {{ ucfirst($order->shipping_method) }}
+              </li>
+              <li class="list-group-item px-0">
+                <span class="fw-semibold">Payment Method:</span> {{ ucfirst($order->payment_method) }}
+              </li>
             </ul>
           </div>
         </div>
       </div>
     </div>
 
-    {{-- ===== ORDER ITEMS w/ DOWNLOADS ===== --}}
+    {{-- ===== ORDER ITEMS (uses variation_summary) + DOWNLOADS ===== --}}
     @if($order->items->count())
       <div class="card shadow-sm border-0 mt-4">
         <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
@@ -159,50 +194,74 @@
               <tbody>
                 @foreach($order->items as $item)
                   @php
-                    $reviewed  = $item->review !== null;
-                    $modalId   = 'reviewModal_'.$item->id;
-                    $profile   = optional($item->shippingProfile)->name ?? 'N/A';
-                    $shipCost  = $item->shipping_cost ?? 0;
+                    $product     = optional($item->product);
+                    $reviewed    = $item->review !== null;
+                    $modalId     = 'reviewModal_'.$item->id;
+                    $profileName = optional($item->shippingProfile)->name ?? 'N/A';
+                    $shipCost    = (float) ($item->shipping_cost ?? 0);
+                    $qty         = (int) ($item->quantity ?? 1);
+                    $lineSubtotal= (float) ($item->price ?? 0) * $qty;
+                    $lineTotal   = $lineSubtotal + $shipCost;
                     $canDownload = in_array(
-                      $order->status,
-                      [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED]
-                    ) && optional($item->product)->type === 'digital';
+                                      $order->status,
+                                      [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED]
+                                   ) && $product && $product->type === 'digital';
+                    // image
+                    $thumbUrl = $product?->featured_image
+                        ?: ($product?->media->first()?->url ? asset('storage/'.$product->media->first()->url) : null);
                   @endphp
 
                   <tr>
                     <td>{{ $loop->iteration }}</td>
-                      <td>
-        @if($item->product->featured_image)
-          <a href="{{ route('listing.show', $item->product->slug) }}" target="_blank">
-  <img 
-    src="{{ $item->product->featured_image }}"
-    alt="{{ $item->name }}"
-    class="img-fluid rounded"
-    style="max-width:100px; height:auto; object-fit:cover;"
-  ></a>
-@else
-  <a href="{{ route('listing.show', $item->product->slug) }}" target="_blank">
-  <img 
-    src="{{ asset('storage/' . ($item->product->media->first()->url ?? 'placeholder.jpg')) }}"
-    alt="{{ $item->product->name }}"
-    class="img-fluid rounded"
-    style="max-width:100px; height:auto; object-fit:cover;"
-  ></a>
-@endif
 
-                                </td>
-                    <td>{{ optional($item->product)->name ?? 'N/A' }}</td>
-                    <td>{{ $item->variation->type ?? '-' }} : {{ $item->variation->variation_option ?? '-' }} </td>
-                    <td>{{ $item->quantity }}</td>
-                    <td>{{ get_currency() }} {{ number_format($item->price,2) }}</td>
-                    <td>{{ $profile }}</td>
-                    <td>{{ get_currency() }} {{ number_format($shipCost,2) }}</td>
-                    <td class="fw-semibold">{{ get_currency() }} {{ number_format($item->price*$item->quantity + $shipCost,2) }}</td>
+                    {{-- Image --}}
+                    <td>
+                      @if($thumbUrl)
+                        <a href="{{ route('listing.show', $product->slug) }}" target="_blank">
+                          <img
+                            src="{{ $thumbUrl }}"
+                            alt="{{ $product->name }}"
+                            class="img-fluid rounded"
+                            style="max-width:100px; height:auto; object-fit:cover;"
+                          >
+                        </a>
+                      @endif
+                    </td>
 
-                    {{-- review column --}}
+                    {{-- Product name --}}
+                    <td>
+                      <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="text-decoration-none">
+                        {{ $product->name ?? 'N/A' }}
+                      </a>
+                    </td>
+
+                    {{-- Variation: now uses saved summary string --}}
+                    <td>
+                      {{ $item->variation_summary ?? '—' }}
+                    </td>
+
+                    {{-- Qty --}}
+                    <td>{{ $qty }}</td>
+
+                    {{-- Unit Price --}}
+                    <td>{{ get_currency() }} {{ number_format($item->price, 2) }}</td>
+
+                    {{-- Shipping profile --}}
+                    <td>{{ $profileName }}</td>
+
+                    {{-- Shipping cost --}}
+                    <td>{{ get_currency() }} {{ number_format($shipCost, 2) }}</td>
+
+                    {{-- Line total --}}
+                    <td class="fw-semibold">{{ get_currency() }} {{ number_format($lineTotal, 2) }}</td>
+
+                    {{-- Review --}}
                     <td class="text-center">
                       @if($reviewed)
-                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> {{ $item->review->rating }} ⭐</span>
+                        <span class="badge bg-success">
+                          <i class="bi bi-check-circle"></i>
+                          {{ $item->review->rating }} ⭐
+                        </span>
                       @else
                         <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
                           <i class="bi bi-star"></i> Review
@@ -210,27 +269,25 @@
                       @endif
                     </td>
 
-                    {{-- downloads column --}}
+                    {{-- Downloads (digital products only + allowed statuses) --}}
                     <td>
-                        @if($item->product->digitalFiles->count())
-      <div class="card mb-4 shadow-sm">
-        
-        <ul class="list-group list-group-flush">
-          @foreach($item->product->digitalFiles as $file)
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-
-              <a href="{{ route('digital-files.download', $file) }}" target="_blank" class="d-inline-flex align-items-center">
-  <i class="fas fa-file-download me-2"></i>{{ $file->filename }}
-</a>
-
-
-            
-           
-            </li>
-          @endforeach
-        </ul>
-      </div>
-    @endif
+                      @if($canDownload && $product && $product->digitalFiles->count())
+                        <div class="card mb-0 shadow-sm">
+                          <ul class="list-group list-group-flush">
+                            @foreach($product->digitalFiles as $file)
+                              <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a href="{{ route('digital-files.download', $file) }}"
+                                   target="_blank"
+                                   class="d-inline-flex align-items-center">
+                                  <i class="fas fa-file-download me-2"></i> {{ $file->filename }}
+                                </a>
+                              </li>
+                            @endforeach
+                          </ul>
+                        </div>
+                      @else
+                        <span class="text-muted">—</span>
+                      @endif
                     </td>
                   </tr>
                 @endforeach
@@ -251,16 +308,32 @@
           <div class="table-responsive">
             <table class="table table-striped table-hover mb-0 align-middle">
               <thead class="table-light text-nowrap">
-                <tr><th>#</th><th>Reference</th><th>Method</th><th>Amount</th><th>Status</th><th>Paid On</th></tr>
+                <tr>
+                  <th>#</th>
+                  <th>Reference</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Paid On</th>
+                </tr>
               </thead>
               <tbody>
                 @foreach($order->payments as $pay)
+                  @php
+                    // Many implementations use numeric codes. Treat "3" as completed.
+                    $isCompleted = (string)$pay->status === '3' || strtolower((string)$pay->status) === 'success' || strtolower((string)$pay->status) === 'completed';
+                    $statusLabel = $isCompleted ? 'Completed' : (is_numeric($pay->status) ? $pay->status : ucfirst((string)$pay->status));
+                  @endphp
                   <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $pay->local_transaction_id }}</td>
                     <td>{{ ucfirst($pay->payment_method) }}</td>
                     <td>{{ get_currency() }} {{ number_format($pay->total_amount,2) }}</td>
-                    <td><span class="badge {{ $pay->status === 'success' ? 'bg-success' : 'bg-secondary' }}">{{ ucfirst($pay->status) }}</span></td>
+                    <td>
+                      <span class="badge {{ $isCompleted ? 'bg-success' : 'bg-secondary' }}">
+                        {{ $statusLabel }}
+                      </span>
+                    </td>
                     <td>{{ $pay->created_at->format('d M Y, h:i A') }}</td>
                   </tr>
                 @endforeach
@@ -309,7 +382,9 @@
               <label class="form-label fw-semibold">Rating</label>
               <select name="rating" class="form-select" required>
                 <option value="" hidden>Choose…</option>
-                @for($i=5;$i>=1;$i--)<option value="{{ $i }}">{{ $i }} ⭐</option>@endfor
+                @for($i=5;$i>=1;$i--)
+                  <option value="{{ $i }}">{{ $i }} ⭐</option>
+                @endfor
               </select>
             </div>
             <div class="mb-3">
@@ -319,7 +394,9 @@
           </div>
 
           <div class="modal-footer">
-            <button class="btn btn-primary"><i class="bi bi-send"></i> Submit Review</button>
+            <button class="btn btn-primary">
+              <i class="bi bi-send"></i> Submit Review
+            </button>
           </div>
         </form>
       </div>

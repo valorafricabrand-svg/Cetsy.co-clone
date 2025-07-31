@@ -3,16 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\ProductVariation;
+use App\Models\VariationOption;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
+use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
     /**
-     * Add a product to the session cart.
+     * Add a product (with selected options) to the session cart.
      */
     public function addToCart(Request $request): RedirectResponse
     {
@@ -27,7 +28,7 @@ class CartController extends Controller
     }
 
     /**
-     * "Buy Now": add to cart then go to cart/checkout.
+     * "Buy Now": add to cart then redirect to the cart page.
      */
     public function addToBuy(Request $request): RedirectResponse
     {
@@ -36,7 +37,7 @@ class CartController extends Controller
 
         return redirect()
             ->route('cart.view')
-            ->with('success', 'Proceeding to checkout...');
+            ->with('success', 'Proceeding to checkout…');
     }
 
     /**
@@ -144,60 +145,80 @@ class CartController extends Controller
      | Internals
      | ----------------------------------------------------------------- */
 
+    /**
+     * Validate incoming add-to-cart payload.
+     */
     private function validateCartData(Request $request): array
     {
         return $request->validate([
             'product_id'           => 'required|integer|exists:products,id',
-            'product_variation_id' => 'nullable|integer|exists:product_variations,id',
+            'variations'           => 'nullable|array',
+            'variations.*'         => 'integer|exists:variation_options,id',
             'quantity'             => 'nullable|integer|min:1',
             'shipping_profile_id'  => 'nullable|integer|exists:shipping_profiles,id',
         ]);
     }
 
+    /**
+     * Core logic to add (or increment) an item in the session cart,
+     * storing the selected VariationOptions rather than a ProductVariation.
+     */
     private function addItemToSessionCart(array $data): void
     {
-        /** @var Product $product */
-        $product = Product::with(['shippingProfiles', 'media'])->findOrFail($data['product_id']);
+        // Load product with media & shipping profiles
+        $product = Product::with(['shippingProfiles','media'])->findOrFail($data['product_id']);
 
-        /** @var ProductVariation|null $variation */
-        $variation = null;
-        if (!empty($data['product_variation_id'])) {
-            $variation = ProductVariation::where('product_id', $product->id)
-                                         ->findOrFail($data['product_variation_id']);
-        }
+        // Determine quantity & chosen shipping profile
+        $qty           = $data['quantity'] ?? 1;
+        $defaultShipId = $product->shippingProfiles->firstWhere('is_default', true)?->id;
+        $shipProfile   = $data['shipping_profile_id'] ?? $defaultShipId;
 
-        $qty              = $data['quantity'] ?? 1;
-        $defaultProfileId = $product->shippingProfiles->firstWhere('is_default', true)?->id;
-        $chosenProfile    = $data['shipping_profile_id'] ?? $defaultProfileId;
+        // Fetch selected options, sorted
+        $optionIds = collect($data['variations'] ?? [])->map(fn($v) => (int)$v)->sort()->values();
+        $options   = $optionIds->isEmpty()
+            ? collect()
+            : VariationOption::with('variationType')
+                              ->whereIn('id', $optionIds)
+                              ->get()
+                              ->sortBy(fn($o) => $optionIds->search($o->id));
 
-        // Unique row id (product-only or product-variation combo)
-        $rowId = $product->id . ($variation ? '-'.$variation->id : '');
+        // Build human-readable summary & unique row ID
+        $summary    = $options->map(fn($o) => "{$o->variationType->name}: {$o->value}")
+                              ->join(', ');
+        $rowId      = implode('-', array_merge([$product->id], $optionIds->all()));
 
+        // Retrieve existing cart
         $cart = session()->get('cart', []);
 
         if (isset($cart[$rowId])) {
+            // Already in cart -> increment quantity & update shipping
             $cart[$rowId]['quantity'] += $qty;
-            $cart[$rowId]['selected_shipping_profile_id'] = $chosenProfile;
+            $cart[$rowId]['selected_shipping_profile_id'] = $shipProfile;
         } else {
-            $price = $this->resolvePrice($product, $variation); // use variation if available else product
+            // New entry
+            $price = (float) ($product->discounted_price ?? $product->price);
 
             $cart[$rowId] = [
                 'row_id'                       => $rowId,
                 'product_id'                   => $product->id,
-                'product_variation_id'         => $variation?->id,
                 'name'                         => $product->name,
-                'variation'                    => $variation?->name ?? $variation?->variation_option ?? null,
+                'variations'                   => $options->map(fn($o) => [
+                                                    'type'  => $o->variationType->name,
+                                                    'value' => $o->value,
+                                                ])->all(),
+                'variation_summary'            => $summary,
                 'quantity'                     => $qty,
                 'price'                        => $price,
-                'photo'                        => $this->resolvePhoto($product, $variation),
-                'shipping_profiles'            => $product->shippingProfiles
-                                                        ->map(fn($p) => [
-                                                            'id'         => $p->id,
-                                                            'name'       => $p->name,
-                                                            'base_rate'  => $p->base_rate,
-                                                            'is_default' => $p->is_default,
-                                                        ])->toArray(),
-                'selected_shipping_profile_id' => $chosenProfile,
+                'photo'                        => optional($product->media->first())->url
+                                                    ? asset('storage/'.optional($product->media->first())->url)
+                                                    : null,
+                'shipping_profiles'            => $product->shippingProfiles->map(fn($p) => [
+                                                    'id'         => $p->id,
+                                                    'name'       => $p->name,
+                                                    'base_rate'  => $p->base_rate,
+                                                    'is_default' => $p->is_default,
+                                                ])->all(),
+                'selected_shipping_profile_id' => $shipProfile,
             ];
         }
 
@@ -205,45 +226,15 @@ class CartController extends Controller
     }
 
     /**
-     * Prefer variation price; else product discounted price, else product price.
+     * Decrease a cart row's quantity or remove it if it falls below 1.
      */
-    private function resolvePrice(Product $product, ?ProductVariation $variation): float
-    {
-        if ($variation) {
-            // common fields to check
-            if (!is_null($variation->price)) {
-                return (float) $variation->price;
-            }
-            if (!is_null($variation->price_override ?? null)) {
-                return (float) $variation->price_override;
-            }
-            if (isset($variation->price_diff) && $variation->price_diff != 0) {
-                return (float) ($product->discounted_price ?? $product->price) + (float) $variation->price_diff;
-            }
-        }
-
-        return (float) ($product->discounted_price ?? $product->price);
-    }
-
-    /**
-     * Choose best image: variation image > product first media > null.
-     */
-    private function resolvePhoto(Product $product, ?ProductVariation $variation): ?string
-    {
-        if ($variation && $variation->image) {
-            return asset('storage/'.$variation->image);
-        }
-
-        $first = $product->media->first()?->url;
-        return $first ? asset('storage/'.$first) : null;
-    }
-
     private function decreaseOrRemove(array &$cart, string $rowId): void
     {
-        $cart[$rowId]['quantity']--;
-
-        if ($cart[$rowId]['quantity'] < 1) {
-            unset($cart[$rowId]);
+        if (isset($cart[$rowId])) {
+            $cart[$rowId]['quantity']--;
+            if ($cart[$rowId]['quantity'] < 1) {
+                unset($cart[$rowId]);
+            }
         }
     }
 }
