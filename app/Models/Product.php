@@ -161,9 +161,14 @@ public function options()
     return $this->hasMany(ProductOption::class);
 }
 
-public function variations()
-{
-    return $this->hasMany(ProductVariation::class);
+
+
+
+public function variationTypes() {
+    return $this->hasMany(VariationType::class);
+}
+public function variations() {
+    return $this->hasMany(Variant::class)->with('options');
 }
 
 
