@@ -3,49 +3,44 @@
 @section('main')
 
 <!-- Hero Section -->
-<section id="hero" class="py-5" style="background-color: #FDF4E4;">
-  <div class="container d-flex flex-column flex-lg-row align-items-center">
-    <!-- Hero Text -->
-    <div class="me-lg-5 text-center text-lg-start">
-      <h1 class="display-4 fw-bold text-success mb-3">
-        Cetsy Your Global Marketplace
-      </h1>
-      
-      <p class="lead text-muted mb-4" style="max-width: 480px;">
-        Your global marketplace where you’ll find almost anything—from anyone, anywhere.
-      </p>
-      <div class="d-flex justify-content-center justify-content-lg-start gap-3 mb-4">
-        <a href="{{ route('listings') }}"
-        class="btn btn-success btn-lg rounded-pill shadow-sm px-4">
-        Shop Now
-      </a>
-      <a href="#features"
-      class="btn btn-outline-success btn-lg rounded-pill shadow-sm px-4">
-      Learn More
-    </a>
-  </div>
-  <div class="d-flex flex-wrap gap-4 align-items-center justify-content-center justify-content-lg-start small text-secondary">
-    <div class="d-flex align-items-center">
-      <i class="fas fa-shield-alt fs-5 me-2 text-success"></i>
-      <span>Secure &amp; Trusted</span>
-    </div>
-    <div class="d-flex align-items-center">
-      <i class="fas fa-cogs fs-5 me-2 text-success"></i>
-      <span>Custom Orders Available</span>
-    </div>
-  </div>
-</div>
+<section id="hero" class="py-5 position-relative overflow-hidden bg-light bg-gradient">
+  <div class="container position-relative py-5">
+    <div class="row align-items-center g-5">
+      <!-- Hero Text -->
+      <div class="col-lg-6 text-center text-lg-start">
+        <h1 class="display-4 fw-bold text-success mb-3">
+          Cetsy Your Global Marketplace
+        </h1>
 
-<!-- Hero Image -->
-<div class="mt-5 mt-lg-0 text-center flex-shrink-0">
-  <img
-  src="{{ asset('assets/images/illustrator.webp') }}"
-  alt="World map with shopping icons"
-  class="img-fluid rounded-lg shadow"
-  style="max-width: 600px;"
-  >
-</div>
-</div>
+        <p class="lead text-muted mb-4" style="max-width: 480px;">
+          Your global marketplace where you’ll find almost anything—from anyone, anywhere.
+        </p>
+        <div class="d-flex justify-content-center justify-content-lg-start gap-3 mb-4">
+          <a href="{{ route('listings') }}" class="btn btn-success btn-lg rounded-pill shadow px-4">
+            Shop Now
+          </a>
+          <a href="#features" class="btn btn-outline-success btn-lg rounded-pill shadow px-4">
+            Learn More
+          </a>
+        </div>
+        <div class="d-flex flex-wrap gap-4 align-items-center justify-content-center justify-content-lg-start small text-secondary">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-shield-alt fs-5 me-2 text-success"></i>
+            <span>Secure &amp; Trusted</span>
+          </div>
+          <div class="d-flex align-items-center">
+            <i class="fas fa-cogs fs-5 me-2 text-success"></i>
+            <span>Custom Orders Available</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Image -->
+      <div class="col-lg-6 text-center">
+        <img src="{{ asset('assets/images/illustrator.webp') }}" alt="World map with shopping icons" class="img-fluid rounded shadow" style="max-width: 600px;">
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- Trending Categories -->
@@ -56,21 +51,20 @@
       @foreach($categories as $cat)
       <div class="col">
         <a href="{{ route('category.show', $cat->slug) }}" class="text-decoration-none">
-          <div class="ratio ratio-1x1 bg-secondary rounded overflow-hidden">
-            @if($cat->image)
-            <img 
-            src="{{ asset('storage/'.$cat->image) }}" 
-            alt="{{ $cat->name }}" 
-            class="w-100 h-100" 
-            style="object-fit:cover;"
-            >
-            @else
-            <div class="d-flex align-items-center justify-content-center h-100 text-white fw-semibold">
-              {{ $cat->name }}
+          <div class="card border-0 shadow-sm h-100">
+            <div class="ratio ratio-1x1 overflow-hidden rounded-top">
+              @if($cat->image)
+              <img src="{{ asset('storage/'.$cat->image) }}" alt="{{ $cat->name }}" class="w-100 h-100 object-fit-cover">
+              @else
+              <div class="d-flex align-items-center justify-content-center h-100 bg-secondary text-white fw-semibold">
+                {{ $cat->name }}
+              </div>
+              @endif
             </div>
-            @endif
+            <div class="card-body p-2">
+              <p class="text-center text-dark small fw-semibold mb-0">{{ $cat->name }}</p>
+            </div>
           </div>
-          <p class="mt-2 text-center text-dark small mb-0">{{ $cat->name }}</p>
         </a>
       </div>
       @endforeach

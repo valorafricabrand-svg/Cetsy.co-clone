@@ -20,7 +20,8 @@ class OrderItem extends Model
         'quantity',
         'price',
         'shipping_profile_id',  // Add this field here
-        'shipping_cost'
+        'shipping_cost',
+        'variation_summary'
     ];
 
     /**

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use App\Models\ListingFeeType;
 use App\Models\Country;
 use App\Models\Wishlist;
@@ -181,61 +182,50 @@ public function store(Request $request)
 
 
 
- public function edit(Product $product)
-    {
-        // 1. Get the current user’s shop and its shipping profiles
-        $shop = Auth::user()->shop;
-        $shippingProfiles = $shop->shippingProfiles;
+public function edit(Product $product)
+{
 
-        // 2. Determine which profiles are assigned and which is default
-        $assignedProfiles = $product
-            ->shippingProfiles()
-            ->pluck('shipping_profile_id')
-            ->toArray();
 
-        $defaultProfileId = $product
-            ->shippingProfiles()
-            ->wherePivot('is_default', true)
-            ->pluck('shipping_profile_id')
-            ->first();
+    // 1) Current user’s shop + shipping profiles
+    $shop = Auth::user()->shop;
+    $shippingProfiles = $shop?->shippingProfiles ?? collect();
 
-        // 3. Dropdown data for categories and countries
-        $categories = Category::orderBy('name')->get();
-        $countries  = Country::orderBy('name')->get();
+    // 2) Profiles assigned to this product + default profile id
+    $assignedProfiles = $product->shippingProfiles()
+        ->pluck('shipping_profile_id')
+        ->all();
 
-        // 4. Eager-load variations → values, and category → attributes → values
-        $product->load([
-            // for each variation, load its CategoryAttributeValue rows
-            'variations.values:id,category_attribute_id,value',
-            // for the category’s attribute picker, load each attribute’s values
-            'category.attributes.values:id,category_attribute_id,value',
-        ]);
+    $defaultProfileId = $product->shippingProfiles()
+        ->wherePivot('is_default', true)
+        ->value('shipping_profile_id');
 
-        // 5. Build JS payload for existing variations
-        $existingVariationsForJs = $product->variations
-            ->map(fn($v) => [
-                'key'      => now()->timestamp . random_int(1000, 9999),
-                'id'       => $v->id,
-                'valueIds' => $v->values->pluck('id')->all(),
-                'sku'      => $v->sku,
-                'price'    => (float) $v->price,
-                'stock'    => (int)   $v->stock,
-            ])
-            ->all();
-
+    // 3) Dropdown data
+    $categories       = Category::orderBy('name')->get();
+    $countries        = Country::orderBy('name')->get();
     $processingTimes  = ProcessingTime::orderBy('days')->get();
-        // 6. Render the edit view
-        return view('products.edit', [
-            'product'                 => $product,
-            'shippingProfiles'        => $shippingProfiles,
-            'assignedProfiles'        => $assignedProfiles,
-            'defaultProfileId'        => $defaultProfileId,
-            'categories'              => $categories,
-            'countries'               => $countries,
-            'existingVariationsForJs' => $existingVariationsForJs,
-            'processingTimes'         => $processingTimes,
-        ]);
-    }
+
+    // 4) Eager‑load ONLY what the edit view actually uses:
+    //    - variation types + options for the "Manage variation types" UI
+    //    - (optional) category attributes/values if your form needs them
+    $product->load([
+        'variationTypes.options',
+        // 'category.attributes.values', // ⬅️ uncomment if your edit form renders these
+    ]);
+
+   
+
+    // 5) Render (NO variations payload sent)
+    return view('products.edit', [
+        'product'          => $product,
+        'shippingProfiles' => $shippingProfiles,
+        'assignedProfiles' => $assignedProfiles,
+        'defaultProfileId' => $defaultProfileId,
+        'categories'       => $categories,
+        'countries'        => $countries,
+        'processingTimes'  => $processingTimes,
+    ]);
+}
+
 
 
 
@@ -377,6 +367,35 @@ public function update(Request $request, Product $product)
         return back()->with('success', 'Product deleted successfully!');
     }
 
+    public function duplicate(Product $product)
+    {
+        abort_if($product->shop_id !== Auth::user()->shop->id, 403);
+
+        $newProduct = null;
+        DB::transaction(function () use ($product, &$newProduct) {
+            $newProduct = $product->replicate();
+            $newProduct->name = $product->name . ' (Copy)';
+            $newProduct->slug = Str::slug($newProduct->name) . '-' . Str::random(6);
+            $newProduct->is_active = 0;
+            $newProduct->save();
+
+            foreach ($product->media as $media) {
+                $newProduct->media()->create($media->replicate()->toArray());
+            }
+
+            foreach ($product->variants as $variant) {
+                $newProduct->variants()->create($variant->replicate()->toArray());
+            }
+
+            foreach ($product->digitalFiles as $file) {
+                $newProduct->digitalFiles()->create($file->replicate()->toArray());
+            }
+        });
+
+        return redirect()->route('products.edit', $newProduct)
+            ->with('success', 'Product duplicated successfully!');
+    }
+
     public function show(Product $product)
     {
         $product->load('media');
@@ -392,10 +411,12 @@ public function listing(string $slug)
             'media',
             'category:id,name,slug',
             'country:id,name',
-            // ➜ keep only real columns that exist in shipping_profiles
             'shippingProfiles:id,name,base_rate',
             'shop:id,name,user_id,slug',
             'shop.policies:shop_id,shipping,returns',
+            // + variation types & variants for picker:
+            'variationTypes.options',
+            'variations.options.variationType',
         ])
         ->withCount('reviews')
         ->withAvg('reviews', 'rating')
@@ -406,7 +427,7 @@ public function listing(string $slug)
      | 2.  Record a view (logged-in users and guests)
      |------------------------------------------------------------ */
     $product->views()->create([
-        'viewer_id' => Auth::id(),   // null for guests
+        'viewer_id' => Auth::id(),
         'ip'        => request()->ip(),
     ]);
 
@@ -431,16 +452,16 @@ public function listing(string $slug)
     $faqs = $product->faqs()->latest()->get();
 
     $shopPolicies = $product->shop->policies
-        ?? (object) ['shipping' => null, 'returns' => null];
+        ?? (object) ['shipping'=>null,'returns'=>null];
 
     $moreFromShop = $product->shop->products()
-        ->where('id', '!=', $product->id)
+        ->where('id','!=',$product->id)
         ->latest()
         ->take(8)
         ->get();
 
     $relatedProducts = Product::where('category_id', $product->category_id)
-        ->where('id', '!=', $product->id)
+        ->where('id','!=',$product->id)
         ->latest()
         ->take(8)
         ->get();
@@ -449,12 +470,40 @@ public function listing(string $slug)
      | 5.  Default shipping profile ID for the view (pivot field)
      |------------------------------------------------------------ */
     $defaultProfileId = optional(
-        $product->shippingProfiles->firstWhere('pivot.is_default', true)
-            ?? $product->shippingProfiles->first()      // fallback
+        $product->shippingProfiles
+                ->firstWhere('pivot.is_default', true)
+            ?? $product->shippingProfiles->first()
     )->id;
 
     /* ------------------------------------------------------------
-     | 6.  Render
+     | 6.  Variation‐picker data
+     |------------------------------------------------------------ */
+    // map each VariationType → [id, name, options:[{id,value},…]]
+    $typesData = $product->variationTypes
+        ->map(fn($t) => [
+            'id'      => $t->id,
+            'name'    => $t->name,
+            'options' => $t->options
+                            ->map(fn($o)=>['id'=>$o->id,'value'=>$o->value])
+                            ->values(),
+        ])->values();
+
+    // map each Variant → [id, price, byType:{ typeId→optionId }]
+    $variantsData = $product->variations
+        ->map(fn($v) => [
+            'id'     => $v->id,
+            'price'  => (float)$v->price,
+            'byType' => $v->options
+                          ->mapWithKeys(fn($o)=>[$o->variation_type_id=>$o->id])
+                          ->toArray(),
+        ])->values();
+
+    // base & final price
+    $basePrice    = (float)($product->price ?? 0);
+    $displayPrice = (float)($product->discounted_price ?? $basePrice);
+
+    /* ------------------------------------------------------------
+     | 7.  Render
      |------------------------------------------------------------ */
     return themed_view('listing_show', [
         'product'          => $product,
@@ -465,8 +514,14 @@ public function listing(string $slug)
         'moreFromShop'     => $moreFromShop,
         'relatedProducts'  => $relatedProducts,
         'defaultProfileId' => $defaultProfileId,
+        // new variation‐picker props:
+        'typesData'        => $typesData,
+        'variantsData'     => $variantsData,
+        'basePrice'        => $basePrice,
+        'displayPrice'     => $displayPrice,
     ]);
 }
+
 
     public function wishlist()
     {

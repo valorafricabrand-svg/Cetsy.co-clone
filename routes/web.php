@@ -140,31 +140,38 @@ Route::patch('products/{product}/renewal', [ProductController::class, 'updateRen
 
 
 
-// Add new variation to a product
-Route::post('products/{product}/variations', [VariationController::class, 'store'])
-     ->name('variations.store');
+    Route::prefix('products/{product}')->group(function () {
+        // Add this for your “Add Custom Variation” form:
+        Route::post('variation‑types', [VariationController::class, 'storeType'])
+             ->name('variationTypes.store');
 
-// Update an existing variation
-Route::patch('variations/{variation}', [VariationController::class, 'update'])
-     ->name('variations.update');
+        // Existing variant routes...
+        Route::post('variations',      [VariationController::class, 'store'])
+             ->name('variations.store');
+        Route::post('variations/bulk', [VariationController::class, 'bulkStore'])
+             ->name('variations.bulkStore');
+    });
 
-// Delete a variation
-Route::delete(
-    'variations/{variation}',
-    [VariationController::class, 'destroy']
-)->name('variations.destroy');
+    Route::patch('variations/{variation}',   [VariationController::class, 'update'])
+         ->name('variations.update');
+    Route::delete('variations/{variation}',  [VariationController::class, 'destroy'])
+         ->name('variations.destroy');
 
+    // (Optional) deleting a variation type
+    Route::delete('variation‑types/{variationType}', [VariationController::class, 'destroyType'])
+         ->name('variationTypes.destroy');
 
+// Add a single option under a type
+Route::post('variation-types/{variationType}/options', [VariationController::class, 'storeOption'])
+    ->name('variationOptions.store');
 
+// Edit an existing option (e.g., rename "Red" -> "Crimson")
+Route::patch('variation-options/{option}', [VariationController::class, 'updateOption'])
+    ->name('variationOptions.update');
 
-// Bulk create variations for a product
-Route::post(
-    'products/{product}/variations/bulk',
-    [VariationController::class, 'bulkStore']
-)->name('variations.bulkStore');
-
-
-
+// Remove an option
+Route::delete('variation-options/{option}', [VariationController::class, 'destroyOption'])
+    ->name('variationOptions.destroy');
 
 
     Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
@@ -197,8 +204,13 @@ Route::post(
     Route::post('products', [ProductController::class, 'store'])
         ->middleware('kyc.after.two.sales')
         ->name('products.store');
-    Route::resource('products', ProductController::class)->except(['create', 'store'])->middleware('kyc.after.two.sales');
+    Route::resource('products', ProductController::class)
+        ->except(['create', 'store'])
+        ->middleware('kyc.after.two.sales');
+    Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate'])
+        ->name('products.duplicate');
 
+   Route::post('media/{media}/crop', [MediaController::class,'crop'])->name('media.crop');
    
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');

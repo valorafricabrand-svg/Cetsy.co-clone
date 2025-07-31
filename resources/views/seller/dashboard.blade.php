@@ -146,11 +146,12 @@
                     <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift position-relative">
 
                         {{-- Inactive & pay badge --}}
-                           @php
+                       @php
           switch($product->is_active) {
             case 0: $label='Pending'; $class='warning'; break;
             case 1: $label='Active';  $class='success'; break;
             case 2: $label='Paused';  $class='secondary'; break;
+            case 3: $label='Suspended';  $class='danger'; break;
             default:$label='Closed';  $class='dark'; break;
           }
         @endphp

@@ -41,6 +41,7 @@
             case 0: $label='Pending'; $class='warning'; break;
             case 1: $label='Active';  $class='success'; break;
             case 2: $label='Paused';  $class='secondary'; break;
+            case 3: $label='Suspended';  $class='secondary'; break;
             default:$label='Closed';  $class='dark'; break;
           }
         @endphp
@@ -142,36 +143,90 @@
       @endif
 
       {{-- Listing Fee Prompt --}}
-      @if($product->is_active !== 1)
+{{-- Listing Fee / Renewal / Suspension Prompt --}}
+@php
+    use Carbon\Carbon;
+@endphp
+
+@if($product->is_active === 3)
+    {{-- Suspended --}}
+    <div class="alert alert-danger d-flex align-items-center mb-4">
+        <i class="fas fa-ban me-2"></i>
+        This listing has been suspended. Please contact the administrator for assistance.
+    </div>
+
+@elseif($product->is_active === 2)
+    {{-- Paused --}}
+    @if($product->next_due_date && Carbon::parse($product->next_due_date)->lte(Carbon::now()))
+        {{-- Subscription expired: allow renewal --}}
         <div class="alert alert-warning d-flex align-items-center mb-4">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          This listing isn’t live yet. Pay the fee below to activate it.
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Your subscription expired on {{ Carbon::parse($product->next_due_date)->format('M d, Y') }}. Renew below to reactivate your listing.
         </div>
 
         @php
-          $baseFee    = $product->category?->listing_fee ?? 0;
-          $monthlyFee = $baseFee / 3;
+            $baseFee    = $product->category?->listing_fee ?? 0;
+            $monthlyFee = $baseFee / 3;
         @endphp
 
         <div class="d-flex gap-2 mb-4">
-          <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+                @csrf
+                <input type="hidden" name="plan" value="monthly">
+                <button class="btn btn-outline-success">
+                    Renew Monthly<br>
+                    <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
+                </button>
+            </form>
+            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+                @csrf
+                <input type="hidden" name="plan" value="4months">
+                <button class="btn btn-success">
+                    Renew 4‑Month<br>
+                    <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>
+                </button>
+            </form>
+        </div>
+    @else
+        {{-- Paused but not yet due --}}
+        <div class="alert alert-info d-flex align-items-center mb-4">
+            <i class="fas fa-pause me-2"></i>
+            This listing is paused. It will automatically become eligible for renewal on {{ Carbon::parse($product->next_due_date)->format('M d, Y') }}.
+        </div>
+    @endif
+
+@elseif($product->is_active !== 1)
+    {{-- Not active / pending --}}
+    <div class="alert alert-warning d-flex align-items-center mb-4">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        This listing isn’t live yet. Pay the fee below to activate it.
+    </div>
+
+    @php
+        $baseFee    = $product->category?->listing_fee ?? 0;
+        $monthlyFee = $baseFee / 3;
+    @endphp
+
+    <div class="d-flex gap-2 mb-4">
+        <form method="POST" action="{{ route('products.pay-fee', $product) }}">
             @csrf
             <input type="hidden" name="plan" value="monthly">
             <button class="btn btn-outline-success">
-              Pay Monthly<br>
-              <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
+                Pay Monthly<br>
+                <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
             </button>
-          </form>
-          <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+        </form>
+        <form method="POST" action="{{ route('products.pay-fee', $product) }}">
             @csrf
             <input type="hidden" name="plan" value="4months">
             <button class="btn btn-success">
-              Pay 4‑Month<br>
-              <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>
+                Pay 4‑Month<br>
+                <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>
             </button>
-          </form>
-        </div>
-      @endif
+        </form>
+    </div>
+@endif
+
 
       {{-- Action Links --}}
       <div class="mt-auto">
