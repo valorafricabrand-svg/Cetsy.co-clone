@@ -17,7 +17,7 @@ use App\Services\Shared\GetShippingService;
 use App\Models\ShippingPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;   
-
+use App\Models\Activity;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Session;
@@ -164,6 +164,13 @@ public function store(Request $request)
             ]);
         }
     }
+
+    // Create activity record for the seller
+    Activity::create([
+        'user_id' => Auth::id(),
+        'is_read' => false,
+        'description' => 'You created a new product'
+    ]);
 
     return redirect()
         ->route('products.edit',$product)

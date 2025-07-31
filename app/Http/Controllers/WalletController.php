@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use App\Models\Shop;
 use App\Models\Order;
 use App\Models\PaymentMethod;
+use App\Models\Activity;
 
 class WalletController extends Controller
 {
@@ -79,6 +80,13 @@ public function depositForm()
             'description'=> 'Manual deposit via ' . ucfirst($request->method),
         ]);
 
+        // Create activity record for the seller
+        Activity::create([
+            'user_id' => Auth::id(),
+            'is_read' => false,
+            'description' => 'You made a manual deposit of $' . number_format($request->amount, 2)
+        ]);
+
         return redirect()->route('wallet.index')->with('success', 'Deposit recorded successfully!');
     }
 
@@ -111,6 +119,13 @@ public function handlePayPalDeposit(Request $request)
                 $request->amount,
                 $wallet->reference
             ));
+
+            // Create activity record for the seller
+            Activity::create([
+                'user_id' => Auth::id(),
+                'is_read' => false,
+                'description' => 'You made a deposit of $' . number_format($request->amount, 2)
+            ]);
         } catch (\Exception $emailException) {
             // Log email sending error but don't fail the deposit process
             \Log::error('Failed to send wallet deposit success email: ' . $emailException->getMessage(), [
@@ -185,6 +200,13 @@ public function payListing(Request $request, $id)
             'reference'   => strtoupper(uniqid('TXN-')),
             'method'      => 'wallet',
             'description' => "Listing fee ({$data['plan']})",
+        ]);
+
+        // Create activity record for the seller
+        Activity::create([
+            'user_id' => Auth::id(),
+            'is_read' => false,
+            'description' => 'You paid for a listing fee of $' . number_format($fee, 2)
         ]);
     }
 
@@ -314,6 +336,20 @@ public function payOrder(Request $request, $id)
                 $shop,
                 $payment
             ));
+
+            // Create activity record for the seller
+            Activity::create([
+                'user_id' => $shopOwner->id,
+                'is_read' => false,
+                'description' => 'You received a payment of $' . number_format($order->total_amount, 2)
+            ]);
+
+            // Create activity record for the buyer
+            Activity::create([
+                'user_id' => $buyer->id,
+                'is_read' => false,
+                'description' => 'You paid for an order of $' . number_format($order->total_amount, 2)
+            ]);
         } catch (\Exception $e) {
             // Log email sending error but don't fail the payment process
             \Log::error('Failed to send payment success emails: ' . $e->getMessage(), [

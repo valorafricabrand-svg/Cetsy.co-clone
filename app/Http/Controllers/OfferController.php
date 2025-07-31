@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Mail\OfferReceivedMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use App\Models\Activity;
 
 class OfferController extends Controller
 {
@@ -40,6 +41,13 @@ class OfferController extends Controller
                         $request->user(),
                         $product->shop->user
                     ));
+
+                // Create activity record for the seller
+                Activity::create([
+                    'user_id' => $product->shop->user->id,
+                    'is_read' => false,
+                    'description' => 'You received a new offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . $offer->buyer->name
+                ]);
             }
         } catch (\Exception $e) {
             // Log the error but don't break the user experience

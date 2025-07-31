@@ -58,6 +58,15 @@
     } else {
         $cartCount = $user->cart ? $user->cart->items()->count() : 0;
     }
+    
+    // Notifications
+    $notificationsCount = \App\Models\Activity::where('user_id', $user->id)
+        ->where('is_read', false)
+        ->count();
+    $recentNotifications = \App\Models\Activity::where('user_id', $user->id)
+        ->orderBy('created_at', 'desc')
+        ->limit(5)
+        ->get();
 
     $navItems = [
         'seller' => [
@@ -91,11 +100,18 @@
                 'route' => route('seller.favorites.index'),
                 'badge' => $wishlistCount,
             ],
+            [
+                'label' => 'Notifications',
+                'icon' => 'fas fa-bell',
+                'route' => '#',
+                'badge' => $notificationsCount,
+                'is_dropdown' => true,
+            ],
         ],
         'buyer' => [
             [
                 'label' => 'Messages',
-                'icon' => 'fas fa-bell',
+                'icon' => 'fas fa-envelope',
                 'route' => route('buyer.messages.index'),
                 'badge' => $messagesCount,
             ],
@@ -123,6 +139,13 @@
                 'route' => route('buyer.favorites'),
                 'badge' => $wishlistCount,
             ],
+            [
+                'label' => 'Notifications',
+                'icon' => 'fas fa-bell',
+                'route' => '#',
+                'badge' => $notificationsCount,
+                'is_dropdown' => true,
+            ],
         ],
     ];
 @endphp
@@ -145,16 +168,64 @@
 
         <ul class="navbar-nav navbar-nav-icons flex-row">
             @foreach($navItems[$role] as $item)
-                <li class="nav-item me-2">
-                    <a href="{{ $item['route'] }}" class="nav-link position-relative" title="{{ $item['label'] }}">
-                        <i class="{{ $item['icon'] }} fa-lg"></i>
-                        @if($item['badge'] > 0)
-                            <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
-                                {{ $item['badge'] > 99 ? '99+' : $item['badge'] }}
-                            </span>
-                        @endif
-                    </a>
-                </li>
+                @if(isset($item['is_dropdown']) && $item['is_dropdown'])
+                    <li class="nav-item me-2 dropdown">
+                        <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="{{ $item['label'] }}">
+                            <i class="{{ $item['icon'] }} fa-lg"></i>
+                            @if($item['badge'] > 0)
+                                <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+                                    {{ $item['badge'] > 99 ? '99+' : $item['badge'] }}
+                                </span>
+                            @endif
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end navbar-dropdown-caret py-0 shadow border" style="min-width: 300px;">
+                            <div class="card position-relative border-0">
+                                <div class="card-header bg-transparent border-bottom border-translucent">
+                                    <h6 class="mb-0">Recent Notifications</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    @if($recentNotifications->count() > 0)
+                                        @foreach($recentNotifications as $notification)
+                                            <div class="dropdown-item p-3 border-bottom border-translucent">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="flex-1">
+                                                        <p class="mb-1 text-body-secondary small">{{ $notification->description }}</p>
+                                                        <small class="text-body-quaternary">{{ $notification->created_at->diffForHumans() }}</small>
+                                                    </div>
+                                                    @if(!$notification->is_read)
+                                                        <div class="ms-2">
+                                                            <span class="badge bg-primary rounded-pill">New</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        <div class="dropdown-item p-3 text-center">
+                                            <p class="mb-0 text-body-quaternary">No notifications</p>
+                                        </div>
+                                    @endif
+                                </div>
+                                @if($recentNotifications->count() > 0)
+                                    <div class="card-footer p-2 border-top border-translucent">
+                                        <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-phoenix-secondary w-100">View All Notifications</a>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </li>
+                @else
+                    <li class="nav-item me-2">
+                        <a href="{{ $item['route'] }}" class="nav-link position-relative" title="{{ $item['label'] }}">
+                            <i class="{{ $item['icon'] }} fa-lg"></i>
+                            @if($item['badge'] > 0)
+                                <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+                                    {{ $item['badge'] > 99 ? '99+' : $item['badge'] }}
+                                </span>
+                            @endif
+                        </a>
+                    </li>
+                @endif
             @endforeach
 
             <li class="nav-item dropdown">

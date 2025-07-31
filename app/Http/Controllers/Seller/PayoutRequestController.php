@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\PaymentMethod;
 use App\Models\Shop;
+use App\Models\Activity;
 
 class PayoutRequestController extends Controller
 {
@@ -84,6 +85,13 @@ public function store(Request $request)
             'payment_method_id' => $request->method,
             'status'    => 'pending',
             'meta'      => $request->only('method'),
+        ]);
+
+        // Create activity record for the seller
+        Activity::create([
+            'user_id' => Auth::id(),
+            'is_read' => false,
+            'description' => 'You submitted a new payout request of $' . number_format($request->amount, 2)
         ]);
     });
 

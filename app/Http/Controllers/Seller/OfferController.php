@@ -14,6 +14,7 @@ use App\Mail\OfferDeclinedMail;
 use App\Mail\CounterOfferMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use App\Models\Activity;
 
 class OfferController extends Controller
 {
@@ -150,6 +151,13 @@ class OfferController extends Controller
                     'seller_id' => $user->id,
                     'order_id' => $order->id
                 ]);
+
+                // Create activity record for the buyer
+                Activity::create([
+                    'user_id' => $offer->buyer->id,
+                    'is_read' => false,
+                    'description' => 'You received a new offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . $offer->buyer->name
+                ]);
             } catch (\Exception $e) {
                 \Log::error('Failed to send offer accepted email', [
                     'offer_id' => $offer->id,
@@ -244,6 +252,13 @@ class OfferController extends Controller
         // Link the order back to the offer
         $offer->update(['order_id' => $order->id]);
 
+        // Create activity record for the buyer
+        Activity::create([
+            'user_id' => $buyer->id,
+            'is_read' => false,
+            'description' => 'You received a new order from ' . $shop->user->name
+        ]);
+
         return $order;
     }
 
@@ -285,6 +300,13 @@ class OfferController extends Controller
                 'buyer_email' => $offer->buyer->email,
                 'seller_id' => $user->id
             ]);
+
+            // Create activity record for the buyer
+            Activity::create([
+                'user_id' => $offer->buyer->id,
+                'is_read' => false,
+                'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' has been declined'
+            ]);
         } catch (\Exception $e) {
             \Log::error('Failed to send offer declined email', [
                 'offer_id' => $offer->id,
@@ -296,6 +318,7 @@ class OfferController extends Controller
         $message = 'Offer declined successfully.';
         if ($emailSent) {
             $message .= ' The buyer has been notified via email.';
+
         } else {
             $message .= ' Email notification failed to send.';
         }
@@ -353,6 +376,13 @@ class OfferController extends Controller
                 'buyer_email' => $offer->buyer->email,
                 'seller_id' => $user->id,
                 'counter_price' => $data['counter_price']
+            ]);
+
+            // Create activity record for the buyer
+            Activity::create([
+                'user_id' => $offer->buyer->id,
+                'is_read' => false,
+                'description' => 'You received a new offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . $offer->buyer->name
             ]);
         } catch (\Exception $e) {
             \Log::error('Failed to send counter offer email', [
@@ -417,6 +447,13 @@ class OfferController extends Controller
                             try {
                                 Mail::to($offer->buyer->email)
                                     ->send(new OfferAcceptedMail($offer, $order));
+
+                                // Create activity record for the buyer
+                                Activity::create([
+                                    'user_id' => $offer->buyer->id,
+                                    'is_read' => false,
+                                    'description' => "Your offer of $" . number_format($offer->offer_price, 2) . " for " . $offer->product->name . " has been accepted"
+                                ]);
                                 $emailsSent++;
                             } catch (\Exception $e) {
                                 \Log::error('Failed to send offer accepted email: ' . $e->getMessage());
@@ -438,6 +475,13 @@ class OfferController extends Controller
                                 Mail::to($offer->buyer->email)
                                     ->send(new OfferDeclinedMail($offer, $offer->product, $user, $offer->buyer));
                                 $emailsSent++;
+
+                                // Create activity record for the buyer
+                                Activity::create([
+                                    'user_id' => $offer->buyer->id,
+                                    'is_read' => false,
+                                    'description' => "Your offer of $" . number_format($offer->offer_price, 2) . " for " . $offer->product->name . " has been declined"
+                                ]);
                             } catch (\Exception $e) {
                                 \Log::error('Failed to send offer declined email: ' . $e->getMessage());
                             }

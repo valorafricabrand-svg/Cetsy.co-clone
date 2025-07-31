@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Activity;
 
 class ShopPostController extends Controller
 {
@@ -53,6 +54,13 @@ class ShopPostController extends Controller
             }
 
             ShopPost::create($data);
+
+            // Create activity record for the seller
+            Activity::create([
+                'user_id' => Auth::id(),
+                'is_read' => false,
+                'description' => 'You created a new shop post'
+            ]);
 
             DB::commit();
             return redirect()

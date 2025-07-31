@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Mail\MessageReceivedMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use App\Models\Activity;
 
 class MessageController extends Controller
 {
@@ -44,6 +45,13 @@ class MessageController extends Controller
                         $request->user(),
                         $receiver
                     ));
+
+                // Create activity record for the seller
+                Activity::create([
+                    'user_id' => $receiver->id,
+                    'is_read' => false,
+                    'description' => 'You received a new message from ' . $request->user()->name
+                ]);
             }
         } catch (\Exception $e) {
             // Log the error but don't break the user experience

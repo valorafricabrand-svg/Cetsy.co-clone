@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\PaymentMethod;
 use App\Models\Country;
+use App\Models\Activity;
+
 class ShopController extends Controller
 {
     /**
@@ -84,6 +86,13 @@ public function create()
 
         // Create the shop via the one-to-one relationship
         $shop = Auth::user()->shop()->create($data);
+
+        // Create activity record for the seller
+        Activity::create([
+            'user_id' => Auth::id(),
+            'is_read' => false,
+            'description' => 'You created a new shop'
+        ]);
 
         return redirect()
             ->route('seller.shops.show', $shop)

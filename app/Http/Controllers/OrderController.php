@@ -14,6 +14,7 @@ use App\Models\ProductVariation;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use App\Models\Activity;
 
 class OrderController extends Controller
 {
@@ -263,6 +264,20 @@ public function storeOrder(Request $request)
 
             \Mail::to($shopOwner->email)->send(new \App\Mail\OrderCreatedShopOwnerMail($order, $shopOwner, $buyer, $order->shop));
             \Mail::to($buyer->email)->send(new \App\Mail\OrderCreatedBuyerMail($order, $buyer, $order->shop));
+
+            // Create activity record for the seller
+            Activity::create([
+                'user_id' => $shopOwner->id,
+                'is_read' => false,
+                'description' => 'You received a new order from ' . $buyer->name
+            ]);
+
+            // Create activity record for the buyer
+            Activity::create([
+                'user_id' => $buyer->id,
+                'is_read' => false,
+                'description' => 'You placed a new order'
+            ]);
         }
 
         return redirect()
