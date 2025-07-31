@@ -521,7 +521,6 @@
 @endpush
 
 @push('scripts')
-<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"
         integrity="sha384-xKDJcyOgCjL2mK9ZcYnmQgSJvMREh4baN4GckSbnREV7mY4T0kT2LSpJxErL8xP8"
         crossorigin="anonymous"></script>
@@ -529,8 +528,8 @@
   document.addEventListener('DOMContentLoaded', () => AOS.init({ duration:800, once:true }));
 
   /* ---------- Etsy-like variant picker: per-type dropdowns with combo filtering ---------- */
-  function variantPicker({ types, variants, basePrice, currency }) {
-    return {
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('variantPicker', ({ types, variants, basePrice, currency }) => ({
       types, variants, basePrice, currency,
       selected: {},              // { [typeId]: optionId (string) }
       currentVariantId: null,
@@ -597,7 +596,7 @@
         // Otherwise require a valid variant match
         return !!this.currentVariantId;
       }
-    }
-  }
+    }));
+  });
 </script>
 @endpush
