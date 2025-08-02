@@ -1,6 +1,59 @@
-@extends('emails.layout')
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Offer Accepted</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #28a745;                          
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .content {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        .offer-details {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .offer-details img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 15px;
+        }
+        .offer-details h4 {
+            margin: 0;
+            color: #333;
+        }
+        .offer-details p {
+            margin: 5px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>🎉 Your Offer Has Been Accepted!</h2>
+        <p>Great news! The seller has accepted your offer.</p>
+    </div>
 
-@section('content')
 <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 30px;">
         <h2 style="color: #28a745; margin-bottom: 10px;">🎉 Your Offer Has Been Accepted!</h2>
