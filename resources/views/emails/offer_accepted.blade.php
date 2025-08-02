@@ -153,4 +153,5 @@
         @endif
     </div>
 </div>
-@endsection 
+</body>
+</html>

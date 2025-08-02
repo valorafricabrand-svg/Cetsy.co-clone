@@ -98,4 +98,5 @@
         <p>Consider reviewing your pricing or making a new counter offer to other interested buyers.</p>
     </div>
 </div>
-@endsection 
+</body>
+</html>
