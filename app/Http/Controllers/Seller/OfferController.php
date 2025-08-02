@@ -151,17 +151,25 @@ class OfferController extends Controller
                     'seller_id' => $user->id,
                     'order_id' => $order->id
                 ]);
-
-                // Create activity record for the buyer
-                Activity::create([
-                    'user_id' => $offer->buyer->id,
-                    'is_read' => false,
-                    'description' => 'You received a new offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . $offer->buyer->name
-                ]);
             } catch (\Exception $e) {
                 \Log::error('Failed to send offer accepted email', [
                     'offer_id' => $offer->id,
                     'buyer_email' => $offer->buyer->email,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // Create activity record for the buyer (outside of email try-catch)
+            try {
+                Activity::create([
+                    'user_id' => $offer->buyer->id,
+                    'is_read' => false,
+                    'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' has been accepted by ' . $user->name
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to create activity record for offer acceptance', [
+                    'offer_id' => $offer->id,
+                    'buyer_id' => $offer->buyer->id,
                     'error' => $e->getMessage()
                 ]);
             }
