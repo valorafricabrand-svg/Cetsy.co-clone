@@ -47,7 +47,7 @@
                                 @endif
                                 <div class="text-muted small">
                                     <i class="bi bi-clock me-1"></i>
-                                    Started {{ $messages->first() ? $messages->first()->created_at->diffForHumans() : 'recently' }}
+                                    Started {!! $messages->first() ? $messages->first()->created_at->diffForHumans() : 'recently' !!}
                                 </div>
                             </div>
                         </div>
@@ -70,7 +70,7 @@
                             @endif
                             <div class="flex-grow-1">
                                 <h6 class="mb-1">{{ $product->name }}</h6>
-                                <p class="text-muted mb-0 small">{{ $product->description ? \Illuminate\Support\Str::limit($product->description, 100) : 'No description available' }}</p>
+                                <p class="text-muted mb-0 small">{!! $product->description ? \Illuminate\Support\Str::limit($product->description, 100) : 'No description available' !!}</p>
                             </div>
                             <div class="text-end">
                                 <span class="badge bg-primary">{{ $product->price_formatted }}</span>
