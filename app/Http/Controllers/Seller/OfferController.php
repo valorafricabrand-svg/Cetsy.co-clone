@@ -72,7 +72,7 @@ class OfferController extends Controller
             $query->where('offer_price', '<=', $request->price_max);
         }
 
-        $offers = $query->paginate(20);
+        $offers = $query->orderBy('id', 'desc')->paginate(20);
 
         // Get summary statistics
         $allOffers = Offer::whereIn('product_id', $productIds);

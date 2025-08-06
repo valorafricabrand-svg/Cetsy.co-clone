@@ -549,7 +549,7 @@ public function listing(string $slug)
                     $query->orderBy('created_at', 'desc');
                 }
             ])
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->get()
             ->groupBy('product_id')
             ->map(function($productOffers) {
