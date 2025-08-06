@@ -70,36 +70,7 @@
 
     $navItems = [
         'seller' => [
-            [
-                'label' => 'Messages',
-                'icon' => 'fas fa-bell',
-                'route' => route('seller.messages.index'),
-                'badge' => $messagesCount,
-            ],
-            [
-                'label' => 'Orders',
-                'icon' => 'fas fa-shopping-bag',
-                'route' => route('orders.index'),
-                'badge' => $ordersCount,
-            ],
-            [
-                'label' => 'Cart',
-                'icon' => 'fas fa-shopping-cart',
-                'route' => route('cart.view'),
-                'badge' => $cartCount,
-            ],
-            [
-                'label' => 'Offers',
-                'icon' => 'fas fa-handshake',
-                'route' => route('seller.offers.index'),
-                'badge' => $offersCount,
-            ],
-            [
-                'label' => 'Wishlist',
-                'icon' => 'fas fa-heart',
-                'route' => route('seller.favorites.index'),
-                'badge' => $wishlistCount,
-            ],
+           
             [
                 'label' => 'Notifications',
                 'icon' => 'fas fa-bell',
@@ -110,6 +81,18 @@
         ],
         'buyer' => [
             [
+                'label' => 'Notifications',
+                'icon' => 'fas fa-bell',
+                'route' => '#',
+                'badge' => $notificationsCount,
+                'is_dropdown' => true,
+            ],
+        ],
+    ];
+@endphp
+
+
+<!-- [
                 'label' => 'Messages',
                 'icon' => 'fas fa-envelope',
                 'route' => route('buyer.messages.index'),
@@ -139,16 +122,40 @@
                 'route' => route('buyer.favorites'),
                 'badge' => $wishlistCount,
             ],
-            [
-                'label' => 'Notifications',
+            
+            
+            
+            
+             [
+                'label' => 'Messages',
                 'icon' => 'fas fa-bell',
-                'route' => '#',
-                'badge' => $notificationsCount,
-                'is_dropdown' => true,
+                'route' => route('seller.messages.index'),
+                'badge' => $messagesCount,
             ],
-        ],
-    ];
-@endphp
+            [
+                'label' => 'Orders',
+                'icon' => 'fas fa-shopping-bag',
+                'route' => route('orders.index'),
+                'badge' => $ordersCount,
+            ],
+            [
+                'label' => 'Cart',
+                'icon' => 'fas fa-shopping-cart',
+                'route' => route('cart.view'),
+                'badge' => $cartCount,
+            ],
+            [
+                'label' => 'Offers',
+                'icon' => 'fas fa-handshake',
+                'route' => route('seller.offers.index'),
+                'badge' => $offersCount,
+            ],
+            [
+                'label' => 'Wishlist',
+                'icon' => 'fas fa-heart',
+                'route' => route('seller.favorites.index'),
+                'badge' => $wishlistCount,
+            ],-->
 
 <nav class="navbar navbar-top fixed-top navbar-expand" id="navbarDefault" style="display:none;">
     <div class="collapse navbar-collapse justify-content-between">
