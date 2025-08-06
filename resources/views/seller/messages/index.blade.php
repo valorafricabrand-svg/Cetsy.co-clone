@@ -107,7 +107,7 @@
                                     @endif
                                     <div class="flex-grow-1">
                                         <span class="fw-semibold text-dark text-truncate d-block product-name" style="max-width:120px;" title="{{ $conversation['product']->name ?? '-' }}">
-                                            {{ \Illuminate\Support\Str::limit($conversation['product']->name ?? '-', 22) }}
+                                            {!! \Illuminate\Support\Str::limit($conversation['product']->name ?? '-', 22) !!}
                                         </span>
                                         <span class="badge bg-light text-muted border small">#{{ $conversation['product']->id ?? '-' }}</span>
                                         <a href="?product={{ $conversation['product']->id ?? '' }}" class="btn btn-link btn-xs p-0 ms-1 small">All for this product</a>
