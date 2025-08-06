@@ -135,7 +135,7 @@
 @if($shop->announcement)
   <div class="container mt-4">
     <div class="alert alert-info shadow-sm border-0">
-      <i class="fas fa-bullhorn me-2"></i>{{ $shop->announcement }}
+      <i class="fas fa-bullhorn me-2"></i>{!! $shop->announcement !!}
     </div>
   </div>
 @endif
@@ -307,7 +307,7 @@
             <div class="card shadow-sm h-100">
               <div class="card-header bg-white fw-semibold">About This Shop</div>
               <div class="card-body">
-                {!! $shop->bio ? '<p class="text-secondary mb-0">'.e($shop->bio).'</p>' : '<p class="text-muted mb-0">No description provided.</p>' !!}
+                {!! $shop->bio ? $shop->bio : 'No description provided.' !!}
               </div>
             </div>
           </div>

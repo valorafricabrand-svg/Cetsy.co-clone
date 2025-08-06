@@ -413,6 +413,7 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     Route::post('offers/{offer}/decline', [App\Http\Controllers\Seller\OfferController::class, 'decline'])->name('offers.decline');
     Route::post('offers/{offer}/counter', [App\Http\Controllers\Seller\OfferController::class, 'counterOffer'])->name('offers.counter');
     Route::post('offers/bulk-action', [App\Http\Controllers\Seller\OfferController::class, 'bulkAction'])->name('offers.bulk-action');
+    Route::get('offers/test-bulk', [App\Http\Controllers\Seller\OfferController::class, 'testBulkAction'])->name('offers.test-bulk');
 
     // Message Management
     Route::get('messages', [App\Http\Controllers\Seller\MessageController::class, 'index'])->name('messages.index');

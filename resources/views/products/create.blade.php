@@ -98,16 +98,16 @@
           @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
      <div class="col-md-6">
-  <label class="form-label fw-semibold">% Discount</label>
+  <label class="form-label fw-semibold">% Discount <small class="text-muted">(optional)</small></label>
   <input
     type="number"
     name="discount_percent"
     step="1"
-    min="1"
+    min="0"
     max="100"
     class="form-control @error('discount_percent') is-invalid @enderror"
     value="{{ old('discount_percent') }}"
-    required
+    placeholder="Enter discount percentage"
   >
   @error('discount_percent')
     <div class="invalid-feedback">{{ $message }}</div>

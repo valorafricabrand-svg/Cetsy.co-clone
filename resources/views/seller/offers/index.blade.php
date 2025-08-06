@@ -14,6 +14,7 @@
                     <i class="bi bi-check-all me-1"></i>Bulk Actions
                 </button>
             @endif
+            
         </div>
     </div>
 
@@ -29,7 +30,7 @@
 
     {{-- Statistics Cards --}}
     <div class="row mb-4">
-        <div class="col-md-3 col-sm-6 mb-3">
+        <div class="col-md-4 col-sm-6 mb-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
@@ -46,7 +47,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
+        <div class="col-md-4 col-sm-6 mb-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
@@ -63,7 +64,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
+        <div class="col-md-4 col-sm-6 mb-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
@@ -80,7 +81,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
+        <!-- <div class="col-md-3 col-sm-6 mb-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
@@ -96,7 +97,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 
     {{-- Filters --}}
@@ -371,7 +372,7 @@
                 <h5 class="modal-title">Bulk Actions</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="{{ route('seller.offers.bulk-action') }}">
+            <form method="POST" action="{{ route('seller.offers.bulk-action') }}" id="bulkActionForm">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
@@ -396,7 +397,7 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Apply Action</button>
                 </div>
-                <input type="hidden" name="offer_ids" id="selectedOfferIds">
+
             </form>
         </div>
     </div>
@@ -428,15 +429,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const count = selected.length;
         const info = document.getElementById('selectedOffersInfo');
         const countSpan = document.getElementById('selectedCount');
-        const idsInput = document.getElementById('selectedOfferIds');
         
         if (count > 0) {
             info.classList.remove('d-none');
             countSpan.textContent = count;
-            idsInput.value = Array.from(selected).map(cb => cb.value).join(',');
+            // Clear existing hidden inputs
+            const existingInputs = document.querySelectorAll('input[name="offer_ids[]"]');
+            existingInputs.forEach(input => input.remove());
+            
+            // Create new hidden inputs for each selected offer
+            selected.forEach(checkbox => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'offer_ids[]';
+                input.value = checkbox.value;
+                document.getElementById('bulkActionModal').querySelector('form').appendChild(input);
+            });
+            
+            // Debug logging
+            console.log('Selected offers:', Array.from(selected).map(cb => cb.value));
         } else {
             info.classList.add('d-none');
-            idsInput.value = '';
+            // Clear existing hidden inputs
+            const existingInputs = document.querySelectorAll('input[name="offer_ids[]"]');
+            existingInputs.forEach(input => input.remove());
         }
     }
     
@@ -450,6 +466,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Modal handlers
     const declineModal = document.getElementById('declineModal');
     const counterModal = document.getElementById('counterModal');
+    const bulkActionModal = document.getElementById('bulkActionModal');
     
     declineModal.addEventListener('show.bs.modal', function(event) {
         const button = event.relatedTarget;
@@ -469,6 +486,48 @@ document.addEventListener('DOMContentLoaded', function() {
         priceInput.value = originalPrice;
         priceInput.focus();
     });
+    
+    // Bulk action form submission handler
+    bulkActionModal.addEventListener('show.bs.modal', function(event) {
+        const form = bulkActionModal.querySelector('form');
+        console.log('Bulk action form action:', form.action);
+        
+        // Remove any existing event listeners to prevent duplicates
+        form.removeEventListener('submit', handleBulkActionSubmit);
+        form.addEventListener('submit', handleBulkActionSubmit);
+    });
+    
+    function handleBulkActionSubmit(e) {
+        console.log('Bulk action form submission started');
+        
+        const formData = new FormData(this);
+        console.log('Form data being submitted:');
+        for (let [key, value] of formData.entries()) {
+            console.log(key + ': ' + value);
+        }
+        
+        // Check if any offers are selected
+        const selectedOffers = document.querySelectorAll('input[name="offer_ids[]"]');
+        console.log('Selected offers count:', selectedOffers.length);
+        
+        if (selectedOffers.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one offer to perform bulk action.');
+            return false;
+        }
+        
+        // Check if action is selected
+        const actionSelect = this.querySelector('select[name="action"]');
+        console.log('Selected action:', actionSelect.value);
+        
+        if (!actionSelect.value) {
+            e.preventDefault();
+            alert('Please select an action to perform.');
+            return false;
+        }
+        
+        console.log('Form submission proceeding...');
+    }
 });
 </script>
 @endpush
