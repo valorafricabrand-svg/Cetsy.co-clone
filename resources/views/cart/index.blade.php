@@ -1,5 +1,5 @@
 {{-- resources/views/cart/index.blade.php --}}
-@extends('layouts.frontapp')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title','Your Cart')
 
