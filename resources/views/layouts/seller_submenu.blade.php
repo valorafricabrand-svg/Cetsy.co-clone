@@ -34,6 +34,15 @@
 @endphp
 
 @if(Auth::user()->isSeller())
+
+    <form class="d-flex flex-grow-1 mx-2" action="{{ route('products.index') }}" method="GET">
+        <input class="form-control me-2" type="search" name="q" placeholder="Search products ..." aria-label="Search products ...">
+        <button class="btn btn-outline-success" type="submit">
+            <i class="fas fa-search"></i>
+        </button>
+    </form>
+
+
   <aside class="position-sticky top-3" style="max-width: 280px;">
     {{-- Balance Card --}}
     <div class="card mb-4 bg-white bg-opacity-75 border-0 shadow-sm rounded-3">

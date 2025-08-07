@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Payment;
 use App\Models\Category;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request; 
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -19,25 +19,80 @@ use App\Models\ShippingPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;   
 use App\Models\Activity;
+use App\Models\ShippingProfile;
+use Illuminate\Support\Facades\Schema;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Session;
 
 
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Validator;
+
+
+
 
 class ProductController extends Controller
 {
-    public function index()
+       public function index(Request $request)
     {
-        $shopId = auth()->user()->shop->id;
+        // Resolve shop
+        $shop = auth()->user()->shop;
+        if (! $shop) {
+            abort(403, 'No shop assigned to your account.');
+        }
+        $shopId = $shop->id;
 
-        $products = Product::with('media')
-            ->where('shop_id', $shopId)
+        // Base query
+        $query = Product::with('media')
+            ->where('shop_id', $shopId);
+
+        // Apply search
+        if ($search = $request->input('q')) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply status filter
+        if (($status = $request->input('status')) !== null) {
+            if ($status === 'closed') {
+                $query->whereNotIn('is_active', [0,1,2,3]);
+            } else {
+                $query->where('is_active', (int) $status);
+            }
+        }
+
+        // Fetch paginated products
+        $products = $query
             ->latest()
-            ->paginate(12);
+            ->paginate(12)
+            ->appends($request->only(['q','status']));
 
-        return view('products.index', compact('products'));
+        // Build counts for each status
+        $rawCounts = Product::where('shop_id', $shopId)
+            ->select('is_active', DB::raw('count(*) as cnt'))
+            ->groupBy('is_active')
+            ->pluck('cnt', 'is_active')
+            ->toArray();
+
+        // Count “closed” (any status not 0–3)
+        $closedCount = Product::where('shop_id', $shopId)
+            ->whereNotIn('is_active', [0,1,2,3])
+            ->count();
+
+        $statusCounts = [
+            0       => $rawCounts[0] ?? 0,
+            1       => $rawCounts[1] ?? 0,
+            2       => $rawCounts[2] ?? 0,
+            3       => $rawCounts[3] ?? 0,
+            'closed' => $closedCount,
+        ];
+
+        return view('products.index', compact('products','statusCounts'));
     }
+
 
  public function create()
 {
@@ -79,30 +134,15 @@ public function store(Request $request)
         'stock'                       => 'nullable|integer|min:0',
         'media.*'                     => 'nullable|image|max:5120',
         'digital_file'                => 'nullable|file|max:10240',
-        'shipping_profiles'           => 'required_if:type,physical|array|min:1',
-        'shipping_profiles.*'         => 'exists:shipping_profiles,id',
-        'default_shipping_profile'    => 'required_if:type,physical|exists:shipping_profiles,id',
         'country_id'                  => 'nullable|exists:countries,id',
 
         // new fields
         'origin_postal_code'          => 'nullable|string|max:20',
         'processing_time_id'          => 'nullable|exists:processing_times,id',
 
-        // variations
-        'variations'                  => 'nullable|array',
-        'variations.*.type'           => 'required_with:variations|string|max:255',
-        'variations.*.variation_option' => 'required_with:variations|string|max:255',
-        'variations.*.price'          => 'required_with:variations|numeric|min:0',
-        'variations.*.stock'          => 'required_with:variations|integer|min:0',
     ]);
 
-    // ensure default shipping profile is one of the selected
-    if ($data['type']==='physical'
-        && ! in_array($data['default_shipping_profile'], $data['shipping_profiles'] ?? [])) {
-        return back()
-            ->withInput()
-            ->withErrors(['default_shipping_profile' => 'Default must be one of the selected shipping profiles.']);
-    }
+ 
 
     // 1. Create the product
     $product = new Product();
@@ -118,53 +158,15 @@ public function store(Request $request)
     $product->price                       = $data['price'];
     $product->discount_percent              = $data['discount_percent'] ?? null;
     $product->stock                       = $data['type']==='physical' ? ($data['stock'] ?? 0) : null;
-    $product->default_shipping_profile_id = $data['type']==='physical'
-                                            ? $data['default_shipping_profile']
-                                            : null;
     $product->is_active                   = false;
     $product->save();
 
-    // 2. Sync shipping profiles
-    if ($data['type']==='physical') {
-        $sync = [];
-        foreach ($data['shipping_profiles'] as $pid) {
-            $sync[$pid] = [
-                'is_default' => $pid == $data['default_shipping_profile'],
-            ];
-        }
-        $product->shippingProfiles()->sync($sync);
-    }
 
-    // 3. Upload images
-    if ($request->hasFile('media')) {
-        foreach ($request->file('media') as $file) {
-            $path = $file->store('products','public');
-            $product->media()->create(['url'=>$path]);
-        }
-    }
 
-    // 4. Handle digital file
-    if ($data['type']==='digital' && $request->hasFile('digital_file')) {
-        $disk = 'local';
-        $file = $request->file('digital_file');
-        $path = $file->store('digital-files',$disk);
-        $product->digitalFiles()->create([
-            'filename' => $file->getClientOriginalName(),
-            'filepath' => $path,
-        ]);
-    }
 
-    // 5. Create variations if any
-    if (! empty($data['variations'])) {
-        foreach ($data['variations'] as $v) {
-            $product->variations()->create([
-                'type'             => $v['type'],
-                'variation_option' => $v['variation_option'],
-                'price'            => $v['price'],
-                'stock'            => $v['stock'],
-            ]);
-        }
-    }
+
+
+
 
     // Create activity record for the seller
     Activity::create([
@@ -174,7 +176,7 @@ public function store(Request $request)
     ]);
 
     return redirect()
-        ->route('products.edit',$product)
+        ->route('products.show',$product)
         ->with('success','Product created successfully! You can now add more details or activate it.');
 }
 
@@ -757,5 +759,494 @@ public function updateRenewal(Request $request, Product $product)
 }
 
 
+ // ───────────────────────────── PAGES ─────────────────────────────
+    public function pricing(Product $product)
+    {
+        return view('products.pricing', compact('product'));
+    }
+
+    public function variations(Product $product)
+    {
+        // If you eager-load variations elsewhere, this is optional:
+        $product->loadMissing('variations');
+        return view('products.variations', compact('product'));
+    }
+
+    public function details(Product $product)
+    {
+        // These match what your old monolithic edit view expected
+        $countries       = Country::orderBy('name')->get();
+        $processingTimes = ProcessingTime::orderBy('days')->get();
+
+        return view('products.details', compact('product', 'countries', 'processingTimes'));
+    }
+
+
+
+
+public function shipping(Product $product, Request $request)
+{
+    $shopId = $product->shop_id
+            ?? optional(auth()->user())->shop_id;
+    if (!$shopId) {
+        abort(403, 'Shop not resolved for this product.');
+    }
+
+    $countries       = Country::orderBy('name')->get();
+    $processingTimes = ProcessingTime::orderBy('days')->get();
+
+    // 1) Pull ALL existing rows
+    $allRows = ShippingProfile::query()
+        ->where('shop_id',    $shopId)
+        ->where('product_id', $product->id)
+        ->orderBy('profile_name')
+        ->orderByRaw("CASE WHEN dest_location_type='everywhere_else' THEN 1 ELSE 0 END")
+        ->orderBy('dest_country_id')
+        ->get();
+
+    // 2) If none exist yet, create a default free-shipping profile
+    if ($allRows->isEmpty()) {
+        ShippingProfile::create([
+            'shop_id'               => $shopId,
+            'product_id'            => $product->id,
+            'profile_name'          => 'Standard shipping',
+            'name'                  => 'Standard shipping',
+            'is_default'            => true,
+
+            // ship-from / processing from product defaults
+            'country_id'            => $product->country_id,
+            'origin_postal_code'    => $product->origin_postal_code,
+            'processing_time_id'    => $product->processing_time_id,
+            'processing_custom_min' => $product->processing_custom_min,
+            'processing_custom_max' => $product->processing_custom_max,
+
+            // a single free, everywhere_else row
+            'dest_location_type'    => 'everywhere_else',
+            'dest_country_id'       => null,
+            'service'               => 'Other',
+            'days_min'              => null,
+            'days_max'              => null,
+            'charge_type'           => 'free',
+            'base_rate'             => 0.00,
+            'additional_rate'       => 0.00,
+        ]);
+
+        // reload
+        $allRows = ShippingProfile::query()
+            ->where('shop_id',    $shopId)
+            ->where('product_id', $product->id)
+            ->orderBy('profile_name')
+            ->orderByRaw("CASE WHEN dest_location_type='everywhere_else' THEN 1 ELSE 0 END")
+            ->orderBy('dest_country_id')
+            ->get();
+    }
+
+    // Distinct profile names
+    $profileNames = $allRows
+        ->pluck('profile_name')
+        ->unique()
+        ->values();
+
+    // Decide current profile name
+    $reqName     = trim((string)$request->query('profile_name', ''));
+    $currentName = null;
+
+    if ($reqName !== '') {
+        $currentName = $reqName;
+    } elseif (Schema::hasColumn('shipping_profiles', 'is_default')) {
+        $def = $allRows->firstWhere('is_default', true);
+        if ($def) {
+            $currentName = $def->profile_name;
+        }
+    }
+    if (!$currentName && $profileNames->contains('Standard shipping')) {
+        $currentName = 'Standard shipping';
+    }
+    if (!$currentName) {
+        $currentName = $profileNames->first() ?: 'Standard shipping';
+    }
+
+    // Filter rows for the current profile
+    $rowsForProfile = $allRows->where('profile_name', $currentName);
+
+    // Build array for Alpine init
+    $rulesArray = $rowsForProfile->map(function(ShippingProfile $r){
+        return [
+            'location_type'    => $r->dest_location_type,
+            'country_id'       => $r->dest_location_type === 'country'
+                                    ? (int)($r->dest_country_id ?? 0)
+                                    : '',
+            'service'          => $r->service ?? 'Other',
+            'days_min'         => $r->days_min ?? '',
+            'days_max'         => $r->days_max ?? '',
+            'charge_type'      => $r->charge_type ?? 'fixed',
+            'price_one'        => (float)($r->base_rate ?? 0),
+            'price_additional' => (float)($r->additional_rate ?? 0),
+        ];
+    })->values()->all();
+
+    // Meta for ship-from / processing
+    $metaRow = $rowsForProfile->first();
+    $currentProfileMeta = (object)[
+        'profile_name'          => $currentName,
+        'is_default'            => (bool)optional($metaRow)->is_default,
+        'country_id'            => optional($metaRow)->country_id ?? $product->country_id,
+        'origin_postal_code'    => optional($metaRow)->origin_postal_code ?? $product->origin_postal_code,
+        'processing_time_id'    => optional($metaRow)->processing_time_id ?? $product->processing_time_id,
+        'processing_custom_min' => optional($metaRow)->processing_custom_min ?? $product->processing_custom_min,
+        'processing_custom_max' => optional($metaRow)->processing_custom_max ?? $product->processing_custom_max,
+    ];
+
+    // Render
+    return view('products.shipping', [
+        'product'          => $product,
+        'countries'        => $countries,
+        'processingTimes'  => $processingTimes,
+        'shippingProfiles' => $allRows,
+        'currentProfile'   => $currentProfileMeta,
+        'rulesArray'       => $rulesArray,
+    ]);
+}
+
+
+
+    public function settings(Product $product)
+    {
+        return view('products.settings', compact('product'));
+    }
+
+    // ──────────────────────────── UPDATES ────────────────────────────
+    public function updatePricing(Request $request, Product $product)
+    {
+        // Your form posts: price, discount_percent, stock, sku
+        $validated = $request->validate([
+            'price'            => ['required','numeric','min:0'],
+            'discount_percent' => ['nullable','numeric','min:0','max:100'],
+            'stock'            => ['nullable','integer','min:0'],
+            'sku'              => ['nullable','string','max:100', Rule::unique('products','sku')->ignore($product->id)],
+        ]);
+
+        // Normalize stock: blank => null (unlimited)
+        if ($request->filled('stock') === false) {
+            $validated['stock'] = null;
+        }
+
+        // Compute discounted_price from % (if provided), else null
+        $price = (float)$validated['price'];
+        $discountPercent = (float)($validated['discount_percent'] ?? 0);
+        $discountedPrice = $discountPercent > 0 ? round($price * (1 - $discountPercent/100), 2) : null;
+
+        // If your schema stores both columns, update both; if not, remove the one you don't use.
+        $update = [
+            'price'            => $price,
+            'discount_percent' => $discountPercent ?: null,
+            'discounted_price' => $discountedPrice,
+            'stock'            => $validated['stock'],
+            'sku'              => $validated['sku'] ?? null,
+        ];
+
+        $product->update($update);
+
+        return back()->with('success', 'Price & inventory updated.');
+    }
+
+    public function updateVariations(Request $request, Product $product)
+    {
+        $validated = $request->validate([
+            'variations'                       => ['array'],
+            'variations.*.id'                  => ['nullable','integer','exists:product_variations,id'],
+            'variations.*.sku'                 => ['nullable','string','max:120'],
+            'variations.*.attributes_label'    => ['nullable','string','max:255'],
+            'variations.*.price'               => ['nullable','numeric','min:0'],
+            'variations.*.stock'               => ['nullable','integer','min:0'],
+            'variations.*._delete'             => ['nullable','boolean'],
+        ]);
+
+        foreach ($validated['variations'] ?? [] as $row) {
+            $delete  = !empty($row['_delete']);
+            $id      = $row['id'] ?? null;
+
+            $payload = [
+                'sku'              => $row['sku'] ?? null,
+                'attributes_label' => $row['attributes_label'] ?? null,
+                'price'            => $row['price'] ?? null,
+                'stock'            => array_key_exists('stock', $row) ? $row['stock'] : null,
+            ];
+
+            if ($id) {
+                $var = ProductVariation::where('product_id', $product->id)->findOrFail($id);
+                $delete ? $var->delete() : $var->update($payload);
+            } else {
+                // Create only when not deleting and there is at least one filled field
+                if (!$delete && collect($payload)->filter(fn($v) => $v !== null && $v !== '')->isNotEmpty()) {
+                    $payload['product_id'] = $product->id;
+                    ProductVariation::create($payload);
+                }
+            }
+        }
+
+        return back()->with('success', 'Variations updated.');
+    }
+
+    public function updateDetails(Request $request, Product $product)
+    {
+        $data = $request->validate([
+            'name'              => ['required','string','max:190'],
+            'type'              => ['required','string','in:physical,digital,service'],
+            'category_id'       => ['required','integer','exists:categories,id'],
+            'short_description' => ['nullable','string','max:500'],
+            'description'       => ['nullable','string'],
+            // 'digital_file'    => ['nullable','file','max:20480'], // 20MB – enable if you handle upload here
+        ]);
+
+        $product->update($data);
+
+        // If you want to handle digital file upload here, uncomment and adapt:
+        /*
+        if ($request->hasFile('digital_file') && $request->file('digital_file')->isValid()) {
+            $path = $request->file('digital_file')->store('digital-files');
+            // Persist to your DigitalFile model / media library as needed
+            $product->digitalFiles()->create([
+                'filename' => $request->file('digital_file')->getClientOriginalName(),
+                'path'     => $path,
+                'size'     => $request->file('digital_file')->getSize(),
+                'mime'     => $request->file('digital_file')->getClientMimeType(),
+            ]);
+        }
+        */
+
+        return back()->with('success', 'Details updated.');
+    }
+
+
+
+/**
+ * Update the product's shipping by persisting to a Shipping Profile (shop-scoped).
+ * - If shipping_profile_id is sent, update that profile (must belong to the same shop).
+ * - Else use the product's default shipping profile if any.
+ * - Else create a new shipping profile for the product's shop and set it as default.
+ *
+ * Expects from the form:
+ *  - country_id, origin_postal_code
+ *  - processing_time_id OR custom (processing_custom_min, processing_custom_max)
+ *  - weight, length, width, height, shipping_class, requires_shipping
+ *  - shipping_rules_json (array json)
+ *  - shipping_upgrades_json (array json)
+ *  - shipping_profile_id (optional)
+ */
+
+
+
+
+
+
+public function updateShipping(Product $product, Request $request)
+{
+    $shopId = $product->shop_id ?? optional(auth()->user())->shop_id;
+    if (!$shopId) abort(403, 'Shop not resolved for this product.');
+
+    // Validate top fields
+    $validated = $request->validate([
+        'profile_name'           => ['nullable','string','max:100'],
+        'set_default'            => ['nullable','boolean'],
+
+        // Origin
+        'country_id'             => ['required','integer','exists:countries,id'],
+        'origin_postal_code'     => ['required','string','max:50'],
+
+        // Processing
+        'processing_time_id'     => ['nullable','in:,"",1,2,3,4,5,custom'],
+        'processing_custom_min'  => ['nullable','integer','min:1'],
+        'processing_custom_max'  => ['nullable','integer','min:1'],
+
+        // Rows JSON from UI
+        'shipping_rules_json'    => ['nullable','string'],
+    ]);
+
+    $profileName = trim($validated['profile_name'] ?? '') ?: 'Standard shipping';
+
+    // Normalize processing
+    $processingTimeId = $validated['processing_time_id'] ?? null;
+    $procMin = null; $procMax = null;
+    if ($processingTimeId === 'custom') {
+        $processingTimeId = null;
+        $procMin = $validated['processing_custom_min'] ?? null;
+        $procMax = $validated['processing_custom_max'] ?? null;
+        if (!$procMin || !$procMax) {
+            return back()->withErrors(['processing_time_id' => 'Provide both min and max days for custom processing time.'])->withInput();
+        }
+    }
+
+    // Money normalizer: handles "", " 7.50 ", "7,50"
+    $money = static function ($v): float {
+        if ($v === null) return 0.00;
+        if (is_numeric($v)) return round((float)$v, 2);
+        $s = trim((string)$v);
+        if ($s === '') return 0.00;
+        $s = str_replace([' ', ','], ['', '.'], $s);
+        $s = preg_replace('/[^0-9.]/', '', $s);
+        if ($s === '' || $s === '.') return 0.00;
+        return round((float)$s, 2);
+    };
+
+    // Decode rules JSON
+    $rawRules = [];
+    if (!empty($validated['shipping_rules_json'])) {
+        $tmp = json_decode($validated['shipping_rules_json'], true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($tmp)) {
+            $rawRules = array_values($tmp);
+        } else {
+            return back()->withErrors(['shipping_rules_json' => 'Invalid shipping rules JSON.'])->withInput();
+        }
+    }
+
+    // Normalize rows → DB columns (ensure base_rate & additional_rate are set)
+    $rows = collect($rawRules)->map(function($r) use ($money){
+        $chargeType = ($r['charge_type'] ?? 'fixed') === 'free' ? 'free' : 'fixed';
+
+        $baseRate = $money($r['price_one'] ?? 0);
+        $addRate  = array_key_exists('price_additional', $r)
+            ? $money($r['price_additional'])
+            : $money($r['price_two'] ?? 0);
+
+        if ($chargeType === 'free') { $baseRate = 0.00; $addRate = 0.00; }
+
+        $locType = ($r['location_type'] ?? 'country') === 'everywhere_else' ? 'everywhere_else' : 'country';
+
+        return [
+            'dest_location_type' => $locType,
+            'dest_country_id'    => $locType === 'country'
+                                    ? (!empty($r['country_id']) ? (int)$r['country_id'] : null)
+                                    : null,
+            'service'            => $r['service'] ?? 'Other',
+            'days_min'           => isset($r['days_min']) ? (int)$r['days_min'] : null,
+            'days_max'           => isset($r['days_max']) ? (int)$r['days_max'] : null,
+            'charge_type'        => $chargeType,
+            'base_rate'          => $baseRate,       // <-- SAVED
+            'additional_rate'    => $addRate,        // <-- SAVED
+        ];
+    });
+
+    // Server-side day range check
+    $badRange = $rows->contains(fn($r) => $r['days_min'] && $r['days_max'] && $r['days_max'] < $r['days_min']);
+    if ($badRange) {
+        return back()->withErrors(['shipping_rules_json' => 'Fix delivery time ranges where max < min.'])->withInput();
+    }
+
+    // Fallback: at least one row
+    if ($rows->isEmpty()) {
+        $rows = collect([[
+            'dest_location_type' => 'everywhere_else',
+            'dest_country_id'    => null,
+            'service'            => 'Other',
+            'days_min'           => null,
+            'days_max'           => null,
+            'charge_type'        => 'free',
+            'base_rate'          => 0.00,
+            'additional_rate'    => 0.00,
+        ]]);
+    }
+
+    DB::transaction(function() use ($product, $shopId, $validated, $profileName, $processingTimeId, $procMin, $procMax, $rows) {
+
+        // Remove existing rows for this profile group
+        DB::table('shipping_profiles')
+            ->where('shop_id', $shopId)
+            ->where('product_id', $product->id)
+            ->where('profile_name', $profileName)
+            ->delete();
+
+        $now = now();
+        $common = [
+            'shop_id'               => $shopId,
+            'product_id'            => $product->id,
+
+            // Set BOTH to avoid NOT NULL `name` errors
+            'profile_name'          => $profileName,
+            'name'                  => $profileName,
+
+            'is_default'            => (bool)request()->boolean('set_default'),
+
+            // origin & processing
+            'country_id'            => (int)$validated['country_id'],
+            'origin_postal_code'    => $validated['origin_postal_code'],
+            'processing_time_id'    => $processingTimeId ? (int)$processingTimeId : null,
+            'processing_custom_min' => $procMin,
+            'processing_custom_max' => $procMax,
+
+            'created_at'            => $now,
+            'updated_at'            => $now,
+        ];
+
+        // Build rows with rates (explicitly present)
+        $payload = $rows->map(fn($r) => array_merge($common, [
+            'dest_location_type' => $r['dest_location_type'],
+            'dest_country_id'    => $r['dest_country_id'],
+            'service'            => $r['service'],
+            'days_min'           => $r['days_min'],
+            'days_max'           => $r['days_max'],
+            'charge_type'        => $r['charge_type'],
+            'base_rate'          => $r['base_rate'],        // <- persisted value
+            'additional_rate'    => $r['additional_rate'],  // <- persisted value
+        ]))->toArray();
+
+        DB::table('shipping_profiles')->insert($payload);
+
+        // Default handling (only if column exists)
+        if (Schema::hasColumn('shipping_profiles','is_default') && request()->boolean('set_default')) {
+            DB::table('shipping_profiles')
+                ->where('shop_id', $shopId)
+                ->where('product_id', $product->id)
+                ->where('profile_name', '<>', $profileName)
+                ->update(['is_default' => false, 'updated_at' => $now]);
+        }
+    });
+
+    return redirect()
+        ->route('products.shipping', ['product' => $product, 'profile_name' => $profileName])
+        ->with('success', 'Shipping profile saved successfully.');
+}
+
+
+
+
+
+
+
+
+
+    public function updateSettings(Request $request, Product $product)
+    {
+        $data = $request->validate([
+            'is_active'    => ['required','integer','in:0,1,2,3,4'],
+            'renewal_type' => ['required', Rule::in(['automatic','manual'])],
+            'visibility'   => ['nullable', Rule::in(['Public','Private','Unlisted'])],
+            'slug'         => ['nullable','string','max:190', Rule::unique('products','slug')->ignore($product->id)],
+            'tags'         => ['nullable','string','max:255'],
+        ]);
+
+        if (!empty($data['slug'])) {
+            $data['slug'] = Str::slug($data['slug']);
+        }
+
+        // Optional: normalize tags (trim spaces)
+        if (isset($data['tags'])) {
+            $data['tags'] = collect(explode(',', $data['tags']))
+                ->map(fn($t) => trim($t))
+                ->filter()
+                ->implode(', ');
+        }
+
+        $product->update($data);
+
+        return back()->with('success', 'Settings updated.');
+    }
+
+
+      public function media(Product $product)
+    {
+        $product->loadMissing('media');
+        return view('products.media', compact('product'));
+    }
 
 }
