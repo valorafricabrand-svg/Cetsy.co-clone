@@ -22,12 +22,7 @@ class CartController extends Controller
         $data = $this->validateCartData($request);
         $this->addItemToSessionCart($data);
 
-        // Log activity
-        Activity::create([
-            'user_id'     => Auth::id(),
-            'is_read'     => false,
-            'description' => 'You added a product to your cart'
-        ]);
+  
 
         $link    = route('cart.view');
         $message = 'Product added to cart successfully! '
@@ -155,11 +150,7 @@ public function updateShippingSelection(Request $request): RedirectResponse|Json
             session()->put('cart', $cart);
         }
 
-        Activity::create([
-            'user_id'     => Auth::id(),
-            'is_read'     => false,
-            'description' => 'You removed a product from your cart'
-        ]);
+
 
         return redirect()->route('cart.view')->with('success', 'Product removed from cart successfully!');
     }
