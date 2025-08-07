@@ -75,20 +75,6 @@
     });
   </script>
 
-  <!-- Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Lucare",
-    "url": "https://lucare.co.ke",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://lucare.co.ke/search?q={search_term_string}",
-      "query-input": "required name=search_term_string"
-    }
-  }
-  </script>
 
   <!-- Inline Styles -->
   <style>
