@@ -4,40 +4,40 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\VariationOption;
+use App\Models\ShippingProfile;
+use App\Models\Activity;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
-use App\Models\Activity;
-use Illuminate\Support\Facades\Auth;    
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
     /**
-     * Add a product (with selected options) to the session cart.
+     * Add a product (with selected options & optional profile) to the session cart.
      */
     public function addToCart(Request $request): RedirectResponse
     {
         $data = $this->validateCartData($request);
         $this->addItemToSessionCart($data);
 
+        // Log activity
+        Activity::create([
+            'user_id'     => Auth::id(),
+            'is_read'     => false,
+            'description' => 'You added a product to your cart'
+        ]);
+
         $link    = route('cart.view');
         $message = 'Product added to cart successfully! '
                  . '<a href="'. $link .'" class="text-decoration-underline">View Cart</a>';
-
-        // Create activity record for the seller
-        Activity::create([
-            'user_id' => Auth::id(),
-            'is_read' => false,
-            'description' => 'You added a product to your cart'
-        ]);
 
         return back()->with('success', $message);
     }
 
     /**
-     * "Buy Now": add to cart then redirect to the cart page.
+     * “Buy Now”: add to cart & redirect to cart page.
      */
     public function addToBuy(Request $request): RedirectResponse
     {
@@ -59,7 +59,7 @@ class CartController extends Controller
     }
 
     /**
-     * Update quantity of a cart row.
+     * Update quantity for a row (increase, decrease, set).
      */
     public function updateCart(Request $request): RedirectResponse|JsonResponse
     {
@@ -71,11 +71,7 @@ class CartController extends Controller
 
         $cart = session()->get('cart', []);
 
-        if (! isset($cart[$request->row_id])) {
-            return $request->expectsJson()
-                ? response()->json(['success' => false, 'message' => 'Item not in cart.'], 404)
-                : redirect()->route('cart.view')->withErrors('Item not in cart.');
-        }
+        abort_unless(isset($cart[$request->row_id]), 404, 'Item not in cart.');
 
         switch ($request->action) {
             case 'increase':
@@ -85,7 +81,7 @@ class CartController extends Controller
                 $this->decreaseOrRemove($cart, $request->row_id);
                 break;
             case 'set':
-                $cart[$request->row_id]['quantity'] = max(1, (int) $request->qty);
+                $cart[$request->row_id]['quantity'] = max(1, (int)$request->qty);
                 break;
         }
 
@@ -99,30 +95,51 @@ class CartController extends Controller
     }
 
     /**
-     * Update shipping profile selections for rows.
+     * Persist each item’s selected shipping-profile into session,
+     * then redirect straight to the checkout page.
      */
-    public function updateShippingSelection(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'shipping_profile_ids'   => 'required|array',
-            'shipping_profile_ids.*' => 'integer|exists:shipping_profiles,id',
-        ]);
+/**
+ * Persist each item’s selected shipping-profile into session,
+ * then redirect or respond with JSON.
+ */
+public function updateShippingSelection(Request $request): RedirectResponse|JsonResponse
+{
+    // 1) Validate we got an array of integers that exist in the DB
+    $data = $request->validate([
+        'shipping_profile_ids'   => 'required|array',
+        'shipping_profile_ids.*' => 'integer|exists:shipping_profiles,id',
+    ]);
 
-        $cart = session()->get('cart', []);
+    // 2) Pull the cart array out of the session
+    $cart = session()->get('cart', []);
 
-        foreach ($cart as $rowId => &$item) {
-            if (isset($data['shipping_profile_ids'][$rowId])) {
-                $item['selected_shipping_profile_id'] = (int) $data['shipping_profile_ids'][$rowId];
-            }
+    // 3) Loop through each row and overwrite its selected_shipping_profile_id
+    foreach ($cart as $rowId => &$item) {
+        if (isset($data['shipping_profile_ids'][$rowId])) {
+            $item['selected_shipping_profile_id'] = (int)$data['shipping_profile_ids'][$rowId];
         }
-        unset($item);
-
-        session()->put('cart', $cart);
-
-        return redirect()
-            ->route('cart.checkout')
-            ->with('success', 'Shipping selections updated – proceed to checkout.');
     }
+    unset($item); // break the reference
+
+    // 4) Write the entire modified cart back into the session
+    session()->put('cart', $cart);
+
+    // 5a) If this was an AJAX/JS call, return JSON
+    if ($request->expectsJson()) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Shipping selections saved.',
+            'cart'    => $cart,
+        ]);
+    }
+
+    // 5b) Otherwise redirect to checkout with a flash
+    return redirect()
+        ->route('cart.checkout')
+        ->with('success', 'Shipping selections saved – ready for checkout.');
+}
+
+
 
     /**
      * Remove a row from the cart.
@@ -138,10 +155,9 @@ class CartController extends Controller
             session()->put('cart', $cart);
         }
 
-        // Create activity record for the seller
         Activity::create([
-            'user_id' => Auth::id(),
-            'is_read' => false,
+            'user_id'     => Auth::id(),
+            'is_read'     => false,
             'description' => 'You removed a product from your cart'
         ]);
 
@@ -149,7 +165,7 @@ class CartController extends Controller
     }
 
     /**
-     * Checkout page.
+     * Show the checkout page, using the cart (with profiles already set).
      */
     public function checkout(): View
     {
@@ -158,12 +174,9 @@ class CartController extends Controller
     }
 
     /* -----------------------------------------------------------------
-     | Internals
+     | Internal helpers
      | ----------------------------------------------------------------- */
 
-    /**
-     * Validate incoming add-to-cart payload.
-     */
     private function validateCartData(Request $request): array
     {
         return $request->validate([
@@ -175,50 +188,42 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Core logic to add (or increment) an item in the session cart,
-     * storing the selected VariationOptions rather than a ProductVariation.
-     */
     private function addItemToSessionCart(array $data): void
     {
-        // Load product with media & shipping profiles
-        $product = Product::with(['shippingProfiles','media'])->findOrFail($data['product_id']);
+        $product = Product::with(['shippingProfiles', 'media'])->findOrFail($data['product_id']);
 
-        // Determine quantity & chosen shipping profile
         $qty           = $data['quantity'] ?? 1;
         $defaultShipId = $product->shippingProfiles->firstWhere('is_default', true)?->id;
         $shipProfile   = $data['shipping_profile_id'] ?? $defaultShipId;
 
-        // Fetch selected options, sorted
-        $optionIds = collect($data['variations'] ?? [])->map(fn($v) => (int)$v)->sort()->values();
-        $options   = $optionIds->isEmpty()
+        $optionIds = collect($data['variations'] ?? [])
+                     ->map(fn($v) => (int)$v)->sort()->values();
+
+        $options = $optionIds->isEmpty()
             ? collect()
             : VariationOption::with('variationType')
-                              ->whereIn('id', $optionIds)
-                              ->get()
-                              ->sortBy(fn($o) => $optionIds->search($o->id));
+                ->whereIn('id', $optionIds)->get()
+                ->sortBy(fn($o) => $optionIds->search($o->id));
 
-        // Build human-readable summary & unique row ID
-        $summary    = $options->map(fn($o) => "{$o->variationType->name}: {$o->value}")
-                              ->join(', ');
-        $rowId      = implode('-', array_merge([$product->id], $optionIds->all()));
+        $summary = $options
+            ->map(fn($o) => "{$o->variationType->name}: {$o->value}")
+            ->join(', ');
 
-        // Retrieve existing cart
+        $rowId = implode('-', array_merge([$product->id], $optionIds->all()));
+
         $cart = session()->get('cart', []);
 
         if (isset($cart[$rowId])) {
-            // Already in cart -> increment quantity & update shipping
             $cart[$rowId]['quantity'] += $qty;
             $cart[$rowId]['selected_shipping_profile_id'] = $shipProfile;
         } else {
-            // New entry
             $price = (float) ($product->discounted_price ?? $product->price);
 
             $cart[$rowId] = [
                 'row_id'                       => $rowId,
                 'product_id'                   => $product->id,
                 'name'                         => $product->name,
-                'variations'                   => $options->map(fn($o) => [
+                'variations'                   => $options->map(fn($o)=>[
                                                     'type'  => $o->variationType->name,
                                                     'value' => $o->value,
                                                 ])->all(),
@@ -228,7 +233,7 @@ class CartController extends Controller
                 'photo'                        => optional($product->media->first())->url
                                                     ? asset('storage/'.optional($product->media->first())->url)
                                                     : null,
-                'shipping_profiles'            => $product->shippingProfiles->map(fn($p) => [
+                'shipping_profiles'            => $product->shippingProfiles->map(fn($p)=>[
                                                     'id'         => $p->id,
                                                     'name'       => $p->name,
                                                     'base_rate'  => $p->base_rate,
@@ -241,16 +246,14 @@ class CartController extends Controller
         session()->put('cart', $cart);
     }
 
-    /**
-     * Decrease a cart row's quantity or remove it if it falls below 1.
-     */
     private function decreaseOrRemove(array &$cart, string $rowId): void
     {
-        if (isset($cart[$rowId])) {
-            $cart[$rowId]['quantity']--;
-            if ($cart[$rowId]['quantity'] < 1) {
-                unset($cart[$rowId]);
-            }
+        if (! isset($cart[$rowId])) {
+            return;
+        }
+        $cart[$rowId]['quantity']--;
+        if ($cart[$rowId]['quantity'] < 1) {
+            unset($cart[$rowId]);
         }
     }
 }

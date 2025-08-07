@@ -60,7 +60,8 @@ class Product extends Model
         'next_due_date',
         'featured_image',
         'country_id',
-        'renewal_type'
+        'renewal_type',
+        'tags'
     ];
 
     /**
@@ -212,6 +213,10 @@ public function variations() {
         // 3️⃣ no discount
         return $base;
     }
+
+
+
+
 
 
 }

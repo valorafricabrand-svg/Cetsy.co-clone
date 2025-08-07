@@ -1,4 +1,4 @@
-{{-- resources/views/products/index.blade.php (or similar) --}}
+{{-- resources/views/products/index.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
@@ -10,6 +10,7 @@
         </a>
     </div>
 
+    {{-- Success message --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
             {{ session('success') }}
@@ -17,10 +18,42 @@
         </div>
     @endif
 
+    {{-- Status‐counts bar --}}
+    <div class="mb-4">
+        @php
+            $labels = [
+                0        => 'Pending',
+                1        => 'Active',
+                2        => 'Paused',
+                3        => 'Suspended',
+                'closed' => 'Closed',
+            ];
+            $classes = [
+                0        => 'warning',
+                1        => 'success',
+                2        => 'secondary',
+                3        => 'secondary',
+                'closed' => 'dark',
+            ];
+        @endphp
+
+        @foreach($labels as $key => $label)
+            <a
+                href="{{ route('products.index', array_merge(request()->except('page'), ['status' => $key])) }}"
+                class="btn btn-{{ $classes[$key] }} btn-sm me-2"
+            >
+                {{ $label }}
+                <span class="badge bg-light text-dark ms-1">
+                    {{ $statusCounts[$key] ?? 0 }}
+                </span>
+            </a>
+        @endforeach
+    </div>
+
     @if($products->count())
         <div class="row g-4">
             @foreach($products as $product)
-                <div class="col-md-6 col-lg-4">
+                          <div class="col-md-6 col-lg-4">
                     {{-- position-relative lets us place the badge --}}
                     <div class="card position-relative h-100 shadow-sm border-0 rounded-4">
 
@@ -82,10 +115,7 @@
                                    class="btn btn-outline-primary btn-sm">
                                     <i class="fas fa-eye me-1"></i> View
                                 </a>
-                                <a href="{{ route('products.edit', $product) }}"
-                                   class="btn btn-outline-secondary btn-sm">
-                                    <i class="fas fa-edit me-1"></i> Edit
-                                </a>
+                              
                                 <form action="{{ route('products.duplicate', $product) }}" method="POST" class="d-inline">
                                     @csrf
                                     <button type="submit" class="btn btn-outline-success btn-sm">
@@ -99,6 +129,7 @@
             @endforeach
         </div>
 
+        {{-- Pagination --}}
         <div class="mt-5">
             {{ $products->links('pagination::bootstrap-5') }}
         </div>
