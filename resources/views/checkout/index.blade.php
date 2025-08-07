@@ -23,9 +23,17 @@
 </style>
 
 @php
-  $user     = auth()->user();
-  $cart     = session('cart', []);
-  $currency = get_currency();
+  $user      = auth()->user();
+  $cart      = session('cart', []);
+  $currency  = get_currency();
+
+  // Totals
+  $subtotal      = collect($cart)->sum(fn($i) => $i['price'] * $i['quantity']);
+  $totalShipping = collect($cart)->sum(function($i){
+    $prof = collect($i['shipping_profiles'] ?? [])
+              ->firstWhere('id', $i['selected_shipping_profile_id'] ?? null);
+    return ($prof['base_rate'] ?? 0) * $i['quantity'];
+  });
 @endphp
 
 <section class="checkout-page py-5" style="margin-top:100px;">
@@ -54,7 +62,7 @@
       <form action="{{ route('store_order') }}" method="POST" class="row gy-5 gy-lg-0" novalidate>
         @csrf
 
-        {{-- Billing & Shipping --}}
+        {{-- Billing & Shipping Details --}}
         <div class="col-lg-7 order-lg-1">
           <h4 class="mb-4">Billing &amp; Shipping Details</h4>
           <div class="row g-3">
@@ -140,7 +148,7 @@
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="billing_same"
                        name="billing_same_as_shipping" value="1"
-                       {{ old('billing_same_as_shipping','1') == '1' ? 'checked' : '' }}
+                       {{ old('billing_same_as_shipping','1')=='1' ? 'checked' : '' }}
                        onchange="toggleBillingAddress(this.checked)">
                 <label class="form-check-label" for="billing_same">
                   Billing address same as shipping
@@ -150,7 +158,7 @@
 
             {{-- Billing Address Fields --}}
             <div id="billing_address_fields"
-                 style="display: {{ old('billing_same_as_shipping','1') == '1' ? 'none' : 'block' }};">
+                 style="display:{{ old('billing_same_as_shipping','1')=='1' ? 'none' : 'block' }};">
               <hr class="my-4"><h5>Billing Address</h5>
 
               <div class="col-md-6">
@@ -158,7 +166,7 @@
                 <select name="billing_country" class="form-select">
                   <option value="">Select Country</option>
                   @foreach(\App\Models\Country::orderBy('name')->get() as $c)
-                    <option value="{{ $c->id }}" @selected(old('billing_country') == $c->id)>{{ $c->name }}</option>
+                    <option value="{{ $c->id }}" @selected(old('billing_country')==$c->id)>{{ $c->name }}</option>
                   @endforeach
                 </select>
               </div>
@@ -204,7 +212,8 @@
             {{-- Promo Code --}}
             <div class="col-12">
               <label class="form-label">Promo Code</label>
-              <input name="promo_code" type="text" class="form-control" value="{{ old('promo_code') }}">
+              <input name="promo_code" type="text" class="form-control"
+                     value="{{ old('promo_code') }}">
             </div>
           </div>
         </div>
@@ -214,25 +223,19 @@
           <div class="sticky-summary bg-white p-4 shadow-sm rounded">
             <h4 class="mb-4">Your Order</h4>
 
-            @php
-              $subtotal = 0;
-              $totalShipping = 0;
-            @endphp
             <ul class="list-group mb-3">
               @foreach ($cart as $row)
                 @php
-                  $qty       = $row['quantity'];
-                  $unit      = $row['price'];
-                  $prof      = collect($row['shipping_profiles'] ?? [])
-                                  ->firstWhere('id', $row['selected_shipping_profile_id'] ?? null);
-                  $rate      = $prof['base_rate'] ?? 0;
-                  $subtotal += $unit * $qty;
-                  $totalShipping += $rate * $qty;
+                  $qty  = $row['quantity'];
+                  $unit = $row['price'];
+                  $prof = collect($row['shipping_profiles'] ?? [])
+                            ->firstWhere('id', $row['selected_shipping_profile_id'] ?? null);
+                  $rate = $prof['base_rate'] ?? 0;
                 @endphp
                 <li class="list-group-item d-flex justify-content-between">
                   <div>
                     <div class="fw-semibold">{{ $row['name'] }}</div>
-                    @if(!empty($row['variation_summary']))
+                    @if (!empty($row['variation_summary']))
                       <small class="text-muted">{{ $row['variation_summary'] }}</small><br>
                     @endif
                     <small>
@@ -278,7 +281,8 @@
 
 <script>
   function toggleBillingAddress(checked) {
-    document.getElementById('billing_address_fields').style.display = checked ? 'none' : 'block';
+    document.getElementById('billing_address_fields')
+            .style.display = checked ? 'none' : 'block';
   }
 </script>
 @endsection

@@ -82,7 +82,7 @@ function shop(){
 
 
   function get_currency() {
-    return 'USD';
+    return setting('default_currency');
  }
 
 
