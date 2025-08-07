@@ -18,4 +18,11 @@ class ReviewController extends Controller
             ->paginate(20);
         return view('admin.reviews.index', compact('reviews'));
     }
+    public function destroy($id)
+{
+    $review = \App\Models\Review::findOrFail($id);
+    $review->delete();
+
+    return redirect()->route('admin.reviews.index')->with('success', 'Review deleted successfully.');
+}
 } 

@@ -5,7 +5,8 @@
 @section('content')
 <div class="content">
     <h2 class="h4 mb-4 fw-semibold">All Reviews</h2>
-    <div class="card">
+    <!-- Add Review Button -->
+        <div class="card">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -19,6 +20,7 @@
                             <th>Comment</th>
                             <th>Approved</th>
                             <th>Date</th>
+                            <th>Actions</th> <!-- Actions Column -->
                         </tr>
                     </thead>
                     <tbody>
@@ -42,10 +44,17 @@
                                     @endif
                                 </td>
                                 <td>{{ $review->created_at ? $review->created_at->format('Y-m-d') : '-' }}</td>
+                                <td>
+                                    <form action="{{ route('reviews.destroy', $review) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to delete this review?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">No reviews found.</td>
+                                <td colspan="9" class="text-center text-muted py-4">No reviews found.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -57,4 +66,4 @@
         </div>
     </div>
 </div>
-@endsection 
+@endsection
