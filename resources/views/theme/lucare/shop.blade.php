@@ -7,10 +7,15 @@
     <div class="row align-items-center">
       <div class="col-lg-9 d-flex align-items-center gap-4">
         {{-- Shop Logo --}}
-        <img src="{{ asset($shop->logo ? 'storage/' . $shop->logo : 'assets/images/cetsy_feture_logo.jpg') }}"
-             alt="{{ $shop->name }} logo"
-             class="rounded-circle shadow-sm border"
-             style="width:80px; height:80px; object-fit:cover;">
+<img 
+  src="{{ $shop->logo 
+      ? asset('storage/' . $shop->logo) 
+      : setting('favicon_url') }}" 
+  alt="{{ $shop->name }} logo" 
+  class="rounded-circle shadow-sm border" 
+  style="width:80px; height:80px; object-fit:cover;" 
+>
+
 
         <div class="flex-grow-1">
           <h1 class="h4 fw-bold mb-1">{{ $shop->name }}</h1>
