@@ -4,191 +4,259 @@
 @section('title','Your Cart')
 
 @section('main')
-<section class="cart-page py-5 bg-light" x-data>
+<section class="cart-page py-5 bg-light">
   <div class="container">
-    {{-- Flash messages --}}
-    @if(session('success'))
-      <div class="alert alert-success">{!! session('success') !!}</div>
-    @endif
-    @if(session('error'))
-      <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
+    {{-- Flash --}}
+    <div id="flash-container">
+      @if(session('success'))
+        <div class="alert alert-success">{!! session('success') !!}</div>
+      @endif
+      @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+      @endif
+    </div>
 
-    @php $cart = session('cart', []); @endphp
+    @php
+      $cart     = session('cart', []);
+      $currency = get_currency();
+    @endphp
 
-    {{-- EMPTY CART --}}
-    @if(count($cart) === 0)
+    @if($cart === [])
       <div class="text-center py-5">
         <h3>Your cart is empty</h3>
         <a href="{{ url()->previous() }}" class="btn btn-primary mt-3">Continue Shopping</a>
       </div>
-
-    {{-- POPULATED CART --}}
     @else
-      <form method="POST" action="{{ route('cart.updateShippingSelection') }}">
-        @csrf
+      <div class="table-responsive mb-4">
+        <table class="table table-bordered align-middle text-center">
+          <thead class="table-light">
+            <tr>
+              <th>Product</th><th>Variation</th><th>Price</th>
+              <th>Quantity</th><th>Shipping Profile</th>
+              <th>Line&nbsp;Total</th><th>Remove</th>
+            </tr>
+          </thead>
+          <tbody>
+          @foreach($cart as $rowId => $item)
+            @php
+              $qty       = $item['quantity'];
+              $unitPrice = $item['price'];
+              $profiles  = \App\Models\ShippingProfile::where('product_id',$item['product_id'])->orderBy('name')->get();
+              $selected  = $profiles->firstWhere('id',$item['selected_shipping_profile_id'] ?? null);
+              $rate      = $selected->base_rate ?? 0;
+              $lineTotal = ($unitPrice + $rate) * $qty;
+              $photoUrl  = isset($item['photo']) && filter_var($item['photo'],FILTER_VALIDATE_URL)
+                              ? $item['photo']
+                              : (isset($item['photo']) ? asset('storage/'.$item['photo']) : null);
+            @endphp
+            <tr
+              data-row-id="{{ $rowId }}"
+              data-unit-price="{{ $unitPrice }}"
+              data-quantity="{{ $qty }}"
+            >
+              {{-- Product --}}
+              <td class="text-start">
+                <div class="d-flex gap-3 align-items-center">
+                  @if($photoUrl)
+                    <img src="{{ $photoUrl }}" width="60" height="60" class="rounded object-fit-cover" alt="">
+                  @endif
+                  <span class="fw-semibold">{{ $item['name'] }}</span>
+                </div>
+              </td>
 
-        <div class="table-responsive mb-4">
-          <table class="table table-bordered align-middle text-center">
-            <thead class="table-light">
-              <tr>
-                <th>Product</th>
-                <th>Variation</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Shipping Profile</th>
-                <th>Line&nbsp;Total</th>
-                <th>Remove</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach($cart as $item)
-                @php
-                  // Reliable row identifier
-                  $rowId = $item['row_id'];
+              {{-- Variation --}}
+              <td>{{ $item['variation_summary'] ?? '—' }}</td>
 
-                  // Shipping profiles & selected
-                  $profiles = collect($item['shipping_profiles'] ?? []);
-                  $selectedProfile = $profiles->firstWhere('id', $item['selected_shipping_profile_id'] ?? null);
-                  $rate = $selectedProfile['base_rate'] ?? 0;
+              {{-- Price --}}
+              <td>{{ $currency }} {{ number_format($unitPrice,2) }}</td>
 
-                  // Prices & quantities
-                  $unitPrice = $item['price'] ?? 0;
-                  $qty       = $item['quantity'] ?? 1;
-                  $lineTotal = ($unitPrice + $rate) * $qty;
+              {{-- Quantity (two tiny forms so CSRF token is always sent) --}}
+              <td>
+                <div class="d-flex gap-1 justify-content-center align-items-center">
+                  <button
+                    class="btn btn-sm btn-outline-secondary js-qty-btn"
+                    data-action="decrease"
+                    @disabled($qty<=1)
+                  >&minus;</button>
+                  <span class="quantity">{{ $qty }}</span>
+                  <button
+                    class="btn btn-sm btn-outline-secondary js-qty-btn"
+                    data-action="increase"
+                  >+</button>
+                </div>
+              </td>
 
-                  // Photo URL
-                  $photo = $item['photo'] ?? null;
-                  $photoUrl = $photo
-                    ? (filter_var($photo, FILTER_VALIDATE_URL) ? $photo : asset('storage/'.$photo))
-                    : null;
-
-                  // Variation summary
-                  $summary = $item['variation_summary'] 
-                           ?? (isset($item['variations']) 
-                                ? collect($item['variations'])
-                                    ->map(fn($v) => "{$v['type']}: {$v['value']}")
-                                    ->join(', ')
-                                : '—');
-                @endphp
-
-                <tr>
-                  {{-- Product & thumbnail --}}
-                  <td class="text-start">
-                    <div class="d-flex align-items-center gap-3">
-                      @if($photoUrl)
-                        <img src="{{ $photoUrl }}"
-                             alt=""
-                             width="60"
-                             height="60"
-                             class="rounded object-fit-cover">
-                      @endif
-                      <span class="fw-semibold">{{ $item['name'] }}</span>
-                    </div>
-                  </td>
-
-                  {{-- Variation --}}
-                  <td>{{ $summary }}</td>
-
-                  {{-- Unit price --}}
-                  <td>{{ get_currency() }} {{ number_format($unitPrice, 2) }}</td>
-
-                  {{-- Quantity controls --}}
-                  <td>
-                    <div class="d-flex justify-content-center align-items-center gap-1">
-                      {{-- Decrease --}}
-                      <form action="{{ route('cart.update') }}" method="POST" class="d-inline">
-                        @csrf
-                        <input type="hidden" name="row_id" value="{{ $rowId }}">
-                        <input type="hidden" name="action" value="decrease">
-                        <button type="submit"
-                                class="btn btn-sm btn-outline-secondary"
-                                @disabled($qty <= 1)
-                        >–</button>
-                      </form>
-
-                      <span class="px-2">{{ $qty }}</span>
-
-                      {{-- Increase --}}
-                      <form action="{{ route('cart.update') }}" method="POST" class="d-inline">
-                        @csrf
-                        <input type="hidden" name="row_id" value="{{ $rowId }}">
-                        <input type="hidden" name="action" value="increase">
-                        <button type="submit" class="btn btn-sm btn-outline-secondary">+</button>
-                      </form>
-                    </div>
-                  </td>
-
-                  {{-- Shipping profile selector --}}
-                  <td>
+              {{-- Shipping select (belongs to hidden form below) --}}
+              <td>
+                <select
+                  name="shipping_profile_ids[{{ $rowId }}]"
+                  class="form-select form-select-sm js-shipping-select"
+                >
+                  @foreach($profiles as $profile)
                     @php
-                      // Selected first, then the rest
-                      $ordered = $selectedProfile
-                        ? collect([$selectedProfile])->merge($profiles->where('id','!=',$selectedProfile['id']))
-                        : $profiles;
+                      $label = $profile->dest_location_type==='everywhere_else'
+                               ? 'Everywhere'
+                               : ($profile->destCountry? 'Ship to '.$profile->destCountry->name : $profile->name);
                     @endphp
-                    <select name="shipping_profile_ids[{{ $rowId }}]"
-                            class="form-select form-select-sm">
-                      @foreach($ordered as $profile)
-                        <option value="{{ $profile['id'] }}"
-                                @selected($profile['id'] == ($item['selected_shipping_profile_id'] ?? null))>
-                          {{ $profile['name'] }}
-                          ({{ get_currency() }} {{ number_format($profile['base_rate'],2) }})
-                        </option>
-                      @endforeach
-                    </select>
-                  </td>
+                    <option
+                      value="{{ $profile->id }}"
+                      data-base-rate="{{ $profile->base_rate }}"
+                      @selected($profile->id == ($item['selected_shipping_profile_id'] ?? null))
+                    >
+                      {{ $label }} ({{ $currency }} {{ number_format($profile->base_rate,2) }})
+                    </option>
+                  @endforeach
+                </select>
+              </td>
 
-                  {{-- Line total --}}
-                  <td>{{ get_currency() }} {{ number_format($lineTotal, 2) }}</td>
+              {{-- Line total --}}
+              <td class="line-total">{{ $currency }} {{ number_format($lineTotal,2) }}</td>
 
-                  {{-- Remove --}}
-                  <td>
-                    <form action="{{ route('cart.remove') }}" method="POST">
-                      @csrf
-                      <input type="hidden" name="row_id" value="{{ $rowId }}">
-                      <button type="submit" class="btn btn-sm btn-danger">&times;</button>
-                    </form>
-                  </td>
-                </tr>
-              @endforeach
-            </tbody>
+              {{-- Remove --}}
+              <td>
+                <form action="{{ route('cart.remove') }}" method="POST" class="d-inline js-remove-form">
+                  @csrf
+                  <input type="hidden" name="row_id" value="{{ $rowId }}">
+                  <button class="btn btn-sm btn-danger">&times;</button>
+                </form>
+              </td>
+            </tr>
+          @endforeach
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <th colspan="5" class="text-end">Total:</th>
+              <th colspan="2" id="grand-total">
+                {{ $currency }}
+                {{ number_format(
+                     collect($cart)->sum(fn($i)=>
+                       (($i['price'] ?? 0) +
+                        (collect($i['shipping_profiles'] ?? [])
+                          ->firstWhere('id',$i['selected_shipping_profile_id'] ?? null)['base_rate'] ?? 0)
+                       ) * ($i['quantity'] ?? 1)
+                     ),2) }}
+              </th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
 
-            {{-- Cart totals --}}
-            <tfoot class="table-light">
-              @php
-                $grandTotal = collect($cart)->sum(function($item){
-                  $profiles = collect($item['shipping_profiles'] ?? []);
-                  $rate = $profiles->firstWhere('id', $item['selected_shipping_profile_id'] ?? null)['base_rate'] ?? 0;
-                  $unit = $item['price'] ?? 0;
-                  $qty = $item['quantity'] ?? 1;
-                  return ($unit + $rate) * $qty;
-                });
-              @endphp
-              <tr>
-                <th colspan="5" class="text-end">Total:</th>
-                <th colspan="2">{{ get_currency() }} {{ number_format($grandTotal, 2) }}</th>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        {{-- Continue shopping / update shipping & checkout --}}
-        <div class="d-flex justify-content-between align-items-center">
-          <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">
-            Continue Shopping
-          </a>
-          <div>
-            <button type="submit" class="btn btn-outline-primary me-2">
-              Update Shipping
-            </button>
-            <a href="{{ route('cart.checkout') }}" class="btn btn-primary">
-              Proceed to Checkout
-            </a>
-          </div>
-        </div>
+      {{-- hidden form for shipping-profile update (empty, we fill via JS/Fetch) --}}
+      <form id="shipping-form" method="POST" action="{{ route('cart.updateShippingSelection') }}">
+        @csrf
       </form>
+
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">Continue Shopping</a>
+        <a href="{{ route('cart.checkout') }}" class="btn btn-primary">Proceed to Checkout</a>
+      </div>
     @endif
   </div>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const CSRF  = '{{ csrf_token() }}';
+  const cur   = '{{ $currency }}';
+  const flash = document.getElementById('flash-container');
+
+  /* helpers --------------------------------------------------------- */
+  function money(n){ return cur+' '+(+n).toFixed(2); }
+
+  function rowTotal($tr){
+    const unit = +$tr.dataset.unitPrice;
+    const qty  = +$tr.dataset.quantity;
+    const rate = +$tr.querySelector('.js-shipping-select')
+                    .selectedOptions[0]
+                    .dataset.baseRate;
+    return (unit+rate)*qty;
+  }
+
+  function refreshRow($tr){
+    $tr.querySelector('.line-total').textContent = money(rowTotal($tr));
+  }
+
+  function refreshGrand(){
+    let sum=0;
+    document.querySelectorAll('tbody tr').forEach($tr=>{
+      sum+=rowTotal($tr);
+    });
+    document.getElementById('grand-total').textContent = money(sum);
+  }
+
+  function notify(type,msg){
+    flash.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
+  }
+
+  /* quantity buttons ------------------------------------------------ */
+  document.querySelectorAll('.js-qty-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      const $tr   = btn.closest('tr');
+      const rowId = $tr.dataset.rowId;
+      const act   = btn.dataset.action;
+
+      fetch('{{ route("cart.update") }}',{
+        method:'POST',
+        headers:{
+          'X-CSRF-TOKEN':CSRF,'Accept':'application/json',
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify({row_id:rowId,action:act})
+      })
+      .then(r=>r.json())
+      .then(json=>{
+        const qty=json.cart[rowId].quantity;
+        $tr.dataset.quantity=qty;
+        $tr.querySelector('.quantity').textContent=qty;
+        // disable minus if now 1
+        $tr.querySelectorAll('.js-qty-btn[data-action="decrease"]')
+           .forEach(b=>b.disabled=qty<=1);
+        refreshRow($tr); refreshGrand();
+        notify('success','Quantity updated.');
+      })
+      .catch(()=>notify('danger','Failed to update quantity.'));
+    });
+  });
+
+  /* shipping select -------------------------------------------------- */
+  document.querySelectorAll('.js-shipping-select').forEach(sel=>{
+    sel.addEventListener('change',()=>{
+      const $tr=sel.closest('tr');
+      const rowId=$tr.dataset.rowId;
+
+      // update UI totals immediately
+      refreshRow($tr); refreshGrand();
+
+      fetch('{{ route("cart.updateShippingSelection") }}',{
+        method:'POST',
+        headers:{
+          'X-CSRF-TOKEN':CSRF,'Accept':'application/json',
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify({shipping_profile_ids:{[rowId]:sel.value}})
+      })
+      .then(r=>r.json())
+      .then(j=>notify('success',j.message))
+      .catch(()=>notify('danger','Failed to update shipping.'));
+    });
+  });
+
+  /* remove ----------------------------------------------------------- */
+  document.querySelectorAll('.js-remove-form').forEach(frm=>{
+    frm.addEventListener('submit',e=>{
+      e.preventDefault();
+      fetch(frm.action,{
+        method:'POST',
+        headers:{
+          'X-CSRF-TOKEN':CSRF,'Accept':'application/json',
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify({row_id:frm.row_id.value})
+      }).then(()=>location.reload());
+    });
+  });
+});
+</script>
+@endpush

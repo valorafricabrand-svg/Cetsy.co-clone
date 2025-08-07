@@ -6,7 +6,7 @@ use App\Http\Controllers\{
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
     AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController,
-    ProductReportController
+    ProductReportController,ProductShippingController
 };
 
 use App\Http\Controllers\Admin\{
@@ -92,6 +92,43 @@ Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
 
 // Product Reports
 Route::post('/product-reports', [ProductReportController::class, 'store'])->name('product-reports.store');
+
+
+Route::prefix('products/{product}')->name('products.')->group(function () {         // About
+      // About (view page you already have)
+    Route::get('/pricing',     [ProductController::class, 'pricing'])->name('pricing');    // Edit forms
+    Route::get('/variations',  [ProductController::class, 'variations'])->name('variations');
+    Route::get('/details',     [ProductController::class, 'details'])->name('details');
+    Route::get('/shipping',    [ProductController::class, 'shipping'])->name('shipping');
+    Route::get('/settings',    [ProductController::class, 'settings'])->name('settings');
+        Route::get('/media',       [ProductController::class, 'media'])->name('media');
+
+    // Updates
+    Route::patch('/pricing',     [ProductController::class, 'updatePricing'])->name('pricing.update');
+    Route::patch('/variations',  [ProductController::class, 'updateVariations'])->name('variations.update');
+    Route::patch('/details',     [ProductController::class, 'updateDetails'])->name('details.update');
+    Route::patch('/shipping',    [ProductController::class, 'updateShipping'])->name('shipping.update');
+    Route::patch('/settings',    [ProductController::class, 'updateSettings'])->name('settings.update');
+
+
+
+});
+
+
+
+
+
+
+
+
+// web.php
+Route::post   ('/products/{product}/shipping/rows',           [ProductShippingController::class, 'storeShippingRow'])
+     ->name('products.shipping.rows.store');
+Route::delete ('/products/{product}/shipping/rows/{row}',     [ProductShippingController::class, 'destroyShippingRow'])
+     ->name('products.shipping.rows.destroy');
+
+Route::patch  ('/products/{product}/shipping/rows/{row}', [ProductShippingController::class, 'updateShippingRow'])
+     ->name('products.shipping.rows.update');
 
 
 Route::get('/pay-now-invoice/{total}', [OrderController::class, 'payNowInvoice'])->name('pay_now_invoice');
@@ -210,7 +247,9 @@ Route::delete('variation-options/{option}', [VariationController::class, 'destro
     Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate'])
         ->name('products.duplicate');
 
-   Route::post('media/{media}/crop', [MediaController::class,'crop'])->name('media.crop');
+  Route::post('media/{media}/crop', [MediaController::class, 'crop'])
+     ->name('media.crop')
+     ->middleware('auth');
    
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');

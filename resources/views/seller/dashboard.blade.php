@@ -194,9 +194,7 @@
                                 <a href="{{ route('products.show',$product) }}" class="btn btn-sm btn-outline-primary flex-fill">
                                     View
                                 </a>
-                                <a href="{{ route('products.edit',$product) }}" class="btn btn-sm btn-outline-secondary flex-fill">
-                                    Edit
-                                </a>
+                              
                             </div>
                         </div>
                     </div>

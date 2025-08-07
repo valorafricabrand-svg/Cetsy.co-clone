@@ -20,19 +20,57 @@ class OrderController extends Controller
     /**
      * Seller: list orders.
      */
-    public function index()
-    {
-        $user   = auth()->user();
-        $shopId = Shop::where('user_id', $user->id)->value('id');
+public function index(Request $request)
+{
+    $user   = auth()->user();
+    $shopId = Shop::where('user_id', $user->id)->value('id');
 
-        $orders = Order::with(['items.product'])
-            ->where('shop_id', $shopId)
-            ->orderByDesc('id')
-            ->paginate(15)
-            ->withQueryString();
+    // Base query scoped to this shop
+    $baseQuery = Order::where('shop_id', $shopId);
 
-        return view('seller.orders.index', compact('user', 'orders'));
+    // 1) Compute per-status counts
+    $counts = (clone $baseQuery)
+        ->select('status', DB::raw('count(*) as count'))
+        ->groupBy('status')
+        ->pluck('count', 'status')
+        ->toArray();
+
+    // Ensure zeros for missing statuses
+    $allStatuses = ['pending','processing','shipped','completed','cancelled'];
+    foreach ($allStatuses as $st) {
+        $counts[$st] = $counts[$st] ?? 0;
     }
+
+    $total = array_sum($counts);
+    $statusCounts = array_merge(['all' => $total], $counts);
+
+    // 2) Apply status filter
+    $currentStatus = $request->query('status', 'all');
+    if ($currentStatus !== 'all' && isset($counts[$currentStatus])) {
+        $baseQuery->where('status', $currentStatus);
+    }
+
+    // 3) Apply search by ID
+    $searchId = $request->query('search');
+    if (!empty($searchId) && is_numeric($searchId)) {
+        $baseQuery->where('id', $searchId);
+    }
+
+    // 4) Paginate with items & product eager-load
+    $orders = $baseQuery
+        ->with(['items.product'])
+        ->orderByDesc('id')
+        ->paginate(15)
+        ->withQueryString(); // preserves status & search
+
+    return view('seller.orders.index', compact(
+        'user',
+        'orders',
+        'statusCounts',
+        'currentStatus',
+        'searchId'
+    ));
+}
 
     /**
      * Seller: show a single order.

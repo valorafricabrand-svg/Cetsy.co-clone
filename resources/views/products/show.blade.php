@@ -1,8 +1,105 @@
+{{-- resources/views/products/show.blade.php --}}
 @extends('layouts.app')
 
+@section('title', $product->name . ' | Product')
+
+@push('styles')
+<style>
+  /* Sticky tab header */
+  .page-header-sticky {
+    position: sticky;
+    top: 0;        /* adjust if your main navbar is fixed */
+    z-index: 1020;
+    background: #fff;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+  /* Horizontal scroll for tabs on small screens */
+  .tab-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .tab-scroll .nav-link { border-radius: 999px; }
+  .rounded-4, .rounded-top-4 { border-radius: 1rem !important; }
+</style>
+@endpush
+
 @section('content')
+@php
+    $current = \Illuminate\Support\Facades\Route::currentRouteName();
+@endphp
+
 <div class="content">
-  <div class="row gx-5 gy-4">
+
+  {{-- ───────── Clickable Tabs Header (navigate to pages) ───────── --}}
+  <div class="page-header-sticky">
+    <div class="container-fluid px-0">
+      <div class="tab-scroll px-2 py-2">
+        <ul class="nav nav-pills gap-2 flex-nowrap">
+          <li class="nav-item">
+            <a class="nav-link {{ $current === 'products.show' ? 'active' : 'btn-outline-secondary' }}"
+               href="{{ route('products.show', $product) }}">
+              <i class="fa-regular fa-circle-question me-1"></i> About
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link {{ $current === 'products.pricing' ? 'active' : 'btn-outline-secondary' }}"
+               href="{{ route('products.pricing', $product) }}">
+              <i class="fa-solid fa-tags me-1"></i> Price & Inventory
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link {{ $current === 'products.variations' ? 'active' : 'btn-outline-secondary' }}"
+               href="{{ route('products.variations', $product) }}">
+              <i class="fa-solid fa-layer-group me-1"></i> Variations
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link {{ $current === 'products.details' ? 'active' : 'btn-outline-secondary' }}"
+               href="{{ route('products.details', $product) }}">
+              <i class="fa-regular fa-rectangle-list me-1"></i> Details
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link {{ $current === 'products.shipping' ? 'active' : 'btn-outline-secondary' }}"
+               href="{{ route('products.shipping', $product) }}">
+              <i class="fa-solid fa-truck me-1"></i> Shipping
+            </a>
+          </li>
+
+          {{-- NEW: Media tab --}}
+          <li class="nav-item">
+            <a class="nav-link {{ $current === 'products.media' ? 'active' : 'btn-outline-secondary' }}"
+               href="{{ route('products.media', $product) }}">
+              <i class="fa-regular fa-images me-1"></i> Media
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link {{ $current === 'products.settings' ? 'active' : 'btn-outline-secondary' }}"
+               href="{{ route('products.settings', $product) }}">
+              <i class="fa-solid fa-gear me-1"></i> Settings
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  {{-- Flash --}}
+  @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show rounded-3 mt-3" role="alert">
+      {{ session('success') }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  @endif
+
+  {{-- ───────── ABOUT PAGE CONTENT (this view is the About page) ───────── --}}
+  <div class="row gx-5 gy-4 mt-2">
     {{-- ───────── Image Carousel ───────── --}}
     <div class="col-lg-6">
       @if($product->media->count())
@@ -94,6 +191,10 @@
       {{-- Listing Dates --}}
       @if($product->is_active === 1)
         <ul class="list-unstyled mb-3 text-muted small">
+            <li>
+            <i class="fas fa-calendar-plus me-1"></i>
+            <strong>Listing id:</strong>{{ $product->id }}
+          </li>
           <li>
             <i class="fas fa-calendar-plus me-1"></i>
             <strong>Listed on:</strong>
@@ -142,26 +243,61 @@
         </p>
       @endif
 
-      {{-- Listing Fee Prompt --}}
-{{-- Listing Fee / Renewal / Suspension Prompt --}}
-@php
-    use Carbon\Carbon;
-@endphp
+      {{-- Listing Fee / Renewal / Suspension Prompt --}}
+      @php use Carbon\Carbon; @endphp
 
-@if($product->is_active === 3)
-    {{-- Suspended --}}
-    <div class="alert alert-danger d-flex align-items-center mb-4">
-        <i class="fas fa-ban me-2"></i>
-        This listing has been suspended. Please contact the administrator for assistance.
-    </div>
+      @if($product->is_active === 3)
+        {{-- Suspended --}}
+        <div class="alert alert-danger d-flex align-items-center mb-4">
+          <i class="fas fa-ban me-2"></i>
+          This listing has been suspended. Please contact the administrator for assistance.
+        </div>
 
-@elseif($product->is_active === 2)
-    {{-- Paused --}}
-    @if($product->next_due_date && Carbon::parse($product->next_due_date)->lte(Carbon::now()))
-        {{-- Subscription expired: allow renewal --}}
-        <div class="alert alert-warning d-flex align-items-center mb-4">
+      @elseif($product->is_active === 2)
+        {{-- Paused --}}
+        @if($product->next_due_date && Carbon::parse($product->next_due_date)->lte(Carbon::now()))
+          {{-- Subscription expired: allow renewal --}}
+          <div class="alert alert-warning d-flex align-items-center mb-4">
             <i class="fas fa-exclamation-triangle me-2"></i>
             Your subscription expired on {{ Carbon::parse($product->next_due_date)->format('M d, Y') }}. Renew below to reactivate your listing.
+          </div>
+
+          @php
+              $baseFee    = $product->category?->listing_fee ?? 0;
+              $monthlyFee = $baseFee / 3;
+          @endphp
+
+          <div class="d-flex gap-2 mb-4">
+            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+              @csrf
+              <input type="hidden" name="plan" value="monthly">
+              <button class="btn btn-outline-success">
+                Renew Monthly<br>
+                <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
+              </button>
+            </form>
+            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+              @csrf
+              <input type="hidden" name="plan" value="4months">
+              <button class="btn btn-success">
+                Renew 4-Month<br>
+                <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>
+              </button>
+            </form>
+          </div>
+        @else
+          {{-- Paused but not yet due --}}
+          <div class="alert alert-info d-flex align-items-center mb-4">
+            <i class="fas fa-pause me-2"></i>
+            This listing is paused. It will automatically become eligible for renewal on {{ Carbon::parse($product->next_due_date)->format('M d, Y') }}.
+          </div>
+        @endif
+
+      @elseif($product->is_active !== 1)
+        {{-- Not active / pending --}}
+        <div class="alert alert-warning d-flex align-items-center mb-4">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          This listing isn’t live yet. Pay the fee below to activate it.
         </div>
 
         @php
@@ -170,69 +306,28 @@
         @endphp
 
         <div class="d-flex gap-2 mb-4">
-            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
-                @csrf
-                <input type="hidden" name="plan" value="monthly">
-                <button class="btn btn-outline-success">
-                    Renew Monthly<br>
-                    <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
-                </button>
-            </form>
-            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
-                @csrf
-                <input type="hidden" name="plan" value="4months">
-                <button class="btn btn-success">
-                    Renew 4‑Month<br>
-                    <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>
-                </button>
-            </form>
-        </div>
-    @else
-        {{-- Paused but not yet due --}}
-        <div class="alert alert-info d-flex align-items-center mb-4">
-            <i class="fas fa-pause me-2"></i>
-            This listing is paused. It will automatically become eligible for renewal on {{ Carbon::parse($product->next_due_date)->format('M d, Y') }}.
-        </div>
-    @endif
-
-@elseif($product->is_active !== 1)
-    {{-- Not active / pending --}}
-    <div class="alert alert-warning d-flex align-items-center mb-4">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        This listing isn’t live yet. Pay the fee below to activate it.
-    </div>
-
-    @php
-        $baseFee    = $product->category?->listing_fee ?? 0;
-        $monthlyFee = $baseFee / 3;
-    @endphp
-
-    <div class="d-flex gap-2 mb-4">
-        <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+          <form method="POST" action="{{ route('products.pay-fee', $product) }}">
             @csrf
             <input type="hidden" name="plan" value="monthly">
             <button class="btn btn-outline-success">
-                Pay Monthly<br>
-                <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
+              Pay Monthly<br>
+              <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
             </button>
-        </form>
-        <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+          </form>
+          <form method="POST" action="{{ route('products.pay-fee', $product) }}">
             @csrf
             <input type="hidden" name="plan" value="4months">
             <button class="btn btn-success">
-                Pay 4‑Month<br>
-                <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>
+              Pay 4-Month<br>
+              <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>
             </button>
-        </form>
-    </div>
-@endif
-
+          </form>
+        </div>
+      @endif
 
       {{-- Action Links --}}
       <div class="mt-auto">
-        <a href="{{ route('products.edit', $product) }}" class="btn btn-outline-secondary me-2">
-          <i class="fas fa-edit me-1"></i> Edit
-        </a>
+      
         <a href="{{ route('products.index') }}" class="btn btn-outline-dark">
           <i class="fas fa-arrow-left me-1"></i> Back
         </a>
@@ -249,5 +344,6 @@
       </div>
     </div>
   @endif
+
 </div>
 @endsection

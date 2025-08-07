@@ -116,51 +116,7 @@
 
       </div>
 
-      {{-- 6) Variations (physical only) --}}
-      <div x-show="type==='physical'" class="mb-4">
-        <h6 class="fw-semibold mb-3">Add Variations</h6>
-        <div class="row g-3 align-items-end">
-          <div class="col-md-4">
-            <label class="form-label">Variation Name</label>
-            <input type="text" x-model="variationType" class="form-control" placeholder="e.g. Color">
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Variation Option</label>
-            <input type="text" x-model="variationOption" class="form-control" placeholder="e.g. Red">
-          </div>
-          <div class="col-md-4">
-            <button type="button"
-                    class="btn btn-outline-primary w-100"
-                    :disabled="!variationType.trim() || !variationOption.trim()"
-                    @click="addManualVariation()">
-              <i class="fas fa-plus me-1"></i> Add Variation
-            </button>
-          </div>
-        </div>
 
-        <template x-if="variations.length">
-          <div class="table-responsive mt-4">
-            <table class="table table-bordered align-middle">
-              <thead class="table-light">
-                <tr><th>Type</th><th>Option</th><th>Price</th><th>Stock</th><th></th></tr>
-              </thead>
-              <tbody>
-                <template x-for="(v,i) in variations" :key="v.key">
-                  <tr>
-                    <td><input type="text" class="form-control" :name="`variations[${i}][type]`" x-model="v.type" required></td>
-                    <td><input type="text" class="form-control" :name="`variations[${i}][variation_option]`" x-model="v.option" required></td>
-                    <td><input type="number" step="0.01" min="0" class="form-control" :name="`variations[${i}][price]`" required></td>
-                    <td><input type="number" step="1" min="0" class="form-control" :name="`variations[${i}][stock]`" required></td>
-                    <td class="text-center">
-                      <button type="button" class="btn btn-sm btn-outline-danger" @click="variations.splice(i,1)">&times;</button>
-                    </td>
-                  </tr>
-                </template>
-              </tbody>
-            </table>
-          </div>
-        </template>
-      </div>
 
       {{-- 7) Country & Postal Code --}}
       <div class="row g-3 mb-4">
@@ -197,81 +153,15 @@
         @error('processing_time_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
       </div>
 
-      {{-- 9) Shipping Profiles (physical only) --}}
-      <div x-show="type==='physical'" class="mb-4">
-        <div class="d-flex justify-content-between mb-2">
-          <label class="form-label fw-semibold">Shipping Profiles <small class="text-muted">(select one or more)</small></label>
-          <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newProfileModal">
-            <i class="fas fa-plus-circle me-1"></i> New Profile
-          </button>
-        </div>
-        <div class="row gy-3">
-          @php
-            $first = $shippingProfiles->first()->id ?? null;
-            $sel   = old('shipping_profiles', $first ? [$first] : []);
-            $def   = old('default_shipping_profile', $first);
-          @endphp
-          @foreach($shippingProfiles as $profile)
-            <div class="col-md-6">
-              <div class="d-flex p-3 border rounded align-items-start">
-                <div class="form-check me-3 mt-1">
-                  <input class="form-check-input" type="checkbox"
-                         name="shipping_profiles[]" value="{{ $profile->id }}"
-                         id="sp_{{ $profile->id }}"
-                         {{ in_array($profile->id,$sel)?'checked':'' }}>
-                </div>
-                <div class="flex-grow-1">
-                  <label class="fw-semibold" for="sp_{{ $profile->id }}">{{ $profile->name }}</label>
-                  <div class="small text-muted">
-                    {{ get_currency() }}{{ number_format($profile->base_rate,2) }} ·
-                    {{ $profile->delivery_days }} day{{ $profile->delivery_days>1?'s':'' }}
-                    @if($profile->pickup_available) <span class="badge bg-success ms-1">Pickup</span>@endif
-                  </div>
-                </div>
-                <div class="form-check ms-3 mt-1">
-                  <input class="form-check-input" type="radio"
-                         name="default_shipping_profile" value="{{ $profile->id }}"
-                         id="df_{{ $profile->id }}"
-                         {{ $def==$profile->id?'checked':'' }}>
-                  <label class="small" for="df_{{ $profile->id }}">Default</label>
-                </div>
-              </div>
-            </div>
-          @endforeach
-        </div>
-        @error('shipping_profiles')<div class="text-danger mt-2">{{ $message }}</div>@enderror
-        @error('default_shipping_profile')<div class="text-danger mt-2">{{ $message }}</div>@enderror
-      </div>
 
-      {{-- 10) Image Upload & Preview --}}
-      <div class="border rounded p-3 mb-4 text-center"
-           @drop.prevent="handleDrop" @dragover.prevent @click="$refs.fileInput.click()"
-           style="cursor:pointer;">
-        <p class="mb-0 text-muted">Drag & drop images here or click to select</p>
-        <input type="file" multiple accept="image/*" class="d-none" x-ref="fileInput"
-               @change="handleFiles($event.target.files)" name="media[]">
-      </div>
-      <template x-if="previews.length">
-        <div class="row g-3 mb-4" id="previewList">
-          <template x-for="(file,i) in previews" :key="file.id">
-            <div class="col-6 col-sm-4 col-md-3">
-              <div class="position-relative rounded overflow-hidden" style="height:140px;">
-                <img :src="file.url" class="w-100 h-100 object-fit-cover">
-                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
-                        @click.prevent="removeFile(i)">&times;</button>
-              </div>
-            </div>
-          </template>
-        </div>
-      </template>
-      <template x-if="!previews.length">
-        <p class="text-muted mb-4">No images selected yet.</p>
-      </template>
+
+  
+ 
 
       {{-- Submit --}}
       <div class="d-grid">
         <button type="submit" class="btn btn-success btn-lg rounded-pill">
-          <i class="fas fa-check-circle me-2"></i> Publish Listing
+          <i class="fas fa-check-circle me-2"></i> Continue
         </button>
       </div>
     </form>
