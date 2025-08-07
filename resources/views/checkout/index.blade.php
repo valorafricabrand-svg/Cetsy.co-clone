@@ -1,5 +1,5 @@
 {{-- resources/views/checkout/index.blade.php --}}
-@extends('layouts.frontapp')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title','Checkout')
 
