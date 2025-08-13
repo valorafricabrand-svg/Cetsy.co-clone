@@ -79,20 +79,7 @@
     });
   </script>
 
-  <!-- Structured Data (Website) -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "{{ config('app.name', 'Cetsy') }}",
-    "url": "{{ url('/') }}",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "{{ url('/search') }}?q={search_term_string}",
-      "query-input": "required name=search_term_string"
-    }
-  }
-  </script>
+ 
 
   <!-- Inline Theme Tweaks -->
   <style>
