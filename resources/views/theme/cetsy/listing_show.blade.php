@@ -56,7 +56,7 @@
       <div class="col-lg-5" data-aos="fade-left">
         <div class="position-lg-sticky" style="top: 1rem;">
           {{-- Product Details --}}
-          @include('theme.'.theme().'.partials._details')
+          <!-- @include('theme.'.theme().'.partials._details') -->
 
           {{-- Add to Cart --}}
           @include('theme.'.theme().'.partials._cart')

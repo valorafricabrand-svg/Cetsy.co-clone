@@ -17,6 +17,12 @@ function logo_url(){
 }
 
 
+function price($price = 0){
+  
+   $currency_sign = get_currency();
+    return $currency_sign.' '.$price;
+}
+
 function settings() {
     $domain = request()->getHost();
 
