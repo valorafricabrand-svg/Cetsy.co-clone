@@ -17,11 +17,9 @@
     box-shadow: 0 0 0 .2rem rgba(38,143,255,.25);
   }
   .text-danger { font-size: .875rem; }
+  .thumb { width: 56px; height: 56px; object-fit: cover; border-radius: .5rem; }
   @media (min-width: 992px) {
     .sticky-summary { position: sticky; top: 100px; z-index: 10; }
-  }
-  .list-group-item .thumb {
-    width: 56px; height: 56px; object-fit: cover; border-radius: .5rem;
   }
 </style>
 
@@ -30,12 +28,12 @@
   $cart      = session('cart', []);
   $currency  = get_currency();
 
-  // Totals (server-side initial)
-  $subtotal      = collect($cart)->sum(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 0));
+  // Server-side initial totals
+  $subtotal      = collect($cart)->sum(fn($i) => (float)($i['price'] ?? 0) * (int)($i['quantity'] ?? 0));
   $totalShipping = collect($cart)->sum(function($i){
     $prof = collect($i['shipping_profiles'] ?? [])
               ->firstWhere('id', $i['selected_shipping_profile_id'] ?? null);
-    return (($prof['base_rate'] ?? 0) * ($i['quantity'] ?? 0));
+    return (float)($prof['base_rate'] ?? 0) * (int)($i['quantity'] ?? 0);
   });
 @endphp
 
@@ -53,7 +51,7 @@
       </div>
     @endif
 
-    {{-- Exception Detail --}}
+    {{-- Exception Detail (optional debug) --}}
     @if (session('error_exception'))
       <div class="alert alert-danger">
         <strong>Technical error:</strong>
@@ -232,6 +230,8 @@
                   $qty       = (int) ($row['quantity'] ?? 0);
                   $unit      = (float) ($row['price'] ?? 0);
                   $photo     = $row['photo'] ?? null;
+
+                  // Prefer shipping profiles already stored on the cart item
                   $profiles  = collect($row['shipping_profiles'] ?? []);
                   $selected  = $row['selected_shipping_profile_id'] ?? null;
                   $selProf   = $profiles->firstWhere('id', $selected);
@@ -252,20 +252,24 @@
                       {{-- Shipping profile selector (per item) --}}
                       <div class="mt-2">
                         <label class="form-label small mb-1">Shipping method</label>
-                        <select class="form-select form-select-sm js-ship-select"
-                                data-row-id="{{ $row['row_id'] }}">
-                          @foreach($profiles as $p)
-                            <option value="{{ $p['id'] }}"
-                                    data-rate="{{ (float)($p['base_rate'] ?? 0) }}"
-                                    @selected($p['id'] == $selected)>
-                              {{ $p['name'] }} — {{ $currency }} {{ number_format((float)($p['base_rate'] ?? 0), 2) }}
-                            </option>
-                          @endforeach
-                        </select>
-                        <small class="text-muted d-block mt-1">
-                          Rate: <span class="js-ship-rate">{{ $currency }} {{ number_format($rate,2) }}</span>
-                          <span class="ms-2">× {{ $qty }}</span>
-                        </small>
+                        @if($profiles->isNotEmpty())
+                          <select class="form-select form-select-sm js-ship-select"
+                                  data-row-id="{{ $row['row_id'] }}">
+                            @foreach($profiles as $p)
+                              <option value="{{ $p['id'] }}"
+                                      data-rate="{{ (float)($p['base_rate'] ?? 0) }}"
+                                      @selected($p['id'] == $selected)>
+                                {{ $p['name'] }} — {{ $currency }} {{ number_format((float)($p['base_rate'] ?? 0), 2) }}
+                              </option>
+                            @endforeach
+                          </select>
+                          <small class="text-muted d-block mt-1">
+                            Rate: <span class="js-ship-rate">{{ $currency }} {{ number_format($rate,2) }}</span>
+                            <span class="ms-2">× {{ $qty }}</span>
+                          </small>
+                        @else
+                          <div class="small text-muted">No shipping profiles ({{ $currency }} 0.00)</div>
+                        @endif
                       </div>
                     </div>
 
@@ -338,7 +342,6 @@
         subtotal += unit * qty;
 
         const shipRateText = li.querySelector('.js-ship-rate')?.textContent || '';
-        // Extract number from "<CUR> 123.45"
         const shipRate = parseFloat(shipRateText.replace(/[^\d.]/g,'')) || 0;
         shipping += shipRate * qty;
 
@@ -352,18 +355,15 @@
     }
 
     async function persistShipping(rowId, selectedProfileId){
-      // Build payload: shipping_profile_ids[rowId] = selectedProfileId
       const form = new FormData();
       form.append(`shipping_profile_ids[${rowId}]`, selectedProfileId);
 
       try {
-        const res = await fetch(endpoint, {
+        await fetch(endpoint, {
           method: 'POST',
           headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
           body: form
         });
-        // We don't depend on response to update UI, but log for debugging
-        // const data = await res.json();
       } catch (e) {
         console.error('Failed to persist shipping selection', e);
       }
@@ -375,16 +375,12 @@
         const opt   = this.selectedOptions[0];
         const rate  = parseFloat(opt.getAttribute('data-rate')) || 0;
 
-        // Update the visible rate for this row
         const li = this.closest('li.list-group-item');
         const rateNode = li.querySelector('.js-ship-rate');
         if (rateNode) rateNode.textContent = `${currency} ${money(rate)}`;
 
-        // Recalculate totals client-side
-        recalcTotals();
-
-        // Persist selection to session
-        persistShipping(rowId, this.value);
+        recalcTotals();                  // update UI immediately
+        persistShipping(rowId, this.value); // persist to session
       });
     });
 
