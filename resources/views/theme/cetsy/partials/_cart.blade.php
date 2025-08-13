@@ -7,16 +7,31 @@
   // Ensure variations+options are available
   $product->loadMissing('variations.options', 'variationTypes.options');
 
-  // Build a compact index: variant-combination key -> {id, price}
-  // Only include variants that have a price (so UI falls back when not priced).
+  // Build a compact index: variant-combination key -> {id, price, options:[ids]}
+  // Only include variants that have a price.
   $variantIndex = [];
   foreach ($product->variations ?? [] as $v) {
       if (($v->price ?? null) !== null && $v->options && $v->options->count()) {
-          $key = $v->options->pluck('id')->sort()->implode('-');
+          $ids = $v->options->pluck('id')->sort()->values();
+          $key = $ids->implode('-');
           $variantIndex[$key] = [
-              'id'    => (int) $v->id,
-              'price' => (float) $v->price,
+              'id'      => (int) $v->id,
+              'price'   => (float) $v->price,
+              'options' => $ids->toArray(),
           ];
+      }
+  }
+
+  // Precompute the lowest price that includes each single option id
+  // optionMinPrice[option_id] = min price among all variants containing that option
+  $optionMinPrice = [];
+  foreach ($variantIndex as $entry) {
+      foreach ($entry['options'] as $optId) {
+          if (!isset($optionMinPrice[$optId])) {
+              $optionMinPrice[$optId] = $entry['price'];
+          } else {
+              $optionMinPrice[$optId] = min($optionMinPrice[$optId], $entry['price']);
+          }
       }
   }
 
@@ -192,10 +207,16 @@
                 class="form-select js-variant-select"
                 required
                 data-variation-type-id="{{ $type->id }}"
+                {{-- pass optionMinPrice map to JS for initial "From" per option --}}
+                data-option-min='@json(collect($type->options)->mapWithKeys(fn($o)=>[$o->id => $optionMinPrice[$o->id] ?? null]))'
               >
                 <option value="" disabled selected>Select {{ strtolower($type->name) }}</option>
                 @foreach($type->options as $opt)
-                  <option value="{{ $opt->id }}">{{ $opt->value }}</option>
+                  {{-- store original label in data-label; JS will append prices --}}
+                  <option
+                    value="{{ $opt->id }}"
+                    data-label="{{ $opt->value }}"
+                  >{{ $opt->value }}</option>
                 @endforeach
               </select>
             </div>
@@ -216,18 +237,17 @@
 @push('scripts')
 <script>
   (function(){
-    const priceBlock   = document.getElementById('js-price-block');
+    const priceBlock        = document.getElementById('js-price-block');
     if (!priceBlock) return;
 
-    const priceNode     = document.getElementById('js-price-amount');
-    const variantIdNode = document.getElementById('js-variant-id');
-    const variantPriceNode = document.getElementById('js-variant-price');
-    const addBtn        = document.getElementById('js-add-to-cart');
+    const priceNode         = document.getElementById('js-price-amount');
+    const variantIdNode     = document.getElementById('js-variant-id');
+    const variantPriceNode  = document.getElementById('js-variant-price');
 
     const currency   = priceBlock.getAttribute('data-currency') || '';
     const defaultAmt = parseFloat(priceBlock.getAttribute('data-default-amount') || '0') || 0;
 
-    // variant-index: { "1-12-33": { id: 7, price: 999.00 }, ... }
+    // variant-index: { "1-12-33": { id: 7, price: 999.00, options:[1,12,33] }, ... }
     const variantIndex = JSON.parse(priceBlock.getAttribute('data-variant-index') || '{}');
 
     const selects = Array.from(document.querySelectorAll('.js-variant-select'));
@@ -236,16 +256,30 @@
       return currency + ' ' + Number(amount).toFixed(2);
     }
 
-    function getSelectedKey() {
-      if (!selects.length) return null;
-      const vals = [];
+    function getSelectedKey(excludeSelectId = null, substituteOptionId = null) {
+      // Build a key from current selections; if excludeSelectId is provided,
+      // substituteOptionId is used for that select instead of its current value.
+      const ids = [];
       for (const s of selects) {
+        const typeId = parseInt(s.getAttribute('data-variation-type-id'), 10);
+        if (excludeSelectId !== null && typeId === excludeSelectId) {
+          // use substitute value
+          if (substituteOptionId === null) return null;
+          ids.push(parseInt(substituteOptionId, 10));
+          continue;
+        }
         if (!s.value) return null; // not fully selected yet
-        const idNum = parseInt(s.value, 10);
-        if (Number.isNaN(idNum)) return null;
-        vals.push(idNum);
+        ids.push(parseInt(s.value, 10));
       }
-      return vals.sort((a,b)=>a-b).join('-');
+      return ids.sort((a,b)=>a-b).join('-');
+    }
+
+    function getFullySelectedKey() {
+      for (const s of selects) {
+        if (!s.value) return null;
+      }
+      const ids = selects.map(s => parseInt(s.value, 10)).sort((a,b)=>a-b);
+      return ids.join('-');
     }
 
     function clearVariantHidden() {
@@ -253,31 +287,82 @@
       if (variantPriceNode) variantPriceNode.value = '';
     }
 
-    function updatePriceAndVariant() {
-      const key = getSelectedKey();
+    function updateMainPrice() {
+      const key = getFullySelectedKey();
       if (key && Object.prototype.hasOwnProperty.call(variantIndex, key)) {
         const entry = variantIndex[key];
         const price = parseFloat(entry.price);
-
-        // Show selected variant price
         if (priceNode) priceNode.textContent = fmt(price);
-
-        // Set hidden inputs so server can price by variant ID
         if (variantIdNode) variantIdNode.value = entry.id;
         if (variantPriceNode) variantPriceNode.value = price.toFixed(2);
-
       } else {
-        // Fallback to default price and clear variant linkage
         if (priceNode) priceNode.textContent = fmt(defaultAmt);
         clearVariantHidden();
       }
     }
 
+    // For each select, show price per option:
+    // - If all other selects are chosen, show the exact price for the completed combo with this option.
+    // - Otherwise, show "From <lowest price including this option>" using data-option-min.
+    function updateOptionLabels() {
+      // Check if "other selects" are all chosen for each select
+      const otherAllChosen = (excludeTypeId) => {
+        for (const s of selects) {
+          const typeId = parseInt(s.getAttribute('data-variation-type-id'), 10);
+          if (typeId === excludeTypeId) continue;
+          if (!s.value) return false;
+        }
+        return true;
+      };
+
+      for (const s of selects) {
+        const typeId = parseInt(s.getAttribute('data-variation-type-id'), 10);
+        const perOptionMin = JSON.parse(s.getAttribute('data-option-min') || '{}');
+
+        // Iterate options (skip placeholder)
+        for (const opt of Array.from(s.options)) {
+          if (!opt.value) continue; // placeholder
+
+          const baseLabel = opt.getAttribute('data-label') || opt.textContent;
+          let label = baseLabel;
+          let priceToShow = null;
+
+          const optId = parseInt(opt.value, 10);
+
+          if (otherAllChosen(typeId)) {
+            // We can compute exact price for this completed combo
+            const key = getSelectedKey(typeId, optId);
+            if (key && Object.prototype.hasOwnProperty.call(variantIndex, key)) {
+              priceToShow = parseFloat(variantIndex[key].price);
+            } else {
+              // No direct priced combo with current other selections
+              priceToShow = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : null;
+            }
+          } else {
+            // Not fully chosen yet: show the minimum price that includes this option
+            priceToShow = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : null;
+          }
+
+          if (priceToShow != null && !Number.isNaN(priceToShow)) {
+            label = `${baseLabel} — ${fmt(priceToShow)}`;
+          }
+
+          opt.textContent = label;
+        }
+      }
+    }
+
+    function onChange() {
+      updateOptionLabels();
+      updateMainPrice();
+    }
+
     // Bind changes
-    selects.forEach(s => s.addEventListener('change', updatePriceAndVariant));
+    selects.forEach(s => s.addEventListener('change', onChange));
 
     // Initial render (covers prefilled forms)
-    updatePriceAndVariant();
+    updateOptionLabels();
+    updateMainPrice();
   })();
 </script>
 @endpush
