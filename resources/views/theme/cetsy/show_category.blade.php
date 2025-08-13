@@ -1,59 +1,314 @@
 {{-- resources/views/categories/show.blade.php --}}
-@extends('layouts.frontapp')
+@extends('theme.'.theme().'.layouts.app')
 
-{{-- Optional SEO title --}}
-@section('title', $category->name . ' – Marketplace Category')
+{{-- SEO-friendly title (overrideable) --}}
+@section('title', ($category->seo_title ?? $category->name) . ' – Marketplace Category')
 
 @section('main')
-{{-- ────────── Category Banner ────────── --}}
-<div class="position-relative bg-cover bg-center"
-style="background-image:url('{{ $category->image ? asset('storage/' . $category->image) : asset('assets/img/default-category.jpg') }}'); height:300px;">
-<div class="position-absolute top-0 start-0 w-100 h-100 bg-success bg-opacity-75 d-flex align-items-center justify-content-center">
-    <div class="text-center text-white px-3">
-        <h1 class="display-5 fw-bold text-white">{{ $category->name }}</h1>
-        <p class="lead mb-0">
-          {{ $category->description 
-          ?? 'Explore a wide range of ' . $category->name .' '.$category->listing_type }}
-      </p>
+  <style>
+    /* Scoped cosmetics */
+    .py-6 { padding-top: 4rem; padding-bottom: 4rem; }
+    .hero-mask { background: linear-gradient(180deg, rgba(15,81,50,.82), rgba(25,135,84,.82)); }
+    .eyebrow {
+      display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .75rem;
+      border-radius:999px; background: rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.25);
+      font-weight:600; font-size:.85rem;
+    }
+    .toolbar { position: sticky; top: 0; z-index: 1020; background: #fff; border-bottom: 1px solid rgba(0,0,0,.06); }
+    .chip { display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:999px; border:1px solid rgba(0,0,0,.12); background:#fff; font-size:.875rem; }
+    .view-toggle .btn { border-radius:.5rem; }
+    .empty-spot { border:2px dashed rgba(25,135,84,.35); border-radius:1rem; background:rgba(25,135,84,.03); }
+  </style>
 
-  </div>
-</div>
-</div>
+  {{-- =========== Category Banner =========== --}}
+  @php
+    $banner = $category->image
+      ? asset('storage/' . $category->image)
+      : asset('assets/img/default-category.jpg');
 
-{{-- ────────── Products Grid ────────── --}}
-<section class="py-5 bg-light">
-    <div class="container">
+    $desc = $category->description
+      ?: ('Explore a wide range of ' . e($category->name) . ($category->listing_type ? ' ' . e($category->listing_type) : ' listings') );
+  @endphp
 
-        {{-- Header with “Browse all” link --}}
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="h4 fw-bold mb-0">Listings in {{ $category->name }}</h2>
-            <a href="{{ route('products.index') }}" class="text-success text-decoration-none">
-                Browse All Listings
-            </a>
+  <section class="position-relative" style="height: 320px;">
+    <div
+      class="position-absolute top-0 start-0 w-100 h-100 bg-cover bg-center"
+      style="background-image:url('{{ $banner }}');">
+    </div>
+    <div class="position-absolute top-0 start-0 w-100 h-100 hero-mask d-flex align-items-center">
+      <div class="container text-center text-white px-3">
+        <div class="mb-2">
+          <span class="eyebrow"><i class="fas fa-folder-open"></i> Category</span>
         </div>
+        <h1 class="display-6 fw-bold text-white mb-2">{{ $category->name }}</h1>
+        <p class="lead mb-0 text-white-50">{{ $desc }}</p>
 
-        @if ($products->count())
-        <div class="row g-4">
-            @foreach ($products as $item)
-            
-   <div class="col-6 col-md-3 col-lg-3">
-            @include('theme.'.theme().'.partials.product-card', ['item' => $item])
+        {{-- Breadcrumbs (optional) --}}
+        <nav class="mt-3" aria-label="breadcrumb">
+          <ol class="breadcrumb justify-content-center">
+            <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ url('/') }}">Home</a></li>
+            <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ route('listings') }}">Listings</a></li>
+            <li class="breadcrumb-item active text-white-50" aria-current="page">{{ $category->name }}</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  {{-- =========== Filters / Toolbar =========== --}}
+  @php
+    $q        = request('q');
+    $sort     = request('sort', 'latest');   // latest | price_asc | price_desc | popular
+    $perPage  = (int) request('per_page', 24);
+    $view     = request('view', 'grid');     // grid | list
+    // Optional price range (if you wire it in controller)
+    $priceMin = request('min');
+    $priceMax = request('max');
+  @endphp
+
+  <section class="toolbar py-3">
+    <div class="container">
+      <form method="GET" action="{{ url()->current() }}" id="filtersForm">
+        <div class="row g-2 align-items-center">
+          {{-- Search in category --}}
+          <div class="col-12 col-md-4">
+            <div class="input-group">
+              <span class="input-group-text bg-white"><i class="fas fa-search text-secondary"></i></span>
+              <input type="search" name="q" value="{{ $q }}" class="form-control" placeholder="Search in {{ $category->name }}…">
+            </div>
           </div>
-@endforeach
-</div>
 
-{{-- Pagination --}}
-@if ($products->hasPages())
-<div class="mt-4 d-flex justify-content-center">
-    {{ $products->links('pagination::bootstrap-5') }}
-</div>
-@endif
-@else
-{{-- Empty State --}}
-<div class="alert alert-info text-center">
-    No listings found in this category.
-</div>
-@endif
-</div>
-</section>
+          {{-- Sort --}}
+          <div class="col-6 col-md-2">
+            <select class="form-select" name="sort" aria-label="Sort by">
+              <option value="latest"     {{ $sort==='latest'?'selected':'' }}>Newest</option>
+              <option value="popular"    {{ $sort==='popular'?'selected':'' }}>Popular</option>
+              <option value="price_asc"  {{ $sort==='price_asc'?'selected':'' }}>Price: Low → High</option>
+              <option value="price_desc" {{ $sort==='price_desc'?'selected':'' }}>Price: High → Low</option>
+            </select>
+          </div>
+
+          {{-- Optional: price range (kept simple) --}}
+          <div class="col-3 col-md-2">
+            <input type="number" min="0" step="1" name="min" value="{{ $priceMin }}" class="form-control" placeholder="Min">
+          </div>
+          <div class="col-3 col-md-2">
+            <input type="number" min="0" step="1" name="max" value="{{ $priceMax }}" class="form-control" placeholder="Max">
+          </div>
+
+          {{-- Per page --}}
+          <div class="col-6 col-md-2">
+            <select class="form-select" name="per_page" aria-label="Items per page">
+              @foreach([12,24,48] as $n)
+                <option value="{{ $n }}" {{ $perPage===$n?'selected':'' }}>{{ $n }} / page</option>
+              @endforeach
+            </select>
+          </div>
+
+          {{-- View toggle --}}
+          <div class="col-6 col-md-2 text-md-end">
+            <div class="btn-group view-toggle" role="group" aria-label="Toggle view">
+              <button type="button" class="btn btn-outline-success {{ $view==='grid'?'active':'' }}" data-view="grid" title="Grid view">
+                <i class="fas fa-th-large"></i>
+              </button>
+              <button type="button" class="btn btn-outline-success {{ $view==='list'?'active':'' }}" data-view="list" title="List view">
+                <i class="fas fa-bars"></i>
+              </button>
+            </div>
+            <input type="hidden" name="view" value="{{ $view }}">
+          </div>
+        </div>
+      </form>
+
+      {{-- Active chips --}}
+      <div class="mt-2">
+        <span class="chip me-1"><i class="fas fa-folder"></i> {{ $category->name }}</span>
+
+        @if($q)
+          <span class="chip me-1">
+            <i class="fas fa-search"></i> "{{ $q }}"
+            <a href="{{ request()->fullUrlWithQuery(['q'=>null,'page'=>null]) }}" class="btn-close" aria-label="Clear search"></a>
+          </span>
+        @endif
+
+        @if($priceMin !== null || $priceMax !== null)
+          <span class="chip me-1">
+            <i class="fas fa-dollar-sign"></i>
+            {{ $priceMin !== null ? 'Min '.$priceMin : '' }}{{ ($priceMin !== null && $priceMax !== null) ? ' – ' : '' }}{{ $priceMax !== null ? 'Max '.$priceMax : '' }}
+            <a href="{{ request()->fullUrlWithQuery(['min'=>null,'max'=>null,'page'=>null]) }}" class="btn-close" aria-label="Clear price"></a>
+          </span>
+        @endif
+
+        @if($sort && $sort!=='latest')
+          <span class="chip me-1">
+            <i class="fas fa-sort-amount-down"></i>
+            @switch($sort)
+              @case('popular') Popular @break
+              @case('price_asc') Price: Low→High @break
+              @case('price_desc') Price: High→Low @break
+              @default Newest
+            @endswitch
+            <a href="{{ request()->fullUrlWithQuery(['sort'=>'latest','page'=>null]) }}" class="btn-close" aria-label="Reset sort"></a>
+          </span>
+        @endif
+
+        {{-- Clear all (but stay in the same category) --}}
+        @if($q || $priceMin !== null || $priceMax !== null || ($sort && $sort!=='latest') || $perPage!==24 || $view!=='grid')
+          <a href="{{ url()->current() }}" class="btn btn-sm btn-link text-decoration-none ms-1">
+            <i class="fas fa-times-circle me-1"></i> Clear all
+          </a>
+        @endif>
+
+        {{-- Browse all link (to global listings) --}}
+        <a href="{{ route('listings') }}" class="btn btn-sm btn-link text-decoration-none ms-2">
+          <i class="fas fa-list-ul me-1"></i> Browse All Listings
+        </a>
+      </div>
+    </div>
+  </section>
+
+  {{-- =========== Listings =========== --}}
+  <section class="py-4 bg-light">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 fw-bold mb-0">Listings in {{ $category->name }}</h2>
+        <span class="text-muted small">
+          Showing <strong>{{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }}</strong>
+          of <strong>{{ $products->total() }}</strong>
+        </span>
+      </div>
+
+      {{-- GRID VIEW --}}
+      @if($view === 'grid')
+        @if ($products->count())
+          <div class="row g-4">
+            @foreach ($products as $item)
+              <div class="col-6 col-md-4 col-lg-3">
+                @include('theme.'.theme().'.partials.product-card', ['item' => $item])
+              </div>
+            @endforeach
+          </div>
+
+          {{-- Pagination (preserve filters) --}}
+          @if ($products->hasPages())
+            <div class="mt-4 d-flex justify-content-center">
+              {{ $products->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+            </div>
+          @endif
+        @else
+          <div class="alert alert-info text-center empty-spot py-5">
+            <i class="fas fa-box-open fa-2x mb-3 d-block"></i>
+            No listings found in this category.
+          </div>
+        @endif
+
+      {{-- LIST VIEW (compact rows with partial parity) --}}
+      @else
+        @if ($products->count())
+          <div class="vstack gap-3">
+            @foreach ($products as $item)
+              @php
+                $thumb = $item->featured_image
+                          ?? (isset($item->media) && $item->media->first()
+                                ? asset('storage/'.$item->media->first()->url)
+                                : asset('storage/placeholder.jpg'));
+                $avg  = round($item->reviews_avg_rating ?? 0);
+                $cnt  = (int) ($item->reviews_count ?? 0);
+                $basePrice  = $item->price;
+                $finalPrice = $item->discounted_price;
+              @endphp
+
+              <div class="border rounded-3 p-3 bg-white">
+                <div class="row g-3 align-items-center">
+                  <div class="col-4 col-md-3 col-lg-2">
+                    <a href="{{ route('listing.show', $item->slug) }}" class="d-block rounded overflow-hidden">
+                      <div class="ratio ratio-1x1 bg-white">
+                        <img src="{{ $thumb }}" alt="{{ $item->name }}" class="w-100 h-100" style="object-fit:cover;">
+                      </div>
+                    </a>
+                  </div>
+
+                  <div class="col-8 col-md-6 col-lg-7">
+                    <h5 class="mb-1">
+                      <a class="text-decoration-none text-dark" href="{{ route('listing.show', $item->slug) }}">
+                        {{ $item->name ?? 'Untitled item' }}
+                      </a>
+                    </h5>
+
+                    {{-- Ratings (same concept as product-card) --}}
+                    <div class="mb-1 small text-warning">
+                      @for($i=1; $i<=5; $i++)
+                        <i class="fa-star{{ $i <= $avg ? ' fa-solid' : ' fa-regular text-muted' }}"></i>
+                      @endfor
+                      @if($cnt) <span class="text-muted">({{ $cnt }})</span>@endif
+                    </div>
+
+                    {{-- Short description (optional) --}}
+                    @if(!empty($item->short_description))
+                      <div class="small text-muted">
+                        {{ \Illuminate\Support\Str::limit(strip_tags($item->short_description), 120) }}
+                      </div>
+                    @endif
+                  </div>
+
+                  <div class="col-12 col-md-3 col-lg-3 text-md-end">
+                    {{-- Price parity with partial --}}
+                    @if(isset($finalPrice, $basePrice) && is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
+                      <div class="d-flex align-items-baseline gap-2 justify-content-md-end mb-2">
+                        <span class="fw-bold text-success">{{ get_currency() }} {{ number_format($finalPrice, 2) }}</span>
+                        <span class="text-muted text-decoration-line-through">{{ get_currency() }} {{ number_format($basePrice, 2) }}</span>
+                      </div>
+                    @elseif(isset($basePrice))
+                      <div class="h5 mb-2 text-success">{{ get_currency() }} {{ number_format($basePrice, 2) }}</div>
+                    @else
+                      <div class="text-muted small mb-2">Contact for price</div>
+                    @endif
+
+                    <a href="{{ route('listing.show', $item->slug) }}" class="btn btn-success btn-sm">
+                      <i class="fas fa-eye me-1"></i> View
+                    </a>
+                  </div>
+                </div>
+              </div>
+            @endforeach
+          </div>
+
+          {{-- Pagination (preserve filters) --}}
+          @if ($products->hasPages())
+            <div class="mt-4 d-flex justify-content-center">
+              {{ $products->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+            </div>
+          @endif
+        @else
+          <div class="alert alert-info text-center empty-spot py-5">
+            <i class="fas fa-box-open fa-2x mb-3 d-block"></i>
+            No listings found in this category.
+          </div>
+        @endif
+      @endif
+    </div>
+  </section>
+
+  {{-- View toggle & auto-submit selects --}}
+  @push('scripts')
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('filtersForm');
+      const viewInput = form.querySelector('input[name="view"]');
+      document.querySelectorAll('.view-toggle [data-view]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          viewInput.value = btn.getAttribute('data-view');
+          if (form.querySelector('input[name="page"]')) form.querySelector('input[name="page"]').value = 1;
+          form.submit();
+        });
+      });
+      form.querySelectorAll('select, input[type="number"]').forEach(el => {
+        el.addEventListener('change', () => {
+          if (form.querySelector('input[name="page"]')) form.querySelector('input[name="page"]').value = 1;
+          form.submit();
+        });
+      });
+    });
+  </script>
+  @endpush
 @endsection
