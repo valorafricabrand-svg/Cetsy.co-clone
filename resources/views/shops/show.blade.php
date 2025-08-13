@@ -131,7 +131,7 @@
   @if(!empty($shop->announcement))
     <div class="alert alert-info mb-4">
       <i class="fas fa-bullhorn me-2"></i>
-      {{ $shop->announcement }}
+      {!! $shop->announcement !!}
     </div>
   @endif
 
@@ -155,14 +155,13 @@
   @endif
 
   {{-- Bio --}}
-  @if($shop->bio)
     <div class="card mb-4">
       <div class="card-body">
         <h5 class="card-title">About This Shop</h5>
         <p class="card-text">{!! $shop->bio !!}</p>
       </div>
     </div>
-  @endif
+  
 
  
 
@@ -296,7 +295,7 @@
     <div class="card mb-4">
       <div class="card-body">
         <h5 class="card-title">Shop Policies</h5>
-        <p class="card-text">{!! nl2br(e($shop->policies)) !!}</p>
+        <p class="card-text">{!! $shop->policies !!}</p>
       </div>
     </div>
   @endif
