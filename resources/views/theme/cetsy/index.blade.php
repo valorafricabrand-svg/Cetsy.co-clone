@@ -277,7 +277,7 @@
 
     @if($services->count() > 0)
       <div class="text-center mt-4 reveal reveal-delay-2">
-        <a href="{{ route('services.list') }}" class="btn btn-success btn-lg btn-pill px-4">
+        <a href="{{ route('listings') }}" class="btn btn-success btn-lg btn-pill px-4">
           <i class="fas fa-briefcase me-2"></i> View All Services
         </a>
       </div>
