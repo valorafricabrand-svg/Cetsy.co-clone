@@ -45,6 +45,9 @@
                   <span class="badge {{ $order->getStatusBadgeClass() }}">
                     {{ ucfirst($order->status) }}
                   </span>
+                  @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
+                    <br><small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
+                  @endif
                 </td>
                 <td>{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</td>
                 <td>

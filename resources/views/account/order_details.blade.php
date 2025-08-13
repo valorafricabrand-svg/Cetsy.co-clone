@@ -118,6 +118,12 @@
                   {{ ucfirst($order->status) }}
                 </span>
               </li>
+              @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
+                <li class="list-group-item px-0 d-flex justify-content-between">
+                  <span class="fw-semibold text-danger">Cancellation Reason:</span>
+                  <span class="text-danger">{{ $order->cancel_reason }}</span>
+                </li>
+              @endif
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Created:</span>
                 <span>{{ $order->created_at->format('d M Y, h:i A') }}</span>
