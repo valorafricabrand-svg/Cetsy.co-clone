@@ -17,7 +17,6 @@
     </div>
 
     @php
-      // The controller should have hydrated shipping profiles into the session cart already.
       $cart     = session('cart', []);
       $currency = get_currency();
     @endphp
@@ -36,7 +35,7 @@
               <th>Variation</th>
               <th>Price</th>
               <th>Quantity</th>
-              <th>Shipping</th>
+              <th>Shipping Profile</th>
               <th>Line&nbsp;Total</th>
               <th>Remove</th>
             </tr>
@@ -47,21 +46,16 @@
               $qty        = (int)($item['quantity'] ?? 1);
               $unitPrice  = (float)($item['price'] ?? 0);
 
-              // ✅ Use profiles stored in session on the item (no extra DB hit)
-              $profilesC  = collect($item['shipping_profiles'] ?? []);
+              $profilesC  = collect($item['shipping_profiles'] ?? []);  // snapshot from session
               $selectedId = (int)($item['selected_shipping_profile_id'] ?? 0);
               $selected   = $profilesC->firstWhere('id', $selectedId);
               $rate       = (float)($selected['base_rate'] ?? 0);
 
               $lineTotal  = ($unitPrice + $rate) * $qty;
-              $photoUrl   = $item['photo'] ?? null; // controller stored an absolute URL
+              $photoUrl   = $item['photo'] ?? null;
             @endphp
 
-            <tr
-              data-row-id="{{ $rowId }}"
-              data-unit-price="{{ $unitPrice }}"
-              data-quantity="{{ $qty }}"
-            >
+            <tr data-row-id="{{ $rowId }}" data-unit-price="{{ $unitPrice }}" data-quantity="{{ $qty }}">
               {{-- Product --}}
               <td class="text-start">
                 <div class="d-flex gap-3 align-items-center">
@@ -86,33 +80,29 @@
               {{-- Quantity --}}
               <td>
                 <div class="d-flex gap-1 justify-content-center align-items-center">
-                  <button
-                    class="btn btn-sm btn-outline-secondary js-qty-btn"
-                    data-action="decrease"
-                    @disabled($qty<=1)
-                  >&minus;</button>
+                  <button class="btn btn-sm btn-outline-secondary js-qty-btn" data-action="decrease" @disabled($qty<=1)>&minus;</button>
                   <span class="quantity">{{ $qty }}</span>
-                  <button
-                    class="btn btn-sm btn-outline-secondary js-qty-btn"
-                    data-action="increase"
-                  >+</button>
+                  <button class="btn btn-sm btn-outline-secondary js-qty-btn" data-action="increase">+</button>
                 </div>
               </td>
 
-              {{-- Shipping select (stored in session) --}}
+              {{-- Shipping select (label logic matches your snippet) --}}
               <td>
                 @if($profilesC->isNotEmpty())
-                  <select
-                    name="shipping_profile_ids[{{ $rowId }}]"
-                    class="form-select form-select-sm js-shipping-select"
-                  >
+                  <select name="shipping_profile_ids[{{ $rowId }}]"
+                          class="form-select form-select-sm js-shipping-select">
                     @foreach($profilesC as $p)
-                      <option
-                        value="{{ $p['id'] }}"
-                        data-base-rate="{{ (float)$p['base_rate'] }}"
-                        @selected((int)$p['id'] === $selectedId)
-                      >
-                        {{ $p['name'] }} ({{ $currency }} {{ number_format((float)$p['base_rate'],2) }})
+                      @php
+                        $label = ($p['dest_location_type'] ?? null) === 'everywhere_else'
+                                 ? 'Everywhere'
+                                 : (!empty($p['dest_country_name'])
+                                      ? 'Ship to '.$p['dest_country_name']
+                                      : $p['name']);
+                      @endphp
+                      <option value="{{ $p['id'] }}"
+                              data-base-rate="{{ (float)$p['base_rate'] }}"
+                              @selected((int)$p['id'] === $selectedId)>
+                        {{ $label }} ({{ $currency }} {{ number_format((float)$p['base_rate'],2) }})
                       </option>
                     @endforeach
                   </select>
@@ -121,7 +111,7 @@
                 @endif
               </td>
 
-              {{-- Line total (unit + selected shipping) * qty --}}
+              {{-- Line total --}}
               <td class="line-total">{{ $currency }} {{ number_format($lineTotal,2) }}</td>
 
               {{-- Remove --}}
@@ -152,7 +142,7 @@
         </table>
       </div>
 
-      {{-- Fallback non-JS form (optional but harmless) --}}
+      {{-- Passive fallback form for non-JS (kept) --}}
       <form id="shipping-form" method="POST" action="{{ route('cart.shipping') }}">
         @csrf
       </form>
@@ -174,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const flash = document.getElementById('flash-container');
 
   function money(n){ return cur+' '+(+n).toFixed(2); }
-
   function rowTotal($tr){
     const unit = +$tr.dataset.unitPrice;
     const qty  = +$tr.dataset.quantity;
@@ -182,22 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const rate = sel && sel.selectedOptions.length ? +(sel.selectedOptions[0].dataset.baseRate || 0) : 0;
     return (unit + rate) * qty;
   }
-
-  function refreshRow($tr){
-    $tr.querySelector('.line-total').textContent = money(rowTotal($tr));
-  }
-
+  function refreshRow($tr){ $tr.querySelector('.line-total').textContent = money(rowTotal($tr)); }
   function refreshGrand(){
-    let sum=0;
-    document.querySelectorAll('tbody tr').forEach($tr => sum += rowTotal($tr));
+    let sum=0; document.querySelectorAll('tbody tr').forEach($tr => sum += rowTotal($tr));
     document.getElementById('grand-total').textContent = money(sum);
   }
+  function notify(type,msg){ flash.innerHTML=`<div class="alert alert-${type}">${msg}</div>`; }
 
-  function notify(type,msg){
-    flash.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
-  }
-
-  /* quantity buttons */
   document.querySelectorAll('.js-qty-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const $tr   = btn.closest('tr');
@@ -206,10 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       fetch('{{ route("cart.update") }}',{
         method:'POST',
-        headers:{
-          'X-CSRF-TOKEN':CSRF,'Accept':'application/json',
-          'Content-Type':'application/json'
-        },
+        headers:{ 'X-CSRF-TOKEN':CSRF,'Accept':'application/json','Content-Type':'application/json' },
         body:JSON.stringify({row_id:rowId,action:act})
       })
       .then(r=>r.json())
@@ -225,22 +202,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* shipping select → persist to session and update totals */
   document.querySelectorAll('.js-shipping-select').forEach(sel=>{
     sel.addEventListener('change',()=>{
       const $tr  = sel.closest('tr');
       const rowId= $tr.dataset.rowId;
 
-      // UI update first
-      refreshRow($tr); refreshGrand();
+      refreshRow($tr); refreshGrand(); // UI first
 
-      // Persist selection in session cart
       fetch('{{ route("cart.shipping") }}',{
         method:'POST',
-        headers:{
-          'X-CSRF-TOKEN':CSRF,'Accept':'application/json',
-          'Content-Type':'application/json'
-        },
+        headers:{ 'X-CSRF-TOKEN':CSRF,'Accept':'application/json','Content-Type':'application/json' },
         body:JSON.stringify({shipping_profile_ids:{[rowId]:sel.value}})
       })
       .then(r=>r.json())
@@ -249,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // initial totals
   refreshGrand();
 });
 </script>

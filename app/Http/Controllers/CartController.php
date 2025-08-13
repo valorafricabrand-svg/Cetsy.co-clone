@@ -12,7 +12,6 @@ use Illuminate\View\View;
 
 class CartController extends Controller
 {
-    /** Add a product to cart. */
     public function addToCart(Request $request): RedirectResponse
     {
         $data = $this->validateCartData($request);
@@ -25,7 +24,6 @@ class CartController extends Controller
         return back()->with('success', $message);
     }
 
-    /** Buy now -> add then go to cart/checkout. */
     public function addToBuy(Request $request): RedirectResponse
     {
         $data = $this->validateCartData($request);
@@ -36,16 +34,13 @@ class CartController extends Controller
             ->with('success', 'Proceeding to checkout…');
     }
 
-    /** Cart page. */
     public function viewCart(): View
     {
-        // Always hydrate against DB so profiles strictly match product_id
         $this->hydrateShippingProfiles();
         $cart = session()->get('cart', []);
         return view('cart.index', compact('cart'));
     }
 
-    /** Update quantity for a row. */
     public function updateCart(Request $request): RedirectResponse|JsonResponse
     {
         $request->validate([
@@ -78,7 +73,6 @@ class CartController extends Controller
         return redirect()->route('cart.view')->with('success', 'Cart updated successfully!');
     }
 
-    /** Persist shipping selection (AJAX from cart). */
     public function updateShippingSelection(Request $request): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
@@ -108,7 +102,6 @@ class CartController extends Controller
         return back()->with('success', 'Shipping selections saved – ready for checkout.');
     }
 
-    /** Remove a row. */
     public function removeFromCart(Request $request): RedirectResponse
     {
         $request->validate(['row_id' => 'required|string']);
@@ -122,7 +115,6 @@ class CartController extends Controller
         return redirect()->route('cart.view')->with('success', 'Product removed from cart successfully!');
     }
 
-    /** Checkout page. */
     public function checkout(): View
     {
         $this->hydrateShippingProfiles();
@@ -146,10 +138,14 @@ class CartController extends Controller
         ]);
     }
 
-    /** Build a session-ready profile snapshot strictly for a given product_id. */
+    /**
+     * Build a session-ready profile snapshot for a product.
+     * Includes fields needed to recreate your label:
+     *  - dest_location_type
+     *  - dest_country_name (derived from relation)
+     */
     private function profilesForProduct(int $productId): array
     {
-        // If you have relationships like destCountry, eager load for nicer labels.
         $profiles = ShippingProfile::with('destCountry')
             ->where('product_id', $productId)
             ->orderByDesc('is_default')
@@ -157,24 +153,17 @@ class CartController extends Controller
             ->get();
 
         return $profiles->map(function ($p) {
-            // Pretty label (keep simple if you don’t use these columns)
-            $label = $p->name;
-            if (property_exists($p, 'dest_location_type') && $p->dest_location_type) {
-                $label = $p->dest_location_type === 'everywhere_else'
-                    ? 'Everywhere'
-                    : ($p->destCountry ? ('Ship to '.$p->destCountry->name) : $p->name);
-            }
-
             return [
-                'id'         => (int)$p->id,
-                'name'       => $label,
-                'base_rate'  => (float)$p->base_rate,
-                'is_default' => (bool)$p->is_default,
+                'id'                 => (int)$p->id,
+                'name'               => $p->name,
+                'base_rate'          => (float)$p->base_rate,
+                'is_default'         => (bool)$p->is_default,
+                'dest_location_type' => $p->dest_location_type,               // e.g. 'everywhere_else'
+                'dest_country_name'  => optional($p->destCountry)->name,      // safe string or null
             ];
         })->values()->all();
     }
 
-    /** Add/merge an item into the cart with accurate price + shipping snapshot. */
     private function addItemToSessionCart(array $data): void
     {
         $product = Product::with(['media', 'variations.options'])
@@ -182,11 +171,9 @@ class CartController extends Controller
 
         $qty = max(1, (int) ($data['quantity'] ?? 1));
 
-        // ✅ STRICT per-product profiles
-        $profiles = $this->profilesForProduct($product->id);
-
-        // Choose default/first; override with posted id only if it belongs to this product’s profiles
-        $defaultId = collect($profiles)->firstWhere('is_default', true)['id'] ?? (collect($profiles)->first()['id'] ?? null);
+        $profiles   = $this->profilesForProduct($product->id); // ✅ strict per-product
+        $defaultId  = collect($profiles)->firstWhere('is_default', true)['id']
+                      ?? (collect($profiles)->first()['id'] ?? null);
         $shipProfile = $defaultId;
         if (!empty($data['shipping_profile_id'])) {
             $candidate = (int)$data['shipping_profile_id'];
@@ -195,7 +182,6 @@ class CartController extends Controller
             }
         }
 
-        // Normalize selected options
         $optionIds = collect($data['variations'] ?? [])
             ->map(fn($v) => (int)$v)->filter()->unique()->sort()->values();
 
@@ -208,7 +194,6 @@ class CartController extends Controller
 
         $summary = $options->map(fn($o) => "{$o->variationType->name}: {$o->value}")->join(', ');
 
-        // Resolve variant match (if you expose variations via model)
         $resolvedVariant = null;
         if (!empty($data['variant_id'])) {
             $resolvedVariant = optional($product->variations)->firstWhere('id', (int)$data['variant_id']);
@@ -217,8 +202,7 @@ class CartController extends Controller
             foreach ($product->variations as $v) {
                 $ids = optional($v->options)->pluck('id')->sort()->values();
                 if ($ids && $ids->count() === $optionIds->count() && $ids->implode('-') === $optionIds->implode('-')) {
-                    $resolvedVariant = $v;
-                    break;
+                    $resolvedVariant = $v; break;
                 }
             }
         }
@@ -257,8 +241,7 @@ class CartController extends Controller
                 'quantity'                     => $qty,
                 'price'                        => $price,
                 'photo'                        => $photoUrl,
-
-                // ✅ store a snapshot that ONLY includes this product’s profiles
+                // snapshot contains fields needed for label rendering
                 'shipping_profiles'            => $profiles,
                 'selected_shipping_profile_id' => $shipProfile,
             ];
@@ -267,14 +250,12 @@ class CartController extends Controller
         session()->put('cart', $cart);
     }
 
-    /** Ensure cart rows have correct (per-product) profiles + valid selection. */
     private function hydrateShippingProfiles(): void
     {
         $cart = session()->get('cart', []);
         if (empty($cart)) return;
 
         foreach ($cart as &$item) {
-            // Always refresh to guarantee correctness w.r.t. product_id
             $profiles = $this->profilesForProduct((int)$item['product_id']);
             $item['shipping_profiles'] = $profiles;
 

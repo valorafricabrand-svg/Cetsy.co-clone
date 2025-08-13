@@ -17,7 +17,6 @@
     box-shadow: 0 0 0 .2rem rgba(38,143,255,.25);
   }
   .text-danger { font-size: .875rem; }
-  .thumb { width: 56px; height: 56px; object-fit: cover; border-radius: .5rem; }
   @media (min-width: 992px) {
     .sticky-summary { position: sticky; top: 100px; z-index: 10; }
   }
@@ -28,17 +27,34 @@
   $cart      = session('cart', []);
   $currency  = get_currency();
 
-  // Server-side initial totals
-  $subtotal      = collect($cart)->sum(fn($i) => (float)($i['price'] ?? 0) * (int)($i['quantity'] ?? 0));
-  $totalShipping = collect($cart)->sum(function($i){
-    $prof = collect($i['shipping_profiles'] ?? [])
-              ->firstWhere('id', $i['selected_shipping_profile_id'] ?? null);
-    return (float)($prof['base_rate'] ?? 0) * (int)($i['quantity'] ?? 0);
+  // Helpers to pull the selected profile snapshot per item (from session)
+  $getSelectedProfile = function(array $row) {
+      $profiles = collect($row['shipping_profiles'] ?? []);
+      $selId    = (int)($row['selected_shipping_profile_id'] ?? 0);
+      $selected = $profiles->firstWhere('id', $selId);
+      // Fallback to first if selection is missing/invalid
+      if (!$selected && $profiles->isNotEmpty()) {
+          $selected = $profiles->first();
+      }
+      return $selected ?: ['name' => 'Standard', 'base_rate' => 0];
+  };
+
+  // Subtotal (products only)
+  $subtotal = collect($cart)->sum(fn($i) => ((float)($i['price'] ?? 0)) * (int)($i['quantity'] ?? 1));
+
+  // Shipping total (selected profile rate * qty)
+  $totalShipping = collect($cart)->sum(function($i) use ($getSelectedProfile) {
+      $qty  = (int)($i['quantity'] ?? 1);
+      $prof = $getSelectedProfile($i);
+      return (float)($prof['base_rate'] ?? 0) * $qty;
   });
+
+  $grandTotal = $subtotal + $totalShipping;
 @endphp
 
 <section class="checkout-page py-5" style="margin-top:100px;">
   <div class="container">
+
     {{-- Validation Errors --}}
     @if ($errors->any())
       <div class="alert alert-danger">
@@ -66,6 +82,7 @@
         {{-- Billing & Shipping Details --}}
         <div class="col-lg-7 order-lg-1">
           <h4 class="mb-4">Billing &amp; Shipping Details</h4>
+
           <div class="row g-3">
             {{-- Full Name --}}
             <div class="col-md-6">
@@ -224,76 +241,49 @@
           <div class="sticky-summary bg-white p-4 shadow-sm rounded">
             <h4 class="mb-4">Your Order</h4>
 
-            <ul class="list-group mb-3" id="js-order-lines">
+            <ul class="list-group mb-3">
               @foreach ($cart as $row)
                 @php
-                  $qty       = (int) ($row['quantity'] ?? 0);
-                  $unit      = (float) ($row['price'] ?? 0);
-                  $photo     = $row['photo'] ?? null;
+                  $qty   = (int)($row['quantity'] ?? 1);
+                  $unit  = (float)($row['price'] ?? 0);
+                  $prof  = $getSelectedProfile($row);
+                  $rate  = (float)($prof['base_rate'] ?? 0);
 
-                  // Prefer shipping profiles already stored on the cart item
-                  $profiles  = collect($row['shipping_profiles'] ?? []);
-                  $selected  = $row['selected_shipping_profile_id'] ?? null;
-                  $selProf   = $profiles->firstWhere('id', $selected);
-                  $rate      = (float) ($selProf['base_rate'] ?? 0);
+                  // Label logic mirrors cart/index:
+                  $label = ($prof['dest_location_type'] ?? null) === 'everywhere_else'
+                           ? 'Everywhere'
+                           : (!empty($prof['dest_country_name'])
+                                ? 'Ship to '.$prof['dest_country_name']
+                                : ($prof['name'] ?? 'Shipping'));
                 @endphp
-                <li class="list-group-item" data-row-id="{{ $row['row_id'] }}"
-                    data-unit="{{ $unit }}" data-qty="{{ $qty }}">
-                  <div class="d-flex align-items-start gap-3">
-                    @if($photo)
-                      <img src="{{ $photo }}" alt="{{ $row['name'] }}" class="thumb">
+                <li class="list-group-item d-flex justify-content-between">
+                  <div>
+                    <div class="fw-semibold">{{ $row['name'] }}</div>
+                    @if (!empty($row['variation_summary']))
+                      <small class="text-muted">{{ $row['variation_summary'] }}</small><br>
                     @endif
-                    <div class="flex-grow-1">
-                      <div class="fw-semibold">{{ $row['name'] }}</div>
-                      @if (!empty($row['variation_summary']))
-                        <small class="text-muted d-block">{{ $row['variation_summary'] }}</small>
-                      @endif
-
-                      {{-- Shipping profile selector (per item) --}}
-                      <div class="mt-2">
-                        <label class="form-label small mb-1">Shipping method</label>
-                        @if($profiles->isNotEmpty())
-                          <select class="form-select form-select-sm js-ship-select"
-                                  data-row-id="{{ $row['row_id'] }}">
-                            @foreach($profiles as $p)
-                              <option value="{{ $p['id'] }}"
-                                      data-rate="{{ (float)($p['base_rate'] ?? 0) }}"
-                                      @selected($p['id'] == $selected)>
-                                {{ $p['name'] }} — {{ $currency }} {{ number_format((float)($p['base_rate'] ?? 0), 2) }}
-                              </option>
-                            @endforeach
-                          </select>
-                          <small class="text-muted d-block mt-1">
-                            Rate: <span class="js-ship-rate">{{ $currency }} {{ number_format($rate,2) }}</span>
-                            <span class="ms-2">× {{ $qty }}</span>
-                          </small>
-                        @else
-                          <div class="small text-muted">No shipping profiles ({{ $currency }} 0.00)</div>
-                        @endif
-                      </div>
-                    </div>
-
-                    <div class="text-end">
-                      <div class="fw-semibold">{{ $currency }} <span class="js-line-total">{{ number_format(($unit * $qty),2) }}</span></div>
-                      <small class="text-muted">Item × {{ $qty }}</small>
-                    </div>
+                    <small>
+                      {{ $label }} ({{ $currency }} {{ number_format($rate,2) }})
+                    </small>
+                    <div class="mt-1">× {{ $qty }}</div>
                   </div>
+                  <div>{{ $currency }} {{ number_format(($unit + $rate) * $qty,2) }}</div>
                 </li>
               @endforeach
             </ul>
 
             <div class="d-flex justify-content-between mb-2">
               <span>Subtotal</span>
-              <strong>{{ $currency }} <span id="js-subtotal">{{ number_format($subtotal,2) }}</span></strong>
+              <strong>{{ $currency }} {{ number_format($subtotal,2) }}</strong>
             </div>
             <div class="d-flex justify-content-between mb-2">
               <span>Shipping</span>
-              <strong>{{ $currency }} <span id="js-shipping">{{ number_format($totalShipping,2) }}</span></strong>
+              <strong>{{ $currency }} {{ number_format($totalShipping,2) }}</strong>
             </div>
             <hr>
             <div class="d-flex justify-content-between">
               <span><strong>Total</strong></span>
-              <strong>{{ $currency }} <span id="js-total">{{ number_format($subtotal + $totalShipping,2) }}</span></strong>
+              <strong>{{ $currency }} {{ number_format($grandTotal,2) }}</strong>
             </div>
 
             <div class="d-grid mt-4">
@@ -317,75 +307,5 @@
     document.getElementById('billing_address_fields')
             .style.display = checked ? 'none' : 'block';
   }
-
-  (function(){
-    const currency = @json($currency);
-    const csrf     = @json(csrf_token());
-    const endpoint = @json(route('cart.shipping'));
-
-    const orderLines = document.getElementById('js-order-lines');
-    if (!orderLines) return;
-
-    const subtotalNode = document.getElementById('js-subtotal');
-    const shippingNode = document.getElementById('js-shipping');
-    const totalNode    = document.getElementById('js-total');
-
-    function money(n){ return Number(n).toFixed(2); }
-
-    function recalcTotals(){
-      let subtotal = 0, shipping = 0;
-
-      orderLines.querySelectorAll('li.list-group-item').forEach(li => {
-        const unit = parseFloat(li.getAttribute('data-unit')) || 0;
-        const qty  = parseInt(li.getAttribute('data-qty')) || 0;
-
-        subtotal += unit * qty;
-
-        const shipRateText = li.querySelector('.js-ship-rate')?.textContent || '';
-        const shipRate = parseFloat(shipRateText.replace(/[^\d.]/g,'')) || 0;
-        shipping += shipRate * qty;
-
-        const lineTotalNode = li.querySelector('.js-line-total');
-        if (lineTotalNode) lineTotalNode.textContent = money(unit * qty);
-      });
-
-      if (subtotalNode) subtotalNode.textContent = money(subtotal);
-      if (shippingNode) shippingNode.textContent = money(shipping);
-      if (totalNode) totalNode.textContent = money(subtotal + shipping);
-    }
-
-    async function persistShipping(rowId, selectedProfileId){
-      const form = new FormData();
-      form.append(`shipping_profile_ids[${rowId}]`, selectedProfileId);
-
-      try {
-        await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
-          body: form
-        });
-      } catch (e) {
-        console.error('Failed to persist shipping selection', e);
-      }
-    }
-
-    orderLines.querySelectorAll('.js-ship-select').forEach(sel => {
-      sel.addEventListener('change', function(){
-        const rowId = this.getAttribute('data-row-id');
-        const opt   = this.selectedOptions[0];
-        const rate  = parseFloat(opt.getAttribute('data-rate')) || 0;
-
-        const li = this.closest('li.list-group-item');
-        const rateNode = li.querySelector('.js-ship-rate');
-        if (rateNode) rateNode.textContent = `${currency} ${money(rate)}`;
-
-        recalcTotals();                  // update UI immediately
-        persistShipping(rowId, this.value); // persist to session
-      });
-    });
-
-    // Initial calc (useful if DOM changed)
-    recalcTotals();
-  })();
 </script>
 @endsection

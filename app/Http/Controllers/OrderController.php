@@ -109,217 +109,253 @@ public function index(Request $request)
     /**
      * Buyer: place order from cart.
      */
-    public function storeOrder(Request $request)
-    {
-        // Normalize checkbox
-        $request->merge([
-            'billing_same_as_shipping' => $request->input('billing_same_as_shipping') === '1',
+
+
+public function storeOrder(Request $request)
+{
+    // Normalize checkbox -> boolean "1"/"0" → true/false
+    $request->merge([
+        'billing_same_as_shipping' => $request->input('billing_same_as_shipping') === '1',
+    ]);
+
+    $rules = [
+        'full_name'                => 'required|string|max:255',
+        'email'                    => 'required|email|max:255',
+        'phone'                    => 'required|string|max:20',
+
+        'shipping_country'         => 'required|integer|exists:countries,id',
+        'shipping_address_1'       => 'required|string|max:255',
+        'shipping_address_2'       => 'nullable|string|max:255',
+        'shipping_city'            => 'required|string|max:255',
+        'shipping_state'           => 'nullable|string|max:255',
+        'shipping_postal_code'     => 'nullable|string|max:20',
+
+        'billing_same_as_shipping' => 'required|boolean',
+
+        // If you want stricter billing validation when not same-as:
+        // 'billing_country'          => 'required_if:billing_same_as_shipping,false|nullable|integer|exists:countries,id',
+        'billing_country'          => 'nullable|integer|exists:countries,id',
+        'billing_address_1'        => 'nullable|string|max:255',
+        'billing_address_2'        => 'nullable|string|max:255',
+        'billing_city'             => 'nullable|string|max:255',
+        'billing_state'            => 'nullable|string|max:255',
+        'billing_postal_code'      => 'nullable|string|max:20',
+
+        'order_notes'              => 'nullable|string|max:1000',
+        'promo_code'               => 'nullable|string|max:50',
+    ];
+
+    $validated = $request->validate($rules);
+
+    $cart = $request->session()->get('cart', []);
+    if (empty($cart)) {
+        return back()->withErrors(['cart' => 'Your cart is empty.']);
+    }
+
+    try {
+        DB::beginTransaction();
+
+        // Group prepared rows per shop
+        $itemsByShop = [];
+
+        foreach ($cart as $rowId => $item) {
+            $productId = (int)($item['product_id'] ?? 0);
+            if (!$productId) {
+                continue;
+            }
+
+            /** @var \App\Models\Product|null $product */
+            $product = \App\Models\Product::with(['shop', 'variations']) // variations for price resolution
+                        ->find($productId);
+
+            if (!$product || !$product->shop_id) {
+                // Product no longer exists or has no shop; skip this row
+                continue;
+            }
+
+            // Build a friendly variation summary if missing
+            $variationSummary = $item['variation_summary'] ?? null;
+            if (!$variationSummary && !empty($item['variations']) && is_array($item['variations'])) {
+                // variations: [ ['type'=>'Color','value'=>'Red'], ... ]
+                $variationSummary = collect($item['variations'])
+                    ->map(function ($v) {
+                        $type  = $v['type']  ?? ($v['name'] ?? 'Choice');
+                        $value = $v['value'] ?? ($v['option'] ?? '');
+                        $type  = trim((string)$type);
+                        $value = trim((string)$value);
+                        return $type && $value ? ($type . ': ' . $value) : null;
+                    })
+                    ->filter()
+                    ->join(', ');
+            }
+
+            $qty = max(1, (int)($item['quantity'] ?? 1));
+
+            // ————————— Authoritative Unit Price —————————
+            // Prefer variant price (if cart stored a variant_id AND it exists on this product),
+            // fall back to product discounted/base price.
+            $unitPrice = null;
+            $variantId = $item['variant_id'] ?? null;
+            if ($variantId && $product->relationLoaded('variations')) {
+                $variant = $product->variations->firstWhere('id', (int)$variantId);
+                if ($variant && $variant->price !== null) {
+                    $unitPrice = (float)$variant->price;
+                }
+            }
+            if ($unitPrice === null) {
+                $unitPrice = (float)($product->discounted_price ?? $product->price ?? 0);
+            }
+
+            // ————————— Selected Shipping Profile (from session snapshot) —————————
+            // Snapshot is a flat array like:
+            // ['id'=>.., 'name'=>.., 'base_rate'=>.., 'is_default'=>.., 'dest_location_type'=>.., 'dest_country_name'=>..]
+            $profiles   = collect($item['shipping_profiles'] ?? []);
+            $selProfId  = (int)($item['selected_shipping_profile_id'] ?? 0);
+
+            // Ensure the selected is actually in the snapshot; else fallback to default/first
+            $selected   = $profiles->firstWhere('id', $selProfId);
+            if (!$selected) {
+                $selected = $profiles->firstWhere('is_default', true) ?: $profiles->first();
+            }
+            // If still nothing (no profiles), treat as zero-rate
+            $unitShip = (float)($selected['base_rate'] ?? 0);
+            $selProfId = $selected['id'] ?? null;
+
+            // Accumulate for this shop
+            $itemsByShop[$product->shop_id][] = [
+                'row_id'            => $rowId,
+                'product'           => $product,
+                'variation_summary' => $variationSummary,
+                'quantity'          => $qty,
+                'unit_price'        => $unitPrice,
+                'profiles'          => $profiles->values()->all(), // keep snapshot for traceability
+                'selected_profile'  => $selected,
+                'selected_profile_id' => $selProfId,
+                'unit_shipping'     => $unitShip,
+            ];
+        }
+
+        if (empty($itemsByShop)) {
+            DB::rollBack();
+            return back()->withErrors(['cart' => 'Your cart items are invalid or products are unavailable.']);
+        }
+
+        $orders = [];
+
+        foreach ($itemsByShop as $shopId => $rows) {
+            // Totals
+            $shopSubtotal  = 0.0;
+            $shopShipTotal = 0.0;
+
+            foreach ($rows as $r) {
+                $lineSub  = $r['unit_price']   * $r['quantity'];
+                $lineShip = $r['unit_shipping'] * $r['quantity'];
+
+                $shopSubtotal  += $lineSub;
+                $shopShipTotal += $lineShip;
+            }
+
+            // Create order
+            $order = new \App\Models\Order();
+            $order->user_id   = auth()->id();
+            $order->shop_id   = (int)$shopId;
+
+            $order->full_name = $validated['full_name'];
+            $order->email     = $validated['email'];
+            $order->phone     = $validated['phone'];
+
+            $order->shipping_country_id  = (int)$validated['shipping_country'];
+            $order->shipping_address_1   = $validated['shipping_address_1'];
+            $order->shipping_address_2   = $validated['shipping_address_2'] ?? null;
+            $order->shipping_city        = $validated['shipping_city'];
+            $order->shipping_state       = $validated['shipping_state'] ?? null;
+            $order->shipping_postal_code = $validated['shipping_postal_code'] ?? null;
+
+            if ($validated['billing_same_as_shipping']) {
+                $order->billing_same_as_shipping = true;
+                $order->billing_country_id       = $order->shipping_country_id;
+                $order->billing_address_1        = $order->shipping_address_1;
+                $order->billing_address_2        = $order->shipping_address_2;
+                $order->billing_city             = $order->shipping_city;
+                $order->billing_state            = $order->shipping_state;
+                $order->billing_postal_code      = $order->shipping_postal_code;
+            } else {
+                $order->billing_same_as_shipping = false;
+                $order->billing_country_id       = $validated['billing_country'] ?? null;
+                $order->billing_address_1        = $validated['billing_address_1'] ?? null;
+                $order->billing_address_2        = $validated['billing_address_2'] ?? null;
+                $order->billing_city             = $validated['billing_city'] ?? null;
+                $order->billing_state            = $validated['billing_state'] ?? null;
+                $order->billing_postal_code      = $validated['billing_postal_code'] ?? null;
+            }
+
+            // If you later support multiple choices, take from request; for now defaults:
+            $order->shipping_method = 'standard';
+            $order->payment_method  = 'paypal';
+
+            $order->order_notes  = $validated['order_notes'] ?? null;
+            $order->promo_code   = $validated['promo_code'] ?? null;
+
+            $order->subtotal      = (float)$shopSubtotal;
+            $order->shipping_cost = (float)$shopShipTotal;
+            $order->total_amount  = (float)($shopSubtotal + $shopShipTotal);
+            $order->status        = \App\Models\Order::STATUS_PENDING;
+            $order->save();
+
+            // Order items
+            foreach ($rows as $r) {
+                $orderItem = new \App\Models\OrderItem();
+                $orderItem->order_id            = $order->id;
+                $orderItem->product_id          = $r['product']->id;
+                $orderItem->variation_summary   = $r['variation_summary']; // store plain text summary
+                $orderItem->quantity            = (int)$r['quantity'];
+                $orderItem->price               = (float)$r['unit_price'];
+                $orderItem->shipping_profile_id = $r['selected_profile_id']; // can be null
+                $orderItem->shipping_cost       = (float)($r['unit_shipping'] * $r['quantity']);
+                $orderItem->save();
+
+                // Optional: decrement stock here if you manage inventory on checkout
+                // $r['product']->decrement('stock', $r['quantity']);
+            }
+
+            $orders[] = $order;
+        }
+
+        DB::commit();
+
+        // Clear cart after orders are created
+        $request->session()->forget('cart');
+
+        // Notify (left commented as in your original)
+        // foreach ($orders as $order) {
+        //     $order->load(['items.product', 'shop.user']);
+        //     $buyer     = auth()->user();
+        //     $shopOwner = $order->shop->user;
+        //     $shop      = $order->shop;
+        //     \Mail::to($shopOwner->email)->send(new \App\Mail\OrderCreatedShopOwnerMail($order, $shopOwner, $buyer, $shop));
+        //     \Mail::to($buyer->email)->send(new \App\Mail\OrderCreatedBuyerMail($order, $buyer, $shopOwner, $shop));
+        // }
+
+        return redirect()
+            ->route('buyer.orders.show', $orders[0]->id)
+            ->with('success', 'Your orders have been placed successfully! Please proceed to payment.');
+    } catch (\Throwable $e) {
+        DB::rollBack();
+
+        Log::error('Order creation failed: '.$e->getMessage(), [
+            'user_id' => auth()->id(),
+            'cart'    => $request->session()->get('cart'),
+            'trace'   => $e->getTraceAsString(),
         ]);
 
-        $rules = [
-            'full_name'                => 'required|string|max:255',
-            'email'                    => 'required|email|max:255',
-            'phone'                    => 'required|string|max:20',
+        $msg = config('app.debug')
+            ? ('Failed to create order: '.$e->getMessage())
+            : 'Failed to create order. Please try again or contact support.';
 
-            'shipping_country'         => 'required|integer|exists:countries,id',
-            'shipping_address_1'       => 'required|string|max:255',
-            'shipping_address_2'       => 'nullable|string|max:255',
-            'shipping_city'            => 'required|string|max:255',
-            'shipping_state'           => 'nullable|string|max:255',
-            'shipping_postal_code'     => 'nullable|string|max:20',
-
-            'billing_same_as_shipping' => 'required|boolean',
-
-            'billing_country'          => 'nullable|integer|exists:countries,id',
-            'billing_address_1'        => 'nullable|string|max:255',
-            'billing_address_2'        => 'nullable|string|max:255',
-            'billing_city'             => 'nullable|string|max:255',
-            'billing_state'            => 'nullable|string|max:255',
-            'billing_postal_code'      => 'nullable|string|max:20',
-
-            'order_notes'              => 'nullable|string|max:1000',
-            'promo_code'               => 'nullable|string|max:50',
-        ];
-
-        $validated = $request->validate($rules);
-
-        $cart = $request->session()->get('cart', []);
-        if (empty($cart)) {
-            return back()->withErrors(['cart' => 'Your cart is empty.']);
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Group cart rows by shop
-            $itemsByShop = [];
-            foreach ($cart as $rowId => $item) {
-                $productId = $item['product_id'] ?? null;
-                /** @var \App\Models\Product|null $product */
-                $product   = \App\Models\Product::with('shop')->find($productId);
-                if (! $product) continue;
-
-                // Build a friendly variation summary if missing
-                $variationSummary = $item['variation_summary'] ?? null;
-                if (! $variationSummary && !empty($item['variations']) && is_array($item['variations'])) {
-                    // variations: [ ['type'=>'Color','value'=>'Red'], ... ]
-                    $variationSummary = collect($item['variations'])
-                        ->map(function ($v) {
-                            $type  = $v['type']  ?? ($v['name'] ?? 'Choice');
-                            $value = $v['value'] ?? ($v['option'] ?? '');
-                            return trim($type . ': ' . $value);
-                        })
-                        ->filter()
-                        ->join(', ');
-                }
-
-                $itemsByShop[$product->shop_id][] = [
-                    'row_id'            => $rowId,
-                    'product'           => $product,
-                    'variation_summary' => $variationSummary,       // <-- store summary, not an ID
-                    'quantity'          => (int) ($item['quantity'] ?? 1),
-                    'price'             => (float) ($item['price'] ?? 0),
-                    'profiles'          => $item['shipping_profiles'] ?? [],
-                    'ship_prof'         => $item['selected_shipping_profile_id'] ?? null,
-                ];
-            }
-
-            $orders = [];
-
-            foreach ($itemsByShop as $shopId => $rows) {
-                // Totals
-                $shopSubtotal  = 0.0;
-                $shopShipTotal = 0.0;
-
-                foreach ($rows as $r) {
-                    $qty   = $r['quantity'];
-                    $price = $r['price'];
-
-                    $profiles   = collect($r['profiles']);
-                    $selProfId  = $r['ship_prof'];
-                    $selProfile = $profiles->firstWhere('id', $selProfId);
-
-                    $unitShip   = $selProfile['base_rate'] ?? 0;
-                    $lineShip   = $unitShip * $qty;
-                    $lineSub    = $price * $qty;
-
-                    $shopSubtotal  += $lineSub;
-                    $shopShipTotal += $lineShip;
-                }
-
-                // Create order
-                $order = new \App\Models\Order();
-                $order->user_id   = auth()->id();
-                $order->shop_id   = $shopId;
-
-                $order->full_name = $validated['full_name'];
-                $order->email     = $validated['email'];
-                $order->phone     = $validated['phone'];
-
-                $order->shipping_country_id  = $validated['shipping_country'];
-                $order->shipping_address_1   = $validated['shipping_address_1'];
-                $order->shipping_address_2   = $validated['shipping_address_2'] ?? null;
-                $order->shipping_city        = $validated['shipping_city'];
-                $order->shipping_state       = $validated['shipping_state'] ?? null;
-                $order->shipping_postal_code = $validated['shipping_postal_code'] ?? null;
-
-                if ($validated['billing_same_as_shipping']) {
-                    $order->billing_same_as_shipping = true;
-                    $order->billing_country_id       = $order->shipping_country_id;
-                    $order->billing_address_1        = $order->shipping_address_1;
-                    $order->billing_address_2        = $order->shipping_address_2;
-                    $order->billing_city             = $order->shipping_city;
-                    $order->billing_state            = $order->shipping_state;
-                    $order->billing_postal_code      = $order->shipping_postal_code;
-                } else {
-                    $order->billing_same_as_shipping = false;
-                    $order->billing_country_id       = $validated['billing_country'] ?? null;
-                    $order->billing_address_1        = $validated['billing_address_1'] ?? null;
-                    $order->billing_address_2        = $validated['billing_address_2'] ?? null;
-                    $order->billing_city             = $validated['billing_city'] ?? null;
-                    $order->billing_state            = $validated['billing_state'] ?? null;
-                    $order->billing_postal_code      = $validated['billing_postal_code'] ?? null;
-                }
-
-                // Required (new)
-                $order->shipping_method = 'standard';
-                $order->payment_method  = 'paypal';
-
-                $order->order_notes  = $validated['order_notes'] ?? null;
-                $order->promo_code   = $validated['promo_code'] ?? null;
-
-                $order->subtotal      = $shopSubtotal;
-                $order->shipping_cost = $shopShipTotal;
-                $order->total_amount  = $shopSubtotal + $shopShipTotal;
-                $order->status        = Order::STATUS_PENDING;
-                $order->save();
-
-                // Order items
-                foreach ($rows as $r) {
-                    $qty      = $r['quantity'];
-                    $price    = $r['price'];
-                    $profiles = collect($r['profiles'] ?? []);
-
-                    $selProfId  = $r['ship_prof'];
-                    $selProfile = $profiles->firstWhere('id', $selProfId);
-                    $unitShip   = $selProfile['base_rate'] ?? 0;
-
-                    $orderItem = new \App\Models\OrderItem();
-                    $orderItem->order_id            = $order->id;
-                    $orderItem->product_id          = $r['product']->id;
-                    $orderItem->variation_summary   = $r['variation_summary']; // <-- store text
-                    $orderItem->quantity            = $qty;
-                    $orderItem->price               = $price;
-                    $orderItem->shipping_profile_id = $selProfId;              // can be null
-                    $orderItem->shipping_cost       = $unitShip * $qty;
-                    $orderItem->save();
-                }
-
-                $orders[] = $order;
-            }
-
-            DB::commit();
-
-            // Empty cart
-            $request->session()->forget('cart');
-
-            // Emails
-            foreach ($orders as $order) {
-                $order->load(['items.product', 'shop.user']);
-                $buyer     = auth()->user();
-                $shopOwner = $order->shop->user;
-                $shop      = $order->shop;
-
-                // Shop-owner notification (expects 4 params)
-                // \Mail::to($shopOwner->email)->send(
-                //     new \App\Mail\OrderCreatedShopOwnerMail($order, $shopOwner, $buyer, $shop)
-                // );
-
-                // // Buyer notification (expects 4 params)
-                // \Mail::to($buyer->email)->send(
-                //     new \App\Mail\OrderCreatedBuyerMail($order, $buyer, $shopOwner, $shop)
-                // );
-            }
-
-            return redirect()
-                ->route('buyer.orders.show', $orders[0]->id)
-                ->with('success', 'Your orders have been placed successfully! Please proceed to payment.');
-        } catch (\Throwable $e) {
-            DB::rollBack();
-
-            Log::error('Order creation failed: '.$e->getMessage(), [
-                'user_id' => auth()->id(),
-                'cart'    => $request->session()->get('cart'),
-                'trace'   => $e->getTraceAsString(),
-            ]);
-
-            $msg = config('app.debug')
-                ? ('Failed to create order: '.$e->getMessage())
-                : 'Failed to create order. Please try again or contact support.';
-
-            return back()->withErrors(['error' => $msg])->withInput();
-        }
+        return back()->withErrors(['error' => $msg])->withInput();
     }
+}
+
 
     /**
      * Show the "Pay now" page for an order.
@@ -568,7 +604,7 @@ public function index(Request $request)
         Notification::send([$buyer, $seller], new \App\Notifications\OrderCancelledNotification($order));
 
         $statusMessage = $order->status === Order::STATUS_REFUNDED 
-            ? 'Your order was cancelled and refunded successfully.'
+            ? 'Your order was cancelled successfully.'
             : 'Your order was cancelled successfully.';
 
         return back()->with('success', $statusMessage);
