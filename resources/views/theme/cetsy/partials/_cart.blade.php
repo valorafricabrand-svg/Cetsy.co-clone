@@ -23,7 +23,6 @@
   }
 
   // Precompute the lowest price that includes each single option id
-  // optionMinPrice[option_id] = min price among all variants containing that option
   $optionMinPrice = [];
   foreach ($variantIndex as $entry) {
       foreach ($entry['options'] as $optId) {
@@ -207,12 +206,10 @@
                 class="form-select js-variant-select"
                 required
                 data-variation-type-id="{{ $type->id }}"
-                {{-- pass optionMinPrice map to JS for initial "From" per option --}}
                 data-option-min='@json(collect($type->options)->mapWithKeys(fn($o)=>[$o->id => $optionMinPrice[$o->id] ?? null]))'
               >
                 <option value="" disabled selected>Select {{ strtolower($type->name) }}</option>
                 @foreach($type->options as $opt)
-                  {{-- store original label in data-label; JS will append prices --}}
                   <option
                     value="{{ $opt->id }}"
                     data-label="{{ $opt->value }}"
@@ -223,10 +220,19 @@
           @endforeach
         </div>
 
-        <div class="d-grid">
+        {{-- Actions: Add to Cart + Buy Now --}}
+        <div class="d-grid gap-2 d-sm-flex">
           <button type="submit" class="btn btn-success btn-lg" id="js-add-to-cart">
             <i class="fa-solid fa-cart-plus me-1"></i>
             Add to Cart
+          </button>
+
+          {{-- Override destination just for this button --}}
+          <button type="submit"
+                  class="btn btn-primary btn-lg"
+                  formaction="{{ route('cart.buy') }}">
+            <i class="fa-solid fa-bolt me-1"></i>
+            Buy Now
           </button>
         </div>
       </form>
@@ -257,18 +263,15 @@
     }
 
     function getSelectedKey(excludeSelectId = null, substituteOptionId = null) {
-      // Build a key from current selections; if excludeSelectId is provided,
-      // substituteOptionId is used for that select instead of its current value.
       const ids = [];
       for (const s of selects) {
         const typeId = parseInt(s.getAttribute('data-variation-type-id'), 10);
         if (excludeSelectId !== null && typeId === excludeSelectId) {
-          // use substitute value
           if (substituteOptionId === null) return null;
           ids.push(parseInt(substituteOptionId, 10));
           continue;
         }
-        if (!s.value) return null; // not fully selected yet
+        if (!s.value) return null;
         ids.push(parseInt(s.value, 10));
       }
       return ids.sort((a,b)=>a-b).join('-');
@@ -302,10 +305,9 @@
     }
 
     // For each select, show price per option:
-    // - If all other selects are chosen, show the exact price for the completed combo with this option.
+    // - If all other selects are chosen, show exact price for the completed combo with this option.
     // - Otherwise, show "From <lowest price including this option>" using data-option-min.
     function updateOptionLabels() {
-      // Check if "other selects" are all chosen for each select
       const otherAllChosen = (excludeTypeId) => {
         for (const s of selects) {
           const typeId = parseInt(s.getAttribute('data-variation-type-id'), 10);
@@ -319,7 +321,6 @@
         const typeId = parseInt(s.getAttribute('data-variation-type-id'), 10);
         const perOptionMin = JSON.parse(s.getAttribute('data-option-min') || '{}');
 
-        // Iterate options (skip placeholder)
         for (const opt of Array.from(s.options)) {
           if (!opt.value) continue; // placeholder
 
@@ -330,16 +331,13 @@
           const optId = parseInt(opt.value, 10);
 
           if (otherAllChosen(typeId)) {
-            // We can compute exact price for this completed combo
             const key = getSelectedKey(typeId, optId);
             if (key && Object.prototype.hasOwnProperty.call(variantIndex, key)) {
               priceToShow = parseFloat(variantIndex[key].price);
             } else {
-              // No direct priced combo with current other selections
               priceToShow = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : null;
             }
           } else {
-            // Not fully chosen yet: show the minimum price that includes this option
             priceToShow = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : null;
           }
 
@@ -357,10 +355,9 @@
       updateMainPrice();
     }
 
-    // Bind changes
     selects.forEach(s => s.addEventListener('change', onChange));
 
-    // Initial render (covers prefilled forms)
+    // Initial render
     updateOptionLabels();
     updateMainPrice();
   })();
