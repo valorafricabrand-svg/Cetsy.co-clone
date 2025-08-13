@@ -41,6 +41,7 @@
             @php
               $qty       = $item['quantity'];
               $unitPrice = $item['price'];
+              // You already store profiles in session; you can reuse them or query fresh:
               $profiles  = \App\Models\ShippingProfile::where('product_id',$item['product_id'])->orderBy('name')->get();
               $selected  = $profiles->firstWhere('id',$item['selected_shipping_profile_id'] ?? null);
               $rate      = $selected->base_rate ?? 0;
@@ -70,7 +71,7 @@
               {{-- Price --}}
               <td>{{ $currency }} {{ number_format($unitPrice,2) }}</td>
 
-              {{-- Quantity (two tiny forms so CSRF token is always sent) --}}
+              {{-- Quantity --}}
               <td>
                 <div class="d-flex gap-1 justify-content-center align-items-center">
                   <button
@@ -86,7 +87,7 @@
                 </div>
               </td>
 
-              {{-- Shipping select (belongs to hidden form below) --}}
+              {{-- Shipping select --}}
               <td>
                 <select
                   name="shipping_profile_ids[{{ $rowId }}]"
@@ -141,8 +142,8 @@
         </table>
       </div>
 
-      {{-- hidden form for shipping-profile update (empty, we fill via JS/Fetch) --}}
-      <form id="shipping-form" method="POST" action="{{ route('cart.updateShippingSelection') }}">
+      {{-- hidden form (kept for progressive enhancement; not used by JS) --}}
+      <form id="shipping-form" method="POST" action="{{ route('cart.shipping') }}">
         @csrf
       </form>
 
@@ -162,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const cur   = '{{ $currency }}';
   const flash = document.getElementById('flash-container');
 
-  /* helpers --------------------------------------------------------- */
   function money(n){ return cur+' '+(+n).toFixed(2); }
 
   function rowTotal($tr){
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     flash.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
   }
 
-  /* quantity buttons ------------------------------------------------ */
+  /* quantity buttons */
   document.querySelectorAll('.js-qty-btn').forEach(btn=>{
     btn.addEventListener('click',e=>{
       const $tr   = btn.closest('tr');
@@ -210,7 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const qty=json.cart[rowId].quantity;
         $tr.dataset.quantity=qty;
         $tr.querySelector('.quantity').textContent=qty;
-        // disable minus if now 1
         $tr.querySelectorAll('.js-qty-btn[data-action="decrease"]')
            .forEach(b=>b.disabled=qty<=1);
         refreshRow($tr); refreshGrand();
@@ -220,16 +219,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* shipping select -------------------------------------------------- */
+  /* shipping select */
   document.querySelectorAll('.js-shipping-select').forEach(sel=>{
     sel.addEventListener('change',()=>{
-      const $tr=sel.closest('tr');
-      const rowId=$tr.dataset.rowId;
+      const $tr  = sel.closest('tr');
+      const rowId= $tr.dataset.rowId;
 
       // update UI totals immediately
       refreshRow($tr); refreshGrand();
 
-      fetch('{{ route("cart.updateShippingSelection") }}',{
+      fetch('{{ route("cart.shipping") }}',{
         method:'POST',
         headers:{
           'X-CSRF-TOKEN':CSRF,'Accept':'application/json',
@@ -238,12 +237,12 @@ document.addEventListener('DOMContentLoaded', () => {
         body:JSON.stringify({shipping_profile_ids:{[rowId]:sel.value}})
       })
       .then(r=>r.json())
-      .then(j=>notify('success',j.message))
+      .then(j=>notify('success',j.message || 'Shipping updated.'))
       .catch(()=>notify('danger','Failed to update shipping.'));
     });
   });
 
-  /* remove ----------------------------------------------------------- */
+  /* remove */
   document.querySelectorAll('.js-remove-form').forEach(frm=>{
     frm.addEventListener('submit',e=>{
       e.preventDefault();
@@ -257,6 +256,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }).then(()=>location.reload());
     });
   });
+
+  // initial totals
+  refreshGrand();
 });
 </script>
 @endpush

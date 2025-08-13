@@ -113,9 +113,8 @@ class CartController extends Controller
             ]);
         }
 
-        return redirect()
-            ->route('cart.checkout')
-            ->with('success', 'Shipping selections saved – ready for checkout.');
+        // 🔁 Works from both Cart and Checkout
+        return back()->with('success', 'Shipping selections saved – ready for checkout.');
     }
 
     /**
@@ -197,12 +196,10 @@ class CartController extends Controller
             ->map(fn($o) => "{$o->variationType->name}: {$o->value}")
             ->join(', ');
 
-        // Try to resolve a "variant-like" combo from the product's in-memory variations relation (if present).
-        // This does NOT require a database table; it only inspects whatever your Product model exposes.
+        // Try to resolve a variant-like combo from the product's variations relation (if present).
         $variantIdFromPost = $data['variant_id'] ?? null;
         $resolvedVariant   = null;
 
-        // 1) If client posted an id, accept it only if it exists inside the product->variations collection
         if ($variantIdFromPost && $product->relationLoaded('variations')) {
             $resolvedVariant = $product->variations->firstWhere('id', (int)$variantIdFromPost);
             if (! $resolvedVariant) {
@@ -210,7 +207,6 @@ class CartController extends Controller
             }
         }
 
-        // 2) If still not found, try to match by exact option set
         if (! $resolvedVariant && $optionIds->isNotEmpty() && $product->relationLoaded('variations')) {
             foreach ($product->variations as $v) {
                 $ids = optional($v->options)->pluck('id')->sort()->values();
@@ -221,9 +217,6 @@ class CartController extends Controller
             }
         }
 
-        // Price resolution:
-        // - If we have a resolvedVariant with a defined price -> use it
-        // - Else -> fall back to product discounted/base price
         $price = null;
         if ($resolvedVariant && isset($resolvedVariant->price) && $resolvedVariant->price !== null) {
             $price = (float) $resolvedVariant->price;
@@ -231,7 +224,6 @@ class CartController extends Controller
             $price = (float) ($product->discounted_price ?? $product->price);
         }
 
-        // Build row_id: prefer a variant-based identity if we have an id; else use product + options key
         $optionsKey = $optionIds->implode('-');
         $rowId = ($resolvedVariant && isset($resolvedVariant->id))
             ? "p{$product->id}-v{$resolvedVariant->id}"
@@ -250,23 +242,16 @@ class CartController extends Controller
                 'row_id'                       => $rowId,
                 'product_id'                   => $product->id,
                 'name'                         => $product->name,
-
-                // Keep the id if we had one from relation; if none, store null.
                 'variant_id'                   => ($resolvedVariant && isset($resolvedVariant->id)) ? (int)$resolvedVariant->id : null,
-
-                // Selected options for display
                 'variations'                   => $options->map(fn($o)=>[
                                                     'type'  => $o->variationType->name,
                                                     'value' => $o->value,
                                                     'id'    => $o->id,
                                                 ])->all(),
                 'variation_summary'            => $summary,
-
                 'quantity'                     => $qty,
-                'price'                        => $price, // <-- resolved price
-
+                'price'                        => $price,
                 'photo'                        => $photoUrl,
-
                 'shipping_profiles'            => $product->shippingProfiles->map(fn($p)=>[
                                                     'id'         => $p->id,
                                                     'name'       => $p->name,
