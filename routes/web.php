@@ -68,6 +68,9 @@ Route::prefix('cart')->name('cart.')->group(function () {
     Route::post('/remove', [CartController::class, 'removeFromCart'])->name('remove');
     Route::post('/update', [CartController::class, 'updateCart'])->name('update');
 
+        Route::post('/shipping', [CartController::class, 'updateShippingSelection'])->name('shipping');
+
+
 });
 
 // routes/web.php
