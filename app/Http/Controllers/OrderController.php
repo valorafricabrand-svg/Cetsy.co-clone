@@ -524,19 +524,41 @@ public function index(Request $request)
         ]);
 
         DB::transaction(function () use ($order, $data) {
-            $order->update([
-                'status'        => Order::STATUS_REFUNDED,
-                'cancel_reason' => $data['cancel_reason'],
-            ]);
+            // Check if buyer has paid (order is PROCESSING)
+            if ($order->status === Order::STATUS_PROCESSING) {
+                // Buyer has paid - full refund process
+                $order->update([
+                    'status'        => Order::STATUS_REFUNDED,
+                    'cancel_reason' => $data['cancel_reason'],
+                ]);
 
-            Wallet::create([
-                'user_id'    => $order->user_id,
-                'credit'     => $order->total_amount,
-                'debit'      => 0,
-                'balance'    => 0,
-                'reference'  => 'refund_'.$order->id,
-                'description'=> 'Order refund',
-            ]);
+                // Refund buyer
+                Wallet::create([
+                    'user_id'    => $order->user_id,
+                    'credit'     => $order->total_amount,
+                    'debit'      => 0,
+                    'balance'    => 0,
+                    'reference'  => 'refund_'.$order->id,
+                    'description'=> 'Order refund',
+                ]);
+
+                // Debit seller to reverse the payment
+                Wallet::create([
+                    'user_id'    => $order->shop->user_id,
+                    'credit'     => 0,
+                    'debit'      => $order->total_amount,
+                    'balance'    => 0,
+                    'reference'  => 'seller_debit_'.$order->id,
+                    'description'=> 'Order cancellation - payment reversed',
+                ]);
+            } else {
+                // Buyer hasn't paid (order is PENDING) - simple cancellation
+                $order->update([
+                    'status'        => Order::STATUS_CANCELLED,
+                    'cancel_reason' => $data['cancel_reason'],
+                ]);
+                // No financial transactions needed for unpaid orders
+            }
         });
 
         $order->load(['user', 'shop.user']);
@@ -545,6 +567,83 @@ public function index(Request $request)
 
         Notification::send([$buyer, $seller], new \App\Notifications\OrderCancelledNotification($order));
 
-        return back()->with('success', 'Your order was cancelled successfully.');
+        $statusMessage = $order->status === Order::STATUS_REFUNDED 
+            ? 'Your order was cancelled and refunded successfully.'
+            : 'Your order was cancelled successfully.';
+
+        return back()->with('success', $statusMessage);
+    }
+
+    /**
+     * Seller cancels an order.
+     */
+    public function sellerCancel(Request $request, Order $order)
+    {
+        // Verify the authenticated user owns the shop for this order
+        $user = auth()->user();
+        $shop = Shop::where('user_id', $user->id)->first();
+        
+        if (!$shop || $order->shop_id !== $shop->id) {
+            return back()->withErrors('You are not authorized to cancel this order.');
+        }
+
+        // Only allow cancellation for pending and processing orders
+        if (!in_array($order->status, [Order::STATUS_PENDING, Order::STATUS_PROCESSING])) {
+            return back()->withErrors('This order can no longer be cancelled.');
+        }
+
+        $data = $request->validate([
+            'cancel_reason' => 'required|string|max:1000',
+        ]);
+
+        DB::transaction(function () use ($order, $data) {
+            // Check if buyer has paid (order is PROCESSING)
+            if ($order->status === Order::STATUS_PROCESSING) {
+                // Buyer has paid - full refund process
+                $order->update([
+                    'status'        => Order::STATUS_REFUNDED,
+                    'cancel_reason' => 'Seller cancelled: ' . $data['cancel_reason'],
+                ]);
+
+                // Refund buyer
+                Wallet::create([
+                    'user_id'    => $order->user_id,
+                    'credit'     => $order->total_amount,
+                    'debit'      => 0,
+                    'balance'    => 0,
+                    'reference'  => 'seller_refund_'.$order->id,
+                    'description'=> 'Order cancelled by seller - refund',
+                ]);
+
+                // Debit seller to reverse the payment
+                Wallet::create([
+                    'user_id'    => $order->shop->user_id,
+                    'credit'     => 0,
+                    'debit'      => $order->total_amount,
+                    'balance'    => 0,
+                    'reference'  => 'seller_cancellation_debit_'.$order->id,
+                    'description'=> 'Order cancelled by seller - payment reversed',
+                ]);
+            } else {
+                // Buyer hasn't paid (order is PENDING) - simple cancellation
+                $order->update([
+                    'status'        => Order::STATUS_CANCELLED,
+                    'cancel_reason' => 'Seller cancelled: ' . $data['cancel_reason'],
+                ]);
+                // No financial transactions needed for unpaid orders
+            }
+        });
+
+        $order->load(['user', 'shop.user']);
+        $buyer  = $order->user;
+        $seller = $order->shop->user;
+
+        Notification::send([$buyer, $seller], new \App\Notifications\OrderCancelledNotification($order));
+
+        $statusMessage = $order->status === Order::STATUS_REFUNDED 
+            ? 'Order cancelled and buyer refunded successfully.'
+            : 'Order cancelled successfully.';
+
+        return back()->with('success', $statusMessage);
     }
 }

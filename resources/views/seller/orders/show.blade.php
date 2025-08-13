@@ -35,12 +35,26 @@
                     <i class="fa-solid fa-gear"></i> Process
                 </button>
                 @include('seller.orders.modals.process')
+
+                <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#cancelModal-{{ $order->id }}">
+                    <i class="fa-solid fa-times-circle"></i> Cancel
+                </button>
+                @include('seller.orders.modals.cancel')
             @elseif($order->status === \App\Models\Order::STATUS_PROCESSING)
                 <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1"
                         data-bs-toggle="modal"
                         data-bs-target="#shipModal">
                     <i class="fa-solid fa-truck"></i> Ship
                 </button>
+
+                <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#cancelModal-{{ $order->id }}">
+                    <i class="fa-solid fa-times-circle"></i> Cancel
+                </button>
+                @include('seller.orders.modals.cancel')
             @endif
         </div>
     </div>
@@ -88,6 +102,13 @@
                             </span>
                         </span>
                     </div>
+
+                    @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="fw-semibold text-danger">Cancellation Reason:</span>
+                            <span class="text-danger">{{ $order->cancel_reason }}</span>
+                        </div>
+                    @endif
 
                     <div class="d-flex justify-content-between">
                         <span class="fw-semibold">Created:</span>
