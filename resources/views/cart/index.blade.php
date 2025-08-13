@@ -17,6 +17,7 @@
     </div>
 
     @php
+      // The controller should have hydrated shipping profiles into the session cart already.
       $cart     = session('cart', []);
       $currency = get_currency();
     @endphp
@@ -31,36 +32,48 @@
         <table class="table table-bordered align-middle text-center">
           <thead class="table-light">
             <tr>
-              <th>Product</th><th>Variation</th><th>Price</th>
-              <th>Quantity</th><th>Shipping Profile</th>
-              <th>Line&nbsp;Total</th><th>Remove</th>
+              <th>Product</th>
+              <th>Variation</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Shipping</th>
+              <th>Line&nbsp;Total</th>
+              <th>Remove</th>
             </tr>
           </thead>
           <tbody>
           @foreach($cart as $rowId => $item)
             @php
-              $qty       = (int)$item['quantity'];
-              $unitPrice = (float)$item['price'];
+              $qty        = (int)($item['quantity'] ?? 1);
+              $unitPrice  = (float)($item['price'] ?? 0);
 
-              // ✅ use profiles stored in session (ensured by hydrateShippingProfiles)
-              $profilesC = collect($item['shipping_profiles'] ?? []);
-              $selected  = (int)($item['selected_shipping_profile_id'] ?? 0);
-              $selProf   = $profilesC->firstWhere('id', $selected);
-              $rate      = (float)($selProf['base_rate'] ?? 0);
+              // ✅ Use profiles stored in session on the item (no extra DB hit)
+              $profilesC  = collect($item['shipping_profiles'] ?? []);
+              $selectedId = (int)($item['selected_shipping_profile_id'] ?? 0);
+              $selected   = $profilesC->firstWhere('id', $selectedId);
+              $rate       = (float)($selected['base_rate'] ?? 0);
 
-              $lineTotal = ($unitPrice + $rate) * $qty;
-              $photoUrl  = $item['photo'] ?? null; // already absolute in controller
+              $lineTotal  = ($unitPrice + $rate) * $qty;
+              $photoUrl   = $item['photo'] ?? null; // controller stored an absolute URL
             @endphp
-            <tr data-row-id="{{ $rowId }}"
-                data-unit-price="{{ $unitPrice }}"
-                data-quantity="{{ $qty }}">
+
+            <tr
+              data-row-id="{{ $rowId }}"
+              data-unit-price="{{ $unitPrice }}"
+              data-quantity="{{ $qty }}"
+            >
               {{-- Product --}}
               <td class="text-start">
                 <div class="d-flex gap-3 align-items-center">
                   @if($photoUrl)
                     <img src="{{ $photoUrl }}" width="60" height="60" class="rounded object-fit-cover" alt="">
                   @endif
-                  <span class="fw-semibold">{{ $item['name'] }}</span>
+                  <div class="text-start">
+                    <div class="fw-semibold">{{ $item['name'] }}</div>
+                    @if (!empty($item['variation_summary']))
+                      <small class="text-muted">{{ $item['variation_summary'] }}</small>
+                    @endif
+                  </div>
                 </div>
               </td>
 
@@ -86,7 +99,7 @@
                 </div>
               </td>
 
-              {{-- Shipping select (from session) --}}
+              {{-- Shipping select (stored in session) --}}
               <td>
                 @if($profilesC->isNotEmpty())
                   <select
@@ -97,7 +110,7 @@
                       <option
                         value="{{ $p['id'] }}"
                         data-base-rate="{{ (float)$p['base_rate'] }}"
-                        @selected((int)$p['id'] === $selected)
+                        @selected((int)$p['id'] === $selectedId)
                       >
                         {{ $p['name'] }} ({{ $currency }} {{ number_format((float)$p['base_rate'],2) }})
                       </option>
@@ -108,7 +121,7 @@
                 @endif
               </td>
 
-              {{-- Line total --}}
+              {{-- Line total (unit + selected shipping) * qty --}}
               <td class="line-total">{{ $currency }} {{ number_format($lineTotal,2) }}</td>
 
               {{-- Remove --}}
@@ -126,8 +139,8 @@
             @php
               $grand = collect($cart)->sum(function($i){
                 $profiles = collect($i['shipping_profiles'] ?? []);
-                $sel      = $i['selected_shipping_profile_id'] ?? null;
-                $rate     = (float) optional($profiles->firstWhere('id', $sel))['base_rate'] ?? 0;
+                $selId    = (int)($i['selected_shipping_profile_id'] ?? 0);
+                $rate     = (float) optional($profiles->firstWhere('id', $selId))['base_rate'] ?? 0;
                 return ((float)($i['price'] ?? 0) + $rate) * (int)($i['quantity'] ?? 1);
               });
             @endphp
@@ -138,6 +151,11 @@
           </tfoot>
         </table>
       </div>
+
+      {{-- Fallback non-JS form (optional but harmless) --}}
+      <form id="shipping-form" method="POST" action="{{ route('cart.shipping') }}">
+        @csrf
+      </form>
 
       <div class="d-flex justify-content-between align-items-center">
         <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">Continue Shopping</a>
@@ -160,7 +178,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function rowTotal($tr){
     const unit = +$tr.dataset.unitPrice;
     const qty  = +$tr.dataset.quantity;
-    const rate = +$tr.querySelector('.js-shipping-select')?.selectedOptions[0]?.dataset.baseRate || 0;
+    const sel  = $tr.querySelector('.js-shipping-select');
+    const rate = sel && sel.selectedOptions.length ? +(sel.selectedOptions[0].dataset.baseRate || 0) : 0;
     return (unit + rate) * qty;
   }
 
@@ -170,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function refreshGrand(){
     let sum=0;
-    document.querySelectorAll('tbody tr').forEach($tr=> sum += rowTotal($tr));
+    document.querySelectorAll('tbody tr').forEach($tr => sum += rowTotal($tr));
     document.getElementById('grand-total').textContent = money(sum);
   }
 
@@ -206,16 +225,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* shipping select */
+  /* shipping select → persist to session and update totals */
   document.querySelectorAll('.js-shipping-select').forEach(sel=>{
     sel.addEventListener('change',()=>{
       const $tr  = sel.closest('tr');
       const rowId= $tr.dataset.rowId;
 
-      // UI first
+      // UI update first
       refreshRow($tr); refreshGrand();
 
-      // Persist selection
+      // Persist selection in session cart
       fetch('{{ route("cart.shipping") }}',{
         method:'POST',
         headers:{
