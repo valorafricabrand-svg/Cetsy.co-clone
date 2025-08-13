@@ -92,7 +92,7 @@
 
     {{-- Cancel Order — allowed until the order is shipped --}}
     @if(in_array($order->status, [
-            \App\Models\Order::STATUS_PENDING]))
+            \App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
         <form action="{{ route('orders.cancel', $order->id) }}" method="POST"
               class="m-0"
               onsubmit="return confirm('Are you sure you want to cancel this order?');">

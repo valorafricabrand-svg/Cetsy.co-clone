@@ -101,6 +101,9 @@
                                            class="badge {{ $order->getStatusBadgeClass() }} text-capitalize">
                                             {{ $order->status }}
                                         </a>
+                                        @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
+                                            <br><small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
+                                        @endif
                                     </td>
                                     <td>{{ $order->tracking_no ?? '—' }}</td>
                                     <td>{{ $order->created_at->format('d M Y') }}</td>
@@ -110,6 +113,16 @@
                                            aria-label="View order {{ $order->id }}">
                                             <i class="fa-solid fa-eye"></i>
                                         </a>
+                                        
+                                        @if(in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
+                                            <button class="btn btn-sm btn-outline-danger ms-1"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#cancelModal-{{ $order->id }}"
+                                                    aria-label="Cancel order {{ $order->id }}">
+                                                <i class="fa-solid fa-times-circle"></i>
+                                            </button>
+                                            @include('seller.orders.modals.cancel')
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
