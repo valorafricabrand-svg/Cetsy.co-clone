@@ -39,22 +39,21 @@
           <tbody>
           @foreach($cart as $rowId => $item)
             @php
-              $qty       = $item['quantity'];
-              $unitPrice = $item['price'];
-              // You already store profiles in session; you can reuse them or query fresh:
-              $profiles  = \App\Models\ShippingProfile::where('product_id',$item['product_id'])->orderBy('name')->get();
-              $selected  = $profiles->firstWhere('id',$item['selected_shipping_profile_id'] ?? null);
-              $rate      = $selected->base_rate ?? 0;
+              $qty       = (int)$item['quantity'];
+              $unitPrice = (float)$item['price'];
+
+              // ✅ use profiles stored in session (ensured by hydrateShippingProfiles)
+              $profilesC = collect($item['shipping_profiles'] ?? []);
+              $selected  = (int)($item['selected_shipping_profile_id'] ?? 0);
+              $selProf   = $profilesC->firstWhere('id', $selected);
+              $rate      = (float)($selProf['base_rate'] ?? 0);
+
               $lineTotal = ($unitPrice + $rate) * $qty;
-              $photoUrl  = isset($item['photo']) && filter_var($item['photo'],FILTER_VALIDATE_URL)
-                              ? $item['photo']
-                              : (isset($item['photo']) ? asset('storage/'.$item['photo']) : null);
+              $photoUrl  = $item['photo'] ?? null; // already absolute in controller
             @endphp
-            <tr
-              data-row-id="{{ $rowId }}"
-              data-unit-price="{{ $unitPrice }}"
-              data-quantity="{{ $qty }}"
-            >
+            <tr data-row-id="{{ $rowId }}"
+                data-unit-price="{{ $unitPrice }}"
+                data-quantity="{{ $qty }}">
               {{-- Product --}}
               <td class="text-start">
                 <div class="d-flex gap-3 align-items-center">
@@ -68,7 +67,7 @@
               {{-- Variation --}}
               <td>{{ $item['variation_summary'] ?? '—' }}</td>
 
-              {{-- Price --}}
+              {{-- Unit Price --}}
               <td>{{ $currency }} {{ number_format($unitPrice,2) }}</td>
 
               {{-- Quantity --}}
@@ -87,27 +86,26 @@
                 </div>
               </td>
 
-              {{-- Shipping select --}}
+              {{-- Shipping select (from session) --}}
               <td>
-                <select
-                  name="shipping_profile_ids[{{ $rowId }}]"
-                  class="form-select form-select-sm js-shipping-select"
-                >
-                  @foreach($profiles as $profile)
-                    @php
-                      $label = $profile->dest_location_type==='everywhere_else'
-                               ? 'Everywhere'
-                               : ($profile->destCountry? 'Ship to '.$profile->destCountry->name : $profile->name);
-                    @endphp
-                    <option
-                      value="{{ $profile->id }}"
-                      data-base-rate="{{ $profile->base_rate }}"
-                      @selected($profile->id == ($item['selected_shipping_profile_id'] ?? null))
-                    >
-                      {{ $label }} ({{ $currency }} {{ number_format($profile->base_rate,2) }})
-                    </option>
-                  @endforeach
-                </select>
+                @if($profilesC->isNotEmpty())
+                  <select
+                    name="shipping_profile_ids[{{ $rowId }}]"
+                    class="form-select form-select-sm js-shipping-select"
+                  >
+                    @foreach($profilesC as $p)
+                      <option
+                        value="{{ $p['id'] }}"
+                        data-base-rate="{{ (float)$p['base_rate'] }}"
+                        @selected((int)$p['id'] === $selected)
+                      >
+                        {{ $p['name'] }} ({{ $currency }} {{ number_format((float)$p['base_rate'],2) }})
+                      </option>
+                    @endforeach
+                  </select>
+                @else
+                  <div class="small text-muted">No shipping profiles ({{ $currency }} 0.00)</div>
+                @endif
               </td>
 
               {{-- Line total --}}
@@ -125,27 +123,21 @@
           @endforeach
           </tbody>
           <tfoot class="table-light">
+            @php
+              $grand = collect($cart)->sum(function($i){
+                $profiles = collect($i['shipping_profiles'] ?? []);
+                $sel      = $i['selected_shipping_profile_id'] ?? null;
+                $rate     = (float) optional($profiles->firstWhere('id', $sel))['base_rate'] ?? 0;
+                return ((float)($i['price'] ?? 0) + $rate) * (int)($i['quantity'] ?? 1);
+              });
+            @endphp
             <tr>
               <th colspan="5" class="text-end">Total:</th>
-              <th colspan="2" id="grand-total">
-                {{ $currency }}
-                {{ number_format(
-                     collect($cart)->sum(fn($i)=>
-                       (($i['price'] ?? 0) +
-                        (collect($i['shipping_profiles'] ?? [])
-                          ->firstWhere('id',$i['selected_shipping_profile_id'] ?? null)['base_rate'] ?? 0)
-                       ) * ($i['quantity'] ?? 1)
-                     ),2) }}
-              </th>
+              <th colspan="2" id="grand-total">{{ $currency }} {{ number_format($grand,2) }}</th>
             </tr>
           </tfoot>
         </table>
       </div>
-
-      {{-- hidden form (kept for progressive enhancement; not used by JS) --}}
-      <form id="shipping-form" method="POST" action="{{ route('cart.shipping') }}">
-        @csrf
-      </form>
 
       <div class="d-flex justify-content-between align-items-center">
         <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">Continue Shopping</a>
@@ -168,10 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function rowTotal($tr){
     const unit = +$tr.dataset.unitPrice;
     const qty  = +$tr.dataset.quantity;
-    const rate = +$tr.querySelector('.js-shipping-select')
-                    .selectedOptions[0]
-                    .dataset.baseRate;
-    return (unit+rate)*qty;
+    const rate = +$tr.querySelector('.js-shipping-select')?.selectedOptions[0]?.dataset.baseRate || 0;
+    return (unit + rate) * qty;
   }
 
   function refreshRow($tr){
@@ -180,9 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function refreshGrand(){
     let sum=0;
-    document.querySelectorAll('tbody tr').forEach($tr=>{
-      sum+=rowTotal($tr);
-    });
+    document.querySelectorAll('tbody tr').forEach($tr=> sum += rowTotal($tr));
     document.getElementById('grand-total').textContent = money(sum);
   }
 
@@ -192,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* quantity buttons */
   document.querySelectorAll('.js-qty-btn').forEach(btn=>{
-    btn.addEventListener('click',e=>{
+    btn.addEventListener('click',()=>{
       const $tr   = btn.closest('tr');
       const rowId = $tr.dataset.rowId;
       const act   = btn.dataset.action;
@@ -210,8 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const qty=json.cart[rowId].quantity;
         $tr.dataset.quantity=qty;
         $tr.querySelector('.quantity').textContent=qty;
-        $tr.querySelectorAll('.js-qty-btn[data-action="decrease"]')
-           .forEach(b=>b.disabled=qty<=1);
+        $tr.querySelectorAll('.js-qty-btn[data-action="decrease"]').forEach(b=>b.disabled=qty<=1);
         refreshRow($tr); refreshGrand();
         notify('success','Quantity updated.');
       })
@@ -225,9 +212,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const $tr  = sel.closest('tr');
       const rowId= $tr.dataset.rowId;
 
-      // update UI totals immediately
+      // UI first
       refreshRow($tr); refreshGrand();
 
+      // Persist selection
       fetch('{{ route("cart.shipping") }}',{
         method:'POST',
         headers:{
@@ -237,23 +225,8 @@ document.addEventListener('DOMContentLoaded', () => {
         body:JSON.stringify({shipping_profile_ids:{[rowId]:sel.value}})
       })
       .then(r=>r.json())
-      .then(j=>notify('success',j.message || 'Shipping updated.'))
+      .then(j=>notify('success', j.message || 'Shipping updated.'))
       .catch(()=>notify('danger','Failed to update shipping.'));
-    });
-  });
-
-  /* remove */
-  document.querySelectorAll('.js-remove-form').forEach(frm=>{
-    frm.addEventListener('submit',e=>{
-      e.preventDefault();
-      fetch(frm.action,{
-        method:'POST',
-        headers:{
-          'X-CSRF-TOKEN':CSRF,'Accept':'application/json',
-          'Content-Type':'application/json'
-        },
-        body:JSON.stringify({row_id:frm.row_id.value})
-      }).then(()=>location.reload());
     });
   });
 

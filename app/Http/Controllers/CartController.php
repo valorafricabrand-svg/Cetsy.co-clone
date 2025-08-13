@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\VariationOption;
-use App\Models\ShippingProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
@@ -45,6 +44,8 @@ class CartController extends Controller
      */
     public function viewCart(): View
     {
+        // Ensure every cart row has shipping_profiles + a valid selected_shipping_profile_id
+        $this->hydrateShippingProfiles();
         $cart = session()->get('cart', []);
         return view('cart.index', compact('cart'));
     }
@@ -113,7 +114,7 @@ class CartController extends Controller
             ]);
         }
 
-        // 🔁 Works from both Cart and Checkout
+        // Works from Cart or Checkout
         return back()->with('success', 'Shipping selections saved – ready for checkout.');
     }
 
@@ -139,6 +140,8 @@ class CartController extends Controller
      */
     public function checkout(): View
     {
+        // Same hydration guard before showing checkout
+        $this->hydrateShippingProfiles();
         $cart = session()->get('cart', []);
         return view('checkout.index', compact('cart'));
     }
@@ -168,7 +171,7 @@ class CartController extends Controller
      */
     private function addItemToSessionCart(array $data): void
     {
-        // Load product with possible relationships used for pricing.
+        // Load product with relationships.
         $product = Product::with(['shippingProfiles', 'media', 'variations.options'])
             ->findOrFail($data['product_id']);
 
@@ -184,7 +187,7 @@ class CartController extends Controller
             ->sort()
             ->values();
 
-        // Load selected option models (to show names/types in cart)
+        // Selected option models (for display)
         $options = $optionIds->isEmpty()
             ? collect()
             : VariationOption::with('variationType')
@@ -196,7 +199,7 @@ class CartController extends Controller
             ->map(fn($o) => "{$o->variationType->name}: {$o->value}")
             ->join(', ');
 
-        // Try to resolve a variant-like combo from the product's variations relation (if present).
+        // Resolve a "variant-like" combo from product->variations (if available)
         $variantIdFromPost = $data['variant_id'] ?? null;
         $resolvedVariant   = null;
 
@@ -217,13 +220,12 @@ class CartController extends Controller
             }
         }
 
-        $price = null;
-        if ($resolvedVariant && isset($resolvedVariant->price) && $resolvedVariant->price !== null) {
-            $price = (float) $resolvedVariant->price;
-        } else {
-            $price = (float) ($product->discounted_price ?? $product->price);
-        }
+        // Price resolution
+        $price = $resolvedVariant && isset($resolvedVariant->price) && $resolvedVariant->price !== null
+            ? (float) $resolvedVariant->price
+            : (float) ($product->discounted_price ?? $product->price);
 
+        // Build row_id
         $optionsKey = $optionIds->implode('-');
         $rowId = ($resolvedVariant && isset($resolvedVariant->id))
             ? "p{$product->id}-v{$resolvedVariant->id}"
@@ -233,7 +235,10 @@ class CartController extends Controller
 
         if (isset($cart[$rowId])) {
             $cart[$rowId]['quantity'] += $qty;
-            $cart[$rowId]['selected_shipping_profile_id'] = $shipProfile;
+            // If user specified a ship profile now, update it
+            if ($shipProfile) {
+                $cart[$rowId]['selected_shipping_profile_id'] = $shipProfile;
+            }
         } else {
             $firstMedia = optional($product->media->first())->url;
             $photoUrl   = $firstMedia ? asset('storage/'.ltrim($firstMedia, '/')) : null;
@@ -242,25 +247,75 @@ class CartController extends Controller
                 'row_id'                       => $rowId,
                 'product_id'                   => $product->id,
                 'name'                         => $product->name,
+
                 'variant_id'                   => ($resolvedVariant && isset($resolvedVariant->id)) ? (int)$resolvedVariant->id : null,
+
+                // Selected options for display
                 'variations'                   => $options->map(fn($o)=>[
                                                     'type'  => $o->variationType->name,
                                                     'value' => $o->value,
                                                     'id'    => $o->id,
                                                 ])->all(),
                 'variation_summary'            => $summary,
+
                 'quantity'                     => $qty,
                 'price'                        => $price,
+
                 'photo'                        => $photoUrl,
+
+                // Store shipping profiles snapshot into session
                 'shipping_profiles'            => $product->shippingProfiles->map(fn($p)=>[
-                                                    'id'         => $p->id,
+                                                    'id'         => (int)$p->id,
                                                     'name'       => $p->name,
-                                                    'base_rate'  => $p->base_rate,
-                                                    'is_default' => $p->is_default,
+                                                    'base_rate'  => (float)$p->base_rate,
+                                                    'is_default' => (bool)$p->is_default,
                                                 ])->all(),
                 'selected_shipping_profile_id' => $shipProfile,
             ];
         }
+
+        session()->put('cart', $cart);
+    }
+
+    /**
+     * Ensure every cart row has shipping profiles and a valid selected profile in session.
+     */
+    private function hydrateShippingProfiles(): void
+    {
+        $cart = session()->get('cart', []);
+        if (empty($cart)) {
+            return;
+        }
+
+        foreach ($cart as &$item) {
+            // If profiles missing OR selected id not valid anymore, refresh from DB
+            $needRefresh = empty($item['shipping_profiles'])
+                || !collect($item['shipping_profiles'])->pluck('id')->contains($item['selected_shipping_profile_id'] ?? null);
+
+            if ($needRefresh) {
+                $product = Product::with('shippingProfiles')->find($item['product_id']);
+                if ($product) {
+                    $profiles = $product->shippingProfiles->map(fn($p)=>[
+                        'id'         => (int)$p->id,
+                        'name'       => $p->name,
+                        'base_rate'  => (float)$p->base_rate,
+                        'is_default' => (bool)$p->is_default,
+                    ])->values()->all();
+
+                    $item['shipping_profiles'] = $profiles;
+
+                    // pick default -> else first -> else null
+                    $defaultId = $product->shippingProfiles->firstWhere('is_default', true)?->id
+                              ?? $product->shippingProfiles->first()?->id;
+
+                    if (empty($item['selected_shipping_profile_id'])
+                        || ! collect($profiles)->pluck('id')->contains($item['selected_shipping_profile_id'])) {
+                        $item['selected_shipping_profile_id'] = $defaultId ? (int)$defaultId : null;
+                    }
+                }
+            }
+        }
+        unset($item);
 
         session()->put('cart', $cart);
     }
