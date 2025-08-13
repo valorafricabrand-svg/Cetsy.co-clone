@@ -126,10 +126,10 @@
           </div> -->
           <div class="col-12">
           <label for="bio" class="form-label fw-semibold">Description</label>
-            <textarea id="bio" name="bi" rows="6"
+            <textarea id="bio" name="bio" rows="6"
                       class="form-control @error('bio') is-invalid @enderror">{{ old('bio',$shop->bio) }}</textarea>
             @error('bio')<div class="text-danger mt-1">{{ $message }}</div>@enderror
-            
+            <div class="form-text">Tell customers about your shop and what makes it special.</div>
           </div>
         </div>
       </div>
@@ -185,7 +185,12 @@
         <div class="card-body">
           <div class="mb-3">
             <label for="password" class="form-label">Confirm Your Password <span class="text-danger">*</span></label>
-            <input type="password" id="password" name="password" class="form-control" required placeholder="Enter your account password">
+            <div class="input-group">
+              <input type="password" id="password" name="password" class="form-control" required placeholder="Enter your account password">
+              <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                <i class="fas fa-eye" id="eyeIcon"></i>
+              </button>
+            </div>
           </div>
           <input type="hidden" name="enable_2fa" value="0">
           <div class="form-check">
@@ -256,6 +261,22 @@ document.addEventListener('DOMContentLoaded', function() {
     toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
     menubar: false,
     height: 300
+  });
+
+  // Password visibility toggle
+  document.getElementById('togglePassword').addEventListener('click', function() {
+    const passwordInput = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
+    
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      eyeIcon.classList.remove('fa-eye');
+      eyeIcon.classList.add('fa-eye-slash');
+    } else {
+      passwordInput.type = 'password';
+      eyeIcon.classList.remove('fa-eye-slash');
+      eyeIcon.classList.add('fa-eye');
+    }
   });
 
   // Toggle sections
