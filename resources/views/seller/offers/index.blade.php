@@ -194,13 +194,24 @@
                             </td>
                             <td style="min-width:200px;">
                                 <div class="d-flex align-items-center gap-2">
-                                    @if($offer->product && $offer->product->media->first())
+                                    <!-- @if($offer->product && $offer->product->media->first())
                                         <img src="{{ asset('storage/' . $offer->product->media->first()->file_path) }}" 
                                              alt="Product" class="rounded" style="width:40px;height:40px;object-fit:cover;">
                                     @else
                                         <div class="bg-light border rounded d-flex align-items-center justify-content-center" 
                                              style="width:40px;height:40px;">
                                             <i class="bi bi-box text-secondary"></i>
+                                        </div>
+                                    @endif -->
+
+                                    @if($img = $offer->product->media->first())
+                                        <img src="{{ asset('storage/'.$img->url) }}"
+                                            class="rounded"
+                                            style="height:40px;object-fit:cover;" alt="{{ $offer->product->name }}">
+                                    @else
+                                        <div class="bg-light d-flex align-items-center justify-content-center"
+                                            style="height:220px;">
+                                            <span class="text-muted">No Image</span>
                                         </div>
                                     @endif
                                     <div class="flex-grow-1">
