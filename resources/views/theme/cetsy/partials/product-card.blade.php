@@ -33,6 +33,7 @@
     @php
       // If featured_image is a full URL use it; otherwise assume it's a storage path
       $thumb = null;
+      $mediaType = 'image';
       if (!empty($item->featured_image)) {
           $thumb = str_starts_with($item->featured_image, 'http')
                   ? $item->featured_image
@@ -42,12 +43,17 @@
           $thumb = $firstMedia
                   ? asset('storage/' . ltrim($firstMedia->url, '/'))
                   : asset('storage/placeholder.jpg');
+          $mediaType = $firstMedia->type ?? 'image';
       }
     @endphp
 
-    <img src="{{ $thumb }}"
-         alt="{{ $item->name }}"
-         class="w-100 h-100 object-fit-cover">
+    @if($mediaType === 'video')
+      <video src="{{ $thumb }}" class="w-100 h-100 object-fit-cover" controls></video>
+    @else
+      <img src="{{ $thumb }}"
+           alt="{{ $item->name }}"
+           class="w-100 h-100 object-fit-cover">
+    @endif
   </div>
 
   <div class="card-body p-2 d-flex flex-column">
