@@ -19,6 +19,12 @@
     @php
       $cart     = session('cart', []);
       $currency = get_currency();
+
+      // Prefetch product types (to detect digital vs physical) with one query
+      $productIds   = collect($cart)->pluck('product_id')->filter()->unique()->all();
+      $productTypes = $productIds
+        ? \App\Models\Product::whereIn('id', $productIds)->pluck('type','id')->toArray()
+        : [];
     @endphp
 
     @if($cart === [])
@@ -31,28 +37,43 @@
         <table class="table table-bordered align-middle text-center">
           <thead class="table-light">
             <tr>
-              <th>Product</th><th>Variation</th><th>Price</th>
-              <th>Quantity</th><th>Shipping Profile</th>
-              <th>Line&nbsp;Total</th><th>Remove</th>
+              <th>Product</th>
+              <th>Variation</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Shipping</th>
+              <th>Line&nbsp;Total</th>
+              <th>Remove</th>
             </tr>
           </thead>
           <tbody>
           @foreach($cart as $rowId => $item)
             @php
-              $qty       = $item['quantity'];
-              $unitPrice = $item['price'];
-              $profiles  = \App\Models\ShippingProfile::where('product_id',$item['product_id'])->orderBy('name')->get();
-              $selected  = $profiles->firstWhere('id',$item['selected_shipping_profile_id'] ?? null);
-              $rate      = $selected->base_rate ?? 0;
-              $lineTotal = ($unitPrice + $rate) * $qty;
-              $photoUrl  = isset($item['photo']) && filter_var($item['photo'],FILTER_VALIDATE_URL)
-                              ? $item['photo']
-                              : (isset($item['photo']) ? asset('storage/'.$item['photo']) : null);
+              $qty       = (int)($item['quantity'] ?? 1);
+              $unitPrice = (float)($item['price'] ?? 0);
+
+              // Determine digital/physical
+              $typeFromCart = $item['product_type'] ?? null; // if you ever stored it
+              $typeFromDb   = $productTypes[$item['product_id']] ?? null;
+              $isDigital    = ($typeFromCart ?? $typeFromDb) === 'digital';
+
+              // Use profiles snapshot from session for physical products
+              $profilesC  = collect($item['shipping_profiles'] ?? []);
+              $selectedId = (int)($item['selected_shipping_profile_id'] ?? 0);
+
+              // Rate is zero for digital items (hidden UI), otherwise selected profile's base_rate
+              $selected   = $profilesC->firstWhere('id', $selectedId);
+              $rate       = $isDigital ? 0.0 : (float)($selected['base_rate'] ?? 0.0);
+
+              $lineTotal  = ($unitPrice + $rate) * $qty;
+              $photoUrl   = $item['photo'] ?? null; // absolute URL already stored by controller
             @endphp
+
             <tr
               data-row-id="{{ $rowId }}"
               data-unit-price="{{ $unitPrice }}"
               data-quantity="{{ $qty }}"
+              data-is-digital="{{ $isDigital ? 1 : 0 }}"
             >
               {{-- Product --}}
               <td class="text-start">
@@ -60,17 +81,27 @@
                   @if($photoUrl)
                     <img src="{{ $photoUrl }}" width="60" height="60" class="rounded object-fit-cover" alt="">
                   @endif
-                  <span class="fw-semibold">{{ $item['name'] }}</span>
+                  <div class="text-start">
+                    <div class="fw-semibold">
+                      {{ $item['name'] }}
+                      @if($isDigital)
+                        <span class="badge bg-secondary ms-1">Digital</span>
+                      @endif
+                    </div>
+                    @if (!empty($item['variation_summary']))
+                      <small class="text-muted">{{ $item['variation_summary'] }}</small>
+                    @endif
+                  </div>
                 </div>
               </td>
 
               {{-- Variation --}}
               <td>{{ $item['variation_summary'] ?? '—' }}</td>
 
-              {{-- Price --}}
+              {{-- Unit Price --}}
               <td>{{ $currency }} {{ number_format($unitPrice,2) }}</td>
 
-              {{-- Quantity (two tiny forms so CSRF token is always sent) --}}
+              {{-- Quantity --}}
               <td>
                 <div class="d-flex gap-1 justify-content-center align-items-center">
                   <button
@@ -86,27 +117,38 @@
                 </div>
               </td>
 
-              {{-- Shipping select (belongs to hidden form below) --}}
+              {{-- Shipping (hidden/disabled for digital) --}}
               <td>
-                <select
-                  name="shipping_profile_ids[{{ $rowId }}]"
-                  class="form-select form-select-sm js-shipping-select"
-                >
-                  @foreach($profiles as $profile)
-                    @php
-                      $label = $profile->dest_location_type==='everywhere_else'
-                               ? 'Everywhere'
-                               : ($profile->destCountry? 'Ship to '.$profile->destCountry->name : $profile->name);
-                    @endphp
-                    <option
-                      value="{{ $profile->id }}"
-                      data-base-rate="{{ $profile->base_rate }}"
-                      @selected($profile->id == ($item['selected_shipping_profile_id'] ?? null))
+                @if($isDigital)
+                  <div class="small text-muted">No shipping (digital)</div>
+                @else
+                  @if($profilesC->isNotEmpty())
+                    <select
+                      name="shipping_profile_ids[{{ $rowId }}]"
+                      class="form-select form-select-sm js-shipping-select"
                     >
-                      {{ $label }} ({{ $currency }} {{ number_format($profile->base_rate,2) }})
-                    </option>
-                  @endforeach
-                </select>
+                      @foreach($profilesC as $p)
+                        @php
+                          // Label rule you requested
+                          $label = ($p['dest_location_type'] ?? null) === 'everywhere_else'
+                                   ? 'Everywhere'
+                                   : (!empty($p['dest_country_name'])
+                                        ? 'Ship to '.$p['dest_country_name']
+                                        : $p['name']);
+                        @endphp
+                        <option
+                          value="{{ $p['id'] }}"
+                          data-base-rate="{{ (float)$p['base_rate'] }}"
+                          @selected((int)$p['id'] === $selectedId)
+                        >
+                          {{ $label }} ({{ $currency }} {{ number_format((float)$p['base_rate'],2) }})
+                        </option>
+                      @endforeach
+                    </select>
+                  @else
+                    <div class="small text-muted">No shipping profiles ({{ $currency }} 0.00)</div>
+                  @endif
+                @endif
               </td>
 
               {{-- Line total --}}
@@ -124,25 +166,32 @@
           @endforeach
           </tbody>
           <tfoot class="table-light">
+            @php
+              $grand = collect($cart)->sum(function($i) use ($productTypes) {
+                $qty   = (int)($i['quantity'] ?? 1);
+                $unit  = (float)($i['price'] ?? 0);
+
+                $typeFromCart = $i['product_type'] ?? null;
+                $typeFromDb   = $productTypes[$i['product_id']] ?? null;
+                $isDigital    = ($typeFromCart ?? $typeFromDb) === 'digital';
+
+                $profiles = collect($i['shipping_profiles'] ?? []);
+                $selId    = (int)($i['selected_shipping_profile_id'] ?? 0);
+                $rate     = $isDigital ? 0.0 : (float) optional($profiles->firstWhere('id',$selId))['base_rate'] ?? 0.0;
+
+                return ($unit + $rate) * $qty;
+              });
+            @endphp
             <tr>
               <th colspan="5" class="text-end">Total:</th>
-              <th colspan="2" id="grand-total">
-                {{ $currency }}
-                {{ number_format(
-                     collect($cart)->sum(fn($i)=>
-                       (($i['price'] ?? 0) +
-                        (collect($i['shipping_profiles'] ?? [])
-                          ->firstWhere('id',$i['selected_shipping_profile_id'] ?? null)['base_rate'] ?? 0)
-                       ) * ($i['quantity'] ?? 1)
-                     ),2) }}
-              </th>
+              <th colspan="2" id="grand-total">{{ $currency }} {{ number_format($grand,2) }}</th>
             </tr>
           </tfoot>
         </table>
       </div>
 
-      {{-- hidden form for shipping-profile update (empty, we fill via JS/Fetch) --}}
-      <form id="shipping-form" method="POST" action="{{ route('cart.updateShippingSelection') }}">
+      {{-- Passive fallback form (not used by JS directly, kept for PE) --}}
+      <form id="shipping-form" method="POST" action="{{ route('cart.shipping') }}">
         @csrf
       </form>
 
@@ -162,16 +211,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const cur   = '{{ $currency }}';
   const flash = document.getElementById('flash-container');
 
-  /* helpers --------------------------------------------------------- */
   function money(n){ return cur+' '+(+n).toFixed(2); }
 
   function rowTotal($tr){
-    const unit = +$tr.dataset.unitPrice;
-    const qty  = +$tr.dataset.quantity;
-    const rate = +$tr.querySelector('.js-shipping-select')
-                    .selectedOptions[0]
-                    .dataset.baseRate;
-    return (unit+rate)*qty;
+    const unit      = +$tr.dataset.unitPrice;
+    const qty       = +$tr.dataset.quantity;
+    const isDigital = ($tr.dataset.isDigital === '1');
+    let rate = 0;
+    if (!isDigital) {
+      const sel = $tr.querySelector('.js-shipping-select');
+      rate = sel && sel.selectedOptions.length ? +(sel.selectedOptions[0].dataset.baseRate || 0) : 0;
+    }
+    return (unit + rate) * qty;
   }
 
   function refreshRow($tr){
@@ -180,9 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function refreshGrand(){
     let sum=0;
-    document.querySelectorAll('tbody tr').forEach($tr=>{
-      sum+=rowTotal($tr);
-    });
+    document.querySelectorAll('tbody tr').forEach($tr => sum += rowTotal($tr));
     document.getElementById('grand-total').textContent = money(sum);
   }
 
@@ -190,9 +239,9 @@ document.addEventListener('DOMContentLoaded', () => {
     flash.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
   }
 
-  /* quantity buttons ------------------------------------------------ */
+  /* quantity buttons */
   document.querySelectorAll('.js-qty-btn').forEach(btn=>{
-    btn.addEventListener('click',e=>{
+    btn.addEventListener('click',()=>{
       const $tr   = btn.closest('tr');
       const rowId = $tr.dataset.rowId;
       const act   = btn.dataset.action;
@@ -210,9 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const qty=json.cart[rowId].quantity;
         $tr.dataset.quantity=qty;
         $tr.querySelector('.quantity').textContent=qty;
-        // disable minus if now 1
-        $tr.querySelectorAll('.js-qty-btn[data-action="decrease"]')
-           .forEach(b=>b.disabled=qty<=1);
+        $tr.querySelectorAll('.js-qty-btn[data-action="decrease"]').forEach(b=>b.disabled=qty<=1);
         refreshRow($tr); refreshGrand();
         notify('success','Quantity updated.');
       })
@@ -220,16 +267,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* shipping select -------------------------------------------------- */
+  /* shipping select (only on physical rows) */
   document.querySelectorAll('.js-shipping-select').forEach(sel=>{
     sel.addEventListener('change',()=>{
-      const $tr=sel.closest('tr');
-      const rowId=$tr.dataset.rowId;
+      const $tr  = sel.closest('tr');
+      const rowId= $tr.dataset.rowId;
 
-      // update UI totals immediately
+      // UI first
       refreshRow($tr); refreshGrand();
 
-      fetch('{{ route("cart.updateShippingSelection") }}',{
+      // Persist selection to session
+      fetch('{{ route("cart.shipping") }}',{
         method:'POST',
         headers:{
           'X-CSRF-TOKEN':CSRF,'Accept':'application/json',
@@ -238,25 +286,13 @@ document.addEventListener('DOMContentLoaded', () => {
         body:JSON.stringify({shipping_profile_ids:{[rowId]:sel.value}})
       })
       .then(r=>r.json())
-      .then(j=>notify('success',j.message))
+      .then(j=>notify('success', j.message || 'Shipping updated.'))
       .catch(()=>notify('danger','Failed to update shipping.'));
     });
   });
 
-  /* remove ----------------------------------------------------------- */
-  document.querySelectorAll('.js-remove-form').forEach(frm=>{
-    frm.addEventListener('submit',e=>{
-      e.preventDefault();
-      fetch(frm.action,{
-        method:'POST',
-        headers:{
-          'X-CSRF-TOKEN':CSRF,'Accept':'application/json',
-          'Content-Type':'application/json'
-        },
-        body:JSON.stringify({row_id:frm.row_id.value})
-      }).then(()=>location.reload());
-    });
-  });
+  // initial totals
+  refreshGrand();
 });
 </script>
 @endpush

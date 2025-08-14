@@ -71,10 +71,25 @@
         <span class="badge bg-{{ $class }} text-white position-absolute top-0 start-0 m-2">{{ $label }}</span>
 
 
+  @php
+      // If featured_image is a full URL use it; otherwise assume it's a storage path
+      $thumb = null;
+      if (!empty($product->featured_image)) {
+          $thumb = str_starts_with($product->featured_image, 'http')
+                  ? $product->featured_image
+                  : asset('storage/' . ltrim($product->featured_image, '/'));
+      } else {
+          $firstMedia = $product->media->first();
+          $thumb = $firstMedia
+                  ? asset('storage/' . ltrim($firstMedia->url, '/'))
+                  : asset('storage/placeholder.jpg');
+      }
+    @endphp
 
+  
                         {{-- Image --}}
-                        @if($img = $product->media->first())
-                            <img src="{{ asset('storage/' . $img->url) }}"
+                        @if($thumb)
+                            <img src="{{ $thumb }}"
                                  class="card-img-top rounded-top-4"
                                  style="height:220px;object-fit:cover;"
                                  alt="{{ $product->name }}">
