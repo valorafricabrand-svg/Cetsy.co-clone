@@ -25,7 +25,7 @@ class CetsyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const CetsyWebViewScreen(
-        initialUrl: 'https://cetsy.co/',
+        initialUrl: 'https://cetsy.co/dashboard',
       ),
     );
   }
