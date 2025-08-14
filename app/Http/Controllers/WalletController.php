@@ -237,8 +237,14 @@ public function payListing(Request $request, $id)
 
 public function payOrder(Request $request, $id)
     {
-       // Retrieve the order/invoice
+        // Retrieve the order/invoice
         $order = Order::findOrFail($id);
+
+        if ($order->isPaid()) {
+            return redirect()
+                ->route('buyer.orders.show', $order->id)
+                ->with('error', 'This order has already been paid.');
+        }
 
         // Determine payment method: default to 'paypal'
         $method = $request->get('method', 'wallet');

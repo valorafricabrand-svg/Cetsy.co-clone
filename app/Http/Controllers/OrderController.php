@@ -363,6 +363,13 @@ public function storeOrder(Request $request)
     public function payNow($orderId)
     {
         $order = Order::findOrFail($orderId);
+
+        if ($order->isPaid()) {
+            return redirect()
+                ->route('account.orders')
+                ->with('error', 'This order has already been paid.');
+        }
+
         return view('account.pay_now', ['order' => $order]);
     }
 
@@ -381,6 +388,13 @@ public function storeOrder(Request $request)
     public function successDeposit(Request $request, $id)
     {
         $order  = Order::findOrFail($id);
+
+        if ($order->isPaid()) {
+            return redirect()
+                ->route('account.orders')
+                ->with('error', 'This order has already been paid.');
+        }
+
         $method = $request->get('method', 'paypal');
 
         // Unique local transaction id
