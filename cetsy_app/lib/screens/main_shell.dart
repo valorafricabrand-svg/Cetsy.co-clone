@@ -3,27 +3,39 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/cart_provider.dart';
-import 'product_list_screen.dart';
 import 'cart_screen.dart';
+import 'home_screen.dart';
+import 'product_list_screen.dart';
 import 'profile_screen.dart';
+import 'search_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  State<MainShell> createState() => MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class MainShellState extends State<MainShell> {
   static const Color cetsyGreen = Color(0xFF198754);
 
   int _index = 0;
 
-  final _tabs = const [
-    ProductListScreen(),
-    CartScreen(),
-    ProfileScreen(),
-  ];
+  late final List<Widget> _tabs;
+
+  void _setIndex(int i) => setState(() => _index = i);
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = [
+      HomeScreen(onShop: () => _setIndex(1)),
+      const ProductListScreen(),
+      const SearchScreen(),
+      const CartScreen(),
+      const ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,12 +50,22 @@ class _MainShellState extends State<MainShell> {
         height: 65,
         selectedIndex: _index,
         indicatorColor: cetsyGreen.withOpacity(.12),
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: _setIndex,
         destinations: [
+          const NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
           const NavigationDestination(
             icon: Icon(Icons.storefront_outlined),
             selectedIcon: Icon(Icons.storefront),
             label: 'Shop',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.search_outlined),
+            selectedIcon: Icon(Icons.search),
+            label: 'Search',
           ),
           NavigationDestination(
             icon: cartCount > 0
