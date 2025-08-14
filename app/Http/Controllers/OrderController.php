@@ -682,4 +682,53 @@ public function storeOrder(Request $request)
 
         return back()->with('success', $statusMessage);
     }
+
+
+    public function process(Request $request, Order $order)
+    {
+        $this->authorizeSeller($order);
+
+        if ($order->status !== Order::STATUS_PENDING) {
+            return back()->withErrors('Only pending orders can be processed.');
+        }
+
+        // If you want to REQUIRE payment before processing, uncomment this block:
+        /*
+        $paid = (float) $order->payments()
+            ->where(function ($q) {
+                $q->whereIn('status', ['success', 'completed', 'paid', 3]);
+            })
+            ->sum('total_amount');
+
+        if ($paid <= 0) {
+            return back()->withErrors('This order has not been paid yet.');
+        }
+        */
+
+        DB::transaction(function () use ($order) {
+            $order->update([
+                'status' => Order::STATUS_PROCESSING,
+            ]);
+        });
+
+        // Optional: notify buyer & seller (ignore if you don’t have this notification)
+        try {
+            Notification::send(
+                [$order->user, $order->shop?->user],
+                new \App\Notifications\OrderProcessingNotification($order)
+            );
+        } catch (\Throwable $e) {
+            // swallow if notification class doesn’t exist
+        }
+
+        return back()->with('success', 'Order moved to processing.');
+    }
+
+
+        private function authorizeSeller(Order $order): void
+    {
+        if (!auth()->check() || optional($order->shop)->user_id !== auth()->id()) {
+            abort(403, 'You are not allowed to manage this order.');
+        }
+    }
 }
