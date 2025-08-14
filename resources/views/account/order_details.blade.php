@@ -400,9 +400,7 @@
 </div>
 
 {{-- ===== REVIEW MODALS (only when Delivered and not already reviewed) ===== --}}
-@php $canReviewOrder = ($order->status === \App\Models\Order::STATUS_DELIVERED); @endphp
 @foreach($order->items as $item)
-  @if(!$item->review && $order->status === \App\Models\Order::STATUS_DELIVERED)
   @if($canReviewOrder && !$item->review)
     @php($modalId = 'reviewModal_'.$item->id)
     <div class="modal fade" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
