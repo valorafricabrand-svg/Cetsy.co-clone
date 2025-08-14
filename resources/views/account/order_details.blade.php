@@ -155,8 +155,11 @@
                 <address class="mb-0">
                   {{ $order->shipping_address_1 }}<br>
                   @if($order->shipping_address_2){{ $order->shipping_address_2 }}<br>@endif
-                  {{ $order->shipping_city }}, {{ $order->shipping_state }}<br>
-                  {{ $order->shipping_postal_code }}
+                  {{ $order->shipping_city }}@if($order->shipping_state), {{ $order->shipping_state }}@endif<br>
+                  @if($order->shipping_postal_code){{ $order->shipping_postal_code }}<br>@endif
+                  @if(method_exists($order, 'shippingCountry') && ($order->relationLoaded('shippingCountry') || optional($order->shippingCountry)->id))
+                    {{ optional($order->shippingCountry)->name }}
+                  @endif
                 </address>
               </li>
               <li class="list-group-item px-0">
@@ -171,7 +174,11 @@
       </div>
     </div>
 
-    {{-- ===== ORDER ITEMS (uses variation_summary) + DOWNLOADS ===== --}}
+    {{-- ===== ORDER ITEMS (uses variation_summary, hides shipping for digital) + DOWNLOADS ===== --}}
+    @php
+      $canReviewOrder = ($order->status === \App\Models\Order::STATUS_DELIVERED);
+    @endphp
+
     @if($order->items->count())
       <div class="card shadow-sm border-0 mt-4">
         <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
@@ -200,21 +207,37 @@
               <tbody>
                 @foreach($order->items as $item)
                   @php
-                    $product     = optional($item->product);
-                    $reviewed    = $item->review !== null;
-                    $modalId     = 'reviewModal_'.$item->id;
-                    $profileName = optional($item->shippingProfile)->name ?? 'N/A';
-                    $shipCost    = (float) ($item->shipping_cost ?? 0);
-                    $qty         = (int) ($item->quantity ?? 1);
-                    $lineSubtotal= (float) ($item->price ?? 0) * $qty;
-                    $lineTotal   = $lineSubtotal + $shipCost;
+                    $product    = optional($item->product);
+                    $reviewed   = $item->review !== null;
+                    $modalId    = 'reviewModal_'.$item->id;
+                    $isDigital  = $product && $product->type === 'digital';
+
+                    // Shipping label + cost (hidden/zero for digital)
+                    if ($isDigital) {
+                        $label    = 'No shipping (digital)';
+                        $shipCost = 0.0;
+                    } else {
+                        $sp    = optional($item->shippingProfile);
+                        $label = $sp && $sp->dest_location_type === 'everywhere_else'
+                                 ? 'Everywhere'
+                                 : ($sp && $sp->destCountry ? 'Ship to '.$sp->destCountry->name : ($sp->name ?? 'N/A'));
+                        $shipCost = (float) ($item->shipping_cost ?? 0);
+                    }
+
+                    $qty          = (int)   ($item->quantity ?? 1);
+                    $unit         = (float) ($item->price ?? 0);
+                    $lineSubtotal = $unit * $qty;
+                    $lineTotal    = $lineSubtotal + $shipCost;
+
+                    // image
+                    $thumbUrl = $product?->featured_image
+                        ?: ($product?->media->first()?->url ? asset('storage/'.$product->media->first()->url) : null);
+
+                    // Downloads: allow on Processing/Completed for digital products
                     $canDownload = in_array(
                                       $order->status,
                                       [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED]
                                    ) && $product && $product->type === 'digital';
-                    // image
-                    $thumbUrl = $product?->featured_image
-                        ?: ($product?->media->first()?->url ? asset('storage/'.$product->media->first()->url) : null);
                   @endphp
 
                   <tr>
@@ -228,32 +251,36 @@
                             src="{{ $thumbUrl }}"
                             alt="{{ $product->name }}"
                             class="img-fluid rounded"
-                            style="max-width:100px; height:auto; object-fit:cover;"
-                          >
+                            style="max-width:100px; height:auto; object-fit:cover;">
                         </a>
                       @endif
                     </td>
 
-                    {{-- Product name --}}
+                    {{-- Product --}}
                     <td>
-                      <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="text-decoration-none">
-                        {{ $product->name ?? 'N/A' }}
-                      </a>
+                      @if($product)
+                        <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="text-decoration-none">
+                          {{ $product->name }}
+                        </a>
+                        @if($isDigital)
+                          <span class="badge bg-secondary ms-1">Digital</span>
+                        @endif
+                      @else
+                        <span class="text-muted">N/A</span>
+                      @endif
                     </td>
 
-                    {{-- Variation: now uses saved summary string --}}
-                    <td>
-                      {{ $item->variation_summary ?? '—' }}
-                    </td>
+                    {{-- Variation: saved summary --}}
+                    <td>{{ $item->variation_summary ?? '—' }}</td>
 
                     {{-- Qty --}}
                     <td>{{ $qty }}</td>
 
                     {{-- Unit Price --}}
-                    <td>{{ get_currency() }} {{ number_format($item->price, 2) }}</td>
+                    <td>{{ get_currency() }} {{ number_format($unit, 2) }}</td>
 
-                    {{-- Shipping profile --}}
-                    <td>{{ $profileName }}</td>
+                    {{-- Shipping profile (or hidden for digital) --}}
+                    <td>{{ $label }}</td>
 
                     {{-- Shipping cost --}}
                     <td>{{ get_currency() }} {{ number_format($shipCost, 2) }}</td>
@@ -261,10 +288,10 @@
                     {{-- Line total --}}
                     <td class="fw-semibold">{{ get_currency() }} {{ number_format($lineTotal, 2) }}</td>
 
-                    {{-- Review --}}
+                    {{-- Review (only after delivery) --}}
                     <td class="text-center">
                       @if($reviewed)
-                        <span class="badge bg-success">
+                        <span class="badge bg-success d-inline-flex align-items-center gap-1">
                           <i class="bi bi-check-circle"></i>
                           {{ $item->review->rating }} ⭐
                         </span>
@@ -274,10 +301,18 @@
                         </button>
                       @else
                         <span class="text-muted small">Review after delivery</span>
+                      @else
+                        @if($canReviewOrder)
+                          <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
+                            <i class="bi bi-star"></i> Review
+                          </button>
+                        @else
+                          <span class="text-muted small">Available after delivery</span>
+                        @endif
                       @endif
                     </td>
 
-                    {{-- Downloads (digital products only + allowed statuses) --}}
+                    {{-- Downloads (digital + allowed statuses) --}}
                     <td>
                       @if($canDownload && $product && $product->digitalFiles->count())
                         <div class="card mb-0 shadow-sm">
@@ -328,8 +363,8 @@
               <tbody>
                 @foreach($order->payments as $pay)
                   @php
-                    // Many implementations use numeric codes. Treat "3" as completed.
-                    $isCompleted = (string)$pay->status === '3' || strtolower((string)$pay->status) === 'success' || strtolower((string)$pay->status) === 'completed';
+                    $statusStr   = strtolower((string)$pay->status);
+                    $isCompleted = (string)$pay->status === '3' || $statusStr === 'success' || $statusStr === 'completed';
                     $statusLabel = $isCompleted ? 'Completed' : (is_numeric($pay->status) ? $pay->status : ucfirst((string)$pay->status));
                   @endphp
                   <tr>
@@ -372,9 +407,14 @@
   </div>
 </div>
 
-{{-- ===== REVIEW MODALS ===== --}}
+{{-- ===== REVIEW MODALS (only when Delivered and not already reviewed) ===== --}}
+@php $canReviewOrder = ($order->status === \App\Models\Order::STATUS_DELIVERED); @endphp
 @foreach($order->items as $item)
+<<<<<<< HEAD
   @if(!$item->review && $order->status === \App\Models\Order::STATUS_DELIVERED)
+=======
+  @if($canReviewOrder && !$item->review)
+>>>>>>> development
     @php($modalId = 'reviewModal_'.$item->id)
     <div class="modal fade" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg">

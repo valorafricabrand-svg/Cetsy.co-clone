@@ -84,4 +84,69 @@ class AuthService {
       }
     }
   }
+
+  /// Send password reset link to email.
+  ///
+  /// Laravel API (Fortify/Starter kits) commonly uses POST /forgot-password
+  /// and returns 200 with a { "status": "We have emailed your password reset link!" }
+  /// message. Some setups may return 202.
+  static Future<void> forgotPassword({
+    required String email,
+  }) async {
+    final url = Uri.parse("${Constants.baseUrl}/forgot-password");
+
+    final response = await http.post(
+      url,
+      headers: {'Accept': 'application/json'},
+      body: {'email': email},
+    );
+
+    // Accept 200/202 as success; decode to surface backend error messages.
+    if (response.statusCode == 200 || response.statusCode == 202) {
+      // Optionally inspect message:
+      // final data = jsonDecode(response.body);
+      return;
+    } else {
+      try {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Password reset request failed.');
+      } catch (_) {
+        throw Exception('Password reset request failed. Please try again.');
+      }
+    }
+  }
+
+  /// (Optional helper) Complete the reset using token from email.
+  /// Typical Laravel route: POST /reset-password
+  /// Body: email, token, password, password_confirmation
+  static Future<void> resetPassword({
+    required String email,
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final url = Uri.parse("${Constants.baseUrl}/reset-password");
+
+    final response = await http.post(
+      url,
+      headers: {'Accept': 'application/json'},
+      body: {
+        'email': email,
+        'token': token,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return;
+    } else {
+      try {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Password reset failed.');
+      } catch (_) {
+        throw Exception('Password reset failed. Please try again.');
+      }
+    }
+  }
 }

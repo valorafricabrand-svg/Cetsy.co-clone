@@ -1,19 +1,28 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'providers/auth_provider.dart';
-import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
+import 'providers/cart_provider.dart'; // 👈 NEW
+
+// Screens
 import 'screens/product_detail_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/forgot_password_screen.dart';
+import 'screens/main_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   final authProvider = AuthProvider();
   await authProvider.loadUserFromPrefs();
 
   runApp(
-    ChangeNotifierProvider.value(
-      value: authProvider,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+        ChangeNotifierProvider<CartProvider>(create: (_) => CartProvider()), // 👈 NEW
+      ],
       child: const CetsyApp(),
     ),
   );
@@ -22,24 +31,114 @@ void main() async {
 class CetsyApp extends StatelessWidget {
   const CetsyApp({super.key});
 
+  static const Color cetsyGreen = Color(0xFF198754);
+
   @override
   Widget build(BuildContext context) {
-    final isLoggedIn = context.select<AuthProvider, bool>((p) => p.isAuthenticated);
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: cetsyGreen,
+      brightness: Brightness.light,
+    );
 
     return MaterialApp(
       title: 'Cetsy App',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.green, useMaterial3: true),
 
-      // keep your home: as-is
-      home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: colorScheme,
+        scaffoldBackgroundColor: const Color(0xFFF7F9F8),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: cetsyGreen,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: cetsyGreen,
+            foregroundColor: Colors.white,
+            elevation: 2,
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: cetsyGreen,
+            side: const BorderSide(color: cetsyGreen),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: cetsyGreen,
+            textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(14)),
+            borderSide: BorderSide(color: cetsyGreen, width: 1.5),
+          ),
+          labelStyle: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        chipTheme: ChipThemeData(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          backgroundColor: const Color(0xFFEFF7F3),
+          selectedColor: cetsyGreen.withOpacity(.15),
+          side: const BorderSide(color: cetsyGreen),
+          labelStyle: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: cetsyGreen,
+          foregroundColor: Colors.white,
+          elevation: 2,
+        ),
+        bottomSheetTheme: const BottomSheetThemeData(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+          ),
+        ),
+        cardTheme: CardTheme(
+          color: Colors.white,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        textTheme: const TextTheme(bodyMedium: TextStyle(height: 1.35)),
+      ),
 
-      // ← register the detail screen here:
+      home: const MainShell(),
+
       routes: {
         ProductDetailScreen.route: (_) => const ProductDetailScreen(),
-        // add more named routes if you have them:
-        // HomeScreen.route: (_) => const HomeScreen(),
-        // LoginScreen.route: (_) => const LoginScreen(),
+        '/register': (_) => const RegisterScreen(),
+        '/forgot-password': (_) => const ForgotPasswordScreen(),
       },
     );
   }

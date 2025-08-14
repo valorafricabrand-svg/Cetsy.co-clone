@@ -62,12 +62,17 @@ Route::get('/shop/{id}', [ShopController::class, 'showPublic'])->name('shop.show
 
 // Cart
 Route::prefix('cart')->name('cart.')->group(function () {
-    Route::get('/', [CartController::class, 'viewCart'])->name('view');
-    Route::post('/add', [CartController::class, 'addToCart'])->name('add');
-    Route::post('/buy', [CartController::class, 'addToBuy'])->name('buy');
+    Route::get('/',        [CartController::class, 'viewCart'])->name('view');
+    Route::post('/add',    [CartController::class, 'addToCart'])->name('add');
+    Route::post('/buy',    [CartController::class, 'addToBuy'])->name('buy');
     Route::post('/remove', [CartController::class, 'removeFromCart'])->name('remove');
     Route::post('/update', [CartController::class, 'updateCart'])->name('update');
 
+    // persist per-item shipping selection to session
+    Route::post('/shipping', [CartController::class, 'updateShippingSelection'])->name('shipping');
+
+    // checkout page
+    Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
 });
 
 // routes/web.php
@@ -165,10 +170,6 @@ Route::patch('products/{product}/renewal', [ProductController::class, 'updateRen
             [WalletController::class,'payOrder'])
      ->name('order.wallet.pay');
 
- Route::patch(
-        '/account/orders/{order}/cancel',
-        [OrderController::class, 'cancel']
-    )->name('orders.cancel');
 
  Route::post(
     '/products/{product}/status',
@@ -211,9 +212,7 @@ Route::delete('variation-options/{option}', [VariationController::class, 'destro
     ->name('variationOptions.destroy');
 
 
-    Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
 
-    Route::post('/cart/update-shipping-selection', [CartController::class, 'updateShippingSelection'])->name('cart.updateShippingSelection');
 
     Route::post('/favorites/toggle', [WishlistController::class, 'toggle'])
          ->name('favorites.toggle');

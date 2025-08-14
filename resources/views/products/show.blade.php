@@ -100,17 +100,23 @@
 
   {{-- ───────── ABOUT PAGE CONTENT (this view is the About page) ───────── --}}
   <div class="row gx-5 gy-4 mt-2">
-    {{-- ───────── Image Carousel ───────── --}}
+    {{-- ───────── Media Carousel ───────── --}}
     <div class="col-lg-6">
       @if($product->media->count())
         <div id="productCarousel" class="carousel slide rounded-4 shadow-sm border" data-bs-ride="carousel">
           <div class="carousel-inner">
             @foreach($product->media as $i => $media)
               <div class="carousel-item @if($i===0) active @endif">
-                <img src="{{ asset('storage/'.$media->url) }}"
-                     class="d-block w-100 rounded-4"
-                     style="height:400px; object-fit:cover;"
-                     alt="{{ $product->name }}">
+                @if($media->type === 'video')
+                  <video controls class="d-block w-100 rounded-4" style="height:400px; object-fit:cover;">
+                    <source src="{{ asset('storage/'.$media->url) }}" />
+                  </video>
+                @else
+                  <img src="{{ asset('storage/'.$media->url) }}"
+                       class="d-block w-100 rounded-4"
+                       style="height:400px; object-fit:cover;"
+                       alt="{{ $product->name }}">
+                @endif
               </div>
             @endforeach
           </div>
@@ -123,7 +129,7 @@
         </div>
       @else
         <div class="d-flex align-items-center justify-content-center border rounded-4 text-muted" style="height:400px;">
-          No image available
+          No media available
         </div>
       @endif
     </div>

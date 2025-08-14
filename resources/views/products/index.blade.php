@@ -71,17 +71,38 @@
         <span class="badge bg-{{ $class }} text-white position-absolute top-0 start-0 m-2">{{ $label }}</span>
 
 
+  @php
+      // If featured_image is a full URL use it; otherwise assume it's a storage path
+      $thumb = null;
+      $mediaType = 'image';
+      if (!empty($product->featured_image)) {
+          $thumb = str_starts_with($product->featured_image, 'http')
+                  ? $product->featured_image
+                  : asset('storage/' . ltrim($product->featured_image, '/'));
+      } else {
+          $firstMedia = $product->media->first();
+          $thumb = $firstMedia
+                  ? asset('storage/' . ltrim($firstMedia->url, '/'))
+                  : asset('storage/placeholder.jpg');
+          $mediaType = $firstMedia->type ?? 'image';
+      }
+    @endphp
 
+  
                         {{-- Image --}}
-                        @if($img = $product->media->first())
-                            <img src="{{ asset('storage/' . $img->url) }}"
-                                 class="card-img-top rounded-top-4"
-                                 style="height:220px;object-fit:cover;"
-                                 alt="{{ $product->name }}">
+                        @if($thumb)
+                            @if($mediaType === 'video')
+                                <video src="{{ $thumb }}" class="card-img-top rounded-top-4" style="height:220px;object-fit:cover;" controls></video>
+                            @else
+                                <img src="{{ $thumb }}"
+                                     class="card-img-top rounded-top-4"
+                                     style="height:220px;object-fit:cover;"
+                                     alt="{{ $product->name }}">
+                            @endif
                         @else
                             <div class="bg-light d-flex align-items-center justify-content-center"
                                  style="height:220px;">
-                                <span class="text-muted">No Image</span>
+                                <span class="text-muted">No Media</span>
                             </div>
                         @endif
 
