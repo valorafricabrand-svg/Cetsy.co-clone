@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
-import '../screens/home_screen.dart';
+import '../screens/main_shell.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const MainShell()),
         );
       }
     } catch (e) {
