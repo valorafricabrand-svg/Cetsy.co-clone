@@ -71,7 +71,6 @@
   <script src="{{ asset('assets/js/config.js') }}" defer></script>
 
   <script>
-    // Respect RTL setting (if your phoenix config sets it)
     document.addEventListener("DOMContentLoaded", function () {
       if (window.config?.config?.phoenixIsRTL) {
         document.documentElement.setAttribute('dir', 'rtl');
@@ -100,9 +99,7 @@
     .navbar-brand img { height: 48px; width: auto; }
     .navbar { min-height: var(--nav-height); }
     .navbar .form-control { min-width: 280px; }
-    @media (max-width: 991.98px) {
-      .navbar .form-control { min-width: 0; }
-    }
+    @media (max-width: 991.98px) { .navbar .form-control { min-width: 0; } }
 
     /* Dropdown menus */
     .dropdown-menu {
@@ -117,7 +114,7 @@
     .dropdown-submenu > .dropdown-menu { top: -0.25rem; left: 100%; margin-left: .15rem; }
     .dropdown-submenu.no-children > a .rotate { display: none; }
 
-    /* Mobile category chips (small screens) */
+    /* Mobile category chips */
     .cat-scroll {
       display: flex; gap: .5rem; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: .75rem 0;
     }
@@ -132,10 +129,7 @@
     .footer-link:hover { color: #fff !important; text-decoration: none; }
     .social-icon i { font-size: 18px; }
 
-    /* Reduced motion respect */
-    @media (prefers-reduced-motion: reduce) {
-      .rotate { transition: none; }
-    }
+    @media (prefers-reduced-motion: reduce) { .rotate { transition: none; } }
   </style>
 
   <!-- Alpine.js (optional for cart badge etc.) -->
@@ -156,32 +150,24 @@
   <main class="main" id="top">
     <div class="bg-body-emphasis" data-navbar-shadow-on-scroll="true">
 
-      {{-- NAVBAR --}}
+      {{-- NAVBAR (menu toggle moved LEFT) --}}
       <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top" aria-label="Main Navigation">
-        <div class="container">
-          {{-- Brand --}}
-          <a class="navbar-brand d-flex align-items-center gap-2 me-2" href="{{ url('/') }}">
-            <img src="{{ setting('logo_url') }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="48" width="auto" loading="lazy">
-          </a>
+        <div class="container align-items-stretch">
 
-          {{-- Right utilities (mobile): search + offcanvas toggles --}}
-          <div class="d-flex d-lg-none align-items-center gap-2 ms-auto">
-            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#mobileSearch" aria-controls="mobileSearch" aria-expanded="false" aria-label="Toggle search">
-              <i class="fas fa-search"></i>
-            </button>
-            @php $cartCount = (int) count(session('cart', [])); @endphp
-            <a href="{{ route('cart.view') }}" class="btn btn-outline-secondary btn-sm position-relative" aria-label="View cart">
-              <i class="fas fa-shopping-cart"></i>
-              @if($cartCount)
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">{{ $cartCount }}</span>
-              @endif
-            </a>
-            <button class="navbar-toggler ms-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainOffcanvas" aria-controls="mainOffcanvas" aria-label="Open menu">
+          {{-- Left: Hamburger + Brand --}}
+          <div class="d-flex align-items-center gap-2 me-2">
+            <button class="navbar-toggler d-lg-none" type="button"
+                    data-bs-toggle="offcanvas" data-bs-target="#mainOffcanvas"
+                    aria-controls="mainOffcanvas" aria-label="Open menu">
               <span class="navbar-toggler-icon"></span>
             </button>
+
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url('/') }}">
+              <img src="{{ setting('logo_url') }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="48" width="auto" loading="lazy">
+            </a>
           </div>
 
-          {{-- Desktop Nav --}}
+          {{-- Desktop Nav (center grows) --}}
           <div class="collapse navbar-collapse" id="mainNavbar">
             {{-- Search (desktop) --}}
             <form class="d-none d-lg-flex ms-3 me-3 flex-grow-1" method="GET" action="{{ route('search') }}" role="search">
@@ -194,6 +180,7 @@
 
             {{-- Cart + User (desktop) --}}
             <ul class="navbar-nav ms-auto align-items-center" x-data="cartDropdown()" x-init="fetchCart()">
+              @php $cartCount = (int) count(session('cart', [])); @endphp
               <li class="nav-item me-2 d-none d-lg-block">
                 <a href="{{ route('cart.view') }}" class="nav-link position-relative text-dark" aria-label="View cart">
                   <i class="fas fa-shopping-cart fa-lg"></i>
@@ -238,6 +225,20 @@
               @endguest
             </ul>
           </div>
+
+          {{-- Right (mobile): search + cart --}}
+          <div class="d-flex d-lg-none align-items-center gap-2 ms-auto">
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#mobileSearch" aria-controls="mobileSearch" aria-expanded="false" aria-label="Toggle search">
+              <i class="fas fa-search"></i>
+            </button>
+            @php $cartCount = (int) count(session('cart', [])); @endphp
+            <a href="{{ route('cart.view') }}" class="btn btn-outline-secondary btn-sm position-relative" aria-label="View cart">
+              <i class="fas fa-shopping-cart"></i>
+              @if($cartCount)
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">{{ $cartCount }}</span>
+              @endif
+            </a>
+          </div>
         </div>
 
         {{-- Mobile Search (collapsible) --}}
@@ -255,8 +256,8 @@
         </div>
       </nav>
 
-      {{-- OFFCANVAS (mobile navigation + auth quick links) --}}
-      <div class="offcanvas offcanvas-end" tabindex="-1" id="mainOffcanvas" aria-labelledby="mainOffcanvasLabel">
+      {{-- OFFCANVAS (now opens from LEFT) --}}
+      <div class="offcanvas offcanvas-start" tabindex="-1" id="mainOffcanvas" aria-labelledby="mainOffcanvasLabel">
         <div class="offcanvas-header">
           <h5 class="offcanvas-title" id="mainOffcanvasLabel">{{ config('app.name','Cetsy') }}</h5>
           <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -265,7 +266,7 @@
           @auth
             <div class="mb-3">
               <div class="fw-semibold mb-1">Hi, {{ auth()->user()->name }}</div>
-              <div class="d-flex gap-2">
+              <div class="d-flex flex-wrap gap-2">
                 <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary btn-sm">Dashboard</a>
                 <a href="{{ route('profile.edit') }}" class="btn btn-outline-secondary btn-sm">Profile</a>
                 <form method="POST" action="{{ route('logout') }}">
@@ -338,7 +339,6 @@
       {{-- ======= DESKTOP Multi-level Category Nav ======= --}}
       @if($mainCategories->isNotEmpty())
         @php
-          // separate recursion for desktop dropdown
           $renderCatsDesktop = function ($nodes) use (&$renderCatsDesktop){
             foreach($nodes as $cat){
               $kids = $cat->childrenRecursive;
