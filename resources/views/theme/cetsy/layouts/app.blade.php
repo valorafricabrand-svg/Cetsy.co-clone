@@ -87,7 +87,491 @@
     .text-primary { color: #027333 !important; }
     .btn-link { color: #027333; }
     a.text-primary:hover, a.text-primary:focus { color: #025a1f !important; }
+<<<<<<< HEAD
     body { font-family: "Nunito Sans", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif; }
+=======
+    
+    /* ===== Mobile App UI ===== */
+    @media (max-width: 768px) {
+      /* Fixed App Header */
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        height: var(--app-header-height);
+        background: #fff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+      }
+      
+      .app-bar {
+        width: 100%;
+        display: flex;
+        align-items: center;
+      }
+
+      /* App Menu Button */
+      .app-menu-btn {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: var(--brand-dark);
+        transition: var(--transition);
+        margin-right: 8px;
+      }
+
+      .app-menu-btn:active {
+        background: rgba(0,0,0,0.05);
+      }
+
+      .app-menu-btn i {
+        font-size: 20px;
+      }
+
+      /* Brand Logo */
+      .navbar-brand {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        position: static;
+        transform: none;
+        margin: 0;
+      }
+
+      .navbar-brand img {
+        height: 32px;
+        transition: var(--transition);
+      }
+
+      /* App Actions */
+      .app-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-left: auto;
+      }
+      
+      .app-actions a {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--brand-dark);
+        border-radius: 50%;
+        transition: var(--transition);
+      }
+      
+      .app-actions a:active {
+        background: rgba(0,0,0,0.05);
+      }
+      
+      .app-actions .badge {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        font-size: 10px;
+        padding: 3px 6px;
+        min-width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      /* Hide desktop elements on mobile */
+      .navbar .desktop-only { display: none !important; }
+      nav[aria-label="Category Navigation"] { display: none; }
+      
+      /* Bottom Navigation Bar */
+      .mobile-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: var(--app-bottom-nav-height);
+        background: #fff;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 1000;
+        padding-bottom: env(safe-area-inset-bottom);
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+      }
+      
+      .mobile-bottom-nav a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: #666;
+        font-size: 10px;
+        font-weight: 500;
+        flex: 1;
+        height: 100%;
+        transition: var(--transition);
+        position: relative;
+      }
+      
+      .mobile-bottom-nav a.active {
+        color: var(--brand-primary);
+      }
+      
+      .mobile-bottom-nav a.active::after {
+        content: '';
+        position: absolute;
+        top: 4px;
+        width: 5px;
+        height: 5px;
+        background: var(--brand-primary);
+        border-radius: 50%;
+      }
+      
+      .mobile-bottom-nav i {
+        font-size: 20px;
+        margin-bottom: 2px;
+      }
+      
+      /* App Drawer */
+      .offcanvas.app-drawer {
+        width: 85vw;
+        max-width: 320px;
+        border-radius: 0 16px 16px 0;
+        background: #fff;
+      }
+      
+      .app-drawer .offcanvas-header {
+        padding: 16px;
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+      }
+      
+      .app-drawer .offcanvas-title {
+        font-weight: 700;
+        font-size: 18px;
+      }
+      
+      .app-drawer .btn-close {
+        background-size: 14px;
+        padding: 8px;
+      }
+      
+      .app-drawer .list-group-item {
+        border: 0;
+        padding: 12px 16px;
+        font-size: 15px;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      
+      .app-drawer .list-group-item i {
+        width: 20px;
+        text-align: center;
+      }
+      
+      .app-drawer .list-group-item:hover {
+        background: rgba(0,0,0,0.03);
+      }
+      
+      .app-drawer .form-control {
+        border-radius: 20px;
+        padding: 10px 16px;
+        font-size: 15px;
+      }
+      
+      /* Categories in drawer */
+      .app-drawer details {
+        margin-bottom: 4px;
+      }
+      
+      .app-drawer details summary {
+        padding: 12px 16px;
+        font-size: 15px;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      
+      .app-drawer details summary::-webkit-details-marker {
+        display: none;
+      }
+      
+      .app-drawer details summary::after {
+        content: '\f078';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        font-size: 12px;
+        transition: var(--transition);
+      }
+      
+      .app-drawer details[open] summary::after {
+        transform: rotate(180deg);
+      }
+      
+      .app-drawer details ul {
+        padding-left: 16px;
+        margin-top: 4px;
+      }
+      
+      .app-drawer details li {
+        margin-bottom: 4px;
+      }
+      
+      .app-drawer details a {
+        display: block;
+        padding: 8px 16px;
+        color: #555;
+        text-decoration: none;
+        font-size: 14px;
+        border-radius: 6px;
+        transition: var(--transition);
+      }
+      
+      .app-drawer details a:hover {
+        background: rgba(0,0,0,0.03);
+        color: var(--brand-primary);
+      }
+      
+      /* Prevent content from being hidden behind nav bars */
+      main {
+        min-height: calc(100vh - var(--app-header-height) - var(--app-bottom-nav-height));
+      }
+      
+      footer {
+        padding-bottom: calc(var(--app-bottom-nav-height) + 20px);
+      }
+    }
+    
+    /* ===== Desktop UI ===== */
+    @media (min-width: 769px) {
+      body {
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+      
+      .mobile-bottom-nav {
+        display: none !important;
+      }
+      
+      /* Professional Navbar */
+      .navbar {
+        padding: 16px 24px;
+        background: #fff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      }
+      
+      .app-bar {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+      
+      .navbar-brand img {
+        height: 40px;
+      }
+      
+      /* Search Bar */
+      .navbar .desktop-only {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex: 1;
+      }
+      
+      .navbar .form-control {
+        flex: 1;
+        max-width: 600px;
+        border-radius: 24px;
+        padding: 10px 20px;
+        border: 1px solid #ddd;
+        font-size: 15px;
+        transition: var(--transition);
+      }
+      
+      .navbar .form-control:focus {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 3px rgba(2,115,51,0.1);
+      }
+      
+      .navbar .btn-outline-secondary {
+        border-radius: 24px;
+        padding: 10px 16px;
+        font-weight: 500;
+      }
+      
+      /* Navigation Links */
+      .navbar-nav .nav-link {
+        font-weight: 600;
+        color: var(--brand-dark);
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: var(--transition);
+      }
+      
+      .navbar-nav .nav-link:hover {
+        background: rgba(0,0,0,0.03);
+        color: var(--brand-primary);
+      }
+      
+      /* Buttons */
+      .btn-success {
+        background: var(--brand-primary);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 24px;
+        font-weight: 600;
+        transition: var(--transition);
+      }
+      
+      .btn-success:hover {
+        background: #025a1f;
+        transform: translateY(-1px);
+      }
+      
+      /* Category Navigation */
+      nav[aria-label="Category Navigation"] {
+        background: var(--brand-dark);
+        padding: 12px 24px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      }
+      
+      nav[aria-label="Category Navigation"] .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+      
+      nav[aria-label="Category Navigation"] .nav-link {
+        color: #fff;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: var(--transition);
+      }
+      
+      nav[aria-label="Category Navigation"] .nav-link:hover {
+        background: rgba(255,255,255,0.1);
+      }
+    }
+    
+    /* ===== Common Components ===== */
+    /* Dropdown Menus */
+    .dropdown-menu {
+      min-width: 240px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      border: none;
+      padding: 8px 0;
+      margin-top: 8px;
+    }
+    
+    .dropdown-item {
+      padding: 8px 16px;
+      font-size: 14px;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .dropdown-item i {
+      width: 20px;
+      text-align: center;
+    }
+    
+    .dropdown-item:hover, .dropdown-item:focus {
+      background: rgba(2,115,51,0.08);
+      color: var(--brand-primary);
+    }
+    
+    /* Multi-level Dropdowns */
+    .dropdown-submenu {
+      position: relative;
+    }
+    
+    .dropdown-submenu > .dropdown-menu {
+      top: 0;
+      left: 100%;
+      margin-left: 4px;
+    }
+    
+    .dropdown-submenu > a::after {
+      content: '\f054';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      font-size: 12px;
+      margin-left: auto;
+      transition: var(--transition);
+    }
+    
+    .dropdown-submenu.show > a::after {
+      transform: rotate(90deg);
+    }
+    
+    @media (min-width: 992px) {
+      .dropdown-submenu:hover > .dropdown-menu {
+        display: block;
+      }
+    }
+    
+    /* Footer */
+    footer {
+      background: linear-gradient(180deg, #1a2526 0%, #2d3a3b 100%);
+    }
+    
+    .footer-heading {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .footer-link {
+      display: inline-block;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 8px;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+    
+    .footer-link:hover {
+      color: #fff;
+      transform: translateX(4px);
+    }
+    
+    .social-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      transition: var(--transition);
+    }
+    
+    .social-icon:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+>>>>>>> 81e651f96c83f81b7d5ce0bd046495b151dffcd2
   </style>
 
   <!-- Alpine.js -->
@@ -114,12 +598,33 @@
   <main class="main" id="top">
     <div class="bg-body-emphasis" data-navbar-shadow-on-scroll="true">
 
+<<<<<<< HEAD
       {{-- NAVBAR --}}
       <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm" aria-label="Main Navigation">
         <div class="container">
           {{-- Brand --}}
           <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url('/') }}">
             <img src="{{ setting('logo_url') }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="60" width="auto" loading="lazy">
+=======
+      <!-- Navbar -->
+      <nav class="navbar navbar-light bg-white shadow-sm" aria-label="Main Navigation">
+        <div class="container app-bar">
+          <!-- Mobile Menu Button -->
+          <button
+            class="app-menu-btn d-lg-none"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#appDrawer"
+            aria-controls="appDrawer"
+            aria-label="Open menu"
+          >
+            <i class="fas fa-bars-staggered"></i>
+          </button>
+
+          <!-- Brand Logo -->
+          <a class="navbar-brand" href="{{ url('/') }}">
+            <img src="{{ setting('logo_url') }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="40" width="auto" loading="lazy">
+>>>>>>> 81e651f96c83f81b7d5ce0bd046495b151dffcd2
           </a>
 
           {{-- Mobile toggle --}}

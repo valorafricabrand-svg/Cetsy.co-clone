@@ -1,9 +1,21 @@
-// lib/src/webview/cetsy_webview_screen.dart
+// WebView screen without AppBar. Adds:
+// - Safe top inset + configurable top margin for breathing space
+// - Top-edge swipe down to refresh (pull ≥ ~100px)
+// - Loader overlay on tap and during navigation
+// - Offline banner
+// - Android file uploads (basic)
+// - Web build auto-redirects to https://cetsy.co (no iframe/webview)
+
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 class CetsyWebViewScreen extends StatefulWidget {
   const CetsyWebViewScreen({super.key, required this.initialUrl});
@@ -14,44 +26,79 @@ class CetsyWebViewScreen extends StatefulWidget {
 }
 
 class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
-  WebViewController? _controller; // nullable so we can skip on web
-  final ValueNotifier<int> _progress = ValueNotifier<int>(0);
-  final ValueNotifier<String> _currentUrl = ValueNotifier<String>('');
+  WebViewController? _controller; // null on web (we redirect instead)
+
+  // ---- Layout tuning
+  static const double _topMargin = 0; // <— adjust this to taste
+
+  // ---- Load/progress state
+  final ValueNotifier<int> _pageProgress = ValueNotifier<int>(0);
+  bool _loadingOverlay = false; // tap/transition spinner
+
+  // ---- Offline + errors
+  final ValueNotifier<bool> _isOffline = ValueNotifier<bool>(false);
+  final ValueNotifier<String?> _lastError = ValueNotifier<String?>(null);
+  late final StreamSubscription<dynamic> _connSub; // supports Result or List<Result>
+
+  // ---- Pull-to-refresh (top-edge handle)
+  double _dragDistance = 0.0;
+  double _pullProgress = 0.0; // 0..1 visual bar
+  static const double _pullTrigger = 100; // px to trigger reload
 
   @override
   void initState() {
     super.initState();
 
-    // ✅ On Flutter Web: DO NOT create a WebView controller (avoids UnimplementedError)
+    // Connectivity banner (compatible with old/new connectivity_plus)
+    _connSub = Connectivity().onConnectivityChanged.listen((event) {
+      bool offline = false;
+      if (event is ConnectivityResult) {
+        offline = event == ConnectivityResult.none;
+      } else if (event is List<ConnectivityResult>) {
+        offline = event.contains(ConnectivityResult.none);
+      }
+      _isOffline.value = offline;
+    });
+
+    // ✅ On Flutter Web: DO NOT instantiate a WebView. Redirect the tab instead.
     if (kIsWeb) return;
 
-    final params = const PlatformWebViewControllerCreationParams();
+    // Generic creation params (portable across plugin versions)
+    const params = PlatformWebViewControllerCreationParams();
 
-    _controller = WebViewController.fromPlatformCreationParams(params)
+    final controller = WebViewController.fromPlatformCreationParams(params)
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.transparent)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onProgress: (p) => _progress.value = p,
-          onPageFinished: (url) => _currentUrl.value = url,
-          onUrlChange: (change) {
-            if (change.url != null) _currentUrl.value = change.url!;
+          onProgress: (p) {
+            _pageProgress.value = p;
+            if (p > 0 && p < 100) {
+              _setLoading(true);
+            } else if (p == 100) {
+              _setLoading(false);
+            }
+          },
+          onPageStarted: (_) {
+            _lastError.value = null;
+            _setLoading(true);
+          },
+          onPageFinished: (_) {
+            _setLoading(false);
+          },
+          onWebResourceError: (err) {
+            _lastError.value = '${err.errorCode}: ${err.description}';
+            _setLoading(false);
           },
           onNavigationRequest: (req) {
-            final url = Uri.parse(req.url);
-            final isHttp = url.scheme == 'http' || url.scheme == 'https';
-            final isAppScheme = {
-              'tel',
-              'mailto',
-              'sms',
-              'whatsapp',
-              'intent',
-              'maps',
-              'geo',
-            }.contains(url.scheme);
+            final uri = Uri.parse(req.url);
+            final isHttp = uri.scheme == 'http' || uri.scheme == 'https';
+            final isAppScheme = <String>{
+              'tel', 'mailto', 'sms', 'whatsapp', 'intent', 'maps', 'geo',
+            }.contains(uri.scheme);
 
             if (isAppScheme) {
-              launchUrl(url, mode: LaunchMode.externalApplication);
+              launchUrl(uri, mode: LaunchMode.externalApplication);
               return NavigationDecision.prevent;
             }
             return isHttp ? NavigationDecision.navigate : NavigationDecision.prevent;
@@ -59,106 +106,255 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
         ),
       )
       ..loadRequest(Uri.parse(widget.initialUrl));
+
+    // Android extras: debugging, basic file uploads (no allowMultiple for older APIs)
+    if (controller.platform is AndroidWebViewController) {
+      AndroidWebViewController.enableDebugging(true);
+      final android = controller.platform as AndroidWebViewController;
+
+      android.setOnShowFileSelector((params) async {
+        final result = await FilePicker.platform.pickFiles(type: FileType.any);
+        if (result == null) return <String>[];
+        return result.paths.whereType<String>().toList();
+      });
+
+      // NOTE: Some versions don't support setDownloadListener; omitted intentionally.
+    }
+
+    _controller = controller;
   }
 
-  Future<void> _reload() async => _controller?.reload();
-  Future<void> _goBack() async {
+  @override
+  void dispose() {
+    _connSub.cancel();
+    _pageProgress.dispose();
+    _isOffline.dispose();
+    _lastError.dispose();
+    super.dispose();
+  }
+
+  // ---- Utilities
+  void _setLoading(bool v) {
+    if (_loadingOverlay == v) return;
+    setState(() => _loadingOverlay = v);
+  }
+
+  Future<void> _reload() async {
+    if (_controller == null) return;
+    HapticFeedback.lightImpact();
+    _setLoading(true);
+    await _controller!.reload();
+  }
+
+  Future<void> _goBackOrExit() async {
     if (_controller != null && await _controller!.canGoBack()) {
       await _controller!.goBack();
+    } else {
+      try {
+        await SystemNavigator.pop();
+      } catch (_) {}
     }
   }
 
-  Future<void> _goForward() async {
-    if (_controller != null && await _controller!.canGoForward()) {
-      await _controller!.goForward();
-    }
+  // ---- Pull-to-refresh handle at the very top of the web content
+  Widget _buildPullHandle() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 24,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragStart: (_) {
+          _dragDistance = 0;
+          setState(() => _pullProgress = 0);
+        },
+        onVerticalDragUpdate: (details) {
+          final dy = details.delta.dy;
+          if (dy > 0) {
+            _dragDistance += dy;
+            final p = (_dragDistance / _pullTrigger).clamp(0.0, 1.0);
+            setState(() => _pullProgress = p);
+          }
+        },
+        onVerticalDragEnd: (_) async {
+          final shouldRefresh = _dragDistance >= _pullTrigger;
+          _dragDistance = 0;
+          setState(() => _pullProgress = 0);
+          if (shouldRefresh) {
+            await _reload();
+          }
+        },
+      ),
+    );
   }
 
-  Future<void> _openExternally() async {
-    final current = _controller == null ? null : await _controller!.currentUrl();
-    final url = current ?? widget.initialUrl;
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  // Thin progress strip at the top (uses either pull-progress or page-load progress)
+  Widget _buildTopProgressStrip() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 2,
+      child: ValueListenableBuilder<int>(
+        valueListenable: _pageProgress,
+        builder: (_, p, __) {
+          final isLoading = p > 0 && p < 100;
+          final showPull = _pullProgress > 0;
+          final value = showPull
+              ? _pullProgress
+              : (isLoading ? p / 100 : null); // null -> indeterminate off
+          return AnimatedOpacity(
+            duration: const Duration(milliseconds: 120),
+            opacity: (showPull || isLoading) ? 1 : 0,
+            child: LinearProgressIndicator(value: value),
+          );
+        },
+      ),
+    );
+  }
+
+  // Offline banner (under the progress strip)
+  Widget _buildOfflineBanner() {
+    return ValueListenableBuilder<bool>(
+      valueListenable: _isOffline,
+      builder: (_, offline, __) {
+        if (!offline) return const SizedBox.shrink();
+        return Container(
+          width: double.infinity,
+          color: Colors.amber,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Row(
+            children: [
+              const Icon(Icons.wifi_off, size: 18),
+              const SizedBox(width: 8),
+              const Expanded(child: Text('You are offline. Pull down to retry.')),
+              TextButton(onPressed: _reload, child: const Text('Retry')),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Error overlay with retry
+  Widget _buildErrorOverlay() {
+    return ValueListenableBuilder<String?>(
+      valueListenable: _lastError,
+      builder: (_, err, __) {
+        if (err == null) return const SizedBox.shrink();
+        return Container(
+          color: Theme.of(context).colorScheme.surface.withOpacity(.98),
+          alignment: Alignment.center,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off, size: 42),
+                const SizedBox(height: 12),
+                Text('Something went wrong', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Text(err, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 16),
+                FilledButton.icon(onPressed: _reload, icon: const Icon(Icons.refresh), label: const Text('Retry')),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Tap listener overlay: shows a quick loader flash and lets touch pass through.
+  Widget _buildTapLoaderListener() {
+    return Listener(
+      behavior: HitTestBehavior.translucent, // does NOT block the webview
+      onPointerDown: (_) {
+        // flash the loader briefly on any tap; if a real navigation starts,
+        // onProgress/onPageStarted will keep it visible until finished.
+        _setLoading(true);
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if ((_pageProgress.value == 0 || _pageProgress.value == 100) && mounted) {
+            _setLoading(false);
+          }
+        });
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Web fallback: redirect this tab to https://cetsy.co (no iframe/webview)
+    // ✅ Web fallback: redirect this tab to cetsy.co (no iframe/webview)
     if (kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         launchUrl(Uri.parse(widget.initialUrl), webOnlyWindowName: '_self');
       });
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Mobile (Android/iOS) WebView UI
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) async {
         if (didPop) return;
-        if (_controller != null && await _controller!.canGoBack()) {
-          await _controller!.goBack();
-        } else {
-          try {
-            await SystemNavigator.pop();
-          } catch (_) {}
-        }
+        await _goBackOrExit();
       },
       child: Scaffold(
-        appBar: AppBar(
-          titleSpacing: 0,
-          title: ValueListenableBuilder<String>(
-            valueListenable: _currentUrl,
-            builder: (_, url, __) {
-              final showHost = Uri.tryParse(url)?.host ?? 'cetsy.co';
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Cetsy'),
-                  Text(showHost, style: Theme.of(context).textTheme.bodySmall),
-                ],
-              );
-            },
-          ),
-          actions: [
-            IconButton(
-              tooltip: 'Back',
-              onPressed: _goBack,
-              icon: const Icon(Icons.arrow_back),
-            ),
-            IconButton(
-              tooltip: 'Forward',
-              onPressed: _goForward,
-              icon: const Icon(Icons.arrow_forward),
-            ),
-            IconButton(
-              tooltip: 'Refresh',
-              onPressed: _reload,
-              icon: const Icon(Icons.refresh),
-            ),
-            IconButton(
-              tooltip: 'Open in Browser',
-              onPressed: _openExternally,
-              icon: const Icon(Icons.open_in_new),
-            ),
-          ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(2),
-            child: ValueListenableBuilder<int>(
-              valueListenable: _progress,
-              builder: (_, p, __) => AnimatedOpacity(
-                duration: const Duration(milliseconds: 150),
-                opacity: (p > 0 && p < 100) ? 1 : 0,
-                child: LinearProgressIndicator(value: p == 100 ? null : p / 100),
-              ),
-            ),
-          ),
-        ),
+        // No AppBar — clean fullscreen; protect top with SafeArea and margin
         body: SafeArea(
-          child: _controller == null
-              ? const SizedBox.shrink()
-              : WebViewWidget(controller: _controller!),
+          top: true,
+          bottom: false,
+          child: Column(
+            children: [
+              // Optional spacer for a "good top margin" above your content
+              SizedBox(height: _topMargin),
+
+              // Offline banner (appears under the margin)
+              _buildOfflineBanner(),
+
+              // Main area
+              Expanded(
+                child: Padding(
+                  // Add the same top margin inside the stack too, so the pull handle/progress sit below it
+                  padding: const EdgeInsets.only(top: _topMargin),
+                  child: Stack(
+                    children: [
+                      // Web content
+                      if (_controller != null) WebViewWidget(controller: _controller!),
+
+                      // Top-edge swipe-to-refresh handle and progress strip (positioned within the padded area)
+                      _buildPullHandle(),
+                      _buildTopProgressStrip(),
+
+                      // Tap loader listener (doesn't block touches)
+                      _buildTapLoaderListener(),
+
+                      // Error overlay (if any)
+                      _buildErrorOverlay(),
+
+                      // Center loader overlay
+                      IgnorePointer(
+                        ignoring: true, // visual only
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 150),
+                          opacity: _loadingOverlay ? 1 : 0,
+                          child: Container(
+                            color: Colors.black.withOpacity(0.12),
+                            alignment: Alignment.center,
+                            child: const SizedBox(
+                              width: 36,
+                              height: 36,
+                              child: CircularProgressIndicator(strokeWidth: 3),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
