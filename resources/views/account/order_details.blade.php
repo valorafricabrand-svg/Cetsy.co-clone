@@ -295,20 +295,12 @@
                           <i class="bi bi-check-circle"></i>
                           {{ $item->review->rating }} ⭐
                         </span>
-                      @elseif($order->status === \App\Models\Order::STATUS_DELIVERED)
+                      @elseif($canReviewOrder)
                         <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
                           <i class="bi bi-star"></i> Review
                         </button>
                       @else
-                        <span class="text-muted small">Review after delivery</span>
-                      @else
-                        @if($canReviewOrder)
-                          <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
-                            <i class="bi bi-star"></i> Review
-                          </button>
-                        @else
-                          <span class="text-muted small">Available after delivery</span>
-                        @endif
+                        <span class="text-muted small">Available after delivery</span>
                       @endif
                     </td>
 
