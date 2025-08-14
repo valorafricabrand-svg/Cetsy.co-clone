@@ -295,6 +295,12 @@
                           <i class="bi bi-check-circle"></i>
                           {{ $item->review->rating }} ⭐
                         </span>
+                      @elseif($order->status === \App\Models\Order::STATUS_DELIVERED)
+                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
+                          <i class="bi bi-star"></i> Review
+                        </button>
+                      @else
+                        <span class="text-muted small">Review after delivery</span>
                       @else
                         @if($canReviewOrder)
                           <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
@@ -404,7 +410,11 @@
 {{-- ===== REVIEW MODALS (only when Delivered and not already reviewed) ===== --}}
 @php $canReviewOrder = ($order->status === \App\Models\Order::STATUS_DELIVERED); @endphp
 @foreach($order->items as $item)
+<<<<<<< HEAD
+  @if(!$item->review && $order->status === \App\Models\Order::STATUS_DELIVERED)
+=======
   @if($canReviewOrder && !$item->review)
+>>>>>>> development
     @php($modalId = 'reviewModal_'.$item->id)
     <div class="modal fade" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg">

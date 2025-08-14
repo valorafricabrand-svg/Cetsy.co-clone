@@ -256,6 +256,69 @@ class Shop extends Model
         return $this->hasMany(Review::class);
     }
 
+    /**
+     * Get the average rating for this shop.
+     *
+     * @return float
+     */
+    public function getAverageRatingAttribute(): float
+    {
+        return round($this->reviews()->avg('rating') ?? 0, 1);
+    }
+
+    /**
+     * Get the total number of reviews for this shop.
+     *
+     * @return int
+     */
+    public function getReviewCountAttribute(): int
+    {
+        return $this->reviews()->count();
+    }
+
+    /**
+     * Get the rating distribution (count of each rating).
+     *
+     * @return array
+     */
+    public function getRatingDistributionAttribute(): array
+    {
+        $distribution = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $distribution[$i] = $this->reviews()->where('rating', $i)->count();
+        }
+        return $distribution;
+    }
+
+    /**
+     * Get the percentage of each rating.
+     *
+     * @return array
+     */
+    public function getRatingPercentagesAttribute(): array
+    {
+        $total = $this->review_count;
+        if ($total === 0) {
+            return array_fill(1, 5, 0);
+        }
+
+        $percentages = [];
+        foreach ($this->rating_distribution as $rating => $count) {
+            $percentages[$rating] = round(($count / $total) * 100, 1);
+        }
+        return $percentages;
+    }
+
+    /**
+     * Check if the shop has any reviews.
+     *
+     * @return bool
+     */
+    public function hasReviews(): bool
+    {
+        return $this->review_count > 0;
+    }
+
 
        public function policies()
     {
