@@ -1,7 +1,7 @@
 name: cetsy_webview
-description: Flutter WebView wrapper for https://cetsy.co with shared web support.
+description: Flutter WebView wrapper for https://cetsy.co with enhanced UX and web fallback.
 publish_to: "none"
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -10,15 +10,18 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # WebView (Android/iOS)
+  # WebView core + web implementation
   webview_flutter: ^4.8.0
-
-  # Web implementation (Chrome/Edge/Safari)
-  # ^0.2.3+4 is the compatible line for many stable setups
   webview_flutter_web: ^0.2.3+4
+  # Platform-specific extras (Android download/upload hooks)
+  webview_flutter_android: ^3.16.0
+  webview_flutter_wkwebview: ^3.13.0
 
-  # External intents & web redirects
   url_launcher: ^6.3.0
+  connectivity_plus: ^6.0.5
+  share_plus: ^10.0.2
+  file_picker: ^8.0.3
+  package_info_plus: ^8.0.2
 
   intl: ^0.19.0
 
@@ -26,6 +29,21 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
 
 flutter:
   uses-material-design: true
+flutter_launcher_icons:
+  android: true
+  ios: true
+
+  # Provide a base image for BOTH platforms (satisfies the plugin requirement)
+  image_path: assets/app_icons/cetsy_icon_1024.png
+
+  # Android adaptive icons (Play’s modern shape-masking)
+  adaptive_icon_foreground: assets/app_icons/android_adaptive_foreground_1024.png
+  adaptive_icon_background: assets/app_icons/android_adaptive_background_1024.png
+
+  # Nice-to-haves
+  min_sdk_android: 21
+  remove_alpha_ios: true
