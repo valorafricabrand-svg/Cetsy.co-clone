@@ -1,10 +1,6 @@
-// WebView screen without AppBar. Adds:
-// - Safe top inset + configurable top margin for breathing space
-// - Top-edge swipe down to refresh (pull ≥ ~100px)
-// - Loader overlay on tap and during navigation
-// - Offline banner
-// - Android file uploads (basic)
-// - Web build auto-redirects to https://cetsy.co (no iframe/webview)
+// WebView screen with 4-item bottom navigation.
+// Keeps: no AppBar, Safe top margin, pull-to-refresh, tap/transition loader,
+// offline banner, Android file uploads, and web redirect to https://cetsy.co.
 
 import 'dart:async';
 
@@ -25,11 +21,18 @@ class CetsyWebViewScreen extends StatefulWidget {
   State<CetsyWebViewScreen> createState() => _CetsyWebViewScreenState();
 }
 
+class _NavItem {
+  final String label;
+  final IconData icon;
+  final String url; // can be absolute or relative to base
+  const _NavItem(this.label, this.icon, this.url);
+}
+
 class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   WebViewController? _controller; // null on web (we redirect instead)
 
   // ---- Layout tuning
-  static const double _topMargin = 0; // <— adjust this to taste
+  static const double _topMargin = 0;
 
   // ---- Load/progress state
   final ValueNotifier<int> _pageProgress = ValueNotifier<int>(0);
@@ -45,9 +48,22 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   double _pullProgress = 0.0; // 0..1 visual bar
   static const double _pullTrigger = 100; // px to trigger reload
 
+  // ---- Bottom navigation
+  late final Uri _baseUri;
+  int _currentIndex = 0;
+  late final List<_NavItem> _tabs;
+
   @override
   void initState() {
     super.initState();
+
+    _baseUri = Uri.parse(widget.initialUrl);
+    _tabs = const [
+      _NavItem('Home', Icons.home, '/'),
+      _NavItem('Explore', Icons.search, '/search'),
+      _NavItem('Cart', Icons.shopping_cart, '/cart'),
+      _NavItem('Account', Icons.person, '/buyer/dashboard'),
+    ];
 
     // Connectivity banner (compatible with old/new connectivity_plus)
     _connSub = Connectivity().onConnectivityChanged.listen((event) {
@@ -83,8 +99,9 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
             _lastError.value = null;
             _setLoading(true);
           },
-          onPageFinished: (_) {
+          onPageFinished: (url) {
             _setLoading(false);
+            _syncIndexWithUrl(url);
           },
           onWebResourceError: (err) {
             _lastError.value = '${err.errorCode}: ${err.description}';
@@ -134,6 +151,32 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   }
 
   // ---- Utilities
+
+  Uri _absolute(String pathOrFull) {
+    final p = pathOrFull.trim();
+    if (p.startsWith('http://') || p.startsWith('https://')) {
+      return Uri.parse(p);
+    }
+    // Treat as relative to base
+    return _baseUri.resolve(p.startsWith('/') ? p : '/$p');
+  }
+
+  void _syncIndexWithUrl(String? url) {
+    if (url == null) return;
+    try {
+      final u = Uri.parse(url);
+      // Pick the tab whose target is a prefix of current page
+      for (int i = 0; i < _tabs.length; i++) {
+        final target = _absolute(_tabs[i].url).toString();
+        if (u.toString().startsWith(target)) {
+          if (_currentIndex != i) setState(() => _currentIndex = i);
+          return;
+        }
+      }
+      // If no match, leave current as is.
+    } catch (_) {}
+  }
+
   void _setLoading(bool v) {
     if (_loadingOverlay == v) return;
     setState(() => _loadingOverlay = v);
@@ -154,6 +197,19 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
         await SystemNavigator.pop();
       } catch (_) {}
     }
+  }
+
+  Future<void> _loadTab(int index) async {
+    if (_controller == null) return;
+    if (_currentIndex == index) {
+      // Reselect -> reload current tab
+      await _reload();
+      return;
+    }
+    setState(() => _currentIndex = index);
+    final target = _absolute(_tabs[index].url);
+    _setLoading(true);
+    await _controller!.loadRequest(target);
   }
 
   // ---- Pull-to-refresh handle at the very top of the web content
@@ -201,9 +257,7 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
         builder: (_, p, __) {
           final isLoading = p > 0 && p < 100;
           final showPull = _pullProgress > 0;
-          final value = showPull
-              ? _pullProgress
-              : (isLoading ? p / 100 : null); // null -> indeterminate off
+          final value = showPull ? _pullProgress : (isLoading ? p / 100 : null);
           return AnimatedOpacity(
             duration: const Duration(milliseconds: 120),
             opacity: (showPull || isLoading) ? 1 : 0,
@@ -300,14 +354,14 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
         await _goBackOrExit();
       },
       child: Scaffold(
-        // No AppBar — clean fullscreen; protect top with SafeArea and margin
+        extendBody: true,
         body: SafeArea(
           top: true,
-          bottom: false,
+          bottom: true, // make room for bottom nav safely
           child: Column(
             children: [
               // Optional spacer for a "good top margin" above your content
-              SizedBox(height: _topMargin),
+              const SizedBox(height: _topMargin),
 
               // Offline banner (appears under the margin)
               _buildOfflineBanner(),
@@ -315,14 +369,12 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
               // Main area
               Expanded(
                 child: Padding(
-                  // Add the same top margin inside the stack too, so the pull handle/progress sit below it
                   padding: const EdgeInsets.only(top: _topMargin),
                   child: Stack(
                     children: [
-                      // Web content
                       if (_controller != null) WebViewWidget(controller: _controller!),
 
-                      // Top-edge swipe-to-refresh handle and progress strip (positioned within the padded area)
+                      // Pull-to-refresh handle + top progress strip
                       _buildPullHandle(),
                       _buildTopProgressStrip(),
 
@@ -353,6 +405,23 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
+
+        // ===== Bottom Navigation (4 tabs) =====
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            currentIndex: _currentIndex,
+            onTap: _loadTab,
+            showUnselectedLabels: true,
+            items: [
+              BottomNavigationBarItem(icon: const Icon(Icons.home), label: _tabs[0].label),
+              BottomNavigationBarItem(icon: const Icon(Icons.search), label: _tabs[1].label),
+              BottomNavigationBarItem(icon: const Icon(Icons.shopping_cart), label: _tabs[2].label),
+              BottomNavigationBarItem(icon: const Icon(Icons.person), label: _tabs[3].label),
             ],
           ),
         ),

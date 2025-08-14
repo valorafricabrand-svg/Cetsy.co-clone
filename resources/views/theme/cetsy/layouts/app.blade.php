@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en" dir="ltr" data-bs-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,7 +16,7 @@
   <!-- Canonical -->
   <link rel="canonical" href="@yield('canonical_url', url()->current())">
 
-  <!-- Open Graph / Twitter (override per-page via @section('social-meta')) -->
+  <!-- Social -->
   @section('social-meta')
     <meta property="og:title" content="@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')">
     <meta property="og:description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
@@ -43,628 +43,158 @@
   <link rel="icon" type="image/png" sizes="16x16" href="{{ $favicon }}">
   <link rel="shortcut icon" type="image/x-icon" href="{{ $favicon }}">
   <link rel="manifest" href="{{ asset('assets/img/favicons/manifest.json') }}">
-  <meta name="msapplication-TileColor" content="#ffffff">
-  <meta name="msapplication-TileImage" content="{{ $favicon }}">
   <meta name="theme-color" content="#ffffff">
 
-  <!-- Performance: Preconnects -->
+  <!-- Performance -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Core Styles -->
+  <!-- Vendor CSS -->
   <link href="{{ asset('vendors/mapbox-gl/mapbox-gl.css') }}" rel="stylesheet">
   <link href="{{ asset('vendors/simplebar/simplebar.min.css') }}" rel="stylesheet">
+
+  <!-- Your Theme CSS (built on Bootstrap 5) -->
   <link href="{{ asset('assets/css/theme.min.css') }}" rel="stylesheet">
   <link href="{{ asset('assets/css/user.min.css') }}" rel="stylesheet">
 
-  <!-- Font Awesome (CSS, for fas/fa icons) -->
+  <!-- Font Awesome (CSS) -->
   <link rel="stylesheet" href="{{ asset('vendors/fontawesome/css/all.min.css') }}">
 
-  <!-- Page-level Styles (optional) -->
+  <!-- Page-level Styles -->
   @yield('styles')
   @stack('styles')
 
-  <!-- Config (defines window.config) -->
+  <!-- Config -->
   <script src="{{ asset('assets/js/config.js') }}" defer></script>
 
   <script>
-    // Respect RTL setting from phoenix config (if present)
+    // Respect RTL setting (if your phoenix config sets it)
     document.addEventListener("DOMContentLoaded", function () {
-      if (window.config && window.config.config && window.config.config.phoenixIsRTL) {
+      if (window.config?.config?.phoenixIsRTL) {
         document.documentElement.setAttribute('dir', 'rtl');
       }
     });
   </script>
 
- 
-
   <!-- Inline Theme Tweaks -->
   <style>
-    :root { --brand-success: #198754; }
+    :root {
+      --brand-success: #198754;
+      --brand-dark: #0b3320;
+      --nav-height: 64px;
+    }
+    body {
+      font-family: "Nunito Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
+                   "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
     .text-primary { color: #027333 !important; }
     .btn-link { color: #027333; }
     a.text-primary:hover, a.text-primary:focus { color: #025a1f !important; }
-<<<<<<< HEAD
-    body { font-family: "Nunito Sans", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif; }
-=======
-    
-    /* ===== Mobile App UI ===== */
-    @media (max-width: 768px) {
-      /* Fixed App Header */
-      .navbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 1000;
-        height: var(--app-header-height);
-        background: #fff;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        padding: 0 16px;
-        display: flex;
-        align-items: center;
-      }
-      
-      .app-bar {
-        width: 100%;
-        display: flex;
-        align-items: center;
-      }
 
-      /* App Menu Button */
-      .app-menu-btn {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background: transparent;
-        border: none;
-        color: var(--brand-dark);
-        transition: var(--transition);
-        margin-right: 8px;
-      }
-
-      .app-menu-btn:active {
-        background: rgba(0,0,0,0.05);
-      }
-
-      .app-menu-btn i {
-        font-size: 20px;
-      }
-
-      /* Brand Logo */
-      .navbar-brand {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        position: static;
-        transform: none;
-        margin: 0;
-      }
-
-      .navbar-brand img {
-        height: 32px;
-        transition: var(--transition);
-      }
-
-      /* App Actions */
-      .app-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-left: auto;
-      }
-      
-      .app-actions a {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--brand-dark);
-        border-radius: 50%;
-        transition: var(--transition);
-      }
-      
-      .app-actions a:active {
-        background: rgba(0,0,0,0.05);
-      }
-      
-      .app-actions .badge {
-        position: absolute;
-        top: -2px;
-        right: -2px;
-        font-size: 10px;
-        padding: 3px 6px;
-        min-width: 18px;
-        height: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      
-      /* Hide desktop elements on mobile */
-      .navbar .desktop-only { display: none !important; }
-      nav[aria-label="Category Navigation"] { display: none; }
-      
-      /* Bottom Navigation Bar */
-      .mobile-bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: var(--app-bottom-nav-height);
-        background: #fff;
-        border-top: 1px solid rgba(0,0,0,0.1);
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        z-index: 1000;
-        padding-bottom: env(safe-area-inset-bottom);
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
-      }
-      
-      .mobile-bottom-nav a {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        color: #666;
-        font-size: 10px;
-        font-weight: 500;
-        flex: 1;
-        height: 100%;
-        transition: var(--transition);
-        position: relative;
-      }
-      
-      .mobile-bottom-nav a.active {
-        color: var(--brand-primary);
-      }
-      
-      .mobile-bottom-nav a.active::after {
-        content: '';
-        position: absolute;
-        top: 4px;
-        width: 5px;
-        height: 5px;
-        background: var(--brand-primary);
-        border-radius: 50%;
-      }
-      
-      .mobile-bottom-nav i {
-        font-size: 20px;
-        margin-bottom: 2px;
-      }
-      
-      /* App Drawer */
-      .offcanvas.app-drawer {
-        width: 85vw;
-        max-width: 320px;
-        border-radius: 0 16px 16px 0;
-        background: #fff;
-      }
-      
-      .app-drawer .offcanvas-header {
-        padding: 16px;
-        border-bottom: 1px solid rgba(0,0,0,0.08);
-      }
-      
-      .app-drawer .offcanvas-title {
-        font-weight: 700;
-        font-size: 18px;
-      }
-      
-      .app-drawer .btn-close {
-        background-size: 14px;
-        padding: 8px;
-      }
-      
-      .app-drawer .list-group-item {
-        border: 0;
-        padding: 12px 16px;
-        font-size: 15px;
-        transition: var(--transition);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      
-      .app-drawer .list-group-item i {
-        width: 20px;
-        text-align: center;
-      }
-      
-      .app-drawer .list-group-item:hover {
-        background: rgba(0,0,0,0.03);
-      }
-      
-      .app-drawer .form-control {
-        border-radius: 20px;
-        padding: 10px 16px;
-        font-size: 15px;
-      }
-      
-      /* Categories in drawer */
-      .app-drawer details {
-        margin-bottom: 4px;
-      }
-      
-      .app-drawer details summary {
-        padding: 12px 16px;
-        font-size: 15px;
-        list-style: none;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      
-      .app-drawer details summary::-webkit-details-marker {
-        display: none;
-      }
-      
-      .app-drawer details summary::after {
-        content: '\f078';
-        font-family: 'Font Awesome 6 Free';
-        font-weight: 900;
-        font-size: 12px;
-        transition: var(--transition);
-      }
-      
-      .app-drawer details[open] summary::after {
-        transform: rotate(180deg);
-      }
-      
-      .app-drawer details ul {
-        padding-left: 16px;
-        margin-top: 4px;
-      }
-      
-      .app-drawer details li {
-        margin-bottom: 4px;
-      }
-      
-      .app-drawer details a {
-        display: block;
-        padding: 8px 16px;
-        color: #555;
-        text-decoration: none;
-        font-size: 14px;
-        border-radius: 6px;
-        transition: var(--transition);
-      }
-      
-      .app-drawer details a:hover {
-        background: rgba(0,0,0,0.03);
-        color: var(--brand-primary);
-      }
-      
-      /* Prevent content from being hidden behind nav bars */
-      main {
-        min-height: calc(100vh - var(--app-header-height) - var(--app-bottom-nav-height));
-      }
-      
-      footer {
-        padding-bottom: calc(var(--app-bottom-nav-height) + 20px);
-      }
+    /* Navbar polish */
+    .navbar-brand img { height: 48px; width: auto; }
+    .navbar { min-height: var(--nav-height); }
+    .navbar .form-control { min-width: 280px; }
+    @media (max-width: 991.98px) {
+      .navbar .form-control { min-width: 0; }
     }
-    
-    /* ===== Desktop UI ===== */
-    @media (min-width: 769px) {
-      body {
-        padding-top: 0;
-        padding-bottom: 0;
-      }
-      
-      .mobile-bottom-nav {
-        display: none !important;
-      }
-      
-      /* Professional Navbar */
-      .navbar {
-        padding: 16px 24px;
-        background: #fff;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-      }
-      
-      .app-bar {
-        max-width: 1400px;
-        margin: 0 auto;
-        display: flex;
-        align-items: center;
-        gap: 24px;
-      }
-      
-      .navbar-brand img {
-        height: 40px;
-      }
-      
-      /* Search Bar */
-      .navbar .desktop-only {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-        flex: 1;
-      }
-      
-      .navbar .form-control {
-        flex: 1;
-        max-width: 600px;
-        border-radius: 24px;
-        padding: 10px 20px;
-        border: 1px solid #ddd;
-        font-size: 15px;
-        transition: var(--transition);
-      }
-      
-      .navbar .form-control:focus {
-        border-color: var(--brand-primary);
-        box-shadow: 0 0 0 3px rgba(2,115,51,0.1);
-      }
-      
-      .navbar .btn-outline-secondary {
-        border-radius: 24px;
-        padding: 10px 16px;
-        font-weight: 500;
-      }
-      
-      /* Navigation Links */
-      .navbar-nav .nav-link {
-        font-weight: 600;
-        color: var(--brand-dark);
-        padding: 8px 16px;
-        border-radius: 6px;
-        transition: var(--transition);
-      }
-      
-      .navbar-nav .nav-link:hover {
-        background: rgba(0,0,0,0.03);
-        color: var(--brand-primary);
-      }
-      
-      /* Buttons */
-      .btn-success {
-        background: var(--brand-primary);
-        border: none;
-        padding: 10px 20px;
-        border-radius: 24px;
-        font-weight: 600;
-        transition: var(--transition);
-      }
-      
-      .btn-success:hover {
-        background: #025a1f;
-        transform: translateY(-1px);
-      }
-      
-      /* Category Navigation */
-      nav[aria-label="Category Navigation"] {
-        background: var(--brand-dark);
-        padding: 12px 24px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-      }
-      
-      nav[aria-label="Category Navigation"] .container {
-        max-width: 1400px;
-        margin: 0 auto;
-      }
-      
-      nav[aria-label="Category Navigation"] .nav-link {
-        color: #fff;
-        font-weight: 500;
-        padding: 8px 16px;
-        border-radius: 6px;
-        transition: var(--transition);
-      }
-      
-      nav[aria-label="Category Navigation"] .nav-link:hover {
-        background: rgba(255,255,255,0.1);
-      }
-    }
-    
-    /* ===== Common Components ===== */
-    /* Dropdown Menus */
+
+    /* Dropdown menus */
     .dropdown-menu {
-      min-width: 240px;
-      border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-      border: none;
-      padding: 8px 0;
-      margin-top: 8px;
+      --bs-dropdown-min-width: 230px;
+      border-radius: .5rem;
+      box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
     }
-    
-    .dropdown-item {
-      padding: 8px 16px;
-      font-size: 14px;
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .dropdown-item:hover, .dropdown-item:focus { background: #eaf7ef; color: #198754; }
+    .rotate { transition: transform .25s ease; }
+
+    /* Multi-level submenu */
+    .dropdown-submenu > .dropdown-menu { top: -0.25rem; left: 100%; margin-left: .15rem; }
+    .dropdown-submenu.no-children > a .rotate { display: none; }
+
+    /* Mobile category chips (small screens) */
+    .cat-scroll {
+      display: flex; gap: .5rem; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: .75rem 0;
     }
-    
-    .dropdown-item i {
-      width: 20px;
-      text-align: center;
+    .cat-chip {
+      white-space: nowrap; border: 1px solid rgba(0,0,0,.08); border-radius: 999px; padding: .4rem .75rem; background: #fff;
     }
-    
-    .dropdown-item:hover, .dropdown-item:focus {
-      background: rgba(2,115,51,0.08);
-      color: var(--brand-primary);
+
+    /* Footer polish */
+    footer, .footer-text, .footer-link, .footer-heading { font-size: 15px !important; }
+    .footer-heading { font-weight: 600; }
+    .footer-link { transition: color .2s ease-in-out; }
+    .footer-link:hover { color: #fff !important; text-decoration: none; }
+    .social-icon i { font-size: 18px; }
+
+    /* Reduced motion respect */
+    @media (prefers-reduced-motion: reduce) {
+      .rotate { transition: none; }
     }
-    
-    /* Multi-level Dropdowns */
-    .dropdown-submenu {
-      position: relative;
-    }
-    
-    .dropdown-submenu > .dropdown-menu {
-      top: 0;
-      left: 100%;
-      margin-left: 4px;
-    }
-    
-    .dropdown-submenu > a::after {
-      content: '\f054';
-      font-family: 'Font Awesome 6 Free';
-      font-weight: 900;
-      font-size: 12px;
-      margin-left: auto;
-      transition: var(--transition);
-    }
-    
-    .dropdown-submenu.show > a::after {
-      transform: rotate(90deg);
-    }
-    
-    @media (min-width: 992px) {
-      .dropdown-submenu:hover > .dropdown-menu {
-        display: block;
-      }
-    }
-    
-    /* Footer */
-    footer {
-      background: linear-gradient(180deg, #1a2526 0%, #2d3a3b 100%);
-    }
-    
-    .footer-heading {
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    .footer-link {
-      display: inline-block;
-      color: rgba(255,255,255,0.7);
-      margin-bottom: 8px;
-      transition: var(--transition);
-      text-decoration: none;
-    }
-    
-    .footer-link:hover {
-      color: #fff;
-      transform: translateX(4px);
-    }
-    
-    .social-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-      transition: var(--transition);
-    }
-    
-    .social-icon:hover {
-      background: rgba(255,255,255,0.2);
-      transform: translateY(-2px);
-    }
->>>>>>> 81e651f96c83f81b7d5ce0bd046495b151dffcd2
   </style>
 
-  <!-- Alpine.js -->
+  <!-- Alpine.js (optional for cart badge etc.) -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script>
     document.addEventListener('alpine:init', () => {
       Alpine.data('cartDropdown', () => ({
         items: [],
-        fetchCart() {
-          // TODO: Replace with AJAX logic if fetching cart dynamically
-        }
+        fetchCart() { /* hook for AJAX cart */ }
       }));
     });
   </script>
 
-  <!-- Allow pages to add stuff in head if needed -->
   @yield('head_scripts')
 </head>
 
 <body style="--phoenix-scroll-margin-top: 1.2rem;">
-  <!-- ===============================================-->
-  <!--    Main Content-->
-  <!-- ===============================================-->
   <main class="main" id="top">
     <div class="bg-body-emphasis" data-navbar-shadow-on-scroll="true">
 
-<<<<<<< HEAD
       {{-- NAVBAR --}}
-      <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm" aria-label="Main Navigation">
+      <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top" aria-label="Main Navigation">
         <div class="container">
           {{-- Brand --}}
-          <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url('/') }}">
-            <img src="{{ setting('logo_url') }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="60" width="auto" loading="lazy">
-=======
-      <!-- Navbar -->
-      <nav class="navbar navbar-light bg-white shadow-sm" aria-label="Main Navigation">
-        <div class="container app-bar">
-          <!-- Mobile Menu Button -->
-          <button
-            class="app-menu-btn d-lg-none"
-            type="button"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#appDrawer"
-            aria-controls="appDrawer"
-            aria-label="Open menu"
-          >
-            <i class="fas fa-bars-staggered"></i>
-          </button>
-
-          <!-- Brand Logo -->
-          <a class="navbar-brand" href="{{ url('/') }}">
-            <img src="{{ setting('logo_url') }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="40" width="auto" loading="lazy">
->>>>>>> 81e651f96c83f81b7d5ce0bd046495b151dffcd2
+          <a class="navbar-brand d-flex align-items-center gap-2 me-2" href="{{ url('/') }}">
+            <img src="{{ setting('logo_url') }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="48" width="auto" loading="lazy">
           </a>
 
-          {{-- Mobile toggle --}}
-          <button
-            class="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#mainNavbar"
-            aria-controls="mainNavbar"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-          >
-            <span class="navbar-toggler-icon"></span>
-          </button>
+          {{-- Right utilities (mobile): search + offcanvas toggles --}}
+          <div class="d-flex d-lg-none align-items-center gap-2 ms-auto">
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#mobileSearch" aria-controls="mobileSearch" aria-expanded="false" aria-label="Toggle search">
+              <i class="fas fa-search"></i>
+            </button>
+            @php $cartCount = (int) count(session('cart', [])); @endphp
+            <a href="{{ route('cart.view') }}" class="btn btn-outline-secondary btn-sm position-relative" aria-label="View cart">
+              <i class="fas fa-shopping-cart"></i>
+              @if($cartCount)
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">{{ $cartCount }}</span>
+              @endif
+            </a>
+            <button class="navbar-toggler ms-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainOffcanvas" aria-controls="mainOffcanvas" aria-label="Open menu">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+          </div>
 
+          {{-- Desktop Nav --}}
           <div class="collapse navbar-collapse" id="mainNavbar">
-            {{-- Search --}}
-            <form class="d-flex me-3 flex-grow-1" method="GET" action="{{ route('search') }}" role="search">
+            {{-- Search (desktop) --}}
+            <form class="d-none d-lg-flex ms-3 me-3 flex-grow-1" method="GET" action="{{ route('search') }}" role="search">
               <label for="navbarSearch" class="visually-hidden">Search</label>
-              <input
-                id="navbarSearch"
-                class="form-control flex-grow-1"
-                type="search"
-                name="q"
-                placeholder="Search products, services, shops…"
-                aria-label="Search"
-                value="{{ request('q') }}"
-                autocomplete="on"
-              >
+              <input id="navbarSearch" class="form-control" type="search" name="q" placeholder="Search products, services, shops…" aria-label="Search" value="{{ request('q') }}" autocomplete="on">
               <button class="btn btn-outline-secondary ms-2" type="submit" aria-label="Submit search">
                 <i class="fas fa-search"></i>
               </button>
             </form>
 
-            {{-- Cart + User --}}
+            {{-- Cart + User (desktop) --}}
             <ul class="navbar-nav ms-auto align-items-center" x-data="cartDropdown()" x-init="fetchCart()">
-              @php $cartCount = (int) count(session('cart', [])); @endphp
-
-              {{-- Cart --}}
-              <li class="nav-item me-3">
+              <li class="nav-item me-2 d-none d-lg-block">
                 <a href="{{ route('cart.view') }}" class="nav-link position-relative text-dark" aria-label="View cart">
                   <i class="fas fa-shopping-cart fa-lg"></i>
                   @if($cartCount)
@@ -673,24 +203,23 @@
                 </a>
               </li>
 
-              {{-- Auth --}}
               @guest
-                <li class="nav-item">
+                <li class="nav-item d-none d-lg-block">
                   <a class="nav-link" href="{{ route('login') }}">Log In</a>
                 </li>
-                <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                <li class="nav-item ms-lg-2 d-none d-lg-block">
                   <a class="btn btn-success btn-sm" href="{{ route('register') }}">
                     <i class="fas fa-user-plus me-1"></i> Sign Up
                   </a>
                 </li>
               @else
                 @if(auth()->user()->shop)
-                  <li class="nav-item">
+                  <li class="nav-item d-none d-lg-block">
                     <a class="nav-link" href="{{ route('seller.shops.show', auth()->user()->shop) }}">My Shop</a>
                   </li>
                 @endif
 
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown d-none d-lg-block">
                   <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     {{ auth()->user()->name }}
                   </a>
@@ -710,40 +239,131 @@
             </ul>
           </div>
         </div>
+
+        {{-- Mobile Search (collapsible) --}}
+        <div class="collapse border-top d-lg-none" id="mobileSearch">
+          <div class="container py-3">
+            <form class="d-flex" method="GET" action="{{ route('search') }}" role="search">
+              <label for="navbarSearchMobile" class="visually-hidden">Search</label>
+              <input id="navbarSearchMobile" class="form-control" type="search" name="q"
+                     placeholder="Search products, services, shops…" aria-label="Search" value="{{ request('q') }}">
+              <button class="btn btn-outline-secondary ms-2" type="submit" aria-label="Submit search">
+                <i class="fas fa-search"></i>
+              </button>
+            </form>
+          </div>
+        </div>
       </nav>
 
-      {{-- ======= Responsive Multi-level Category Nav ======= --}}
-      @php
-        $mainCategories = \App\Models\Category::with('childrenRecursive')
-            ->whereNull('parent_id')->orderBy('id')->get();
+      {{-- OFFCANVAS (mobile navigation + auth quick links) --}}
+      <div class="offcanvas offcanvas-end" tabindex="-1" id="mainOffcanvas" aria-labelledby="mainOffcanvasLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="mainOffcanvasLabel">{{ config('app.name','Cetsy') }}</h5>
+          <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column">
+          @auth
+            <div class="mb-3">
+              <div class="fw-semibold mb-1">Hi, {{ auth()->user()->name }}</div>
+              <div class="d-flex gap-2">
+                <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+                <a href="{{ route('profile.edit') }}" class="btn btn-outline-secondary btn-sm">Profile</a>
+                <form method="POST" action="{{ route('logout') }}">
+                  @csrf
+                  <button class="btn btn-outline-danger btn-sm" type="submit">Log Out</button>
+                </form>
+              </div>
+            </div>
+          @else
+            <div class="d-flex gap-2 mb-3">
+              <a class="btn btn-success btn-sm w-100" href="{{ route('register') }}"><i class="fas fa-user-plus me-1"></i> Sign Up</a>
+              <a class="btn btn-outline-secondary btn-sm w-100" href="{{ route('login') }}">Log In</a>
+            </div>
+          @endauth
 
-        $renderCats = function ($nodes) use (&$renderCats){
-          foreach($nodes as $cat){
-            $kids = $cat->childrenRecursive;
-            $has  = $kids->isNotEmpty();
-            echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
-            echo   '<a class="dropdown-item d-flex justify-content-between align-items-center"'.
-                   ' href="'.($has?'#':route('category.show',$cat->slug)).'">';
-            echo     e($cat->name);
-            if($has) echo '<i class="fas fa-chevron-right ms-2 rotate" aria-hidden="true"></i>';
-            echo   '</a>';
-            if($has){
-              echo '<ul class="dropdown-menu">'.PHP_EOL;
-              $renderCats($kids);
-              echo '</ul>'.PHP_EOL;
-            }
-            echo '</li>'.PHP_EOL;
-          }
-        };
-      @endphp
+          {{-- Quick Category Chips --}}
+          @php
+            $mainCategories = \App\Models\Category::with('childrenRecursive')
+                ->whereNull('parent_id')->orderBy('id')->get();
+          @endphp
 
+          @if($mainCategories->isNotEmpty())
+            <div class="mb-3">
+              <div class="cat-scroll" aria-label="Top categories (scrollable)">
+                @foreach($mainCategories as $main)
+                  <a href="{{ $main->childrenRecursive->isNotEmpty() ? '#' : route('category.show',$main->slug) }}"
+                     class="cat-chip text-decoration-none text-dark">
+                    {{ $main->name }}
+                    @if($main->childrenRecursive->isNotEmpty())
+                      <i class="fas fa-chevron-right ms-1"></i>
+                    @endif
+                  </a>
+                @endforeach
+              </div>
+            </div>
+
+            {{-- Full tree (mobile) --}}
+            <div class="border rounded-3 p-2" style="max-height: 55vh; overflow:auto;">
+              @php
+                $renderCats = function ($nodes) use (&$renderCats) {
+                  echo '<ul class="list-group list-group-flush">';
+                  foreach($nodes as $cat){
+                    $kids = $cat->childrenRecursive;
+                    $has  = $kids->isNotEmpty();
+                    echo '<li class="list-group-item">';
+                    echo  '<div class="d-flex align-items-center justify-content-between">';
+                    echo    '<a class="text-decoration-none" href="'.($has?'#':route('category.show',$cat->slug)).'">'.e($cat->name).'</a>';
+                    if($has) echo '<button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#mcat-'.$cat->id.'" aria-expanded="false" aria-controls="mcat-'.$cat->id.'"><i class="fas fa-chevron-down"></i></button>';
+                    echo  '</div>';
+                    if($has){
+                      echo '<div class="collapse ms-3 mt-2" id="mcat-'.$cat->id.'">';
+                      $renderCats($kids);
+                      echo '</div>';
+                    }
+                    echo '</li>';
+                  }
+                  echo '</ul>';
+                };
+              @endphp
+              {!! $renderCats($mainCategories) !!}
+            </div>
+          @endif
+
+          <div class="mt-auto pt-3 border-top small text-muted">
+            &copy; {{ date('Y') }} {{ config('app.name','Cetsy') }} — All rights reserved.
+          </div>
+        </div>
+      </div>
+
+      {{-- ======= DESKTOP Multi-level Category Nav ======= --}}
       @if($mainCategories->isNotEmpty())
-        <nav class="bg-success" aria-label="Category Navigation">
+        @php
+          // separate recursion for desktop dropdown
+          $renderCatsDesktop = function ($nodes) use (&$renderCatsDesktop){
+            foreach($nodes as $cat){
+              $kids = $cat->childrenRecursive;
+              $has  = $kids->isNotEmpty();
+              echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
+              echo   '<a class="dropdown-item d-flex justify-content-between align-items-center" href="'.($has?'#':route('category.show',$cat->slug)).'">';
+              echo     e($cat->name);
+              if($has) echo '<i class="fas fa-chevron-right ms-2 rotate" aria-hidden="true"></i>';
+              echo   '</a>';
+              if($has){
+                echo '<ul class="dropdown-menu">';
+                $renderCatsDesktop($kids);
+                echo '</ul>';
+              }
+              echo '</li>';
+            }
+          };
+        @endphp
+
+        <nav class="bg-success d-none d-lg-block" aria-label="Category Navigation">
           <div class="container">
-            <ul class="nav flex-wrap">
+            <ul class="nav">
               @foreach($mainCategories as $main)
                 <li class="nav-item dropdown">
-                  <a class="nav-link text-white" href="#" id="catDD{{ $main->id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                  <a class="nav-link text-white py-2" href="#" id="catDD{{ $main->id }}" data-bs-toggle="dropdown" aria-expanded="false">
                     {{ $main->name }}
                     @if($main->childrenRecursive->isNotEmpty())
                       <i class="fas fa-chevron-down ms-1 rotate" aria-hidden="true"></i>
@@ -752,7 +372,7 @@
 
                   @if($main->childrenRecursive->isNotEmpty())
                     <ul class="dropdown-menu" aria-labelledby="catDD{{ $main->id }}">
-                      {!! $renderCats($main->childrenRecursive) !!}
+                      {!! $renderCatsDesktop($main->childrenRecursive) !!}
                     </ul>
                   @endif
                 </li>
@@ -764,16 +384,7 @@
 
       @push('styles')
       <style>
-        /* Multi-level dropdown polish */
-        .dropdown-menu { min-width:230px; border-radius:.5rem; box-shadow:0 .5rem 1rem rgba(0,0,0,.08); max-height:72vh; overflow:auto; z-index:1055; }
-        .dropdown-submenu > .dropdown-menu { top:-0.25rem; left:100%; margin-left:.15rem; }
-        .dropdown-submenu.no-children > a .rotate { display:none; }
-
-        .dropdown-item:hover, .dropdown-item:focus { background:#eaf7ef; color:#198754; }
-        .rotate { transition:.25s transform; }
-        .dropdown-submenu.show > a .rotate,
-        .nav-item.dropdown.show > a .rotate { transform:rotate(90deg); }
-
+        /* Desktop hover open + overflow flip */
         @media (min-width:992px) {
           .nav-item.dropdown:hover > .dropdown-menu { display:block; }
           .dropdown-submenu:hover  > .dropdown-menu { display:block; }
@@ -784,7 +395,7 @@
       @push('scripts')
       <script>
       document.addEventListener('DOMContentLoaded', () => {
-        // Toggle/flip and overflow protection for submenus
+        // Desktop submenu flip + sibling close
         document.querySelectorAll('.dropdown-submenu > a').forEach(anchor => {
           anchor.addEventListener('click', e => {
             const sub = anchor.nextElementSibling;
@@ -816,28 +427,9 @@
           });
         });
 
-        // Hover open keeps flip logic
-        if (window.matchMedia('(hover:hover)').matches) {
-          document.querySelectorAll('.dropdown-submenu').forEach(li => {
-            li.addEventListener('mouseenter', () => {
-              const sub = li.querySelector(':scope > .dropdown-menu');
-              if (sub) {
-                sub.classList.add('show'); li.classList.add('show');
-                const rect = sub.getBoundingClientRect();
-                if (rect.right > window.innerWidth) { sub.style.left = 'auto'; sub.style.right = '100%'; }
-              }
-            });
-            li.addEventListener('mouseleave', () => {
-              li.classList.remove('show');
-              li.querySelectorAll('.dropdown-menu').forEach(m => { m.classList.remove('show'); m.style.left=''; m.style.right=''; });
-            });
-          });
-        }
-
-        // Close on outside click or Esc
+        // Close all on outside click or Esc (desktop)
         const closeAll = () => document.querySelectorAll('.dropdown-menu.show,.dropdown-submenu.show')
           .forEach(el => { el.classList.remove('show'); el.style.left=''; el.style.right=''; });
-
         document.addEventListener('click', e => { if (!e.target.closest('nav')) closeAll(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
       });
@@ -851,7 +443,7 @@
 
     {{-- Footer --}}
     @php $settings = \App\Models\Setting::first(); @endphp
-    <footer class="bg-dark text-white pt-5">
+    <footer class="bg-dark text-white pt-5 mt-5">
       <div class="container px-3 px-sm-5">
         <div class="row gx-4 gy-5">
           <!-- Sellers -->
@@ -909,7 +501,7 @@
                   </li>
                 @endif
                 @if(!empty($settings->phone))
-                <!--   <li class="text-white-50 footer-text">
+                  <!-- <li class="text-white-50 footer-text">
                     <strong>Phone:</strong> <a href="tel:{{ $settings->phone }}" class="text-white">{{ $settings->phone }}</a>
                   </li> -->
                 @endif
@@ -937,60 +529,42 @@
           </div>
         </div>
 
-        <div class="mt-5 pt-4 border-top border-secondary text-center">
+        <div class="mt-5 pt-4 border-top border-secondary-subtle text-center">
           <p class="mb-0 text-white-50 footer-text">
             &copy; {{ date('Y') }} {{ config('app.name', 'Cetsy') }} — All rights reserved.
           </p>
         </div>
       </div>
-
-      @push('styles')
-      <style>
-        footer, .footer-text, .footer-link, .footer-heading { font-size: 15px !important; }
-        .footer-heading { font-weight: 600; }
-        .footer-link { display: inline-block; transition: color .2s ease-in-out; }
-        .footer-link:hover { color: #fff !important; text-decoration: none; }
-        .social-icon i { font-size: 18px; }
-      </style>
-      @endpush
     </footer>
 
   </main>
 
-  <!-- ===============================================-->
-  <!--    Scripts (deferred) -->
-  <!-- ===============================================-->
+  <!-- Scripts (deferred) -->
   <script src="{{ asset('vendors/popper/popper.min.js') }}" defer></script>
   <script src="{{ asset('vendors/bootstrap/bootstrap.min.js') }}" defer></script>
   <script src="{{ asset('vendors/anchorjs/anchor.min.js') }}" defer></script>
   <script src="{{ asset('vendors/is/is.min.js') }}" defer></script>
-
-  <!-- FontAwesome JS optional (only if you rely on JS features). CSS already loaded above. -->
   <script src="{{ asset('vendors/fontawesome/all.min.js') }}" defer></script>
-
   <script src="{{ asset('vendors/lodash/lodash.min.js') }}" defer></script>
   <script src="{{ asset('vendors/list.js/list.min.js') }}" defer></script>
   <script src="{{ asset('vendors/feather-icons/feather.min.js') }}" defer></script>
   <script src="{{ asset('vendors/dayjs/dayjs.min.js') }}" defer></script>
   <script src="{{ asset('vendors/mapbox-gl/mapbox-gl.js') }}" defer></script>
-
   <script src="{{ asset('assets/js/phoenix.js') }}" defer></script>
-
   <script src="{{ asset('vendors/isotope-layout/isotope.pkgd.min.js') }}" defer></script>
   <script src="{{ asset('vendors/imagesloaded/imagesloaded.pkgd.min.js') }}" defer></script>
   <script src="{{ asset('vendors/isotope-packery/packery-mode.pkgd.min.js') }}" defer></script>
   <script src="{{ asset('vendors/bigpicture/BigPicture.js') }}" defer></script>
   <script src="{{ asset('vendors/countup/countUp.umd.js') }}" defer></script>
 
-  <!-- Google Maps (async) — replace key via env if needed -->
+  <!-- Google Maps (async) -->
   <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key') }}&callback=initMap" async></script>
 
-  <!-- SMTPJS (fixed path) — only include if you actually use it -->
+  <!-- SMTPJS (only if used) -->
   <script src="https://smtpjs.com/v3/smtp.js" defer></script>
 
   {{-- Page-level scripts --}}
   @yield('scripts')
   @stack('scripts')
-
 </body>
 </html>
