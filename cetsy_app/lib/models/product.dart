@@ -1,4 +1,6 @@
 // lib/models/product.dart
+import 'shipping_profile.dart';
+
 class Product {
   final int id;
   final String name;
@@ -6,6 +8,7 @@ class Product {
   final double price;
   final String? image;         // featured image path or full URL
   final double? discountPrice; // nullable → easier null-checks
+  final List<ShippingProfile> shippingProfiles;
 
   // ─────────────────────────  ctor  ─────────────────────────
   const Product({
@@ -15,6 +18,7 @@ class Product {
     required this.price,
     this.image,
     this.discountPrice,
+    this.shippingProfiles = const [],
   });
 
   // ─────────────────────────  Getters  ─────────────────────────
@@ -41,6 +45,10 @@ class Product {
         discountPrice: json['discount_price'] == null
             ? null
             : double.tryParse(json['discount_price'].toString()),
+        shippingProfiles: (json['shipping_profiles'] as List?)
+                ?.map((e) => ShippingProfile.fromJson(e))
+                .toList() ??
+            const [],
       );
 
   Map<String, dynamic> toJson() => {
@@ -50,6 +58,8 @@ class Product {
         'price': price,
         'image': image,
         'discount_price': discountPrice,
+        'shipping_profiles':
+            shippingProfiles.map((e) => e.toJson()).toList(),
       };
 
   /// Converts a list of dynamic maps to a strongly-typed `List<Product>`.
@@ -64,6 +74,7 @@ class Product {
     double? price,
     String? image,
     double? discountPrice,
+    List<ShippingProfile>? shippingProfiles,
   }) =>
       Product(
         id: id ?? this.id,
@@ -72,10 +83,11 @@ class Product {
         price: price ?? this.price,
         image: image ?? this.image,
         discountPrice: discountPrice ?? this.discountPrice,
+        shippingProfiles: shippingProfiles ?? this.shippingProfiles,
       );
 
   // For easier debugging
   @override
   String toString() =>
-      'Product(id: $id, name: $name, price: $price, discount: $discountPrice)';
+      'Product(id: $id, name: $name, price: $price, discount: $discountPrice, shippingProfiles: ${shippingProfiles.length})';
 }
