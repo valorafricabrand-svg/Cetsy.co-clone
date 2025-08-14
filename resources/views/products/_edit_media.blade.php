@@ -33,19 +33,23 @@
 {{-- This wrapper now controls both existing-image cropping and new-image uploads --}}
 <div x-data="modernUploader()" x-init="init()">
 
-  {{-- ─── Current Images (with Crop button) ─── --}}
+  {{-- ─── Current Media (with Crop button) ─── --}}
   <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-light"><h5>Current Images</h5></div>
+    <div class="card-header bg-light"><h5>Current Media</h5></div>
     <div class="card-body">
       @if($product->media->count())
         <div class="row g-3">
           @foreach($product->media as $media)
             <div class="col-6 col-sm-4 col-md-3">
               <div class="card">
-                <img src="{{ asset('storage/'.$media->url) }}"
-                     id="media-img-{{ $media->id }}"
-                     class="card-img-top"
-                     style="height:140px;object-fit:cover;">
+                @if($media->type === 'video')
+                  <video src="{{ asset('storage/'.$media->url) }}" class="card-img-top" style="height:140px;object-fit:cover;" controls></video>
+                @else
+                  <img src="{{ asset('storage/'.$media->url) }}"
+                       id="media-img-{{ $media->id }}"
+                       class="card-img-top"
+                       style="height:140px;object-fit:cover;">
+                @endif
                 <div class="card-footer text-center py-2">
                   @php
                     $mediaUrl = asset('storage/'.$media->url);
@@ -61,16 +65,18 @@
                   </form>
 
                   {{-- Crop existing image --}}
+                  @if($media->type !== 'video')
                   <button type="button"
                           class="btn btn-sm btn-outline-secondary"
                           @click.prevent="openExistingCrop({{ $media->id }}, '{{ asset('storage/'.$media->url) }}')">
                     <i class="fas fa-crop"></i> Crop
                   </button>
+                  @endif
 
                   <form action="{{ route('media.destroy', $media) }}"
                         method="POST"
                         class="d-inline"
-                        onsubmit="return confirm('Remove image?')">
+                        onsubmit="return confirm('Remove media?')">
                     @csrf @method('DELETE')
                     <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                   </form>
@@ -80,15 +86,15 @@
           @endforeach
         </div>
       @else
-        <p class="text-muted">No images uploaded yet.</p>
+        <p class="text-muted">No media uploaded yet.</p>
       @endif
     </div>
   </div>
 
-  {{-- ─── Upload & Crop New Images ─── --}}
+  {{-- ─── Upload New Media ─── --}}
   <div class="card shadow-sm mb-5">
     <div class="card-header bg-light d-flex justify-content-between align-items-center">
-      <h5 class="mb-0"><i class="bi bi-images me-2"></i>Upload & Crop Images</h5>
+      <h5 class="mb-0"><i class="bi bi-images me-2"></i>Upload Media</h5>
       <small class="text-muted" x-text="items.length ? `${items.length} selected` : ''"></small>
     </div>
     <form x-ref="form"
@@ -109,13 +115,13 @@
            style="cursor:pointer;">
         <p class="mb-1">
           <i class="bi bi-cloud-arrow-up fs-2 d-block mb-2"></i>
-          Drag & drop images here or click to browse
+          Drag & drop images or videos here or click to browse
         </p>
-        <small class="text-muted">PNG • JPG • WebP • up to 5MB each</small>
+        <small class="text-muted">Images up to 5MB • Videos up to 50MB</small>
         <input type="file"
                class="d-none"
                multiple
-               accept="image/*"
+               accept="image/*,video/*"
                x-ref="file"
                @change="addFiles($event.target.files)">
       </div>
@@ -126,14 +132,21 @@
           <template x-for="(it,i) in items" :key="it.id">
             <div class="col-6 col-sm-4 col-md-3">
               <div class="position-relative border rounded thumb overflow-hidden shadow-sm">
-                <img :src="it.url" draggable="false">
+                <template x-if="it.type==='video'">
+                  <video :src="it.url" class="w-100 h-100" controls></video>
+                </template>
+                <template x-if="it.type==='image'">
+                  <img :src="it.url" draggable="false">
+                </template>
                 <div class="position-absolute top-0 end-0 m-1 d-flex flex-column gap-1">
-                  <button type="button"
-                          class="btn btn-sm btn-warning toolbar-btn"
-                          @click.prevent="openNewCrop(i)"
-                          title="Crop">
-                    <i class="fas fa-crop"></i>
-                  </button>
+                  <template x-if="it.type==='image'">
+                    <button type="button"
+                            class="btn btn-sm btn-warning toolbar-btn"
+                            @click.prevent="openNewCrop(i)"
+                            title="Crop">
+                      <i class="fas fa-crop"></i>
+                    </button>
+                  </template>
                   <button type="button"
                           class="btn btn-sm btn-danger toolbar-btn"
                           @click.prevent="remove(i)"
@@ -158,7 +171,7 @@
       <template x-if="items.length">
         <div class="d-grid">
           <button class="btn btn-success rounded-pill" @click.prevent="submit">
-            <span x-show="!loading"><i class="fas fa-upload me-1"></i> Upload Images</span>
+            <span x-show="!loading"><i class="fas fa-upload me-1"></i> Upload Media</span>
             <span x-show="loading" class="spinner-border spinner-border-sm"></span>
           </button>
         </div>
@@ -258,9 +271,16 @@ function modernUploader(){
     handleDrop(e){ this.dragging=false; this.addFiles(e.dataTransfer.files); },
     addFiles(files){
       [...files].forEach(f=>{
-        if(!f.type.startsWith('image/')) return;
+        const isImage = f.type.startsWith('image/');
+        const isVideo = f.type.startsWith('video/');
+        if(!isImage && !isVideo) return;
+        const max = isImage ? 5*1024*1024 : 50*1024*1024;
+        if(f.size > max){
+          alert(`${f.name} is larger than ${isImage ? '5MB' : '50MB'}`);
+          return;
+        }
         const url = URL.createObjectURL(f);
-        this.items.push({id:crypto.randomUUID(), file:f, url});
+        this.items.push({id:crypto.randomUUID(), file:f, url, type:isVideo?'video':'image'});
       });
       this.$nextTick(()=> this.initSortable());
     },

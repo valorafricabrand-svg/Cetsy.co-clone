@@ -18,20 +18,21 @@ use Intervention\Image\Drivers\Gd\Driver; // or Imagick
 class MediaController extends Controller
 {
     /**
-     * Upload images for a product.
+     * Upload media (images or videos) for a product.
      */
     public function upload(Request $request, Product $product)
     {
         $request->validate([
-            'media.*' => 'required|image|max:5120', // up to 5MB each
+            'media.*' => 'required|file|mimes:jpeg,jpg,png,gif,webp,mp4,mov,avi,wmv,webm|max:51200', // up to ~50MB
         ]);
 
-        foreach ($request->file('media', []) as $image) {
-            $path = $image->store('product-images', 'public');
-            $product->media()->create(['url' => $path]);
+        foreach ($request->file('media', []) as $file) {
+            $path = $file->store('product-media', 'public');
+            $type = str_starts_with($file->getMimeType(), 'video') ? 'video' : 'image';
+            $product->media()->create(['url' => $path, 'type' => $type]);
         }
 
-        return back()->with('success', 'Images uploaded successfully.');
+        return back()->with('success', 'Media uploaded successfully.');
     }
 
     /**
@@ -42,7 +43,7 @@ class MediaController extends Controller
         Storage::disk('public')->delete($media->url);
         $media->delete();
 
-        return back()->with('success', 'Image deleted successfully.');
+        return back()->with('success', 'Media deleted successfully.');
     }
 
     /**

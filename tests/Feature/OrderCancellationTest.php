@@ -83,7 +83,7 @@ class OrderCancellationTest extends TestCase
             'status' => Order::STATUS_PENDING,
         ]);
 
-        $response = $this->actingAs($seller)->patch(route('orders.cancel', $order), [
+        $response = $this->actingAs($seller)->patch(route('seller.orders.cancel', $order), [
             'cancel_reason' => 'Out of stock',
         ]);
 

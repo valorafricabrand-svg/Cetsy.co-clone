@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/cart_provider.dart';
+import 'checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -44,39 +45,80 @@ class CartScreen extends StatelessWidget {
                     final p = item.product;
                     final unitPrice = p.discountPrice ?? p.price;
                     return Card(
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        leading: CircleAvatar(
-                          backgroundColor: cetsyGreen.withOpacity(.1),
-                          child: const Icon(Icons.shopping_bag, color: cetsyGreen),
-                        ),
-                        title: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        subtitle: Text('KES ${fmt.format(unitPrice)} each'),
-                        trailing: SizedBox(
-                          width: 132,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              IconButton(
-                                tooltip: 'Decrease',
-                                onPressed: () => context.read<CartProvider>().setQty(p.id, item.qty - 1),
-                                icon: const Icon(Icons.remove_circle_outline),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            leading: CircleAvatar(
+                              backgroundColor: cetsyGreen.withOpacity(.1),
+                              child: const Icon(Icons.shopping_bag, color: cetsyGreen),
+                            ),
+                            title: Text(p.name,
+                                maxLines: 1, overflow: TextOverflow.ellipsis),
+                            subtitle:
+                                Text('KES ${fmt.format(unitPrice)} each'),
+                            trailing: SizedBox(
+                              width: 132,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Decrease',
+                                    onPressed: () =>
+                                        context.read<CartProvider>().setQty(
+                                            p.id, item.qty - 1),
+                                    icon: const Icon(
+                                        Icons.remove_circle_outline),
+                                  ),
+                                  Text('${item.qty}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w700)),
+                                  IconButton(
+                                    tooltip: 'Increase',
+                                    onPressed: () =>
+                                        context.read<CartProvider>().setQty(
+                                            p.id, item.qty + 1),
+                                    icon: const Icon(Icons.add_circle_outline),
+                                  ),
+                                ],
                               ),
-                              Text('${item.qty}', style: const TextStyle(fontWeight: FontWeight.w700)),
-                              IconButton(
-                                tooltip: 'Increase',
-                                onPressed: () => context.read<CartProvider>().setQty(p.id, item.qty + 1),
-                                icon: const Icon(Icons.add_circle_outline),
-                              ),
-                            ],
+                            ),
+                            onLongPress: () =>
+                                context.read<CartProvider>().remove(p.id),
                           ),
-                        ),
-                        onLongPress: () => context.read<CartProvider>().remove(p.id),
+                          if (p.shippingProfiles.isNotEmpty)
+                            Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                              child: DropdownButtonFormField<int>(
+                                value: item.shippingProfile?.id ??
+                                    p.shippingProfiles.first.id,
+                                decoration: const InputDecoration(
+                                    labelText: 'Shipping'),
+                                items: p.shippingProfiles
+                                    .map((sp) => DropdownMenuItem(
+                                          value: sp.id,
+                                          child: Text(
+                                              '${sp.name} (${fmt.format(sp.baseRate)})'),
+                                        ))
+                                    .toList(),
+                                onChanged: (id) {
+                                  if (id == null) return;
+                                  final profile = p.shippingProfiles
+                                      .firstWhere((sp) => sp.id == id);
+                                  context
+                                      .read<CartProvider>()
+                                      .setShippingProfile(p.id, profile);
+                                },
+                              ),
+                            ),
+                        ],
                       ),
                     );
                   }),
                   const SizedBox(height: 16),
-                  _totalBar(context, cart.total, fmt),
+                  _totalBar(context, cart.total, cart.shippingTotal, fmt),
                 ],
               ),
       ),
@@ -108,7 +150,9 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  Widget _totalBar(BuildContext context, double total, NumberFormat fmt) {
+  Widget _totalBar(
+      BuildContext context, double subtotal, double shipping, NumberFormat fmt) {
+    final grand = subtotal + shipping;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -121,14 +165,29 @@ class CartScreen extends StatelessWidget {
           const Icon(Icons.receipt_long),
           const SizedBox(width: 10),
           Expanded(
-            child: Text('Total: KES ${fmt.format(total)}',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cetsyGreen)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Items: KES ${fmt.format(subtotal)}',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, color: cetsyGreen)),
+                Text('Shipping: KES ${fmt.format(shipping)}',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, color: cetsyGreen)),
+                const SizedBox(height: 4),
+                Text('Total: KES ${fmt.format(grand)}',
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: cetsyGreen)),
+              ],
+            ),
           ),
           ElevatedButton(
             onPressed: () {
-              // TODO: implement checkout flow
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Checkout is not implemented yet.')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CheckoutScreen()),
               );
             },
             child: const Text('Checkout'),
