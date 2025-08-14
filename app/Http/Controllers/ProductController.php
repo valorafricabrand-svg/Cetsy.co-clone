@@ -604,7 +604,7 @@ public function listing(string $slug)
     {
         $q = $request->input('q');
 
-        $products = Product::where('name', 'like', "%{$q}%")
+        $products = Product::where('is_active', 1)->where('name', 'like', "%{$q}%")
             ->orWhere('description', 'like', "%{$q}%")
             ->paginate(12);
 
