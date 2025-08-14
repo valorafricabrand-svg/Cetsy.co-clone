@@ -170,10 +170,6 @@ Route::patch('products/{product}/renewal', [ProductController::class, 'updateRen
             [WalletController::class,'payOrder'])
      ->name('order.wallet.pay');
 
- Route::patch(
-        '/account/orders/{order}/cancel',
-        [OrderController::class, 'cancel']
-    )->name('orders.cancel');
 
  Route::post(
     '/products/{product}/status',
