@@ -13,8 +13,6 @@ import '../services/product_service.dart';
 import '../utils/html_utils.dart';
 import '../providers/cart_provider.dart';
 import 'product_detail_screen.dart';
-import 'home_screen.dart';       // for bottom nav -> Home
-import 'profile_screen.dart';   // for bottom nav -> Profile
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -125,30 +123,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-  // —— Bottom Nav helpers ——
-  int get _currentNavIndex => 1; // Products tab
-
-  void _onNavTap(int index) {
-    if (index == _currentNavIndex) return;
-    switch (index) {
-      case 0: // Home
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-        break;
-      case 1: // Products
-        // already here
-        break;
-      case 2: // Profile
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const ProfileScreen()),
-        );
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final bgGradient = const LinearGradient(
@@ -181,30 +155,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
             onPressed: _openFilterSheet,
             icon: const Icon(Icons.tune),
             label: const Text('Filters'),
-          ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentNavIndex,
-        onTap: _onNavTap,
-        selectedItemColor: cetsyGreen,
-        unselectedItemColor: Colors.grey.shade600,
-        showUnselectedLabels: true,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_outlined),
-            activeIcon: Icon(Icons.shopping_bag),
-            label: 'Products',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
           ),
         ],
       ),

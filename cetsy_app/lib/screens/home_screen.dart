@@ -4,29 +4,16 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import 'login_screen.dart';
-import 'product_list_screen.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+/// Home view shown after authentication.
+/// Displays basic account info and quick actions.
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key, required this.onShop});
+
+  /// Callback used to open the product catalog tab in [MainShell].
+  final VoidCallback onShop;
 
   static const Color cetsyGreen = Color(0xFF198754);
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
-
-  final _screens = const [
-    _HomeContent(),
-    ProductListScreen(),
-    Center(child: Text('Profile Section')), // placeholder
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
-  }
 
   Future<void> _logout(BuildContext context) async {
     final ok = await showDialog<bool>(
@@ -49,8 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (ok != true) return;
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.logout();
+    await context.read<AuthProvider>().logout();
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -62,49 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: HomeScreen.cetsyGreen,
-        unselectedItemColor: Colors.grey.shade600,
-        showUnselectedLabels: true,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_outlined),
-            activeIcon: Icon(Icons.shopping_bag),
-            label: 'Products',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Extracted Home content widget
-class _HomeContent extends StatelessWidget {
-  const _HomeContent();
-
-  static const Color cetsyGreen = Color(0xFF198754);
-
-  Future<void> _logout(BuildContext context) async {
-    final parentState = context.findAncestorStateOfType<_HomeScreenState>();
-    parentState?._logout(context);
   }
 
   @override
@@ -175,8 +118,7 @@ class _HomeContent extends StatelessWidget {
                                       user.email,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style:
-                                          const TextStyle(color: Colors.black54),
+                                      style: const TextStyle(color: Colors.black54),
                                     ),
                                   ],
                                 ),
@@ -217,15 +159,7 @@ class _HomeContent extends StatelessWidget {
                                 child: ElevatedButton.icon(
                                   icon: const Icon(Icons.shopping_bag),
                                   label: const Text('Shop Now'),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const ProductListScreen(),
-                                      ),
-                                    );
-                                  },
+                                  onPressed: onShop,
                                 ),
                               ),
                             ],

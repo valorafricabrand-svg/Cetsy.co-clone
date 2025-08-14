@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../providers/auth_provider.dart';
-import 'home_screen.dart';
+import 'main_shell.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -71,7 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const MainShell()),
         );
       }
     } catch (e) {
