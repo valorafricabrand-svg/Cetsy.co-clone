@@ -1,5 +1,8 @@
 // lib/providers/cart_provider.dart
+import 'dart:collection';
+
 import 'package:flutter/foundation.dart';
+
 import '../models/product.dart';
 import '../models/shipping_profile.dart';
 
@@ -17,7 +20,7 @@ class CartProvider extends ChangeNotifier {
   /// key = product.id
   final Map<int, CartItem> _items = {};
 
-  Map<int, CartItem> get items => _items;
+  UnmodifiableMapView<int, CartItem> get items => UnmodifiableMapView(_items);
 
   int get itemCount => _items.values.fold(0, (sum, i) => sum + i.qty);
 
