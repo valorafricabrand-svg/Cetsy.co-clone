@@ -596,7 +596,7 @@ public function listing(string $slug)
 
     public function listings()
     {
-        $products = Product::with('media')->latest()->paginate(16);
+        $products = Product::where('is_active', 1)->with('media')->latest()->paginate(16);
         return themed_view('listings', compact('products'));
     }
 

@@ -1,4 +1,3 @@
-{{-- resources/views/admin/categories/index.blade.php --}}
 @extends('layouts.app')
 
 @section('header')
@@ -57,14 +56,8 @@
                 </tr>
               </thead>
               <tbody>
-                {{-- PARENTS --}}
                 @foreach($parents as $parent)
-                  @include('categories._row', ['cat'=>$parent, 'isChild'=>false])
-
-                  {{-- CHILDREN --}}
-                  @foreach($parent->children as $child)
-                    @include('categories._row', ['cat'=>$child, 'isChild'=>true])
-                  @endforeach
+                  @include('categories._row', ['cat' => $parent, 'depth' => 0])
                 @endforeach
               </tbody>
             </table>

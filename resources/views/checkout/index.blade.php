@@ -27,24 +27,36 @@
   $cart      = session('cart', []);
   $currency  = get_currency();
 
-  // Helpers to pull the selected profile snapshot per item (from session)
+  // Prefetch product types once (digital/physical) to decide shipping visibility/costs
+  $productIds   = collect($cart)->pluck('product_id')->filter()->unique()->all();
+  $productTypes = $productIds
+      ? \App\Models\Product::whereIn('id', $productIds)->pluck('type','id')->toArray()
+      : [];
+
+  // Helper to read the selected profile snapshot from session (for PHYSICAL only)
   $getSelectedProfile = function(array $row) {
       $profiles = collect($row['shipping_profiles'] ?? []);
       $selId    = (int)($row['selected_shipping_profile_id'] ?? 0);
       $selected = $profiles->firstWhere('id', $selId);
-      // Fallback to first if selection is missing/invalid
       if (!$selected && $profiles->isNotEmpty()) {
           $selected = $profiles->first();
       }
+      // Always return a consistent array shape
       return $selected ?: ['name' => 'Standard', 'base_rate' => 0];
   };
 
   // Subtotal (products only)
   $subtotal = collect($cart)->sum(fn($i) => ((float)($i['price'] ?? 0)) * (int)($i['quantity'] ?? 1));
 
-  // Shipping total (selected profile rate * qty)
-  $totalShipping = collect($cart)->sum(function($i) use ($getSelectedProfile) {
+  // Shipping total: zero for digital rows, selected profile * qty for physical rows
+  $totalShipping = collect($cart)->sum(function($i) use ($getSelectedProfile, $productTypes) {
       $qty  = (int)($i['quantity'] ?? 1);
+      $pid  = (int)($i['product_id'] ?? 0);
+      $type = $i['product_type'] ?? ($productTypes[$pid] ?? null); // prefer cart snapshot if ever stored
+      $isDigital = ($type === 'digital');
+
+      if ($isDigital) return 0.0;
+
       $prof = $getSelectedProfile($i);
       return (float)($prof['base_rate'] ?? 0) * $qty;
   });
@@ -246,19 +258,33 @@
                 @php
                   $qty   = (int)($row['quantity'] ?? 1);
                   $unit  = (float)($row['price'] ?? 0);
-                  $prof  = $getSelectedProfile($row);
+                  $pid   = (int)($row['product_id'] ?? 0);
+                  $type  = $row['product_type'] ?? ($productTypes[$pid] ?? null);
+                  $isDigital = ($type === 'digital');
+
+                  // Physical: use selected shipping profile snapshot; Digital: rate=0 and show "No shipping"
+                  $prof  = $isDigital ? ['name' => 'No shipping (digital)', 'base_rate' => 0] : $getSelectedProfile($row);
                   $rate  = (float)($prof['base_rate'] ?? 0);
 
-                  // Label logic mirrors cart/index:
-                  $label = ($prof['dest_location_type'] ?? null) === 'everywhere_else'
-                           ? 'Everywhere'
-                           : (!empty($prof['dest_country_name'])
-                                ? 'Ship to '.$prof['dest_country_name']
-                                : ($prof['name'] ?? 'Shipping'));
+                  // Label (match cart/index formatting) — only meaningful for physical
+                  if ($isDigital) {
+                      $label = 'No shipping (digital)';
+                  } else {
+                      $label = ($prof['dest_location_type'] ?? null) === 'everywhere_else'
+                               ? 'Everywhere'
+                               : (!empty($prof['dest_country_name'])
+                                    ? 'Ship to '.$prof['dest_country_name']
+                                    : ($prof['name'] ?? 'Shipping'));
+                  }
                 @endphp
                 <li class="list-group-item d-flex justify-content-between">
                   <div>
-                    <div class="fw-semibold">{{ $row['name'] }}</div>
+                    <div class="fw-semibold">
+                      {{ $row['name'] }}
+                      @if($isDigital)
+                        <span class="badge bg-secondary ms-1">Digital</span>
+                      @endif
+                    </div>
                     @if (!empty($row['variation_summary']))
                       <small class="text-muted">{{ $row['variation_summary'] }}</small><br>
                     @endif
