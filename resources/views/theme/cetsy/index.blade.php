@@ -430,7 +430,7 @@
             <a href="{{ url('/about') }}" class="btn btn-outline-success btn-pill">
               <i class="fas fa-info-circle"></i> About Cetsy
             </a>
-            <a href="{{ url('/explore') }}" class="btn btn-success btn-pill">
+            <a href="{{ url('/listings') }}" class="btn btn-success btn-pill">
               <i class="fas fa-compass"></i> Explore Marketplace
             </a>
             <a href="{{ url('/register') }}" class="btn btn-success btn-pill">
