@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 
 import '../config/constants.dart';
 import '../models/product.dart';
-import '../utils/html_utils.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   /// Named route used by the list screen.

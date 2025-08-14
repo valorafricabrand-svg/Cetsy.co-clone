@@ -5,12 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:provider/provider.dart';
 
 import '../config/constants.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import '../utils/html_utils.dart';
+import '../providers/cart_provider.dart';
 import 'product_detail_screen.dart';
+import 'home_screen.dart';       // for bottom nav -> Home
+import 'profile_screen.dart';   // for bottom nav -> Profile
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -20,6 +24,9 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
+  // Brand color
+  static const Color cetsyGreen = Color(0xFF198754);
+
   late Future<List<Product>> _products;
   final _keywordCtl = TextEditingController();
   final _minCtl = TextEditingController();
@@ -94,8 +101,62 @@ class _ProductListScreenState extends State<ProductListScreen> {
     return Uri.encodeFull('$root/storage/products/$file');
   }
 
+  // Unified, modern input decoration used across sheets/fields
+  InputDecoration _pillInput({
+    String? hint,
+    String? label,
+    IconData? prefixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      labelText: label,
+      prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
+      filled: true,
+      fillColor: Colors.grey.shade100,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(30),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(30),
+        borderSide: const BorderSide(color: cetsyGreen, width: 1.5),
+      ),
+    );
+  }
+
+  // —— Bottom Nav helpers ——
+  int get _currentNavIndex => 1; // Products tab
+
+  void _onNavTap(int index) {
+    if (index == _currentNavIndex) return;
+    switch (index) {
+      case 0: // Home
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+        break;
+      case 1: // Products
+        // already here
+        break;
+      case 2: // Profile
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+        );
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bgGradient = const LinearGradient(
+      colors: [Color(0xFFEFF7F3), Color(0xFFEAF5F0)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
     return Scaffold(
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
@@ -103,6 +164,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
           if (_showTopFab)
             FloatingActionButton.small(
               heroTag: 'toTopFab',
+              backgroundColor: Colors.white,
+              foregroundColor: cetsyGreen,
               onPressed: () => _scrollCtl.animateTo(
                 0,
                 duration: const Duration(milliseconds: 400),
@@ -113,49 +176,152 @@ class _ProductListScreenState extends State<ProductListScreen> {
           const SizedBox(height: 10),
           FloatingActionButton.extended(
             heroTag: 'filterFab',
+            backgroundColor: cetsyGreen,
+            foregroundColor: Colors.white,
             onPressed: _openFilterSheet,
             icon: const Icon(Icons.tune),
             label: const Text('Filters'),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async => _fetch(),
-        child: CustomScrollView(
-          controller: _scrollCtl,
-          slivers: [
-            SliverAppBar(
-              floating: true,
-              snap: true,
-              title: _buildSearchBar(),
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              foregroundColor: Colors.black87,
-              elevation: 2,
-            ),
-            _buildProductGrid(),
-            SliverToBoxAdapter(child: _buildPagination()),
-          ],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentNavIndex,
+        onTap: _onNavTap,
+        selectedItemColor: cetsyGreen,
+        unselectedItemColor: Colors.grey.shade600,
+        showUnselectedLabels: true,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_bag_outlined),
+            activeIcon: Icon(Icons.shopping_bag),
+            label: 'Products',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(gradient: bgGradient),
+        child: RefreshIndicator(
+          color: cetsyGreen,
+          onRefresh: () async => _fetch(),
+          child: CustomScrollView(
+            controller: _scrollCtl,
+            slivers: [
+              SliverAppBar(
+                floating: true,
+                snap: true,
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black87,
+                elevation: 1,
+                titleSpacing: 12,
+                title: _buildSearchBar(),
+                actions: [
+                  IconButton(
+                    tooltip: 'Open filters',
+                    onPressed: _openFilterSheet,
+                    icon: const Icon(Icons.filter_alt_outlined),
+                    color: cetsyGreen,
+                  ),
+                  const SizedBox(width: 6),
+                ],
+              ),
+              // Active filter chips (keyword/min/max)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _activeFilterChips(),
+                  ),
+                ),
+              ),
+              _buildProductGrid(),
+              SliverToBoxAdapter(child: _buildPagination()),
+              const SliverToBoxAdapter(child: SizedBox(height: 40)),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  // Search pill with Cetsy styling
   Widget _buildSearchBar() => TextField(
         controller: _keywordCtl,
         textInputAction: TextInputAction.search,
         onSubmitted: (_) => _applyDebounced(),
-        decoration: InputDecoration(
-          hintText: 'Search listings…',
-          filled: true,
-          fillColor: Colors.grey.shade200,
-          prefixIcon: const Icon(Icons.search),
-          contentPadding: EdgeInsets.zero,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide.none,
-          ),
+        decoration: _pillInput(
+          hint: 'Search listings…',
+          prefixIcon: Icons.search,
+        ).copyWith(
+          suffixIcon: _keywordCtl.text.isNotEmpty
+              ? IconButton(
+                  tooltip: 'Clear',
+                  onPressed: () {
+                    _keywordCtl.clear();
+                    _applyDebounced();
+                  },
+                  icon: const Icon(Icons.close),
+                )
+              : null,
         ),
       );
+
+  // Build chips for any active filters
+  List<Widget> _activeFilterChips() {
+    final chips = <Widget>[];
+    if (_keywordCtl.text.trim().isNotEmpty) {
+      chips.add(_filterChip('Keyword: ${_keywordCtl.text.trim()}', () {
+        _keywordCtl.clear();
+        _applyDebounced();
+      }));
+    }
+    if (_minCtl.text.trim().isNotEmpty) {
+      chips.add(_filterChip('Min: ${_minCtl.text.trim()}', () {
+        _minCtl.clear();
+        _applyDebounced();
+      }));
+    }
+    if (_maxCtl.text.trim().isNotEmpty) {
+      chips.add(_filterChip('Max: ${_maxCtl.text.trim()}', () {
+        _maxCtl.clear();
+        _applyDebounced();
+      }));
+    }
+    if (chips.isEmpty) {
+      chips.add(
+        Chip(
+          label: const Text('Tip: Tap Filters to refine results'),
+          backgroundColor: Colors.grey.shade200,
+          labelStyle: TextStyle(color: Colors.grey.shade700),
+          avatar: const Icon(Icons.info_outline, size: 18),
+        ),
+      );
+    }
+    return chips;
+  }
+
+  Widget _filterChip(String text, VoidCallback onDeleted) {
+    return Chip(
+      label: Text(text),
+      labelStyle: const TextStyle(fontWeight: FontWeight.w500),
+      backgroundColor: const Color(0xFFEFF7F3),
+      side: const BorderSide(color: cetsyGreen),
+      deleteIcon: const Icon(Icons.close, size: 18),
+      onDeleted: onDeleted,
+      avatar: const Icon(Icons.tune, color: cetsyGreen, size: 18),
+    );
+  }
 
   Widget _buildProductGrid() => FutureBuilder<List<Product>>(
         future: _products,
@@ -200,13 +366,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
         ProductDetailScreen.route,
         arguments: p,
       ),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           child: Material(
-            elevation: 3,
+            color: Colors.white,
+            elevation: 2.5,
             shadowColor: Colors.black12,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -239,54 +406,137 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           'assets/images/placeholder.png',
                           fit: BoxFit.cover,
                         ),
+
+                      // Subtle gradient overlay bottom for text readability (reserved)
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          height: 0,
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [Colors.black26, Colors.transparent],
+                            ),
+                          ),
+                        ),
+                      ),
+
                       if (hasDiscount)
                         Positioned(
                           top: 0,
                           left: 0,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
+                                horizontal: 10, vertical: 6),
                             decoration: const BoxDecoration(
                               color: Colors.redAccent,
                               borderRadius: BorderRadius.only(
-                                  bottomRight: Radius.circular(8)),
+                                bottomRight: Radius.circular(10),
+                              ),
                             ),
                             child: Text(
                               '-${(((p.price - displayPrice) / p.price) * 100).round()}%',
                               style: const TextStyle(
-                                  color: Colors.white, fontSize: 11),
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
+
+                      // 👉 Quick action: Add to cart
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.95),
+                            shape: BoxShape.circle,
+                            boxShadow: const [
+                              BoxShadow(
+                                blurRadius: 10,
+                                color: Color(0x14000000),
+                              )
+                            ],
+                          ),
+                          child: IconButton(
+                            tooltip: 'Add to cart',
+                            onPressed: () {
+                              context.read<CartProvider>().add(p);
+                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Added "${p.name}" to cart'),
+                                  duration: const Duration(seconds: 1),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.add_shopping_cart),
+                            splashRadius: 20,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Title
                       Text(
                         p.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 15),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15.5,
+                        ),
                       ),
                       const SizedBox(height: 4),
+
+                      // Description
                       Text(
                         stripHtmlTags(p.description ?? 'No description'),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            color: Colors.grey.shade600, fontSize: 13),
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                          height: 1.35,
+                        ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'KES ${_priceFmt.format(displayPrice)}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15),
+                      const SizedBox(height: 8),
+
+                      // Price row
+                      Row(
+                        children: [
+                          Text(
+                            'KES ${_priceFmt.format(displayPrice)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                              color: cetsyGreen,
+                            ),
+                          ),
+                          if (hasDiscount) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              'KES ${_priceFmt.format(p.price)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -312,15 +562,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
               ),
             ),
           ),
         ),
       );
 
-  SliverToBoxAdapter _sliverMessage(
-          {required IconData icon, required String text}) =>
+  SliverToBoxAdapter _sliverMessage({
+    required IconData icon,
+    required String text,
+  }) =>
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.only(top: 100),
@@ -332,8 +584,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
               Text(
                 text,
                 textAlign: TextAlign.center,
-                style:
-                    TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
               ),
             ],
           ),
@@ -342,27 +593,38 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   Widget _buildPagination() => Padding(
         padding: const EdgeInsets.symmetric(vertical: 24),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
           children: [
-            OutlinedButton(
+            OutlinedButton.icon(
               onPressed: _page > 1
                   ? () {
                       setState(() => _page--);
                       _fetch();
                     }
                   : null,
-              child: const Text('Previous'),
+              icon: const Icon(Icons.chevron_left),
+              label: const Text('Previous'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: cetsyGreen,
+                side: const BorderSide(color: cetsyGreen),
+              ),
             ),
-            const SizedBox(width: 12),
-            Text('Page $_page'),
-            const SizedBox(width: 12),
-            OutlinedButton(
+            Text('Page $_page',
+                style: const TextStyle(
+                    fontWeight: FontWeight.w600, color: Colors.black87)),
+            OutlinedButton.icon(
               onPressed: () {
                 setState(() => _page++);
                 _fetch();
               },
-              child: const Text('Next'),
+              icon: const Icon(Icons.chevron_right),
+              label: const Text('Next'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: cetsyGreen,
+                side: const BorderSide(color: cetsyGreen),
+              ),
             ),
           ],
         ),
@@ -373,6 +635,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: Padding(
@@ -380,12 +646,38 @@ class _ProductListScreenState extends State<ProductListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Header row
+              Row(
+                children: [
+                  const Icon(Icons.tune, color: cetsyGreen),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Refine Results',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      _resetFilters();
+                      Navigator.pop(ctx);
+                    },
+                    child: const Text('Reset'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: _keywordCtl,
-                decoration: const InputDecoration(
-                  labelText: 'Keyword',
-                  prefixIcon: Icon(Icons.search),
+                decoration: _pillInput(
+                  label: 'Keyword',
+                  prefixIcon: Icons.search,
                 ),
+                onSubmitted: (_) {
+                  Navigator.pop(ctx);
+                  _applyDebounced();
+                },
               ),
               const SizedBox(height: 12),
               Row(
@@ -394,7 +686,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     child: TextField(
                       controller: _minCtl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Min Price'),
+                      decoration: _pillInput(label: 'Min Price').copyWith(
+                        prefixIcon: const Icon(Icons.price_change_outlined),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -402,7 +696,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     child: TextField(
                       controller: _maxCtl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Max Price'),
+                      decoration: _pillInput(label: 'Max Price').copyWith(
+                        prefixIcon: const Icon(Icons.price_check_outlined),
+                      ),
                     ),
                   ),
                 ],
@@ -411,21 +707,25 @@ class _ProductListScreenState extends State<ProductListScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.check_circle_outline),
                       onPressed: () {
                         Navigator.pop(ctx);
                         _applyDebounced();
                       },
-                      child: const Text('Apply Filters'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: cetsyGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      label: const Text(
+                        'Apply Filters',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  TextButton(
-                    onPressed: () {
-                      _resetFilters();
-                      Navigator.pop(ctx);
-                    },
-                    child: const Text('Reset'),
                   ),
                 ],
               ),
@@ -443,4 +743,3 @@ class _ProductListScreenState extends State<ProductListScreen> {
     return 2;
   }
 }
-
