@@ -402,11 +402,8 @@
 {{-- ===== REVIEW MODALS (only when Delivered and not already reviewed) ===== --}}
 @php $canReviewOrder = ($order->status === \App\Models\Order::STATUS_DELIVERED); @endphp
 @foreach($order->items as $item)
-<<<<<<< HEAD
   @if(!$item->review && $order->status === \App\Models\Order::STATUS_DELIVERED)
-=======
   @if($canReviewOrder && !$item->review)
->>>>>>> development
     @php($modalId = 'reviewModal_'.$item->id)
     <div class="modal fade" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg">
