@@ -35,10 +35,41 @@ class CheckoutScreen extends StatelessWidget {
                   children: cart.items.values.map((item) {
                     final p = item.product;
                     final unit = p.discountPrice ?? p.price;
-                    return ListTile(
-                      leading: const Icon(Icons.shopping_bag),
-                      title: Text(p.name),
-                      subtitle: Text('x${item.qty}  @ KES ${fmt.format(unit)}'),
+                    return Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.shopping_bag),
+                          title: Text(p.name),
+                          subtitle:
+                              Text('x${item.qty}  @ KES ${fmt.format(unit)}'),
+                        ),
+                        if (p.shippingProfiles.isNotEmpty)
+                          Padding(
+                            padding:
+                                const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                            child: DropdownButtonFormField<int>(
+                              value: item.shippingProfile?.id ??
+                                  p.shippingProfiles.first.id,
+                              decoration: const InputDecoration(
+                                  labelText: 'Shipping'),
+                              items: p.shippingProfiles
+                                  .map((sp) => DropdownMenuItem(
+                                        value: sp.id,
+                                        child: Text(
+                                            '${sp.name} (${fmt.format(sp.baseRate)})'),
+                                      ))
+                                  .toList(),
+                              onChanged: (id) {
+                                if (id == null) return;
+                                final profile = p.shippingProfiles
+                                    .firstWhere((sp) => sp.id == id);
+                                context
+                                    .read<CartProvider>()
+                                    .setShippingProfile(p.id, profile);
+                              },
+                            ),
+                          ),
+                      ],
                     );
                   }).toList(),
                 ),
@@ -60,7 +91,22 @@ class CheckoutScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Total: KES ${fmt.format(cart.total)}',
+                      'Items: KES ${fmt.format(cart.total)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: cetsyGreen,
+                      ),
+                    ),
+                    Text(
+                      'Shipping: KES ${fmt.format(cart.shippingTotal)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: cetsyGreen,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Total: KES ${fmt.format(cart.grandTotal)}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
