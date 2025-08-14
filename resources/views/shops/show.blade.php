@@ -1,6 +1,28 @@
 @extends('layouts.app')
 
 @section('content')
+@push('styles')
+<style>
+  .rating-bars .progress {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+  }
+  
+  .rating-bars .progress-bar {
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  
+  .rating-bars .fas.fa-star {
+    font-size: 12px;
+  }
+  
+  .rating-bars .text-muted {
+    font-size: 12px;
+  }
+</style>
+@endpush
+
 <div class="content">
 
   {{-- Header: Logo + Name + Edit Button --}}
@@ -25,6 +47,26 @@
       <div>
         <h1 class="h3 mb-0">{{ $shop->name }}</h1>
         <!-- <small class="text-muted">Owned by {{ $shop->user->name }}</small> -->
+        
+        {{-- Shop Rating in Header --}}
+        @if($shop->hasReviews())
+          <div class="d-flex align-items-center gap-2 mt-2">
+            <div class="d-flex align-items-center">
+              @for($i = 1; $i <= 5; $i++)
+                @if($i <= $shop->average_rating)
+                  <i class="fas fa-star text-warning" style="font-size: 14px;"></i>
+                @elseif($i - $shop->average_rating < 1 && $i - $shop->average_rating > 0)
+                  <i class="fas fa-star-half-alt text-warning" style="font-size: 14px;"></i>
+                @else
+                  <i class="far fa-star text-muted" style="font-size: 14px;"></i>
+                @endif
+              @endfor
+            </div>
+            <span class="text-muted small">
+              {{ $shop->average_rating }} ({{ $shop->review_count }} {{ Str::plural('review', $shop->review_count) }})
+            </span>
+          </div>
+        @endif
       </div>
     </div>
     {{-- View Payment Methods --}}
@@ -56,6 +98,80 @@
           <i class="fas fa-umbrella-beach me-2"></i>Enable Holiday Mode
         </button>
       @endif
+    </div>
+  @endif
+
+  {{-- Shop Rating Section --}}
+  @if($shop->hasReviews())
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-star text-warning me-2"></i>Shop Rating</span>
+        <a href="{{ route('shop.reviews', $shop) }}" class="btn btn-sm btn-outline-primary">
+          <i class="fas fa-eye me-1"></i> View All Reviews
+        </a>
+      </div>
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-4 text-center">
+            <div class="d-flex justify-content-center mb-2">
+              @for($i = 1; $i <= 5; $i++)
+                @if($i <= $shop->average_rating)
+                  <i class="fas fa-star text-warning" style="font-size: 24px;"></i>
+                @elseif($i - $shop->average_rating < 1 && $i - $shop->average_rating > 0)
+                  <i class="fas fa-star-half-alt text-warning" style="font-size: 24px;"></i>
+                @else
+                  <i class="far fa-star text-muted" style="font-size: 24px;"></i>
+                @endif
+              @endfor
+            </div>
+            <div class="mb-2">
+              <span class="h3 fw-bold text-primary">{{ $shop->average_rating }}</span>
+              <span class="text-muted">out of 5</span>
+            </div>
+            <div class="text-muted">
+              {{ $shop->review_count }} {{ Str::plural('review', $shop->review_count) }}
+            </div>
+          </div>
+          
+          <div class="col-md-8">
+            <div class="rating-bars">
+              @for($i = 5; $i >= 1; $i--)
+                <div class="d-flex align-items-center mb-2">
+                  <div class="me-2" style="width: 20px;">
+                    <span class="text-muted small">{{ $i }}</span>
+                  </div>
+                  <div class="me-2" style="width: 20px;">
+                    <i class="fas fa-star text-warning"></i>
+                  </div>
+                  <div class="flex-grow-1 me-2">
+                    <div class="progress" style="height: 8px;">
+                      @php
+                        $percentage = $shop->rating_percentages[$i] ?? 0;
+                        $width = $percentage > 0 ? $percentage : 0;
+                      @endphp
+                      <div class="progress-bar bg-warning" style="width: {{ $width }}%"></div>
+                    </div>
+                  </div>
+                  <div style="width: 40px;">
+                    <span class="text-muted small">{{ $shop->rating_distribution[$i] ?? 0 }}</span>
+                  </div>
+                </div>
+              @endfor
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  @else
+    <div class="card mb-4">
+      <div class="card-header">
+        <span><i class="fas fa-star text-muted me-2"></i>Shop Rating</span>
+      </div>
+      <div class="card-body text-center py-4">
+        <i class="fas fa-star text-muted" style="font-size: 48px;"></i>
+        <h5 class="mt-3 text-muted">No Reviews Yet</h5>
+        <p class="text-muted mb-0">This shop hasn't received any reviews yet. Be the first to leave a review!</p>
+      </div>
     </div>
   @endif
 
