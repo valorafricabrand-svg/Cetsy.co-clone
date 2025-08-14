@@ -174,7 +174,7 @@
       </div>
     </div>
 
-    {{-- ===== ORDER ITEMS (uses variation_summary) + DOWNLOADS ===== --}}
+    {{-- ===== ORDER ITEMS (uses variation_summary, hides shipping for digital) + DOWNLOADS ===== --}}
     @php
       $canReviewOrder = ($order->status === \App\Models\Order::STATUS_DELIVERED);
     @endphp
@@ -207,17 +207,23 @@
               <tbody>
                 @foreach($order->items as $item)
                   @php
-                    $product   = optional($item->product);
-                    $reviewed  = $item->review !== null;
-                    $modalId   = 'reviewModal_'.$item->id;
+                    $product    = optional($item->product);
+                    $reviewed   = $item->review !== null;
+                    $modalId    = 'reviewModal_'.$item->id;
+                    $isDigital  = $product && $product->type === 'digital';
 
-                    // Shipping profile label – same rule as cart
-                    $sp = optional($item->shippingProfile);
-                    $label = $sp && $sp->dest_location_type === 'everywhere_else'
-                              ? 'Everywhere'
-                              : ($sp && $sp->destCountry ? 'Ship to '.$sp->destCountry->name : ($sp->name ?? 'N/A'));
+                    // Shipping label + cost (hidden/zero for digital)
+                    if ($isDigital) {
+                        $label    = 'No shipping (digital)';
+                        $shipCost = 0.0;
+                    } else {
+                        $sp    = optional($item->shippingProfile);
+                        $label = $sp && $sp->dest_location_type === 'everywhere_else'
+                                 ? 'Everywhere'
+                                 : ($sp && $sp->destCountry ? 'Ship to '.$sp->destCountry->name : ($sp->name ?? 'N/A'));
+                        $shipCost = (float) ($item->shipping_cost ?? 0);
+                    }
 
-                    $shipCost     = (float) ($item->shipping_cost ?? 0);
                     $qty          = (int)   ($item->quantity ?? 1);
                     $unit         = (float) ($item->price ?? 0);
                     $lineSubtotal = $unit * $qty;
@@ -227,7 +233,7 @@
                     $thumbUrl = $product?->featured_image
                         ?: ($product?->media->first()?->url ? asset('storage/'.$product->media->first()->url) : null);
 
-                    // Downloads still follow your previous rule (Processing/Completed)
+                    // Downloads: allow on Processing/Completed for digital products
                     $canDownload = in_array(
                                       $order->status,
                                       [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED]
@@ -245,24 +251,26 @@
                             src="{{ $thumbUrl }}"
                             alt="{{ $product->name }}"
                             class="img-fluid rounded"
-                            style="max-width:100px; height:auto; object-fit:cover;"
-                          >
+                            style="max-width:100px; height:auto; object-fit:cover;">
                         </a>
                       @endif
                     </td>
 
-                    {{-- Product name --}}
+                    {{-- Product --}}
                     <td>
                       @if($product)
                         <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="text-decoration-none">
                           {{ $product->name }}
                         </a>
+                        @if($isDigital)
+                          <span class="badge bg-secondary ms-1">Digital</span>
+                        @endif
                       @else
                         <span class="text-muted">N/A</span>
                       @endif
                     </td>
 
-                    {{-- Variation: saved summary string --}}
+                    {{-- Variation: saved summary --}}
                     <td>{{ $item->variation_summary ?? '—' }}</td>
 
                     {{-- Qty --}}
@@ -271,7 +279,7 @@
                     {{-- Unit Price --}}
                     <td>{{ get_currency() }} {{ number_format($unit, 2) }}</td>
 
-                    {{-- Shipping profile --}}
+                    {{-- Shipping profile (or hidden for digital) --}}
                     <td>{{ $label }}</td>
 
                     {{-- Shipping cost --}}
@@ -280,7 +288,7 @@
                     {{-- Line total --}}
                     <td class="fw-semibold">{{ get_currency() }} {{ number_format($lineTotal, 2) }}</td>
 
-                    {{-- Review --}}
+                    {{-- Review (only after delivery) --}}
                     <td class="text-center">
                       @if($reviewed)
                         <span class="badge bg-success d-inline-flex align-items-center gap-1">
@@ -298,7 +306,7 @@
                       @endif
                     </td>
 
-                    {{-- Downloads (digital products only + allowed statuses) --}}
+                    {{-- Downloads (digital + allowed statuses) --}}
                     <td>
                       @if($canDownload && $product && $product->digitalFiles->count())
                         <div class="card mb-0 shadow-sm">

@@ -158,7 +158,7 @@
   @if ($product->country)
     <p class="mb-4 small text-muted">
       <i class="fa-solid fa-globe-africa me-1"></i>
-      Ship from {{ $product->country->name }}
+      Ships from {{ $product->country->name }}
     </p>
   @endif
 </div>

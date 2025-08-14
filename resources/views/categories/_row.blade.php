@@ -1,40 +1,67 @@
 @php
-    // Add a small visual indent + arrow for child rows
-    $indent = $isChild ? '&nbsp;&nbsp;↳&nbsp;' : '';
+  /** @var \App\Models\Category $cat */
+  $depth = $depth ?? 0;
+  $isTop = $depth === 0;
+
+  // Visual indent for nested levels
+  $indentHtml = $depth > 0 ? str_repeat('&nbsp;', $depth * 3) . '↳&nbsp;' : '';
 @endphp
 
 <tr>
-    {{-- Image --}}
-    <td class="text-center">
-        @if($cat->image)
-            <img src="{{ asset('storage/' . $cat->image) }}"
-                 class="rounded-circle"
-                 style="width:40px;height:40px;object-fit:cover;">
-        @else
-            <span class="text-muted">—</span>
-        @endif
-    </td>
+  {{-- Image --}}
+  <td class="text-center">
+    @if($cat->image)
+      <img src="{{ asset('storage/' . ltrim($cat->image, '/')) }}"
+           class="rounded-circle"
+           style="width:40px;height:40px;object-fit:cover;">
+    @else
+      <span class="text-muted">—</span>
+    @endif
+  </td>
 
-    {{-- Name (bold if parent) --}}
-    <td>
-        {!! $indent !!}
-        @if(!$isChild)
-            <strong>{{ $cat->name }}</strong>
-        @else
-            {{ $cat->name }}
-        @endif
-    </td>
+  {{-- Name (bold if top-level) --}}
+  <td>
+    {!! $indentHtml !!}
+    @if($isTop)
+      <strong>{{ $cat->name }}</strong>
+    @else
+      {{ $cat->name }}
+    @endif
+  </td>
 
-    {{-- Slug / Parent / Fee --}}
- <td>{{ $parent->listing_type }}</td>
-    <td>{{ $cat->parent?->name ?? '—' }}</td>
-    <td>{{ get_currency() }} {{ number_format($cat->listing_fee, 2) }}</td>
+  {{-- Type --}}
+  <td>{{ $cat->listing_type ? ucfirst($cat->listing_type) : '—' }}</td>
 
-    {{-- Actions --}}
-    <td class="text-end">
-        <a href="{{ route('admin.categories.show', $cat) }}"
-           class="btn btn-sm btn-info text-white me-1">
-            View
-        </a>
-    </td>
+  {{-- Parent --}}
+  <td>{{ $cat->parent?->name ?? '—' }}</td>
+
+  {{-- Listing Fee --}}
+  <td>{{ get_currency() }} {{ number_format((float)($cat->listing_fee ?? 0), 2) }}</td>
+
+  {{-- Actions --}}
+  <td class="text-end">
+    <a href="{{ route('admin.categories.show', $cat) }}"
+       class="btn btn-sm btn-info text-white me-1">
+      View
+    </a>
+    <a href="{{ route('admin.categories.edit', $cat) }}"
+       class="btn btn-sm btn-warning me-1">
+      Edit
+    </a>
+    <form action="{{ route('admin.categories.destroy', $cat) }}"
+          method="POST"
+          class="d-inline"
+          onsubmit="return confirm('Delete category “{{ $cat->name }}”?')">
+      @csrf
+      @method('DELETE')
+      <button class="btn btn-sm btn-danger">Delete</button>
+    </form>
+  </td>
 </tr>
+
+{{-- Render children (and grandchildren, etc.) recursively --}}
+@if($cat->relationLoaded('children') && $cat->children->isNotEmpty())
+  @foreach($cat->children->sortBy('name') as $child)
+    @include('categories._row', ['cat' => $child, 'depth' => $depth + 1])
+  @endforeach
+@endif

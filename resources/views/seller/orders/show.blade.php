@@ -145,7 +145,7 @@
     </div>
   </div>
 
-  {{-- ITEMS --}}
+  {{-- ITEMS (hide shipping details for digital products) --}}
   @if($order->items->isNotEmpty())
     <div class="card mb-4 shadow-sm">
       <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
@@ -170,17 +170,26 @@
             @foreach($order->items as $item)
               @php
                 $product   = optional($item->product);
+                $isDigital = $product && $product->type === 'digital';
+
                 $qty       = (int) ($item->quantity ?? 1);
                 $unit      = (float) ($item->price ?? 0);
-                $shipCost  = (float) ($item->shipping_cost ?? 0);
-                $lineSub   = $unit * $qty; // Subtotal (without shipping)
-                $thumbUrl  = $product?->featured_image
+
+                // For digital items, hide shipping and force cost = 0
+                if ($isDigital) {
+                  $shipLabel = 'No shipping (digital)';
+                  $shipCost  = 0.0;
+                } else {
+                  $sp        = optional($item->shippingProfile);
+                  $shipLabel = $sp && $sp->dest_location_type === 'everywhere_else'
+                                ? 'Everywhere'
+                                : ($sp && $sp->destCountry ? ('Ship to '.$sp->destCountry->name) : ($sp->name ?? 'N/A'));
+                  $shipCost  = (float) ($item->shipping_cost ?? 0);
+                }
+
+                $lineSub  = $unit * $qty; // product subtotal (no shipping)
+                $thumbUrl = $product?->featured_image
                               ?: ($product?->media->first()?->url ? asset('storage/'.$product->media->first()->url) : asset('placeholder.jpg'));
-                // Shipping profile label like in cart:
-                $sp = optional($item->shippingProfile);
-                $label = $sp && $sp->dest_location_type === 'everywhere_else'
-                          ? 'Everywhere'
-                          : ($sp && $sp->destCountry ? ('Ship to '.$sp->destCountry->name) : ($sp->name ?? 'N/A'));
               @endphp
               <tr>
                 <td>{{ $loop->iteration }}</td>
@@ -204,15 +213,22 @@
                   @else
                     {{ $product->name ?? 'N/A' }}
                   @endif
+                  @if($isDigital)
+                    <span class="badge bg-secondary ms-1">Digital</span>
+                  @endif
                 </td>
 
-                {{-- Use saved textual summary; no variations table required --}}
+                {{-- Saved textual summary; no variations table required --}}
                 <td>{{ $item->variation_summary ?? '—' }}</td>
 
                 <td class="text-center">{{ $qty }}</td>
                 <td class="text-end">{{ $symbol }} {{ number_format($unit,2) }}</td>
-                <td>{{ $label }}</td>
-                <td class="text-end">{{ $symbol }} {{ number_format($shipCost,2) }}</td>
+
+                {{-- Shipping profile / cost hidden (shown as em dash) for digital --}}
+                <td>{{ $isDigital ? '—' : $shipLabel }}</td>
+                <td class="text-end">{{ $symbol }} {{ number_format($isDigital ? 0 : $shipCost,2) }}</td>
+
+                {{-- Product subtotal (without shipping) --}}
                 <td class="text-end">{{ $symbol }} {{ number_format($lineSub,2) }}</td>
               </tr>
             @endforeach
@@ -358,27 +374,32 @@
               <tbody>
                 @foreach($order->items as $item)
                   @php
-                    // Build label exactly like cart
-                    $profiles = $item->product?->shippingProfiles ?? collect();
+                    $product  = optional($item->product);
+                    $isDigital = $product && $product->type === 'digital';
+                    $profiles = $product?->shippingProfiles ?? collect();
                     $selected = $item->shipping_profile_id;
                   @endphp
                   <tr>
-                    <td>{{ $item->product->name ?? 'N/A' }}</td>
+                    <td>{{ $product->name ?? 'N/A' }} @if($isDigital)<span class="badge bg-secondary ms-1">Digital</span>@endif</td>
                     <td class="text-center">{{ (int)($item->quantity ?? 1) }}</td>
                     <td>
                       <input type="hidden" name="order_items[{{ $item->id }}][id]" value="{{ $item->id }}">
-                      <select name="order_items[{{ $item->id }}][shipping_profile_id]" class="form-select">
-                        @foreach($profiles as $profile)
-                          @php
-                            $label = $profile->dest_location_type === 'everywhere_else'
-                                     ? 'Everywhere'
-                                     : ($profile->destCountry ? ('Ship to '.$profile->destCountry->name) : $profile->name);
-                          @endphp
-                          <option value="{{ $profile->id }}" @selected($selected == $profile->id)>
-                            {{ $label }} ({{ $symbol }} {{ number_format((float)$profile->base_rate,2) }})
-                          </option>
-                        @endforeach
-                      </select>
+                      @if($isDigital)
+                        <div class="form-control-plaintext text-muted">No shipping (digital)</div>
+                      @else
+                        <select name="order_items[{{ $item->id }}][shipping_profile_id]" class="form-select">
+                          @foreach($profiles as $profile)
+                            @php
+                              $label = $profile->dest_location_type === 'everywhere_else'
+                                      ? 'Everywhere'
+                                      : ($profile->destCountry ? ('Ship to '.$profile->destCountry->name) : $profile->name);
+                            @endphp
+                            <option value="{{ $profile->id }}" @selected($selected == $profile->id)>
+                              {{ $label }} ({{ $symbol }} {{ number_format((float)$profile->base_rate,2) }})
+                            </option>
+                          @endforeach
+                        </select>
+                      @endif
                     </td>
                   </tr>
                 @endforeach
