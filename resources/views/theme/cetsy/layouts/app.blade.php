@@ -108,9 +108,8 @@
         width: 100%;
         display: flex;
         align-items: center;
-        justify-content: space-between;
       }
-      
+
       /* App Menu Button */
       .app-menu-btn {
         width: 40px;
@@ -123,33 +122,38 @@
         border: none;
         color: var(--brand-dark);
         transition: var(--transition);
+        margin-right: 8px;
       }
-      
+
       .app-menu-btn:active {
         background: rgba(0,0,0,0.05);
       }
-      
+
       .app-menu-btn i {
         font-size: 20px;
       }
-      
+
       /* Brand Logo */
       .navbar-brand {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        position: static;
+        transform: none;
+        margin: 0;
       }
-      
+
       .navbar-brand img {
         height: 32px;
         transition: var(--transition);
       }
-      
+
       /* App Actions */
       .app-actions {
         display: flex;
         align-items: center;
         gap: 12px;
+        margin-left: auto;
       }
       
       .app-actions a {
@@ -595,7 +599,7 @@
             aria-controls="appDrawer"
             aria-label="Open menu"
           >
-            <i class="fas fa-bars"></i>
+            <i class="fas fa-bars-staggered"></i>
           </button>
 
           <!-- Brand Logo -->
