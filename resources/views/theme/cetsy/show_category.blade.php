@@ -9,13 +9,25 @@
     /* Scoped cosmetics */
     .py-6 { padding-top: 4rem; padding-bottom: 4rem; }
     .hero-mask { background: linear-gradient(180deg, rgba(15,81,50,.82), rgba(25,135,84,.82)); }
-    .eyebrow {
+
+    .eyebrow{
       display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .75rem;
       border-radius:999px; background: rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.25);
       font-weight:600; font-size:.85rem;
     }
-    .toolbar { position: sticky; top: 0; z-index: 1020; background: #fff; border-bottom: 1px solid rgba(0,0,0,.06); }
-    .chip { display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:999px; border:1px solid rgba(0,0,0,.12); background:#fff; font-size:.875rem; }
+
+    /* ✅ Keep toolbar below nav dropdown/collapse */
+    .toolbar { position: sticky; top: 0; z-index: 900; background:#fff; border-bottom:1px solid rgba(0,0,0,.06); }
+
+    /* ✅ Force navbar menus above everything on this page */
+    nav.navbar { z-index: 1100; }
+    .navbar .dropdown-menu { z-index: 1101; }
+    .navbar-collapse { position: relative; z-index: 1102; }
+
+    .chip{
+      display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem;
+      border-radius:999px; border:1px solid rgba(0,0,0,.12); background:#fff; font-size:.875rem;
+    }
     .view-toggle .btn { border-radius:.5rem; }
     .empty-spot { border:2px dashed rgba(25,135,84,.35); border-radius:1rem; background:rgba(25,135,84,.03); }
   </style>
@@ -31,10 +43,7 @@
   @endphp
 
   <section class="position-relative" style="height: 320px;">
-    <div
-      class="position-absolute top-0 start-0 w-100 h-100 bg-cover bg-center"
-      style="background-image:url('{{ $banner }}');">
-    </div>
+    <div class="position-absolute top-0 start-0 w-100 h-100 bg-cover bg-center" style="background-image:url('{{ $banner }}');"></div>
     <div class="position-absolute top-0 start-0 w-100 h-100 hero-mask d-flex align-items-center">
       <div class="container text-center text-white px-3">
         <div class="mb-2">
@@ -61,7 +70,6 @@
     $sort     = request('sort', 'latest');   // latest | price_asc | price_desc | popular
     $perPage  = (int) request('per_page', 24);
     $view     = request('view', 'grid');     // grid | list
-    // Optional price range (if you wire it in controller)
     $priceMin = request('min');
     $priceMax = request('max');
   @endphp
@@ -88,7 +96,7 @@
             </select>
           </div>
 
-          {{-- Optional: price range (kept simple) --}}
+          {{-- Price range --}}
           <div class="col-3 col-md-2">
             <input type="number" min="0" step="1" name="min" value="{{ $priceMin }}" class="form-control" placeholder="Min">
           </div>
@@ -157,7 +165,7 @@
           <a href="{{ url()->current() }}" class="btn btn-sm btn-link text-decoration-none ms-1">
             <i class="fas fa-times-circle me-1"></i> Clear all
           </a>
-        @endif>
+        @endif
 
         {{-- Browse all link (to global listings) --}}
         <a href="{{ route('listings') }}" class="btn btn-sm btn-link text-decoration-none ms-2">
@@ -202,7 +210,7 @@
           </div>
         @endif
 
-      {{-- LIST VIEW (compact rows with partial parity) --}}
+      {{-- LIST VIEW --}}
       @else
         @if ($products->count())
           <div class="vstack gap-3">
@@ -234,16 +242,12 @@
                         {{ $item->name ?? 'Untitled item' }}
                       </a>
                     </h5>
-
-                    {{-- Ratings (same concept as product-card) --}}
                     <div class="mb-1 small text-warning">
                       @for($i=1; $i<=5; $i++)
                         <i class="fa-star{{ $i <= $avg ? ' fa-solid' : ' fa-regular text-muted' }}"></i>
                       @endfor
                       @if($cnt) <span class="text-muted">({{ $cnt }})</span>@endif
                     </div>
-
-                    {{-- Short description (optional) --}}
                     @if(!empty($item->short_description))
                       <div class="small text-muted">
                         {{ \Illuminate\Support\Str::limit(strip_tags($item->short_description), 120) }}
@@ -252,7 +256,6 @@
                   </div>
 
                   <div class="col-12 col-md-3 col-lg-3 text-md-end">
-                    {{-- Price parity with partial --}}
                     @if(isset($finalPrice, $basePrice) && is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
                       <div class="d-flex align-items-baseline gap-2 justify-content-md-end mb-2">
                         <span class="fw-bold text-success">{{ get_currency() }} {{ number_format($finalPrice, 2) }}</span>

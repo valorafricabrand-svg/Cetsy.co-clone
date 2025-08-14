@@ -12,7 +12,15 @@
         radial-gradient(1200px 600px at 110% 0%, rgba(25,135,84,.08), transparent 60%),
         linear-gradient(180deg, #0f5132, #198754);
     }
-    .toolbar { position: sticky; top: 0; z-index: 1020; background: #fff; border-bottom: 1px solid rgba(0,0,0,.06); }
+
+    /* ✅ Keep toolbar below nav dropdown/collapse */
+    .toolbar { position: sticky; top: 0; z-index: 900; background: #fff; border-bottom: 1px solid rgba(0,0,0,.06); }
+
+    /* ✅ Ensure BOTH navbars (top + category) sit above the toolbar */
+    nav { position: relative; z-index: 1100; }
+    nav .dropdown-menu { z-index: 1101; }
+    .navbar-collapse { position: relative; z-index: 1102; }
+
     .chip { display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:999px; border:1px solid rgba(0,0,0,.12); background:#fff; font-size:.875rem; }
     .view-toggle .btn { border-radius:.5rem; }
     .card-list { border:1px solid rgba(0,0,0,.06); border-radius:1rem; background:#fff; transition:transform .18s ease, box-shadow .18s ease; }
@@ -44,7 +52,7 @@
           <div class="col-12 col-md-4">
             <div class="input-group">
               <span class="input-group-text bg-white"><i class="fas fa-search text-secondary"></i></span>
-              <input type="search" name="q" value="{{ $q }}" class="form-control" placeholder="Search listings…">
+              <input type="search" name="q" value="{{ $q }}" class="form-control" placeholder="Search listings…" aria-label="Search listings">
             </div>
           </div>
 
@@ -243,6 +251,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('filtersForm');
       const viewInput = form.querySelector('input[name="view"]');
+
       document.querySelectorAll('.view-toggle [data-view]').forEach(btn => {
         btn.addEventListener('click', () => {
           viewInput.value = btn.getAttribute('data-view');
@@ -250,6 +259,7 @@
           form.submit();
         });
       });
+
       form.querySelectorAll('select').forEach(sel => {
         sel.addEventListener('change', () => {
           if (form.querySelector('input[name="page"]')) form.querySelector('input[name="page"]').value = 1;
