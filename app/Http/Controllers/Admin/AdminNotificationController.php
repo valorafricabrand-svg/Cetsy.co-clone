@@ -3,38 +3,40 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Notification;
+use App\Models\Activity;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AdminNotificationController extends Controller
 {
     public function index()
     {
-        $notifications = Notification::latest()->paginate(20);
-        return view('admin.notifications.index', compact('notifications'));
+        $currentDate = now()->format('Y-m-d H:i:s');
+        $currentUser = Auth::user()->name ?? 'HK-MBURU';
+        
+        // Get all activities without filtering by type
+        // Modify this query to match your needs based on existing columns
+        $notifications = Activity::latest()->paginate(15);
+            
+        return view('admin.notifications.index', compact(
+            'notifications', 
+            'currentDate',
+            'currentUser'
+        ));
     }
-
-    public function create()
+    
+    public function markAsRead($id)
     {
-        return view('admin.notifications.create');
+        $notification = Activity::findOrFail($id);
+        $notification->update(['is_read' => true]);
+        
+        return redirect()->back()->with('success', 'Notification marked as read');
     }
-
-    public function store(Request $request)
+    
+    public function markAllAsRead()
     {
-        $request->validate([
-            'title'   => 'required|max:255',
-            'message' => 'required',
-            'link'    => 'nullable|url|max:255',
-        ]);
-
-        Notification::create([
-            'title'   => $request->title,
-            'message' => $request->message,
-            'icon'    => $request->icon,
-            'link'    => $request->link,
-            'is_read' => false,
-        ]);
-
-        return redirect()->route('admin.notifications.index')->with('success', 'Notification sent!');
+        Activity::where('is_read', false)->update(['is_read' => true]);
+        
+        return redirect()->back()->with('success', 'All notifications marked as read');
     }
 }

@@ -11,17 +11,34 @@ class Review extends Model
         'order_item_id',
         'rating',
         'comment',
+        'approved_at',
+        'approved_by',
+        'rejected_at',
+        'rejected_by',
+        'rejection_reason',
         'approved',
+        'created_by',
+        'updated_at',
         'shop_id',
+
     ];
 
     /* ---------- relationships ---------- */
 
-    public function order()     { return $this->belongsTo(Order::class); }
-    public function orderItem() { return $this->belongsTo(OrderItem::class); }
-    public function shop() { return $this->belongsTo(Shop::class); }
-    public function user() 
-    { 
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
+    public function orderItem()
+    {
+        return $this->belongsTo(OrderItem::class);
+    }
+    public function shop()
+    {
+        return $this->belongsTo(Shop::class);
+    }
+    public function user()
+    {
         return $this->hasOneThrough(
             User::class,
             Order::class,
