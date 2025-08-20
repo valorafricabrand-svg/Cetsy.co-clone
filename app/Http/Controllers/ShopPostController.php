@@ -59,7 +59,10 @@ class ShopPostController extends Controller
             Activity::create([
                 'user_id' => Auth::id(),
                 'is_read' => false,
-                'description' => 'You created a new shop post'
+                'description' => 'You created a new shop post',
+                'type' => \App\Models\Activity::TYPE_SHOP_POST,
+                'related_id' => $shopPost->id,
+                'related_type' => 'shop_post'
             ]);
 
             DB::commit();

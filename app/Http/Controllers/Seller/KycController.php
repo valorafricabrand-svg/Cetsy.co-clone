@@ -67,7 +67,10 @@ class KycController extends Controller
             Activity::create([
                 'user_id' => $user->id,
                 'is_read' => false,
-                'description' => 'You submitted a new KYC application'
+                'description' => 'You submitted a new KYC application',
+                'type' => \App\Models\Activity::TYPE_KYC,
+                'related_id' => $kyc->id,
+                'related_type' => 'kyc'
             ]);
 
             \DB::commit();
@@ -135,7 +138,10 @@ class KycController extends Controller
                 Activity::create([
                     'user_id' => $kyc->user->id,
                     'is_read' => false,
-                    'description' => 'Your KYC application has been ' . $validated['status']
+                    'description' => 'Your KYC application has been ' . $validated['status'],
+                    'type' => \App\Models\Activity::TYPE_KYC,
+                    'related_id' => $kyc->id,
+                    'related_type' => 'kyc'
                 ]);
             } catch (\Throwable $mailException) {
                 Log::error('Failed to send KYC status email', [

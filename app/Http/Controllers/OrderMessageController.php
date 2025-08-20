@@ -52,7 +52,10 @@ class OrderMessageController extends Controller
         Activity::create([
             'user_id' => $order->shop->user->id,
             'is_read' => false,
-            'description' => 'You received a new message from ' . auth()->user()->name
+            'description' => 'You received a new message from ' . auth()->user()->name,
+            'type' => \App\Models\Activity::TYPE_MESSAGE,
+            'related_id' => $msg->id,
+            'related_type' => 'message'
         ]);
 
         return response()->json([

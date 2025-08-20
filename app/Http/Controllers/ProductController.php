@@ -172,7 +172,10 @@ public function store(Request $request)
     Activity::create([
         'user_id' => Auth::id(),
         'is_read' => false,
-        'description' => 'You created a new product'
+        'description' => 'You created a new product',
+        'type' => \App\Models\Activity::TYPE_PRODUCT,
+        'related_id' => $product->id,
+        'related_type' => 'product'
     ]);
 
     return redirect()

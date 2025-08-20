@@ -1,6 +1,6 @@
 @php
     $user = auth()->user();
-    $role = $user->isSeller() ? 'seller' : 'buyer';
+    $role = $user->isAdmin() ? 'admin' : ($user->isSeller() ? 'seller' : 'buyer');
 
     // Badge counts logic
     // Messages
@@ -45,8 +45,7 @@
         })->where('status', 'pending')->count() : 0;
     } else {
         $ordersCount = \App\Models\Order::where('user_id', $user->id)
-            ->where('status', 'pending')
-            ->count();
+            ->where('status', 'pending')->count();
     }
     
     // Cart
@@ -69,6 +68,15 @@
         ->get();
 
     $navItems = [
+        'admin' => [
+            [
+                'label' => 'Notifications',
+                'icon' => 'fas fa-bell',
+                'route' => '#',
+                'badge' => $notificationsCount,
+                'is_dropdown' => true,
+            ],
+        ],
         'seller' => [
            
             [
@@ -156,6 +164,7 @@
                 'route' => route('seller.favorites.index'),
                 'badge' => $wishlistCount,
             ],-->
+php artisan make:migration add_type_and_related_fields_to_activities_table --table=activities
 
 <nav class="navbar navbar-top fixed-top navbar-expand" id="navbarDefault" style="display:none;">
     <div class="collapse navbar-collapse justify-content-between">
@@ -198,6 +207,17 @@
                                                     <div class="flex-1">
                                                         <p class="mb-1 text-body-secondary small">{{ $notification->description }}</p>
                                                         <small class="text-body-quaternary">{{ $notification->created_at->diffForHumans() }}</small>
+                                                        @php
+                                                            $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, $user);
+                                                            $linkText = \App\Services\NotificationRouteService::getLinkText($notification, $user);
+                                                        @endphp
+                                                        @if($route && $route !== route('notifications.index'))
+                                                            <div class="mt-2">
+                                                                <a href="{{ $route }}" class="btn btn-sm btn-outline-primary">
+                                                                    {{ $linkText }}
+                                                                </a>
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                     @if(!$notification->is_read)
                                                         <div class="ms-2">
@@ -254,7 +274,17 @@
                         </div>
                         <div class="card-footer p-0 border-top border-translucent">
                             <ul class="nav d-flex flex-column my-3">
-                                @if(Auth::user()->isSeller())
+                                @if(Auth::user()->isAdmin())
+                                    <a class="dropdown-item" href="{{ route('admin.dashboard') }}">
+                                        <i class="fa fa-tachometer-alt"></i> <span>Admin Dashboard</span>
+                                    </a>
+                                    <a class="dropdown-item" href="{{ route('admin.users.index') }}">
+                                        <i class="fa fa-users"></i> <span>Manage Users</span>
+                                    </a>
+                                    <a class="dropdown-item" href="{{ route('admin.kyc.index') }}">
+                                        <i class="fa fa-id-card"></i> <span>KYC Management</span>
+                                    </a>
+                                @elseif(Auth::user()->isSeller())
                                     <a class="dropdown-item" href="{{ route('profile.edit') }}">
                                         <i class="fa fa-user"></i> <span>Profile</span>
                                     </a>
@@ -263,6 +293,10 @@
                                     </a>
                                     <a class="dropdown-item" href="{{ url('subscribe') }}">
                                         <i class="fa fa-users"></i> <span>Manage your subscriptions</span>
+                                    </a>
+                                @else
+                                    <a class="dropdown-item" href="{{ route('profile.edit') }}">
+                                        <i class="fa fa-user"></i> <span>Profile</span>
                                     </a>
                                 @endif
                             </ul>

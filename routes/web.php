@@ -302,6 +302,17 @@ Route::patch(
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     
+    // Disputes
+    Route::prefix('disputes')->name('disputes.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\DisputeController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\DisputeController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\DisputeController::class, 'store'])->name('store');
+        Route::get('/{dispute}', [\App\Http\Controllers\DisputeController::class, 'show'])->name('show');
+        Route::post('/{dispute}/messages', [\App\Http\Controllers\DisputeController::class, 'addMessage'])->name('messages.store');
+        Route::get('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'showAppealForm'])->name('appeal.create');
+        Route::post('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'submitAppeal'])->name('appeal.store');
+    });
+    
 });
 
 /*
@@ -368,6 +379,24 @@ Route::resource('wallets', AdminWalletController::class)->except(['create','stor
     // Product Reports
     Route::get('product-reports', [AdminProductReportController::class, 'index'])->name('product-reports.index');
     Route::put('product-reports/{id}', [AdminProductReportController::class, 'update'])->name('product-reports.update');
+
+    // Disputes
+    Route::prefix('disputes')->name('disputes.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'index'])->name('index');
+        Route::get('/{dispute}', [\App\Http\Controllers\Admin\DisputeController::class, 'show'])->name('show');
+        Route::get('/{dispute}/resolve', [\App\Http\Controllers\Admin\DisputeController::class, 'showResolveForm'])->name('resolve.create');
+        Route::post('/{dispute}/resolve', [\App\Http\Controllers\Admin\DisputeController::class, 'resolve'])->name('resolve.store');
+        Route::post('/{dispute}/messages', [\App\Http\Controllers\Admin\DisputeController::class, 'addMessage'])->name('messages.store');
+        Route::post('/{dispute}/finalize', [\App\Http\Controllers\Admin\DisputeController::class, 'finalizeDispute'])->name('finalize.store');
+        Route::get('/statistics', [\App\Http\Controllers\Admin\DisputeController::class, 'statistics'])->name('statistics');
+    });
+
+    // Appeals
+    Route::prefix('appeals')->name('appeals.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'appeals'])->name('index');
+        Route::get('/{appeal}', [\App\Http\Controllers\Admin\DisputeController::class, 'showAppeal'])->name('show');
+        Route::post('/{appeal}/review', [\App\Http\Controllers\Admin\DisputeController::class, 'reviewAppeal'])->name('review.store');
+    });
 
 });
 

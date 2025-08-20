@@ -84,7 +84,10 @@ public function depositForm()
         Activity::create([
             'user_id' => Auth::id(),
             'is_read' => false,
-            'description' => 'You made a manual deposit of $' . number_format($request->amount, 2)
+            'description' => 'You made a manual deposit of $' . number_format($request->amount, 2),
+            'type' => \App\Models\Activity::TYPE_WALLET,
+            'related_id' => $wallet->id,
+            'related_type' => 'wallet'
         ]);
 
         return redirect()->route('wallet.index')->with('success', 'Deposit recorded successfully!');
@@ -124,7 +127,10 @@ public function handlePayPalDeposit(Request $request)
             Activity::create([
                 'user_id' => Auth::id(),
                 'is_read' => false,
-                'description' => 'You made a deposit of $' . number_format($request->amount, 2)
+                'description' => 'You made a deposit of $' . number_format($request->amount, 2),
+                'type' => \App\Models\Activity::TYPE_WALLET,
+                'related_id' => $wallet->id,
+                'related_type' => 'wallet'
             ]);
         } catch (\Exception $emailException) {
             // Log email sending error but don't fail the deposit process
@@ -208,7 +214,10 @@ public function payListing(Request $request, $id)
         Activity::create([
             'user_id' => Auth::id(),
             'is_read' => false,
-            'description' => 'You paid for a listing fee of $' . number_format($fee, 2)
+            'description' => 'You paid for a listing fee of $' . number_format($fee, 2),
+            'type' => \App\Models\Activity::TYPE_WALLET,
+            'related_id' => $wallet->id,
+            'related_type' => 'wallet'
         ]);
     }
 
@@ -349,14 +358,20 @@ public function payOrder(Request $request, $id)
             Activity::create([
                 'user_id' => $shopOwner->id,
                 'is_read' => false,
-                'description' => 'You received a payment of $' . number_format($order->total_amount, 2)
+                'description' => 'You received a payment of $' . number_format($order->total_amount, 2),
+                'type' => \App\Models\Activity::TYPE_WALLET,
+                'related_id' => $payment->id,
+                'related_type' => 'payment'
             ]);
 
             // Create activity record for the buyer
             Activity::create([
                 'user_id' => $buyer->id,
                 'is_read' => false,
-                'description' => 'You paid for an order of $' . number_format($order->total_amount, 2)
+                'description' => 'You paid for an order of $' . number_format($order->total_amount, 2), 
+                'type' => \App\Models\Activity::TYPE_WALLET,
+                'related_id' => $payment->id,
+                'related_type' => 'payment'
             ]);
         } catch (\Exception $e) {
             // Log email sending error but don't fail the payment process
