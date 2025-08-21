@@ -1004,18 +1004,18 @@ public function shipping(Product $product, Request $request)
         $product->update($data);
 
         // If you want to handle digital file upload here, uncomment and adapt:
-        /*
+    
         if ($request->hasFile('digital_file') && $request->file('digital_file')->isValid()) {
             $path = $request->file('digital_file')->store('digital-files');
             // Persist to your DigitalFile model / media library as needed
             $product->digitalFiles()->create([
                 'filename' => $request->file('digital_file')->getClientOriginalName(),
-                'path'     => $path,
+                'filepath'     => $path,
                 'size'     => $request->file('digital_file')->getSize(),
                 'mime'     => $request->file('digital_file')->getClientMimeType(),
             ]);
         }
-        */
+    
 
         return back()->with('success', 'Details updated.');
     }
