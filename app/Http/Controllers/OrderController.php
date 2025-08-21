@@ -41,12 +41,37 @@ public function index(Request $request)
         $counts[$st] = $counts[$st] ?? 0;
     }
 
+    // Add dispute and appeal counts
+    $disputeCount = (clone $baseQuery)
+        ->whereHas('disputes', function($query) {
+            $query->whereIn('status', ['pending', 'under_review', 'resolved', 'appealed', 'appeal_under_review']);
+        })
+        ->count();
+
+    $appealCount = (clone $baseQuery)
+        ->whereHas('disputes.appeal', function($query) {
+            $query->whereIn('status', ['pending', 'under_review']);
+        })
+        ->count();
+
     $total = array_sum($counts);
-    $statusCounts = array_merge(['all' => $total], $counts);
+    $statusCounts = array_merge([
+        'all' => $total, 
+        'disputes' => $disputeCount,
+        'appeals' => $appealCount
+    ], $counts);
 
     // 2) Apply status filter
     $currentStatus = $request->query('status', 'all');
-    if ($currentStatus !== 'all' && isset($counts[$currentStatus])) {
+    if ($currentStatus === 'disputes') {
+        $baseQuery->whereHas('disputes', function($query) {
+            $query->whereIn('status', ['pending', 'under_review', 'resolved', 'appealed', 'appeal_under_review']);
+        });
+    } elseif ($currentStatus === 'appeals') {
+        $baseQuery->whereHas('disputes.appeal', function($query) {
+            $query->whereIn('status', ['pending', 'under_review']);
+        });
+    } elseif ($currentStatus !== 'all' && isset($counts[$currentStatus])) {
         $baseQuery->where('status', $currentStatus);
     }
 
@@ -56,9 +81,9 @@ public function index(Request $request)
         $baseQuery->where('id', $searchId);
     }
 
-    // 4) Paginate with items & product eager-load
+    // 4) Paginate with items, product, disputes, and appeals eager-load
     $orders = $baseQuery
-        ->with(['items.product'])
+        ->with(['items.product', 'disputes.appeal'])
         ->orderByDesc('id')
         ->paginate(15)
         ->withQueryString(); // preserves status & search
@@ -77,7 +102,7 @@ public function index(Request $request)
      */
     public function show(Order $order)
     {
-        $order->load('items.product', 'shop.user', 'user');
+        $order->load('items.product', 'shop.user', 'user', 'disputes');
         return view('seller.orders.show', compact('order'));
     }
 

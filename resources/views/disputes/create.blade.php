@@ -3,7 +3,7 @@
 @section('title', 'Create New Dispute')
 
 @section('content')
-<div class="container py-4">
+<div class="content">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
@@ -20,6 +20,15 @@
                             </ul>
                         </div>
                     @endif
+
+                    @if($error)
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {{ $error }}
+                        </div>
+                    @endif
+
+                
 
                     <form action="{{ route('disputes.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf

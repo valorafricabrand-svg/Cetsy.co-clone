@@ -3,7 +3,7 @@
 @section('title', 'Submit Appeal')
 
 @section('content')
-<div class="container py-4">
+<div class="content">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">

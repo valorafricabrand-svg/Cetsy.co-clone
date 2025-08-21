@@ -5,7 +5,7 @@ use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController,
+    AccountController, ProductInfoController, /* MpesaController, */ MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController,
     ProductReportController,ProductShippingController
 };
 
@@ -86,8 +86,8 @@ Route::get('/categories/{id}/attribute-template',
 Route::get('/wishlist', [ProductController::class, 'wishlist'])->name('wishlist');
 
 // MPESA
-Route::get('/bmpesa', [MpesaController::class, 'initiate']);
-Route::get('/bconfirm-payment/{id}', [MpesaController::class, 'checkStatus']);
+// Route::get('/bmpesa', [MpesaController::class, 'initiate']);
+// Route::get('/bconfirm-payment/{id}', [MpesaController::class, 'checkStatus']);
 
 // Payment routes
 Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_now');
@@ -158,80 +158,61 @@ Route::resource('shipping-profiles', ShippingProfileController::class)
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
-// routes/web.php
-Route::patch('products/{product}/renewal', [ProductController::class, 'updateRenewal'])
-     ->name('products.updateRenewal');
+    
+    Route::patch('products/{product}/renewal', [ProductController::class, 'updateRenewal'])
+         ->name('products.updateRenewal');
 
-    Route::post('/listing/{order}/wallet',     // URL:  /orders/123/wallet
-            [WalletController::class,'payListing'])
-     ->name('listing.wallet.pay');
+    Route::post('/listing/{order}/wallet', [WalletController::class,'payListing'])
+         ->name('listing.wallet.pay');
 
-    Route::post('/order/{order}/wallet',     // URL:  /orders/123/wallet
-            [WalletController::class,'payOrder'])
-     ->name('order.wallet.pay');
+    Route::post('/order/{order}/wallet', [WalletController::class,'payOrder'])
+         ->name('order.wallet.pay');
 
-
- Route::post(
-    '/products/{product}/status',
-    [ProductController::class, 'changeStatus']
-)->name('products.changeStatus');
-
-
+    Route::post('/products/{product}/status', [ProductController::class, 'changeStatus'])
+         ->name('products.changeStatus');
 
     Route::prefix('products/{product}')->group(function () {
-        // Add this for your “Add Custom Variation” form:
         Route::post('variation‑types', [VariationController::class, 'storeType'])
              ->name('variationTypes.store');
-
-        // Existing variant routes...
-        Route::post('variations',      [VariationController::class, 'store'])
+        Route::post('variations', [VariationController::class, 'store'])
              ->name('variations.store');
         Route::post('variations/bulk', [VariationController::class, 'bulkStore'])
              ->name('variations.bulkStore');
     });
 
-    Route::patch('variations/{variation}',   [VariationController::class, 'update'])
+    Route::patch('variations/{variation}', [VariationController::class, 'update'])
          ->name('variations.update');
-    Route::delete('variations/{variation}',  [VariationController::class, 'destroy'])
+    Route::delete('variations/{variation}', [VariationController::class, 'destroy'])
          ->name('variations.destroy');
-
-    // (Optional) deleting a variation type
     Route::delete('variation‑types/{variationType}', [VariationController::class, 'destroyType'])
          ->name('variationTypes.destroy');
 
-// Add a single option under a type
-Route::post('variation-types/{variationType}/options', [VariationController::class, 'storeOption'])
-    ->name('variationOptions.store');
-
-// Edit an existing option (e.g., rename "Red" -> "Crimson")
-Route::patch('variation-options/{option}', [VariationController::class, 'updateOption'])
-    ->name('variationOptions.update');
-
-// Remove an option
-Route::delete('variation-options/{option}', [VariationController::class, 'destroyOption'])
-    ->name('variationOptions.destroy');
-
-
-
+    Route::post('variation-types/{variationType}/options', [VariationController::class, 'storeOption'])
+         ->name('variationOptions.store');
+    Route::patch('variation-options/{option}', [VariationController::class, 'updateOption'])
+         ->name('variationOptions.update');
+    Route::delete('variation-options/{option}', [VariationController::class, 'destroyOption'])
+         ->name('variationOptions.destroy');
 
     Route::post('/favorites/toggle', [WishlistController::class, 'toggle'])
          ->name('favorites.toggle');
-        Route::delete('/favorites/{wishlist}', [WishlistController::class, 'remove'])
+    Route::delete('/favorites/{wishlist}', [WishlistController::class, 'remove'])
          ->name('wishlist.remove'); 
-        Route::post('/offers', [OfferController::class, 'store'])
+    Route::post('/offers', [OfferController::class, 'store'])
          ->name('offers.store');
-          Route::post('/messages', [MessageController::class, 'store'])
+    Route::post('/messages', [MessageController::class, 'store'])
          ->name('messages.store');
-    Route::post('/products/{product}/media', [MediaController::class, 'upload'])->name('media.upload');
-    Route::delete('/media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
-    Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'destroy'])->name('digital-files.destroy');
+    Route::post('/products/{product}/media', [MediaController::class, 'upload'])
+         ->name('media.upload');
+    Route::delete('/media/{media}', [MediaController::class, 'destroy'])
+         ->name('media.destroy');
+    Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'destroy'])
+         ->name('digital-files.destroy');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
- 
 
     // Products
     Route::get('products/create', [ProductController::class, 'create'])
@@ -246,9 +227,9 @@ Route::delete('variation-options/{option}', [VariationController::class, 'destro
     Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate'])
         ->name('products.duplicate');
 
-  Route::post('media/{media}/crop', [MediaController::class, 'crop'])
-     ->name('media.crop')
-     ->middleware('auth');
+    Route::post('media/{media}/crop', [MediaController::class, 'crop'])
+         ->name('media.crop')
+         ->middleware('auth');
    
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
@@ -257,7 +238,7 @@ Route::delete('variation-options/{option}', [VariationController::class, 'destro
     Route::post('/checkout/order', [OrderController::class, 'storeOrder'])->name('store_order');
 
     Route::get('/downloads/{file}', [DigitalFileController::class, 'download'])
-     ->name('digital-files.download');
+         ->name('digital-files.download');
 
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
@@ -267,13 +248,15 @@ Route::delete('variation-options/{option}', [VariationController::class, 'destro
     Route::get('/orders/{order}/chat', [OrderMessageController::class, 'show'])->name('orders.chat.show');
     Route::get('/orders/{order}/chat/messages', [OrderMessageController::class, 'fetch'])->name('orders.chat.fetch');
     Route::post('/orders/{order}/chat', [OrderMessageController::class, 'send'])->name('orders.chat.send');
-Route::patch(
-    '/products/{product}/set-featured-image',
-    [ProductController::class, 'setFeaturedImage']
-)->name('products.setFeaturedImage');
+    
+    Route::patch('/products/{product}/set-featured-image', [ProductController::class, 'setFeaturedImage'])
+         ->name('products.setFeaturedImage');
+    
     // Reviews
-    Route::post('/orders/{order}/items/{item}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])->name('orders.items.reviews.store');
-    Route::get('/shops/{shop}/reviews', [\App\Http\Controllers\ReviewController::class, 'shopReviews'])->name('shop.reviews');
+    Route::post('/orders/{order}/items/{item}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])
+         ->name('orders.items.reviews.store');
+    Route::get('/shops/{shop}/reviews', [\App\Http\Controllers\ReviewController::class, 'shopReviews'])
+         ->name('shop.reviews');
 
     // Wallet
     Route::prefix('wallet')->name('wallet.')->group(function () {
@@ -302,7 +285,7 @@ Route::patch(
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     
-    // Disputes
+    // Disputes - Keep only this to test
     Route::prefix('disputes')->name('disputes.')->group(function () {
         Route::get('/', [\App\Http\Controllers\DisputeController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\DisputeController::class, 'create'])->name('create');
@@ -335,7 +318,7 @@ Route::resource('wallets', AdminWalletController::class)->except(['create','stor
     Route::get('return-from-impersonation', [UserController::class, 'returnFromImpersonation'])->name('return-from-impersonation');
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
     Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
-    Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
+    // Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
 
             /* create (store) — needs the parent category id */
         Route::post('/categories/{category}/attributes',
@@ -380,8 +363,8 @@ Route::resource('wallets', AdminWalletController::class)->except(['create','stor
     Route::get('product-reports', [AdminProductReportController::class, 'index'])->name('product-reports.index');
     Route::put('product-reports/{id}', [AdminProductReportController::class, 'update'])->name('product-reports.update');
 
-    // Disputes
-    Route::prefix('disputes')->name('disputes.')->group(function () {
+    // Admin Disputes
+    Route::prefix('admin-disputes')->name('admin-disputes.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'index'])->name('index');
         Route::get('/{dispute}', [\App\Http\Controllers\Admin\DisputeController::class, 'show'])->name('show');
         Route::get('/{dispute}/resolve', [\App\Http\Controllers\Admin\DisputeController::class, 'showResolveForm'])->name('resolve.create');

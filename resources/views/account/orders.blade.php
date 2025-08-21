@@ -61,6 +61,35 @@
           Messages
         </a>
 
+        {{-- Dispute Section --}}
+        @php
+            $dispute = $order->disputes()->latest()->first();
+        @endphp
+        
+        @if($dispute)
+            {{-- Show existing dispute status --}}
+            <div class="mt-2">
+                <span class="badge bg-warning text-dark">
+                    <i class="bi bi-exclamation-triangle"></i> Dispute: {{ ucfirst($dispute->status) }}
+                </span>
+                <a href="{{ route('disputes.show', $dispute->id) }}" 
+                   class="btn btn-sm btn-warning ms-1">
+                    <i class="bi bi-chat-dots"></i> Continue Dispute
+                </a>
+            </div>
+        @else
+            {{-- Show create dispute button for eligible orders --}}
+            @if(in_array($order->status, [
+                \App\Models\Order::STATUS_PROCESSING, 
+                \App\Models\Order::STATUS_SHIPPED, 
+                \App\Models\Order::STATUS_DELIVERED
+            ]))
+                <a href="{{ route('disputes.create', ['order_id' => $order->id]) }}" 
+                   class="btn btn-sm btn-outline-warning ms-1">
+                    <i class="bi bi-exclamation-triangle"></i> Create Dispute
+                </a>
+            @endif
+        @endif
 
           @if ($order->status === \App\Models\Order::STATUS_SHIPPED)
                 <button class="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
