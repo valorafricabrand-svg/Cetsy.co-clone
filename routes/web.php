@@ -38,6 +38,10 @@ use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+// Safaricom callback (must be reachable publicly)
+Route::post('/wallet/deposit/mpesa/callback', [WalletDepositController::class, 'mpesaCallback'])
+    ->name('wallet.deposit.mpesa.callback');
+
 
 // pages
 Route::get('/become-seller', function () {return themed_view('pages.become-seller');})->name('become-seller');
@@ -285,7 +289,12 @@ Route::patch(
         Route::get('/deposit', [WalletController::class, 'depositForm'])->name('deposit.form');
         Route::post('/deposit', [WalletController::class, 'storeDeposit'])->name('deposit.store');
         Route::post('/deposit/paypal', [WalletController::class, 'handlePayPalDeposit'])->name('deposit.paypal');
+
+    
     });
+
+    Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
+        ->name('wallet.deposit.mpesa.stk');
 
     // Account
     Route::prefix('account')->name('account.')->group(function () {
