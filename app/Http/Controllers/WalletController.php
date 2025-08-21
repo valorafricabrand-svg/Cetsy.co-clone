@@ -68,41 +68,41 @@ class WalletController extends Controller
      |--------------------------------------------------------------
      */
 
-    public function index(Request $request)
-    {
-        $userId = Auth::id();
+  public function index(Request $request)
+{
+    $query = Wallet::where('user_id', Auth::id());
 
-        $query = Wallet::where('user_id', $userId);
-
-        if ($request->type === 'credit') {
-            $query->where('credit', '>', 0);
-        } elseif ($request->type === 'debit') {
-            $query->where('debit', '>', 0);
-        }
-
-        if ($request->filled('from')) {
-            $query->whereDate('created_at', '>=', $request->from);
-        }
-        if ($request->filled('to')) {
-            $query->whereDate('created_at', '<=', $request->to);
-        }
-
-        $transactions = $query->orderByDesc('created_at')->paginate(10);
-
-        // Use running balance from helper (accurate even if mixed writes happened)
-        $balance = $this->currentBalance($userId);
-
-        // Payment methods for current user's shop
-        $shop = Shop::where('user_id', $userId)->first();
-        $paymentMethods = collect();
-        if ($shop) {
-            $paymentMethods = PaymentMethod::where('shop_id', $shop->id)
-                ->with('paymentType')
-                ->get();
-        }
-
-        return view('wallet.index', compact('transactions', 'balance', 'paymentMethods'));
+    if ($request->type === 'credit') {
+        $query->where('credit', '>', 0);
+    } elseif ($request->type === 'debit') {
+        $query->where('debit', '>', 0);
     }
+
+    if ($request->from) {
+        $query->whereDate('created_at', '>=', $request->from);
+    }
+
+    if ($request->to) {
+        $query->whereDate('created_at', '<=', $request->to);
+    }
+
+    $transactions = $query->orderBy('created_at', 'desc')->paginate(10);
+    $balance = Wallet::where('user_id', Auth::id())
+                ->selectRaw('SUM(credit - debit) as balance')
+                ->value('balance') ?? 0;
+
+    // Fetch payment methods for the current user's shop
+    $shop = Shop::where('user_id', Auth::id())->first();
+    $paymentMethods = collect();
+    
+    if ($shop) {
+        $paymentMethods = PaymentMethod::where('shop_id', $shop->id)
+            ->with('paymentType')
+            ->get();
+    }
+
+    return view('wallet.index', compact('transactions', 'balance', 'paymentMethods'));
+}
 
     public function depositForm()
     {
