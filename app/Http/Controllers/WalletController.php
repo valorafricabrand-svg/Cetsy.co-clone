@@ -346,8 +346,91 @@ class WalletController extends Controller
      |--------------------------------------------------------------
      */
 
-    public function payListing(Request $request, $id)
+     public function payListing(Request $request, $id)
+{
+    // 1) Fetch the product
+    $product = Product::findOrFail($id);
+
+    // 2) Validate plan & via
+    $data = $request->validate([
+        'plan' => ['required', 'in:monthly,4months'],
+        'via'  => ['required', 'in:wallet,paypal'],
+    ]);
+
+    // 3) Compute fee & next due date
+    $fourMonthFee = (float) $product->category->listing_fee;
+    
+    if ($data['plan'] === 'monthly') {
+        $fee     = $fourMonthFee / 4;
+        $nextDue = now()->addMonth();
+    } else {
+        $fee     = $fourMonthFee;
+        $nextDue = now()->addMonths(4);
+    }
+
+    // 4) Activate product & set due date
+    $product->update([
+        'is_active'       => true,
+        'listing_paid_at' => now(),
+        'next_due_date'   => $nextDue,
+    ]);
+
+    // 5) Build a unique local transaction ID
+    $localTxId = $request->input('transaction_id');
+    if (! $localTxId) {
+        do {
+            $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
+        } while (Payment::where('local_transaction_id', $localTxId)->exists());
+    }
+
+    // 6) If paying via wallet, record a Wallet debit
+    if ($data['via'] === 'wallet') {
+
+        $currentBalance = Wallet::where('user_id', Auth::id())
+                                ->latest('created_at')
+                                ->value('balance') ?? 0;
+
+        Wallet::create([
+            'user_id'     => Auth::id(),
+            'credit'      => 0,
+            'debit'       => $fee,
+            'balance'     => $currentBalance - $fee,
+            'reference'   => strtoupper(uniqid('TXN-')),
+            'method'      => 'wallet',
+            'description' => "Listing fee ({$data['plan']})",
+        ]);
+
+        // Create activity record for the seller
+        Activity::create([
+            'user_id' => Auth::id(),
+            'is_read' => false,
+            'description' => 'You paid for a listing fee of $' . number_format($fee, 2)
+        ]);
+    }
+
+    // 7) Record the Payment
+    Payment::create([
+        'shop_id'              => $product->shop_id,
+        'total_amount'         => $fee,
+        'payment_method'       => $data['via'],
+        'status'               => '3',  // completed
+        'currency'             => $product->currency ?? 'USD',
+        'local_transaction_id' => $localTxId,
+        'payment_name'         => 'listing_fee',
+    ]);
+
+    // 8) Redirect with success
+   return view('products.success_deposit_fee', [
+        'product' => $product,
+        'plan'    => $data['plan'],
+        'amount'  => $fee,
+        'nextDue' => $nextDue,
+    ]);
+}
+
+    public function payListing2(Request $request, $id)
     {
+        dd('teysysyss');
         $product = Product::findOrFail($id);
 
         $data = $request->validate([
