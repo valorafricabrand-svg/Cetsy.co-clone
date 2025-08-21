@@ -177,7 +177,7 @@ public function store(Request $request)
 
     return redirect()
         ->route('products.show',$product)
-        ->with('success','Product created successfully! You can now add more details or activate it.');
+        ->with('success','Listing created successfully! You can now add more details or activate it.');
 }
 
 
@@ -604,7 +604,9 @@ public function listing(string $slug)
     {
         $q = $request->input('q');
 
-        $products = Product::where('is_active', 1)->where('name', 'like', "%{$q}%")
+        where('is_active', 1)->
+
+        $products = Product::where('name', 'like', "%{$q}%")
             ->orWhere('description', 'like', "%{$q}%")
             ->paginate(12);
 

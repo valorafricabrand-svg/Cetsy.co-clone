@@ -59,7 +59,7 @@
     <small class="ms-1 text-muted">({{ $product->reviews_count ?? 0 }} reviews)</small>
   </div>
 
-  {{-- Price block (JS updates #js-price-amount when a priced variant is selected) --}}
+  {{-- Price block (JS updates #js-price-amount) --}}
   @if ($lowestVariantPrice !== null)
     <div id="js-price-block"
          class="d-flex align-items-baseline gap-3 mb-3"
@@ -257,6 +257,7 @@
     const variantIndex = JSON.parse(priceBlock.getAttribute('data-variant-index') || '{}');
 
     const selects = Array.from(document.querySelectorAll('.js-variant-select'));
+    const primarySelect = selects.length ? selects[0] : null; // The first variation type (price driver)
 
     function fmt(amount) {
       return currency + ' ' + Number(amount).toFixed(2);
@@ -290,23 +291,87 @@
       if (variantPriceNode) variantPriceNode.value = '';
     }
 
-    function updateMainPrice() {
-      const key = getFullySelectedKey();
-      if (key && Object.prototype.hasOwnProperty.call(variantIndex, key)) {
+    // Find min price across variants that include a specific option id
+    function minPriceForOption(optionId) {
+      let min = null;
+      for (const key in variantIndex) {
         const entry = variantIndex[key];
+        if (entry && Array.isArray(entry.options) && entry.options.indexOf(optionId) !== -1) {
+          const p = parseFloat(entry.price);
+          if (!Number.isNaN(p)) {
+            if (min === null || p < min) min = p;
+          }
+        }
+      }
+      return min;
+    }
+
+    // Get price to display based solely on the FIRST variation type selection (if multiple types exist)
+    function firstTypePrice() {
+      if (!primarySelect || !primarySelect.value) return null;
+
+      // Prefer the precomputed data-option-min
+      const perOptionMin = JSON.parse(primarySelect.getAttribute('data-option-min') || '{}');
+      const optId = parseInt(primarySelect.value, 10);
+
+      if (perOptionMin && perOptionMin[optId] != null) {
+        const p = parseFloat(perOptionMin[optId]);
+        if (!Number.isNaN(p)) return p;
+      }
+
+      // Fallback: compute from variantIndex
+      return minPriceForOption(optId);
+    }
+
+    function updateMainPrice() {
+      const hasMultipleTypes = selects.length > 1;
+
+      if (hasMultipleTypes) {
+        // ALWAYS price by the FIRST variation type only
+        const p = firstTypePrice();
+        if (p != null && !Number.isNaN(p)) {
+          if (priceNode) priceNode.textContent = fmt(p);
+        } else {
+          if (priceNode) priceNode.textContent = fmt(defaultAmt);
+        }
+
+        // Only set hidden variant fields when a full valid combo is selected
+        const fullKey = getFullySelectedKey();
+        if (fullKey && Object.prototype.hasOwnProperty.call(variantIndex, fullKey)) {
+          const entry = variantIndex[fullKey];
+          if (variantIdNode) variantIdNode.value = entry.id;
+          if (variantPriceNode) variantPriceNode.value = parseFloat(entry.price).toFixed(2);
+        } else {
+          clearVariantHidden();
+        }
+        return;
+      }
+
+      // Single variation type behavior: exact variant price when selected, else default
+      const fullKey = getFullySelectedKey();
+      if (fullKey && Object.prototype.hasOwnProperty.call(variantIndex, fullKey)) {
+        const entry = variantIndex[fullKey];
         const price = parseFloat(entry.price);
         if (priceNode) priceNode.textContent = fmt(price);
         if (variantIdNode) variantIdNode.value = entry.id;
         if (variantPriceNode) variantPriceNode.value = price.toFixed(2);
       } else {
-        if (priceNode) priceNode.textContent = fmt(defaultAmt);
+        // If a single type and an option is selected but doesn't map, attempt min by that option
+        if (primarySelect && primarySelect.value) {
+          const p = firstTypePrice();
+          if (p != null && !Number.isNaN(p)) {
+            if (priceNode) priceNode.textContent = fmt(p);
+          } else {
+            if (priceNode) priceNode.textContent = fmt(defaultAmt);
+          }
+        } else {
+          if (priceNode) priceNode.textContent = fmt(defaultAmt);
+        }
         clearVariantHidden();
       }
     }
 
-    // For each select, show price per option:
-    // - If all other selects are chosen, show exact price for the completed combo with this option.
-    // - Otherwise, show "From <lowest price including this option>" using data-option-min.
+    // For each select, keep helpful per-option labels ("— From KES X.XX")
     function updateOptionLabels() {
       const otherAllChosen = (excludeTypeId) => {
         for (const s of selects) {
@@ -330,6 +395,7 @@
 
           const optId = parseInt(opt.value, 10);
 
+          // If all other selects are chosen, try exact combo; else show "From" (min) for that option
           if (otherAllChosen(typeId)) {
             const key = getSelectedKey(typeId, optId);
             if (key && Object.prototype.hasOwnProperty.call(variantIndex, key)) {

@@ -6,7 +6,7 @@ use App\Http\Controllers\{
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
     AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController,
-    ProductReportController,ProductShippingController
+    ProductReportController,ProductShippingController, ProductVariationController
 };
 
 use App\Http\Controllers\Admin\{
@@ -117,9 +117,13 @@ Route::prefix('products/{product}')->name('products.')->group(function () {     
 
 
 
+
+
+
 });
 
-
+    Route::get('/products/{product}/variation-types/{type}/manage', [ProductVariationController::class, 'manage'])
+    ->name('products.variations.manage');
 
 
 
