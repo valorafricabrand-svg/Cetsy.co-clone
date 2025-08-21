@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ensure.seller.kyc' => EnsureSellerKycIsVerified::class,
             'ensure.seller.subscription' => \App\Http\Middleware\EnsureSellerHasActiveSubscription::class,
             'kyc.after.two.sales' => \App\Http\Middleware\RequireKycAfterTwoSales::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
     })
     ->withCommands([

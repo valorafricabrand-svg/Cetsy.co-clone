@@ -91,7 +91,10 @@ public function create()
         Activity::create([
             'user_id' => Auth::id(),
             'is_read' => false,
-            'description' => 'You created a new shop'
+            'description' => 'You created a new shop',
+            'type' => \App\Models\Activity::TYPE_SHOP,
+            'related_id' => $shop->id,
+            'related_type' => 'shop'
         ]);
 
         return redirect()

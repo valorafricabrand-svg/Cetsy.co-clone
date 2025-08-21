@@ -60,6 +60,41 @@
     </div>
   </div>
 
+  {{-- INITIATE DISPUTE BUTTON --}}
+  <div class="d-flex justify-content-center mb-3">
+    <a href="{{ route('disputes.create', ['order_id' => $order->id]) }}" 
+       class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1">
+      <i class="fa-solid fa-exclamation-triangle"></i> Initiate Dispute
+    </a>
+  </div>
+
+  {{-- DISPUTE & APPEAL ACTIONS --}}
+  @if($order->disputes && $order->disputes->isNotEmpty())
+    @php
+      $activeDispute = $order->disputes->where('status', '!=', 'final')->first();
+      $resolvedDispute = $order->disputes->where('status', 'resolved')->first();
+    @endphp
+    
+    @if($activeDispute)
+      <div class="d-flex justify-content-center mb-3">
+        <a href="{{ route('disputes.show', $activeDispute->id) }}" 
+           class="btn btn-warning btn-sm d-flex align-items-center gap-1">
+          <i class="fa-solid fa-exclamation-triangle"></i> View Dispute
+        </a>
+      </div>
+    @endif
+
+    @if($resolvedDispute && $resolvedDispute->canBeAppealed())
+      <div class="d-flex justify-content-center mb-3">
+        <a href="{{ route('disputes.appeal.create', $resolvedDispute->id) }}" 
+           class="btn btn-danger btn-sm d-flex align-items-center gap-1">
+          <i class="fa-solid fa-gavel"></i> Appeal Decision
+          <span class="badge bg-light text-dark ms-1">{{ $resolvedDispute->getAppealDeadlineDaysLeft() }}d left</span>
+        </a>
+      </div>
+    @endif
+  @endif
+
   {{-- SUMMARY & CUSTOMER --}}
   <div class="row g-4 mb-4">
     {{-- Order Summary --}}
@@ -300,6 +335,80 @@
     </div>
   @endif
 </div>
+
+{{-- DISPUTE INFORMATION --}}
+@if($order->disputes && $order->disputes->isNotEmpty())
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+      <i class="fa-solid fa-exclamation-triangle text-warning"></i> Dispute Information
+    </div>
+    <div class="card-body">
+      @foreach($order->disputes as $dispute)
+        <div class="border-bottom pb-3 mb-3 @if(!$loop->last) @endif">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="mb-1">
+              {{ $dispute->getTypeLabel() }}
+              <span class="badge {{ $dispute->getStatusBadgeClass() }} ms-2">
+                {{ ucfirst(str_replace('_', ' ', $dispute->status)) }}
+              </span>
+            </h6>
+            <small class="text-muted">{{ $dispute->created_at->format('d M Y, h:i A') }}</small>
+          </div>
+          
+          <p class="mb-2 text-muted">{{ Str::limit($dispute->description, 150) }}</p>
+          
+          @if($dispute->isResolved())
+            <div class="alert alert-info small mb-2">
+              <strong>Decision:</strong> {{ $dispute->getDecisionLabel() }}
+              @if($dispute->refund_amount)
+                <br><strong>Refund Amount:</strong> {{ $symbol }} {{ number_format($dispute->refund_amount, 2) }}
+              @endif
+            </div>
+            
+            @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
+              <div class="alert alert-warning small mb-2">
+                <strong>Appeal Deadline:</strong> {{ $dispute->getAppealDeadlineDaysLeft() }} days remaining
+              </div>
+            @endif
+            
+            @if($dispute->appeal)
+              <div class="alert alert-warning small mb-2">
+                <strong>Appeal Status:</strong> {{ ucfirst($dispute->appeal->status) }}
+              </div>
+            @endif
+          @endif
+          
+          <div class="d-flex gap-2">
+            <a href="{{ route('disputes.show', $dispute->id) }}" class="btn btn-outline-primary btn-sm">
+              <i class="fa-solid fa-eye me-1"></i> View Details
+            </a>
+            
+            @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
+              <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-warning btn-sm">
+                <i class="fa-solid fa-gavel me-1"></i> Appeal
+              </a>
+            @endif
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+@endif
+
+{{-- NO DISPUTES SECTION --}}
+@if(!$order->disputes || $order->disputes->isEmpty())
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+      <i class="fa-solid fa-check-circle text-success"></i> Dispute Status
+    </div>
+    <div class="card-body text-center">
+      <p class="text-muted mb-2">No disputes have been filed for this order.</p>
+      <p class="small text-muted mb-0">
+        If you encounter any issues with this order, you can initiate a dispute using the button above.
+      </p>
+    </div>
+  </div>
+@endif
 
 {{-- SHIPPING MODAL (PROCESSING → Ship) --}}
 @if($order->status === \App\Models\Order::STATUS_PROCESSING)

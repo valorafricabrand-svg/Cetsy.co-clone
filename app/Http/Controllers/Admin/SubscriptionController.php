@@ -21,7 +21,10 @@ class SubscriptionController extends Controller
         Activity::create([
             'user_id' => Auth::id(),
             'is_read' => false,
-            'description' => 'You deactivated expired subscriptions'
+            'description' => 'You deactivated expired subscriptions',
+            'type' => \App\Models\Activity::TYPE_SUBSCRIPTION,
+            'related_id' => $count,
+            'related_type' => 'subscription'
         ]);
 
         return Redirect::back()->with('success', "Deactivated $count expired subscriptions.");

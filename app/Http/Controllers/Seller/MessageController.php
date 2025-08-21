@@ -182,7 +182,10 @@ class MessageController extends Controller
         Activity::create([
             'user_id' => $message->receiver_id,
             'is_read' => false,
-            'description' => 'You received a new message from ' . $message->sender->name
+            'description' => 'You received a new message from ' . $message->sender->name,
+            'type' => \App\Models\Activity::TYPE_MESSAGE,
+            'related_id' => $message->id,
+            'related_type' => 'message'
         ]);
 
         return back()->with('success', 'Message marked as read.');
@@ -211,7 +214,10 @@ class MessageController extends Controller
         Activity::create([
             'user_id' => $message->receiver_id,
             'is_read' => false,
-            'description' => 'You received a new message from ' . $message->sender->name
+            'description' => 'You received a new message from ' . $message->sender->name,
+            'type' => \App\Models\Activity::TYPE_MESSAGE,
+            'related_id' => $message->id,
+            'related_type' => 'message'
         ]);
 
         return back()->with('success', "Successfully marked {$updatedCount} message(s) as read.");
@@ -271,6 +277,9 @@ class MessageController extends Controller
                     'user_id' => $buyer->id,
                     'is_read' => false,
                     'description' => $replyMessage['body'],
+                    'type' => \App\Models\Activity::TYPE_MESSAGE,
+                    'related_id' => $replyMessage->id,
+                    'related_type' => 'message'
                 ]);
             }
         } catch (\Exception $e) {
