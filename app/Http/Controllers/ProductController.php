@@ -600,18 +600,19 @@ public function listing(string $slug)
         return themed_view('listings', compact('products'));
     }
 
-    public function search(Request $request)
-    {
-        $q = $request->input('q');
+public function search(Request $request)
+{
+    $q = $request->input('q');
 
-        where('is_active', 1)->
+    $products = Product::where('is_active', 1)
+        ->where(function ($query) use ($q) {
+            $query->where('name', 'like', "%{$q}%")
+                  ->orWhere('description', 'like', "%{$q}%");
+        })
+        ->paginate(12);
 
-        $products = Product::where('name', 'like', "%{$q}%")
-            ->orWhere('description', 'like', "%{$q}%")
-            ->paginate(12);
-
-        return themed_view('listings', compact('products'))->with('q', $q);
-    }
+    return themed_view('listings', compact('products'))->with('q', $q);
+}
 
 
  // in App\Http\Controllers\ProductController.php
