@@ -12,7 +12,7 @@
                 <strong>{{ $dispute->getTypeLabel() }}</strong>
             </h6>
             <p class="card-text text-muted small mb-0">
-                Order #{{ $dispute->order->order_number }}
+                Order #{{ $dispute->order->id }}
             </p>
         </div>
 
@@ -29,7 +29,7 @@
             </div>
             <div class="col-6">
                 <small class="text-muted d-block">Seller</small>
-                <strong>{{ $dispute->seller->name }}</strong>
+                <strong>{{ $dispute->order->shop->name ?? 'Seller' }}</strong>
             </div>
         </div>
 
