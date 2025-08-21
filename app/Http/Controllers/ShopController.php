@@ -119,6 +119,7 @@ public function showPublic($id)
     $shop = Shop::whereSlug($id)->firstOrFail();
 
     $products = $shop->products()
+        ->where('is_active', 1)
         ->with('media')
         ->latest()
         ->paginate(12);
