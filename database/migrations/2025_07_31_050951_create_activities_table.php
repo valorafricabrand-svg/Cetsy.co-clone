@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('activities', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->boolean('is_read')->default(false);
-            $table->text('description');
-            $table->timestamps();
+        Schema::table('activities', function (Blueprint $table) {
+            if (!Schema::hasColumn('activities', 'type')) {
+                $table->string('type')->nullable()->after('message');
+            }
         });
     }
 
@@ -25,6 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('activities');
+        Schema::table('activities', function (Blueprint $table) {
+            if (Schema::hasColumn('activities', 'type')) {
+                $table->dropColumn('type');
+            }
+        });
     }
 };

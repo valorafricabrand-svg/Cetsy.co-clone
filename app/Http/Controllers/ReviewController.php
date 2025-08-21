@@ -24,7 +24,7 @@ class ReviewController extends Controller
 
         return view('shops.reviews', compact('shop', 'reviews', 'averageRating', 'reviewCount'));
     }
-
+    
     /**
      * Store a new review for a single order item.
      */
@@ -48,4 +48,5 @@ class ReviewController extends Controller
 
         return back()->with('success', 'Thank you for your review!');
     }
+    
 }

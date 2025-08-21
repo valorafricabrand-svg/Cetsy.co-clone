@@ -12,7 +12,7 @@ use App\Models\Product;
 
 use Illuminate\Support\Facades\Auth;
 
-class DashboardController extends Controller
+class BuyerDashboard extends Controller
 {
     /**
      * Display the buyer dashboard.
