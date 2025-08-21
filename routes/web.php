@@ -96,8 +96,12 @@ Route::get('/bconfirm-payment/{id}', [MpesaController::class, 'checkStatus']);
 // Payment routes
 Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_now');
 
+
+
 Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
       ->name('products.pay-fee');
+
+
 
 // Product Reports
 Route::post('/product-reports', [ProductReportController::class, 'store'])->name('product-reports.store');
