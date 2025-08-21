@@ -15,6 +15,11 @@ class MessageController extends Controller
 {
     public function store(Request $request)
     {
+        // Convert empty string to null for product_id before validation
+        if ($request->has('product_id') && $request->product_id === '') {
+            $request->merge(['product_id' => null]);
+        }
+
         $data = $request->validate([
             'receiver_id' => ['required', 'exists:users,id'],
             'product_id'  => ['nullable', 'exists:products,id'],
@@ -28,16 +33,27 @@ class MessageController extends Controller
             'body'        => $data['message'],
         ]);
 
-        // Send email to receiver (shop owner)
-        try {
-            $receiver = User::find($data['receiver_id']);
-            $product = null;
-            
-            if ($data['product_id']) {
-                $product = Product::find($data['product_id']);
-            }
-            
-            if ($receiver) {
+        // Get receiver and product info
+        $receiver = User::find($data['receiver_id']);
+        $product = null;
+        
+        if ($data['product_id']) {
+            $product = Product::find($data['product_id']);
+        }
+        
+        if ($receiver) {
+            // Create activity record for the seller (always create for any message)
+            Activity::create([
+                'user_id' => $receiver->id,
+                'is_read' => false,
+                'description' => 'You received a new message from ' . $request->user()->name,
+                'type' => \App\Models\Activity::TYPE_MESSAGE,
+                'related_id' => $message->id,
+                'related_type' => 'message'
+            ]);
+
+            // Send email to receiver (shop owner)
+            try {
                 Mail::to($receiver->email)
                     ->send(new MessageReceivedMail(
                         $message,
@@ -45,20 +61,10 @@ class MessageController extends Controller
                         $request->user(),
                         $receiver
                     ));
-
-                // Create activity record for the seller
-                Activity::create([
-                    'user_id' => $receiver->id,
-                    'is_read' => false,
-                    'description' => 'You received a new message from ' . $request->user()->name,
-                    'type' => \App\Models\Activity::TYPE_MESSAGE,
-                    'related_id' => $message->id,
-                    'related_type' => 'message'
-                ]);
+            } catch (\Exception $e) {
+                // Log the error but don't break the user experience
+                \Log::error('Failed to send message notification email: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            // Log the error but don't break the user experience
-            \Log::error('Failed to send message notification email: ' . $e->getMessage());
         }
 
         return back()->with('success', 'Message sent successfully!');
