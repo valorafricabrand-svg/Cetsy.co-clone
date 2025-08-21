@@ -1,14 +1,14 @@
 {{-- resources/views/theme/{{ theme() }}/partials/_media.blade.php --}}
 @php
   /**
-   * $product->media: collection of items with:
+   * $product->media: collection with:
    * - type: 'image' | 'video'
    * - url: storage path (original/high-res)
    * - alt: optional alt text
    */
 
   // Helper: Build srcset for responsive sharpness.
-  // Replace these with real resized variants if you generate them.
+  // Swap these with real resized variants if you generate them.
   $srcsetFor = function (string $path) {
       $url = asset('storage/' . ltrim($path, '/'));
       return implode(', ', [
@@ -106,7 +106,7 @@
   @endif
 </div>
 
-{{-- Full-screen Lightbox (no auto-slide; manual prev/next only) --}}
+{{-- Full-screen Lightbox (manual only) --}}
 <div class="modal fade" id="imageLightbox" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-fullscreen">
     <div class="modal-content bg-dark">
@@ -173,7 +173,7 @@
     width: 180px;
     height: 180px;
     background-repeat: no-repeat;
-    background-size: 200% 200%; /* 2x zoom baseline */
+    /* background-size and background-position are set dynamically for accuracy */
     box-shadow: 0 6px 24px rgba(0,0,0,.25);
     z-index: 2;
   }
@@ -215,6 +215,7 @@
 
   // =========================
   // HOVER LENS ZOOM (desktop)
+  // Accurate cursor-centered zoom with object-fit: contain
   // =========================
   const wraps = document.querySelectorAll('.zoom-wrap');
   wraps.forEach(wrap => {
@@ -230,35 +231,98 @@
     const fullSrc = wrap.getAttribute('data-full') || img.currentSrc || img.src;
     lens.style.backgroundImage = `url("${fullSrc}")`;
 
+    // State for displayed image box inside wrapper (due to object-fit: contain)
+    const state = {
+      dispW: 0, dispH: 0, offX: 0, offY: 0 // displayed width/height and left/top offsets within wrap
+    };
+
+    function computeImageBox(){
+      const wrapRect = wrap.getBoundingClientRect();
+      const containerW = wrapRect.width;
+      const containerH = wrapRect.height;
+
+      const natW = img.naturalWidth || containerW;
+      const natH = img.naturalHeight || containerH;
+
+      const imgAR = natW / natH;
+      const containerAR = containerW / containerH;
+
+      let dispW, dispH, offX, offY;
+      if (imgAR > containerAR) {
+        // Image is wider -> full width, height letterboxed
+        dispW = containerW;
+        dispH = containerW / imgAR;
+        offX = 0;
+        offY = (containerH - dispH) / 2;
+      } else {
+        // Image is taller -> full height, width letterboxed
+        dispH = containerH;
+        dispW = containerH * imgAR;
+        offX = (containerW - dispW) / 2;
+        offY = 0;
+      }
+      state.dispW = dispW;
+      state.dispH = dispH;
+      state.offX = offX;
+      state.offY = offY;
+    }
+
+    // Recompute when needed
+    const computeWhenReady = () => {
+      if (img.complete && img.naturalWidth) {
+        computeImageBox();
+      } else {
+        img.addEventListener('load', computeImageBox, { once: true });
+      }
+    };
+    computeWhenReady();
+    window.addEventListener('resize', computeImageBox);
+
     const isFine = matchMedia('(pointer:fine)').matches;
 
     function moveLens(e){
-      const rect = wrap.getBoundingClientRect();
-      const lensRect = lens.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const wrapRect = wrap.getBoundingClientRect();
+      const mouseX = e.clientX - wrapRect.left;
+      const mouseY = e.clientY - wrapRect.top;
 
-      const halfW = lensRect.width / 2;
-      const halfH = lensRect.height / 2;
+      const lensW = lens.offsetWidth;
+      const lensH = lens.offsetHeight;
 
-      let left = x - halfW;
-      let top  = y - halfH;
+      // Clamp lens center within the displayed image box
+      const minX = state.offX + lensW / 2;
+      const maxX = state.offX + state.dispW - lensW / 2;
+      const minY = state.offY + lensH / 2;
+      const maxY = state.offY + state.dispH - lensH / 2;
 
-      left = Math.max(0, Math.min(left, rect.width - lensRect.width));
-      top  = Math.max(0, Math.min(top,  rect.height - lensRect.height));
+      // If image box not computed yet, skip
+      if (state.dispW <= 0 || state.dispH <= 0) return;
 
-      lens.style.left = left + 'px';
-      lens.style.top  = top  + 'px';
+      let centerX = Math.min(Math.max(mouseX, minX), maxX);
+      let centerY = Math.min(Math.max(mouseY, minY), maxY);
 
-      // Background scale & position
-      lens.style.backgroundSize = `${rect.width * LENS_ZOOM}px ${rect.height * LENS_ZOOM}px`;
-      const bgX = -left * (LENS_ZOOM - 1);
-      const bgY = -top  * (LENS_ZOOM - 1);
-      lens.style.backgroundPosition = `${bgX}px ${bgY}px`;
+      // Position lens (top-left)
+      lens.style.left = (centerX - lensW / 2) + 'px';
+      lens.style.top  = (centerY - lensH / 2) + 'px';
+
+      // Coordinates within the displayed image (relative to its top-left)
+      const xInImage = centerX - state.offX;
+      const yInImage = centerY - state.offY;
+
+      // Set background size based on displayed image size and zoom factor
+      const bgW = state.dispW * LENS_ZOOM;
+      const bgH = state.dispH * LENS_ZOOM;
+      lens.style.backgroundSize = `${bgW}px ${bgH}px`;
+
+      // Center the cursor point in the lens:
+      // background-position = -(x*Z - lensW/2), -(y*Z - lensH/2)
+      const posX = -(xInImage * LENS_ZOOM - lensW / 2);
+      const posY = -(yInImage * LENS_ZOOM - lensH / 2);
+      lens.style.backgroundPosition = `${posX}px ${posY}px`;
     }
 
     function enter(){
       if (!isFine) return; // skip on touch devices
+      if (state.dispW === 0 || state.dispH === 0) computeImageBox();
       lens.style.display = 'block';
       wrap.style.cursor = 'zoom-in';
     }
@@ -271,8 +335,9 @@
     wrap.addEventListener('mouseleave', leave);
 
     // Open lightbox at this index
-    wrap.addEventListener('click', () => openLightbox(parseInt(wrap.getAttribute('data-index'),10) || 0));
-    wrap.addEventListener('dblclick', () => openLightbox(parseInt(wrap.getAttribute('data-index'),10) || 0));
+    const openIndex = () => openLightbox(parseInt(wrap.getAttribute('data-index'),10) || 0);
+    wrap.addEventListener('click', openIndex);
+    wrap.addEventListener('dblclick', openIndex);
   });
 
   // =========================
@@ -401,9 +466,6 @@
       currentIndex = evt.to;
     });
   }
-
-  // IMPORTANT: Ensure no programmatic auto-cycling
-  // (Do not call new bootstrap.Carousel(..., { interval: ... })) and no .cycle()
 })();
 </script>
 @endpush
