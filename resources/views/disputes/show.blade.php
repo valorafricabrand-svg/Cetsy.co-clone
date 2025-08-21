@@ -231,11 +231,11 @@
                             <h6>Created</h6>
                             <p class="mb-3">{{ $dispute->created_at->format('M d, Y \a\t g:i A') }}</p>
                             
-                            <h6>Parties</h6>
-                            <p class="mb-3">
-                                <strong>Buyer:</strong> {{ $dispute->buyer->name }}<br>
-                                <strong>Seller:</strong> {{ $dispute->seller->name }}
-                            </p>
+                                                         <h6>Parties</h6>
+                             <p class="mb-3">
+                                 <strong>Buyer:</strong> {{ $dispute->buyer->name }}<br>
+                                 <strong>Shop:</strong> {{ $dispute->order->shop->name ?? $dispute->seller->name }}
+                             </p>
                         </div>
                     </div>
 
@@ -305,8 +305,81 @@
                 <div class="card-body">
                     <div class="messages-container" style="max-height: 600px; overflow-y: auto;">
                         @forelse($allMessages as $message)
-                            <div class="message mb-4 {{ method_exists($message, 'getMessageTypeClass') ? $message->getMessageTypeClass() : 'default-message' }} {{ $message->is_dispute_message ? 'dispute-message' : 'order-message' }}" 
-                                 data-message-type="{{ $message->is_dispute_message ? 'dispute' : 'order' }}">
+                            @php
+                                // Safely determine message type and class
+                                $messageType = $message->type ?? 'unknown';
+                                $messageClass = 'default-message';
+                                if ($messageType === 'buyer_message') $messageClass = 'buyer-message';
+                                elseif ($messageType === 'seller_message') $messageClass = 'seller-message';
+                                elseif ($messageType === 'system_message') $messageClass = 'system-message';
+                                
+                                // Safely determine if it's a dispute or order message
+                                $isDisputeMessage = isset($message->is_dispute_message) ? $message->is_dispute_message : false;
+                                $isOrderMessage = !$isDisputeMessage;
+                                
+                                // Safely get user info and determine profile image
+                                $userName = $message->user->name ?? 'Unknown User';
+                                $userPhoto = null;
+                                $userRole = 'User';
+                                
+                                // Determine user role and profile image based on dispute context
+                                if ($message->user_id) {
+                                    if ($message->user_id === $dispute->buyer_id) {
+                                        $userRole = 'Buyer';
+                                        // Get buyer's profile photo using the correct method
+                                        if ($message->user->photo) {
+                                            $userPhoto = avatar_img_url($message->user->photo, $message->user->photo_storage);
+                                        } else {
+                                            // Use gravatar as fallback
+                                            $userPhoto = $message->user->get_gravatar(32);
+                                        }
+                                        // Debug: Log buyer profile info
+                                        \Log::info('Buyer profile found', [
+                                            'buyer_id' => $message->user_id,
+                                            'buyer_name' => $message->user->name,
+                                            'photo' => $message->user->photo,
+                                            'photo_storage' => $message->user->photo_storage,
+                                            'profile_photo_url' => $userPhoto
+                                        ]);
+                                    } elseif ($message->user_id === $dispute->seller_id) {
+                                        $userRole = $order && $order->shop ? $order->shop->name : 'Seller';
+                                        // Get shop's profile photo (shop logo/image)
+                                        if ($order && $order->shop && $order->shop->logo) {
+                                            $userPhoto = asset('storage/' . $order->shop->logo);
+                                            // Debug: Log shop logo info
+                                            \Log::info('Shop logo found', [
+                                                'shop_id' => $order->shop->id,
+                                                'shop_name' => $order->shop->name,
+                                                'logo_path' => $order->shop->logo,
+                                                'full_url' => $userPhoto
+                                            ]);
+                                        } elseif ($message->user->photo) {
+                                            // Fallback to user's personal photo if shop logo not available
+                                            $userPhoto = avatar_img_url($message->user->photo, $message->user->photo_storage);
+                                        } else {
+                                            // Use gravatar as final fallback
+                                            $userPhoto = $message->user->get_gravatar(32);
+                                        }
+                                    } elseif ($message->type === 'system_message') {
+                                        $userRole = 'System';
+                                    }
+                                }
+                                
+                                // Safely get message content
+                                $messageContent = $message->message ?? $message->body ?? 'No message content';
+                                
+                                // Safely get attachments
+                                $hasAttachments = isset($message->attachments) && is_array($message->attachments) && count($message->attachments) > 0;
+                                $attachmentsCount = $hasAttachments ? count($message->attachments) : 0;
+                                
+                                // Debug: Display profile image info (temporary)
+                                if (app()->environment('local')) {
+                                    echo "<!-- DEBUG: userPhoto = $userPhoto, userRole = $userRole -->";
+                                }
+                            @endphp
+                            
+                            <div class="message mb-4 {{ $messageClass }} {{ $isDisputeMessage ? 'dispute-message' : 'order-message' }}" 
+                                 data-message-type="{{ $isDisputeMessage ? 'dispute' : 'order' }}">
                                 
                                 {{-- Message Header with Source Badge --}}
                                 <div class="message-header d-flex justify-content-between align-items-center mb-3">
@@ -321,30 +394,30 @@
                                             </span>
                                         @endif
                                         
-                                        <div class="d-flex align-items-center">
-                                            @if($message->user)
-                                                <img src="{{ $message->user->profile_photo_url }}" 
-                                                     alt="{{ $message->user->name }}" 
+                                                                                <div class="d-flex align-items-center">
+                                            @if($userPhoto && $userName !== 'Unknown User')
+                                                <img src="{{ $userPhoto }}" 
+                                                     alt="{{ $userName }}" 
                                                      class="rounded-circle me-2" 
-                                                     width="32" height="32">
-                                                <strong>{{ $message->user->name }}</strong>
-                                                @if(method_exists($message, 'isBuyerMessage') && $message->isBuyerMessage())
-                                                    <span class="badge bg-primary ms-2">Buyer</span>
-                                                @elseif(method_exists($message, 'isSellerMessage') && $message->isSellerMessage())
-                                                    <span class="badge bg-success ms-2">Seller</span>
-                                                @elseif(method_exists($message, 'isAdminMessage') && $message->isAdminMessage())
-                                                    <span class="badge bg-danger ms-2">Admin</span>
-                                                @elseif(method_exists($message, 'isSystemMessage') && $message->isSystemMessage())
-                                                    <span class="badge bg-secondary ms-2">System</span>
-                                                @else
-                                                    <span class="badge bg-info ms-2">User</span>
-                                                @endif
+                                                     width="32" height="32"
+                                                     style="object-fit: cover;"
+                                                     onerror="this.style.display='none'; this.nextElementSibling.nextElementSibling.style.display='block';">
+                                                <strong>{{ $userName }}</strong>
+                                                 <span class="badge {{ $userRole === 'Buyer' ? 'bg-primary' : ($userRole === 'System' ? 'bg-secondary' : 'bg-success') }} ms-2">
+                                                     {{ $userRole }}
+                                                 </span>
                                             @else
-                                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" 
-                                                     style="width: 32px; height: 32px;">
-                                                    <i class="bi bi-robot text-white"></i>
+                                                <div class="rounded-circle avatar-fallback me-2" 
+                                                     style="width: 32px; height: 32px; {{ $userRole === 'Buyer' ? 'background-color: #e3f2fd; color: #1976d2;' : ($userRole === 'System' ? 'background-color: #6c757d; color: white;' : 'background-color: #f3e5f5; color: #7b1fa2;') }}">
+                                                    @if($userRole === 'Buyer')
+                                                        <i class="bi bi-person-fill"></i>
+                                                    @elseif($userRole === 'System')
+                                                        <i class="bi bi-robot"></i>
+                                                    @else
+                                                        <i class="bi bi-shop"></i>
+                                                    @endif
                                                 </div>
-                                                <strong>System</strong>
+                                                <strong>{{ $userRole === 'System' ? 'System' : $userName }}</strong>
                                             @endif
                                         </div>
                                     </div>
@@ -358,24 +431,18 @@
                                 {{-- Message Content --}}
                                 <div class="message-content p-3 rounded">
                                     <p class="mb-3">
-                                        @if(isset($message->message))
-                                            {{ $message->message }}
-                                        @elseif(isset($message->body))
-                                            {{ $message->body }}
-                                        @else
-                                            No message content
-                                        @endif
+                                        {{ $messageContent }}
                                     </p>
                                     
                                     {{-- Attachments Display --}}
-                                    @if(method_exists($message, 'hasAttachments') && $message->hasAttachments())
+                                    @if($hasAttachments)
                                         <div class="attachments-section border-top pt-3">
                                             <h6 class="mb-3">
                                                 <i class="bi bi-paperclip"></i> 
-                                                Attachments ({{ method_exists($message, 'getAttachmentsCount') ? $message->getAttachmentsCount() : 0 }})
+                                                Attachments ({{ $attachmentsCount }})
                                             </h6>
                                             <div class="row g-3">
-                                                @foreach($message->attachments as $attachment)
+                                                @foreach($message->attachments ?? [] as $attachment)
                                                     <div class="col-md-4 col-sm-6 col-12">
                                                         <div class="attachment-item border rounded p-3 text-center h-100">
                                                             @if(in_array($attachment['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
@@ -613,6 +680,37 @@
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
+}
+
+/* Profile Image Styling */
+.message-header img.rounded-circle {
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.message-header img.rounded-circle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Hide fallback avatar by default when image is present */
+.message-header img.rounded-circle + strong + .badge + .avatar-fallback {
+    display: none;
+}
+
+/* Fallback Avatar Styling */
+.avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.avatar-fallback:hover {
+    transform: scale(1.05);
 }
 
 .message:hover {
