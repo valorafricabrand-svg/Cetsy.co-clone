@@ -148,13 +148,13 @@
           </div>
 
           <div class="text-end">
-            {{-- Open the per-type modal for this type --}}
-            <button
-              class="btn btn-sm btn-outline-secondary"
-              data-bs-toggle="modal"
-              data-bs-target="#typeOptionsModal{{ $type->id }}">
-              Manage
-            </button>
+      
+<a
+  href="{{ route('products.variations.manage', ['product' => $product, 'type' => $type]) }}"
+  class="btn btn-sm btn-outline-secondary">
+  Manage
+</a>
+
 
             <form
               action="{{ route('variationTypes.destroy', $type) }}"
@@ -248,153 +248,11 @@
       $otherTypes = $variationTypes->where('id', '!=', $type->id);
     @endphp
 
-    <div class="modal fade" id="typeOptionsModal{{ $type->id }}" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content rounded-4">
-          <div class="modal-header">
-            <h5 class="modal-title">Manage: {{ $type->name }}</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
 
-          <div class="modal-body">
-            <div class="row">
-              {{-- LEFT: Options --}}
-              <div class="col-lg-5">
-                <h6 class="mb-3">Options</h6>
 
-                <div class="list-group mb-3">
-                  @foreach($type->options as $opt)
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                      <form class="d-flex align-items-center" action="{{ route('variationOptions.update', $opt) }}" method="POST">
-                        @csrf
-                        @method('PATCH')
-                        <input type="text" class="form-control form-control-sm me-2" name="value" value="{{ $opt->value }}">
-                        <button class="btn btn-sm btn-outline-primary">Save</button>
-                      </form>
-                      <form action="{{ route('variationOptions.destroy', $opt) }}" method="POST"
-                            onsubmit="return confirm('Delete this option?')">
-                        @csrf
-                        @method('DELETE')
-                        <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                      </form>
-                    </div>
-                  @endforeach
-                </div>
+   
 
-                {{-- Add option --}}
-                <form class="border p-3 rounded" action="{{ route('variationOptions.store', $type) }}" method="POST">
-                  @csrf
-                  <h6 class="mb-2">Add Option</h6>
-                  <div class="input-group">
-                    <input type="text" name="value" class="form-control" placeholder="e.g. Red / 28 inches" required>
-                    <button class="btn btn-success">Add</button>
-                  </div>
-                  <small class="text-muted">Adds a single option to this type.</small>
-                </form>
-              </div>
 
-              {{-- RIGHT: Add Variant + list existing (price only) --}}
-              <div class="col-lg-7">
-                <div class="border rounded p-3 mb-4">
-                  <h6 class="mb-3">Add Variant</h6>
-                  <form
-                    class="js-add-variant-form"
-                    method="POST"
-                    action="{{ route('variations.store', $product) }}"
-                    data-form-scope="type-{{ $type->id }}"
-                  >
-                    @csrf
-
-                    {{-- Required: pick one option from the current type --}}
-                    <div class="mb-3">
-                      <label class="form-label">Option for “{{ $type->name }}” <span class="text-danger">*</span></label>
-                      <select class="form-select" name="base_value" required>
-                        <option value="" disabled selected>— Select {{ $type->name }} —</option>
-                        @foreach($type->options as $opt)
-                          <option value="{{ $opt->id }}">{{ $opt->value }}</option>
-                        @endforeach
-                      </select>
-                    </div>
-
-                    {{-- Optional: pick options from other types to form a combo --}}
-                    @foreach($otherTypes as $ot)
-                      <div class="mb-3">
-                        <label class="form-label">Option for “{{ $ot->name }}” <span class="text-muted">(optional)</span></label>
-                        <select class="form-select" name="extra_values[]">
-                          <option value="">— None —</option>
-                          @foreach($ot->options as $opt)
-                            <option value="{{ $opt->id }}">{{ $opt->value }}</option>
-                          @endforeach
-                        </select>
-                      </div>
-                    @endforeach
-
-                    <div class="row g-3">
-                      <div class="col-12">
-                        <label class="form-label">Price</label>
-                        <input type="number" step="0.01" min="0" name="price" class="form-control" required>
-                      </div>
-                    </div>
-
-                    {{-- This container will be filled with values[] by JS on submit --}}
-                    <div class="d-none" data-values-container></div>
-
-                    <div class="mt-3 d-flex justify-content-end">
-                      <button class="btn btn-primary">Create Variant</button>
-                    </div>
-                  </form>
-                </div>
-
-                <h6 class="mb-3">Variants with “{{ $type->name }}”</h6>
-
-                @if($variantsForType->count())
-                  <div class="table-responsive">
-                    <table class="table table-sm align-middle">
-                      <thead class="table-light">
-                        <tr>
-                          <th>Combination</th>
-                          <th style="width:140px;">Price</th>
-                          <th class="text-end" style="width:90px;">Save</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @foreach($variantsForType as $v)
-                          @php $formId = 'variant-form-'.$v->id; @endphp
-                          <form id="{{ $formId }}" action="{{ route('variations.update', $v) }}" method="POST" class="d-none">
-                            @csrf
-                            @method('PATCH')
-                          </form>
-                          <tr>
-                            <td>
-                              <small class="text-muted">
-                                {{ $v->options->map(fn($o)=>$o->variationType->name.': '.$o->value)->join(' • ') }}
-                              </small>
-                            </td>
-                            <td>
-                              <input type="number" step="0.01" min="0" class="form-control form-control-sm"
-                                     name="price" value="{{ $v->price }}" form="{{ $formId }}" required>
-                            </td>
-                            <td class="text-end">
-                              <button class="btn btn-sm btn-primary" form="{{ $formId }}">Save</button>
-                            </td>
-                          </tr>
-                        @endforeach
-                      </tbody>
-                    </table>
-                  </div>
-                @else
-                  <p class="text-muted mb-0">No variants currently use this type.</p>
-                @endif
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
   @endforeach
 </div>
 @endsection
