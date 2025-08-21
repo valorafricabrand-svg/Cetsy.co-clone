@@ -313,6 +313,28 @@
                                 elseif ($messageType === 'seller_message') $messageClass = 'seller-message';
                                 elseif ($messageType === 'system_message') $messageClass = 'system-message';
                                 
+                                // Determine user role for proper class assignment
+                                $userRoleForClass = 'User';
+                                
+                                // Check for system messages first (regardless of user_id)
+                                if ($message->type === 'system_message') {
+                                    $userRoleForClass = 'System';
+                                } elseif ($message->user_id) {
+                                    if ($message->user_id === $dispute->buyer_id) {
+                                        $userRoleForClass = 'Buyer';
+                                    } elseif ($message->user_id === $dispute->seller_id) {
+                                        $userRoleForClass = 'Seller';
+                                    } else {
+                                        $userRoleForClass = 'Other';
+                                    }
+                                }
+                                
+                                // Assign message class based on user role
+                                if ($userRoleForClass === 'Buyer') $messageClass = 'buyer-message';
+                                elseif ($userRoleForClass === 'Seller') $messageClass = 'seller-message';
+                                elseif ($userRoleForClass === 'System') $messageClass = 'system-message';
+                                elseif ($userRoleForClass === 'Other') $messageClass = 'other-message';
+                                
                                 // Safely determine if it's a dispute or order message
                                 $isDisputeMessage = isset($message->is_dispute_message) ? $message->is_dispute_message : false;
                                 $isOrderMessage = !$isDisputeMessage;
@@ -323,7 +345,13 @@
                                 $userRole = 'User';
                                 
                                 // Determine user role and profile image based on dispute context
-                                if ($message->user_id) {
+                                
+                                // Check for system messages first (regardless of user_id)
+                                if ($message->type === 'system_message') {
+                                    $userRole = 'System';
+                                    $userName = 'System';
+                                    $userPhoto = null;
+                                } elseif ($message->user_id) {
                                     if ($message->user_id === $dispute->buyer_id) {
                                         $userRole = 'Buyer';
                                         // Get buyer's profile photo using the correct method
@@ -333,26 +361,18 @@
                                             // Use gravatar as fallback
                                             $userPhoto = $message->user->get_gravatar(32);
                                         }
-                                        // Debug: Log buyer profile info
-                                        \Log::info('Buyer profile found', [
-                                            'buyer_id' => $message->user_id,
-                                            'buyer_name' => $message->user->name,
-                                            'photo' => $message->user->photo,
-                                            'photo_storage' => $message->user->photo_storage,
-                                            'profile_photo_url' => $userPhoto
-                                        ]);
                                     } elseif ($message->user_id === $dispute->seller_id) {
-                                        $userRole = $order && $order->shop ? $order->shop->name : 'Seller';
+                                        // For sellers, always show shop name if available, otherwise show "Seller"
+                                        if ($order && $order->shop && $order->shop->name) {
+                                            $userName = $order->shop->name;
+                                        } else {
+                                            $userName = 'Seller';
+                                        }
+                                        $userRole = 'Seller';
+                                        
                                         // Get shop's profile photo (shop logo/image)
                                         if ($order && $order->shop && $order->shop->logo) {
                                             $userPhoto = asset('storage/' . $order->shop->logo);
-                                            // Debug: Log shop logo info
-                                            \Log::info('Shop logo found', [
-                                                'shop_id' => $order->shop->id,
-                                                'shop_name' => $order->shop->name,
-                                                'logo_path' => $order->shop->logo,
-                                                'full_url' => $userPhoto
-                                            ]);
                                         } elseif ($message->user->photo) {
                                             // Fallback to user's personal photo if shop logo not available
                                             $userPhoto = avatar_img_url($message->user->photo, $message->user->photo_storage);
@@ -360,8 +380,15 @@
                                             // Use gravatar as final fallback
                                             $userPhoto = $message->user->get_gravatar(32);
                                         }
-                                    } elseif ($message->type === 'system_message') {
-                                        $userRole = 'System';
+                                    } else {
+                                        // For any other users (shouldn't happen in normal disputes), show as "Other"
+                                        $userRole = 'Other';
+                                        $userName = $message->user->name ?? 'Unknown User';
+                                        if ($message->user->photo) {
+                                            $userPhoto = avatar_img_url($message->user->photo, $message->user->photo_storage);
+                                        } else {
+                                            $userPhoto = $message->user->get_gravatar(32);
+                                        }
                                     }
                                 }
                                 
@@ -403,21 +430,26 @@
                                                      style="object-fit: cover;"
                                                      onerror="this.style.display='none'; this.nextElementSibling.nextElementSibling.style.display='block';">
                                                 <strong>{{ $userName }}</strong>
-                                                 <span class="badge {{ $userRole === 'Buyer' ? 'bg-primary' : ($userRole === 'System' ? 'bg-secondary' : 'bg-success') }} ms-2">
-                                                     {{ $userRole }}
-                                                 </span>
+                                                <span class="badge {{ $userRole === 'Buyer' ? 'bg-primary' : ($userRole === 'System' ? 'bg-secondary' : ($userRole === 'Seller' ? 'bg-success' : 'bg-warning')) }} ms-2">
+                                                    {{ $userRole }}
+                                                </span>
                                             @else
                                                 <div class="rounded-circle avatar-fallback me-2" 
-                                                     style="width: 32px; height: 32px; {{ $userRole === 'Buyer' ? 'background-color: #e3f2fd; color: #1976d2;' : ($userRole === 'System' ? 'background-color: #6c757d; color: white;' : 'background-color: #f3e5f5; color: #7b1fa2;') }}">
+                                                     style="width: 32px; height: 32px; {{ $userRole === 'Buyer' ? 'background-color: #e3f2fd; color: #1976d2;' : ($userRole === 'System' ? 'background-color: #6c757d; color: white;' : ($userRole === 'Seller' ? 'background-color: #f3e5f5; color: #7b1fa2;' : 'background-color: #fff3cd; color: #856404;')) }}">
                                                     @if($userRole === 'Buyer')
                                                         <i class="bi bi-person-fill"></i>
                                                     @elseif($userRole === 'System')
                                                         <i class="bi bi-robot"></i>
-                                                    @else
+                                                    @elseif($userRole === 'Seller')
                                                         <i class="bi bi-shop"></i>
+                                                    @else
+                                                        <i class="bi bi-person"></i>
                                                     @endif
                                                 </div>
-                                                <strong>{{ $userRole === 'System' ? 'System' : $userName }}</strong>
+                                                <strong>{{ $userName }}</strong>
+                                                <span class="badge {{ $userRole === 'Buyer' ? 'bg-primary' : ($userRole === 'System' ? 'bg-secondary' : ($userRole === 'Seller' ? 'bg-success' : 'bg-warning')) }} ms-2">
+                                                    {{ $userRole }}
+                                                </span>
                                             @endif
                                         </div>
                                     </div>
@@ -656,6 +688,11 @@
 .message.system-message { 
     background-color: #f1f8e9; 
     border-left: 4px solid #4caf50;
+}
+
+.message.other-message { 
+    background-color: #fff3cd; 
+    border-left: 4px solid #ffc107;
 }
 
 .message.default-message {
