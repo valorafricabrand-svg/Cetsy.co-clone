@@ -1,5 +1,5 @@
 {{-- resources/views/checkout/index.blade.php --}}
-@extends('layouts.frontapp')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title','Checkout')
 
@@ -23,13 +23,50 @@
 </style>
 
 @php
-  $user     = auth()->user();
-  $cart     = session('cart', []);
-  $currency = get_currency();
+  $user      = auth()->user();
+  $cart      = session('cart', []);
+  $currency  = get_currency();
+
+  // Prefetch product types once (digital/physical) to decide shipping visibility/costs
+  $productIds   = collect($cart)->pluck('product_id')->filter()->unique()->all();
+  $productTypes = $productIds
+      ? \App\Models\Product::whereIn('id', $productIds)->pluck('type','id')->toArray()
+      : [];
+
+  // Helper to read the selected profile snapshot from session (for PHYSICAL only)
+  $getSelectedProfile = function(array $row) {
+      $profiles = collect($row['shipping_profiles'] ?? []);
+      $selId    = (int)($row['selected_shipping_profile_id'] ?? 0);
+      $selected = $profiles->firstWhere('id', $selId);
+      if (!$selected && $profiles->isNotEmpty()) {
+          $selected = $profiles->first();
+      }
+      // Always return a consistent array shape
+      return $selected ?: ['name' => 'Standard', 'base_rate' => 0];
+  };
+
+  // Subtotal (products only)
+  $subtotal = collect($cart)->sum(fn($i) => ((float)($i['price'] ?? 0)) * (int)($i['quantity'] ?? 1));
+
+  // Shipping total: zero for digital rows, selected profile * qty for physical rows
+  $totalShipping = collect($cart)->sum(function($i) use ($getSelectedProfile, $productTypes) {
+      $qty  = (int)($i['quantity'] ?? 1);
+      $pid  = (int)($i['product_id'] ?? 0);
+      $type = $i['product_type'] ?? ($productTypes[$pid] ?? null); // prefer cart snapshot if ever stored
+      $isDigital = ($type === 'digital');
+
+      if ($isDigital) return 0.0;
+
+      $prof = $getSelectedProfile($i);
+      return (float)($prof['base_rate'] ?? 0) * $qty;
+  });
+
+  $grandTotal = $subtotal + $totalShipping;
 @endphp
 
 <section class="checkout-page py-5" style="margin-top:100px;">
   <div class="container">
+
     {{-- Validation Errors --}}
     @if ($errors->any())
       <div class="alert alert-danger">
@@ -42,7 +79,7 @@
       </div>
     @endif
 
-    {{-- Exception Detail --}}
+    {{-- Exception Detail (optional debug) --}}
     @if (session('error_exception'))
       <div class="alert alert-danger">
         <strong>Technical error:</strong>
@@ -54,9 +91,10 @@
       <form action="{{ route('store_order') }}" method="POST" class="row gy-5 gy-lg-0" novalidate>
         @csrf
 
-        {{-- Billing & Shipping --}}
+        {{-- Billing & Shipping Details --}}
         <div class="col-lg-7 order-lg-1">
           <h4 class="mb-4">Billing &amp; Shipping Details</h4>
+
           <div class="row g-3">
             {{-- Full Name --}}
             <div class="col-md-6">
@@ -140,7 +178,7 @@
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="billing_same"
                        name="billing_same_as_shipping" value="1"
-                       {{ old('billing_same_as_shipping','1') == '1' ? 'checked' : '' }}
+                       {{ old('billing_same_as_shipping','1')=='1' ? 'checked' : '' }}
                        onchange="toggleBillingAddress(this.checked)">
                 <label class="form-check-label" for="billing_same">
                   Billing address same as shipping
@@ -150,7 +188,7 @@
 
             {{-- Billing Address Fields --}}
             <div id="billing_address_fields"
-                 style="display: {{ old('billing_same_as_shipping','1') == '1' ? 'none' : 'block' }};">
+                 style="display:{{ old('billing_same_as_shipping','1')=='1' ? 'none' : 'block' }};">
               <hr class="my-4"><h5>Billing Address</h5>
 
               <div class="col-md-6">
@@ -158,7 +196,7 @@
                 <select name="billing_country" class="form-select">
                   <option value="">Select Country</option>
                   @foreach(\App\Models\Country::orderBy('name')->get() as $c)
-                    <option value="{{ $c->id }}" @selected(old('billing_country') == $c->id)>{{ $c->name }}</option>
+                    <option value="{{ $c->id }}" @selected(old('billing_country')==$c->id)>{{ $c->name }}</option>
                   @endforeach
                 </select>
               </div>
@@ -204,7 +242,8 @@
             {{-- Promo Code --}}
             <div class="col-12">
               <label class="form-label">Promo Code</label>
-              <input name="promo_code" type="text" class="form-control" value="{{ old('promo_code') }}">
+              <input name="promo_code" type="text" class="form-control"
+                     value="{{ old('promo_code') }}">
             </div>
           </div>
         </div>
@@ -214,34 +253,47 @@
           <div class="sticky-summary bg-white p-4 shadow-sm rounded">
             <h4 class="mb-4">Your Order</h4>
 
-            @php
-              $subtotal = 0;
-              $totalShipping = 0;
-            @endphp
             <ul class="list-group mb-3">
               @foreach ($cart as $row)
                 @php
-                  $qty       = $row['quantity'];
-                  $unit      = $row['price'];
-                  $prof      = collect($row['shipping_profiles'] ?? [])
-                                  ->firstWhere('id', $row['selected_shipping_profile_id'] ?? null);
-                  $rate      = $prof['base_rate'] ?? 0;
-                  $subtotal += $unit * $qty;
-                  $totalShipping += $rate * $qty;
+                  $qty   = (int)($row['quantity'] ?? 1);
+                  $unit  = (float)($row['price'] ?? 0);
+                  $pid   = (int)($row['product_id'] ?? 0);
+                  $type  = $row['product_type'] ?? ($productTypes[$pid] ?? null);
+                  $isDigital = ($type === 'digital');
+
+                  // Physical: use selected shipping profile snapshot; Digital: rate=0 and show "No shipping"
+                  $prof  = $isDigital ? ['name' => 'No shipping (digital)', 'base_rate' => 0] : $getSelectedProfile($row);
+                  $rate  = (float)($prof['base_rate'] ?? 0);
+
+                  // Label (match cart/index formatting) — only meaningful for physical
+                  if ($isDigital) {
+                      $label = 'No shipping (digital)';
+                  } else {
+                      $label = ($prof['dest_location_type'] ?? null) === 'everywhere_else'
+                               ? 'Everywhere'
+                               : (!empty($prof['dest_country_name'])
+                                    ? 'Ship to '.$prof['dest_country_name']
+                                    : ($prof['name'] ?? 'Shipping'));
+                  }
                 @endphp
                 <li class="list-group-item d-flex justify-content-between">
                   <div>
-                    <div class="fw-semibold">{{ $row['name'] }}</div>
-                    @if(!empty($row['variation_summary']))
+                    <div class="fw-semibold">
+                      {{ $row['name'] }}
+                      @if($isDigital)
+                        <span class="badge bg-secondary ms-1">Digital</span>
+                      @endif
+                    </div>
+                    @if (!empty($row['variation_summary']))
                       <small class="text-muted">{{ $row['variation_summary'] }}</small><br>
                     @endif
                     <small>
-                      Ship: {{ $prof['name'] ?? 'Standard' }}
-                      ({{ $currency }} {{ number_format($rate,2) }})
+                      {{ $label }} ({{ $currency }} {{ number_format($rate,2) }})
                     </small>
                     <div class="mt-1">× {{ $qty }}</div>
                   </div>
-                  <div>{{ $currency }} {{ number_format($unit * $qty,2) }}</div>
+                  <div>{{ $currency }} {{ number_format(($unit + $rate) * $qty,2) }}</div>
                 </li>
               @endforeach
             </ul>
@@ -257,7 +309,7 @@
             <hr>
             <div class="d-flex justify-content-between">
               <span><strong>Total</strong></span>
-              <strong>{{ $currency }} {{ number_format($subtotal + $totalShipping,2) }}</strong>
+              <strong>{{ $currency }} {{ number_format($grandTotal,2) }}</strong>
             </div>
 
             <div class="d-grid mt-4">
@@ -278,7 +330,8 @@
 
 <script>
   function toggleBillingAddress(checked) {
-    document.getElementById('billing_address_fields').style.display = checked ? 'none' : 'block';
+    document.getElementById('billing_address_fields')
+            .style.display = checked ? 'none' : 'block';
   }
 </script>
 @endsection

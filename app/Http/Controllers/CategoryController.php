@@ -15,35 +15,50 @@ class CategoryController extends Controller
 
 public function index(Request $request)
 {
-    // Grab the query string, if any (e.g. /admin/categories?q=shoes)
     $search = trim($request->input('q'));
 
-    $parents = Category::with([
-            'children' => function ($q) use ($search) {
-                // Always order children alphabetically …
-                $q->orderBy('name');
+    // Re-usable filter for children collections (keeps a child if it or any of its children match)
+    $childrenFilter = function ($q) use ($search) {
+        $q->orderBy('name');
 
-                // … and, when searching, keep only the children that match.
-                if ($search !== '') {
-                    $q->where('name', 'like', "%{$search}%");
-                }
-            }
+        if ($search !== '') {
+            $q->where(function ($qq) use ($search) {
+                $qq->where('name', 'like', "%{$search}%")
+                   ->orWhereHas('children', function ($q2) use ($search) {
+                       $q2->where('name', 'like', "%{$search}%")
+                          // if you want to go one more level deep, keep this nested whereHas:
+                          ->orWhereHas('children', function ($q3) use ($search) {
+                              $q3->where('name', 'like', "%{$search}%");
+                          });
+                   });
+            });
+        }
+    };
+
+    $parents = Category::with([
+            // Eager-load children and grandchildren
+            'children' => $childrenFilter,
+            'children.children' => $childrenFilter,
         ])
         ->whereNull('parent_id')
         ->when($search !== '', function ($q) use ($search) {
-            /* Show a top-level (parent) row if:
-               1) the parent’s own name matches   OR
-               2) at least one of its children matches. */
-            $q->where('name', 'like', "%{$search}%")
-               ->orWhereHas('children', function ($q2) use ($search) {
-                   $q2->where('name', 'like', "%{$search}%");
-               });
+            // Show a parent if it matches, OR one of its children matches, OR one of its grandchildren matches
+            $q->where(function ($qq) use ($search) {
+                $qq->where('name', 'like', "%{$search}%")
+                   ->orWhereHas('children', function ($q2) use ($search) {
+                       $q2->where('name', 'like', "%{$search}%");
+                   })
+                   ->orWhereHas('children.children', function ($q3) use ($search) {
+                       $q3->where('name', 'like', "%{$search}%");
+                   });
+            });
         })
         ->orderBy('name')
         ->get();
 
     return view('categories.index', compact('parents'));
 }
+
 
 
 

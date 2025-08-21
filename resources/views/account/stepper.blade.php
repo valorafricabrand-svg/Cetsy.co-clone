@@ -68,50 +68,17 @@
     {{-- 3️⃣  Info text --}}
     <p class="small text-muted mb-4">
       Email notifications are sent at every step. Refresh this page anytime for real-time status.
-      @if(in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
-        &nbsp;Need to stop? You may cancel until the order is shipped.
-      @endif
     </p>
 
-    {{-- 4️⃣  Cancel button (if allowed) --}}
-    @if(in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
-{{-- ===== ACTION BUTTONS (side-by-side) ===== --}}
-
-<div class="d-flex flex-wrap gap-3">
-
-    {{-- Pay Now — visible only while payment is still pending --}}
+    {{-- 4️⃣  Action buttons --}}
     @if($order->status === \App\Models\Order::STATUS_PENDING)
-     
-            <a href="{{ route('pay_now', $order->id) }}" 
-                    class="btn btn-success btn-lg d-flex align-items-center gap-2 px-4 py-2">
-                <i class="fas fa-credit-card fs-5"></i>
-                <span>Pay&nbsp;Now</span>
-            </a>
-      
-    @endif
-
-    {{-- Cancel Order — allowed until the order is shipped --}}
-    @if(in_array($order->status, [
-            \App\Models\Order::STATUS_PENDING]))
-        <form action="{{ route('orders.cancel', $order->id) }}" method="POST"
-              class="m-0"
-              onsubmit="return confirm('Are you sure you want to cancel this order?');">
-            @csrf @method('PATCH')
-            <div class="mb-2">
-                <textarea name="cancel_reason" class="form-control" rows="3" placeholder="Reason for cancellation" required></textarea>
-            </div>
-            <button type="submit"
-                    class="btn btn-outline-danger btn-lg d-flex align-items-center gap-2 px-4 py-2">
-                <i class="fas fa-times-circle fs-5"></i>
-                <span>Cancel&nbsp;Order</span>
-            </button>
-        </form>
-    @endif
-
-</div>
-
-
-
+    <div class="d-flex flex-wrap gap-3">
+        <a href="{{ route('pay_now', $order->id) }}"
+                class="btn btn-success btn-lg d-flex align-items-center gap-2 px-4 py-2">
+            <i class="fas fa-credit-card fs-5"></i>
+            <span>Pay&nbsp;Now</span>
+        </a>
+    </div>
     @endif
 
   </div>

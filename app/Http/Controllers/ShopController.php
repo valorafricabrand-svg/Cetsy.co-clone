@@ -91,7 +91,10 @@ public function create()
         Activity::create([
             'user_id' => Auth::id(),
             'is_read' => false,
-            'description' => 'You created a new shop'
+            'description' => 'You created a new shop',
+            'type' => \App\Models\Activity::TYPE_SHOP,
+            'related_id' => $shop->id,
+            'related_type' => 'shop'
         ]);
 
         return redirect()
@@ -119,6 +122,7 @@ public function showPublic($id)
     $shop = Shop::whereSlug($id)->firstOrFail();
 
     $products = $shop->products()
+        ->where('is_active', 1)
         ->with('media')
         ->latest()
         ->paginate(12);
@@ -166,7 +170,7 @@ public function update(Request $request, Shop $shop)
         'enable_2fa'     => ['required','boolean'],
         'logo'           => ['nullable','image','max:2048'],
         'featured_image' => ['nullable','image','max:2048'],
-        'announcement'   => ['nullable','string','max:1000'],
+        'announcement'   => ['nullable','string'],
         'policies'       => ['nullable','string'],
     ]);
 

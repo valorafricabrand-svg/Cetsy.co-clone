@@ -7,10 +7,15 @@
     <div class="row align-items-center">
       <div class="col-lg-9 d-flex align-items-center gap-4">
         {{-- Shop Logo --}}
-        <img src="{{ asset($shop->logo ? 'storage/' . $shop->logo : 'assets/images/cetsy_feture_logo.jpg') }}"
-             alt="{{ $shop->name }} logo"
-             class="rounded-circle shadow-sm border"
-             style="width:80px; height:80px; object-fit:cover;">
+<img 
+  src="{{ $shop->logo 
+      ? asset('storage/' . $shop->logo) 
+      : setting('favicon_url') }}" 
+  alt="{{ $shop->name }} logo" 
+  class="rounded-circle shadow-sm border" 
+  style="width:80px; height:80px; object-fit:cover;" 
+>
+
 
         <div class="flex-grow-1">
           <h1 class="h4 fw-bold mb-1">{{ $shop->name }}</h1>
@@ -370,16 +375,17 @@
     <form class="modal-content" action="{{ route('messages.store') }}" method="POST">
       @csrf
       <input type="hidden" name="receiver_id" value="{{ $shop->user_id }}">
+      <input type="hidden" name="product_id" value="">
       <div class="modal-header">
-        <h5 class="modal-title" id="messageModalLabel">Message Seller</h5>
+        <h5 class="modal-title" id="messageModalLabel">Message Seller – {{ $shop->name }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <label for="messageBody" class="form-label">Your Message</label>
+        <label for="messageBody" class="form-label">Your message</label>
         <textarea id="messageBody" name="message" class="form-control" rows="4" required></textarea>
       </div>
       <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Send</button>
+        <button type="submit" class="btn btn-primary">Send Message</button>
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
       </div>
     </form>

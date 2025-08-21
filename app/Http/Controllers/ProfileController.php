@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Country;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,8 +17,11 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $countries = Country::all();
+        
         return view('profile.edit', [
             'user' => $request->user(),
+            'countries' => $countries,
         ]);
     }
 
@@ -26,7 +30,22 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $data = $request->validated();
+        
+        // Handle photo upload if provided
+        if ($request->hasFile('photo')) {
+            // Delete old photo if exists
+            if ($user->photo) {
+                \Storage::disk('public')->delete($user->photo);
+            }
+            
+            // Store new photo
+            $photoPath = $request->file('photo')->store('profile-photos', 'public');
+            $data['photo'] = $photoPath;
+        }
+        
+        $user->fill($data);
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;

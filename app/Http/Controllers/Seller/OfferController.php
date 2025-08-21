@@ -164,7 +164,10 @@ class OfferController extends Controller
                 Activity::create([
                     'user_id' => $offer->buyer->id,
                     'is_read' => false,
-                    'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' has been accepted by ' . $user->name
+                    'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' has been accepted by ' . $user->name,
+                    'type' => \App\Models\Activity::TYPE_OFFER,
+                    'related_id' => $offer->id,
+                    'related_type' => 'offer'
                 ]);
             } catch (\Exception $e) {
                 \Log::error('Failed to create activity record for offer acceptance', [
@@ -264,7 +267,10 @@ class OfferController extends Controller
         Activity::create([
             'user_id' => $buyer->id,
             'is_read' => false,
-            'description' => 'You received a new order from ' . $shop->user->name
+            'description' => 'You received a new order from ' . $shop->user->name,
+            'type' => \App\Models\Activity::TYPE_ORDER,
+            'related_id' => $order->id,
+            'related_type' => 'order'
         ]);
 
         return $order;
@@ -313,7 +319,10 @@ class OfferController extends Controller
             Activity::create([
                 'user_id' => $offer->buyer->id,
                 'is_read' => false,
-                'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' has been declined'
+                'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' has been declined',
+                'type' => \App\Models\Activity::TYPE_OFFER,
+                'related_id' => $offer->id,
+                'related_type' => 'offer'
             ]);
         } catch (\Exception $e) {
             \Log::error('Failed to send offer declined email', [
@@ -390,7 +399,10 @@ class OfferController extends Controller
             Activity::create([
                 'user_id' => $offer->buyer->id,
                 'is_read' => false,
-                'description' => 'You received a new offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . $offer->buyer->name
+                'description' => 'You received a new offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . $offer->buyer->name,
+                'type' => \App\Models\Activity::TYPE_OFFER,
+                'related_id' => $offer->id,
+                'related_type' => 'offer'
             ]);
         } catch (\Exception $e) {
             \Log::error('Failed to send counter offer email', [
@@ -503,7 +515,10 @@ class OfferController extends Controller
                                     Activity::create([
                                         'user_id' => $offer->buyer->id,
                                         'is_read' => false,
-                                        'description' => "Your offer of $" . number_format($offer->offer_price, 2) . " for " . $offer->product->name . " has been accepted"
+                                        'description' => "Your offer of $" . number_format($offer->offer_price, 2) . " for " . $offer->product->name . " has been accepted",
+                                        'type' => \App\Models\Activity::TYPE_OFFER,
+                                        'related_id' => $offer->id,
+                                        'related_type' => 'offer'
                                     ]);
                                     $emailsSent++;
                                 } catch (\Exception $e) {
@@ -531,7 +546,10 @@ class OfferController extends Controller
                                     Activity::create([
                                         'user_id' => $offer->buyer->id,
                                         'is_read' => false,
-                                        'description' => "Your offer of $" . number_format($offer->offer_price, 2) . " for " . $offer->product->name . " has been declined"
+                                        'description' => "Your offer of $" . number_format($offer->offer_price, 2) . " for " . $offer->product->name . " has been declined",
+                                        'type' => \App\Models\Activity::TYPE_OFFER,
+                                        'related_id' => $offer->id,
+                                        'related_type' => 'offer'
                                     ]);
                                 } catch (\Exception $e) {
                                     \Log::error('Failed to send offer declined email: ' . $e->getMessage());

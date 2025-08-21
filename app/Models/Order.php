@@ -89,9 +89,23 @@ public function orderItems()
     return $this->hasMany(OrderItem::class);
 }
 
-public function payments() {
-    return $this->hasMany(Payment::class);
-}
+    public function payments() {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Determine if the order already has a successful payment.
+     */
+    public function isPaid(): bool
+    {
+        if ($this->status !== self::STATUS_PENDING) {
+            return true;
+        }
+
+        return $this->payments()
+            ->where('paymentStatus', 3)
+            ->exists();
+    }
 
 
   public function shop(): BelongsTo
@@ -114,6 +128,11 @@ public function payments() {
 public function reviews()
 {
     return $this->hasMany(Review::class);
+}
+
+public function disputes()
+{
+    return $this->hasMany(Dispute::class);
 }
 
     

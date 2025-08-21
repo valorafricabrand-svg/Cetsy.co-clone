@@ -8,38 +8,40 @@
 
   <!-- Dynamic Title -->
   <title>
-    @yield('title', 'Jaat | Kenya’s Marketplace for Handmade & Locally-Made Products')
+    @yield('title', 'Jaat – Kenya’s Marketplace')
   </title>
 
   <!-- Description -->
   <meta name="description"
-        content="@yield('meta_description', 'Jaat is Kenya’s all-in-one platform to showcase, sell, and promote your handmade and locally-made products nationwide.')">
+        content="@yield('meta_description', 'Discover, buy, and sell one-of-a-kind items from trusted Kenyans—right here on Jaat.')">
 
   <!-- Canonical URL -->
   <link rel="canonical" href="@yield('canonical_url', 'https://jaat.co.ke')">
 
   <!-- Social Meta Section -->
   @section('social-meta')
+    <!-- Open Graph Meta Tags -->
     <meta property="og:title"
-          content="@yield('title', 'Jaat | Kenya’s Marketplace for Handmade & Locally-Made Products')">
+          content="@yield('title', 'Jaat – Kenya’s Marketplace')">
     <meta property="og:description"
-          content="@yield('meta_description', 'Jaat is Kenya’s all-in-one platform to showcase, sell, and promote your handmade and locally-made products nationwide.')">
+          content="@yield('meta_description', 'Discover, buy, and sell one-of-a-kind items from trusted Kenyans—right here on Jaat.')">
     <meta property="og:type" content="website">
     <meta property="og:url"  content="@yield('canonical_url', 'https://jaat.co.ke')">
     <meta property="og:image"
           content="@yield('meta_image', asset('assets/images/default-og-image-jaat.jpg'))">
-    <meta property="og:image:alt" content="Jaat — Kenyan Handmade Products Marketplace">
+    <meta property="og:image:alt" content="Jaat — Kenya’s Marketplace">
     <meta property="og:locale" content="en_KE">
     <meta property="og:site_name" content="Jaat">
 
+    <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title"
-          content="@yield('title', 'Jaat | Kenya’s Marketplace for Handmade & Locally-Made Products')">
+          content="@yield('title', 'Jaat – Kenya’s Marketplace')">
     <meta name="twitter:description"
-          content="@yield('meta_description', 'Jaat is Kenya’s all-in-one platform to showcase, sell, and promote your handmade and locally-made products nationwide.')">
+          content="@yield('meta_description', 'Discover, buy, and sell one-of-a-kind items from trusted Kenyans—right here on Jaat.')">
     <meta name="twitter:image"
           content="@yield('meta_image', asset('assets/images/default-twitter-image-jaat.jpg'))">
-    <meta name="twitter:image:alt" content="Jaat — Kenyan Handmade Products Marketplace">
+    <meta name="twitter:image:alt" content="Jaat — Kenya’s Marketplace">
   @show
 
   <!-- Favicons -->
@@ -82,61 +84,37 @@
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-
 <body style="--phoenix-scroll-margin-top: 1.2rem;">
-  <main id="top" class="main">
+  <main class="main" id="top">
     <div class="bg-body-emphasis" data-navbar-shadow-on-scroll="true">
 
-{{-- Top Contact Bar --}}
-<header class="bg-success border-bottom py-2">
-  <div class="container d-flex justify-content-end align-items-center gap-4">
-    {{-- Phone --}}
-    <div class="d-flex align-items-center">
-      <i class="fas fa-phone-alt text-white me-1"></i>
-      <small class="text-white fw-semibold">{{ setting('phone') ?? 'N/A' }}</small>
-    </div>
-
-    {{-- Email --}}
-    <div class="d-flex align-items-center">
-      <i class="fas fa-envelope text-white me-1"></i>
-      <a href="mailto:{{ $shop->email ?? '#' }}" class="text-white fw-semibold text-decoration-none">
-        {{ setting('email') ?? 'info@example.com' }}
-      </a>
-    </div>
-
-    {{-- Social Media --}}
-    <div class="d-flex align-items-center gap-2">
-      @if(!empty(setting('facebook_url')))
-        <a href="{{ setting('facebook_url') }}" target="_blank" class="text-white">
-          <i class="fab fa-facebook-f"></i>
-        </a>
-      @endif
-
-      @if(!empty(setting('x_url')))
-        <a href="{{ setting('x_url') }}" target="_blank" class="text-white">
-          <i class="fab fa-twitter"></i>
-        </a>
-      @endif
-
-      @if(!empty(setting('instagram_url')))
-        <a href="{{ setting('instagram_url') }}" target="_blank" class="text-white">
-          <i class="fab fa-instagram"></i>
-        </a>
-      @endif
-      @if(!empty(setting('linkedin_url')))
-        <a href="{{ setting('linkedin_url') }}" target="_blank" class="text-white">
-          <i class="fab fa-linkedin-in"></i>
-        </a>
-      @endif
-      @if(!empty(setting('tiktok_url')))
-        <a href="{{ setting('tiktok_url') }}" target="_blank" class="text-white">
-          <i class="fab fa-tiktok"></i>
-        </a>
-      @endif
-    </div>
-  </div>
-</header>
-
+      {{-- Top Contact Bar --}}
+      <header class="bg-success border-bottom py-2">
+        <div class="container d-flex justify-content-end align-items-center gap-4">
+          {{-- Phone --}}
+          <div class="d-flex align-items-center">
+            <i class="fas fa-phone-alt text-white me-1"></i>
+            <small class="text-white fw-semibold">{{ setting('phone') ?? 'N/A' }}</small>
+          </div>
+          {{-- Email --}}
+          <div class="d-flex align-items-center">
+            <i class="fas fa-envelope text-white me-1"></i>
+            <a href="mailto:{{ setting('email') }}" class="text-white fw-semibold text-decoration-none">
+              {{ setting('email') ?? 'info@example.com' }}
+            </a>
+          </div>
+          {{-- Social Media --}}
+          <div class="d-flex align-items-center gap-2">
+            @foreach(['facebook_url','x_url','instagram_url','linkedin_url','tiktok_url'] as $key)
+              @if(!empty(setting($key)))
+                <a href="{{ setting($key) }}" target="_blank" class="text-white">
+                  <i class="fab fa-{{ str_replace('_url','',$key) }}"></i>
+                </a>
+              @endif
+            @endforeach
+          </div>
+        </div>
+      </header>
 
       {{-- Navbar --}}
       <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
@@ -173,15 +151,12 @@
                   @endif
                 </a>
               </li>
-
               @guest
                 <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">Log In</a></li>
                 <li class="nav-item"><a class="btn btn-success btn-sm" href="{{ route('register') }}">Sign Up</a></li>
               @else
                 @if(auth()->user()->shop)
-                  <li class="nav-item">
-                    <a class="nav-link" href="{{ route('seller.shops.show', auth()->user()->shop) }}">My Shop</a>
-                  </li>
+                  <li class="nav-item"><a class="nav-link" href="{{ route('seller.shops.show', auth()->user()->shop) }}">My Shop</a></li>
                 @endif
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button"
@@ -356,7 +331,7 @@
             </ul>
           </div>
           <div class="col-6 col-md-3">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2">Buyers</h4>  
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2">Buyers</h4>
             <ul class="list-unstyled mb-0">
               @foreach([
                 'Buyer Tips'         => url('/buyer-tips'),
@@ -373,8 +348,8 @@
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2">About</h4>
             <ul class="list-unstyled mb-0">
               @foreach([
-                'About ' . config('app.name') => url('/about'),
-                'House Rules & Policy'        => url('/house-policy'),
+                'About Jaat'             => url('/about'),
+                'House Rules & Policy'   => url('/house-policy'),
               ] as $label => $link)
                 <li class="mb-2">
                   <a href="{{ $link }}" class="text-white-50 text-decoration-none">{{ $label }}</a>
@@ -390,34 +365,23 @@
               <li class="text-white-50"><strong>Phone:</strong> <a href="tel:{{ $settings->phone }}" class="text-white">{{ $settings->phone }}</a></li>
             </ul>
             <div class="d-flex gap-4">
-              @foreach([
-                'facebook_url'  => 'fab fa-facebook-f',
-                'instagram_url' => 'fab fa-instagram',
-                'x_url'         => 'fab fa-twitter',
-                'linkedin_url'  => 'fab fa-linkedin-in',
-                'tiktok_url'    => 'fab fa-tiktok',
-              ] as $key => $icon)
+              @foreach(['facebook_url','instagram_url','x_url','linkedin_url','tiktok_url'] as $key)
                 @if(!empty($settings->{$key}))
-                  <a href="{{ $settings->{$key} }}" target="_blank" aria-label="{{ ucfirst(str_replace('_url','',$key)) }}" class="text-white">
-                    <i class="{{ $icon }}"></i>
-                  </a>
+                  <a href="{{ $settings->{$key} }}" target="_blank" class="text-white"><i class="fab fa-{{ str_replace('_url','',$key) }}"></i></a>
                 @endif
               @endforeach
             </div>
           </div>
         </div>
         <div class="mt-5 pt-4 border-top border-secondary text-center">
-          <p class="mb-0">&copy; {{ date('Y') }} {{ config('app.name') }} — All rights reserved.</p>
+          <p class="mb-0">&copy; {{ date('Y') }} Jaat — All rights reserved.</p>
         </div>
       </div>
     </footer>
 
     @push('styles')
       <style>
-        footer,
-        .footer-text,
-        .footer-link,
-        .footer-heading { font-size:15px!important; }
+        footer, .footer-text, .footer-link, .footer-heading { font-size:15px!important; }
         .footer-heading { font-weight:600; }
         .footer-link { display:inline-block; transition:color .2s; }
         .footer-link:hover { color:#fff!important; text-decoration:none; }

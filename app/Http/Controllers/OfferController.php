@@ -46,7 +46,10 @@ class OfferController extends Controller
                 Activity::create([
                     'user_id' => $product->shop->user->id,
                     'is_read' => false,
-                    'description' => 'You received a new offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . $offer->buyer->name
+                    'description' => 'You received a new offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . $offer->buyer->name,
+                    'type' => \App\Models\Activity::TYPE_OFFER,
+                    'related_id' => $offer->id,
+                    'related_type' => 'offer'
                 ]);
             }
         } catch (\Exception $e) {

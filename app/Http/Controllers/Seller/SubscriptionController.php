@@ -184,7 +184,10 @@ class SubscriptionController extends Controller
         Activity::create([
             'user_id' => $user->id,
             'is_read' => false,
-            'description' => 'You activated a new ' . ucfirst($plan) . ' subscription'
+            'description' => 'You activated a new ' . ucfirst($plan) . ' subscription',
+            'type' => \App\Models\Activity::TYPE_SUBSCRIPTION,
+            'related_id' => $subscription->id,
+            'related_type' => 'subscription'
         ]);
 
         return redirect()
@@ -207,7 +210,10 @@ class SubscriptionController extends Controller
             Activity::create([
                 'user_id' => $user->id,
                 'is_read' => false,
-                'description' => 'You cancelled your ' . ucfirst($plan) . ' subscription'
+                'description' => 'You cancelled your ' . ucfirst($plan) . ' subscription',
+                'type' => \App\Models\Activity::TYPE_SUBSCRIPTION,
+                'related_id' => $subscription->id,
+                'related_type' => 'subscription'
             ]);
         }
 

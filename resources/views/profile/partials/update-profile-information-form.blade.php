@@ -20,6 +20,7 @@
   <form method="POST"
         action="{{ route('profile.update') }}"
         class="needs-validation"
+        enctype="multipart/form-data"
         novalidate>
     @csrf @method('PATCH')
 
@@ -74,6 +75,72 @@
           @endif
         </div>
       @endif
+    </div>
+
+    {{-- Phone --}}
+    <div class="mb-3">
+      <label for="phone" class="form-label">{{ __('Phone') }}</label>
+      <input
+        type="text"
+        id="phone"
+        name="phone"
+        class="form-control @error('phone') is-invalid @enderror"
+        value="{{ old('phone', $user->phone) }}"
+        placeholder="+254 7xx xxx xxx"
+        autocomplete="tel">
+      @error('phone')
+        <div class="invalid-feedback">{{ $message }}</div>
+      @enderror
+    </div>
+
+    {{-- Country --}}
+    <div class="mb-3">
+      <label for="country_id" class="form-label">{{ __('Country') }}</label>
+      <select
+        id="country_id"
+        name="country_id"
+        class="form-select @error('country_id') is-invalid @enderror"
+        data-control="select2">
+        <option value="">{{ __('Select a country') }}</option>
+        @foreach($countries as $country)
+          <option
+            value="{{ $country->id }}"
+            {{ old('country_id', $user->country_id) == $country->id ? 'selected' : '' }}>
+            {{ $country->name }}
+          </option>
+        @endforeach
+      </select>
+      @error('country_id')
+        <div class="invalid-feedback">{{ $message }}</div>
+      @enderror
+    </div>
+
+    {{-- Profile Photo --}}
+    <div class="mb-3">
+      <label for="photo" class="form-label">{{ __('Profile Photo') }}</label>
+      <input
+        type="file"
+        id="photo"
+        name="photo"
+        class="form-control @error('photo') is-invalid @enderror"
+        accept="image/*">
+      @error('photo')
+        <div class="invalid-feedback">{{ $message }}</div>
+      @enderror
+      
+      {{-- Show current photo if exists --}}
+      @if($user->photo)
+        <div class="mt-2">
+          <img src="{{ asset('storage/' . $user->photo) }}" 
+               alt="Profile photo" 
+               class="rounded-circle" 
+               width="80" 
+               height="80"
+               style="object-fit: cover;">
+          <div class="form-text">Current profile photo</div>
+        </div>
+      @endif
+      <div class="form-text">Upload a new profile photo (optional). Max size: 2MB.</div>
     </div>
 
     {{-- Save button & flash "Saved." --}}

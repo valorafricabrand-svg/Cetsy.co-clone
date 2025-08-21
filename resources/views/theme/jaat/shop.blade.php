@@ -7,10 +7,15 @@
     <div class="row align-items-center">
       <div class="col-lg-9 d-flex align-items-center gap-4">
         {{-- Shop Logo --}}
-        <img src="{{ asset($shop->logo ? 'storage/' . $shop->logo : 'assets/images/cetsy_feture_logo.jpg') }}"
-             alt="{{ $shop->name }} logo"
-             class="rounded-circle shadow-sm border"
-             style="width:80px; height:80px; object-fit:cover;">
+<img 
+  src="{{ $shop->logo 
+      ? asset('storage/' . $shop->logo) 
+      : setting('favicon_url') }}" 
+  alt="{{ $shop->name }} logo" 
+  class="rounded-circle shadow-sm border" 
+  style="width:80px; height:80px; object-fit:cover;" 
+>
+
 
         <div class="flex-grow-1">
           <h1 class="h4 fw-bold mb-1">{{ $shop->name }}</h1>
@@ -370,22 +375,213 @@
     <form class="modal-content" action="{{ route('messages.store') }}" method="POST">
       @csrf
       <input type="hidden" name="receiver_id" value="{{ $shop->user_id }}">
+      <input type="hidden" name="product_id" value="">
       <div class="modal-header">
-        <h5 class="modal-title" id="messageModalLabel">Message Seller</h5>
+        <h5 class="modal-title" id="messageModalLabel">Message Seller – {{ $shop->name }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <label for="messageBody" class="form-label">Your Message</label>
+        <label for="messageBody" class="form-label">Your message</label>
         <textarea id="messageBody" name="message" class="form-control" rows="4" required></textarea>
       </div>
       <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Send</button>
+        <button type="submit" class="btn btn-primary">Send Message</button>
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
       </div>
     </form>
   </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+// Filter and sort functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const priceFilter = document.getElementById('priceFilter');
+    const sortFilter = document.getElementById('sortFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const viewModeInputs = document.querySelectorAll('input[name="viewMode"]');
+    
+    // Auto-scroll to tab content when tab is clicked
+    const navTabs = document.querySelectorAll('.nav-tabs .nav-link');
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Get the target tab content
+            const targetId = this.getAttribute('href');
+            const targetContent = document.querySelector(targetId);
+            
+            if (targetContent) {
+                // Smooth scroll to the tab content
+                targetContent.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start',
+                    inline: 'nearest'
+                });
+                
+                // Add a small delay to ensure the scroll happens before the tab switch
+                setTimeout(() => {
+                    // Trigger the tab switch
+                    const tabTrigger = new bootstrap.Tab(this);
+                    tabTrigger.show();
+                }, 100);
+            }
+        });
+    });
+    
+    // View mode toggle
+    viewModeInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const gridView = document.getElementById('gridView');
+            const listView = document.getElementById('listView');
+            
+            if (this.value === 'grid') {
+                gridView.classList.remove('d-none');
+                listView.classList.add('d-none');
+            } else {
+                gridView.classList.add('d-none');
+                listView.classList.remove('d-none');
+            }
+        });
+    });
+    
+    // Filter functionality
+    function filterProducts() {
+        const priceRange = priceFilter.value;
+        const productType = typeFilter.value;
+        const products = document.querySelectorAll('.product-item');
+        
+        products.forEach(product => {
+            const price = parseFloat(product.dataset.price);
+            const type = product.dataset.type;
+            let show = true;
+            
+            // Price filter
+            if (priceRange) {
+                const [min, max] = priceRange.split('-').map(p => p === '+' ? Infinity : parseFloat(p));
+                if (price < min || (max !== Infinity && price > max)) {
+                    show = false;
+                }
+            }
+            
+            // Type filter
+            if (productType && type !== productType) {
+                show = false;
+            }
+            
+            product.style.display = show ? 'block' : 'none';
+        });
+    }
+    
+    // Sort functionality
+    function sortProducts() {
+        const sortBy = sortFilter.value;
+        const container = document.querySelector('.row');
+        const products = Array.from(document.querySelectorAll('.product-item'));
+        
+        products.sort((a, b) => {
+            const priceA = parseFloat(a.dataset.price);
+            const priceB = parseFloat(b.dataset.price);
+            const ratingA = parseFloat(a.dataset.rating);
+            const ratingB = parseFloat(b.dataset.rating);
+            
+            switch(sortBy) {
+                case 'price-low':
+                    return priceA - priceB;
+                case 'price-high':
+                    return priceB - priceA;
+                case 'rating':
+                    return ratingB - ratingA;
+                default:
+                    return 0;
+            }
+        });
+        
+        products.forEach(product => container.appendChild(product));
+    }
+    
+    priceFilter.addEventListener('change', filterProducts);
+    typeFilter.addEventListener('change', filterProducts);
+    sortFilter.addEventListener('change', sortProducts);
+});
+
+function copyShopUrl(url) {
+    const tempInput = document.createElement('input');
+    tempInput.value = url;
+    document.body.appendChild(tempInput);
+    
+    tempInput.select();
+    tempInput.setSelectionRange(0, 99999);
+    
+    try {
+        document.execCommand('copy');
+        
+        const button = event.target.closest('button');
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.classList.remove('btn-outline-success');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-success');
+        }, 2000);
+        
+    } catch (err) {
+        console.error('Failed to copy URL: ', err);
+        alert('Failed to copy URL. Please copy manually.');
+    }
+    
+    document.body.removeChild(tempInput);
+}
+
+function contactShop() {
+    alert('Contact functionality will be implemented here');
+}
+
+function followShop() {
+    alert('Follow functionality will be implemented here');
+}
+
+function addToWishlist(productId) {
+    // Implement wishlist functionality
+    alert('Add to wishlist functionality will be implemented here');
+}
+
+function addToCart(productId) {
+    // Implement cart functionality
+    alert('Add to cart functionality will be implemented here');
+}
+
+function shareOnFacebook() {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent('Check out this amazing shop on Cetsy!');
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank');
+}
+
+function shareOnTwitter() {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent('Check out this amazing shop on Cetsy!');
+    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+}
+
+function shareOnWhatsApp() {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent('Check out this amazing shop on Cetsy!');
+    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+}
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+@endpush
 
 @push('styles')
 <style>

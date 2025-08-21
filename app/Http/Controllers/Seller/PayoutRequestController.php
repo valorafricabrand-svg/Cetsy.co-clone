@@ -91,7 +91,10 @@ public function store(Request $request)
         Activity::create([
             'user_id' => Auth::id(),
             'is_read' => false,
-            'description' => 'You submitted a new payout request of $' . number_format($request->amount, 2)
+            'description' => 'You submitted a new payout request of $' . number_format($request->amount, 2),
+            'type' => \App\Models\Activity::TYPE_PAYOUT_REQUEST,
+            'related_id' => $wallet_created->id,
+            'related_type' => 'wallet'
         ]);
     });
 

@@ -33,6 +33,17 @@
                                                     {{ $notification->created_at->format('M d, Y \a\t g:i A') }}
                                                     ({{ $notification->created_at->diffForHumans() }})
                                                 </small>
+                                                @php
+                                                    $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, auth()->user());
+                                                    $linkText = \App\Services\NotificationRouteService::getLinkText($notification, auth()->user());
+                                                @endphp
+                                                @if($route && $route !== route('notifications.index'))
+                                                    <div class="mt-2">
+                                                        <a href="{{ $route }}" class="btn btn-sm btn-outline-primary">
+                                                            {{ $linkText }}
+                                                        </a>
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div class="ms-3">
                                                 @if(!$notification->is_read)
@@ -42,16 +53,10 @@
                                         </div>
                                     </div>
                                     @if(!$notification->is_read)
-                                        <div class="ms-2">
-                                            <button class="btn btn-sm btn-outline-secondary mark-read-btn" 
-                                                    data-notification-id="{{ $notification->id }}"
-                                                    data-notification-description="{{ $notification->description }}"
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#markReadModal"
-                                                    title="Mark as read">
-                                                <i class="fas fa-check"></i>
-                                            </button>
-                                        </div>
+                                        <form method="POST" action="{{ route('notifications.mark-read', $notification->id) }}" class="ms-2">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Mark Read</button>
+                                        </form>
                                     @endif
                                 </div>
                             @endforeach
@@ -69,12 +74,8 @@
                             </div>
                         </div>
                     @else
-                        <div class="text-center py-5">
-                            <div class="mb-3">
-                                <i class="fas fa-bell fa-3x text-muted"></i>
-                            </div>
-                            <h5 class="text-muted">No notifications</h5>
-                            <p class="text-muted">You don't have any notifications yet.</p>
+                        <div class="text-center py-4">
+                            <p class="text-muted">No notifications found.</p>
                         </div>
                     @endif
                 </div>

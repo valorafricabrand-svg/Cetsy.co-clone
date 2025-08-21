@@ -15,12 +15,15 @@ class CreateOrderMessagesTable extends Migration
             $table->unsignedBigInteger('order_id');
             $table->unsignedBigInteger('user_id');
 
-            $table->text('body');
+            $table->text('body'); // Message content
+            $table->json('attachments')->nullable(); // Added attachments column
+            $table->string('type')->default('buyer_message'); // Added type column
             $table->timestamps();
 
             // If you want indexes for faster lookups:
             $table->index('order_id');
             $table->index('user_id');
+            $table->index('type'); // Added index for type
         });
     }
 

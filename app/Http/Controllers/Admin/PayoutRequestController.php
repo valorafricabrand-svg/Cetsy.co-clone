@@ -69,7 +69,10 @@ class PayoutRequestController extends Controller
         Activity::create([
             'user_id' => $payout->user_id,
             'is_read' => false,
-            'description' => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been rejected'
+            'description' => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been rejected',
+            'type' => \App\Models\Activity::TYPE_PAYOUT_REQUEST,
+            'related_id' => $payout->id,
+            'related_type' => 'payout'
         ]);
 
         // (optionally) notify seller …
@@ -96,7 +99,10 @@ class PayoutRequestController extends Controller
         Activity::create([
             'user_id' => $payout->user_id,
             'is_read' => false,
-            'description' => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been marked as paid'
+            'description' => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been marked as paid',
+            'type' => \App\Models\Activity::TYPE_PAYOUT_REQUEST,
+            'related_id' => $payout->id,
+            'related_type' => 'payout'
         ]);
 
         // (optionally) notify seller …

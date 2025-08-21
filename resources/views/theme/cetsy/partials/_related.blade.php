@@ -1,13 +1,22 @@
 {{-- resources/views/theme/{{ theme() }}/partials/_related.blade.php --}}
 
-@if(isset($relatedProducts) && $relatedProducts->isNotEmpty())
-  <section class="related-products mt-12">
-    <h2 class="text-2xl font-semibold mb-6">You May Also Like</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+@if(isset($relatedProducts) && $relatedProducts->count())
+  <section class="related-products mt-5">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h2 class="h4 fw-bold mb-0">You May Also Like</h2>
+      {{-- Optional: pass $moreUrl from the parent view if you want a CTA --}}
+      @isset($moreUrl)
+        <a href="{{ $moreUrl }}" class="btn btn-sm btn-outline-success">
+          View more
+        </a>
+      @endisset
+    </div>
+
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-4 g-3">
       @foreach($relatedProducts as $item)
-        <div class="col-6 col-md-3 col-lg-3">
-            @include('theme.'.theme().'.partials.product-card', ['item' => $item])
-          </div>
+        <div class="col">
+          @include('theme.'.theme().'.partials.product-card', ['item' => $item])
+        </div>
       @endforeach
     </div>
   </section>

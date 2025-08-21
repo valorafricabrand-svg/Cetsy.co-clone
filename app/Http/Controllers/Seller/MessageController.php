@@ -182,7 +182,10 @@ class MessageController extends Controller
         Activity::create([
             'user_id' => $message->receiver_id,
             'is_read' => false,
-            'description' => 'You received a new message from ' . $message->sender->name
+            'description' => 'You received a new message from ' . $message->sender->name,
+            'type' => \App\Models\Activity::TYPE_MESSAGE,
+            'related_id' => $message->id,
+            'related_type' => 'message'
         ]);
 
         return back()->with('success', 'Message marked as read.');
@@ -207,12 +210,7 @@ class MessageController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
-        // Create activity record for the buyer
-        Activity::create([
-            'user_id' => $message->receiver_id,
-            'is_read' => false,
-            'description' => 'You received a new message from ' . $message->sender->name
-        ]);
+        // Note: No activity record needed for bulk mark as read since these are existing messages
 
         return back()->with('success', "Successfully marked {$updatedCount} message(s) as read.");
     }
@@ -270,7 +268,10 @@ class MessageController extends Controller
                 Activity::create([
                     'user_id' => $buyer->id,
                     'is_read' => false,
-                    'description' => $replyMessage['body'],
+                    'description' => 'You received a reply from ' . $user->name,
+                    'type' => \App\Models\Activity::TYPE_MESSAGE,
+                    'related_id' => $replyMessage->id,
+                    'related_type' => 'message'
                 ]);
             }
         } catch (\Exception $e) {

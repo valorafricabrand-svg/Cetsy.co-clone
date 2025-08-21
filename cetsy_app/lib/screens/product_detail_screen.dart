@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';          // html → widgets
 import 'package:photo_view/photo_view.dart';              // pinch‑zoom image
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../config/constants.dart';
 import '../models/product.dart';
-import '../utils/html_utils.dart';
+import '../providers/cart_provider.dart';
+import 'checkout_screen.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   /// Named route used by the list screen.
@@ -122,16 +124,35 @@ class ProductDetailScreen extends StatelessWidget {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: SizedBox(
-            height: 48,
-            child: FilledButton(
-              onPressed: () {
-                // TODO ‑ integrate with your cart / checkout flow
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(const SnackBar(content: Text('Added to cart')));
-              },
-              child: const Text('Add to Cart'),
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    context.read<CartProvider>().add(product);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Added to cart')),
+                    );
+                  },
+                  child: const Text('Add to Cart'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () {
+                    context.read<CartProvider>().add(product);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CheckoutScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text('Buy Now'),
+                ),
+              ),
+            ],
           ),
         ),
       ),

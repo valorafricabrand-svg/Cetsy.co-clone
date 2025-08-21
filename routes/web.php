@@ -6,9 +6,7 @@ use App\Http\Controllers\{
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
     AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController,
-    NotificationController,
-    ProductReportController,ProductShippingController,
-    ShopPostController
+    ProductReportController,ProductShippingController, ProductVariationController
 };
 
 use App\Http\Controllers\Admin\{
@@ -46,6 +44,10 @@ use App\Http\Controllers\Seller\{
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+// Safaricom callback (must be reachable publicly)
+Route::post('/wallet/deposit/mpesa/callback', [WalletDepositController::class, 'mpesaCallback'])
+    ->name('wallet.deposit.mpesa.callback');
+
 
 // pages
 Route::get('/become-seller', function () {
@@ -88,11 +90,17 @@ Route::get('/shop/{id}', [ShopController::class, 'showPublic'])->name('shop.show
 
 // Cart
 Route::prefix('cart')->name('cart.')->group(function () {
-    Route::get('/', [CartController::class, 'viewCart'])->name('view');
-    Route::post('/add', [CartController::class, 'addToCart'])->name('add');
-    Route::post('/buy', [CartController::class, 'addToBuy'])->name('buy');
+    Route::get('/',        [CartController::class, 'viewCart'])->name('view');
+    Route::post('/add',    [CartController::class, 'addToCart'])->name('add');
+    Route::post('/buy',    [CartController::class, 'addToBuy'])->name('buy');
     Route::post('/remove', [CartController::class, 'removeFromCart'])->name('remove');
     Route::post('/update', [CartController::class, 'updateCart'])->name('update');
+
+    // persist per-item shipping selection to session
+    Route::post('/shipping', [CartController::class, 'updateShippingSelection'])->name('shipping');
+
+    // checkout page
+    Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
 });
 
 // routes/web.php
@@ -105,14 +113,18 @@ Route::get(
 Route::get('/wishlist', [ProductController::class, 'wishlist'])->name('wishlist');
 
 // MPESA
-Route::get('/bmpesa', [MpesaController::class, 'initiate']);
-Route::get('/bconfirm-payment/{id}', [MpesaController::class, 'checkStatus']);
+// Route::get('/bmpesa', [MpesaController::class, 'initiate']);
+// Route::get('/bconfirm-payment/{id}', [MpesaController::class, 'checkStatus']);
 
 // Payment routes
 Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_now');
 
+
+
 Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
     ->name('products.pay-fee');
+
+
 
 // Product Reports
 Route::post('/product-reports', [ProductReportController::class, 'store'])->name('product-reports.store');
@@ -133,7 +145,21 @@ Route::prefix('products/{product}')->name('products.')->group(function () {
     Route::patch('/details',     [ProductController::class, 'updateDetails'])->name('details.update');
     Route::patch('/shipping',    [ProductController::class, 'updateShipping'])->name('shipping.update');
     Route::patch('/settings',    [ProductController::class, 'updateSettings'])->name('settings.update');
+
+
+
+
+
+
 });
+
+    Route::get('/products/{product}/variation-types/{type}/manage', [ProductVariationController::class, 'manage'])
+    ->name('products.variations.manage');
+
+
+
+
+
 
 // web.php
 Route::post   ('/products/{product}/shipping/rows',           [ProductShippingController::class, 'storeShippingRow'])
@@ -163,80 +189,56 @@ Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('r
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
-    // routes/web.php
+    
     Route::patch('products/{product}/renewal', [ProductController::class, 'updateRenewal'])
-        ->name('products.updateRenewal');
+         ->name('products.updateRenewal');
 
-    Route::post(
-        '/listing/{order}/wallet',     // URL:  /orders/123/wallet
-        [WalletController::class, 'payListing']
-    )
-        ->name('listing.wallet.pay');
+    Route::post('/listing/{order}/wallet', [WalletController::class,'payListing'])
+         ->name('listing.wallet.pay');
 
-    Route::post(
-        '/order/{order}/wallet',     // URL:  /orders/123/wallet
-        [WalletController::class, 'payOrder']
-    )
-        ->name('order.wallet.pay');
+    Route::post('/order/{order}/wallet', [WalletController::class,'payOrder'])
+         ->name('order.wallet.pay');
 
-    Route::patch(
-        '/account/orders/{order}/cancel',
-        [OrderController::class, 'cancel']
-    )->name('orders.cancel');
-
-    Route::post(
-        '/products/{product}/status',
-        [ProductController::class, 'changeStatus']
-    )->name('products.changeStatus');
+    Route::post('/products/{product}/status', [ProductController::class, 'changeStatus'])
+         ->name('products.changeStatus');
 
     Route::prefix('products/{product}')->group(function () {
-        // Add this for your "Add Custom Variation" form:
         Route::post('variation‑types', [VariationController::class, 'storeType'])
-            ->name('variationTypes.store');
-
-        // Existing variant routes...
-        Route::post('variations',      [VariationController::class, 'store'])
-            ->name('variations.store');
+             ->name('variationTypes.store');
+        Route::post('variations', [VariationController::class, 'store'])
+             ->name('variations.store');
         Route::post('variations/bulk', [VariationController::class, 'bulkStore'])
             ->name('variations.bulkStore');
     });
 
-    Route::patch('variations/{variation}',   [VariationController::class, 'update'])
-        ->name('variations.update');
-    Route::delete('variations/{variation}',  [VariationController::class, 'destroy'])
-        ->name('variations.destroy');
-
-    // (Optional) deleting a variation type
+    Route::patch('variations/{variation}', [VariationController::class, 'update'])
+         ->name('variations.update');
+    Route::delete('variations/{variation}', [VariationController::class, 'destroy'])
+         ->name('variations.destroy');
     Route::delete('variation‑types/{variationType}', [VariationController::class, 'destroyType'])
         ->name('variationTypes.destroy');
 
-    // Add a single option under a type
     Route::post('variation-types/{variationType}/options', [VariationController::class, 'storeOption'])
-        ->name('variationOptions.store');
-
-    // Edit an existing option (e.g., rename "Red" -> "Crimson")
+         ->name('variationOptions.store');
     Route::patch('variation-options/{option}', [VariationController::class, 'updateOption'])
-        ->name('variationOptions.update');
-
-    // Remove an option
+         ->name('variationOptions.update');
     Route::delete('variation-options/{option}', [VariationController::class, 'destroyOption'])
-        ->name('variationOptions.destroy');
-
-    Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
-
-    Route::post('/cart/update-shipping-selection', [CartController::class, 'updateShippingSelection'])->name('cart.updateShippingSelection');
+         ->name('variationOptions.destroy');
 
     Route::post('/favorites/toggle', [WishlistController::class, 'toggle'])
-        ->name('favorites.toggle');
+         ->name('favorites.toggle');
     Route::delete('/favorites/{wishlist}', [WishlistController::class, 'remove'])
-        ->name('wishlist.remove');
+         ->name('wishlist.remove'); 
     Route::post('/offers', [OfferController::class, 'store'])
-        ->name('offers.store');
+         ->name('offers.store');
     Route::post('/messages', [MessageController::class, 'store'])
-        ->name('messages.store');
-    Route::post('/products/{product}/media', [MediaController::class, 'upload'])->name('media.upload');
-    Route::delete('/media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
-    Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'destroy'])->name('digital-files.destroy');
+         ->name('messages.store');
+    Route::post('/products/{product}/media', [MediaController::class, 'upload'])
+         ->name('media.upload');
+    Route::delete('/media/{media}', [MediaController::class, 'destroy'])
+         ->name('media.destroy');
+    Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'destroy'])
+         ->name('digital-files.destroy');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -257,8 +259,8 @@ Route::middleware('auth')->group(function () {
         ->name('products.duplicate');
 
     Route::post('media/{media}/crop', [MediaController::class, 'crop'])
-       ->name('media.crop')
-       ->middleware('auth');
+         ->name('media.crop')
+         ->middleware('auth');
    
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
@@ -267,7 +269,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/checkout/order', [OrderController::class, 'storeOrder'])->name('store_order');
 
     Route::get('/downloads/{file}', [DigitalFileController::class, 'download'])
-        ->name('digital-files.download');
+         ->name('digital-files.download');
 
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
@@ -280,13 +282,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders/{order}/chat', [OrderMessageController::class, 'show'])->name('orders.chat.show');
     Route::get('/orders/{order}/chat/messages', [OrderMessageController::class, 'fetch'])->name('orders.chat.fetch');
     Route::post('/orders/{order}/chat', [OrderMessageController::class, 'send'])->name('orders.chat.send');
-    Route::patch(
-        '/products/{product}/set-featured-image',
-        [ProductController::class, 'setFeaturedImage']
-    )->name('products.setFeaturedImage');
+    
+    Route::patch('/products/{product}/set-featured-image', [ProductController::class, 'setFeaturedImage'])
+         ->name('products.setFeaturedImage');
+    
     // Reviews
-    Route::post('/orders/{order}/items/{item}/reviews', [ReviewController::class, 'store'])->name('orders.items.reviews.store');
-    Route::get('/shops/{shop}/reviews', [ReviewController::class, 'shopReviews'])->name('shop.reviews');
+    Route::post('/orders/{order}/items/{item}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])
+         ->name('orders.items.reviews.store');
+    Route::get('/shops/{shop}/reviews', [\App\Http\Controllers\ReviewController::class, 'shopReviews'])
+         ->name('shop.reviews');
 
     // Wallet
     Route::prefix('wallet')->name('wallet.')->group(function () {
@@ -294,7 +298,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/deposit', [WalletController::class, 'depositForm'])->name('deposit.form');
         Route::post('/deposit', [WalletController::class, 'storeDeposit'])->name('deposit.store');
         Route::post('/deposit/paypal', [WalletController::class, 'handlePayPalDeposit'])->name('deposit.paypal');
+
+    
     });
+
+    Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
+        ->name('wallet.deposit.mpesa.stk');
 
     // Account
     Route::prefix('account')->name('account.')->group(function () {
@@ -311,9 +320,21 @@ Route::middleware('auth')->group(function () {
     Route::get('buyer/offers', [ProductController::class, 'offers'])->name('buyer.offers');
 
     // Notifications
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
-    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    
+    // Disputes - Keep only this to test
+    Route::prefix('disputes')->name('disputes.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\DisputeController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\DisputeController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\DisputeController::class, 'store'])->name('store');
+        Route::get('/{dispute}', [\App\Http\Controllers\DisputeController::class, 'show'])->name('show');
+        Route::post('/{dispute}/messages', [\App\Http\Controllers\DisputeController::class, 'addMessage'])->name('messages.store');
+        Route::get('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'showAppealForm'])->name('appeal.create');
+        Route::post('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'submitAppeal'])->name('appeal.store');
+    });
+    
 });
 
 /*
@@ -333,16 +354,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::get('sellers/{userId}/login-as', [UserController::class, 'loginAs'])->name('sellers.login-as');
     Route::get('return-from-impersonation', [UserController::class, 'returnFromImpersonation'])->name('return-from-impersonation');
-    Route::resource('products', ProductController::class);
-    Route::post('products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
-    Route::resource('roles', RoleController::class);
-// Add this with your other review routes
-    Route::post('reviews/{id}/approve', [ReviewController::class, 'approve'])->name('reviews.approve');
-    /* create (store) — needs the parent category id */
-    Route::post(
-        '/categories/{category}/attributes',
-        [CategoryAttributeController::class, 'store']
-    )->name('categories.attributes.store');
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+    Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
+    // Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
 
     /* update + destroy — shallow, no category prefix */
     Route::put(
@@ -383,21 +397,25 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Product Reports
     Route::get('product-reports', [AdminProductReportController::class, 'index'])->name('product-reports.index');
     Route::put('product-reports/{id}', [AdminProductReportController::class, 'update'])->name('product-reports.update');
-    
-    // Admin notifications - fixed routes
-    Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
-        Route::resource('notifications', AdminNotificationController::class);
+
+    // Admin Disputes
+    Route::prefix('admin-disputes')->name('admin-disputes.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'index'])->name('index');
+        Route::get('/{dispute}', [\App\Http\Controllers\Admin\DisputeController::class, 'show'])->name('show');
+        Route::get('/{dispute}/resolve', [\App\Http\Controllers\Admin\DisputeController::class, 'showResolveForm'])->name('resolve.create');
+        Route::post('/{dispute}/resolve', [\App\Http\Controllers\Admin\DisputeController::class, 'resolve'])->name('resolve.store');
+        Route::post('/{dispute}/messages', [\App\Http\Controllers\Admin\DisputeController::class, 'addMessage'])->name('messages.store');
+        Route::post('/{dispute}/finalize', [\App\Http\Controllers\Admin\DisputeController::class, 'finalizeDispute'])->name('finalize.store');
+        Route::get('/statistics', [\App\Http\Controllers\Admin\DisputeController::class, 'statistics'])->name('statistics');
     });
-    
-    // Admin notification routes - properly nested
-    Route::get('/notifications', [AdminNotificationController::class, 'index'])
-        ->name('notifications.index');
-    
-    Route::post('/notifications/{id}/mark-read', [AdminNotificationController::class, 'markAsRead'])
-        ->name('notifications.mark-read');
-    
-    Route::post('/notifications/mark-all-read', [AdminNotificationController::class, 'markAllAsRead'])
-        ->name('notifications.mark-all-read');
+
+    // Appeals
+    Route::prefix('appeals')->name('appeals.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'appeals'])->name('index');
+        Route::get('/{appeal}', [\App\Http\Controllers\Admin\DisputeController::class, 'showAppeal'])->name('show');
+        Route::post('/{appeal}/review', [\App\Http\Controllers\Admin\DisputeController::class, 'reviewAppeal'])->name('review.store');
+    });
+
 });
 
 /*
@@ -455,6 +473,7 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     Route::get('order/payments', [OrderController::class, 'orderPayments'])->name('orders.payments');
     Route::patch('orders/{order}/process', [OrderController::class, 'process'])->name('orders.process');
     Route::post('orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
+    Route::patch('orders/{order}/cancel', [OrderController::class, 'sellerCancel'])->name('orders.cancel');
 
     Route::resource('shipping_profiles', ShippingProfileController::class)
         ->except(['show']);
