@@ -216,7 +216,15 @@ class WalletController extends Controller
         $ref    = 'WALLET' . $user->id;
         $desc   = 'Wallet Topup';
 
-        $resp = SafaricomDarajaHelper::stkPushRequest($request->input('phone'), $kes, $ref, $desc);
+    
+$phone = ltrim($request->input('phone'), '0+');
+    if (!str_starts_with($phone, '254')) {
+        $phone = '254' . $phone;
+    }
+
+
+
+        $resp = SafaricomDarajaHelper::stkPushRequest($phone, $kes, $ref, $desc);
 
         if (($resp['status'] ?? '') !== 'success') {
             return response()->json([
