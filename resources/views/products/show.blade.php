@@ -30,6 +30,8 @@
 @endphp
 
 <div class="content">
+  <a target="_blank" href="{{ route('listing.show', $product->slug) }}">View Public </a>
+
 
   {{-- ───────── Clickable Tabs Header (navigate to pages) ───────── --}}
   <div class="page-header-sticky">
@@ -85,6 +87,9 @@
               <i class="fa-solid fa-gear me-1"></i> Settings
             </a>
           </li>
+
+
+        
         </ul>
       </div>
     </div>

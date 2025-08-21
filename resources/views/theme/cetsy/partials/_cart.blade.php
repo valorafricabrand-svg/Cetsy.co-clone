@@ -67,7 +67,7 @@
          data-default-amount="{{ $defaultDisplayPrice }}"
          data-variant-index='@json($variantIndex)'>
       <span class="fw-bold text-success">
-        <span class="me-1 small text-muted">From</span>
+        <span id="js-from-label" class="me-1 small text-muted">From</span>
         <span id="js-price-amount">{{ $currency }} {{ $format($defaultDisplayPrice) }}</span>
       </span>
     </div>
@@ -171,7 +171,7 @@
 @if($showCart)
   <aside class="card border-0 shadow-sm mb-4">
     <div class="card-body">
-      <form method="POST" action="{{ route('cart.add') }}">
+      <form method="POST" action="{{ route('cart.add') }}" id="js-cart-form">
         @csrf
 
         <input type="hidden" name="product_id" value="{{ $product->id }}">
@@ -230,6 +230,7 @@
           {{-- Override destination just for this button --}}
           <button type="submit"
                   class="btn btn-primary btn-lg"
+                  id="js-buy-now"
                   formaction="{{ route('cart.buy') }}">
             <i class="fa-solid fa-bolt me-1"></i>
             Buy Now
@@ -247,8 +248,11 @@
     if (!priceBlock) return;
 
     const priceNode         = document.getElementById('js-price-amount');
+    const fromLabel         = document.getElementById('js-from-label');
     const variantIdNode     = document.getElementById('js-variant-id');
     const variantPriceNode  = document.getElementById('js-variant-price');
+
+    const form              = document.getElementById('js-cart-form');
 
     const currency   = priceBlock.getAttribute('data-currency') || '';
     const defaultAmt = parseFloat(priceBlock.getAttribute('data-default-amount') || '0') || 0;
@@ -257,31 +261,18 @@
     const variantIndex = JSON.parse(priceBlock.getAttribute('data-variant-index') || '{}');
 
     const selects = Array.from(document.querySelectorAll('.js-variant-select'));
-    const primarySelect = selects.length ? selects[0] : null; // The first variation type (price driver)
+    const primarySelect = selects.length ? selects[0] : null; // The first variation type (price driver, for labels)
 
     function fmt(amount) {
       return currency + ' ' + Number(amount).toFixed(2);
     }
 
-    function getSelectedKey(excludeSelectId = null, substituteOptionId = null) {
-      const ids = [];
-      for (const s of selects) {
-        const typeId = parseInt(s.getAttribute('data-variation-type-id'), 10);
-        if (excludeSelectId !== null && typeId === excludeSelectId) {
-          if (substituteOptionId === null) return null;
-          ids.push(parseInt(substituteOptionId, 10));
-          continue;
-        }
-        if (!s.value) return null;
-        ids.push(parseInt(s.value, 10));
-      }
-      return ids.sort((a,b)=>a-b).join('-');
+    function allChosen() {
+      return selects.every(s => !!s.value);
     }
 
-    function getFullySelectedKey() {
-      for (const s of selects) {
-        if (!s.value) return null;
-      }
+    function getSelectedKey() {
+      if (!allChosen()) return null;
       const ids = selects.map(s => parseInt(s.value, 10)).sort((a,b)=>a-b);
       return ids.join('-');
     }
@@ -291,7 +282,7 @@
       if (variantPriceNode) variantPriceNode.value = '';
     }
 
-    // Find min price across variants that include a specific option id
+    // Find min price across variants that include a specific option id (used for option labels and "first-type price" preview)
     function minPriceForOption(optionId) {
       let min = null;
       for (const key in variantIndex) {
@@ -306,7 +297,7 @@
       return min;
     }
 
-    // Get price to display based solely on the FIRST variation type selection (if multiple types exist)
+    // Get price to display based solely on the FIRST variation type selection (if multiple types exist) — preview only
     function firstTypePrice() {
       if (!primarySelect || !primarySelect.value) return null;
 
@@ -326,49 +317,33 @@
     function updateMainPrice() {
       const hasMultipleTypes = selects.length > 1;
 
-      if (hasMultipleTypes) {
-        // ALWAYS price by the FIRST variation type only
-        const p = firstTypePrice();
-        if (p != null && !Number.isNaN(p)) {
-          if (priceNode) priceNode.textContent = fmt(p);
-        } else {
-          if (priceNode) priceNode.textContent = fmt(defaultAmt);
-        }
-
-        // Only set hidden variant fields when a full valid combo is selected
-        const fullKey = getFullySelectedKey();
-        if (fullKey && Object.prototype.hasOwnProperty.call(variantIndex, fullKey)) {
-          const entry = variantIndex[fullKey];
-          if (variantIdNode) variantIdNode.value = entry.id;
-          if (variantPriceNode) variantPriceNode.value = parseFloat(entry.price).toFixed(2);
-        } else {
-          clearVariantHidden();
-        }
-        return;
-      }
-
-      // Single variation type behavior: exact variant price when selected, else default
-      const fullKey = getFullySelectedKey();
+      // If full valid combo exists, always show its EXACT price and set hidden fields
+      const fullKey = getSelectedKey();
       if (fullKey && Object.prototype.hasOwnProperty.call(variantIndex, fullKey)) {
         const entry = variantIndex[fullKey];
         const price = parseFloat(entry.price);
-        if (priceNode) priceNode.textContent = fmt(price);
+
+        if (priceNode && !Number.isNaN(price)) priceNode.textContent = fmt(price);
+        if (fromLabel) fromLabel.style.display = 'none';
+
         if (variantIdNode) variantIdNode.value = entry.id;
         if (variantPriceNode) variantPriceNode.value = price.toFixed(2);
-      } else {
-        // If a single type and an option is selected but doesn't map, attempt min by that option
-        if (primarySelect && primarySelect.value) {
-          const p = firstTypePrice();
-          if (p != null && !Number.isNaN(p)) {
-            if (priceNode) priceNode.textContent = fmt(p);
-          } else {
-            if (priceNode) priceNode.textContent = fmt(defaultAmt);
-          }
-        } else {
-          if (priceNode) priceNode.textContent = fmt(defaultAmt);
-        }
-        clearVariantHidden();
+        return;
       }
+
+      // Otherwise, preview price:
+      if (hasMultipleTypes) {
+        const p = firstTypePrice();
+        if (priceNode) priceNode.textContent = fmt(!Number.isNaN(p) && p != null ? p : defaultAmt);
+        if (fromLabel) fromLabel.style.display = ''; // show "From" for preview
+      } else {
+        // Single type and no valid mapping yet -> show default
+        if (priceNode) priceNode.textContent = fmt(defaultAmt);
+        if (fromLabel) fromLabel.style.display = ''; // in case it exists in single type scenario
+      }
+
+      // Not a fully valid combo => clear hidden fields
+      clearVariantHidden();
     }
 
     // For each select, keep helpful per-option labels ("— From KES X.XX")
@@ -397,11 +372,24 @@
 
           // If all other selects are chosen, try exact combo; else show "From" (min) for that option
           if (otherAllChosen(typeId)) {
-            const key = getSelectedKey(typeId, optId);
-            if (key && Object.prototype.hasOwnProperty.call(variantIndex, key)) {
-              priceToShow = parseFloat(variantIndex[key].price);
-            } else {
-              priceToShow = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : null;
+            // Build a temporary key substituting this option
+            const ids = [];
+            for (const s2 of selects) {
+              const tId = parseInt(s2.getAttribute('data-variation-type-id'), 10);
+              if (tId === typeId) {
+                ids.push(optId);
+              } else {
+                if (!s2.value) { priceToShow = null; break; }
+                ids.push(parseInt(s2.value, 10));
+              }
+            }
+            if (ids.length === selects.length) {
+              const key = ids.sort((a,b)=>a-b).join('-');
+              if (key && Object.prototype.hasOwnProperty.call(variantIndex, key)) {
+                priceToShow = parseFloat(variantIndex[key].price);
+              } else {
+                priceToShow = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : null;
+              }
             }
           } else {
             priceToShow = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : null;
@@ -422,6 +410,20 @@
     }
 
     selects.forEach(s => s.addEventListener('change', onChange));
+
+    // Prevent submit if a priced variant combo isn't resolved
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        const hasVariants = Object.keys(variantIndex).length > 0;
+        if (!hasVariants) return; // product with no priced variants -> allow normal flow
+
+        const key = getSelectedKey();
+        const valid = key && Object.prototype.hasOwnProperty.call(variantIndex, key);
+        if (!valid) {
+          e.preventDefault();
+        }
+      });
+    }
 
     // Initial render
     updateOptionLabels();
