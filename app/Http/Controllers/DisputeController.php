@@ -23,11 +23,11 @@ class DisputeController extends Controller
         $status = $request->get('status');
         $type = $request->get('type');
 
-        // Get disputes where user is either buyer or seller
+        // Get disputes where user is either buyer or specifically involved as seller
         $query = Dispute::with(['order', 'buyer', 'seller', 'appeal'])
             ->where(function ($q) use ($user) {
                 $q->where('buyer_id', $user->id)      // User is the buyer
-                  ->orWhere('seller_id', $user->id);  // User is the seller
+                  ->orWhere('seller_id', $user->id);  // User is specifically the seller in this dispute
             });
 
         if ($status) {
@@ -256,10 +256,10 @@ class DisputeController extends Controller
 
                 \Log::info('Initial message created');
 
-                // Create system message
+                // Create system message (no user_id for system messages)
                 DisputeMessage::create([
                     'dispute_id' => $dispute->id,
-                    'user_id' => 1, // System user ID
+                    'user_id' => null, // No user for system messages
                     'message' => 'Dispute created. Awaiting response.',
                     'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
                     'is_internal' => false
@@ -298,12 +298,15 @@ class DisputeController extends Controller
     {
         $user = Auth::user();
 
-        // Check if user is authorized to view this dispute (either buyer or seller)
-        if ($dispute->buyer_id !== $user->id && $dispute->seller_id !== $user->id) {
+        // Check if user is authorized to view this dispute (either buyer or specifically involved as seller)
+        $isAuthorized = $dispute->buyer_id === $user->id || // User is the buyer
+                       $dispute->seller_id === $user->id;   // User is specifically the seller in this dispute
+
+        if (!$isAuthorized) {
             abort(403, 'Unauthorized access to dispute.');
         }
 
-        $dispute->load(['order', 'buyer', 'seller', 'messages.user', 'appeal']);
+        $dispute->load(['order.shop', 'buyer', 'seller', 'messages.user', 'appeal']);
 
         // Get dispute messages
         $disputeMessages = $dispute->messages()
@@ -320,7 +323,24 @@ class DisputeController extends Controller
             $orderMessages = $dispute->order->messages()
                 ->with('user')
                 ->orderBy('created_at', 'asc')
-                ->get();
+                ->get()
+                ->map(function ($message) {
+                    // Ensure type is set for existing messages
+                    if (empty($message->type)) {
+                        $message->type = $message->getTypeAttribute(null);
+                    }
+                    
+                    // Debug logging
+                    \Log::info('Order message processed', [
+                        'message_id' => $message->id,
+                        'type' => $message->type,
+                        'has_type' => isset($message->type),
+                        'has_attachments' => isset($message->attachments),
+                        'attachments_count' => is_array($message->attachments) ? count($message->attachments) : 0
+                    ]);
+                    
+                    return $message;
+                });
         }
 
         // Combine and sort all messages chronologically
@@ -328,10 +348,22 @@ class DisputeController extends Controller
             ->sortBy('created_at')
             ->values();
 
-        // Add message source indicator
+        // Add message source indicator and debug user data
         $allMessages = $allMessages->map(function ($message) use ($dispute) {
             $message->is_dispute_message = $message->dispute_id === $dispute->id;
             $message->is_order_message = !$message->is_dispute_message;
+            
+            // Debug user data
+            \Log::info('Message user data', [
+                'message_id' => $message->id,
+                'user_id' => $message->user_id,
+                'has_user' => isset($message->user),
+                'user_name' => $message->user->name ?? 'NO_USER_NAME',
+                'user_photo' => $message->user->profile_photo_url ?? 'NO_USER_PHOTO',
+                'is_dispute_message' => $message->is_dispute_message,
+                'is_order_message' => $message->is_order_message
+            ]);
+            
             return $message;
         });
 
@@ -356,8 +388,11 @@ class DisputeController extends Controller
     {
         $user = Auth::user();
 
-        // Check if user is authorized to add messages (either buyer or seller)
-        if ($dispute->buyer_id !== $user->id && $dispute->seller_id !== $user->id) {
+        // Check if user is authorized to add messages (either buyer or specifically involved as seller)
+        $isAuthorized = $dispute->buyer_id === $user->id || // User is the buyer
+                       $dispute->seller_id === $user->id;   // User is specifically the seller in this dispute
+
+        if (!$isAuthorized) {
             abort(403, 'Unauthorized access to dispute.');
         }
 
@@ -409,8 +444,11 @@ class DisputeController extends Controller
     {
         $user = Auth::user();
 
-        // Check if user is authorized to appeal (either buyer or seller)
-        if ($dispute->buyer_id !== $user->id && $dispute->seller_id !== $user->id) {
+        // Check if user is authorized to appeal (either buyer or specifically involved as seller)
+        $isAuthorized = $dispute->buyer_id === $user->id || // User is the buyer
+                       $dispute->seller_id === $user->id;   // User is specifically the seller in this dispute
+
+        if (!$isAuthorized) {
             abort(403, 'Unauthorized access to dispute.');
         }
 
@@ -428,8 +466,11 @@ class DisputeController extends Controller
     {
         $user = Auth::user();
 
-        // Check if user is authorized to appeal (either buyer or seller)
-        if ($dispute->buyer_id !== $user->id && $dispute->seller_id !== $user->id) {
+        // Check if user is authorized to appeal (either buyer or specifically involved as seller)
+        $isAuthorized = $dispute->buyer_id === $user->id || // User is the buyer
+                       $dispute->seller_id === $user->id;   // User is specifically the seller in this dispute
+
+        if (!$isAuthorized) {
             abort(403, 'Unauthorized access to dispute.');
         }
 
