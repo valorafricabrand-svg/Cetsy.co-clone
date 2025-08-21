@@ -29,7 +29,7 @@
    class="card text-decoration-none border-0 shadow-sm h-100">
 
   {{-- Thumbnail --}}
-  <div class="ratio ratio-1x1 rounded-top overflow-hidden">
+  <div class="ratio ratio-1x1 rounded-top overflow-hidden bg-light d-flex align-items-center justify-content-center">
     @php
       // If featured_image is a full URL use it; otherwise assume it's a storage path
       $thumb = null;
@@ -48,11 +48,12 @@
     @endphp
 
     @if($mediaType === 'video')
-      <video src="{{ $thumb }}" class="w-100 h-100 object-fit-cover" controls></video>
+      <video src="{{ $thumb }}" class="w-100 h-100" style="object-fit: contain;" controls></video>
     @else
       <img src="{{ $thumb }}"
            alt="{{ $item->name }}"
-           class="w-100 h-100 object-fit-cover">
+           class="w-100 h-100"
+           style="object-fit: contain;">
     @endif
   </div>
 
