@@ -404,7 +404,10 @@ class WalletController extends Controller
         Activity::create([
             'user_id' => Auth::id(),
             'is_read' => false,
-            'description' => 'You paid for a listing fee of $' . number_format($fee, 2)
+            'description' => 'You paid for a listing fee of $' . number_format($fee, 2),
+            'type' => \App\Models\Activity::TYPE_WALLET,
+            'related_id' => $wallet->id,
+            'related_type' => 'wallet'
         ]);
     }
 

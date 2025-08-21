@@ -50,7 +50,10 @@ class WishlistController extends Controller
                 Activity::create([
                     'user_id' => $product->shop->user->id,
                     'is_read' => false,
-                    'description' => 'You received a new wishlist for ' . $product->name . ' from ' . $request->user()->name
+                    'description' => 'You received a new wishlist for ' . $product->name . ' from ' . $request->user()->name,
+                    'type' => \App\Models\Activity::TYPE_WISHLIST,
+                    'related_id' => $product->id,
+                    'related_type' => 'product'
                 ]);
             }
         } catch (\Exception $e) {
@@ -72,7 +75,10 @@ class WishlistController extends Controller
                 Activity::create([
                     'user_id' => $request->user()->id,
                     'is_read' => false,
-                    'description' => 'You added ' . $product->name . ' to your wishlist'
+                    'description' => 'You added ' . $product->name . ' to your wishlist',   
+                    'type' => \App\Models\Activity::TYPE_WISHLIST,
+                    'related_id' => $product->id,
+                    'related_type' => 'product'
                 ]);
             }
         } catch (\Exception $e) {

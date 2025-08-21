@@ -50,7 +50,10 @@ class MessageController extends Controller
                 Activity::create([
                     'user_id' => $receiver->id,
                     'is_read' => false,
-                    'description' => 'You received a new message from ' . $request->user()->name
+                    'description' => 'You received a new message from ' . $request->user()->name,
+                    'type' => \App\Models\Activity::TYPE_MESSAGE,
+                    'related_id' => $message->id,
+                    'related_type' => 'message'
                 ]);
             }
         } catch (\Exception $e) {

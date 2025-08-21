@@ -2,30 +2,58 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class OrderMessage extends Model
+class DisputeMessage extends Model
 {
-    protected $guarded = ['id'];
+    use HasFactory;
+
+    protected $fillable = [
+        'dispute_id', 'user_id', 'message', 'attachments', 
+        'type', 'is_internal'
+    ];
 
     protected $casts = [
         'attachments' => 'array',
+        'is_internal' => 'boolean',
     ];
 
-    // Message type constants (for order messages)
+    // Type constants
     const TYPE_BUYER_MESSAGE = 'buyer_message';
     const TYPE_SELLER_MESSAGE = 'seller_message';
+    const TYPE_ADMIN_MESSAGE = 'admin_message';
     const TYPE_SYSTEM_MESSAGE = 'system_message';
 
-    public function order() {
-        return $this->belongsTo(Order::class);
+    // Relationships
+    public function dispute(): BelongsTo
+    {
+        return $this->belongsTo(Dispute::class);
     }
 
-    public function user() {
+    public function user(): BelongsTo
+    {
         return $this->belongsTo(User::class);
     }
 
-    // Message type methods
+    // Scopes
+    public function scopePublic($query)
+    {
+        return $query->where('is_internal', false);
+    }
+
+    public function scopeInternal($query)
+    {
+        return $query->where('is_internal', true);
+    }
+
+    public function scopeByType($query, string $type)
+    {
+        return $query->where('type', $type);
+    }
+
+    // Methods
     public function isBuyerMessage(): bool
     {
         return $this->type === self::TYPE_BUYER_MESSAGE;
@@ -36,9 +64,19 @@ class OrderMessage extends Model
         return $this->type === self::TYPE_SELLER_MESSAGE;
     }
 
+    public function isAdminMessage(): bool
+    {
+        return $this->type === self::TYPE_ADMIN_MESSAGE;
+    }
+
     public function isSystemMessage(): bool
     {
         return $this->type === self::TYPE_SYSTEM_MESSAGE;
+    }
+
+    public function isInternal(): bool
+    {
+        return $this->is_internal;
     }
 
     public function getTypeLabel(): string
@@ -46,8 +84,9 @@ class OrderMessage extends Model
         return match($this->type) {
             self::TYPE_BUYER_MESSAGE => 'Buyer Message',
             self::TYPE_SELLER_MESSAGE => 'Seller Message',
+            self::TYPE_ADMIN_MESSAGE => 'Admin Message',
             self::TYPE_SYSTEM_MESSAGE => 'System Message',
-            default => 'Order Message'
+            default => 'Unknown'
         };
     }
 
@@ -56,12 +95,12 @@ class OrderMessage extends Model
         return match($this->type) {
             self::TYPE_BUYER_MESSAGE => 'buyer-message',
             self::TYPE_SELLER_MESSAGE => 'seller-message',
+            self::TYPE_ADMIN_MESSAGE => 'admin-message',
             self::TYPE_SYSTEM_MESSAGE => 'system-message',
-            default => 'order-message'
+            default => 'default-message'
         };
     }
 
-    // Attachment methods
     public function hasAttachments(): bool
     {
         return !empty($this->attachments);
@@ -70,28 +109,5 @@ class OrderMessage extends Model
     public function getAttachmentsCount(): int
     {
         return is_array($this->attachments) ? count($this->attachments) : 0;
-    }
-
-    // Get message content (alias for body)
-    public function getMessageAttribute()
-    {
-        return $this->body;
-    }
-
-    // Default type if none is set
-    public function getTypeAttribute($value)
-    {
-        if (empty($value)) {
-            // Determine type based on user relationship if possible
-            if ($this->user_id && $this->order) {
-                if ($this->user_id === $this->order->user_id) {
-                    return self::TYPE_BUYER_MESSAGE;
-                } elseif ($this->order->shop && $this->user_id === $this->order->shop->user_id) {
-                    return self::TYPE_SELLER_MESSAGE;
-                }
-            }
-            return self::TYPE_SYSTEM_MESSAGE;
-        }
-        return $value;
     }
 }
