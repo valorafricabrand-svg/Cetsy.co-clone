@@ -5,8 +5,8 @@ use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
     DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, /* MpesaController, */ MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController,
-    ProductReportController,ProductShippingController
+    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController,
+    ProductReportController,ProductShippingController, ProductVariationController
 };
 
 use App\Http\Controllers\Admin\{
@@ -38,6 +38,10 @@ use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+// Safaricom callback (must be reachable publicly)
+Route::post('/wallet/deposit/mpesa/callback', [WalletDepositController::class, 'mpesaCallback'])
+    ->name('wallet.deposit.mpesa.callback');
+
 
 // pages
 Route::get('/become-seller', function () {return themed_view('pages.become-seller');})->name('become-seller');
@@ -92,8 +96,12 @@ Route::get('/wishlist', [ProductController::class, 'wishlist'])->name('wishlist'
 // Payment routes
 Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_now');
 
+
+
 Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
       ->name('products.pay-fee');
+
+
 
 // Product Reports
 Route::post('/product-reports', [ProductReportController::class, 'store'])->name('product-reports.store');
@@ -117,9 +125,13 @@ Route::prefix('products/{product}')->name('products.')->group(function () {     
 
 
 
+
+
+
 });
 
-
+    Route::get('/products/{product}/variation-types/{type}/manage', [ProductVariationController::class, 'manage'])
+    ->name('products.variations.manage');
 
 
 
@@ -264,7 +276,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/deposit', [WalletController::class, 'depositForm'])->name('deposit.form');
         Route::post('/deposit', [WalletController::class, 'storeDeposit'])->name('deposit.store');
         Route::post('/deposit/paypal', [WalletController::class, 'handlePayPalDeposit'])->name('deposit.paypal');
+
+    
     });
+
+    Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
+        ->name('wallet.deposit.mpesa.stk');
 
     // Account
     Route::prefix('account')->name('account.')->group(function () {

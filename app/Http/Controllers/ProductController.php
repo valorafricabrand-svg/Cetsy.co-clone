@@ -180,7 +180,7 @@ public function store(Request $request)
 
     return redirect()
         ->route('products.show',$product)
-        ->with('success','Product created successfully! You can now add more details or activate it.');
+        ->with('success','Listing created successfully! You can now add more details or activate it.');
 }
 
 
@@ -603,22 +603,29 @@ public function listing(string $slug)
         return themed_view('listings', compact('products'));
     }
 
-    public function search(Request $request)
-    {
-        $q = $request->input('q');
 
-        $products = Product::where('name', 'like', "%{$q}%")
-            ->orWhere('description', 'like', "%{$q}%")
-            ->paginate(12);
 
-        return themed_view('listings', compact('products'))->with('q', $q);
-    }
+public function search(Request $request)
+{
+    $q = $request->input('q');
+
+    $products = Product::where('is_active', 1)
+        ->where(function ($query) use ($q) {
+            $query->where('name', 'like', "%{$q}%")
+                  ->orWhere('description', 'like', "%{$q}%");
+        })
+        ->paginate(12);
+
+    return themed_view('listings', compact('products'))->with('q', $q);
+}
 
 
  // in App\Http\Controllers\ProductController.php
 // In your controller:
 public function payFee(Request $request, Product $product)
 {
+
+   
     $request->validate([
         'plan' => ['required','in:monthly,4months'],
     ]);
@@ -1005,18 +1012,18 @@ public function shipping(Product $product, Request $request)
         $product->update($data);
 
         // If you want to handle digital file upload here, uncomment and adapt:
-        /*
+    
         if ($request->hasFile('digital_file') && $request->file('digital_file')->isValid()) {
             $path = $request->file('digital_file')->store('digital-files');
             // Persist to your DigitalFile model / media library as needed
             $product->digitalFiles()->create([
                 'filename' => $request->file('digital_file')->getClientOriginalName(),
-                'path'     => $path,
+                'filepath'     => $path,
                 'size'     => $request->file('digital_file')->getSize(),
                 'mime'     => $request->file('digital_file')->getClientMimeType(),
             ]);
         }
-        */
+    
 
         return back()->with('success', 'Details updated.');
     }
