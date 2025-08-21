@@ -600,6 +600,8 @@ public function listing(string $slug)
         return themed_view('listings', compact('products'));
     }
 
+
+
 public function search(Request $request)
 {
     $q = $request->input('q');
