@@ -5,7 +5,7 @@
   $salePrice   = (float) ($product->discounted_price ?? $basePrice);
 
   // Ensure variations+options are available
-  $product->loadMissing('variations.options', 'variationTypes.options');
+  $product->loadMissing('variations.options', 'variationTypes.options', 'shop', 'category', 'country');
 
   // Build a compact index: variant-combination key -> {id, price, options:[ids]}
   // Only include variants that have a price.
@@ -26,11 +26,9 @@
   $optionMinPrice = [];
   foreach ($variantIndex as $entry) {
       foreach ($entry['options'] as $optId) {
-          if (!isset($optionMinPrice[$optId])) {
-              $optionMinPrice[$optId] = $entry['price'];
-          } else {
-              $optionMinPrice[$optId] = min($optionMinPrice[$optId], $entry['price']);
-          }
+          $optionMinPrice[$optId] = isset($optionMinPrice[$optId])
+              ? min($optionMinPrice[$optId], $entry['price'])
+              : $entry['price'];
       }
   }
 
@@ -178,7 +176,7 @@
 
         {{-- Hidden field that JS sets when a priced variant is fully selected --}}
         <input type="hidden" name="variant_id" id="js-variant-id">
-        {{-- Optional: client-side convenience for showing in cart preview (server MUST ignore this and price from DB) --}}
+        {{-- Client-side hint only; server must price from DB --}}
         <input type="hidden" name="variant_price" id="js-variant-price">
 
         <div class="row g-3 mb-4">
@@ -222,18 +220,19 @@
 
         {{-- Actions: Add to Cart + Buy Now --}}
         <div class="d-grid gap-2 d-sm-flex">
-          <button type="submit" class="btn btn-success btn-lg" id="js-add-to-cart">
+          <button type="submit" class="btn btn-success btn-lg" id="js-add-to-cart" disabled>
             <i class="fa-solid fa-cart-plus me-1"></i>
-            Add to Cart
+            <span class="js-cta-label">Select options</span>
           </button>
 
           {{-- Override destination just for this button --}}
           <button type="submit"
                   class="btn btn-primary btn-lg"
                   id="js-buy-now"
-                  formaction="{{ route('cart.buy') }}">
+                  formaction="{{ route('cart.buy') }}"
+                  disabled>
             <i class="fa-solid fa-bolt me-1"></i>
-            Buy Now
+            <span class="js-buy-label">Select options</span>
           </button>
         </div>
       </form>
@@ -253,6 +252,10 @@
     const variantPriceNode  = document.getElementById('js-variant-price');
 
     const form              = document.getElementById('js-cart-form');
+    const btnAdd            = document.getElementById('js-add-to-cart');
+    const btnBuy            = document.getElementById('js-buy-now');
+    const ctaLabel          = btnAdd ? btnAdd.querySelector('.js-cta-label') : null;
+    const buyLabel          = btnBuy ? btnBuy.querySelector('.js-buy-label') : null;
 
     const currency   = priceBlock.getAttribute('data-currency') || '';
     const defaultAmt = parseFloat(priceBlock.getAttribute('data-default-amount') || '0') || 0;
@@ -260,20 +263,58 @@
     // variant-index: { "1-12-33": { id: 7, price: 999.00, options:[1,12,33] }, ... }
     const variantIndex = JSON.parse(priceBlock.getAttribute('data-variant-index') || '{}');
 
+    // All selects
     const selects = Array.from(document.querySelectorAll('.js-variant-select'));
-    const primarySelect = selects.length ? selects[0] : null; // The first variation type (price driver, for labels)
+
+    // Build a lookup of viable option IDs (present in any priced variant)
+    const viableOptionIdSet = (function(){
+      const set = new Set();
+      for (const key in variantIndex) {
+        const entry = variantIndex[key];
+        if (entry && Array.isArray(entry.options)) {
+          entry.options.forEach(id => set.add(Number(id)));
+        }
+      }
+      return set;
+    })();
+
+    // Determine which selects are actually relevant to priced variants
+    function isSelectRelevant(selectEl) {
+      const opts = Array.from(selectEl.options).filter(o => o.value);
+      return opts.some(o => viableOptionIdSet.has(parseInt(o.value, 10)));
+    }
+
+    // Only consider relevant selects when deciding if "all chosen"
+    const relevantSelects = selects.filter(isSelectRelevant);
+
+    // Auto-pick a value for any relevant select that has exactly one viable option
+    function autoPickSingletons() {
+      relevantSelects.forEach(s => {
+        const viableOpts = Array.from(s.options).filter(o => o.value && viableOptionIdSet.has(parseInt(o.value, 10)));
+        if (viableOpts.length === 1) {
+          const already = s.value && s.value === viableOpts[0].value;
+          if (!already) {
+            s.value = viableOpts[0].value;
+            s.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+      });
+    }
 
     function fmt(amount) {
       return currency + ' ' + Number(amount).toFixed(2);
     }
 
     function allChosen() {
-      return selects.every(s => !!s.value);
+      // If there are no relevant selects (edge case), treat as chosen
+      if (relevantSelects.length === 0) return true;
+      return relevantSelects.every(s => !!s.value);
     }
 
-    function getSelectedKey() {
+    function selectedKey() {
       if (!allChosen()) return null;
-      const ids = selects.map(s => parseInt(s.value, 10)).sort((a,b)=>a-b);
+      // Use only relevant selects to build the key
+      const ids = relevantSelects.map(s => parseInt(s.value, 10)).sort((a,b)=>a-b);
       return ids.join('-');
     }
 
@@ -282,12 +323,20 @@
       if (variantPriceNode) variantPriceNode.value = '';
     }
 
-    // Find min price across variants that include a specific option id (used for option labels and "first-type price" preview)
+    function setButtonsEnabled(enabled) {
+      if (!btnAdd || !btnBuy) return;
+      btnAdd.disabled = !enabled;
+      btnBuy.disabled = !enabled;
+      if (ctaLabel) ctaLabel.textContent = enabled ? 'Add to Cart' : 'Select options';
+      if (buyLabel) buyLabel.textContent = enabled ? 'Buy Now' : 'Select options';
+    }
+
+    // Find min price across variants that include a specific option id
     function minPriceForOption(optionId) {
       let min = null;
       for (const key in variantIndex) {
         const entry = variantIndex[key];
-        if (entry && Array.isArray(entry.options) && entry.options.indexOf(optionId) !== -1) {
+        if (entry && Array.isArray(entry.options) && entry.options.indexOf(Number(optionId)) !== -1) {
           const p = parseFloat(entry.price);
           if (!Number.isNaN(p)) {
             if (min === null || p < min) min = p;
@@ -297,11 +346,11 @@
       return min;
     }
 
-    // Get price to display based solely on the FIRST variation type selection (if multiple types exist) — preview only
+    // Preview price from the FIRST visible/relevant type (optional UX)
     function firstTypePrice() {
+      const primarySelect = relevantSelects[0] || null;
       if (!primarySelect || !primarySelect.value) return null;
 
-      // Prefer the precomputed data-option-min
       const perOptionMin = JSON.parse(primarySelect.getAttribute('data-option-min') || '{}');
       const optId = parseInt(primarySelect.value, 10);
 
@@ -309,125 +358,93 @@
         const p = parseFloat(perOptionMin[optId]);
         if (!Number.isNaN(p)) return p;
       }
-
-      // Fallback: compute from variantIndex
       return minPriceForOption(optId);
     }
 
-    function updateMainPrice() {
-      const hasMultipleTypes = selects.length > 1;
+    // Keep helpful per-option labels ("— From KES X.XX")
+    function updateOptionLabels() {
+      for (const s of selects) {
+        const perOptionMin = JSON.parse(s.getAttribute('data-option-min') || '{}');
+        for (const opt of Array.from(s.options)) {
+          if (!opt.value) continue; // placeholder
+          const baseLabel = opt.getAttribute('data-label') || opt.textContent;
+          const optId = parseInt(opt.value, 10);
 
-      // If full valid combo exists, always show its EXACT price and set hidden fields
-      const fullKey = getSelectedKey();
-      if (fullKey && Object.prototype.hasOwnProperty.call(variantIndex, fullKey)) {
-        const entry = variantIndex[fullKey];
+          // Only show price suffix for options that actually appear in any priced variant
+          if (viableOptionIdSet.has(optId)) {
+            const min = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : minPriceForOption(optId);
+            opt.textContent = (min != null && !Number.isNaN(min))
+              ? `${baseLabel} — ${fmt(min)}`
+              : baseLabel;
+          } else {
+            opt.textContent = baseLabel; // no priced mapping -> leave plain
+          }
+        }
+      }
+    }
+
+    function updateMainPriceAndState() {
+      const hasVariants = Object.keys(variantIndex).length > 0;
+
+      if (!hasVariants) {
+        // No priced variants: allow submit with product price
+        if (priceNode) priceNode.textContent = fmt(defaultAmt);
+        if (fromLabel) fromLabel.style.display = 'none';
+        setButtonsEnabled(true);
+        return;
+      }
+
+      // If relevantSelects exist, require them only
+      const key = selectedKey();
+
+      if (key && Object.prototype.hasOwnProperty.call(variantIndex, key)) {
+        // Valid exact combo
+        const entry = variantIndex[key];
         const price = parseFloat(entry.price);
 
-        if (priceNode && !Number.isNaN(price)) priceNode.textContent = fmt(price);
+        if (!Number.isNaN(price) && priceNode) priceNode.textContent = fmt(price);
         if (fromLabel) fromLabel.style.display = 'none';
 
         if (variantIdNode) variantIdNode.value = entry.id;
         if (variantPriceNode) variantPriceNode.value = price.toFixed(2);
+
+        setButtonsEnabled(true);
         return;
       }
 
-      // Otherwise, preview price:
-      if (hasMultipleTypes) {
-        const p = firstTypePrice();
-        if (priceNode) priceNode.textContent = fmt(!Number.isNaN(p) && p != null ? p : defaultAmt);
-        if (fromLabel) fromLabel.style.display = ''; // show "From" for preview
-      } else {
-        // Single type and no valid mapping yet -> show default
-        if (priceNode) priceNode.textContent = fmt(defaultAmt);
-        if (fromLabel) fromLabel.style.display = ''; // in case it exists in single type scenario
-      }
-
-      // Not a fully valid combo => clear hidden fields
+      // Not fully selected / invalid combo -> preview & disable
+      const p = firstTypePrice();
+      if (priceNode) priceNode.textContent = fmt((p != null && !Number.isNaN(p)) ? p : defaultAmt);
+      if (fromLabel) fromLabel.style.display = ''; // show "From"
       clearVariantHidden();
-    }
-
-    // For each select, keep helpful per-option labels ("— From KES X.XX")
-    function updateOptionLabels() {
-      const otherAllChosen = (excludeTypeId) => {
-        for (const s of selects) {
-          const typeId = parseInt(s.getAttribute('data-variation-type-id'), 10);
-          if (typeId === excludeTypeId) continue;
-          if (!s.value) return false;
-        }
-        return true;
-      };
-
-      for (const s of selects) {
-        const typeId = parseInt(s.getAttribute('data-variation-type-id'), 10);
-        const perOptionMin = JSON.parse(s.getAttribute('data-option-min') || '{}');
-
-        for (const opt of Array.from(s.options)) {
-          if (!opt.value) continue; // placeholder
-
-          const baseLabel = opt.getAttribute('data-label') || opt.textContent;
-          let label = baseLabel;
-          let priceToShow = null;
-
-          const optId = parseInt(opt.value, 10);
-
-          // If all other selects are chosen, try exact combo; else show "From" (min) for that option
-          if (otherAllChosen(typeId)) {
-            // Build a temporary key substituting this option
-            const ids = [];
-            for (const s2 of selects) {
-              const tId = parseInt(s2.getAttribute('data-variation-type-id'), 10);
-              if (tId === typeId) {
-                ids.push(optId);
-              } else {
-                if (!s2.value) { priceToShow = null; break; }
-                ids.push(parseInt(s2.value, 10));
-              }
-            }
-            if (ids.length === selects.length) {
-              const key = ids.sort((a,b)=>a-b).join('-');
-              if (key && Object.prototype.hasOwnProperty.call(variantIndex, key)) {
-                priceToShow = parseFloat(variantIndex[key].price);
-              } else {
-                priceToShow = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : null;
-              }
-            }
-          } else {
-            priceToShow = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : null;
-          }
-
-          if (priceToShow != null && !Number.isNaN(priceToShow)) {
-            label = `${baseLabel} — ${fmt(priceToShow)}`;
-          }
-
-          opt.textContent = label;
-        }
-      }
+      setButtonsEnabled(false);
     }
 
     function onChange() {
       updateOptionLabels();
-      updateMainPrice();
+      updateMainPriceAndState();
     }
 
     selects.forEach(s => s.addEventListener('change', onChange));
+
+    // INITIALIZATION: label options, auto-pick singletons, then compute price/state
+    updateOptionLabels();
+    autoPickSingletons();
+    updateMainPriceAndState();
 
     // Prevent submit if a priced variant combo isn't resolved
     if (form) {
       form.addEventListener('submit', function(e) {
         const hasVariants = Object.keys(variantIndex).length > 0;
-        if (!hasVariants) return; // product with no priced variants -> allow normal flow
+        if (!hasVariants) return;
 
-        const key = getSelectedKey();
+        const key = selectedKey();
         const valid = key && Object.prototype.hasOwnProperty.call(variantIndex, key);
         if (!valid) {
           e.preventDefault();
         }
       });
     }
-
-    // Initial render
-    updateOptionLabels();
-    updateMainPrice();
   })();
 </script>
 @endpush
