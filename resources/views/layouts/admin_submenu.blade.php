@@ -61,6 +61,10 @@
         'url'   => route('admin.reviews.index'),
         'icon'  => 'fas fa-star',
       ],
+      [
+        'label' => 'Notifications',
+        'url'   => route('admin.notifications.index'),
+        'icon' => 'fas fa-bell',      ],
     ];
   @endphp
 
