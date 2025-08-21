@@ -621,6 +621,8 @@ public function search(Request $request)
 // In your controller:
 public function payFee(Request $request, Product $product)
 {
+
+   
     $request->validate([
         'plan' => ['required','in:monthly,4months'],
     ]);
