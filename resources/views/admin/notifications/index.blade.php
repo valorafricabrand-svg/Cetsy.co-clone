@@ -208,26 +208,24 @@
 <div class="content">
 <div class="page-notifications">
     <!-- Sticky Header -->
-    <div class="page-header mb-4">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="notification-title">Notifications Dashboard</h1>
-                    <p class="notification-timestamp mb-0 d-flex align-items-center">
-                    </button>
-                    </p>
-                </div>
-                <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                    <form action="{{ route('admin.notifications.mark-all-read') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-mark-all">
-                            <i class="fas fa-check-double me-1"></i> Mark All as Read
-                        </button>
-                    </form>
-                </div>
+   <div class="page-header mb-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="notification-title">Notifications Dashboard</h1>
+                <p class="notification-timestamp mb-0 d-flex align-items-center">
+                    <!-- Timestamp or other info can go here -->
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+               <form method="POST" action="{{ route('admin.notifications.mark-all-read') }}">
+    @csrf
+    <button type="submit">Mark all as read</button>
+</form>
             </div>
         </div>
     </div>
+</div>
 
     <div class="container">
         <!-- Success Messages -->
