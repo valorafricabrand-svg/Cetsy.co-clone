@@ -23,7 +23,7 @@ class NotificationController extends Controller
     {
         $activity = Activity::findOrFail($id);
         
-        \Log::info('Mark as read called', [
+        Log::info('Mark as read called', [
             'activity_id' => $activity->id,
             'user_id' => Auth::id(),
             'activity_user_id' => $activity->user_id

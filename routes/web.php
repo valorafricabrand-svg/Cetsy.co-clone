@@ -2,11 +2,32 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{
-    HomeController, ProfileController, ShopController, ProductController,
-    CategoryController, CartController, CheckoutController, OrderController,
-    DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController,
-    ProductReportController,ProductShippingController, ProductVariationController
+    HomeController,
+    ProfileController,
+    ShopController,
+    ProductController,
+    CategoryController,
+    CartController,
+    CheckoutController,
+    OrderController,
+    DashboardController,
+    WalletController,
+    OrderMessageController,
+    AccountController,
+    ProductInfoController,
+    MpesaController,
+    MediaController,
+    DigitalFileController,
+    ShippingProfileController,
+    WishlistController,
+    OfferController,
+    MessageController,
+    VariationController,
+    DealController,
+    BulkPriceController,
+    ProductReportController,
+    ProductShippingController,
+    ProductVariationController
 };
 
 use App\Http\Controllers\Admin\{
@@ -145,15 +166,9 @@ Route::prefix('products/{product}')->name('products.')->group(function () {
     Route::patch('/details',     [ProductController::class, 'updateDetails'])->name('details.update');
     Route::patch('/shipping',    [ProductController::class, 'updateShipping'])->name('shipping.update');
     Route::patch('/settings',    [ProductController::class, 'updateSettings'])->name('settings.update');
-
-
-
-
-
-
 });
 
-    Route::get('/products/{product}/variation-types/{type}/manage', [ProductVariationController::class, 'manage'])
+Route::get('/products/{product}/variation-types/{type}/manage', [ProductVariationController::class, 'manage'])
     ->name('products.variations.manage');
 
 
@@ -162,13 +177,13 @@ Route::prefix('products/{product}')->name('products.')->group(function () {
 
 
 // web.php
-Route::post   ('/products/{product}/shipping/rows',           [ProductShippingController::class, 'storeShippingRow'])
-     ->name('products.shipping.rows.store');
-Route::delete ('/products/{product}/shipping/rows/{row}',     [ProductShippingController::class, 'destroyShippingRow'])
-     ->name('products.shipping.rows.destroy');
+Route::post('/products/{product}/shipping/rows',           [ProductShippingController::class, 'storeShippingRow'])
+    ->name('products.shipping.rows.store');
+Route::delete('/products/{product}/shipping/rows/{row}',     [ProductShippingController::class, 'destroyShippingRow'])
+    ->name('products.shipping.rows.destroy');
 
-Route::patch  ('/products/{product}/shipping/rows/{row}', [ProductShippingController::class, 'updateShippingRow'])
-     ->name('products.shipping.rows.update');
+Route::patch('/products/{product}/shipping/rows/{row}', [ProductShippingController::class, 'updateShippingRow'])
+    ->name('products.shipping.rows.update');
 
 Route::get('/pay-now-invoice/{total}', [OrderController::class, 'payNowInvoice'])->name('pay_now_invoice');
 Route::get('/success-deposit/{id}', [OrderController::class, 'successDeposit'])->name('success_deposit');
@@ -189,56 +204,56 @@ Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('r
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
-    
+
     Route::patch('products/{product}/renewal', [ProductController::class, 'updateRenewal'])
-         ->name('products.updateRenewal');
+        ->name('products.updateRenewal');
 
-    Route::post('/listing/{order}/wallet', [WalletController::class,'payListing'])
-         ->name('listing.wallet.pay');
+    Route::post('/listing/{order}/wallet', [WalletController::class, 'payListing'])
+        ->name('listing.wallet.pay');
 
-    Route::post('/order/{order}/wallet', [WalletController::class,'payOrder'])
-         ->name('order.wallet.pay');
+    Route::post('/order/{order}/wallet', [WalletController::class, 'payOrder'])
+        ->name('order.wallet.pay');
 
     Route::post('/products/{product}/status', [ProductController::class, 'changeStatus'])
-         ->name('products.changeStatus');
+        ->name('products.changeStatus');
 
     Route::prefix('products/{product}')->group(function () {
         Route::post('variation‑types', [VariationController::class, 'storeType'])
-             ->name('variationTypes.store');
+            ->name('variationTypes.store');
         Route::post('variations', [VariationController::class, 'store'])
-             ->name('variations.store');
+            ->name('variations.store');
         Route::post('variations/bulk', [VariationController::class, 'bulkStore'])
             ->name('variations.bulkStore');
     });
 
     Route::patch('variations/{variation}', [VariationController::class, 'update'])
-         ->name('variations.update');
+        ->name('variations.update');
     Route::delete('variations/{variation}', [VariationController::class, 'destroy'])
-         ->name('variations.destroy');
+        ->name('variations.destroy');
     Route::delete('variation‑types/{variationType}', [VariationController::class, 'destroyType'])
         ->name('variationTypes.destroy');
 
     Route::post('variation-types/{variationType}/options', [VariationController::class, 'storeOption'])
-         ->name('variationOptions.store');
+        ->name('variationOptions.store');
     Route::patch('variation-options/{option}', [VariationController::class, 'updateOption'])
-         ->name('variationOptions.update');
+        ->name('variationOptions.update');
     Route::delete('variation-options/{option}', [VariationController::class, 'destroyOption'])
-         ->name('variationOptions.destroy');
+        ->name('variationOptions.destroy');
 
     Route::post('/favorites/toggle', [WishlistController::class, 'toggle'])
-         ->name('favorites.toggle');
+        ->name('favorites.toggle');
     Route::delete('/favorites/{wishlist}', [WishlistController::class, 'remove'])
-         ->name('wishlist.remove'); 
+        ->name('wishlist.remove');
     Route::post('/offers', [OfferController::class, 'store'])
-         ->name('offers.store');
+        ->name('offers.store');
     Route::post('/messages', [MessageController::class, 'store'])
-         ->name('messages.store');
+        ->name('messages.store');
     Route::post('/products/{product}/media', [MediaController::class, 'upload'])
-         ->name('media.upload');
+        ->name('media.upload');
     Route::delete('/media/{media}', [MediaController::class, 'destroy'])
-         ->name('media.destroy');
+        ->name('media.destroy');
     Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'destroy'])
-         ->name('digital-files.destroy');
+        ->name('digital-files.destroy');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -259,9 +274,9 @@ Route::middleware('auth')->group(function () {
         ->name('products.duplicate');
 
     Route::post('media/{media}/crop', [MediaController::class, 'crop'])
-         ->name('media.crop')
-         ->middleware('auth');
-   
+        ->name('media.crop')
+        ->middleware('auth');
+
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
@@ -269,28 +284,28 @@ Route::middleware('auth')->group(function () {
     Route::post('/checkout/order', [OrderController::class, 'storeOrder'])->name('store_order');
 
     Route::get('/downloads/{file}', [DigitalFileController::class, 'download'])
-         ->name('digital-files.download');
+        ->name('digital-files.download');
 
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
-    
+
     //notification routes
     Route::get('/admin/notification', [AdminNotificationController::class, 'index'])->name('admin.notifications.index');
-    
+
     // Chat
     Route::get('/orders/{order}/chat', [OrderMessageController::class, 'show'])->name('orders.chat.show');
     Route::get('/orders/{order}/chat/messages', [OrderMessageController::class, 'fetch'])->name('orders.chat.fetch');
     Route::post('/orders/{order}/chat', [OrderMessageController::class, 'send'])->name('orders.chat.send');
-    
+
     Route::patch('/products/{product}/set-featured-image', [ProductController::class, 'setFeaturedImage'])
-         ->name('products.setFeaturedImage');
-    
+        ->name('products.setFeaturedImage');
+
     // Reviews
     Route::post('/orders/{order}/items/{item}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])
-         ->name('orders.items.reviews.store');
+        ->name('orders.items.reviews.store');
     Route::get('/shops/{shop}/reviews', [\App\Http\Controllers\ReviewController::class, 'shopReviews'])
-         ->name('shop.reviews');
+        ->name('shop.reviews');
 
     // Wallet
     Route::prefix('wallet')->name('wallet.')->group(function () {
@@ -298,8 +313,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/deposit', [WalletController::class, 'depositForm'])->name('deposit.form');
         Route::post('/deposit', [WalletController::class, 'storeDeposit'])->name('deposit.store');
         Route::post('/deposit/paypal', [WalletController::class, 'handlePayPalDeposit'])->name('deposit.paypal');
-
-    
     });
 
     Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
@@ -323,7 +336,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    
+
     // Disputes - Keep only this to test
     Route::prefix('disputes')->name('disputes.')->group(function () {
         Route::get('/', [\App\Http\Controllers\DisputeController::class, 'index'])->name('index');
@@ -334,7 +347,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'showAppealForm'])->name('appeal.create');
         Route::post('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'submitAppeal'])->name('appeal.store');
     });
-    
 });
 
 /*
@@ -354,9 +366,15 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::get('sellers/{userId}/login-as', [UserController::class, 'loginAs'])->name('sellers.login-as');
     Route::get('return-from-impersonation', [UserController::class, 'returnFromImpersonation'])->name('return-from-impersonation');
-    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
-    Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
+    Route::resource('products', Admin\ProductController::class);
+    Route::post('products/{product}/toggle-status', [Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     // Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
+    Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
+        // Other admin routes...
+
+        Route::post('notifications/mark-all-read', [\NotificationController::class, 'markAllRead'])
+            ->name('notifications.mark-all-read');
+    });
 
     /* update + destroy — shallow, no category prefix */
     Route::put(
@@ -390,7 +408,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
-    
+
     //Payment Types
     Route::resource('payment-types', PaymentTypeController::class);
 
@@ -415,7 +433,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('/{appeal}', [\App\Http\Controllers\Admin\DisputeController::class, 'showAppeal'])->name('show');
         Route::post('/{appeal}/review', [\App\Http\Controllers\Admin\DisputeController::class, 'reviewAppeal'])->name('review.store');
     });
-
 });
 
 /*
