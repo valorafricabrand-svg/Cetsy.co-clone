@@ -5,230 +5,308 @@
 @section('styles')
 <style>
     :root {
-        --primary-color: #4361ee;
-        --success-color: #2ecc71;
-        --danger-color: #e74c3c;
-        --light-gray: #f8f9fa;
-        --border-color: #e9ecef;
-        --text-muted: #6c757d;
-        --radius-sm: 0.25rem;
-        --radius-md: 0.375rem;
-        --shadow: rgba(0, 0, 0, 0.05) 0px 1px 3px;
+        --primary: #3b82f6;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-400: #9ca3af;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --border-radius: 8px;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f3f4f6;
+        overflow-x: hidden;
+    }
+
     .page-reviews {
-        padding-bottom: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-md);
     }
-    
-    .page-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #212529;
-        margin-bottom: 0;
-    }
-    
-    .reviews-card {
-        border: none;
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow);
-        overflow: hidden;
-    }
-    
-    .avatar-circle {
-        width: 2rem;
-        height: 2rem;
-        border-radius: 50%;
-        background-color: var(--light-gray);
-        color: #6c757d;
+
+    .page-header {
         display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-900);
+    }
+
+    .btn {
+        display: inline-flex;
         align-items: center;
         justify-content: center;
+        border-radius: var(--border-radius);
         font-weight: 500;
-        margin-right: 0.75rem;
+        transition: var(--transition);
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
         font-size: 0.875rem;
+        line-height: 1;
     }
-    
-    .review-comment {
-        max-width: 320px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        line-height: 1.4;
-        transition: all 0.2s ease;
-        font-size: 0.875rem;
-        color: #495057;
-    }
-    
-    .review-row:hover .review-comment {
-        -webkit-line-clamp: 5;
-        max-height: 120px;
-    }
-    .date-badge .badge {
-    font-weight: 500;
-    font-size: 0.8125rem;
-    background-color: rgba(248, 249, 250, 0.8) !important;
-}
 
-.date-badge .badge i {
-    font-size: 0.75rem;
-    opacity: 0.8;
-}
-
-@media (max-width: 767.98px) {
-    .date-badge .badge {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem !important;
-    }
-}
-    .star-rating {
-        margin-bottom: 0.5rem;
+    .alert {
+        padding: 1rem;
+        border-radius: var(--border-radius);
+        margin-bottom: 1.5rem;
+        border: 1px solid transparent;
         display: flex;
         align-items: center;
+        font-weight: 500;
+        position: relative;
+        overflow: hidden;
     }
-    
-    .star-rating i {
-        color: #ffc107;
-        font-size: 0.875rem;
-        margin-right: 1px;
+
+    .alert::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
     }
-    
-    table.review-table {
-        margin-bottom: 0;
+
+    .alert-success {
+        background: #ecfdf5;
+        color: #065f46;
+        border-color: #a7f3d0;
     }
-    
-    .review-table th {
+
+    .alert-success::before {
+        background: var(--success);
+    }
+
+    .alert-danger {
+        background: #fef2f2;
+        color: #991b1b;
+        border-color: #fecaca;
+    }
+
+    .alert-danger::before {
+        background: var(--danger);
+    }
+
+    .alert-dismissible {
+        padding-right: 3rem;
+    }
+
+    .btn-close {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        font-size: 1.25rem;
+        cursor: pointer;
+        opacity: 0.5;
+        transition: var(--transition);
+    }
+
+    .btn-close:hover {
+        opacity: 1;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+    .table thead th {
+        background: var(--gray-50);
+        padding: 1rem;
         font-weight: 600;
         font-size: 0.875rem;
-        color: #495057;
-        border-top: none;
+        color: var(--gray-700);
+        border-bottom: 1px solid var(--gray-200);
+        text-align: left;
+    }
+
+    .table tbody td {
         padding: 1rem;
+        border-bottom: 1px solid var(--gray-100);
+        vertical-align: top;
     }
-    
-    .review-table td {
-        padding: 1rem;
-        vertical-align: middle;
-        border-color: var(--border-color);
+
+    .table tbody tr {
+        transition: var(--transition);
     }
-    
-    .review-row {
-        transition: background-color 0.15s ease-in-out;
+
+    .table tbody tr:hover {
+        background: var(--gray-50);
     }
-    
-    .review-row:hover {
-        background-color: rgba(248, 249, 250, 0.7);
-    }
-    
-    .shop-badge {
-        background-color: var(--light-gray);
-        border: 1px solid #dee2e6;
-        color: #495057;
-        font-weight: 500;
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: var(--radius-sm);
-    }
-    
-    .btn-action {
-        border-radius: var(--radius-sm);
-        font-size: 0.8125rem;
-        padding: 0.375rem 0.75rem;
-        font-weight: 500;
-        box-shadow: none;
-        transition: all 0.2s;
-    }
-    
-    .btn-approve {
-        background-color: var(--success-color);
-        border-color: var(--success-color);
-        color: white;
-    }
-    
-    .btn-approve:hover {
-        background-color: #27ae60;
-        border-color: #27ae60;
-        color: white;
-    }
-    
-    .btn-delete {
-        background-color: white;
-        border-color: #dee2e6;
-        color: var(--danger-color);
-    }
-    
-    .btn-delete:hover {
-        background-color: var(--danger-color);
-        border-color: var(--danger-color);
-        color: white;
-    }
-    
-    .btn-back {
-        background-color: white;
-        border-color: #dee2e6;
-        color: #495057;
-        font-size: 0.8125rem;
-        padding: 0.375rem 0.75rem;
-        font-weight: 500;
-    }
-    
-    .btn-back:hover {
-        background-color: #f8f9fa;
-        color: #212529;
-    }
-    
-    .status-badge {
-        font-size: 0.75rem;
-        font-weight: 500;
-        padding: 0.25rem 0.5rem;
-        border-radius: var(--radius-sm);
-    }
-    
-    .status-approved {
-        background-color: rgba(46, 204, 113, 0.15);
-        color: #27ae60;
-    }
-    
+
     .action-buttons {
         display: flex;
         gap: 0.5rem;
+        align-items: center;
         justify-content: flex-end;
         flex-wrap: wrap;
     }
-    
-    .empty-state {
-        padding: 3rem 0;
-        text-align: center;
+
+    .btn-danger {
+        background: white;
+        color: var(--danger);
+        border: 1px solid var(--gray-200);
+        font-size: 0.8125rem;
     }
-    
+
+    .btn-danger:hover {
+        background: var(--danger);
+        color: white;
+        border-color: var(--danger);
+        transform: translateY(-1px);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
     .empty-icon {
-        font-size: 2.5rem;
-        color: #dee2e6;
+        font-size: 3rem;
+        color: var(--gray-300);
         margin-bottom: 1rem;
     }
-    
-    .card-footer {
-        background-color: white;
-        border-color: var(--border-color);
-        padding: 0.75rem 1rem;
+
+    .empty-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 0.5rem;
     }
-    
+
+    .empty-text {
+        color: var(--gray-600);
+        font-size: 0.875rem;
+    }
+
+    .card-footer {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        gap: 1rem;
+    }
+
     .pagination-info {
         font-size: 0.8125rem;
-        color: var(--text-muted);
+        color: var(--gray-600);
     }
-    
-    @media (max-width: 767.98px) {
+
+    /* Pagination Styles */
+    .pagination {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .pagination .page-item {
+        list-style: none;
+    }
+
+    .pagination .page-link {
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius);
+        background: var(--gray-100);
+        color: var(--gray-700);
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .pagination .page-link:hover {
+        background: var(--gray-200);
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .table thead th,
+        .table tbody td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .btn-success,
+        .btn-danger {
+            width: 100%;
+            justify-content: center;
+        }
+
         .review-comment {
             max-width: 200px;
         }
-        
-        .action-buttons {
-            flex-direction: column;
+
+        .customer-avatar {
+            width: 2rem;
+            height: 2rem;
         }
-        
-        .btn-action {
-            width: 100%;
+
+        .date-relative {
+            display: none;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .page-reviews {
+            padding: 1rem 0.5rem;
+        }
+
+        .table {
+            font-size: 0.8125rem;
+        }
+
+        .shop-badge,
+        .date-badge,
+        .status-approved {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
         }
     }
 </style>
@@ -237,134 +315,162 @@
 @section('content')
 <div class="content">
     <div class="page-reviews">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="page-title">Reviews</h1>
-            <div>
-                <a href="{{ route('admin.dashboard') }}" class="btn btn-back">
-                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
-                </a>
-            </div>
+        <div class="page-header">
+            <h1 class="page-title">All Reviews</h1>
         </div>
         
         @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert" id="successAlert">
-    <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
-
-<script>
-    // Auto-dismiss the alert after 5 seconds
-    document.addEventListener('DOMContentLoaded', function() {
-        const alertElement = document.getElementById('successAlert');
-        if (alertElement) {
-            setTimeout(function() {
-                const bsAlert = new bootstrap.Alert(alertElement);
-                bsAlert.close();
-            }, 5000); // 5000 milliseconds = 5 seconds
-        }
-    });
-</script>
+            <div class="alert alert-success alert-dismissible" id="successAlert">
+                <div class="alert-progress"></div>
+                <i class="fas fa-check-circle" style="margin-right: 0.5rem;"></i>
+                {{ session('success') }}
+                <button type="button" class="btn-close" onclick="closeAlert('successAlert')">&times;</button>
+            </div>
         @endif
-        
-        <div class="card reviews-card">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table review-table">
-                        <thead class="table-light">
+
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible" id="errorAlert">
+                <div class="alert-progress"></div>
+                <i class="fas fa-exclamation-circle" style="margin-right: 0.5rem;"></i>
+                {{ session('error') }}
+                <button type="button" class="btn-close" onclick="closeAlert('errorAlert')">&times;</button>
+            </div>
+        @endif
+
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Shop</th>
+                            <th>Review</th>
+                            <th>Date</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($reviews as $review)
                             <tr>
-                                <th>Customer</th>
-                                <th>Shop</th>
-                                <th>Review</th>
-                                <th>Date</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($reviews as $review)
-                                <tr class="review-row">
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                        <div>
-                                            <div class="fw-medium">{{ $review->user ? $review->user->name : '-' }}</div>
+                                <td>
+                                    <div class="customer-info">
+                                        <div class="customer-avatar">
+                                            {{ substr($review->user ? $review->user->name : 'U', 0, 1) }}
                                         </div>
+                                        <div class="customer-name">
+                                            {{ $review->user ? $review->user->name : 'Unknown User' }}
                                         </div>
-                                    </td>
-                                    <td>
-                                        <span class=>
-                                            {{ $review->shop ? $review->shop->name : '-' }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <p class="review-comment mb-0">{{ $review->comment ?? '-' }}</p>
-                                    </td>
-                                    <td>
-                                    <div class="d-flex align-items-center">
-                                                    <div class="date-badge me-2">
-                                                        <span class="badge bg-light text-dark border border-secondary-subtle rounded-1 p-2">
-                                                            <i class="far fa-calendar-alt me-1 text-primary"></i>
-                                                            {{ $review->created_at ? $review->created_at->format('Y-m-d') : '-' }}
-                                                        </span>
-                                                    </div>
-                                                    @if($review->created_at)
-                                                        <small class="text-muted d-none d-md-inline">
-                                                            {{ $review->created_at->diffForHumans() }}
-                                                        </small>
-                                                    @endif
-                                                </div>
-                                            </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            @if(!$review->approved)
-                                                <form action="/admin/reviews/{{ $review->id }}/approve" method="POST">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-action btn-approve">
-                                                        <i class="fas fa-check me-1"></i> Approve
-                                                    </button>
-                                                </form>
-                                            @else
-                                                <span class="status-badge status-approved">
-                                                    <i class="fas fa-check-circle me-1"></i> Approved
-                                                </span>
-                                            @endif
-                                            
-                                            <form action="{{ route('reviews.destroy', $review) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this review?');">
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="shop-badge">
+                                        {{ $review->shop ? $review->shop->name : 'Unknown Shop' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    @if($review->rating)
+                                        <div class="star-rating">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                <i class="fas fa-star star {{ $i <= $review->rating ? '' : 'empty' }}"></i>
+                                            @endfor
+                                            <span class="rating-text">({{ $review->rating }}/5)</span>
+                                        </div>
+                                    @endif
+                                    <div class="review-comment">
+                                        {{ $review->comment ?? 'No comment provided' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="date-wrapper">
+                                        <div class="date-badge">
+                                            <i class="far fa-calendar-alt"></i>
+                                            {{ $review->created_at ? $review->created_at->format('M d, Y') : '-' }}
+                                        </div>
+                                        @if($review->created_at)
+                                            <span class="date-relative">
+                                                {{ $review->created_at->diffForHumans() }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        @if(!$review->approved)
+                                            <form action="{{ route('admin.reviews.approve', $review->id) }}" method="POST">
                                                 @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-action btn-delete">
-                                                    <i class="fas fa-trash me-1"></i> Delete
+                                                @method('PATCH')
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="fas fa-check" style="margin-right: 0.375rem;"></i>
+                                                    Approve
                                                 </button>
                                             </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5">
-                                        <div class="empty-state">
-                                            <i class="far fa-comment-dots empty-icon"></i>
-                                            <h5 class="fw-normal text-muted mb-1">No Reviews Found</h5>
-                                            <p class="text-muted small mb-0">Reviews will appear here once customers start leaving feedback.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                                        @else
+                                            <span class="status-approved">
+                                                <i class="fas fa-check-circle"></i>
+                                                Approved
+                                            </span>
+                                        @endif
+                                        
+                                        <form action="{{ route('admin.reviews.destroy', $review->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this review?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-trash" style="margin-right: 0.375rem;"></i>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5">
+                                    <div class="empty-state">
+                                        <i class="far fa-comment-dots empty-icon"></i>
+                                        <div class="empty-title">No Reviews Found</div>
+                                        <div class="empty-text">Reviews will appear here once customers start leaving feedback.</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
+
             @if($reviews->count() > 0)
                 <div class="card-footer">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="pagination-info">
-                            Showing {{ $reviews->firstItem() ?? 0 }} to {{ $reviews->lastItem() ?? 0 }} of {{ $reviews->total() }} reviews
-                        </div>
-                        <div>
-                            {{ $reviews->links() }}
-                        </div>
+                    <div class="pagination-info">
+                        Showing {{ $reviews->firstItem() ?? 0 }} to {{ $reviews->lastItem() ?? 0 }} of {{ $reviews->total() }} reviews
+                    </div>
+                    <div>
+                        {{ $reviews->links() }}
                     </div>
                 </div>
             @endif
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-dismiss alerts after 5 seconds
+    const alerts = document.querySelectorAll('.alert-dismissible');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            closeAlert(alert.id);
+        }, 5000);
+    });
+});
+
+function closeAlert(alertId) {
+    const alert = document.getElementById(alertId);
+    if (alert) {
+        alert.style.opacity = '0';
+        alert.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+            alert.remove();
+        }, 200);
+    }
+}
+</script>
 @endsection

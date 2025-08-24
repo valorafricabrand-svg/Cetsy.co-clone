@@ -134,9 +134,9 @@
     <div class="container">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <p class="mb-0 text-muted">
-          Showing <strong>{{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }}</strong>
-          of <strong>{{ $products->total() }}</strong> listings
-        </p>
+    Showing <strong>{{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }}</strong>
+    of <strong>{{ $products->total() }}</strong> listings
+</p>
         @if($products->total() > 0)
           <a href="{{ route('listings') }}" class="btn btn-outline-success btn-sm"><i class="fas fa-undo me-1"></i> Reset</a>
         @endif
@@ -237,11 +237,11 @@
       @endif
 
       {{-- Pagination (keeps filters) --}}
-      @if ($products->hasPages())
-        <div class="mt-4 d-flex justify-content-center">
-          {{ $products->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
-        </div>
-      @endif
+ @if ($products->hasPages())
+    <div class="mt-4 d-flex justify-content-center">
+        {{ $products->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+    </div>
+@endif
     </div>
   </section>
 

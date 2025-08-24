@@ -52,7 +52,7 @@ class NotificationRouteService
         if ($user->isSeller()) {
             return route('seller.messages.index');
         } elseif ($user->isAdmin()) {
-            return route('admin.dashboard'); // Admin doesn't have specific message route
+            return route('admin.messages.index'); 
         } else {
             return route('buyer.messages.index');
         }

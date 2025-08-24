@@ -326,11 +326,11 @@
                                     
                                     @if(!$notification->is_read)
                                         <form action="{{ route('admin.notifications.mark-read', $notification->id) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-mark-read">
-                                                <i class="fas fa-check me-1"></i> Mark as Read
-                                            </button>
-                                        </form>
+                                    @csrf
+                                    <button type="submit" class="btn btn-mark-read">
+                                    <i class="fas fa-check me-1"></i> Mark as Read
+                                    </button>
+                                    </form>
                                     @endif
                                 </div>
                             </a>
