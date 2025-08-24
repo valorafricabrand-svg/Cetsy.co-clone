@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Activity; // Use your activities table model
 use App\Models\User; // For causer relationship
+use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
@@ -14,8 +15,9 @@ class NotificationController extends Controller
         $notifications = Activity::with('causer')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
+            $user=Auth::user();
 
-        return view('admin.notifications.index', compact('notifications'));
+        return view('admin.notifications.index', compact('notifications','user'));
     }
 
     public function markAllRead()

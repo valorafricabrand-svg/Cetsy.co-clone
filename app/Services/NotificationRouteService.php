@@ -179,7 +179,7 @@ class NotificationRouteService
             case Activity::TYPE_PRODUCT:
                 return 'View Products';
             default:
-                return 'View Details';
+                return '';
         }
     }
 }
