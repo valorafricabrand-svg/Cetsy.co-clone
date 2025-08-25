@@ -356,14 +356,15 @@ Route::middleware('auth')->group(function () {
 | Admin Routes
 |--------------------------------------------------------------------------
 */
+// Admin Messages
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('messages', [AdminMessageController::class, 'index'])->name('messages.index');
+    Route::post('messages/{id}/reply', [AdminMessageController::class, 'reply'])->name('messages.reply');
+});
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
-    // Admin Messages
-    Route::get('messages', [AdminMessageController::class, 'index'])->name('messages.index');
-    Route::post('messages/{id}/reply', [AdminMessageController::class, 'reply'])->name('messages.reply');
-
-    // Admin Reviews
+     // Admin Reviews
     Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
     Route::patch('reviews/{id}/approve', [AdminReviewController::class, 'approve'])->name('reviews.approve');
     Route::delete('reviews/{id}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
@@ -569,7 +570,7 @@ Route::middleware(['auth'])->prefix('buyer')->name('buyer.')->group(function () 
     Route::get('/dashboard', [BuyerDashboard::class, 'index'])->name('dashboard');
 
     // Messages
-    Route::get('/messages', [BuyerMessageControlle::class, 'index'])->name('messages.index');
+    Route::get('/messages', [BuyerMessageController::class, 'index'])->name('messages.index');
     Route::get('/messages/{conversation}', [BuyerMessageController::class, 'show'])->name('messages.show');
     Route::post('/messages', [BuyerMessageController::class, 'store'])->name('messages.store');
 });

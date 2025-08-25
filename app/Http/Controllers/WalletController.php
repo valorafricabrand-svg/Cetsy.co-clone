@@ -53,8 +53,8 @@ class WalletController extends Controller
                 'balance'    => $newBalance,
                 'reference'  => strtoupper(uniqid('TXN-')),
                 'method'     => $overrides['method'] ?? 'wallet',
-                'description'=> $overrides['description'] ?? null,
-                'external_id'=> $overrides['external_id'] ?? null, // e.g. CheckoutRequestID, PayPal order id
+                'description' => $overrides['description'] ?? null,
+                'external_id' => $overrides['external_id'] ?? null, // e.g. CheckoutRequestID, PayPal order id
             ], $overrides);
 
             /** @var Wallet $row */
@@ -68,41 +68,41 @@ class WalletController extends Controller
      |--------------------------------------------------------------
      */
 
-  public function index(Request $request)
-{
-    $query = Wallet::where('user_id', Auth::id());
+    public function index(Request $request)
+    {
+        $query = Wallet::where('user_id', Auth::id());
 
-    if ($request->type === 'credit') {
-        $query->where('credit', '>', 0);
-    } elseif ($request->type === 'debit') {
-        $query->where('debit', '>', 0);
+        if ($request->type === 'credit') {
+            $query->where('credit', '>', 0);
+        } elseif ($request->type === 'debit') {
+            $query->where('debit', '>', 0);
+        }
+
+        if ($request->from) {
+            $query->whereDate('created_at', '>=', $request->from);
+        }
+
+        if ($request->to) {
+            $query->whereDate('created_at', '<=', $request->to);
+        }
+
+        $transactions = $query->orderBy('created_at', 'desc')->paginate(10);
+        $balance = Wallet::where('user_id', Auth::id())
+            ->selectRaw('SUM(credit - debit) as balance')
+            ->value('balance') ?? 0;
+
+        // Fetch payment methods for the current user's shop
+        $shop = Shop::where('user_id', Auth::id())->first();
+        $paymentMethods = collect();
+
+        if ($shop) {
+            $paymentMethods = PaymentMethod::where('shop_id', $shop->id)
+                ->with('paymentType')
+                ->get();
+        }
+
+        return view('wallet.index', compact('transactions', 'balance', 'paymentMethods'));
     }
-
-    if ($request->from) {
-        $query->whereDate('created_at', '>=', $request->from);
-    }
-
-    if ($request->to) {
-        $query->whereDate('created_at', '<=', $request->to);
-    }
-
-    $transactions = $query->orderBy('created_at', 'desc')->paginate(10);
-    $balance = Wallet::where('user_id', Auth::id())
-                ->selectRaw('SUM(credit - debit) as balance')
-                ->value('balance') ?? 0;
-
-    // Fetch payment methods for the current user's shop
-    $shop = Shop::where('user_id', Auth::id())->first();
-    $paymentMethods = collect();
-    
-    if ($shop) {
-        $paymentMethods = PaymentMethod::where('shop_id', $shop->id)
-            ->with('paymentType')
-            ->get();
-    }
-
-    return view('wallet.index', compact('transactions', 'balance', 'paymentMethods'));
-}
 
     public function depositForm()
     {
@@ -205,8 +205,8 @@ class WalletController extends Controller
     public function startMpesaStk(Request $request)
     {
         $request->validate([
-            'usd_amount' => ['required','numeric','min:1'],
-            'phone'      => ['required','string','max:20'],
+            'usd_amount' => ['required', 'numeric', 'min:1'],
+            'phone'      => ['required', 'string', 'max:20'],
         ]);
 
         $user   = $request->user();
@@ -216,11 +216,11 @@ class WalletController extends Controller
         $ref    = 'WALLET' . $user->id;
         $desc   = 'Wallet Topup';
 
-    
-$phone = ltrim($request->input('phone'), '0+');
-    if (!str_starts_with($phone, '254')) {
-        $phone = '254' . $phone;
-    }
+
+        $phone = ltrim($request->input('phone'), '0+');
+        if (!str_starts_with($phone, '254')) {
+            $phone = '254' . $phone;
+        }
 
 
 
@@ -242,7 +242,7 @@ $phone = ltrim($request->input('phone'), '0+');
         Wallet::firstOrCreate(
             [
                 'user_id'    => $user->id,
-                'external_id'=> $checkoutId ?: $merchantId,
+                'external_id' => $checkoutId ?: $merchantId,
                 'method'     => 'mpesa_stk',
                 'credit'     => 0,
                 'debit'      => 0,
@@ -354,90 +354,90 @@ $phone = ltrim($request->input('phone'), '0+');
      |--------------------------------------------------------------
      */
 
-     public function payListing(Request $request, $id)
-{
-    // 1) Fetch the product
-    $product = Product::findOrFail($id);
+    public function payListing(Request $request, $id)
+    {
+        // 1) Fetch the product
+        $product = Product::findOrFail($id);
 
-    // 2) Validate plan & via
-    $data = $request->validate([
-        'plan' => ['required', 'in:monthly,4months'],
-        'via'  => ['required', 'in:wallet,paypal'],
-    ]);
-
-    // 3) Compute fee & next due date
-    $fourMonthFee = (float) $product->category->listing_fee;
-    
-    if ($data['plan'] === 'monthly') {
-        $fee     = $fourMonthFee / 4;
-        $nextDue = now()->addMonth();
-    } else {
-        $fee     = $fourMonthFee;
-        $nextDue = now()->addMonths(4);
-    }
-
-    // 4) Activate product & set due date
-    $product->update([
-        'is_active'       => true,
-        'listing_paid_at' => now(),
-        'next_due_date'   => $nextDue,
-    ]);
-
-    // 5) Build a unique local transaction ID
-    $localTxId = $request->input('transaction_id');
-    if (! $localTxId) {
-        do {
-            $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
-        } while (Payment::where('local_transaction_id', $localTxId)->exists());
-    }
-
-    // 6) If paying via wallet, record a Wallet debit
-    if ($data['via'] === 'wallet') {
-
-        $currentBalance = Wallet::where('user_id', Auth::id())
-                                ->latest('created_at')
-                                ->value('balance') ?? 0;
-
-        Wallet::create([
-            'user_id'     => Auth::id(),
-            'credit'      => 0,
-            'debit'       => $fee,
-            'balance'     => $currentBalance - $fee,
-            'reference'   => strtoupper(uniqid('TXN-')),
-            'method'      => 'wallet',
-            'description' => "Listing fee ({$data['plan']})",
+        // 2) Validate plan & via
+        $data = $request->validate([
+            'plan' => ['required', 'in:monthly,4months'],
+            'via'  => ['required', 'in:wallet,paypal'],
         ]);
 
-        // Create activity record for the seller
-        Activity::create([
-            'user_id' => Auth::id(),
-            'is_read' => false,
-            'description' => 'You paid for a listing fee of $' . number_format($fee, 2),
-            'type' => \App\Models\Activity::TYPE_WALLET,
-            'related_id' => $wallet->id,
-            'related_type' => 'wallet'
+        // 3) Compute fee & next due date
+        $fourMonthFee = (float) $product->category->listing_fee;
+
+        if ($data['plan'] === 'monthly') {
+            $fee     = $fourMonthFee / 4;
+            $nextDue = now()->addMonth();
+        } else {
+            $fee     = $fourMonthFee;
+            $nextDue = now()->addMonths(4);
+        }
+
+        // 4) Activate product & set due date
+        $product->update([
+            'is_active'       => true,
+            'listing_paid_at' => now(),
+            'next_due_date'   => $nextDue,
+        ]);
+
+        // 5) Build a unique local transaction ID
+        $localTxId = $request->input('transaction_id');
+        if (! $localTxId) {
+            do {
+                $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
+            } while (Payment::where('local_transaction_id', $localTxId)->exists());
+        }
+
+        // 6) If paying via wallet, record a Wallet debit
+        if ($data['via'] === 'wallet') {
+
+            $currentBalance = Wallet::where('user_id', Auth::id())
+                ->latest('created_at')
+                ->value('balance') ?? 0;
+
+            $wallet = Wallet::create([
+                'user_id'     => Auth::id(),
+                'credit'      => 0,
+                'debit'       => $fee,
+                'balance'     => $currentBalance - $fee,
+                'reference'   => strtoupper(uniqid('TXN-')),
+                'method'      => 'wallet',
+                'description' => "Listing fee ({$data['plan']})",
+            ]);
+
+            // Create activity record for the seller
+            Activity::create([
+                'user_id'      => Auth::id(),
+                'is_read'      => false,
+                'description'  => 'You paid for a listing fee of $' . number_format($fee, 2),
+                'type'         => \App\Models\Activity::TYPE_WALLET,
+                'related_id'   => $wallet->id,  
+                'related_type' => 'wallet'
+            ]);
+        }
+
+        // 7) Record the Payment
+        Payment::create([
+            'shop_id'              => $product->shop_id,
+            'total_amount'         => $fee,
+            'payment_method'       => $data['via'],
+            'status'               => '3',  // completed
+            'currency'             => $product->currency ?? 'USD',
+            'local_transaction_id' => $localTxId,
+            'payment_name'         => 'listing_fee',
+        ]);
+
+        // 8) Redirect with success
+        return view('products.success_deposit_fee', [
+            'product' => $product,
+            'plan'    => $data['plan'],
+            'amount'  => $fee,
+            'nextDue' => $nextDue,
         ]);
     }
-
-    // 7) Record the Payment
-    Payment::create([
-        'shop_id'              => $product->shop_id,
-        'total_amount'         => $fee,
-        'payment_method'       => $data['via'],
-        'status'               => '3',  // completed
-        'currency'             => $product->currency ?? 'USD',
-        'local_transaction_id' => $localTxId,
-        'payment_name'         => 'listing_fee',
-    ]);
-
-    // 8) Redirect with success
-   return view('products.success_deposit_fee', [
-        'product' => $product,
-        'plan'    => $data['plan'],
-        'amount'  => $fee,
-        'nextDue' => $nextDue,
-    ]);
-}
 
     public function payListing2(Request $request, $id)
     {
@@ -596,13 +596,20 @@ $phone = ltrim($request->input('phone'), '0+');
 
             if ($shopOwner) {
                 \Mail::to($shopOwner->email)->send(new \App\Mail\PaymentSuccessShopOwnerMail(
-                    $order, $shopOwner, $buyer, $shop, $payment
+                    $order,
+                    $shopOwner,
+                    $buyer,
+                    $shop,
+                    $payment
                 ));
             }
 
             if ($buyer) {
                 \Mail::to($buyer->email)->send(new \App\Mail\PaymentSuccessBuyerMail(
-                    $order, $buyer, $shop, $payment
+                    $order,
+                    $buyer,
+                    $shop,
+                    $payment
                 ));
             }
 

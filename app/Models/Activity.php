@@ -11,11 +11,14 @@ class Activity extends Model
 
     protected $fillable = [
         'type',
-        'description', // or 'message', depending on your column name
+        'description',
         'causer_id',
         'is_read',
         'link',
         'created_at',
+        'related_id',
+        'related_type',
+        'user_id',
     ];
 
     // Constants for notification types
@@ -28,6 +31,9 @@ class Activity extends Model
     public const TYPE_PAYOUT       = 'payout';
     public const TYPE_PRODUCT      = 'product';
     public const TYPE_GENERAL      = 'general';
+
+    // 👇 Add this for shop activities
+    public const TYPE_SHOP         = 'shop';
 
     public function causer()
     {

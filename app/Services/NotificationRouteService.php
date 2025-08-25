@@ -50,11 +50,11 @@ class NotificationRouteService
     private static function getMessageRoute(User $user): string
     {
         if ($user->isSeller()) {
-            return route('seller.messages.index');
+            return route('admin.messages.index');
         } elseif ($user->isAdmin()) {
             return route('admin.messages.index'); 
         } else {
-            return route('buyer.messages.index');
+            return route('admin.messages.index');
         }
     }
 
