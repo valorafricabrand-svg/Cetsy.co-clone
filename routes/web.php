@@ -7,7 +7,6 @@ use App\Http\Controllers\{
     HomeController,
     ProfileController,
     ShopController,
-
     CategoryController,
     CartController,
     CheckoutController,
@@ -32,6 +31,7 @@ use App\Http\Controllers\{
     ProductShippingController,
     ProductVariationController
 };
+
 use App\Http\Controllers\admin\ProductController;
 
 use App\Http\Controllers\Admin\{
@@ -51,7 +51,12 @@ use App\Http\Controllers\Admin\{
     NotificationController as AdminNotificationController,
     DisputeController
 };
-use App\Http\Controllers\Buyer\BuyerDashboard;
+
+use App\Http\Controllers\Buyer\{
+    BuyerDashboard,
+    BuyerMessageController
+};
+
 use App\Http\Controllers\Seller\{
     DashboardController as SellerDashboard,
     KycController,
@@ -61,7 +66,8 @@ use App\Http\Controllers\Seller\{
     ServiceController,
     BuyerController,
     FavoriteController,
-    PaymentMethodController
+    PaymentMethodController,
+    SellerMessageController
 };
 
 /*
@@ -70,47 +76,11 @@ use App\Http\Controllers\Seller\{
 |--------------------------------------------------------------------------
 */
 
-// messages route
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
-
-Route::middleware(['auth'])->group(function () {
-
-    // Seller Messages
-    Route::prefix('seller')->name('seller.')->group(function () {
-        Route::get('messages', [SellerMessageController::class, 'index'])->name('messages.index');
-    });
-
-    // Admin Messages
-    Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('messages', [AdminMessageController::class, 'index'])->name('messages.index');
-    });
-
-
-    // Buyer Messages
-    Route::prefix('buyer')->name('buyer.')->group(function () {
-        Route::get('messages', [BuyerMessageController::class, 'index'])->name('messages.index');
-    });
-
-});
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::post('messages/{id}/reply', [AdminMessageController::class, 'reply'])->name('messages.reply');
-});
-
-
-
-
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
     ->name('wallet.deposit.mpesa.callback');
 
-// pages
+// Static pages
 Route::get('/become-seller', fn() => themed_view('pages.become-seller'))->name('become-seller');
 Route::get('/privacy', fn() => themed_view('pages.privacy'))->name('privacy');
 Route::get('/terms', fn() => themed_view('pages.terms'))->name('terms');
@@ -133,9 +103,9 @@ Route::get('/shop/{id}', [ShopController::class, 'showPublic'])->name('shop.show
 
 // Cart
 Route::prefix('cart')->name('cart.')->group(function () {
-    Route::get('/',        [CartController::class, 'viewCart'])->name('view');
-    Route::post('/add',    [CartController::class, 'addToCart'])->name('add');
-    Route::post('/buy',    [CartController::class, 'addToBuy'])->name('buy');
+    Route::get('/', [CartController::class, 'viewCart'])->name('view');
+    Route::post('/add', [CartController::class, 'addToCart'])->name('add');
+    Route::post('/buy', [CartController::class, 'addToBuy'])->name('buy');
     Route::post('/remove', [CartController::class, 'removeFromCart'])->name('remove');
     Route::post('/update', [CartController::class, 'updateCart'])->name('update');
     Route::post('/shipping', [CartController::class, 'updateShippingSelection'])->name('shipping');
@@ -157,17 +127,17 @@ Route::post('/product-reports', [ProductReportController::class, 'store'])->name
 
 // Product detail routes
 Route::prefix('products/{product}')->name('products.')->group(function () {
-    Route::get('/pricing',     [ProductController::class, 'pricing'])->name('pricing');
-    Route::get('/variations',  [ProductController::class, 'variations'])->name('variations');
-    Route::get('/details',     [ProductController::class, 'details'])->name('details');
-    Route::get('/shipping',    [ProductController::class, 'shipping'])->name('shipping');
-    Route::get('/settings',    [ProductController::class, 'settings'])->name('settings');
-    Route::get('/media',       [ProductController::class, 'media'])->name('media');
-    Route::patch('/pricing',     [ProductController::class, 'updatePricing'])->name('pricing.update');
-    Route::patch('/variations',  [ProductController::class, 'updateVariations'])->name('variations.update');
-    Route::patch('/details',     [ProductController::class, 'updateDetails'])->name('details.update');
-    Route::patch('/shipping',    [ProductController::class, 'updateShipping'])->name('shipping.update');
-    Route::patch('/settings',    [ProductController::class, 'updateSettings'])->name('settings.update');
+    Route::get('/pricing', [ProductController::class, 'pricing'])->name('pricing');
+    Route::get('/variations', [ProductController::class, 'variations'])->name('variations');
+    Route::get('/details', [ProductController::class, 'details'])->name('details');
+    Route::get('/shipping', [ProductController::class, 'shipping'])->name('shipping');
+    Route::get('/settings', [ProductController::class, 'settings'])->name('settings');
+    Route::get('/media', [ProductController::class, 'media'])->name('media');
+    Route::patch('/pricing', [ProductController::class, 'updatePricing'])->name('pricing.update');
+    Route::patch('/variations', [ProductController::class, 'updateVariations'])->name('variations.update');
+    Route::patch('/details', [ProductController::class, 'updateDetails'])->name('details.update');
+    Route::patch('/shipping', [ProductController::class, 'updateShipping'])->name('shipping.update');
+    Route::patch('/settings', [ProductController::class, 'updateSettings'])->name('settings.update');
 });
 
 Route::get('/products/{product}/variation-types/{type}/manage', [ProductVariationController::class, 'manage'])
@@ -235,7 +205,7 @@ Route::middleware('auth')->group(function () {
     Route::post('products', [ProductController::class, 'store'])->middleware('kyc.after.two.sales')->name('products.store');
     Route::resource('products', ProductController::class)->except(['create', 'store'])->middleware('kyc.after.two.sales');
     Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate'])->name('products.duplicate');
-    Route::post('media/{media}/crop', [MediaController::class, 'crop'])->name('media.crop')->middleware('auth');
+    Route::post('media/{media}/crop', [MediaController::class, 'crop'])->name('media.crop');
 
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
@@ -300,13 +270,105 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Seller Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->prefix('seller')->name('seller.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
+    
+    // Shop management routes (MISSING ROUTES)
+    Route::get('/shops', [ShopController::class, 'index'])->name('shops.index');
+    Route::get('/shops/create', [ShopController::class, 'create'])->name('shops.create');
+    Route::post('/shops', [ShopController::class, 'store'])->name('shops.store');
+    Route::get('/shops/{shop}', [ShopController::class, 'show'])->name('shops.show');
+    Route::get('/shops/{shop}/edit', [ShopController::class, 'edit'])->name('shops.edit');
+    Route::patch('/shops/{shop}', [ShopController::class, 'update'])->name('shops.update');
+    Route::delete('/shops/{shop}', [ShopController::class, 'destroy'])->name('shops.destroy');
+    
+    // Alternative shop creation route
+    Route::get('/shop/create', [ShopController::class, 'create'])->name('shop.create');
+    Route::post('/shop', [ShopController::class, 'store'])->name('shop.store');
+    
+    // Holiday mode routes
+    Route::post('/holiday-mode/enable', [SellerDashboard::class, 'enableHolidayMode'])->name('holiday-mode.enable');
+    Route::post('/holiday-mode/disable', [SellerDashboard::class, 'disableHolidayMode'])->name('holiday-mode.disable');
+    
+    // Subscription routes (THIS WAS MISSING - causing your error)
+    Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription');
+    Route::post('/subscription', [SubscriptionController::class, 'store'])->name('subscription.store');
+    Route::get('/subscription/create', [SubscriptionController::class, 'create'])->name('subscription.create');
+    Route::get('/subscription/plans', [SubscriptionController::class, 'plans'])->name('subscription.plans');
+    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+    Route::post('/subscription/resume', [SubscriptionController::class, 'resume'])->name('subscription.resume');
+    
+    // KYC routes
+    Route::get('/kyc', [KycController::class, 'index'])->name('kyc.index');
+    Route::post('/kyc', [KycController::class, 'store'])->name('kyc.store');
+    Route::get('/kyc/create', [KycController::class, 'create'])->name('kyc.create');
+    Route::patch('/kyc/{kyc}', [KycController::class, 'update'])->name('kyc.update');
+    
+    // Analytics
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+    Route::get('/analytics/sales', [AnalyticsController::class, 'sales'])->name('analytics.sales');
+    Route::get('/analytics/products', [AnalyticsController::class, 'products'])->name('analytics.products');
+    
+    // Payout requests
+    Route::get('/payouts', [PayoutRequestController::class, 'index'])->name('payouts.index');
+    Route::post('/payouts', [PayoutRequestController::class, 'store'])->name('payouts.store');
+    Route::get('/payouts/create', [PayoutRequestController::class, 'create'])->name('payouts.create');
+    Route::get('/payouts/{payout}', [PayoutRequestController::class, 'show'])->name('payouts.show');
+    
+    // Services
+    Route::resource('services', ServiceController::class);
+    
+    // Buyers management
+    Route::get('/buyers', [BuyerController::class, 'index'])->name('buyers.index');
+    Route::get('/buyers/{buyer}', [BuyerController::class, 'show'])->name('buyers.show');
+    
+    // Favorites
+    Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
+    
+    // Payment methods
+    Route::get('/payment-methods', [PaymentMethodController::class, 'index'])->name('payment-methods.index');
+    Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
+    Route::delete('/payment-methods/{method}', [PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
+    
+    // Messages
+    Route::get('/messages', [SellerMessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/{conversation}', [SellerMessageController::class, 'show'])->name('messages.show');
+    Route::post('/messages', [SellerMessageController::class, 'store'])->name('messages.store');
+    Route::post('/messages/{message}/reply', [SellerMessageController::class, 'reply'])->name('messages.reply');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Buyer Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->prefix('buyer')->name('buyer.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [BuyerDashboard::class, 'index'])->name('dashboard');
+    
+    // Messages
+    Route::get('/messages', [BuyerMessageControlle::class, 'index'])->name('messages.index');
+    Route::get('/messages/{conversation}', [BuyerMessageController::class, 'show'])->name('messages.show');
+    Route::post('/messages', [BuyerMessageController::class, 'store'])->name('messages.store');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Admin Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
-    // Admin Reviews - FIXED ROUTES
+    // Admin Messages
+    Route::get('messages', [AdminMessageController::class, 'index'])->name('messages.index');
+    Route::post('messages/{id}/reply', [AdminMessageController::class, 'reply'])->name('messages.reply');
+
+    // Admin Reviews
     Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
     Route::patch('reviews/{id}/approve', [AdminReviewController::class, 'approve'])->name('reviews.approve');
     Route::delete('reviews/{id}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
@@ -384,16 +446,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     });
 });
 
-/*
-|--------------------------------------------------------------------------
-| Seller Routes - Subscription Management (No Active Subscription Required)
-|--------------------------------------------------------------------------
-*/
-// ... (unchanged seller and buyer routes below)
-
-// ------------------------------
-// ADD THIS AT THE END FOR LOGOUT
-// ------------------------------
+// Logout route
 Route::post('/logout', function (Request $request) {
     Auth::logout();
     $request->session()->invalidate();
