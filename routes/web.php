@@ -288,13 +288,17 @@ Route::middleware('auth')->group(function () {
 
     // Disputes
     Route::prefix('disputes')->name('disputes.')->group(function () {
-        Route::get('/', [DisputeController::class, 'index'])->name('index');
-        Route::get('/create', [DisputeController::class, 'create'])->name('create');
-        Route::post('/', [DisputeController::class, 'store'])->name('store');
-        Route::get('/{dispute}', [DisputeController::class, 'show'])->name('show');
-        Route::post('/{dispute}/messages', [DisputeController::class, 'addMessage'])->name('messages.store');
-        Route::get('/{dispute}/appeal', [DisputeController::class, 'showAppealForm'])->name('appeal.create');
-        Route::post('/{dispute}/appeal', [DisputeController::class, 'submitAppeal'])->name('appeal.store');
+
+        Route::get('/', [\App\Http\Controllers\DisputeController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\DisputeController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\DisputeController::class, 'store'])->name('store');
+        Route::get('/{dispute}', [\App\Http\Controllers\DisputeController::class, 'show'])->name('show');
+        Route::post('/{dispute}/messages', [\App\Http\Controllers\DisputeController::class, 'addMessage'])->name('messages.store');
+        Route::get('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'showAppealForm'])->name('appeal.create');
+        Route::post('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'submitAppeal'])->name('appeal.store');
+        Route::post('/{dispute}/mutual-resolution', [\App\Http\Controllers\DisputeController::class, 'initiateMutualResolution'])->name('mutual-resolution.initiate');
+        Route::post('/{dispute}/mutual-resolution/agree', [\App\Http\Controllers\DisputeController::class, 'agreeToMutualResolution'])->name('mutual-resolution.agree');
+
     });
 });
 

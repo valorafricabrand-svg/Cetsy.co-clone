@@ -47,6 +47,11 @@
                                 Final <span class="badge bg-secondary">{{ $statusCounts['final'] ?? 0 }}</span>
                             </button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="mutually_resolved-tab" data-bs-toggle="tab" data-bs-target="#mutually_resolved" type="button" role="tab">
+                                Mutually Resolved <span class="badge bg-success">{{ $statusCounts['mutually_resolved'] ?? 0 }}</span>
+                            </button>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -78,7 +83,7 @@
                 </div>
 
                 <!-- Individual status tabs -->
-                @foreach(['pending', 'under_review', 'resolved', 'appealed', 'final'] as $status)
+                @foreach(['pending', 'under_review', 'resolved', 'appealed', 'final', 'mutually_resolved'] as $status)
                     <div class="tab-pane fade" id="{{ $status }}" role="tabpanel">
                         @php
                             $filteredDisputes = $disputes->where('status', $status);

@@ -1,6 +1,9 @@
+// android/app/build.gradle — FIXED for AGP 8.6.1 / Kotlin 1.9.24 / Gradle 8.7
+
 plugins {
     id "com.android.application"
-    id "kotlin-android"
+    // Use the modern Kotlin plugin ID (matches settings.gradle pluginManagement)
+    id "org.jetbrains.kotlin.android"
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
@@ -13,46 +16,75 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
-if (flutterVersionCode == null) {
-    flutterVersionCode = "1"
-}
-
-def flutterVersionName = localProperties.getProperty("flutter.versionName")
-if (flutterVersionName == null) {
-    flutterVersionName = "1.0"
-}
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "1"
+def flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
 
 android {
-    namespace = "com.example.cetsy_starter"
-    compileSdk = flutter.compileSdkVersion
+    namespace "com.example.cetsy_starter"          // TODO: replace with your real package (e.g., com.isaiah.kikuyu_bible)
+
+    // You can keep using Flutter’s exported values, but ensure they resolve to SDK 34.
+    // If your Flutter export is older, uncomment the explicit lines below.
+    compileSdk = (flutter.hasProperty('compileSdkVersion') ? flutter.compileSdkVersion : 34)
     ndkVersion = flutter.ndkVersion
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.cetsy_starter"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutterVersionCode.toInteger()
-        versionName = flutterVersionName
+        applicationId "com.example.cetsy_starter"  // TODO: keep in sync with `namespace`
+        minSdk = (flutter.hasProperty('minSdkVersion') ? flutter.minSdkVersion : 21)
+        targetSdk = (flutter.hasProperty('targetSdkVersion') ? flutter.targetSdkVersion : 34)
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+
+        multiDexEnabled true
+        vectorDrawables {
+            useSupportLibrary = true
+        }
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            // TODO: set up your real signing config for release builds
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.debug
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            // keep defaults
+        }
+    }
+
+    // AGP 8.x requires Java 17
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // Kotlin toolchain 17 to match AGP/Gradle/JDK
+    kotlin {
+        jvmToolchain(17)
+    }
+
+    packaging {
+        resources {
+            excludes += ["/META-INF/{AL2.0,LGPL2.1}", "META-INF/DEPENDENCIES"]
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Keep Kotlin stdlib aligned with the plugin (pinned in settings.gradle to 1.9.24)
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"
+
+    // Common AndroidX libs (optional but useful)
+    implementation "androidx.core:core-ktx:1.13.1"
+    implementation "androidx.appcompat:appcompat:1.7.0"
+    implementation "com.google.android.material:material:1.12.0"
+    implementation "androidx.constraintlayout:constraintlayout:2.1.4"
+
+    // Multidex support if needed
+    implementation "androidx.multidex:multidex:2.0.1"
 }
