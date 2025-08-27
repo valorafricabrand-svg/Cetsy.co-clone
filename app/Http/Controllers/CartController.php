@@ -208,7 +208,7 @@ class CartController extends Controller
         }
 
         $price = $resolvedVariant && isset($resolvedVariant->price) && $resolvedVariant->price !== null
-            ? (float)$resolvedVariant->price
+            ? $product->applyDiscount((float)$resolvedVariant->price)
             : (float) ($product->discounted_price ?? $product->price);
 
         $optionsKey = $optionIds->implode('-');
