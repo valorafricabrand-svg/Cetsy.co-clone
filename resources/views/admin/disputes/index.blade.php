@@ -28,6 +28,7 @@
                                 <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
                                 <option value="appealed" {{ request('status') == 'appealed' ? 'selected' : '' }}>Appealed</option>
                                 <option value="final" {{ request('status') == 'final' ? 'selected' : '' }}>Final</option>
+                                <option value="mutually_resolved" {{ request('status') == 'mutually_resolved' ? 'selected' : '' }}>Mutually Resolved</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -100,6 +101,14 @@
                         <div class="card-body">
                             <h5 class="card-title text-secondary">{{ $statusCounts['final'] ?? 0 }}</h5>
                             <p class="card-text small">Final</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">{{ $statusCounts['mutually_resolved'] ?? 0 }}</h5>
+                            <p class="card-text small">Mutually Resolved</p>
                         </div>
                     </div>
                 </div>
