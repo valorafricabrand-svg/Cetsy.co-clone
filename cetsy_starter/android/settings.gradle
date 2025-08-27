@@ -1,12 +1,16 @@
+// android/settings.gradle — FIXED & UPDATED FOR AGP 8.6.1 / Kotlin 1.9.24
+
 pluginManagement {
+    // Resolve Flutter SDK path from local.properties
     def flutterSdkPath = {
-        def properties = new Properties()
-        file("local.properties").withInputStream { properties.load(it) }
-        def flutterSdkPath = properties.getProperty("flutter.sdk")
-        assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
-        return flutterSdkPath
+        def props = new Properties()
+        file("local.properties").withInputStream { props.load(it) }
+        def path = props.getProperty("flutter.sdk")
+        assert path != null && path.trim(), "flutter.sdk not set in local.properties"
+        return path
     }()
 
+    // Use Flutter's Gradle integration
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
@@ -14,12 +18,27 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+
+    // Pin plugin versions here (AGP & Kotlin)
+    plugins {
+        id("com.android.application") version "8.6.1"
+        id("org.jetbrains.kotlin.android") version "1.9.24"
+        id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+        // If you use Google services, also pin here:
+        // id("com.google.gms.google-services") version "4.4.2"
+    }
 }
 
-plugins {
-    id "dev.flutter.flutter-plugin-loader" version "1.0.0"
-    id "com.android.application" version "7.3.0" apply false
-    id "org.jetbrains.kotlin.android" version "1.7.10" apply false
+// Enforce centralized repositories for all subprojects
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
 }
 
-include ":app"
+rootProject.name = "android"
+
+// App module
+include(":app")

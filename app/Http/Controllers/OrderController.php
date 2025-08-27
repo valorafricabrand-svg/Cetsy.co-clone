@@ -199,7 +199,7 @@ public function storeOrder(Request $request)
             if ($variantId && $product->relationLoaded('variations')) {
                 $variant = $product->variations->firstWhere('id', (int)$variantId);
                 if ($variant && $variant->price !== null) {
-                    $unitPrice = (float)$variant->price;
+                    $unitPrice = $product->applyDiscount((float)$variant->price);
                 }
             }
             if ($unitPrice === null) {
