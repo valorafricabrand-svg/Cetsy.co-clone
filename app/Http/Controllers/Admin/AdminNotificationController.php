@@ -12,7 +12,7 @@ class AdminNotificationController extends Controller
     public function index()
     {
         $currentDate = now()->format('Y-m-d H:i:s');
-        $currentUser = Auth::user()->name ?? 'HK-MBURU';
+        $currentUser = Auth::user();
         
         // Get all activities without filtering by type
         // Modify this query to match your needs based on existing columns

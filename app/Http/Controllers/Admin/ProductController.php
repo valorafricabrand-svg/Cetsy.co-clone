@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Shop;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -20,7 +21,7 @@ class ProductController extends Controller
         // Apply search if provided
         if ($search = $request->input('search')) {
             $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                ->orWhere('description', 'like', "%{$search}%");
         }
 
         // Filter by shop if provided
@@ -117,14 +118,67 @@ class ProductController extends Controller
         // Determine status message
         $statusMessages = [
             0 => 'deactivated',
-            1 => 'activated', 
+            1 => 'activated',
             2 => 'suspended'
         ];
 
         $statusText = $statusMessages[$status] ?? 'updated';
-        
+
         return redirect()
             ->route('admin.products.index')
             ->with('success', "Product {$statusText} successfully.");
     }
-} 
+
+   public function listings(Request $request)
+{
+    // Get the authenticated user's shop
+    $user = Auth::user();
+    $shop = $user->shop;
+
+    // Get filtering and pagination params from the request
+    $q = $request->input('q');
+    $sort = $request->input('sort', 'latest');
+    $type = $request->input('type');
+    $perPage = (int) $request->input('per_page', 24);
+
+    // Build the query to filter products
+    $query = Product::with('media');
+
+    if ($shop) {
+        $query->where('shop_id', $shop->id);
+    }
+
+    // Apply filters
+    if ($q) {
+        $query->where('name', 'like', '%' . $q . '%');
+    }
+
+    if ($type) {
+        $query->where('type', $type);
+    }
+
+    // Sorting logic
+    switch ($sort) {
+        case 'price_asc':
+            $query->orderBy('price', 'asc');
+            break;
+        case 'price_desc':
+            $query->orderBy('price', 'desc');
+            break;
+        case 'popular':
+            $query->orderBy('popularity', 'desc'); // Adjust to your popularity column
+            break;
+        case 'latest':
+        default:
+            $query->latest();
+            break;
+    }
+
+    // Paginate results
+    $products = $query->paginate($perPage);
+
+    // Return the view with the filtered and paginated products
+    return view('theme.cetsy.listings', compact('products'));
+}
+
+}
