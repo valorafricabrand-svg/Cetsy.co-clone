@@ -16,7 +16,7 @@
           $key = $ids->implode('-');
           $variantIndex[$key] = [
               'id'      => (int) $v->id,
-              'price'   => (float) $v->price,
+              'price'   => (float) $product->applyDiscount($v->price),
               'options' => $ids->toArray(),
           ];
       }
