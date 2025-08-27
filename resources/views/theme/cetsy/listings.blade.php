@@ -179,7 +179,7 @@
                 <div class="col-4 col-md-3 col-lg-2">
                   <a href="{{ route('listing.show', $item->slug) }}" class="d-block rounded overflow-hidden">
                     <div class="ratio ratio-1x1 bg-white">
-                      <img src="{{ $thumb }}" alt="{{ $item->name }}" class="w-100 h-100" style="object-fit:cover;">
+                      <img src="{{ $thumb }}" alt="{{ $item->name }}" class="img-fluid w-100 h-100" loading="lazy" decoding="async" style="object-fit:cover;">
                     </div>
                   </a>
                 </div>
