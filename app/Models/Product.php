@@ -195,23 +195,26 @@ public function variations() {
                    ->first();
     }
 
+    /**
+     * Apply the product or active deal discount to a given price.
+     */
+    public function applyDiscount(float $price): float
+    {
+        if ($this->discount_percent) {
+            return round($price * (1 - $this->discount_percent / 100), 2);
+        }
+
+        if ($deal = $this->activeDeal()) {
+            return round($price * (1 - $deal->discount_percent / 100), 2);
+        }
+
+        return $price;
+    }
+
     /** Final price after either product % or active deal % */
     public function getDiscountedPriceAttribute()
     {
-        $base = $this->price;
-
-        // 1️⃣ product‑level %
-        if ($this->discount_percent) {
-            return round($base * (1 - $this->discount_percent / 100), 2);
-        }
-
-        // 2️⃣ one‑off deal %
-        if ($deal = $this->activeDeal()) {
-            return round($base * (1 - $deal->discount_percent / 100), 2);
-        }
-
-        // 3️⃣ no discount
-        return $base;
+        return $this->applyDiscount($this->price);
     }
 
 
