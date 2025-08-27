@@ -2,6 +2,7 @@
 use App\Models\Setting;
 use App\Models\Shop;
 use App\Models\Country;
+use App\Models\Product;
 
 function favicon_url(){
 
@@ -90,6 +91,22 @@ function shop(){
   function get_currency() {
     return setting('default_currency');
  }
+
+if (! function_exists('apply_discount')) {
+    /**
+     * Calculate the discounted price for a given product.
+     *
+     * @param  float  $price      Base or variant price.
+     * @param  int    $productId  ID of the product.
+     * @return float              Price after applying any product or deal discount.
+     */
+    function apply_discount(float $price, int $productId): float
+    {
+        $product = Product::find($productId);
+
+        return $product ? $product->applyDiscount($price) : $price;
+    }
+}
 
 
 if (! function_exists('setting')) {

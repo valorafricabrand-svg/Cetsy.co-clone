@@ -224,11 +224,11 @@ public function storeOrder(Request $request)
             if ($variantId && $product->relationLoaded('variations')) {
                 $variant = $product->variations->firstWhere('id', (int)$variantId);
                 if ($variant && $variant->price !== null) {
-                    $unitPrice = $product->applyDiscount((float)$variant->price);
+                    $unitPrice = apply_discount((float)$variant->price, $product->id);
                 }
             }
             if ($unitPrice === null) {
-                $unitPrice = (float)($product->discounted_price ?? $product->price ?? 0);
+                $unitPrice = apply_discount((float)($product->price ?? 0), $product->id);
             }
 
             // ————————— Selected Shipping Profile (from session snapshot) —————————

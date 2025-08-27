@@ -2,7 +2,7 @@
 @php
   $currency    = get_currency();
   $basePrice   = (float) ($product->price ?? 0);
-  $salePrice   = (float) ($product->discounted_price ?? $basePrice);
+  $salePrice   = apply_discount($basePrice, $product->id);
 
   // Ensure variations+options are available
   $product->loadMissing('variations.options', 'variationTypes.options', 'shop', 'category', 'country');
@@ -16,7 +16,7 @@
           $key = $ids->implode('-');
           $variantIndex[$key] = [
               'id'      => (int) $v->id,
-              'price'   => (float) $product->applyDiscount($v->price),
+              'price'   => (float) apply_discount($v->price, $product->id),
               'options' => $ids->toArray(),
           ];
       }
