@@ -314,6 +314,7 @@ class DisputeController extends Controller
             'resolved_disputes' => Dispute::resolved()->count(),
             'appealed_disputes' => Dispute::appealed()->count(),
             'final_disputes' => Dispute::final()->count(),
+            'mutually_resolved_disputes' => Dispute::mutuallyResolved()->count(),
             'total_appeals' => Appeal::count(),
             'pending_appeals' => Appeal::pending()->count(),
             'approved_appeals' => Appeal::approved()->count(),

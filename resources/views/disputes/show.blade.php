@@ -281,6 +281,114 @@
                 </div>
             </div>
 
+            {{-- Mutual Resolution Section --}}
+            @if($dispute->canBeMutuallyResolved())
+                <div class="card mb-4 border-success">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-handshake"></i> Mutual Resolution
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        @if($dispute->mutual_resolution_terms)
+                            {{-- Show existing mutual resolution proposal --}}
+                            <div class="alert alert-info mb-3">
+                                <h6 class="alert-heading">Proposed Resolution Terms</h6>
+                                <p class="mb-2">{{ $dispute->mutual_resolution_terms }}</p>
+                                <small class="text-muted">
+                                    Proposed by: {{ $dispute->buyer_agreed_at && !$dispute->seller_agreed_at ? $dispute->buyer->name : $dispute->seller->name }}
+                                </small>
+                            </div>
+
+                            {{-- Show agreement status --}}
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-person-circle me-2"></i>
+                                        <span>Buyer ({{ $dispute->buyer->name }})</span>
+                                        @if($dispute->buyer_agreed_at)
+                                            <span class="badge bg-success ms-2">
+                                                <i class="bi bi-check-circle"></i> Agreed
+                                            </span>
+                                        @else
+                                            <span class="badge bg-warning ms-2">
+                                                <i class="bi bi-clock"></i> Pending
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-shop me-2"></i>
+                                        <span>Seller ({{ $dispute->seller->name }})</span>
+                                        @if($dispute->seller_agreed_at)
+                                            <span class="badge bg-success ms-2">
+                                                <i class="bi bi-check-circle"></i> Agreed
+                                            </span>
+                                        @else
+                                            <span class="badge bg-warning ms-2">
+                                                <i class="bi bi-clock"></i> Pending
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Agree button for the party who hasn't agreed yet --}}
+                            @if(($dispute->buyer_id === auth()->id() && !$dispute->buyer_agreed_at) || 
+                                 ($dispute->seller_id === auth()->id() && !$dispute->seller_agreed_at))
+                                <form action="{{ route('disputes.mutual-resolution.agree', $dispute->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-check-circle"></i> I Agree to These Terms
+                                    </button>
+                                </form>
+                            @endif
+
+                            @if($dispute->buyer_agreed_at && $dispute->seller_agreed_at)
+                                <div class="alert alert-success">
+                                    <i class="bi bi-check-circle"></i>
+                                    <strong>Both parties have agreed!</strong> This dispute will be automatically resolved.
+                                </div>
+                            @endif
+                        @else
+                            {{-- Show form to propose mutual resolution --}}
+                            <p class="text-muted mb-3">
+                                If you and the other party have reached an agreement, you can propose mutual resolution terms here.
+                            </p>
+                            
+                            <form action="{{ route('disputes.mutual-resolution.initiate', $dispute->id) }}" method="POST">
+                                @csrf
+                                <div class="mb-3">
+                                    <label for="terms" class="form-label">Resolution Terms</label>
+                                    <textarea name="terms" id="terms" rows="3" class="form-control" 
+                                        placeholder="Describe the agreed resolution terms..." required></textarea>
+                                    <div class="form-text">
+                                        Clearly state what both parties have agreed to resolve this dispute.
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-handshake"></i> Propose Mutual Resolution
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
+            {{-- Show mutual resolution status if already resolved --}}
+            @if($dispute->isMutuallyResolved())
+                <div class="alert alert-success mb-4">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-handshake"></i> Mutually Resolved
+                    </h6>
+                    <p class="mb-2"><strong>Agreed Terms:</strong> {{ $dispute->mutual_resolution_terms }}</p>
+                    <p class="mb-0">
+                        <strong>Resolved:</strong> {{ $dispute->resolved_at->format('M d, Y \a\t g:i A') }}
+                    </p>
+                </div>
+            @endif
+
             <!-- Unified Messages Section -->
             <div class="card">
                 <div class="card-header">
@@ -631,6 +739,36 @@
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Under Review</h6>
                                     <small class="text-muted">Being reviewed by Cetsy support</small>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($dispute->mutual_resolution_terms)
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Mutual Resolution Proposed</h6>
+                                    <small class="text-muted">Terms: {{ Str::limit($dispute->mutual_resolution_terms, 50) }}</small>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($dispute->buyer_agreed_at)
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Buyer Agreed</h6>
+                                    <small class="text-muted">{{ $dispute->buyer_agreed_at->format('M d, Y g:i A') }}</small>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($dispute->seller_agreed_at)
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Seller Agreed</h6>
+                                    <small class="text-muted">{{ $dispute->seller_agreed_at->format('M d, Y g:i A') }}</small>
                                 </div>
                             </div>
                         @endif

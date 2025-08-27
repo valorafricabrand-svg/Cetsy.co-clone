@@ -17,7 +17,8 @@ class Dispute extends Model
         'order_id', 'buyer_id', 'seller_id', 'type', 'status', 
         'description', 'evidence', 'resolution', 'resolved_by', 
         'resolved_at', 'appeal_deadline', 'can_appeal',
-        'decision', 'refund_amount', 'admin_notes'
+        'decision', 'refund_amount', 'admin_notes',
+        'mutual_resolution_terms', 'buyer_agreed_at', 'seller_agreed_at'
     ];
 
     protected $casts = [
@@ -26,6 +27,8 @@ class Dispute extends Model
         'appeal_deadline' => 'datetime',
         'can_appeal' => 'boolean',
         'refund_amount' => 'decimal:2',
+        'buyer_agreed_at' => 'datetime',
+        'seller_agreed_at' => 'datetime',
     ];
 
     // Status constants
@@ -35,6 +38,7 @@ class Dispute extends Model
     const STATUS_APPEALED = 'appealed';
     const STATUS_APPEAL_UNDER_REVIEW = 'appeal_under_review';
     const STATUS_FINAL = 'final';
+    const STATUS_MUTUALLY_RESOLVED = 'mutually_resolved';
 
     // Type constants
     const TYPE_CUSTOMS_FEES = 'customs_fees';
@@ -49,6 +53,7 @@ class Dispute extends Model
     const DECISION_SELLER_WINS = 'seller_wins';
     const DECISION_PARTIAL_REFUND = 'partial_refund';
     const DECISION_NO_ACTION = 'no_action';
+    const DECISION_MUTUAL_AGREEMENT = 'mutual_agreement';
 
     // Relationships
     public function order(): BelongsTo
@@ -105,6 +110,11 @@ class Dispute extends Model
     public function scopeFinal($query)
     {
         return $query->where('status', self::STATUS_FINAL);
+    }
+
+    public function scopeMutuallyResolved($query)
+    {
+        return $query->where('status', self::STATUS_MUTUALLY_RESOLVED);
     }
 
     // Methods
@@ -169,6 +179,7 @@ class Dispute extends Model
             self::STATUS_APPEALED => 'badge-warning',
             self::STATUS_APPEAL_UNDER_REVIEW => 'badge-info',
             self::STATUS_FINAL => 'badge-secondary',
+            self::STATUS_MUTUALLY_RESOLVED => 'badge-success',
             default => 'badge-light'
         };
     }
@@ -193,6 +204,7 @@ class Dispute extends Model
             self::DECISION_SELLER_WINS => 'Seller Wins',
             self::DECISION_PARTIAL_REFUND => 'Partial Refund',
             self::DECISION_NO_ACTION => 'No Action',
+            self::DECISION_MUTUAL_AGREEMENT => 'Mutual Agreement',
             default => 'Pending'
         };
     }
@@ -232,6 +244,75 @@ class Dispute extends Model
         $this->update([
             'status' => self::STATUS_FINAL,
             'can_appeal' => false
+        ]);
+    }
+
+    // Mutual Resolution Methods
+    public function isMutuallyResolved(): bool
+    {
+        return $this->status === self::STATUS_MUTUALLY_RESOLVED;
+    }
+
+    public function canBeMutuallyResolved(): bool
+    {
+        return $this->status === self::STATUS_PENDING || $this->status === self::STATUS_UNDER_REVIEW;
+    }
+
+    public function initiateMutualResolution(string $terms, int $initiatorId): void
+    {
+        $this->update([
+            'mutual_resolution_terms' => $terms,
+            'status' => self::STATUS_UNDER_REVIEW
+        ]);
+
+        // Set the initiator's agreement timestamp
+        if ($initiatorId === $this->buyer_id) {
+            $this->update(['buyer_agreed_at' => Carbon::now()]);
+        } elseif ($initiatorId === $this->seller_id) {
+            $this->update(['seller_agreed_at' => Carbon::now()]);
+        }
+    }
+
+    public function agreeToMutualResolution(int $userId): bool
+    {
+        if (!$this->mutual_resolution_terms) {
+            return false;
+        }
+
+        if ($userId === $this->buyer_id && !$this->buyer_agreed_at) {
+            $this->update(['buyer_agreed_at' => Carbon::now()]);
+        } elseif ($userId === $this->seller_id && !$this->seller_agreed_at) {
+            $this->update(['seller_agreed_at' => Carbon::now()]);
+        }
+
+        // Check if both parties have agreed
+        if ($this->buyer_agreed_at && $this->seller_agreed_at) {
+            $this->markAsMutuallyResolved();
+            return true;
+        }
+
+        return false;
+    }
+
+    public function getMutualResolutionStatus(): array
+    {
+        return [
+            'terms' => $this->mutual_resolution_terms,
+            'buyer_agreed' => !is_null($this->buyer_agreed_at),
+            'seller_agreed' => !is_null($this->seller_agreed_at),
+            'buyer_agreed_at' => $this->buyer_agreed_at,
+            'seller_agreed_at' => $this->seller_agreed_at,
+            'is_complete' => !is_null($this->buyer_agreed_at) && !is_null($this->seller_agreed_at)
+        ];
+    }
+
+    public function markAsMutuallyResolved(): void
+    {
+        $this->update([
+            'status' => self::STATUS_MUTUALLY_RESOLVED,
+            'decision' => self::DECISION_MUTUAL_AGREEMENT,
+            'can_appeal' => false,
+            'resolved_at' => Carbon::now()
         ]);
     }
 }
