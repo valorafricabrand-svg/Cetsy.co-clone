@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductView;
+use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,17 +26,31 @@ class AnalyticsController extends Controller
 
         $range = $request->input('range', '6months');
 
-        [$start, $end] = match ($range) {
-            'today'     => [now()->startOfDay(), now()->endOfDay()],
-            'yesterday' => [now()->subDay()->startOfDay(), now()->subDay()->endOfDay()],
-            'week'      => [now()->subWeek()->startOfDay(), now()],
-            '2weeks'    => [now()->subWeeks(2)->startOfDay(), now()],
-            '1month'    => [now()->subMonth()->startOfDay(), now()],
-            '2months'   => [now()->subMonths(2)->startOfDay(), now()],
-            '3months'   => [now()->subMonths(3)->startOfDay(), now()],
-            '6months'   => [now()->subMonths(6)->startOfDay(), now()],
-            default     => [null, null],
-        };
+        // Determine date range
+        if ($range === 'custom') {
+            try {
+                $start = $request->filled('start')
+                    ? Carbon::parse($request->input('start'))->startOfDay()
+                    : null;
+                $end = $request->filled('end')
+                    ? Carbon::parse($request->input('end'))->endOfDay()
+                    : null;
+            } catch (\Exception $e) {
+                $start = $end = null;
+            }
+        } else {
+            [$start, $end] = match ($range) {
+                'today'     => [now()->startOfDay(), now()->endOfDay()],
+                'yesterday' => [now()->subDay()->startOfDay(), now()->subDay()->endOfDay()],
+                'week'      => [now()->subWeek()->startOfDay(), now()],
+                '2weeks'    => [now()->subWeeks(2)->startOfDay(), now()],
+                '1month'    => [now()->subMonth()->startOfDay(), now()],
+                '2months'   => [now()->subMonths(2)->startOfDay(), now()],
+                '3months'   => [now()->subMonths(3)->startOfDay(), now()],
+                '6months'   => [now()->subMonths(6)->startOfDay(), now()],
+                default     => [null, null],
+            };
+        }
 
         /* 1. KPIs */
         $ordersQ = Order::where('shop_id', $shopId)
@@ -136,17 +151,21 @@ class AnalyticsController extends Controller
             ->take(10)
             ->get();
 
-        $rangeLabel = [
-            'today'     => 'Today',
-            'yesterday' => 'Yesterday',
-            'week'      => 'Last 7 Days',
-            '2weeks'    => 'Last 14 Days',
-            '1month'    => 'Last 1 Month',
-            '2months'   => 'Last 2 Months',
-            '3months'   => 'Last 3 Months',
-            '6months'   => 'Last 6 Months',
-            'all'       => 'All Time',
-        ][$range] ?? 'All Time';
+        if ($range === 'custom' && $start && $end) {
+            $rangeLabel = $start->format('M j, Y') . ' - ' . $end->format('M j, Y');
+        } else {
+            $rangeLabel = [
+                'today'     => 'Today',
+                'yesterday' => 'Yesterday',
+                'week'      => 'Last 7 Days',
+                '2weeks'    => 'Last 14 Days',
+                '1month'    => 'Last 1 Month',
+                '2months'   => 'Last 2 Months',
+                '3months'   => 'Last 3 Months',
+                '6months'   => 'Last 6 Months',
+                'all'       => 'All Time',
+            ][$range] ?? 'All Time';
+        }
 
         return view('seller.analytics.index', [
             'kpi'        => $kpi,
@@ -155,6 +174,8 @@ class AnalyticsController extends Controller
             'performance'=> $performance,
             'range'      => $range,
             'rangeLabel' => $rangeLabel,
+            'startDate'  => $start ? $start->toDateString() : null,
+            'endDate'    => $end ? $end->toDateString() : null,
         ]);
     }
 }
