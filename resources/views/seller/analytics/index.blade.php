@@ -18,9 +18,23 @@
 <div class="content">
     <div class="container-xxl">
 
-        <div class="mb-4">
-            <h1 class="h4 fw-semibold mb-1">Analytics Dashboard</h1>
-            <p class="text-muted small mb-0">Monitor your shop performance at a glance.</p>
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h4 fw-semibold mb-1">Analytics Dashboard</h1>
+                <p class="text-muted small mb-0">Monitor your shop performance at a glance.</p>
+            </div>
+            <form method="GET">
+                <select name="range" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="today"    {{ $range=='today'    ? 'selected' : '' }}>Today</option>
+                    <option value="yesterday"{{ $range=='yesterday'? 'selected' : '' }}>Yesterday</option>
+                    <option value="week"     {{ $range=='week'     ? 'selected' : '' }}>Last 7 Days</option>
+                    <option value="2weeks"   {{ $range=='2weeks'   ? 'selected' : '' }}>Last 14 Days</option>
+                    <option value="1month"   {{ $range=='1month'   ? 'selected' : '' }}>Last 1 Month</option>
+                    <option value="2months"  {{ $range=='2months'  ? 'selected' : '' }}>Last 2 Months</option>
+                    <option value="3months"  {{ $range=='3months'  ? 'selected' : '' }}>Last 3 Months</option>
+                    <option value="6months"  {{ $range=='6months'  ? 'selected' : '' }}>Last 6 Months</option>
+                </select>
+            </form>
         </div>
 
         {{-- ======================= KPIs ======================= --}}
@@ -39,7 +53,7 @@
         {{-- ======================= Revenue & Orders chart ======================= --}}
         <div class="card shadow border-0 mb-5 glass">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                <h6 class="fw-semibold mb-0">Revenue & Orders <small class="text-muted">(12 Months)</small></h6>
+                <h6 class="fw-semibold mb-0">Revenue & Orders <small class="text-muted">({{ $rangeLabel }})</small></h6>
                 {{-- toggle --}}
                 <div class="btn-group btn-group-sm" role="group" id="chartToggle">
                     <button class="btn btn-outline-secondary active" data-target="revenue">Revenue</button>
@@ -141,11 +155,9 @@
 <script>
 (() => {
     /** ------- charts data from PHP ------- **/
-    const months  = @json(array_keys($monthly));
-    const revenue = @json(array_values($monthly));
-    const orders  = @json(array_values(
-        collect($monthly)->map(fn($v,$k)=> $kpi->total_orders ? round($v/($kpi->total_sales/$kpi->total_orders)) : 0)->toArray()
-    ));
+    const labels  = @json($chart['labels']);
+    const revenue = @json($chart['revenue']);
+    const orders  = @json($chart['orders']);
 
     /** ------- chart helpers ------- **/
     const gradient = (ctx, color) => {
@@ -160,7 +172,7 @@
     const revenueChart = new Chart(revCtx, {
         type:'bar',
         data:{
-            labels: months,
+            labels: labels,
             datasets:[{
                 label:'Revenue',
                 data: revenue,
@@ -181,7 +193,7 @@
     const ordersChart = new Chart(ordCtx, {
         type:'line',
         data:{
-            labels: months,
+            labels: labels,
             datasets:[{
                 label:'Orders',
                 data: orders,
