@@ -27,7 +27,8 @@ use App\Http\Controllers\{
     BulkPriceController,
     ProductReportController,
     ProductShippingController,
-    ProductVariationController
+    ProductVariationController,
+    ShopPostController
 };
 
 use App\Http\Controllers\Admin\{
@@ -45,7 +46,8 @@ use App\Http\Controllers\Admin\{
     AdminWalletController,
     ReviewController,
     AdminNotificationController,
-    DisputeController
+    DisputeController,
+    NotificationController
 };
 use App\Http\Controllers\Buyer\BuyerDashboard;
 use App\Http\Controllers\Seller\{
@@ -365,9 +367,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
      // Admin Reviews
-    Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
-    Route::patch('reviews/{id}/approve', [AdminReviewController::class, 'approve'])->name('reviews.approve');
-    Route::delete('reviews/{id}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::patch('reviews/{id}/approve', [ReviewController::class, 'approve'])->name('reviews.approve');
+    Route::delete('reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 
     // Wallets
     Route::resource('wallets', AdminWalletController::class)->except(['create', 'store']);
@@ -386,10 +388,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
 
     // Admin Notifications
-    Route::get('notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
-    Route::post('notifications/mark-all-read', [AdminNotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
-    Route::post('notifications/{id}/mark-read', [AdminNotificationController::class, 'markRead'])->name('notifications.mark-read');
-    Route::get('notifications/recent', [AdminNotificationController::class, 'getRecent'])->name('notifications.recent');
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
+    Route::post('notifications/{id}/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
+    Route::get('notifications/recent', [NotificationController::class, 'getRecent'])->name('notifications.recent');
 
     // Category attributes
     Route::put('category-attributes/{attribute}', [CategoryAttributeController::class, 'update'])->name('category-attributes.update');
@@ -482,7 +484,11 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
 | Seller Routes - Active Subscription Required
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
+Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])
+    ->prefix('seller')
+    ->name('seller.')
+    ->group(function () {
+
     // Dashboard & Analytics
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
@@ -490,7 +496,6 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     // Holiday Mode
     Route::post('holiday-mode/enable', [SellerDashboard::class, 'enableHolidayMode'])->name('holiday-mode.enable');
     Route::post('holiday-mode/disable', [SellerDashboard::class, 'disableHolidayMode'])->name('holiday-mode.disable');
-
 
     // Order Management
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
@@ -500,8 +505,8 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     Route::post('orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
     Route::patch('orders/{order}/cancel', [OrderController::class, 'sellerCancel'])->name('orders.cancel');
 
-    Route::resource('shipping_profiles', ShippingProfileController::class)
-        ->except(['show']);
+    Route::resource('shipping_profiles', ShippingProfileController::class)->except(['show']);
+
     // KYC Management
     Route::get('kyc', [KycController::class, 'show'])->name('kyc');
     Route::post('kyc', [KycController::class, 'submit'])->name('kyc.submit');
@@ -525,10 +530,11 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     Route::post('offers/bulk-action', [OfferController::class, 'bulkAction'])->name('offers.bulk-action');
     Route::get('offers/test-bulk', [OfferController::class, 'testBulkAction'])->name('offers.test-bulk');
 
-    // Message Management
-    Route::get('messages', [MessageController::class, 'index'])->name('messages.index');
-    Route::get('messages/{conversationId}', [MessageController::class, 'show'])->name('messages.show');
-    Route::post('messages/{conversationId}/reply', [MessageController::class, 'reply'])->name('messages.reply');
+    // ✅ Messages (single clean block)
+    Route::get('messages', [\App\Http\Controllers\Seller\MessageController::class, 'index'])->name('messages.index');
+    Route::get('messages/{conversation}', [MessageController::class, 'show'])->name('messages.show');
+    Route::post('messages', [MessageController::class, 'store'])->name('messages.store');
+    Route::post('messages/{conversation}/reply', [MessageController::class, 'reply'])->name('messages.reply');
     Route::post('messages/{message}/mark-read', [MessageController::class, 'markAsRead'])->name('messages.mark-read');
     Route::post('messages/bulk-mark-read', [MessageController::class, 'bulkMarkAsRead'])->name('messages.bulk-mark-read');
 
@@ -540,12 +546,8 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
 
     // Shop Posts
     Route::resource('shop-posts', ShopPostController::class);
-    // Messages
-    Route::get('/messages', [SellerMessageController::class, 'index'])->name('messages.index');
-    Route::get('/messages/{conversation}', [SellerMessageController::class, 'show'])->name('messages.show');
-    Route::post('/messages', [SellerMessageController::class, 'store'])->name('messages.store');
-    Route::post('/messages/{message}/reply', [SellerMessageController::class, 'reply'])->name('messages.reply');
 });
+
 
 /*
 |--------------------------------------------------------------------------
@@ -570,9 +572,9 @@ Route::middleware(['auth'])->prefix('buyer')->name('buyer.')->group(function () 
     Route::get('/dashboard', [BuyerDashboard::class, 'index'])->name('dashboard');
 
     // Messages
-    Route::get('/messages', [BuyerMessageController::class, 'index'])->name('messages.index');
-    Route::get('/messages/{conversation}', [BuyerMessageController::class, 'show'])->name('messages.show');
-    Route::post('/messages', [BuyerMessageController::class, 'store'])->name('messages.store');
+    Route::get('/messages', [MessageController::class, 'buyerIndex'])->name('messages.index');
+    Route::get('/messages/{conversation}', [MessageController::class, 'show'])->name('messages.show');
+    Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
 });
 
 /*
