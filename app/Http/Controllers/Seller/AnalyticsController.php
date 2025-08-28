@@ -8,15 +8,20 @@ use App\Models\Product;
 use App\Models\ProductView;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
     public function index(Request $request)
     {
-        $sellerId = Auth::id();
-        $shopId   = shop_id(); // helper that returns seller’s shop_id
+        $shopId = shop_id(); // helper that returns seller’s shop_id
+
+        $paidStatuses = [
+            Order::STATUS_PROCESSING,
+            Order::STATUS_SHIPPED,
+            Order::STATUS_DELIVERED,
+            Order::STATUS_COMPLETED,
+        ];
 
         $range = $request->input('range', '6months');
 
@@ -33,8 +38,8 @@ class AnalyticsController extends Controller
         };
 
         /* 1. KPIs */
-        $ordersQ = Order::where('user_id', $sellerId)
-                        ->where('status', 'paid');
+        $ordersQ = Order::where('shop_id', $shopId)
+                        ->whereIn('status', $paidStatuses);
 
         if ($start && $end) {
             $ordersQ->whereBetween('created_at', [$start, $end]);
@@ -73,7 +78,7 @@ class AnalyticsController extends Controller
         $topProducts = Product::where('products.shop_id', $shopId)
             ->join('order_items', 'order_items.product_id', '=', 'products.id')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->where('orders.status', 'paid')
+            ->whereIn('orders.status', $paidStatuses)
             ->when($start && $end, fn($q) => $q->whereBetween('orders.created_at', [$start, $end]))
             ->groupBy(
                 'products.id',
@@ -105,8 +110,8 @@ class AnalyticsController extends Controller
             ->selectRaw('product_id, COUNT(*) AS views')
             ->groupBy('product_id');
 
-        $salesSub = Order::where('status', 'paid')
-            ->where('user_id', $sellerId)
+        $salesSub = Order::whereIn('status', $paidStatuses)
+            ->where('shop_id', $shopId)
             ->when($start && $end, fn($q) => $q->whereBetween('orders.created_at', [$start, $end]))
             ->join('order_items', 'orders.id', '=', 'order_items.order_id')
             ->selectRaw('order_items.product_id, SUM(order_items.quantity) AS sales')
