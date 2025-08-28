@@ -71,11 +71,6 @@
         'url'   => route('admin.appeals.index'),
         'icon'  => 'fas fa-balance-scale',
       ],
-      [
-        'label' => 'Notifications',
-        'url'   => route('admin.notifications.index'),
-        'icon'  => 'fas fa-bell',
-      ],
     ];
   @endphp
 
