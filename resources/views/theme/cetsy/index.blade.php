@@ -246,9 +246,10 @@
 
     @if($featuredProducts->count() > 0)
       <div class="text-center mt-4 reveal reveal-delay-2">
-        <a href="{{ route('listings') }}" class="btn btn-success btn-lg btn-pill px-4">
-          <i class="fas fa-list-ul me-2"></i> View All Listings
-        </a>
+       <a href="{{ route('listings', ['type' => 'physical']) }}" class="btn btn-success btn-lg btn-pill px-4">
+  <i class="fas fa-list-ul me-2"></i> View All Products
+</a>
+
       </div>
     @endif
   </div>
@@ -277,7 +278,7 @@
 
     @if($services->count() > 0)
       <div class="text-center mt-4 reveal reveal-delay-2">
-        <a href="{{ route('listings') }}" class="btn btn-success btn-lg btn-pill px-4">
+        <a href="{{ route('listings', ['type' => 'service']) }}" class="btn btn-success btn-lg btn-pill px-4">
           <i class="fas fa-briefcase me-2"></i> View All Services
         </a>
       </div>
@@ -311,7 +312,7 @@
 
     @if($featuredDigitals->count() > 0)
       <div class="text-center mt-4 reveal reveal-delay-2">
-        <a href="{{ route('listings') }}" class="btn btn-success btn-lg btn-pill px-4">
+        <a href="{{ route('listings', ['type' => 'digital']) }}" class="btn btn-success btn-lg btn-pill px-4">
           <i class="fas fa-cloud-download-alt me-2"></i> View All Digital Downloads
         </a>
       </div>

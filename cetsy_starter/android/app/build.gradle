@@ -4,26 +4,11 @@ plugins {
     id "com.android.application"
     // Use the modern Kotlin plugin ID (matches settings.gradle pluginManagement)
     id "org.jetbrains.kotlin.android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // Apply the official Flutter Gradle plugin (declarative)
     id "dev.flutter.flutter-gradle-plugin"
 }
 
-// Ensure repositories for this module include Flutter engine artifacts
-repositories {
-    google()
-    mavenCentral()
-    // Route Flutter artifacts exclusively to Flutter's Maven repos
-    exclusiveContent {
-        forRepository { maven { url = uri("https://storage.googleapis.com/download.flutter.io") } }
-        filter { includeGroup("io.flutter"); includeGroup("com.google.flutter") }
-    }
-    exclusiveContent {
-        forRepository { maven { url = uri("https://storage.flutter-io.cn") } }
-        filter { includeGroup("io.flutter"); includeGroup("com.google.flutter") }
-    }
-    // Legacy/redirect endpoint some toolchains use
-    maven { url = uri("https://download.flutter.io") }
-}
+// Use repositories defined centrally in settings.gradle
 
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file("local.properties")
@@ -93,8 +78,7 @@ flutter {
 }
 
 dependencies {
-    // Keep Kotlin stdlib aligned with the plugin (2.1.0)
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
+    // Rely on the Kotlin Gradle plugin to add the correct stdlib
 
     // Common AndroidX libs (optional but useful)
     implementation "androidx.core:core-ktx:1.13.1"
