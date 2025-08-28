@@ -62,6 +62,15 @@
         'icon'  => 'fas fa-star',
       ],
       [
+        'label' => 'Disputes',
+        'url'   => route('admin.admin-disputes.index'),
+        'icon'  => 'fas fa-gavel',
+      ],
+      [
+        'label' => 'Appeals',
+        'url'   => route('admin.appeals.index'),
+        'icon'  => 'fas fa-balance-scale',
+      ],
         'label' => 'Notifications',
         'url'   => route('admin.notifications.index'),
         'icon' => 'fas fa-bell',      ],
