@@ -110,13 +110,16 @@
     }
     .dropdown-item:hover, .dropdown-item:focus { background: #eaf7ef; color: #198754; }
     .rotate { transition: transform .25s ease; }
+    .nav-item.dropdown.show > a .rotate { transform: rotate(180deg); }
+    .dropdown-submenu.show > a .rotate { transform: rotate(90deg); }
 
     /* Multi-level submenu */
-    .dropdown-submenu { position: relative; } /* IMPORTANT: anchor child menu positioning */
+    .dropdown-submenu { position: relative; } /* anchor child menu positioning */
     .dropdown-submenu > .dropdown-menu {
-      top: -0.25rem;
+      top: 0;
       left: 100%;
-      margin-left: .15rem;
+      margin-top: -0.25rem; /* overlap for seamless hover */
+      margin-left: .125rem;
     }
     .dropdown-submenu.no-children > a .rotate { display: none; }
 
@@ -452,6 +455,7 @@
           const menu = item.querySelector(':scope > .dropdown-menu');
           item.addEventListener('mouseenter', () => {
             if (!isDesktop() || !menu) return;
+            clearTimeout(item._leaveTimer);
             item.classList.add('show');
             menu.classList.add('show');
             // keep stable placement (no popper jitter)
@@ -459,8 +463,10 @@
           });
           item.addEventListener('mouseleave', () => {
             if (!menu) return;
-            item.classList.remove('show');
-            menu.classList.remove('show');
+            item._leaveTimer = setTimeout(() => {
+              item.classList.remove('show');
+              menu.classList.remove('show');
+            }, 150);
           });
         });
 
@@ -470,8 +476,17 @@
             li.removeEventListener('mouseenter', li._enterHandler || (()=>{}));
             li.removeEventListener('mouseleave', li._leaveHandler || (()=>{}));
 
-            li._enterHandler = () => { if (isDesktop()) openSub(li); };
-            li._leaveHandler = () => { if (isDesktop()) closeSub(li); };
+            li._enterHandler = () => {
+              if (isDesktop()) {
+                clearTimeout(li._leaveTimer);
+                openSub(li);
+              }
+            };
+            li._leaveHandler = () => {
+              if (isDesktop()) {
+                li._leaveTimer = setTimeout(() => closeSub(li), 150);
+              }
+            };
 
             li.addEventListener('mouseenter', li._enterHandler);
             li.addEventListener('mouseleave', li._leaveHandler);
