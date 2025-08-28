@@ -2,25 +2,35 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Activity extends Model
 {
-    protected $fillable = ['user_id', 'is_read', 'description', 'type', 'related_id', 'related_type'];
+    use HasFactory;
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+    protected $fillable = [
+        'type',
+        'description', // or 'message', depending on your column name
+        'causer_id',
+        'is_read',
+        'link',
+        'created_at',
+    ];
 
     // Constants for notification types
-    const TYPE_MESSAGE = 'message';
-    const TYPE_OFFER = 'offer';
-    const TYPE_ORDER = 'order';
-    const TYPE_KYC = 'kyc';
-    const TYPE_WALLET = 'wallet';
-    const TYPE_SUBSCRIPTION = 'subscription';
-    const TYPE_PAYOUT = 'payout';
-    const TYPE_PRODUCT = 'product';
-    const TYPE_GENERAL = 'general';
+    public const TYPE_MESSAGE      = 'message';
+    public const TYPE_OFFER        = 'offer';
+    public const TYPE_ORDER        = 'order';
+    public const TYPE_KYC          = 'kyc';
+    public const TYPE_WALLET       = 'wallet';
+    public const TYPE_SUBSCRIPTION = 'subscription';
+    public const TYPE_PAYOUT       = 'payout';
+    public const TYPE_PRODUCT      = 'product';
+    public const TYPE_GENERAL      = 'general';
+
+    public function causer()
+    {
+        return $this->belongsTo(User::class, 'causer_id');
+    }
 }
