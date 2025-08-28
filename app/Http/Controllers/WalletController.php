@@ -54,6 +54,7 @@ class WalletController extends Controller
                 'reference'  => strtoupper(uniqid('TXN-')),
                 'method'     => $overrides['method'] ?? 'wallet',
                 'description'=> $overrides['description'] ?? null,
+                'status'     => $overrides['status'] ?? 'completed',
                 'external_id'=> $overrides['external_id'] ?? null, // e.g. CheckoutRequestID, PayPal order id
             ], $overrides);
 
@@ -88,6 +89,11 @@ class WalletController extends Controller
 
     $transactions = $query->orderBy('created_at', 'desc')->paginate(10);
     $balance = Wallet::where('user_id', Auth::id())
+                ->where('status', 'completed')
+                ->selectRaw('SUM(credit - debit) as balance')
+                ->value('balance') ?? 0;
+    $onHold = Wallet::where('user_id', Auth::id())
+                ->where('status', 'on_hold')
                 ->selectRaw('SUM(credit - debit) as balance')
                 ->value('balance') ?? 0;
 
@@ -101,7 +107,7 @@ class WalletController extends Controller
             ->get();
     }
 
-    return view('wallet.index', compact('transactions', 'balance', 'paymentMethods'));
+    return view('wallet.index', compact('transactions', 'balance', 'onHold', 'paymentMethods'));
 }
 
     public function depositForm()
