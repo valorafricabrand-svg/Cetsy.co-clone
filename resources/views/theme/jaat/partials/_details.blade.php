@@ -1,7 +1,10 @@
 {{-- resources/views/theme/{{ theme() }}/partials/_details.blade.php --}}
 @php
-  $basePrice  = (float) ($product->price ?? 0);
-  $finalPrice = (float) ($product->discounted_price ?? $basePrice);
+  $basePrice       = (float) ($product->price ?? 0);
+  $finalPrice      = (float) ($product->discounted_price ?? $basePrice);
+  $discountPercent = $finalPrice < $basePrice && $basePrice > 0
+      ? round((1 - $finalPrice / $basePrice) * 100)
+      : 0;
 @endphp
 
 <div class="position-lg-sticky" style="top: 1rem;">
@@ -22,6 +25,9 @@
       <span class="fw-bold text-success">
         {{ get_currency() }} {{ number_format($finalPrice, 2) }}
       </span>
+      @if ($discountPercent > 0)
+        <span class="badge bg-danger bg-opacity-10 text-danger">-{{ $discountPercent }}%</span>
+      @endif
       <span class="text-muted text-decoration-line-through">
         {{ get_currency() }} {{ number_format($basePrice, 2) }}
       </span>
