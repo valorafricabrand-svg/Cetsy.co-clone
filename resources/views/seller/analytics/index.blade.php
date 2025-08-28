@@ -2,6 +2,7 @@
 @section('title','Analytics Dashboard')
 
 @push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         /* glassy cards */
@@ -58,7 +59,7 @@
         </div>
 
         {{-- ======================= Revenue & Orders chart ======================= --}}
-        <div class="card shadow border-0 mb-5 glass">
+        <div class="card shadow-sm border-0 rounded-3 mb-5 glass">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="fw-semibold mb-0">Revenue & Orders <small class="text-muted">({{ $rangeLabel }})</small></h6>
                 {{-- toggle --}}
@@ -76,11 +77,11 @@
         {{-- ======================= Top products ======================= --}}
         <div class="row g-4 mb-4">
             <div class="col-lg-6">
-                <div class="card shadow border-0 glass h-100">
+                <div class="card shadow-sm border-0 rounded-3 glass h-100">
                     <div class="card-header bg-transparent border-0 fw-semibold">Top Products</div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table align-middle mb-0">
+                            <table class="table table-striped table-hover align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Product</th>
@@ -109,11 +110,11 @@
 
             {{-- Listing performance --}}
             <div class="col-lg-6">
-                <div class="card shadow border-0 glass h-100">
+                <div class="card shadow-sm border-0 rounded-3 glass h-100">
                     <div class="card-header bg-transparent border-0 fw-semibold">Listing Performance</div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table align-middle mb-0">
+                            <table class="table table-striped table-hover align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Product</th>
@@ -134,11 +135,12 @@
                                         <td class="text-end">{{ $p->views ?? 0 }}</td>
                                         <td class="text-end">{{ $p->sales ?? 0 }}</td>
                                         <td>
-                                            <div class="progress" style="height:6px">
-                                                <div class="progress-bar {{ $bar }}"
+                                            <div class="progress rounded-pill" style="height:6px">
+                                                <div class="progress-bar {{ $bar }} rounded-pill"
                                                      role="progressbar"
                                                      style="width: {{ $conv }}%"
-                                                     title="{{ $conv }}%">
+                                                     data-bs-toggle="tooltip"
+                                                     data-bs-title="{{ $conv }}%">
                                                 </div>
                                             </div>
                                             <small class="text-muted">{{ $conv }}%</small>
@@ -158,6 +160,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
 <script>
 (() => {
@@ -238,6 +241,9 @@
             document.getElementById('ordersChart').parentElement.classList.toggle('d-none', target!=='orders');
         });
     });
+
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
 })();
 </script>
 @endpush
