@@ -85,6 +85,9 @@ Route::get('/listings', [ProductController::class, 'listings'])->name('listings'
 Route::get('/listing/{slug}', [ProductController::class, 'listing'])->name('listing.show');
 Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])->name('category.show');
 
+// All shops listing
+Route::get('/shops', [ShopController::class, 'publicIndex'])->name('shops.index');
+
 // Shop public profile
 Route::get('/shop/{id}', [ShopController::class, 'showPublic'])->name('shop.show');
 
