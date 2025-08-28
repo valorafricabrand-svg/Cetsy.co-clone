@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Kyc;
+use App\Models\Activity;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\KycStatusMail;
 use Illuminate\Support\Facades\DB;
