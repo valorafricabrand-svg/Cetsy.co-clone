@@ -1,13 +1,15 @@
 @extends('layouts.app')
-@section('title','Sales Analytics')
+@section('title','Analytics Dashboard')
 
 @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         /* glassy cards */
         .glass {background:rgba(255,255,255,.8);backdrop-filter:blur(6px)}
+        .analytics-icon {width:56px;height:56px;background:rgba(0,0,0,.05);}
         @media (prefers-color-scheme:dark){
             .glass {background:rgba(35,35,35,.55);}
+            .analytics-icon {background:rgba(255,255,255,.05);}
         }
     </style>
 @endpush
@@ -15,6 +17,11 @@
 @section('content')
 <div class="content">
     <div class="container-xxl">
+
+        <div class="mb-4">
+            <h1 class="h4 fw-semibold mb-1">Analytics Dashboard</h1>
+            <p class="text-muted small mb-0">Monitor your shop performance at a glance.</p>
+        </div>
 
         {{-- ======================= KPIs ======================= --}}
         <div class="row g-4 mb-4">
