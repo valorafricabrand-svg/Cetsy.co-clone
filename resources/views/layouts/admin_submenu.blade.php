@@ -61,6 +61,16 @@
         'url'   => route('admin.reviews.index'),
         'icon'  => 'fas fa-star',
       ],
+      [
+        'label' => 'Disputes',
+        'url'   => route('admin.admin-disputes.index'),
+        'icon'  => 'fas fa-gavel',
+      ],
+      [
+        'label' => 'Appeals',
+        'url'   => route('admin.appeals.index'),
+        'icon'  => 'fas fa-balance-scale',
+      ],
     ];
   @endphp
 

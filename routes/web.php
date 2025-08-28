@@ -314,6 +314,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/{dispute}/mutual-resolution', [\App\Http\Controllers\DisputeController::class, 'initiateMutualResolution'])->name('mutual-resolution.initiate');
         Route::post('/{dispute}/mutual-resolution/agree', [\App\Http\Controllers\DisputeController::class, 'agreeToMutualResolution'])->name('mutual-resolution.agree');
     });
+
+    // Evidence Requests (Binance-style)
+    Route::prefix('evidence-requests')->name('evidence-requests.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\EvidenceRequestController::class, 'index'])->name('index');
+        Route::get('/{evidenceRequest}', [\App\Http\Controllers\EvidenceRequestController::class, 'show'])->name('show');
+        Route::post('/{evidenceRequest}/submit', [\App\Http\Controllers\EvidenceRequestController::class, 'submit'])->name('submit');
+    });
     
 });
 
@@ -322,7 +329,7 @@ Route::middleware('auth')->group(function () {
 | Admin Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
 Route::resource('wallets', AdminWalletController::class)->except(['create','store']);
@@ -398,6 +405,8 @@ Route::resource('wallets', AdminWalletController::class)->except(['create','stor
         Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'appeals'])->name('index');
         Route::get('/{appeal}', [\App\Http\Controllers\Admin\DisputeController::class, 'showAppeal'])->name('show');
         Route::post('/{appeal}/review', [\App\Http\Controllers\Admin\DisputeController::class, 'reviewAppeal'])->name('review.store');
+        Route::post('/{appeal}/request-evidence', [\App\Http\Controllers\Admin\DisputeController::class, 'requestEvidence'])->name('request-evidence');
+        Route::post('/{appeal}/close', [\App\Http\Controllers\Admin\DisputeController::class, 'closeAppeal'])->name('close');
     });
 
 });
