@@ -20,6 +20,7 @@ pluginManagement {
     }
 
     // Pin plugin versions here (AGP & Kotlin)
+    // Align with Flutter's current recommended minimums
     plugins {
         id("com.android.application") version "8.7.2"
         id("org.jetbrains.kotlin.android") version "2.1.0"
@@ -27,6 +28,11 @@ pluginManagement {
         // If you use Google services, also pin here:
         // id("com.google.gms.google-services") version "4.4.2"
     }
+}
+
+// Apply the Flutter settings plugin (required for the Flutter Gradle plugin)
+plugins {
+    id("dev.flutter.flutter-plugin-loader") version "1.0.0"
 }
 
 // Enforce centralized repositories for all subprojects
@@ -38,28 +44,12 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-
-        // Ensure Flutter engine artifacts resolve properly
-        exclusiveContent {
-            forRepository {
-                maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
-            }
-            filter {
-                includeGroup("io.flutter")
-                includeGroup("com.google.flutter")
-            }
-        }
-        // Optional mirror (China); Gradle will try in order
-        exclusiveContent {
-            forRepository {
-                maven { url = uri("https://storage.flutter-io.cn") }
-            }
-            filter {
-                includeGroup("io.flutter")
-                includeGroup("com.google.flutter")
-            }
-        }
-        // Leave plugin-added repositories (from Flutter) allowed at project level.
+        // Flutter engine artifacts (primary)
+        maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
+        // Optional mirror if primary is blocked
+        maven { url = uri("https://storage.flutter-io.cn") }
+        // Legacy redirect used by some toolchains
+        maven { url = uri("https://download.flutter.io") }
     }
 }
 
