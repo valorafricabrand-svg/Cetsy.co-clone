@@ -70,18 +70,24 @@ function shop(){
   }
 
 
-   function wallet(){
+   function wallet($status = 'completed'){
      $walletBalance = \App\Models\Wallet::where('user_id', Auth::id())
+                            ->where('status', $status)
                             ->selectRaw('SUM(credit - debit) as balance')
                             ->value('balance') ?? 0;
 
         return $walletBalance;
   }
 
+   function wallet_on_hold(){
+     return wallet('on_hold');
+   }
 
-     function admin_wallet() {
 
-     $walletBalance = \App\Models\Wallet::selectRaw('SUM(credit - debit) as balance')
+     function admin_wallet($status = 'completed') {
+
+     $walletBalance = \App\Models\Wallet::where('status', $status)
+                            ->selectRaw('SUM(credit - debit) as balance')
                             ->value('balance') ?? 0;
 
         return $walletBalance;

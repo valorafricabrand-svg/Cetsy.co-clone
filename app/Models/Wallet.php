@@ -21,6 +21,7 @@ class Wallet extends Model
         'method',       // preferred going forward
         'reference',
         'description',
+        'status',       // funds status: completed or on_hold
         'external_id',  // e.g. CheckoutRequestID, PayPal order id
         'meta',         // JSON bag (rate, raw payloads, etc.)
     ];
@@ -40,6 +41,7 @@ class Wallet extends Model
      */
     protected $attributes = [
         'method' => 'wallet',
+        'status' => 'completed',
     ];
 
     /**

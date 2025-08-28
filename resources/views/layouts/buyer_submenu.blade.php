@@ -1,9 +1,7 @@
 @php
     $active = fn($routes) => collect((array) $routes)
         ->contains(fn($r) => request()->routeIs($r));
-    $walletBalance = \App\Models\Wallet::where('user_id', Auth::id())
-                        ->selectRaw('SUM(credit - debit) as balance')
-                        ->value('balance') ?? 0;
+    $walletBalance = wallet();
     $walletBalanceFormatted = number_format($walletBalance, 2);
     $hasShop = \App\Models\Shop::where('user_id', Auth::id())->exists();
     // Unread messages count for buyer
