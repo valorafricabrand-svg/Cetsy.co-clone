@@ -23,8 +23,8 @@
                 <h1 class="h4 fw-semibold mb-1">Analytics Dashboard</h1>
                 <p class="text-muted small mb-0">Monitor your shop performance at a glance.</p>
             </div>
-            <form method="GET">
-                <select name="range" class="form-select form-select-sm" onchange="this.form.submit()">
+            <form method="GET" class="d-flex align-items-center gap-2" id="rangeForm">
+                <select name="range" class="form-select form-select-sm" id="rangeSelect">
                     <option value="today"    {{ $range=='today'    ? 'selected' : '' }}>Today</option>
                     <option value="yesterday"{{ $range=='yesterday'? 'selected' : '' }}>Yesterday</option>
                     <option value="week"     {{ $range=='week'     ? 'selected' : '' }}>Last 7 Days</option>
@@ -33,7 +33,14 @@
                     <option value="2months"  {{ $range=='2months'  ? 'selected' : '' }}>Last 2 Months</option>
                     <option value="3months"  {{ $range=='3months'  ? 'selected' : '' }}>Last 3 Months</option>
                     <option value="6months"  {{ $range=='6months'  ? 'selected' : '' }}>Last 6 Months</option>
+                    <option value="custom"   {{ $range=='custom'   ? 'selected' : '' }}>Custom</option>
                 </select>
+                <div id="customRange" class="d-flex align-items-center gap-2 {{ $range!='custom' ? 'd-none' : '' }}">
+                    <input type="date" name="start" value="{{ $startDate }}" class="form-control form-control-sm">
+                    <span class="text-muted">to</span>
+                    <input type="date" name="end" value="{{ $endDate }}" class="form-control form-control-sm">
+                    <button class="btn btn-primary btn-sm" type="submit">Apply</button>
+                </div>
             </form>
         </div>
 
@@ -154,6 +161,15 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
 <script>
 (() => {
+    /** ------- range selector ------- **/
+    const rangeSelect = document.getElementById('rangeSelect');
+    const customRange = document.getElementById('customRange');
+    rangeSelect?.addEventListener('change', () => {
+        const isCustom = rangeSelect.value === 'custom';
+        customRange.classList.toggle('d-none', !isCustom);
+        if (!isCustom) rangeSelect.form.submit();
+    });
+
     /** ------- charts data from PHP ------- **/
     const labels  = @json($chart['labels']);
     const revenue = @json($chart['revenue']);
