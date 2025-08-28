@@ -119,11 +119,27 @@ public function create()
     /**
      * Display a paginated list of all shops on the marketplace.
      */
-    public function publicIndex()
+    public function publicIndex(Request $request)
     {
-        $shops = Shop::latest()->paginate(12);
+        $query = Shop::query()->latest();
 
-        return themed_view('shops', compact('shops'));
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('country')) {
+            $query->where('country', $request->country);
+        }
+
+        $shops = $query->paginate(12);
+
+        $countries = Country::orderBy('name')->get();
+
+        return themed_view('shops', compact('shops', 'countries'));
     }
 
 
