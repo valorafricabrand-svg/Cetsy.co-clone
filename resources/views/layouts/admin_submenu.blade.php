@@ -26,7 +26,7 @@
         'url'   => route('admin.kyc.index'),
         'icon'  => 'fas fa-id-card',
       ],
-            [
+      [
         'label' => 'Categories',
         'url'   => route('admin.categories.index'),
         'icon'  => 'fas fa-cogs',
