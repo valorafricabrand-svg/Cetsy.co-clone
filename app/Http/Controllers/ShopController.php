@@ -117,7 +117,7 @@ public function create()
     }
 
 
-public function showPublic($id)
+public function showPublic(Request $request, $id)
 {
     $shop = Shop::whereSlug($id)->firstOrFail();
 
@@ -126,6 +126,10 @@ public function showPublic($id)
         ->with('media')
         ->latest()
         ->paginate(12);
+
+    if ($request->ajax()) {
+        return view('theme.' . theme() . '.partials.shop-products', compact('products'))->render();
+    }
 
     return themed_view('shop', compact('shop', 'products'));
 }
