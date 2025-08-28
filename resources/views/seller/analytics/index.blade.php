@@ -4,11 +4,31 @@
 @push('styles')
     <style>
         /* glassy cards */
-        .glass {background:rgba(255,255,255,.8);backdrop-filter:blur(6px)}
-        .analytics-icon {width:56px;height:56px;background:rgba(0,0,0,.05);}
+        .glass {
+            background: rgba(255,255,255,.8);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(0,0,0,.05);
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+        .glass:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+        }
+        .analytics-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg,#e9ecef,#fff);
+            box-shadow: 0 2px 6px rgba(0,0,0,.1);
+        }
         @media (prefers-color-scheme:dark){
-            .glass {background:rgba(35,35,35,.55);}
-            .analytics-icon {background:rgba(255,255,255,.05);}
+            .glass {
+                background: rgba(35,35,35,.55);
+                border-color: rgba(255,255,255,.1);
+            }
+            .analytics-icon {
+                background: linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.05));
+                box-shadow: 0 2px 6px rgba(0,0,0,.4);
+            }
         }
     </style>
 @endpush
@@ -47,13 +67,13 @@
         <div class="row g-4 mb-4">
             <x-analytics.card title="Total Sales"
                               :value="get_currency().' '.number_format($kpi->total_sales,2)"
-                              icon="bi bi-currency-dollar text-primary"/>
+                              icon="fas fa-dollar-sign text-primary"/>
             <x-analytics.card title="Total Orders"
                               :value="$kpi->total_orders"
-                              icon="bi bi-bag-check-fill text-success"/>
+                              icon="fas fa-shopping-cart text-success"/>
             <x-analytics.card title="Avg Order Value"
                               :value="get_currency().' '.number_format($kpi->avg_order_value,2)"
-                              icon="bi bi-graph-up-arrow text-warning"/>
+                              icon="fas fa-chart-line text-warning"/>
         </div>
 
         {{-- ======================= Revenue & Orders chart ======================= --}}
