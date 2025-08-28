@@ -121,7 +121,10 @@ public function create()
      */
     public function publicIndex(Request $request)
     {
-        $query = Shop::query()->latest();
+        $query = Shop::query()
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->latest();
 
         if ($request->filled('q')) {
             $search = $request->q;
@@ -137,7 +140,7 @@ public function create()
 
         $shops = $query->paginate(12);
 
-        $countries = Country::orderBy('name')->get();
+        $countries = Country::orderBy('name')->get()->keyBy('id');
 
         return themed_view('shops', compact('shops', 'countries'));
     }

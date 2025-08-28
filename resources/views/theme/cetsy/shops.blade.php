@@ -42,7 +42,12 @@
                      alt="{{ $shop->name }} logo"
                      class="rounded-circle mb-3"
                      style="width:80px;height:80px;object-fit:cover;">
-                <h6 class="mb-0 text-dark">{{ $shop->name }}</h6>
+                <h6 class="mb-1 text-dark">{{ $shop->name }}</h6>
+                <div class="small text-muted mb-1">
+                  <span class="text-warning"><i class="fas fa-star"></i> {{ number_format($shop->reviews_avg_rating ?? 0, 1) }}</span>
+                  <span>({{ $shop->reviews_count }})</span>
+                </div>
+                <p class="text-muted small mb-0">{{ $countries[$shop->country]->name ?? '' }}</p>
               </div>
             </div>
           </a>
