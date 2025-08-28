@@ -144,7 +144,7 @@
 
       {{-- GRID VIEW (uses your partial as-is) --}}
       @if($view === 'grid')
-        <div class="row g-4">
+        <div id="listing-items" class="row g-4">
           @forelse ($products as $item)
             <div class="col-6 col-md-4 col-lg-3">
               @include('theme.'.theme().'.partials.product-card', ['item' => $item])
@@ -160,7 +160,7 @@
 
       {{-- LIST VIEW (mirrors the partial’s concepts) --}}
       @else
-        <div class="vstack gap-3">
+        <div id="listing-items" class="vstack gap-3">
           @forelse ($products as $item)
             @php
               // --- Concept parity with product-card ---
@@ -236,12 +236,14 @@
         </div>
       @endif
 
-      {{-- Pagination (keeps filters) --}}
- @if ($products->hasPages())
-    <div class="mt-4 d-flex justify-content-center">
-        {{ $products->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
-    </div>
-@endif
+      {{-- Load More --}}
+      @if ($products->hasMorePages())
+        <div class="mt-4 text-center">
+          <button id="load-more" class="btn btn-success" data-next-page="{{ $products->currentPage() + 1 }}">
+            Load More
+          </button>
+        </div>
+      @endif
     </div>
   </section>
 
@@ -266,6 +268,35 @@
           form.submit();
         });
       });
+
+      const loadMoreBtn = document.getElementById('load-more');
+      if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', () => {
+          const nextPage = loadMoreBtn.dataset.nextPage;
+          const url = new URL(window.location.href);
+          url.searchParams.set('page', nextPage);
+          loadMoreBtn.disabled = true;
+
+          fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(html, 'text/html');
+              const newItems = doc.getElementById('listing-items').children;
+              const container = document.getElementById('listing-items');
+              Array.from(newItems).forEach(el => container.appendChild(el));
+
+              const newBtn = doc.getElementById('load-more');
+              if (newBtn) {
+                loadMoreBtn.dataset.nextPage = newBtn.dataset.nextPage;
+                loadMoreBtn.disabled = false;
+              } else {
+                loadMoreBtn.remove();
+              }
+            })
+            .catch(() => loadMoreBtn.remove());
+        });
+      }
     });
   </script>
   @endpush
