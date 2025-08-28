@@ -1,10 +1,3 @@
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
@@ -15,4 +8,32 @@ subprojects {
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
+}
+
+// Repositories are declared centrally in settings.gradle (dependencyResolutionManagement)
+
+// Also declare repositories at the project level to ensure Gradle uses them
+// even when plugins or AGP configure project repositories.
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        // Flutter engine artifacts (primary)
+        maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
+        // Optional mirror if the above is blocked
+        maven { url = uri("https://storage.flutter-io.cn") }
+        // Legacy/redirect endpoint used by some Flutter toolchains
+        maven { url = uri("https://download.flutter.io") }
+    }
+}
+
+// Ensure every subproject (including :app) inherits the Flutter repositories
+subprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
+        maven { url = uri("https://storage.flutter-io.cn") }
+        maven { url = uri("https://download.flutter.io") }
+    }
 }
