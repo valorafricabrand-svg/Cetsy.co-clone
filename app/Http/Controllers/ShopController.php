@@ -116,6 +116,16 @@ public function create()
         return view('shops.show', compact('shop', 'paymentMethods', 'subscription', 'isHolidayMode', 'activeProducts', 'pausedProducts'));
     }
 
+    /**
+     * Display a paginated list of all shops on the marketplace.
+     */
+    public function publicIndex()
+    {
+        $shops = Shop::latest()->paginate(12);
+
+        return themed_view('shops', compact('shops'));
+    }
+
 
 public function showPublic(Request $request, $id)
 {
