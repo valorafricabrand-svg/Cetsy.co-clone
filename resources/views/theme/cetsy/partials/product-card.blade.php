@@ -48,11 +48,12 @@
     @endphp
 
     @if($mediaType === 'video')
-      <video src="{{ $thumb }}" class="w-100 h-100" style="object-fit: contain;" controls></video>
+      <video src="{{ $thumb }}" class="w-100 h-100" style="object-fit: contain;" controls preload="none"></video>
     @else
       <img src="{{ $thumb }}"
            alt="{{ $item->name }}"
-           class="w-100 h-100"
+           class="img-fluid w-100 h-100"
+           loading="lazy" decoding="async"
            style="object-fit: contain;">
     @endif
   </div>

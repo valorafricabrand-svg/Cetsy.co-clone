@@ -593,6 +593,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <small class="text-success d-block">
                                                     <i class="bi bi-check-circle"></i> Resolved
                                                 </small>
+                                            @elseif($dispute->status === 'mutually_resolved')
+                                                <small class="text-success d-block">
+                                                    <i class="bi bi-handshake"></i> Mutually Resolved
+                                                </small>
                                             @endif
                                         @else
                                             <span class="text-muted">—</span>
