@@ -676,13 +676,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const nextUrl = btn.dataset.nextPageUrl;
         btn.disabled = true;
         btn.textContent = 'Loading...';
+
         fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+
           .then(res => res.text())
           .then(html => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
+
             doc.querySelectorAll('#gridItems .product-item').forEach(el => gridView.appendChild(el));
             doc.querySelectorAll('#listItems .product-item').forEach(el => listView.appendChild(el));
+
             const newBtn = doc.getElementById('loadMore');
             if (newBtn && newBtn.dataset.nextPageUrl) {
               btn.dataset.nextPageUrl = newBtn.dataset.nextPageUrl;

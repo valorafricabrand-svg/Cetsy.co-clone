@@ -48,11 +48,11 @@
   {{-- Top: Logo + Title + Actions --}}
   <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
     <div class="d-flex align-items-center gap-3">
-      @if($shop->logo)
-        <img src="{{ asset('storage/' . $shop->logo) }}" alt="{{ $shop->name }} logo" class="shop-avatar">
-      @else
-        <img src="{{ asset('assets/images/default-logo.png') }}" alt="{{ $shop->name }} logo" class="shop-avatar">
-      @endif
+    
+        <img src="{{ $shop->logo 
+      ? asset('storage/' . $shop->logo) 
+      : setting('favicon_url') }}" alt="{{ $shop->name }} logo" class="shop-avatar">
+    
 
       <div>
         <h1 class="h4 mb-1">{{ $shop->name }}</h1>
