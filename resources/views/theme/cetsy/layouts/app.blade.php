@@ -186,6 +186,10 @@
                 <i class="fas fa-search"></i>
               </button>
             </form>
+            {{-- Primary navigation links --}}
+            <ul class="navbar-nav ms-3">
+              <li class="nav-item"><a class="nav-link" href="{{ route('shops.index') }}">Shops</a></li>
+            </ul>
 
             {{-- Cart + User (desktop) --}}
             <ul class="navbar-nav ms-auto align-items-center" x-data="cartDropdown()" x-init="fetchCart()">
@@ -290,6 +294,11 @@
               <a class="btn btn-outline-secondary btn-sm w-100" href="{{ route('login') }}">Log In</a>
             </div>
           @endauth
+          <div class="mb-3">
+            <a href="{{ route('shops.index') }}" class="btn btn-outline-success w-100">
+              <i class="fas fa-store me-1"></i> Browse Shops
+            </a>
+          </div>
 
           {{-- Quick Category Chips --}}
           @php
