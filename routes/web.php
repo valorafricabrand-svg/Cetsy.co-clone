@@ -45,8 +45,13 @@ use App\Http\Controllers\Seller\{
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 // Safaricom callback (must be reachable publicly)
-Route::post('/wallet/deposit/mpesa/callback', [WalletDepositController::class, 'mpesaCallback'])
+Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
     ->name('wallet.deposit.mpesa.callback');
+
+
+
+Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])->name('wallet.deposit.mpesa.callback');
+Route::post('/wallet/deposit/mpesa/timeout',  [WalletController::class, 'mpesaTimeout'])->name('wallet.deposit.mpesa.timeout');
 
 
 // pages
@@ -307,6 +312,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
         ->name('wallet.deposit.mpesa.stk');
+
+        // Poll status (frontend “listens” by polling this)
+ Route::get ('/wallet/deposit/mpesa/status/{ref}', [WalletController::class, 'mpesaStatus'])->name('wallet.deposit.mpesa.status');
 
     // Account
     Route::prefix('account')->name('account.')->group(function () {
