@@ -715,6 +715,7 @@ public function payOrder(Request $request, $id)
 
         Wallet::create([
             'user_id'    => Auth::id(),
+             'order_id'             => $order->id,
             'credit'     => 0,
             'debit'      => $order->total_amount,
             'balance'    => 0, // Optional: recalculate after insert
@@ -730,12 +731,14 @@ public function payOrder(Request $request, $id)
 
         Wallet::create([
             'user_id'    => $shop->user_id,
+            'order_id'             => $order->id,
             'credit'     => $order->total_amount,
             'debit'      => 0,
             'balance'    => 0, // Optional: recalculate after insert
             'reference'  => $localTxId,
             'method'     => $method,
             'description'=> 'Order payment',
+            'status'     => 'on_hold',
         ]);
 
         // Send email notifications for successful payment
