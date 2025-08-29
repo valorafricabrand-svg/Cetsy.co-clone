@@ -87,11 +87,11 @@
                         </div>
 
                         {{-- Live status area when polling --}}
-                        <div id="stk-live-status" class="alert alert-light border mt-3 d-none"></div>
+                        <div style="color: #000000;" id="stk-live-status" class="alert alert-light border mt-3 d-none"></div>
                     </div>
 
                     {{-- Result Message --}}
-                    <div id="generic-result" class="text-center mt-3 fw-semibold"></div>
+                    <div style="color: #000000;" id="generic-result" class="text-center mt-3 fw-semibold"></div>
 
                 </div>
             </div>
