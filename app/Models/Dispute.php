@@ -86,6 +86,11 @@ class Dispute extends Model
         return $this->hasOne(Appeal::class);
     }
 
+    public function evidenceRequests(): HasMany
+    {
+        return $this->hasMany(EvidenceRequest::class);
+    }
+
     // Scopes
     public function scopePending($query)
     {
