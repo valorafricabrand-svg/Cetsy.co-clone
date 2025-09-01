@@ -85,6 +85,89 @@
         </div>
     </div>
 
+    {{-- Evidence Files Summary Section --}}
+    @php
+        $totalEvidenceFiles = 0;
+        $totalEvidenceSize = 0;
+        
+        // Count initial dispute evidence
+        if ($dispute->evidence && count($dispute->evidence) > 0) {
+            $totalEvidenceFiles += count($dispute->evidence);
+            $totalEvidenceSize += collect($dispute->evidence)->sum('size');
+        }
+        
+        // Count appeal evidence
+        if ($dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty()) {
+            foreach($dispute->appeal->evidenceRequests as $evidenceRequest) {
+                if ($evidenceRequest->submitted_evidence && count($evidenceRequest->submitted_evidence) > 0) {
+                    $totalEvidenceFiles += count($evidenceRequest->submitted_evidence);
+                    $totalEvidenceSize += collect($evidenceRequest->submitted_evidence)->sum('size');
+                }
+            }
+        }
+        
+        // Count message attachments
+        foreach($allMessages as $message) {
+            if (isset($message->attachments) && is_array($message->attachments) && count($message->attachments) > 0) {
+                $totalEvidenceFiles += count($message->attachments);
+                $totalEvidenceSize += collect($message->attachments)->sum('size');
+            }
+        }
+    @endphp
+    
+    @if($totalEvidenceFiles > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 bg-light">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="mb-2">
+                                    <i class="bi bi-files text-primary"></i> 
+                                    Evidence Files Overview
+                                </h5>
+                                <p class="text-muted mb-0">
+                                    Total {{ $totalEvidenceFiles }} files ({{ number_format($totalEvidenceSize / 1024 / 1024, 2) }} MB) available for review
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <div class="d-flex gap-2 justify-content-md-end">
+                                    <span class="badge bg-primary fs-6 px-3 py-2">
+                                        <i class="bi bi-paperclip"></i> {{ $dispute->evidence ? count($dispute->evidence) : 0 }} Initial
+                                    </span>
+                                    @if($dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
+                                        @php
+                                            $appealEvidenceCount = 0;
+                                            foreach($dispute->appeal->evidenceRequests as $evidenceRequest) {
+                                                if ($evidenceRequest->submitted_evidence) {
+                                                    $appealEvidenceCount += count($evidenceRequest->submitted_evidence);
+                                                }
+                                            }
+                                        @endphp
+                                        <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                                            <i class="bi bi-gavel"></i> {{ $appealEvidenceCount }} Appeal
+                                        </span>
+                                    @endif
+                                    @php
+                                        $messageAttachmentsCount = 0;
+                                        foreach($allMessages as $message) {
+                                            if (isset($message->attachments) && is_array($message->attachments)) {
+                                                $messageAttachmentsCount += count($message->attachments);
+                                            }
+                                        }
+                                    @endphp
+                                    <span class="badge bg-info text-dark fs-6 px-3 py-2">
+                                        <i class="bi bi-chat"></i> {{ $messageAttachmentsCount }} Messages
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row">
         <div class="col-md-8">
             <!-- Order Context Header -->
@@ -260,6 +343,76 @@
                                 <p class="mb-0"><strong>Review Notes:</strong> {{ $dispute->appeal->review_notes }}</p>
                             @endif
                         </div>
+                        
+                        {{-- Appeal Evidence Files Section --}}
+                        @if($dispute->appeal->new_evidence && count($dispute->appeal->new_evidence) > 0)
+                            <div class="card mb-4 border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-paperclip"></i> Appeal Evidence Files
+                                        <span class="badge bg-dark ms-2">{{ count($dispute->appeal->new_evidence) }} file(s)</span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info">
+                                        <h6 class="alert-heading">Appeal Evidence</h6>
+                                        <p class="mb-0">These files were submitted with the appeal by <strong>{{ $dispute->appeal->appealedBy->name }}</strong> on {{ $dispute->appeal->created_at->format('M d, Y \a\t g:i A') }}.</p>
+                                    </div>
+                                    
+                                    <div class="row g-3">
+                                        @foreach($dispute->appeal->new_evidence as $index => $file)
+                                            <div class="col-md-4 col-sm-6 col-12">
+                                                <div class="evidence-item border rounded p-3 text-center h-100">
+                                                    @if(in_array($file['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
+                                                        <img src="{{ Storage::url($file['path']) }}" 
+                                                             alt="{{ $file['filename'] }}" 
+                                                             class="img-fluid rounded mb-2" 
+                                                             style="max-height: 120px; width: 100%; object-fit: cover; cursor: pointer;"
+                                                             onclick="openImageModal('{{ Storage::url($file['path']) }}', '{{ $file['filename'] }}')"
+                                                             title="Click to view full size">
+                                                    @elseif(in_array($file['mime_type'], ['application/pdf']))
+                                                        <div class="bg-danger text-white rounded p-3 mb-2">
+                                                            <i class="bi bi-file-pdf fs-1"></i>
+                                                        </div>
+                                                    @elseif(in_array($file['mime_type'], ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']))
+                                                        <div class="bg-primary text-white rounded p-3 mb-2">
+                                                            <i class="bi bi-file-word fs-1"></i>
+                                                        </div>
+                                                    @else
+                                                        <div class="bg-secondary text-white rounded p-3 mb-2">
+                                                            <i class="bi bi-file-earmark fs-1"></i>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <div class="evidence-info">
+                                                        <div class="fw-bold text-truncate mb-2" title="{{ $file['filename'] }}">
+                                                            {{ Str::limit($file['filename'], 25) }}
+                                                        </div>
+                                                        <div class="small text-muted mb-2">
+                                                            {{ number_format($file['size'] / 1024, 1) }} KB
+                                                        </div>
+                                                        <div class="d-flex gap-1 justify-content-center">
+                                                            <a href="{{ Storage::url($file['path']) }}" 
+                                                               target="_blank" 
+                                                               class="btn btn-sm btn-outline-primary">
+                                                                <i class="bi bi-eye"></i> View
+                                                            </a>
+                                                            <a href="{{ Storage::url($file['path']) }}" 
+                                                               download="{{ $file['filename'] }}"
+                                                               class="btn btn-sm btn-outline-secondary">
+                                                                <i class="bi bi-download"></i> Download
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    
+                                    {{-- Evidence descriptions removed as field doesn't exist in Appeal model --}}
+                                </div>
+                            </div>
+                        @endif
                     @endif
 
                     @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
@@ -272,11 +425,384 @@
                         </div>
                     @endif
 
+                    {{-- Appeal Button Section --}}
+                    @if($dispute->canBeAppealed() || 
+                         ($dispute->status === 'under_review' && $dispute->created_at->diffInHours(now()) >= 72) ||
+                         ($dispute->status === 'pending' && $dispute->created_at->diffInHours(now()) >= 24))
+                        <div class="card mb-4 border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-gavel"></i> Submit Appeal
+                                </h6>
+                            </div>
+                            <div class="card-body text-center">
+                                @if($dispute->status === 'resolved')
+                                    <p class="mb-3">If you disagree with the decision, you can submit an appeal for review.</p>
+                                    @if($dispute->appeal_deadline)
+                                        <small class="d-block text-muted mb-3">
+                                            Appeal deadline: {{ $dispute->appeal_deadline->format('M d, Y \a\t g:i A') }}
+                                        </small>
+                                    @endif
+                                @elseif($dispute->status === 'under_review')
+                                    <p class="mb-3">If the admin review is taking too long or you have concerns about the process, you can submit an appeal.</p>
+                                    <small class="d-block text-muted mb-3">
+                                        Available after 72 hours of admin review
+                                    </small>
+                                @elseif($dispute->status === 'pending')
+                                    <p class="mb-3">If the seller is not responding to your dispute, you can submit an appeal for immediate review.</p>
+                                    <small class="d-block text-muted mb-3">
+                                        Available after 24 hours of no seller response
+                                    </small>
+                                @endif
+                                
+                                <button type="button" class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#appealModal">
+                                    <i class="bi bi-gavel"></i> Submit Appeal
+                                </button>
+                            </div>
+                        </div>
+                    @endif
+
                     @if($dispute->isAppealDeadlineExpired() && $dispute->can_appeal)
                         <div class="alert alert-danger">
                             <h6 class="alert-heading">Appeal Deadline Expired</h6>
                             <p class="mb-0">The appeal deadline has passed. This decision is now final.</p>
                         </div>
+                    @endif
+
+                    {{-- Evidence Requests Section --}}
+                    @if($dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
+                        <div class="card mb-4 border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-file-earmark-text"></i> Evidence Requests
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                @foreach($dispute->appeal->evidenceRequests as $evidenceRequest)
+                                    <div class="evidence-request-item border rounded p-3 mb-3 {{ $evidenceRequest->isOverdue() ? 'border-danger' : 'border-info' }}">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="mb-0">
+                                                Evidence Request #{{ $evidenceRequest->id }}
+                                                @if($evidenceRequest->isOverdue())
+                                                    <span class="badge bg-danger ms-2">Overdue</span>
+                                                @elseif($evidenceRequest->status === 'pending')
+                                                    <span class="badge bg-warning ms-2">Pending</span>
+                                                @elseif($evidenceRequest->status === 'responded')
+                                                    <span class="badge bg-success ms-2">Responded</span>
+                                                @endif
+                                            </h6>
+                                            <small class="text-muted">
+                                                Deadline: {{ $evidenceRequest->deadline->format('M d, Y \a\t g:i A') }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <strong>Requested From:</strong> {{ $evidenceRequest->requestedFrom->name }}
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <strong>Message:</strong>
+                                            <div class="mt-2 p-3 bg-light rounded">
+                                                {!! nl2br(e($evidenceRequest->message)) !!}
+                                            </div>
+                                        </div>
+                                        
+                                        @if($evidenceRequest->required_evidence_types)
+                                            <div class="mb-3">
+                                                <strong>Required Evidence Types:</strong>
+                                                <div class="mt-2">
+                                                    @foreach($evidenceRequest->required_evidence_types as $type)
+                                                        <span class="badge bg-secondary me-1">{{ ucwords(str_replace('_', ' ', $type)) }}</span>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+                                        
+                                        @if($evidenceRequest->status === 'responded' && $evidenceRequest->submitted_evidence)
+                                            <div class="mb-3">
+                                                <strong>Submitted Evidence:</strong>
+                                                <div class="mt-2">
+                                                    @foreach($evidenceRequest->submitted_evidence as $evidence)
+                                                        <div class="evidence-item border rounded p-2 mb-2">
+                                                            <strong>{{ $evidence['filename'] }}</strong>
+                                                            <br>
+                                                            <small class="text-muted">{{ $evidence['description'] ?? 'No description' }}</small>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+                                        
+                                        @if($evidenceRequest->status === 'pending' && $evidenceRequest->requested_from === auth()->id())
+                                            <div class="mt-3">
+                                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#evidenceResponseModal-{{ $evidenceRequest->id }}">
+                                                    <i class="bi bi-upload"></i> Submit Evidence Response
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                    
+                    {{-- Evidence Responses Section (Organized by Party) --}}
+                    @if($dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
+                        @php
+                            $respondedRequests = $dispute->appeal->evidenceRequests->where('status', 'responded');
+                            $buyerEvidenceResponses = collect();
+                            $sellerEvidenceResponses = collect();
+                            
+                            // Organize evidence responses by party
+                            foreach($respondedRequests as $evidenceRequest) {
+                                if ($evidenceRequest->submitted_evidence && count($evidenceRequest->submitted_evidence) > 0) {
+                                    $evidenceData = [
+                                        'evidenceRequest' => $evidenceRequest,
+                                        'evidence' => $evidenceRequest->submitted_evidence,
+                                        'response_notes' => $evidenceRequest->response_notes,
+                                        'responded_at' => $evidenceRequest->responded_at,
+                                        'requested_from' => $evidenceRequest->requestedFrom
+                                    ];
+                                    
+                                    // Determine if it's buyer or seller evidence
+                                    if ($evidenceRequest->requested_from === $dispute->buyer_id) {
+                                        $buyerEvidenceResponses->push($evidenceData);
+                                    } else {
+                                        $sellerEvidenceResponses->push($evidenceData);
+                                    }
+                                }
+                            }
+                        @endphp
+                        
+                        {{-- Buyer Evidence Responses --}}
+                        @if($buyerEvidenceResponses->isNotEmpty())
+                            <div class="card mb-4 border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-person-fill"></i> Buyer Evidence Responses
+                                        <span class="badge bg-light text-dark ms-2">{{ $buyerEvidenceResponses->count() }} response(s)</span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-primary">
+                                        <h6 class="alert-heading">Evidence Responses from {{ $dispute->buyer->name }}</h6>
+                                        <p class="mb-0">Evidence files submitted by the buyer in response to evidence requests.</p>
+                                    </div>
+                                    
+                                    @foreach($buyerEvidenceResponses as $evidenceData)
+                                        <div class="evidence-response-item border rounded p-3 mb-3">
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <h6 class="mb-0">
+                                                    <i class="bi bi-person-circle"></i> 
+                                                    Response from {{ $evidenceData['requested_from']->name }}
+                                                </h6>
+                                                <span class="badge bg-success">Responded {{ $evidenceData['responded_at']->format('M d, Y \a\t g:i A') }}</span>
+                                            </div>
+                                            
+                                            @if($evidenceData['response_notes'])
+                                                <div class="mb-3">
+                                                    <strong>Response Notes:</strong>
+                                                    <div class="mt-2 p-3 bg-light rounded">
+                                                        {{ $evidenceData['response_notes'] }}
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            
+                                            @if($evidenceData['evidence'] && count($evidenceData['evidence']) > 0)
+                                                <div class="mb-3">
+                                                    <strong>Submitted Evidence Files:</strong>
+                                                    <div class="row g-3 mt-2">
+                                                        @foreach($evidenceData['evidence'] as $evidence)
+                                                            <div class="col-md-4 col-sm-6 col-12">
+                                                                <div class="evidence-item border rounded p-3 text-center h-100">
+                                                                    @if(in_array($evidence['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
+                                                                        <img src="{{ Storage::url($evidence['path']) }}" 
+                                                                             alt="{{ $evidence['filename'] }}" 
+                                                                             class="img-fluid rounded mb-2" 
+                                                                             style="max-height: 100px; width: 100%; object-fit: cover; cursor: pointer;"
+                                                                             onclick="openImageModal('{{ Storage::url($evidence['path']) }}', '{{ $evidence['filename'] }}')"
+                                                                             title="Click to view full size">
+                                                                    @elseif(in_array($evidence['mime_type'], ['application/pdf']))
+                                                                        <div class="bg-danger text-white rounded p-2 mb-2">
+                                                                            <i class="bi bi-file-pdf fs-4"></i>
+                                                                        </div>
+                                                                    @elseif(in_array($evidence['mime_type'], ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']))
+                                                                        <div class="bg-primary text-white rounded p-2 mb-2">
+                                                                            <i class="bi bi-file-word fs-4"></i>
+                                                                        </div>
+                                                                    @else
+                                                                        <div class="bg-secondary text-white rounded p-2 mb-2">
+                                                                            <i class="bi bi-file-earmark fs-4"></i>
+                                                                        </div>
+                                                                    @endif
+                                                                    
+                                                                    <div class="evidence-info">
+                                                                        <div class="fw-bold text-truncate mb-2" title="{{ $evidence['filename'] }}">
+                                                                            {{ Str::limit($evidence['filename'], 20) }}
+                                                                        </div>
+                                                                        <div class="small text-muted mb-2">
+                                                                            {{ number_format($evidence['size'] / 1024, 1) }} KB
+                                                                        </div>
+                                                                        <div class="d-flex gap-1 justify-content-center">
+                                                                            <a href="{{ Storage::url($evidence['path']) }}" 
+                                                                               target="_blank" 
+                                                                               class="btn btn-sm btn-outline-primary">
+                                                                                <i class="bi bi-eye"></i> View
+                                                                            </a>
+                                                                            <a href="{{ Storage::url($evidence['path']) }}" 
+                                                                               download="{{ $evidence['filename'] }}"
+                                                                               class="btn btn-sm btn-outline-secondary">
+                                                                                <i class="bi bi-download"></i> Download
+                                                                            </a>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                    
+                                    {{-- Buyer Evidence Summary --}}
+                                    <div class="mt-4 p-3 bg-light rounded">
+                                        <h6 class="mb-2">Buyer Evidence Summary</h6>
+                                        @php
+                                            $buyerTotalFiles = $buyerEvidenceResponses->sum(function($data) {
+                                                return count($data['evidence']);
+                                            });
+                                            $buyerTotalSize = $buyerEvidenceResponses->sum(function($data) {
+                                                return collect($data['evidence'])->sum('size');
+                                            });
+                                        @endphp
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <strong>Total Files:</strong> {{ $buyerTotalFiles }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Total Size:</strong> {{ number_format($buyerTotalSize / 1024 / 1024, 2) }} MB
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                        
+                        {{-- Seller Evidence Responses --}}
+                        @if($sellerEvidenceResponses->isNotEmpty())
+                            <div class="card mb-4 border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-shop"></i> Seller Evidence Responses
+                                        <span class="badge bg-light text-dark ms-2">{{ $sellerEvidenceResponses->count() }} response(s)</span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-success">
+                                        <h6 class="alert-heading">Evidence Responses from {{ $order && $order->shop && $order->shop->name ? $order->shop->name : $dispute->seller->name }}</h6>
+                                        <p class="mb-0">Evidence files submitted by the seller in response to evidence requests.</p>
+                                    </div>
+                                    
+                                    @foreach($sellerEvidenceResponses as $evidenceData)
+                                        <div class="evidence-response-item border rounded p-3 mb-3">
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <h6 class="mb-0">
+                                                    <i class="bi bi-shop"></i> 
+                                                    Response from {{ $evidenceData['requested_from']->name }}
+                                                </h6>
+                                                <span class="badge bg-success">Responded {{ $evidenceData['responded_at']->format('M d, Y \a\t g:i A') }}</span>
+                                            </div>
+                                            
+                                            @if($evidenceData['response_notes'])
+                                                <div class="mb-3">
+                                                    <strong>Response Notes:</strong>
+                                                    <div class="mt-2 p-3 bg-light rounded">
+                                                        {{ $evidenceData['response_notes'] }}
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            
+                                            @if($evidenceData['evidence'] && count($evidenceData['evidence']) > 0)
+                                                <div class="mb-3">
+                                                    <strong>Submitted Evidence Files:</strong>
+                                                    <div class="row g-3 mt-2">
+                                                        @foreach($evidenceData['evidence'] as $evidence)
+                                                            <div class="col-md-4 col-sm-6 col-12">
+                                                                <div class="evidence-item border rounded p-3 text-center h-100">
+                                                                    @if(in_array($evidence['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
+                                                                        <img src="{{ Storage::url($evidence['path']) }}" 
+                                                                             alt="{{ $evidence['filename'] }}" 
+                                                                             class="img-fluid rounded mb-2" 
+                                                                             style="max-height: 100px; width: 100%; object-fit: cover; cursor: pointer;"
+                                                                             onclick="openImageModal('{{ Storage::url($evidence['path']) }}', '{{ $evidence['filename'] }}')"
+                                                                             title="Click to view full size">
+                                                                    @elseif(in_array($evidence['mime_type'], ['application/pdf']))
+                                                                        <div class="bg-danger text-white rounded p-2 mb-2">
+                                                                            <i class="bi bi-file-pdf fs-4"></i>
+                                                                        </div>
+                                                                    @elseif(in_array($evidence['mime_type'], ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']))
+                                                                        <div class="bg-primary text-white rounded p-2 mb-2">
+                                                                            <i class="bi bi-file-word fs-4"></i>
+                                                                        </div>
+                                                                    @else
+                                                                        <div class="bg-secondary text-white rounded p-2 mb-2">
+                                                                            <i class="bi bi-file-earmark fs-4"></i>
+                                                                        </div>
+                                                                    @endif
+                                                                    
+                                                                    <div class="evidence-info">
+                                                                        <div class="fw-bold text-truncate mb-2" title="{{ $evidence['filename'] }}">
+                                                                            {{ Str::limit($evidence['filename'], 20) }}
+                                                                        </div>
+                                                                        <div class="small text-muted mb-2">
+                                                                            {{ number_format($evidence['size'] / 1024, 1) }} KB
+                                                                        </div>
+                                                                        <div class="d-flex gap-1 justify-content-center">
+                                                                            <a href="{{ Storage::url($evidence['path']) }}" 
+                                                                               target="_blank" 
+                                                                               class="btn btn-sm btn-outline-primary">
+                                                                                <i class="bi bi-eye"></i> View
+                                                                            </a>
+                                                                            <a href="{{ Storage::url($evidence['path']) }}" 
+                                                                               download="{{ $evidence['filename'] }}"
+                                                                               class="btn btn-sm btn-outline-secondary">
+                                                                                <i class="bi bi-download"></i> Download
+                                                                            </a>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                    
+                                    {{-- Seller Evidence Summary --}}
+                                    <div class="mt-4 p-3 bg-light rounded">
+                                        <h6 class="mb-2">Seller Evidence Summary</h6>
+                                        @php
+                                            $sellerTotalFiles = $sellerEvidenceResponses->sum(function($data) {
+                                                return count($data['evidence']);
+                                            });
+                                            $sellerTotalSize = $sellerEvidenceResponses->sum(function($data) {
+                                                return collect($data['evidence'])->sum('size');
+                                            });
+                                        @endphp
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <strong>Total Files:</strong> {{ $sellerTotalFiles }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Total Size:</strong> {{ number_format($sellerTotalSize / 1024 / 1024, 2) }} MB
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -605,6 +1131,212 @@
                     <p class="mb-0">
                         <strong>Resolved:</strong> {{ $dispute->resolved_at->format('M d, Y \a\t g:i A') }}
                     </p>
+                </div>
+            @endif
+
+            {{-- All Evidence Files Section (Always Visible) --}}
+            @if($dispute->evidence && count($dispute->evidence) > 0)
+                <div class="card mb-4 border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-files"></i> All Evidence Files
+                            <span class="badge bg-light text-dark ms-2">{{ count($dispute->evidence) }} file(s)</span>
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-primary">
+                            <h6 class="alert-heading">Evidence Files Overview</h6>
+                            <p class="mb-0">All evidence files submitted for this dispute. These files are visible to all parties involved.</p>
+                        </div>
+                        
+                        <div class="row g-3">
+                            @foreach($dispute->evidence as $file)
+                                <div class="col-md-4 col-sm-6 col-12">
+                                    <div class="evidence-item border rounded p-3 text-center h-100">
+                                        @if(in_array($file['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
+                                            <img src="{{ Storage::url($file['path']) }}" 
+                                                 alt="{{ $file['filename'] }}" 
+                                                 class="img-fluid rounded mb-2" 
+                                                 style="max-height: 120px; width: 100%; object-fit: cover; cursor: pointer;"
+                                                 onclick="openImageModal('{{ Storage::url($file['path']) }}', '{{ $file['filename'] }}')"
+                                                 title="Click to view full size">
+                                        @elseif(in_array($file['mime_type'], ['application/pdf']))
+                                            <div class="bg-danger text-white rounded p-3 mb-2">
+                                                <i class="bi bi-file-pdf fs-1"></i>
+                                            </div>
+                                        @elseif(in_array($file['mime_type'], ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']))
+                                            <div class="bg-primary text-white rounded p-3 mb-2">
+                                                <i class="bi bi-file-word fs-1"></i>
+                                            </div>
+                                        @else
+                                            <div class="bg-secondary text-white rounded p-3 mb-2">
+                                                <i class="bi bi-file-earmark fs-1"></i>
+                                            </div>
+                                        @endif
+                                        
+                                        <div class="evidence-info">
+                                            <div class="fw-bold text-truncate mb-2" title="{{ $file['filename'] }}">
+                                                {{ Str::limit($file['filename'], 25) }}
+                                            </div>
+                                            <div class="small text-muted mb-2">
+                                                {{ number_format($file['size'] / 1024, 1) }} KB
+                                            </div>
+                                            <div class="small text-primary mb-2">
+                                                <i class="bi bi-upload"></i> Initial Evidence
+                                            </div>
+                                            <div class="d-flex gap-1 justify-content-center">
+                                                <a href="{{ Storage::url($file['path']) }}" 
+                                                   target="_blank" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i> View
+                                                </a>
+                                                <a href="{{ Storage::url($file['path']) }}" 
+                                                   download="{{ $file['filename'] }}"
+                                                   class="btn btn-sm btn-outline-secondary">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        
+                        {{-- Evidence Files Summary --}}
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6 class="mb-2">Evidence Files Summary</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Total Files:</strong> {{ count($dispute->evidence) }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Total Size:</strong> {{ number_format(collect($dispute->evidence)->sum('size') / 1024 / 1024, 2) }} MB
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <strong>File Types:</strong>
+                                @php
+                                    $fileTypes = collect($dispute->evidence)->groupBy('mime_type')->map(function($group) {
+                                        return $group->count() . ' ' . pathinfo($group->first()['filename'], PATHINFO_EXTENSION);
+                                    })->join(', ');
+                                @endphp
+                                {{ $fileTypes }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- All Message Attachments Section -->
+            @php
+                $allAttachments = collect();
+                foreach($allMessages as $message) {
+                    if (isset($message->attachments) && is_array($message->attachments) && count($message->attachments) > 0) {
+                        foreach($message->attachments as $attachment) {
+                            $attachment['message_sender'] = $message->user->name ?? 'Unknown User';
+                            $attachment['message_date'] = $message->created_at;
+                            $attachment['message_content'] = Str::limit($message->message ?? $message->body ?? '', 100);
+                            $allAttachments->push($attachment);
+                        }
+                    }
+                }
+            @endphp
+            
+            @if($allAttachments->isNotEmpty())
+                <div class="card mb-4 border-secondary">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-paperclip"></i> All Message Attachments
+                            <span class="badge bg-light text-dark ms-2">{{ $allAttachments->count() }} file(s)</span>
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-secondary">
+                            <h6 class="alert-heading">Message Attachments Overview</h6>
+                            <p class="mb-0">All files attached to messages in this dispute. These files are visible to all parties involved.</p>
+                        </div>
+                        
+                        <div class="row g-3">
+                            @foreach($allAttachments as $attachment)
+                                <div class="col-md-4 col-sm-6 col-12">
+                                    <div class="evidence-item border rounded p-3 text-center h-100">
+                                        @if(in_array($attachment['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
+                                            <img src="{{ Storage::url($attachment['path']) }}" 
+                                                 alt="{{ $attachment['filename'] }}" 
+                                                 class="img-fluid rounded mb-2" 
+                                                 style="max-height: 120px; width: 100%; object-fit: cover; cursor: pointer;"
+                                                 onclick="openImageModal('{{ Storage::url($attachment['path']) }}', '{{ $attachment['filename'] }}')"
+                                                 title="Click to view full size">
+                                        @elseif(in_array($attachment['mime_type'], ['application/pdf']))
+                                            <div class="bg-danger text-white rounded p-3 mb-2">
+                                                <i class="bi bi-file-pdf fs-1"></i>
+                                            </div>
+                                        @elseif(in_array($attachment['mime_type'], ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']))
+                                            <div class="bg-primary text-white rounded p-3 mb-2">
+                                                <i class="bi bi-file-word fs-1"></i>
+                                            </div>
+                                        @else
+                                            <div class="bg-secondary text-white rounded p-3 mb-2">
+                                                <i class="bi bi-file-earmark fs-1"></i>
+                                            </div>
+                                        @endif
+                                        
+                                        <div class="evidence-info">
+                                            <div class="fw-bold text-truncate mb-2" title="{{ $attachment['filename'] }}">
+                                                {{ Str::limit($attachment['filename'], 25) }}
+                                            </div>
+                                            <div class="small text-muted mb-2">
+                                                {{ number_format($attachment['size'] / 1024, 1) }} KB
+                                            </div>
+                                            <div class="small text-secondary mb-2">
+                                                <i class="bi bi-person"></i> {{ $attachment['message_sender'] }}
+                                            </div>
+                                            <div class="small text-muted mb-2" title="{{ $attachment['message_content'] }}">
+                                                <i class="bi bi-chat"></i> {{ $attachment['message_content'] }}
+                                            </div>
+                                            <div class="small text-muted mb-2">
+                                                <i class="bi bi-clock"></i> {{ $attachment['message_date']->format('M d, Y') }}
+                                            </div>
+                                            <div class="d-flex gap-1 justify-content-center">
+                                                <a href="{{ Storage::url($attachment['path']) }}" 
+                                                   target="_blank" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i> View
+                                                </a>
+                                                <a href="{{ Storage::url($attachment['path']) }}" 
+                                                   download="{{ $attachment['filename'] }}"
+                                                   class="btn btn-sm btn-outline-secondary">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        
+                        {{-- Attachments Summary --}}
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6 class="mb-2">Attachments Summary</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Total Files:</strong> {{ $allAttachments->count() }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Total Size:</strong> {{ number_format($allAttachments->sum('size') / 1024 / 1024, 2) }} MB
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <strong>File Types:</strong>
+                                @php
+                                    $attachmentTypes = $allAttachments->groupBy('mime_type')->map(function($group) {
+                                        return $group->count() . ' ' . pathinfo($group->first()['filename'], PATHINFO_EXTENSION);
+                                    })->join(', ');
+                                @endphp
+                                {{ $attachmentTypes }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             @endif
 
@@ -1028,6 +1760,172 @@
     </div>
 </div>
 
+{{-- Appeal Modal --}}
+<div class="modal fade" id="appealModal" tabindex="-1" aria-labelledby="appealModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="appealModalLabel">
+                    <i class="bi bi-gavel"></i> Submit Appeal
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('disputes.appeal.store', $dispute->id) }}" method="POST" enctype="multipart/form-data" id="appealForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">Appeal Information</h6>
+                        @if($dispute->status === 'resolved')
+                            <p class="mb-0">Please provide a detailed reason for your appeal and any new evidence to support your case.</p>
+                        @elseif($dispute->status === 'under_review')
+                            <p class="mb-0">Please provide a detailed reason for your appeal regarding the admin review process and any new evidence to support your case.</p>
+                        @elseif($dispute->status === 'pending')
+                            <p class="mb-0">Please provide a detailed reason for your appeal regarding the seller's lack of response and any new evidence to support your case.</p>
+                        @endif
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reason_category" class="form-label">Appeal Reason Category *</label>
+                        <select name="reason_category" id="reason_category" class="form-control" required>
+                            <option value="">Select a reason category</option>
+                            @if($dispute->status === 'resolved')
+                                <option value="new_evidence">New Evidence Available</option>
+                                <option value="decision_error">Decision Based on Incorrect Information</option>
+                                <option value="procedural_error">Procedural Error in Review</option>
+                                <option value="other">Other Reasons</option>
+                            @elseif($dispute->status === 'under_review')
+                                <option value="procedural_error">Admin Review Taking Too Long</option>
+                                <option value="new_evidence">New Evidence Available</option>
+                                <option value="review_concerns">Concerns About Review Process</option>
+                                <option value="other">Other Reasons</option>
+                            @elseif($dispute->status === 'pending')
+                                <option value="seller_unresponsive">Seller Not Responding</option>
+                                <option value="urgent_review">Urgent Review Required</option>
+                                <option value="new_evidence">New Evidence Available</option>
+                                <option value="other">Other Reasons</option>
+                            @endif
+                        </select>
+                        <div class="form-text">
+                            Choose the category that best describes your appeal reason.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Appeal Reason *</label>
+                        <textarea name="reason" id="reason" rows="4" class="form-control" 
+                            placeholder="Please explain why you believe the decision should be reconsidered. Provide specific reasons and any new information..." required></textarea>
+                        <div class="form-text">
+                            Be specific about why you disagree with the decision. Provide new evidence or information that wasn't available during the initial review.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="new_evidence" class="form-label">New Evidence *</label>
+                        <input type="file" name="new_evidence[]" id="new_evidence" class="form-control" 
+                            multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" required>
+                        <div class="form-text">
+                            Upload supporting documents, screenshots, or photos for your appeal. 
+                            <strong>Required:</strong> At least 1 file. Max 10MB per file. Total limit: 50MB. Supported: JPG, PNG, PDF, DOC, DOCX
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="evidence_descriptions" class="form-label">Evidence Descriptions (Optional)</label>
+                        <div id="evidence-descriptions-container">
+                            <div class="evidence-description-item mb-2">
+                                <input type="text" name="evidence_descriptions[]" class="form-control" 
+                                    placeholder="Describe what this evidence proves (optional)">
+                            </div>
+                        </div>
+                        <div class="form-text">
+                            Add descriptions for your evidence files to help reviewers understand their relevance.
+                        </div>
+                    </div>
+
+                    @if($dispute->appeal_deadline)
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading">Appeal Deadline</h6>
+                            <p class="mb-0">
+                                You have <strong>{{ $dispute->getAppealDeadlineDaysLeft() }} days</strong> remaining to submit your appeal.
+                                <br>
+                                <small class="text-muted">Deadline: {{ $dispute->appeal_deadline->format('M d, Y \a\t g:i A') }}</small>
+                            </p>
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-gavel"></i> Submit Appeal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Evidence Response Modals --}}
+@if($dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
+    @foreach($dispute->appeal->evidenceRequests as $evidenceRequest)
+        @if($evidenceRequest->status === 'pending' && $evidenceRequest->requested_from === auth()->id())
+            <div class="modal fade" id="evidenceResponseModal-{{ $evidenceRequest->id }}" tabindex="-1" aria-labelledby="evidenceResponseModalLabel-{{ $evidenceRequest->id }}" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="evidenceResponseModalLabel-{{ $evidenceRequest->id }}">
+                                <i class="bi bi-upload"></i> Submit Evidence Response
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form action="{{ route('disputes.disputes.evidence-requests.respond', $evidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <h6 class="alert-heading">Evidence Request Details</h6>
+                                    <p class="mb-0">{{ $evidenceRequest->message }}</p>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="response_notes" class="form-label">Response Notes</label>
+                                    <textarea name="response_notes" id="response_notes" rows="4" class="form-control" 
+                                        placeholder="Please provide any additional context or explanation for your evidence..." required></textarea>
+                                    <div class="form-text">
+                                        Explain how your evidence supports your position in this dispute.
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="submitted_evidence" class="form-label">Evidence Files</label>
+                                    <input type="file" name="submitted_evidence[]" id="submitted_evidence" class="form-control" 
+                                        multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" required>
+                                    <div class="form-text">
+                                        Upload supporting documents, screenshots, or photos. Max 10MB per file. Supported: JPG, PNG, PDF, DOC, DOCX
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-warning">
+                                    <h6 class="alert-heading">Important</h6>
+                                    <p class="mb-0">
+                                        <strong>Deadline:</strong> {{ $evidenceRequest->deadline->format('M d, Y \a\t g:i A') }}
+                                        <br>
+                                        <strong>Time Remaining:</strong> {{ $evidenceRequest->getDeadlineDaysLeft() }} days
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-upload"></i> Submit Evidence Response
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endforeach
+@endif
+
 @push('styles')
 <style>
 .message.buyer-message { 
@@ -1177,6 +2075,21 @@
      background-color: #e9ecef;
      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
  }
+
+/* Evidence Response Item Styling */
+.evidence-response-item {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.evidence-response-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.evidence-response-item .badge {
+    font-size: 0.75rem;
+}
 
 /* Timeline Styling */
 .timeline {
@@ -1386,6 +2299,34 @@ document.addEventListener('DOMContentLoaded', function() {
             openImageModal(src, alt);
         });
     });
+
+    // Evidence descriptions dynamic fields
+    const evidenceInput = document.getElementById('new_evidence');
+    const descriptionsContainer = document.getElementById('evidence-descriptions-container');
+    
+    if (evidenceInput && descriptionsContainer) {
+        evidenceInput.addEventListener('change', function() {
+            const files = this.files;
+            const currentDescriptions = descriptionsContainer.querySelectorAll('.evidence-description-item');
+            
+            // Remove existing description fields
+            currentDescriptions.forEach(item => item.remove());
+            
+            // Add new description fields for each file
+            for (let i = 0; i < files.length; i++) {
+                const descriptionItem = document.createElement('div');
+                descriptionItem.className = 'evidence-description-item mb-2';
+                descriptionItem.innerHTML = `
+                    <div class="input-group">
+                        <span class="input-group-text">${i + 1}</span>
+                        <input type="text" name="evidence_descriptions[]" class="form-control" 
+                            placeholder="Describe what ${files[i].name} proves (optional)">
+                    </div>
+                `;
+                descriptionsContainer.appendChild(descriptionItem);
+            }
+        });
+    }
 });
 
 // Image Modal Function
