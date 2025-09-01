@@ -96,7 +96,7 @@
                     'href'  => route('products.index')
                 ],
                 [
-                    'value' => get_currency().number_format(wallet(),2),
+                    'value' => get_currency().number_format(wallet(),2) . "<small class='text-muted ms-1'>(On Hold: " . get_currency().number_format(wallet('on_hold'),2) . ")</small>",
                     'label' => 'Wallet Balance',
                     'icon'  => 'fas fa-wallet',
                     'class' => 'text-success',

@@ -6,20 +6,59 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductView;
+use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $sellerId = Auth::id();
-        $shopId   = shop_id(); // helper that returns seller’s shop_id
+        $shopId = shop_id(); // helper that returns seller’s shop_id
+
+        $paidStatuses = [
+            Order::STATUS_PROCESSING,
+            Order::STATUS_SHIPPED,
+            Order::STATUS_DELIVERED,
+            Order::STATUS_COMPLETED,
+        ];
+
+        $range = $request->input('range', '6months');
+
+        // Determine date range
+        if ($range === 'custom') {
+            try {
+                $start = $request->filled('start')
+                    ? Carbon::parse($request->input('start'))->startOfDay()
+                    : null;
+                $end = $request->filled('end')
+                    ? Carbon::parse($request->input('end'))->endOfDay()
+                    : null;
+            } catch (\Exception $e) {
+                $start = $end = null;
+            }
+        } else {
+            [$start, $end] = match ($range) {
+                'today'     => [now()->startOfDay(), now()->endOfDay()],
+                'yesterday' => [now()->subDay()->startOfDay(), now()->subDay()->endOfDay()],
+                'week'      => [now()->subWeek()->startOfDay(), now()],
+                '2weeks'    => [now()->subWeeks(2)->startOfDay(), now()],
+                '1month'    => [now()->subMonth()->startOfDay(), now()],
+                '2months'   => [now()->subMonths(2)->startOfDay(), now()],
+                '3months'   => [now()->subMonths(3)->startOfDay(), now()],
+                '6months'   => [now()->subMonths(6)->startOfDay(), now()],
+                default     => [null, null],
+            };
+        }
 
         /* 1. KPIs */
-        $ordersQ = Order::where('user_id', $sellerId)
-                        ->where('status', 'paid');
+        $ordersQ = Order::where('shop_id', $shopId)
+                        ->whereIn('status', $paidStatuses);
+
+        if ($start && $end) {
+            $ordersQ->whereBetween('created_at', [$start, $end]);
+        }
 
         $kpi = (object) [
             'total_sales'     => $ordersQ->sum('total_amount'),
@@ -27,24 +66,35 @@ class AnalyticsController extends Controller
             'avg_order_value' => $ordersQ->avg('total_amount'),
         ];
 
-        /* 2. Monthly revenue (12 mo) */
-        $rawMonthly = $ordersQ->clone()
-            ->selectRaw('DATE_FORMAT(created_at,"%Y-%m") as ym, SUM(total_amount) as revenue')
-            ->groupBy('ym')
-            ->pluck('revenue', 'ym')
-            ->toArray();
+        /* 2. Revenue & orders for chart */
+        $rawPeriod = $ordersQ->clone()
+            ->selectRaw('DATE(created_at) as d, SUM(total_amount) as revenue, COUNT(*) as orders')
+            ->groupBy('d')
+            ->orderBy('d')
+            ->get()
+            ->keyBy('d');
 
-        $monthly = [];
-        foreach (CarbonPeriod::create(now()->subMonths(11)->startOfMonth(), '1 month', now()) as $date) {
-            $ym = $date->format('Y-m');
-            $monthly[$ym] = $rawMonthly[$ym] ?? 0;
+        $periodic = [
+            'labels'  => [],
+            'revenue' => [],
+            'orders'  => [],
+        ];
+
+        if ($start && $end) {
+            foreach (CarbonPeriod::create($start, $end) as $date) {
+                $d = $date->format('Y-m-d');
+                $periodic['labels'][]  = $d;
+                $periodic['revenue'][] = optional($rawPeriod->get($d))->revenue ?? 0;
+                $periodic['orders'][]  = optional($rawPeriod->get($d))->orders ?? 0;
+            }
         }
 
         /* 3. Top-selling products */
         $topProducts = Product::where('products.shop_id', $shopId)
             ->join('order_items', 'order_items.product_id', '=', 'products.id')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->where('orders.status', 'paid')
+            ->whereIn('orders.status', $paidStatuses)
+            ->when($start && $end, fn($q) => $q->whereBetween('orders.created_at', [$start, $end]))
             ->groupBy(
                 'products.id',
                 'products.name',
@@ -71,11 +121,13 @@ class AnalyticsController extends Controller
 
         /* 4. Listing performance (views ➜ sales) */
         $viewsSub = ProductView::whereHas('product', fn($q) => $q->where('products.shop_id', $shopId))
+            ->when($start && $end, fn($q) => $q->whereBetween('product_views.created_at', [$start, $end]))
             ->selectRaw('product_id, COUNT(*) AS views')
             ->groupBy('product_id');
 
-        $salesSub = Order::where('status', 'paid')
-            ->where('user_id', $sellerId)
+        $salesSub = Order::whereIn('status', $paidStatuses)
+            ->where('shop_id', $shopId)
+            ->when($start && $end, fn($q) => $q->whereBetween('orders.created_at', [$start, $end]))
             ->join('order_items', 'orders.id', '=', 'order_items.order_id')
             ->selectRaw('order_items.product_id, SUM(order_items.quantity) AS sales')
             ->groupBy('order_items.product_id');
@@ -99,6 +151,32 @@ class AnalyticsController extends Controller
             ->take(10)
             ->get();
 
-        return view('seller.analytics.index', compact('kpi', 'monthly', 'topProducts', 'performance'));
+        if ($range === 'custom' && $start && $end) {
+            $rangeLabel = $start->format('M j, Y') . ' - ' . $end->format('M j, Y');
+        } else {
+            $rangeLabel = [
+                'today'     => 'Today',
+                'yesterday' => 'Yesterday',
+                'week'      => 'Last 7 Days',
+                '2weeks'    => 'Last 14 Days',
+                '1month'    => 'Last 1 Month',
+                '2months'   => 'Last 2 Months',
+                '3months'   => 'Last 3 Months',
+                '6months'   => 'Last 6 Months',
+                'all'       => 'All Time',
+            ][$range] ?? 'All Time';
+        }
+
+        return view('seller.analytics.index', [
+            'kpi'        => $kpi,
+            'chart'      => $periodic,
+            'topProducts'=> $topProducts,
+            'performance'=> $performance,
+            'range'      => $range,
+            'rangeLabel' => $rangeLabel,
+            'startDate'  => $start ? $start->toDateString() : null,
+            'endDate'    => $end ? $end->toDateString() : null,
+        ]);
     }
 }
+

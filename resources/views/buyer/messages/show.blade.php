@@ -30,7 +30,7 @@
                             @endif
                             <div class="flex-grow-1">
                                 <h6 class="mb-1">{{ $product->name }}</h6>
-                                <p class="text-muted mb-0 small">{{ $product->description ? \Illuminate\Support\Str::limit($product->description, 100) : 'No description available' }}</p>
+                                <p class="text-muted mb-0 small">{!! $product->description ? \Illuminate\Support\Str::limit($product->description, 100) : 'No description available' !!}</p>
                             </div>
                             <div class="text-end">
                                 <span class="badge bg-primary">{{ $product->price_formatted }}</span>
@@ -66,7 +66,7 @@
                                 <div class="d-inline-block p-3 rounded {{ $message->sender_id == auth()->id() ? 'bg-success text-white' : 'bg-light' }}" 
                                      style="max-width: 75%;">
                                     <div class="d-flex align-items-center mb-1">
-                                        <strong class="me-2">{{ $message->sender->shop->name ?? 'Unknown' }}</strong>
+                                        <strong class="me-2">{{ $message->sender->shop->name ?? $message->sender->name }}</strong>
                                         <small class="{{ $message->sender_id == auth()->id() ? 'text-white-50' : 'text-muted' }}">
                                             {{ $message->created_at->format('M d, H:i') }}
                                         </small>

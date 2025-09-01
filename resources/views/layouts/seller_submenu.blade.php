@@ -1,9 +1,8 @@
 {{-- resources/views/partials/seller_sidebar.blade.php --}}
 @php
     $currentUrl     = url()->current();
-    $walletBalance  = \App\Models\Wallet::where('user_id', Auth::id())
-                         ->selectRaw('SUM(credit - debit) as balance')
-                         ->value('balance') ?? 0;
+    $walletBalance  = wallet();
+    $walletHold     = wallet('on_hold');
     $formatMoney    = fn($amt) => number_format($amt,2);
     $shop           = Auth::user()->shop;
     $productIds     = $shop?->products()->pluck('id')->toArray() ?? [];
@@ -52,6 +51,9 @@
           <div>
             <small class="text-muted">Balance</small>
             <h5 class="mb-0">${{ $formatMoney($walletBalance) }}</h5>
+            @if($walletHold > 0)
+              <div class="small text-muted">On Hold: ${{ $formatMoney($walletHold) }}</div>
+            @endif
           </div>
         </div>
       </a>

@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Carbon\Carbon;
 
 class Appeal extends Model
@@ -25,8 +27,10 @@ class Appeal extends Model
     // Status constants
     const STATUS_PENDING = 'pending';
     const STATUS_UNDER_REVIEW = 'under_review';
+    const STATUS_EVIDENCE_REQUESTED = 'evidence_requested';
     const STATUS_APPROVED = 'approved';
     const STATUS_REJECTED = 'rejected';
+    const STATUS_CLOSED = 'closed';
 
     // Decision constants
     const DECISION_APPROVED = 'approved';
@@ -46,6 +50,21 @@ class Appeal extends Model
     public function reviewedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function evidenceRequests(): HasMany
+    {
+        return $this->hasMany(EvidenceRequest::class);
+    }
+
+    public function buyerEvidenceRequest(): HasOne
+    {
+        return $this->hasOne(EvidenceRequest::class)->where('party_type', 'buyer');
+    }
+
+    public function sellerEvidenceRequest(): HasOne
+    {
+        return $this->hasOne(EvidenceRequest::class)->where('party_type', 'seller');
     }
 
     // Scopes
@@ -69,6 +88,11 @@ class Appeal extends Model
         return $query->where('status', self::STATUS_REJECTED);
     }
 
+    public function scopeClosed($query)
+    {
+        return $query->where('status', self::STATUS_CLOSED);
+    }
+
     // Methods
     public function isPending(): bool
     {
@@ -90,13 +114,20 @@ class Appeal extends Model
         return $this->status === self::STATUS_REJECTED;
     }
 
+    public function isClosed(): bool
+    {
+        return $this->status === self::STATUS_CLOSED;
+    }
+
     public function getStatusBadgeClass(): string
     {
         return match($this->status) {
             self::STATUS_PENDING => 'badge-warning',
             self::STATUS_UNDER_REVIEW => 'badge-info',
+            self::STATUS_EVIDENCE_REQUESTED => 'badge-info',
             self::STATUS_APPROVED => 'badge-success',
             self::STATUS_REJECTED => 'badge-danger',
+            self::STATUS_CLOSED => 'badge-secondary',
             default => 'badge-light'
         };
     }

@@ -26,7 +26,7 @@
         'url'   => route('admin.kyc.index'),
         'icon'  => 'fas fa-id-card',
       ],
-            [
+      [
         'label' => 'Categories',
         'url'   => route('admin.categories.index'),
         'icon'  => 'fas fa-cogs',
@@ -62,9 +62,15 @@
         'icon'  => 'fas fa-star',
       ],
       [
-        'label' => 'Notifications',
-        'url'   => route('admin.notifications.index'),
-        'icon' => 'fas fa-bell',      ],
+        'label' => 'Disputes',
+        'url'   => route('admin.admin-disputes.index'),
+        'icon'  => 'fas fa-gavel',
+      ],
+      [
+        'label' => 'Appeals',
+        'url'   => route('admin.appeals.index'),
+        'icon'  => 'fas fa-balance-scale',
+      ],
     ];
   @endphp
 

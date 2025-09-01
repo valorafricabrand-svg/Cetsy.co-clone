@@ -18,6 +18,7 @@ class OrderCancellationTest extends TestCase
         $this->artisan('migrate', ['--path' => 'database/migrations/0001_01_01_000000_create_users_table.php']);
         $this->artisan('migrate', ['--path' => 'database/migrations/2025_05_17_111021_create_shops_table.php']);
         $this->artisan('migrate', ['--path' => 'database/migrations/2025_06_09_060633_create_wallets_table.php']);
+        $this->artisan('migrate', ['--path' => 'database/migrations/2025_08_22_000000_add_status_to_wallets_table.php']);
 
         Schema::create('shipping_profiles', function ($table) {
             $table->id();

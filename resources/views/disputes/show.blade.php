@@ -281,6 +281,333 @@
                 </div>
             </div>
 
+            {{-- General Appeal Section --}}
+            @if($dispute->canBeAppealed() && (auth()->id() === $dispute->buyer_id || auth()->id() === $dispute->seller_id))
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="bi bi-gavel"></i> Need Support Team Intervention?
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-2">If you need assistance from our support team, you can submit an appeal at any time.</p>
+                                <small class="text-muted">This will allow our support team to review your case and provide assistance.</small>
+                            </div>
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#appealModal">
+                                <i class="bi bi-gavel"></i> Appeal to Support Team
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Appeal Progress Section (Binance-style) --}}
+            @if($dispute->appeal)
+                <div class="card mb-4 border-info">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-balance-scale"></i> Appeal Progress
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Appeal Status</h6>
+                                <p><strong>Status:</strong> 
+                                    <span class="badge bg-{{ $dispute->appeal->status === 'pending' ? 'warning' : ($dispute->appeal->status === 'evidence_requested' ? 'info' : ($dispute->appeal->status === 'approved' ? 'success' : 'danger')) }}">
+                                        {{ ucfirst(str_replace('_', ' ', $dispute->appeal->status)) }}
+                                    </span>
+                                </p>
+                                <p><strong>Appealed By:</strong> {{ $dispute->appeal->appealedBy->name }}</p>
+                                <p><strong>Appealed At:</strong> {{ $dispute->appeal->created_at->format('M d, Y \a\t g:i A') }}</p>
+                                <p><strong>Reason:</strong> {{ $dispute->appeal->reason }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Evidence Requests</h6>
+                                @if($dispute->appeal->status === 'evidence_requested')
+                                    @php
+                                        $userEvidenceRequest = null;
+                                        if (auth()->id() === $dispute->buyer_id) {
+                                            $userEvidenceRequest = $dispute->appeal->buyerEvidenceRequest;
+                                        } elseif (auth()->id() === $dispute->seller_id) {
+                                            $userEvidenceRequest = $dispute->appeal->sellerEvidenceRequest;
+                                        }
+                                    @endphp
+                                    
+                                    {{-- Debug Information --}}
+                                    
+                                    
+                                    @if($userEvidenceRequest)
+                                        <div class="alert alert-{{ $userEvidenceRequest->status === 'submitted' ? 'success' : 'warning' }}">
+                                            <h6 class="alert-heading">
+                                                @if($userEvidenceRequest->status === 'submitted')
+                                                    <i class="bi bi-check-circle"></i> Evidence Submitted
+                                                @else
+                                                    <i class="bi bi-clock"></i> Evidence Required
+                                                @endif
+                                            </h6>
+                                            
+                                            @if($userEvidenceRequest->status === 'pending')
+                                                <p class="mb-2"><strong>Deadline:</strong> {{ $userEvidenceRequest->deadline->format('M d, Y \a\t g:i A') }}</p>
+                                                <p class="mb-2"><strong>Days Left:</strong> {{ $userEvidenceRequest->getDaysUntilDeadline() }}</p>
+                                                <p class="mb-3">{{ $userEvidenceRequest->request_message }}</p>
+                                                
+                                                <div class="d-grid">
+                                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#submitEvidenceModal">
+                                                        <i class="bi bi-upload"></i> Submit Evidence
+                                                    </button>
+                                                </div>
+                                            @elseif($userEvidenceRequest->status === 'submitted')
+                                                <p class="mb-2"><strong>Submitted:</strong> {{ $userEvidenceRequest->submitted_at->format('M d, Y \a\t g:i A') }}</p>
+                                                <p class="mb-2"><strong>Description:</strong> {{ $userEvidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
+                                                
+                                                <div class="d-grid">
+                                                    <a href="{{ route('evidence-requests.show', $userEvidenceRequest->id) }}" class="btn btn-outline-success">
+                                                        <i class="bi bi-eye"></i> View Submitted Evidence
+                                                    </a>
+                                                </div>
+                                            @else
+                                                {{-- Show submit button for any status that's not submitted --}}
+                                                <p class="mb-2"><strong>Deadline:</strong> {{ $userEvidenceRequest->deadline->format('M d, Y \a\t g:i A') }}</p>
+                                                <p class="mb-2"><strong>Days Left:</strong> {{ $userEvidenceRequest->getDaysUntilDeadline() }}</p>
+                                                <p class="mb-3">{{ $userEvidenceRequest->request_message }}</p>
+                                                <p class="mb-3 text-muted"><strong>Current Status:</strong> {{ ucfirst($userEvidenceRequest->status) }}</p>
+                                                
+                                                <div class="d-grid">
+                                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#submitEvidenceModal">
+                                                        <i class="bi bi-upload"></i> Submit Evidence
+                                                    </button>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endif
+                                    
+                                    <!-- Show both parties' evidence status -->
+                                    <div class="mt-3">
+                                        <h6>Both Parties Evidence Status</h6>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <div class="evidence-status-card border rounded p-2 text-center">
+                                                    <strong>Buyer</strong>
+                                                    @if($dispute->appeal->buyerEvidenceRequest)
+                                                        <div class="mt-1">
+                                                            <span class="badge bg-{{ $dispute->appeal->buyerEvidenceRequest->getStatusBadgeClass() }}">
+                                                                {{ ucfirst($dispute->appeal->buyerEvidenceRequest->status) }}
+                                                            </span>
+                                                        </div>
+                                                        @if($dispute->appeal->buyerEvidenceRequest->status === 'submitted')
+                                                            <small class="text-muted d-block mt-1">
+                                                                Submitted: {{ $dispute->appeal->buyerEvidenceRequest->submitted_at->format('M d, g:i A') }}
+                                                            </small>
+                                                        @endif
+                                                    @else
+                                                        <div class="mt-1">
+                                                            <span class="badge bg-secondary">Pending</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="evidence-status-card border rounded p-2 text-center">
+                                                    <strong>Seller</strong>
+                                                    @if($dispute->appeal->sellerEvidenceRequest)
+                                                        <div class="mt-1">
+                                                            <span class="badge bg-{{ $dispute->appeal->sellerEvidenceRequest->getStatusBadgeClass() }}">
+                                                                {{ ucfirst($dispute->appeal->sellerEvidenceRequest->status) }}
+                                                            </span>
+                                                        </div>
+                                                        @if($dispute->appeal->sellerEvidenceRequest->status === 'submitted')
+                                                            <small class="text-muted d-block mt-1">
+                                                                Submitted: {{ $dispute->appeal->sellerEvidenceRequest->submitted_at->format('M d, g:i A') }}
+                                                            </small>
+                                                        @endif
+                                                    @else
+                                                        <div class="mt-1">
+                                                            <span class="badge bg-secondary">Pending</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- View All Evidence Button -->
+                                        @if(($dispute->appeal->buyerEvidenceRequest && $dispute->appeal->buyerEvidenceRequest->status === 'submitted') || 
+                                             ($dispute->appeal->sellerEvidenceRequest && $dispute->appeal->sellerEvidenceRequest->status === 'submitted'))
+                                            <div class="mt-3 text-center">
+                                                <a href="{{ route('evidence-requests.show', $userEvidenceRequest ? $userEvidenceRequest->id : $dispute->appeal->buyerEvidenceRequest->id) }}" 
+                                                   class="btn btn-outline-info btn-sm">
+                                                    <i class="bi bi-eye"></i> View All Evidence & Progress
+                                                </a>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @else
+                                    <p class="text-muted">Evidence requests will appear here when the support team requests them.</p>
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <!-- Appeal Timeline -->
+                        <div class="mt-4">
+                            <h6>Appeal Timeline</h6>
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-primary"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="timeline-title">Appeal Submitted</h6>
+                                        <p class="timeline-text">{{ $dispute->appeal->created_at->format('M d, Y \a\t g:i A') }}</p>
+                                        <p class="timeline-text">{{ $dispute->appeal->appealedBy->name }} submitted an appeal</p>
+                                    </div>
+                                </div>
+
+                                @if($dispute->appeal->status === 'evidence_requested')
+                                    <div class="timeline-item">
+                                        <div class="timeline-marker bg-warning"></div>
+                                        <div class="timeline-content">
+                                            <h6 class="timeline-title">Evidence Requested</h6>
+                                            <p class="timeline-text">Cetsy support team requested evidence from both parties</p>
+                                            @if($dispute->appeal->buyerEvidenceRequest)
+                                                <p class="timeline-text">Deadline: {{ $dispute->appeal->buyerEvidenceRequest->deadline->format('M d, Y \a\t g:i A') }}</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if($dispute->appeal->status === 'approved' || $dispute->appeal->status === 'rejected')
+                                    <div class="timeline-item">
+                                        <div class="timeline-marker bg-{{ $dispute->appeal->status === 'approved' ? 'success' : 'danger' }}"></div>
+                                        <div class="timeline-content">
+                                            <h6 class="timeline-title">Appeal {{ ucfirst($dispute->appeal->status) }}</h6>
+                                            <p class="timeline-text">{{ $dispute->appeal->reviewed_at->format('M d, Y \a\t g:i A') }}</p>
+                                            @if($dispute->appeal->review_notes)
+                                                <p class="timeline-text">{{ $dispute->appeal->review_notes }}</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Mutual Resolution Section --}}
+            @if($dispute->canBeMutuallyResolved())
+                <div class="card mb-4 border-success">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-handshake"></i> Mutual Resolution
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        @if($dispute->mutual_resolution_terms)
+                            {{-- Show existing mutual resolution proposal --}}
+                            <div class="alert alert-info mb-3">
+                                <h6 class="alert-heading">Proposed Resolution Terms</h6>
+                                <p class="mb-2">{{ $dispute->mutual_resolution_terms }}</p>
+                                <small class="text-muted">
+                                    Proposed by: {{ $dispute->buyer_agreed_at && !$dispute->seller_agreed_at ? $dispute->buyer->name : $dispute->seller->name }}
+                                </small>
+                            </div>
+
+                            {{-- Show agreement status --}}
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-person-circle me-2"></i>
+                                        <span>Buyer ({{ $dispute->buyer->name }})</span>
+                                        @if($dispute->buyer_agreed_at)
+                                            <span class="badge bg-success ms-2">
+                                                <i class="bi bi-check-circle"></i> Agreed
+                                            </span>
+                                        @else
+                                            <span class="badge bg-warning ms-2">
+                                                <i class="bi bi-clock"></i> Pending
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-shop me-2"></i>
+                                        <span>Seller ({{ $dispute->seller->name }})</span>
+                                        @if($dispute->seller_agreed_at)
+                                            <span class="badge bg-success ms-2">
+                                                <i class="bi bi-check-circle"></i> Agreed
+                                            </span>
+                                        @else
+                                            <span class="badge bg-warning ms-2">
+                                                <i class="bi bi-clock"></i> Pending
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Agree button for the party who hasn't agreed yet --}}
+                            @if(($dispute->buyer_id === auth()->id() && !$dispute->buyer_agreed_at) || 
+                                 ($dispute->seller_id === auth()->id() && !$dispute->seller_agreed_at))
+                                <form action="{{ route('disputes.mutual-resolution.agree', $dispute->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-check-circle"></i> I Agree to These Terms
+                                    </button>
+                                </form>
+                            @endif
+
+                            @if($dispute->buyer_agreed_at && $dispute->seller_agreed_at)
+                                <div class="alert alert-success">
+                                    <i class="bi bi-check-circle"></i>
+                                    <strong>Both parties have agreed!</strong> This dispute will be automatically resolved.
+                                </div>
+                            @else
+                                {{-- Appeal Button for Mutual Resolution Failure --}}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Mutual Resolution Pending</strong>
+                                    <p class="mb-0 mt-2">Waiting for both parties to agree on the proposed terms.</p>
+                                </div>
+                            @endif
+                        @else
+                            {{-- Show form to propose mutual resolution --}}
+                            <p class="text-muted mb-3">
+                                If you and the other party have reached an agreement, you can propose mutual resolution terms here.
+                            </p>
+                            
+                            <form action="{{ route('disputes.mutual-resolution.initiate', $dispute->id) }}" method="POST">
+                                @csrf
+                                <div class="mb-3">
+                                    <label for="terms" class="form-label">Resolution Terms</label>
+                                    <textarea name="terms" id="terms" rows="3" class="form-control" 
+                                        placeholder="Describe the agreed resolution terms..." required></textarea>
+                                    <div class="form-text">
+                                        Clearly state what both parties have agreed to resolve this dispute.
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-handshake"></i> Propose Mutual Resolution
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
+            {{-- Show mutual resolution status if already resolved --}}
+            @if($dispute->isMutuallyResolved())
+                <div class="alert alert-success mb-4">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-handshake"></i> Mutually Resolved
+                    </h6>
+                    <p class="mb-2"><strong>Agreed Terms:</strong> {{ $dispute->mutual_resolution_terms }}</p>
+                    <p class="mb-0">
+                        <strong>Resolved:</strong> {{ $dispute->resolved_at->format('M d, Y \a\t g:i A') }}
+                    </p>
+                </div>
+            @endif
+
             <!-- Unified Messages Section -->
             <div class="card">
                 <div class="card-header">
@@ -635,6 +962,36 @@
                             </div>
                         @endif
 
+                        @if($dispute->mutual_resolution_terms)
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Mutual Resolution Proposed</h6>
+                                    <small class="text-muted">Terms: {{ Str::limit($dispute->mutual_resolution_terms, 50) }}</small>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($dispute->buyer_agreed_at)
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Buyer Agreed</h6>
+                                    <small class="text-muted">{{ $dispute->buyer_agreed_at->format('M d, Y g:i A') }}</small>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($dispute->seller_agreed_at)
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Seller Agreed</h6>
+                                    <small class="text-muted">{{ $dispute->seller_agreed_at->format('M d, Y g:i A') }}</small>
+                                </div>
+                            </div>
+                        @endif
+
                         @if($dispute->isResolved())
                             <div class="timeline-item">
                                 <div class="timeline-marker bg-success"></div>
@@ -802,10 +1159,24 @@
     transition: all 0.3s ease;
 }
 
-.evidence-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
+ .evidence-item:hover {
+     transform: translateY(-2px);
+     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+ }
+
+ .evidence-status-card {
+     background-color: #f8f9fa;
+     transition: all 0.3s ease;
+     min-height: 80px;
+     display: flex;
+     flex-direction: column;
+     justify-content: center;
+ }
+
+ .evidence-status-card:hover {
+     background-color: #e9ecef;
+     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+ }
 
 /* Timeline Styling */
 .timeline {
@@ -1092,6 +1463,176 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// Evidence submission form handling
+document.addEventListener('DOMContentLoaded', function() {
+    const evidenceForm = document.getElementById('submitEvidenceModal')?.querySelector('form');
+    if (evidenceForm) {
+        evidenceForm.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting...';
+            submitBtn.disabled = true;
+            
+            // Re-enable button after a delay (in case of errors)
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 10000);
+        });
+    }
+});
 </script>
 @endpush
+
+{{-- Appeal Modal --}}
+@if($dispute->canBeAppealed() && (auth()->id() === $dispute->buyer_id || auth()->id() === $dispute->seller_id))
+<div class="modal fade" id="appealModal" tabindex="-1" aria-labelledby="appealModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="appealModalLabel">
+                    <i class="bi bi-gavel"></i> Appeal to Support Team
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('disputes.appeal.store', $dispute->id) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Appeal Process:</strong> You can appeal to our support team for intervention at any time. Please provide a clear reason and supporting evidence for your appeal.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Appeal Reason <span class="text-danger">*</span></label>
+                        <textarea name="reason" id="reason" rows="4" class="form-control" 
+                            placeholder="Please explain why you need support team intervention and what you hope to achieve..." required></textarea>
+                        <div class="form-text">
+                            Clearly state your reasons for appealing and what you hope to achieve.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="new_evidence" class="form-label">Supporting Evidence</label>
+                        <input type="file" name="new_evidence[]" id="new_evidence" class="form-control" 
+                            multiple accept="image/*,.pdf,.doc,.docx">
+                        <div class="form-text">
+                            Upload screenshots, documents, or any other evidence to support your appeal. (Max 5 files, 5MB each)
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-gavel"></i> Submit Appeal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- Evidence Submission Modal --}}
+@if($dispute->appeal && $dispute->appeal->status === 'evidence_requested')
+    @php
+        $userEvidenceRequest = null;
+        if (auth()->id() === $dispute->buyer_id) {
+            $userEvidenceRequest = $dispute->appeal->buyerEvidenceRequest;
+        } elseif (auth()->id() === $dispute->seller_id) {
+            $userEvidenceRequest = $dispute->appeal->sellerEvidenceRequest;
+        }
+    @endphp
+    
+    @if($userEvidenceRequest && $userEvidenceRequest->status !== 'submitted')
+        <div class="modal fade" id="submitEvidenceModal" tabindex="-1" aria-labelledby="submitEvidenceModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="submitEvidenceModalLabel">
+                            <i class="bi bi-upload"></i> Submit Evidence
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ route('evidence-requests.submit', $userEvidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Evidence Request:</strong> {{ $userEvidenceRequest->request_message }}
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h6>Required Evidence Types</h6>
+                                    @foreach($userEvidenceRequest->getRequiredEvidenceTypesList() as $evidenceType)
+                                        <span class="badge bg-primary me-2 mb-2">{{ $evidenceType }}</span>
+                                    @endforeach
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Deadline Information</h6>
+                                    <p class="mb-1"><strong>Deadline:</strong> {{ $userEvidenceRequest->deadline->format('M d, Y \a\t g:i A') }}</p>
+                                    <p class="mb-0">
+                                        <span class="text-{{ $userEvidenceRequest->getDaysUntilDeadline() <= 3 ? 'warning' : 'success' }}">
+                                            {{ $userEvidenceRequest->getDaysUntilDeadline() }} days remaining
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="evidence_description" class="form-label">Evidence Description <span class="text-danger">*</span></label>
+                                <textarea name="evidence_description" id="evidence_description" rows="4" class="form-control @error('evidence_description') is-invalid @enderror" 
+                                    placeholder="Please describe the evidence you are submitting and how it supports your case..." required>{{ old('evidence_description') }}</textarea>
+                                @error('evidence_description')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">
+                                    Provide a clear description of your evidence and how it relates to the dispute.
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="evidence_files" class="form-label">Evidence Files <span class="text-danger">*</span></label>
+                                <input type="file" name="evidence_files[]" id="evidence_files" class="form-control @error('evidence_files.*') is-invalid @enderror" 
+                                    multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.mp4,.mov" required>
+                                @error('evidence_files.*')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">
+                                    <strong>Accepted formats:</strong> Images (JPG, PNG), Documents (PDF, DOC, DOCX), Videos (MP4, MOV)<br>
+                                    <strong>Maximum file size:</strong> 50MB per file<br>
+                                    <strong>Multiple files:</strong> You can select multiple files at once
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="additional_notes" class="form-label">Additional Notes</label>
+                                <textarea name="additional_notes" id="additional_notes" rows="3" class="form-control @error('additional_notes') is-invalid @enderror" 
+                                    placeholder="Any additional information or context you'd like to provide...">{{ old('additional_notes') }}</textarea>
+                                @error('additional_notes')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Important:</strong> Once you submit evidence, you cannot modify it. Please ensure all files are correct before submission.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload"></i> Submit Evidence
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+@endif
 @endsection

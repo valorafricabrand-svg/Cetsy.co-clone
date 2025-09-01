@@ -39,14 +39,27 @@
 
             {{-- Summary Card --}}
             <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="card shadow-sm border-0">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <div class="card shadow-sm border-0 h-100">
                         <div class="card-body d-flex align-items-center">
                             <i class="fas fa-wallet fa-2x text-success me-3"></i>
                             <div>
                                 <div class="text-muted small">Available Balance</div>
                                 <div class="fs-4 fw-bold">
                                     USD {{ number_format($balance, 2) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body d-flex align-items-center">
+                            <i class="fas fa-pause-circle fa-2x text-warning me-3"></i>
+                            <div>
+                                <div class="text-muted small">On Hold</div>
+                                <div class="fs-4 fw-bold">
+                                    USD {{ number_format($onHold, 2) }}
                                 </div>
                             </div>
                         </div>
@@ -151,6 +164,7 @@
                         <tr>
                             <th>Date</th>
                             <th>Description</th>
+                            <th>Status</th>
                             <th class="text-end">Credit (USD)</th>
                             <th class="text-end">Debit (USD)</th>
                         </tr>
@@ -160,13 +174,14 @@
                             <tr>
                                 <td>{{ $transaction->created_at->format('d M Y, h:i A') }}</td>
                                 <td>{{ $transaction->description ?? 'Transaction' }}</td>
+                                <td>{{ ucfirst(str_replace('_',' ', $transaction->status ?? 'completed')) }}</td>
                                 <td class="text-end text-success">
                                     {{ $transaction->credit > 0 ? number_format($transaction->credit, 2) : '-' }}
                                 </td>
                                 <td class="text-end text-danger">
                                     {{ $transaction->debit > 0 ? number_format($transaction->debit, 2) : '-' }}
                                 </td>
-                                
+
                             </tr>
                         @empty
                             <tr>

@@ -112,24 +112,53 @@
 <!-- ===================================== -->
 <!-- Hero Section -->
 <!-- ===================================== -->
-<section id="hero" class="py-6 position-relative overflow-hidden bg-light bg-gradient">
+<section id="hero" class="hero-compact py-4 py-lg-5 position-relative overflow-hidden bg-light bg-gradient">
+  <style>
+    /* Compact hero spacing */
+    #hero.hero-compact { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+    @media (min-width: 992px) {
+      #hero.hero-compact { padding-top: 2rem; padding-bottom: 2rem; }
+    }
+
+    /* Illustration: limit overall size & height */
+    .hero-img {
+      width: 100%;
+      height: auto;
+      max-width: 460px;   /* cap width on large screens */
+      max-height: 320px;  /* cap height on large screens */
+    }
+    @media (max-width: 991.98px) {
+      .hero-img {
+        max-width: 360px;   /* smaller on tablets/phones */
+        max-height: 260px;  /* shorter on tablets/phones */
+      }
+    }
+
+    /* Tighten vertical spacing inside hero */
+    #hero .display-4 { margin-bottom: .5rem !important; }
+    #hero .lead { margin-bottom: 1rem !important; }
+    #hero .cta-group { gap: .75rem !important; margin-bottom: 1rem !important; }
+    #hero .trust-badges { gap: 1rem !important; }
+  </style>
+
   <!-- Floating bubbles -->
   <span class="hero-bubble bubble-1"></span>
   <span class="hero-bubble bubble-2"></span>
   <span class="hero-bubble bubble-3"></span>
 
   <div class="container position-relative">
-    <div class="row align-items-center g-5">
+    <div class="row align-items-center g-4">
       <!-- Hero Text -->
       <div class="col-lg-6 text-center text-lg-start reveal">
-        <h1 class="display-4 fw-bold text-success mb-3">
+        <h1 class="display-4 fw-bold text-success mb-2">
           Cetsy — Your Global Marketplace
         </h1>
 
-        <p class="lead text-muted mb-4" style="max-width: 520px;">
+        <p class="lead text-muted" style="max-width: 520px;">
           Your global marketplace where you’ll find almost anything—from anyone, anywhere.
         </p>
-        <div class="d-flex justify-content-center justify-content-lg-start gap-3 mb-4">
+
+        <div class="cta-group d-flex justify-content-center justify-content-lg-start gap-3">
           <a href="{{ route('listings') }}" class="btn btn-success btn-lg btn-pill shadow px-4">
             <i class="fas fa-shopping-bag me-2"></i> Shop Now
           </a>
@@ -137,12 +166,13 @@
             <i class="fas fa-info-circle me-2"></i> Learn More
           </a>
         </div>
-        <div class="d-flex flex-wrap gap-4 align-items-center justify-content-center justify-content-lg-start small text-secondary">
-          <div class="d-flex align-items-center">
+
+        <div class="trust-badges d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start small text-secondary">
+          <div class="d-flex align-items-center me-3 mb-2">
             <i class="fas fa-shield-alt fs-5 me-2 text-success"></i>
             <span>Secure &amp; Trusted</span>
           </div>
-          <div class="d-flex align-items-center">
+          <div class="d-flex align-items-center mb-2">
             <i class="fas fa-cogs fs-5 me-2 text-success"></i>
             <span>Custom Orders Available</span>
           </div>
@@ -151,12 +181,15 @@
 
       <!-- Hero Image -->
       <div class="col-lg-6 text-center reveal reveal-delay-2">
-        <img src="{{ asset('assets/images/illustrator.webp') }}" alt="World map with shopping icons"
-             class="img-fluid rounded shadow" style="max-width: 600px;">
+        <img
+          src="{{ asset('assets/images/illustrator.webp') }}"
+          alt="World map with shopping icons"
+          class="img-fluid hero-img rounded shadow">
       </div>
     </div>
   </div>
 </section>
+
 
 <!-- ===================================== -->
 <!-- Mini Feature Band (target for Learn More) -->
@@ -246,9 +279,10 @@
 
     @if($featuredProducts->count() > 0)
       <div class="text-center mt-4 reveal reveal-delay-2">
-        <a href="{{ route('listings') }}" class="btn btn-success btn-lg btn-pill px-4">
-          <i class="fas fa-list-ul me-2"></i> View All Listings
-        </a>
+       <a href="{{ route('listings', ['type' => 'physical']) }}" class="btn btn-success btn-lg btn-pill px-4">
+  <i class="fas fa-list-ul me-2"></i> View All Products
+</a>
+
       </div>
     @endif
   </div>
@@ -277,7 +311,7 @@
 
     @if($services->count() > 0)
       <div class="text-center mt-4 reveal reveal-delay-2">
-        <a href="{{ route('listings') }}" class="btn btn-success btn-lg btn-pill px-4">
+        <a href="{{ route('listings', ['type' => 'service']) }}" class="btn btn-success btn-lg btn-pill px-4">
           <i class="fas fa-briefcase me-2"></i> View All Services
         </a>
       </div>
@@ -311,7 +345,7 @@
 
     @if($featuredDigitals->count() > 0)
       <div class="text-center mt-4 reveal reveal-delay-2">
-        <a href="{{ route('listings') }}" class="btn btn-success btn-lg btn-pill px-4">
+        <a href="{{ route('listings', ['type' => 'digital']) }}" class="btn btn-success btn-lg btn-pill px-4">
           <i class="fas fa-cloud-download-alt me-2"></i> View All Digital Downloads
         </a>
       </div>

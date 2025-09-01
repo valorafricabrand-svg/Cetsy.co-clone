@@ -1,8 +1,11 @@
 {{-- resources/views/theme/{{ theme() }}/partials/_details.blade.php --}}
 @php
-  $currency    = get_currency();
-  $basePrice   = (float) ($product->price ?? 0);
-  $salePrice   = (float) ($product->discounted_price ?? $basePrice);
+  $currency        = get_currency();
+  $basePrice       = (float) ($product->price ?? 0);
+  $salePrice       = apply_discount($basePrice, $product->id);
+  $discountPercent = $salePrice < $basePrice && $basePrice > 0
+      ? round((1 - $salePrice / $basePrice) * 100)
+      : 0;
 
   // Ensure variations+options are available
   $product->loadMissing('variations.options', 'variationTypes.options', 'shop', 'category', 'country');
@@ -16,7 +19,7 @@
           $key = $ids->implode('-');
           $variantIndex[$key] = [
               'id'      => (int) $v->id,
-              'price'   => (float) $v->price,
+              'price'   => (float) apply_discount($v->price, $product->id),
               'options' => $ids->toArray(),
           ];
       }
@@ -68,6 +71,9 @@
         <span id="js-from-label" class="me-1 small text-muted">From</span>
         <span id="js-price-amount">{{ $currency }} {{ $format($defaultDisplayPrice) }}</span>
       </span>
+      @if ($discountPercent > 0)
+        <span class="badge bg-danger bg-opacity-10 text-danger">-{{ $discountPercent }}%</span>
+      @endif
     </div>
   @else
     {{-- No priced variants: show product pricing (with discount style if applicable) --}}
@@ -80,6 +86,9 @@
         <span class="fw-bold text-success">
           <span id="js-price-amount">{{ $currency }} {{ $format($salePrice) }}</span>
         </span>
+        @if ($discountPercent > 0)
+          <span class="badge bg-danger bg-opacity-10 text-danger">-{{ $discountPercent }}%</span>
+        @endif
         <span class="text-muted text-decoration-line-through">
           {{ $currency }} {{ $format($basePrice) }}
         </span>
