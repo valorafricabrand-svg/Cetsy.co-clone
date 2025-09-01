@@ -4,10 +4,7 @@
 
 @section('styles')
 <style>
-    .payment-toggle {
-        margin-bottom: 1.25rem;
-        text-align: center;
-    }
+    .payment-toggle { margin-bottom: 1.25rem; text-align: center; }
     .payment-toggle .btn { min-width: 180px; }
     .payment-toggle .btn:not(:last-child) { margin-right: .5rem; }
     .d-none { display: none !important; }
@@ -68,8 +65,8 @@
                         <div class="row g-3">
                             <div class="col-md-7">
                                 <label for="mpesa_phone" class="form-label">M-Pesa Phone (Safaricom)</label>
-                                <input type="text" id="mpesa_phone" class="form-control" placeholder="e.g. 07XXXXXXXX" maxlength="12">
-                                <div class="form-text">Use Safaricom number (Kenya). We’ll normalize to 2547… format.</div>
+                                <input type="text" id="mpesa_phone" class="form-control" placeholder="e.g. 07XXXXXXXX, 7XXXXXXXX, or 2547XXXXXXXX" maxlength="13">
+                                <div class="form-text">We’ll normalize to <code>2547XXXXXXXX</code>.</div>
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label">KES Amount (auto)</label>
@@ -88,10 +85,13 @@
                         <div class="small text-muted mt-2">
                             By continuing you agree that M-Pesa transaction charges (if any) are borne by you.
                         </div>
+
+                        {{-- Live status area when polling --}}
+                        <div style="color: #000000;" id="stk-live-status" class="alert alert-light border mt-3 d-none"></div>
                     </div>
 
                     {{-- Result Message --}}
-                    <div id="generic-result" class="text-center mt-3 fw-semibold"></div>
+                    <div style="color: #000000;" id="generic-result" class="text-center mt-3 fw-semibold"></div>
 
                 </div>
             </div>
@@ -110,12 +110,14 @@
     const $mpesaSection  = $('#mpesa-section');
     const $result        = $('#generic-result');
     const $amount        = $('#deposit_amount');
-    const $phone         = $('#mpesa_phone');
+    const $phoneInput    = $('#mpesa_phone');
     const $kesPreview    = $('#mpesa_kes_preview');
     const $stkBtn        = $('#btn-start-stk');
     const $stkSpinner    = $('#stk-spinner');
+    const $liveStatus    = $('#stk-live-status');
 
     const USD_TO_KES = {{ (float) (env('USD_TO_KES', 130)) }}; // configure in .env
+    const REDIRECT_URL = "{{ route('wallet.index') }}";
 
     function show(method){
         $result.removeClass('text-danger text-success').text('');
@@ -123,7 +125,6 @@
             $paypalSection.removeClass('d-none');
             $mpesaSection.addClass('d-none');
         }else{
-            // mpesa
             $mpesaSection.removeClass('d-none');
             $paypalSection.addClass('d-none');
             updateKesPreview();
@@ -136,6 +137,16 @@
         $kesPreview.val('KES ' + kes.toFixed(2));
     }
 
+    // Normalize Kenyan phone to 2547XXXXXXXX
+    function normalizeMsisdn(raw) {
+        if (!raw) return null;
+        let p = String(raw).replace(/\D/g, '');
+        if (p.startsWith('0') && p.length === 10) p = '254' + p.substring(1);
+        else if (p.startsWith('7') && p.length === 9) p = '254' + p;
+        if (/^2547\d{8}$/.test(p)) return p;
+        return null;
+    }
+
     // Toggle buttons
     $('#btn-paypal').on('click', () => show('paypal'));
     $('#btn-mpesa').on('click', () => show('mpesa'));
@@ -146,7 +157,7 @@
     // Keep KES preview in sync
     $amount.on('input', updateKesPreview);
 
-    // PayPal buttons
+    // PayPal buttons (unchanged)
     paypal.Buttons({
         createOrder: function(data, actions) {
             const amount = $amount.val();
@@ -168,7 +179,7 @@
                     order_id: details.id || null
                 }, function(resp) {
                     if (resp.success) {
-                        window.location.href = "{{ route('wallet.index') }}?success=1";
+                        window.location.href = REDIRECT_URL + '?success=1';
                     } else {
                         $result.addClass('text-danger').text(resp.message || 'Deposit failed. Please try again later.');
                     }
@@ -182,30 +193,81 @@
         }
     }).render('#paypal-button-container');
 
-    // M-Pesa STK push
+    // === M-Pesa STK push with live polling & redirect ===
+    let pollTimer = null;
+    const POLL_INTERVAL_MS = 3000;
+    const MAX_POLLS = 40; // ~2 minutes
+
+    function startPolling(ref) {
+        let attempts = 0;
+        clearInterval(pollTimer);
+
+        $liveStatus.removeClass('d-none alert-danger alert-success alert-warning').addClass('alert').html(`
+            <i class="fa fa-sync-alt fa-spin me-2"></i>
+            Waiting for M-Pesa confirmation... (this can take up to 2 minutes)
+        `);
+
+        pollTimer = setInterval(function(){
+            attempts++;
+            $.get("{{ route('wallet.deposit.mpesa.status', '__REF__') }}".replace('__REF__', encodeURIComponent(ref)), function(resp){
+                const msg = resp?.message || '';
+                if (resp?.status === 'success') {
+                    clearInterval(pollTimer);
+                    $liveStatus.removeClass('alert-warning alert-danger').addClass('alert-success').html(`
+                        <i class="fa fa-check-circle me-2"></i>
+                        Payment successful! Redirecting to your wallet...
+                    `);
+                    setTimeout(() => window.location.href = REDIRECT_URL + '?success=1', 1200);
+                    return;
+                }
+                if (resp?.status === 'failed') {
+                    clearInterval(pollTimer);
+                    $liveStatus.removeClass('alert-warning alert-success').addClass('alert-danger').html(`
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        Payment failed: ${msg || 'Unknown error'}.
+                    `);
+                    return;
+                }
+                // keep spinning; optionally render intermediate messages
+            }).fail(function(){
+                // network hiccup; continue polling unless max reached
+            });
+
+            if (attempts >= MAX_POLLS) {
+                clearInterval(pollTimer);
+                $liveStatus.removeClass('alert-success alert-danger').addClass('alert-warning').html(`
+                    <i class="fa fa-hourglass-half me-2"></i>
+                    It's taking longer than expected to confirm. If you've approved the prompt, please check your wallet shortly.
+                `);
+            }
+        }, POLL_INTERVAL_MS);
+    }
+
     $stkBtn.on('click', function(){
         const usd = parseFloat($amount.val() || '0');
         if (!usd || usd <= 0) {
             $result.addClass('text-danger').text('Please enter a valid USD amount before proceeding.');
             return;
         }
-        const phone = ($phone.val() || '').trim();
-        if (!phone) {
-            $result.addClass('text-danger').text('Please enter your Safaricom phone number.');
+        const normalized = normalizeMsisdn($phoneInput.val());
+        if (!normalized) {
+            $result.addClass('text-danger').text('Enter a valid Safaricom number (07XXXXXXXX, 7XXXXXXXX, or 2547XXXXXXXX).');
             return;
         }
 
         $stkBtn.prop('disabled', true);
         $stkSpinner.removeClass('d-none');
         $result.removeClass('text-danger text-success').text('');
+        $liveStatus.addClass('d-none').empty();
 
         $.post("{{ route('wallet.deposit.mpesa.stk') }}", {
             _token: '{{ csrf_token() }}',
-            phone: phone,
+            phone: normalized,
             usd_amount: usd
         }, function(resp){
-            if (resp.success) {
-                $result.addClass('text-success').text('STK Push sent. Please check your phone and enter your M-Pesa PIN to approve.');
+            if (resp.success && resp.ref) {
+                $result.addClass('text-success').text('STK Push sent. Check your phone and approve.');
+                startPolling(resp.ref);
             } else {
                 $result.addClass('text-danger').text(resp.message || 'Failed to start STK Push.');
             }

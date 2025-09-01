@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Product;
@@ -11,11 +12,11 @@ use App\Models\ListingFeeType;
 
 class ProductController extends Controller
 {
-  
+
 
     public function index(Request $request)
     {
-        $query = Product::with('category','media')
+        $query = Product::with('category', 'media')
             ->where('shop_id', Auth::user()->shop->id)
             ->latest();
 
@@ -32,7 +33,7 @@ class ProductController extends Controller
     {
         $categories = Category::orderBy('name')->get();
         $category_listFee_types = ListingFeeType::orderBy('id', 'asc')->get();
-        return view('products.create', compact('categories','category_listFee_types'));
+        return view('products.create', compact('categories', 'category_listFee_types'));
     }
 
     public function store(Request $request)
@@ -60,7 +61,7 @@ class ProductController extends Controller
 
         if ($files = $request->file('images')) {
             foreach ($files as $img) {
-                $path = $img->store('products/images','public');
+                $path = $img->store('products/images', 'public');
                 $product->media()->create([
                     'type' => 'image',
                     'url'  => $path,
@@ -78,7 +79,7 @@ class ProductController extends Controller
         abort_if($product->shop_id !== Auth::user()->shop->id, 403);
 
         $categories = Category::orderBy('name')->get();
-        return view('products.edit', compact('product','categories'));
+        return view('products.edit', compact('product', 'categories'));
     }
 
     public function update(Request $request, Product $product)
@@ -104,7 +105,7 @@ class ProductController extends Controller
 
         if ($files = $request->file('images')) {
             foreach ($files as $img) {
-                $path = $img->store('products/images','public');
+                $path = $img->store('products/images', 'public');
                 $product->media()->create([
                     'type' => 'image',
                     'url'  => $path,
@@ -138,21 +139,20 @@ class ProductController extends Controller
     }
 
 
-        public function listing($slug)
+    public function listing($slug)
     {
 
         $product = Product::whereSlug($slug)->first();
         $isFavorited = auth()->check() && auth()->user()->favorites()->where('product_id', $product->id)->exists();
         return view('products.show', compact('product', 'isFavorited'));
-        
     }
 
 
     public function listings()
-{
-    $products = Product::with('media')->latest()->paginate(16);
-    return view('theme.listings', compact('products'));
-}
+    {
+        $products = Product::with('media')->latest()->paginate(16);
+        return view('theme.listings', compact('products'));
+    }
 
 
     public function toggleFeatured(Product $product): RedirectResponse
@@ -167,5 +167,4 @@ class ProductController extends Controller
                 : 'Product has been un-featured.'
         );
     }
-
 }

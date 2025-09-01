@@ -24,7 +24,7 @@ class CheckoutController extends Controller
 
         // 3. Calculate subtotal
         $subtotal = $items->sum(fn($item) =>
-            $item->product->discounted_price * $item->quantity
+            apply_discount($item->product->price, $item->product_id) * $item->quantity
         );
 
         // 4. Render the checkout view
@@ -45,7 +45,7 @@ public function store(Request $request)
     $items = $cart->items()->with('product')->get();
 
     $total = $items->sum(fn($item) =>
-        $item->product->discounted_price * $item->quantity
+        apply_discount($item->product->price, $item->product_id) * $item->quantity
     );
 
     $shopId = $items->first()->product->shop_id ?? null;
@@ -65,7 +65,7 @@ public function store(Request $request)
         $order->items()->create([
             'product_id' => $item->product_id,
             'quantity'   => $item->quantity,
-            'price'      => $item->product->discounted_price,
+            'price'      => apply_discount($item->product->price, $item->product_id),
         ]);
     }
 

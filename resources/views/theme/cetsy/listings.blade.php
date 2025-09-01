@@ -134,9 +134,9 @@
     <div class="container">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <p class="mb-0 text-muted">
-          Showing <strong>{{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }}</strong>
-          of <strong>{{ $products->total() }}</strong> listings
-        </p>
+    Showing <strong>{{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }}</strong>
+    of <strong>{{ $products->total() }}</strong> listings
+</p>
         @if($products->total() > 0)
           <a href="{{ route('listings') }}" class="btn btn-outline-success btn-sm"><i class="fas fa-undo me-1"></i> Reset</a>
         @endif
@@ -144,7 +144,7 @@
 
       {{-- GRID VIEW (uses your partial as-is) --}}
       @if($view === 'grid')
-        <div class="row g-4">
+        <div id="listing-items" class="row g-4">
           @forelse ($products as $item)
             <div class="col-6 col-md-4 col-lg-3">
               @include('theme.'.theme().'.partials.product-card', ['item' => $item])
@@ -160,7 +160,7 @@
 
       {{-- LIST VIEW (mirrors the partial’s concepts) --}}
       @else
-        <div class="vstack gap-3">
+        <div id="listing-items" class="vstack gap-3">
           @forelse ($products as $item)
             @php
               // --- Concept parity with product-card ---
@@ -179,7 +179,7 @@
                 <div class="col-4 col-md-3 col-lg-2">
                   <a href="{{ route('listing.show', $item->slug) }}" class="d-block rounded overflow-hidden">
                     <div class="ratio ratio-1x1 bg-white">
-                      <img src="{{ $thumb }}" alt="{{ $item->name }}" class="w-100 h-100" style="object-fit:cover;">
+                      <img src="{{ $thumb }}" alt="{{ $item->name }}" class="img-fluid w-100 h-100" loading="lazy" decoding="async" style="object-fit:cover;">
                     </div>
                   </a>
                 </div>
@@ -236,10 +236,12 @@
         </div>
       @endif
 
-      {{-- Pagination (keeps filters) --}}
-      @if ($products->hasPages())
-        <div class="mt-4 d-flex justify-content-center">
-          {{ $products->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+      {{-- Load More --}}
+      @if ($products->hasMorePages())
+        <div class="mt-4 text-center">
+          <button id="load-more" class="btn btn-success" data-next-page="{{ $products->currentPage() + 1 }}">
+            Load More
+          </button>
         </div>
       @endif
     </div>
@@ -266,6 +268,35 @@
           form.submit();
         });
       });
+
+      const loadMoreBtn = document.getElementById('load-more');
+      if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', () => {
+          const nextPage = loadMoreBtn.dataset.nextPage;
+          const url = new URL(window.location.href);
+          url.searchParams.set('page', nextPage);
+          loadMoreBtn.disabled = true;
+
+          fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(html, 'text/html');
+              const newItems = doc.getElementById('listing-items').children;
+              const container = document.getElementById('listing-items');
+              Array.from(newItems).forEach(el => container.appendChild(el));
+
+              const newBtn = doc.getElementById('load-more');
+              if (newBtn) {
+                loadMoreBtn.dataset.nextPage = newBtn.dataset.nextPage;
+                loadMoreBtn.disabled = false;
+              } else {
+                loadMoreBtn.remove();
+              }
+            })
+            .catch(() => loadMoreBtn.remove());
+        });
+      }
     });
   </script>
   @endpush

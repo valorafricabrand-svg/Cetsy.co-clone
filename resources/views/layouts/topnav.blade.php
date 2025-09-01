@@ -1,71 +1,24 @@
 @php
+    // Ensure Activity model is correctly imported in the controller or view
+    use App\Models\Activity;
+
     $user = auth()->user();
     $role = $user->isAdmin() ? 'admin' : ($user->isSeller() ? 'seller' : 'buyer');
 
-    // Badge counts logic
-    // Messages
-    $messagesCount = 0;
-    if ($role === 'seller') {
-        $shop = $user->shop;
-        $productIds = $shop ? $shop->products()->pluck('id') : [];
-        $messagesCount = $shop ? \App\Models\Message::whereIn('product_id', $productIds)
-            ->where('receiver_id', $user->id)
-            ->where('is_read', false)
-            ->count() : 0;
-    } else {
-        $messagesCount = \App\Models\Message::where('sender_id', $user->id)
-            ->where('is_read', false)
-            ->count();
-    }
-    // Offers
-    $offersCount = 0;
-    if ($role === 'seller') {
-        $shop = $user->shop;
-        $productIds = $shop ? $shop->products()->pluck('id') : [];
-        $offersCount = $shop ? \App\Models\Offer::whereIn('product_id', $productIds)
-            ->where('status', 'pending')
-            ->count() : 0;
-    } else {
-        $offersCount = \App\Models\Offer::where('buyer_id', $user->id)
-            ->where('status', 'pending')
-            ->count();
-    }
-    // Wishlist
-    $wishlistCount = method_exists($user, 'wishlistItems') ? $user->wishlistItems()->count() : 0;
-    
-    // Orders
-    $ordersCount = 0;
-    if ($role === 'seller') {
-        $shop = $user->shop;
-        $productIds = $shop ? $shop->products()->pluck('id') : [];
-        $ordersCount = $shop ? \App\Models\Order::whereIn('id', function($query) use ($productIds) {
-            $query->select('order_id')
-                  ->from('order_items')
-                  ->whereIn('product_id', $productIds);
-        })->where('status', 'pending')->count() : 0;
-    } else {
-        $ordersCount = \App\Models\Order::where('user_id', $user->id)
-            ->where('status', 'pending')->count();
-    }
-    
-    // Cart
-    $cartCount = 0;
-    if ($role === 'seller') {
-        $shop = $user->shop;
-        $productIds = $shop ? $shop->products()->pluck('id') : [];
-        $cartCount = $shop ? \App\Models\CartItem::whereIn('product_id', $productIds)->count() : 0;
-    } else {
-        $cartCount = $user->cart ? $user->cart->items()->count() : 0;
-    }
-    
     // Notifications
-    $notificationsCount = \App\Models\Activity::where('user_id', $user->id)
-        ->where('is_read', false)
-        ->count();
-    $recentNotifications = \App\Models\Activity::where('user_id', $user->id)
-        ->orderBy('created_at', 'desc')
-        ->limit(5)
-        ->get();
+    if ($role === 'admin') {
+        // Admin sees all unread activities, not just their own
+        $notificationsCount = Activity::where('is_read', false)->count();
+        $recentNotifications = Activity::orderBy('created_at', 'desc')->limit(5)->get();
+    } else {
+        $notificationsCount = Activity::where('user_id', $user->id)
+            ->where('is_read', false)
+            ->count();
+        $recentNotifications = Activity::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+    }
 
     $navItems = [
         'admin' => [
@@ -78,7 +31,6 @@
             ],
         ],
         'seller' => [
-           
             [
                 'label' => 'Notifications',
                 'icon' => 'fas fa-bell',
@@ -99,73 +51,7 @@
     ];
 @endphp
 
-
-<!-- [
-                'label' => 'Messages',
-                'icon' => 'fas fa-envelope',
-                'route' => route('buyer.messages.index'),
-                'badge' => $messagesCount,
-            ],
-            [
-                'label' => 'Orders',
-                'icon' => 'fas fa-shopping-bag',
-                'route' => route('account.orders'),
-                'badge' => $ordersCount,
-            ],
-            [
-                'label' => 'Cart',
-                'icon' => 'fas fa-shopping-cart',
-                'route' => route('cart.view'),
-                'badge' => $cartCount,
-            ],
-            [
-                'label' => 'Offers',
-                'icon' => 'fas fa-handshake',
-                'route' => route('buyer.offers'),
-                'badge' => $offersCount,
-            ],
-            [
-                'label' => 'Wishlist',
-                'icon' => 'fas fa-heart',
-                'route' => route('buyer.favorites'),
-                'badge' => $wishlistCount,
-            ],
-            
-            
-            
-            
-             [
-                'label' => 'Messages',
-                'icon' => 'fas fa-bell',
-                'route' => route('seller.messages.index'),
-                'badge' => $messagesCount,
-            ],
-            [
-                'label' => 'Orders',
-                'icon' => 'fas fa-shopping-bag',
-                'route' => route('orders.index'),
-                'badge' => $ordersCount,
-            ],
-            [
-                'label' => 'Cart',
-                'icon' => 'fas fa-shopping-cart',
-                'route' => route('cart.view'),
-                'badge' => $cartCount,
-            ],
-            [
-                'label' => 'Offers',
-                'icon' => 'fas fa-handshake',
-                'route' => route('seller.offers.index'),
-                'badge' => $offersCount,
-            ],
-            [
-                'label' => 'Wishlist',
-                'icon' => 'fas fa-heart',
-                'route' => route('seller.favorites.index'),
-                'badge' => $wishlistCount,
-            ],-->
-php artisan make:migration add_type_and_related_fields_to_activities_table --table=activities
-
+<!-- Navbar Code -->
 <nav class="navbar navbar-top fixed-top navbar-expand" id="navbarDefault" style="display:none;">
     <div class="collapse navbar-collapse justify-content-between">
         <div class="navbar-logo">
@@ -176,7 +62,6 @@ php artisan make:migration add_type_and_related_fields_to_activities_table --tab
             </button>
             <a class="navbar-brand me-1 me-sm-3" href="{{ url('/') }}">
                 <div class="d-flex align-items-center">
-                    <!-- <img src="{{ favicon_url() }}" alt="b2b" width="27" /> -->
                     <img src="{{ setting('logo_url') }}" style="height: 50px;">
                 </div>
             </a>

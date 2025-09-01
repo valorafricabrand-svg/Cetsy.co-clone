@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Kyc;
+use App\Models\Activity;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\KycStatusMail;
 use Illuminate\Support\Facades\DB;
@@ -82,7 +83,7 @@ class KycController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'user_id' => auth()->id(),
             ]);
-            return response()->view('errors.500', ['message' => 'An error occurred while submitting your KYC. Please try again later.'], 500);
+       return redirect()->back()->with('error', 'An error occurred while updating KYC status. Please try again.');
         }
     }
 

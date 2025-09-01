@@ -12,24 +12,30 @@ use App\Http\Controllers\{
 use App\Http\Controllers\Admin\{
     DashboardController as AdminDashboard,
     SubscriptionController as AdminSubscriptionController,
-    UserController, AdminReportController as AdminReport,
+    UserController,
+    AdminReportController as AdminReport,
     SettingsController as AdminSetting,
     PayoutRequestController as AdminPayoutRequestController,
     PaymentController,
     PaymentTypeController,
     CategoryAttributeController,
     ProductReportController as AdminProductReportController,
-    AdminWalletController
+    AdminWalletController,
+    ReviewController,
+    AdminNotificationController
 };
-
+use App\Http\Controllers\Buyer\BuyerDashboard;
 use App\Http\Controllers\Seller\{
     DashboardController as SellerDashboard,
-    KycController, SubscriptionController,
-    AnalyticsController, PayoutRequestController,
-    ServiceController, BuyerController
+    KycController,
+    SubscriptionController,
+    AnalyticsController,
+    PayoutRequestController,
+    ServiceController,
+    BuyerController,
+    FavoriteController,
+    PaymentMethodController
 };
-
-use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,20 +45,43 @@ use App\Http\Controllers\Buyer\DashboardController as BuyerDashboard;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 // Safaricom callback (must be reachable publicly)
-Route::post('/wallet/deposit/mpesa/callback', [WalletDepositController::class, 'mpesaCallback'])
+Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
     ->name('wallet.deposit.mpesa.callback');
 
 
+
+Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])->name('wallet.deposit.mpesa.callback');
+Route::post('/wallet/deposit/mpesa/timeout',  [WalletController::class, 'mpesaTimeout'])->name('wallet.deposit.mpesa.timeout');
+
+
 // pages
-Route::get('/become-seller', function () {return themed_view('pages.become-seller');})->name('become-seller');
-Route::get('/privacy', function () {return themed_view('pages.privacy');})->name('privacy');
-Route::get('/terms', function () {return themed_view('pages.terms');})->name('terms');
-Route::get('/seller-forum', function () {return themed_view('pages.seller-forum');})->name('seller-forum');
-Route::get('/seller-tips', function () {return themed_view('pages.seller-tips');})->name('seller-tips');
-Route::get('/buyer-tips', function () {return themed_view('pages.buyer-tips');})->name('buyer-tips');
-Route::get('/buyer-terms', function () {return themed_view('pages.buyer-terms');})->name('buyer-terms');
-Route::get('/about', function () {return themed_view('pages.about');})->name('about');
-Route::get('/house-policy', function () {return themed_view('pages.house-policy');})->name('house-policy');
+Route::get('/become-seller', function () {
+    return themed_view('pages.become-seller');
+})->name('become-seller');
+Route::get('/privacy', function () {
+    return themed_view('pages.privacy');
+})->name('privacy');
+Route::get('/terms', function () {
+    return themed_view('pages.terms');
+})->name('terms');
+Route::get('/seller-forum', function () {
+    return themed_view('pages.seller-forum');
+})->name('seller-forum');
+Route::get('/seller-tips', function () {
+    return themed_view('pages.seller-tips');
+})->name('seller-tips');
+Route::get('/buyer-tips', function () {
+    return themed_view('pages.buyer-tips');
+})->name('buyer-tips');
+Route::get('/buyer-terms', function () {
+    return themed_view('pages.buyer-terms');
+})->name('buyer-terms');
+Route::get('/about', function () {
+    return themed_view('pages.about');
+})->name('about');
+Route::get('/house-policy', function () {
+    return themed_view('pages.house-policy');
+})->name('house-policy');
 
 // Product listings & categories
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -60,6 +89,9 @@ Route::get('/search', [ProductController::class, 'search'])->name('search');
 Route::get('/listings', [ProductController::class, 'listings'])->name('listings');
 Route::get('/listing/{slug}', [ProductController::class, 'listing'])->name('listing.show');
 Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])->name('category.show');
+
+// All shops listing
+Route::get('/shops', [ShopController::class, 'publicIndex'])->name('shops.index');
 
 // Shop public profile
 Route::get('/shop/{id}', [ShopController::class, 'showPublic'])->name('shop.show');
@@ -80,11 +112,10 @@ Route::prefix('cart')->name('cart.')->group(function () {
 });
 
 // routes/web.php
-Route::get('/categories/{id}/attribute-template',
+Route::get(
+    '/categories/{id}/attribute-template',
     [CategoryController::class, 'attributeTemplate']
 )->name('categories.attributeTemplate');
-
-
 
 // Wishlist
 Route::get('/wishlist', [ProductController::class, 'wishlist'])->name('wishlist');
@@ -99,22 +130,22 @@ Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_no
 
 
 Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
-      ->name('products.pay-fee');
+    ->name('products.pay-fee');
 
 
 
 // Product Reports
 Route::post('/product-reports', [ProductReportController::class, 'store'])->name('product-reports.store');
 
-
-Route::prefix('products/{product}')->name('products.')->group(function () {         // About
-      // About (view page you already have)
+Route::prefix('products/{product}')->name('products.')->group(function () {
+    // About
+    // About (view page you already have)
     Route::get('/pricing',     [ProductController::class, 'pricing'])->name('pricing');    // Edit forms
     Route::get('/variations',  [ProductController::class, 'variations'])->name('variations');
     Route::get('/details',     [ProductController::class, 'details'])->name('details');
     Route::get('/shipping',    [ProductController::class, 'shipping'])->name('shipping');
     Route::get('/settings',    [ProductController::class, 'settings'])->name('settings');
-        Route::get('/media',       [ProductController::class, 'media'])->name('media');
+    Route::get('/media',       [ProductController::class, 'media'])->name('media');
 
     // Updates
     Route::patch('/pricing',     [ProductController::class, 'updatePricing'])->name('pricing.update');
@@ -147,20 +178,16 @@ Route::delete ('/products/{product}/shipping/rows/{row}',     [ProductShippingCo
 Route::patch  ('/products/{product}/shipping/rows/{row}', [ProductShippingController::class, 'updateShippingRow'])
      ->name('products.shipping.rows.update');
 
-
 Route::get('/pay-now-invoice/{total}', [OrderController::class, 'payNowInvoice'])->name('pay_now_invoice');
 Route::get('/success-deposit/{id}', [OrderController::class, 'successDeposit'])->name('success_deposit');
 Route::post('/success-deposit-fee/{id}', [ProductController::class, 'successDeposit'])->name('success_deposit_fee');
 Route::get('/success-deposit-invoice/{id}', [OrderController::class, 'successDepositInvoice'])->name('success_deposit_invoice');
 Route::resource('shipping-profiles', ShippingProfileController::class)
-     ->only(['store']);
-
-
-     // routes/web.php
-
-
-
-
+    ->only(['store']);
+Route::get('reviews/create', [ReviewController::class, 'create'])->name('reviews.create');
+Route::post('reviews', [ReviewController::class, 'store'])->name('reviews.store');
+Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+// routes/web.php
 
 /*
 |--------------------------------------------------------------------------
@@ -189,7 +216,7 @@ Route::middleware('auth')->group(function () {
         Route::post('variations', [VariationController::class, 'store'])
              ->name('variations.store');
         Route::post('variations/bulk', [VariationController::class, 'bulkStore'])
-             ->name('variations.bulkStore');
+            ->name('variations.bulkStore');
     });
 
     Route::patch('variations/{variation}', [VariationController::class, 'update'])
@@ -197,7 +224,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('variations/{variation}', [VariationController::class, 'destroy'])
          ->name('variations.destroy');
     Route::delete('variation‑types/{variationType}', [VariationController::class, 'destroyType'])
-         ->name('variationTypes.destroy');
+        ->name('variationTypes.destroy');
 
     Route::post('variation-types/{variationType}/options', [VariationController::class, 'storeOption'])
          ->name('variationOptions.store');
@@ -255,7 +282,10 @@ Route::middleware('auth')->group(function () {
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
-
+    
+    //notification routes
+    Route::get('/admin/notifications', [AdminNotificationController::class, 'index'])->name('admin.notifications.index');
+    
     // Chat
     Route::get('/orders/{order}/chat', [OrderMessageController::class, 'show'])->name('orders.chat.show');
     Route::get('/orders/{order}/chat/messages', [OrderMessageController::class, 'fetch'])->name('orders.chat.fetch');
@@ -283,6 +313,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
         ->name('wallet.deposit.mpesa.stk');
 
+        // Poll status (frontend “listens” by polling this)
+ Route::get ('/wallet/deposit/mpesa/status/{ref}', [WalletController::class, 'mpesaStatus'])->name('wallet.deposit.mpesa.status');
+
     // Account
     Route::prefix('account')->name('account.')->group(function () {
         Route::get('/dashboard', [AccountController::class, 'dashboard'])->name('dashboard');
@@ -296,7 +329,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('buyer/favorites', [ProductController::class, 'favorites'])->name('buyer.favorites');
     Route::get('buyer/offers', [ProductController::class, 'offers'])->name('buyer.offers');
-    
+
     // Notifications
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
@@ -325,14 +358,13 @@ Route::middleware('auth')->group(function () {
 | Admin Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
-Route::resource('wallets', AdminWalletController::class)->except(['create','store']);
-        Route::delete('wallets/bulk', [AdminWalletController::class, 'bulk'])->name('wallets.bulk');
+    Route::resource('wallets', AdminWalletController::class)->except(['create', 'store']);
+    Route::delete('wallets/bulk', [AdminWalletController::class, 'bulk'])->name('wallets.bulk');
 
-
- Route::patch('kyc/bulk', [KycController::class, 'bulk'])->name('kyc.bulk');
+    Route::patch('kyc/bulk', [KycController::class, 'bulk'])->name('kyc.bulk');
     Route::resource('users', UserController::class);
     Route::post('users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
@@ -342,30 +374,39 @@ Route::resource('wallets', AdminWalletController::class)->except(['create','stor
     Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     // Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
 
-            /* create (store) — needs the parent category id */
-        Route::post('/categories/{category}/attributes',
-            [CategoryAttributeController::class, 'store']
-        )->name('categories.attributes.store');
+    /* update + destroy — shallow, no category prefix */
+    Route::put(
+        '/category-attributes/{attribute}',
+        [CategoryAttributeController::class, 'update']
+    )->name('category-attributes.update');
 
-        /* update + destroy — shallow, no category prefix */
-        Route::put('/category-attributes/{attribute}',
-            [CategoryAttributeController::class, 'update']
-        )->name('category-attributes.update');
-
-        Route::delete('/category-attributes/{attribute}',
-            [CategoryAttributeController::class, 'destroy']
-        )->name('category-attributes.destroy');
+    Route::delete(
+        '/category-attributes/{attribute}',
+        [CategoryAttributeController::class, 'destroy']
+    )->name('category-attributes.destroy');
     Route::resource('categories', CategoryController::class);
 
     Route::get('kyc', [KycController::class, 'index'])->name('kyc.index');
+    Route::get('kyc/{kyc}', [KycController::class, 'show'])->name('kyc.show');
     Route::patch('kyc/{kyc}', [KycController::class, 'update'])->name('kyc.update');
     Route::get('kyc/{kyc}', [KycController::class, 'showDetails'])->name('kyc.showDetails');
 
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
-    Route::get('reviews', [\App\Http\Controllers\Admin\ReviewController::class, 'index'])->name('reviews.index');
+    Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
     
-    
+    // Messages
+    Route::get('messages', [\App\Http\Controllers\Admin\MessageController::class, 'index'])->name('messages.index');
+    Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\MessageController::class, 'show'])->name('messages.show');
+
+    // Users
+    Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
+
+    // Categories
+    Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
+
     Route::post('subscriptions/deactivate-expired', [AdminSubscriptionController::class, 'deactivateExpired'])->name('subscriptions.deactivate-expired');
 
     Route::prefix('payout-requests')->name('payouts.')->controller(AdminPayoutRequestController::class)->group(function () {
@@ -378,7 +419,8 @@ Route::resource('wallets', AdminWalletController::class)->except(['create','stor
 
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
-//Payment Types
+    
+    //Payment Types
     Route::resource('payment-types', PaymentTypeController::class);
 
     // Product Reports
@@ -401,6 +443,8 @@ Route::resource('wallets', AdminWalletController::class)->except(['create','stor
         Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'appeals'])->name('index');
         Route::get('/{appeal}', [\App\Http\Controllers\Admin\DisputeController::class, 'showAppeal'])->name('show');
         Route::post('/{appeal}/review', [\App\Http\Controllers\Admin\DisputeController::class, 'reviewAppeal'])->name('review.store');
+        Route::post('/{appeal}/request-evidence', [\App\Http\Controllers\Admin\DisputeController::class, 'requestEvidence'])->name('request-evidence');
+        Route::post('/{appeal}/close', [\App\Http\Controllers\Admin\DisputeController::class, 'closeAppeal'])->name('close');
     });
 
 });
@@ -415,9 +459,9 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::resource('deals', DealController::class)
-         ->only(['index','create','store']);
+        ->only(['index', 'create', 'store']);
 
-    Route::get ('/products/pricing/bulk', [BulkPriceController::class, 'create'])
+    Route::get('/products/pricing/bulk', [BulkPriceController::class, 'create'])
         ->name('products.pricing.bulk');
     Route::post('/products/pricing/bulk', [BulkPriceController::class, 'store'])
         ->name('products.pricing.bulk.store');
@@ -437,7 +481,6 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
     Route::get('/shops/{shop:slug}', [ShopController::class, 'show'])->name('shops.show');
     Route::get('/shops/{shop}/edit', [ShopController::class, 'edit'])->name('shops.edit');
     Route::patch('/shops/{shop}', [ShopController::class, 'update'])->name('shops.update');
-
 });
 
 /*
@@ -449,12 +492,12 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     // Dashboard & Analytics
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
-    
+
     // Holiday Mode
     Route::post('holiday-mode/enable', [SellerDashboard::class, 'enableHolidayMode'])->name('holiday-mode.enable');
     Route::post('holiday-mode/disable', [SellerDashboard::class, 'disableHolidayMode'])->name('holiday-mode.disable');
 
-    
+
     // Order Management
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
@@ -464,7 +507,7 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     Route::patch('orders/{order}/cancel', [OrderController::class, 'sellerCancel'])->name('orders.cancel');
 
     Route::resource('shipping_profiles', ShippingProfileController::class)
-    ->except(['show']);
+        ->except(['show']);
     // KYC Management
     Route::get('kyc', [KycController::class, 'show'])->name('kyc');
     Route::post('kyc', [KycController::class, 'submit'])->name('kyc.submit');
@@ -481,28 +524,28 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     Route::get('buyers/{buyer}', [BuyerController::class, 'show'])->name('buyers.show');
 
     // Offer Management
-    Route::resource('offers', App\Http\Controllers\Seller\OfferController::class);
-    Route::post('offers/{offer}/accept', [App\Http\Controllers\Seller\OfferController::class, 'accept'])->name('offers.accept');
-    Route::post('offers/{offer}/decline', [App\Http\Controllers\Seller\OfferController::class, 'decline'])->name('offers.decline');
-    Route::post('offers/{offer}/counter', [App\Http\Controllers\Seller\OfferController::class, 'counterOffer'])->name('offers.counter');
-    Route::post('offers/bulk-action', [App\Http\Controllers\Seller\OfferController::class, 'bulkAction'])->name('offers.bulk-action');
-    Route::get('offers/test-bulk', [App\Http\Controllers\Seller\OfferController::class, 'testBulkAction'])->name('offers.test-bulk');
+    Route::resource('offers', \App\Http\Controllers\Seller\OfferController::class);
+    Route::post('offers/{offer}/accept', [\App\Http\Controllers\Seller\OfferController::class, 'accept'])->name('offers.accept');
+    Route::post('offers/{offer}/decline', [\App\Http\Controllers\Seller\OfferController::class, 'decline'])->name('offers.decline');
+    Route::post('offers/{offer}/counter', [\App\Http\Controllers\Seller\OfferController::class, 'counterOffer'])->name('offers.counter');
+    Route::post('offers/bulk-action', [\App\Http\Controllers\Seller\OfferController::class, 'bulkAction'])->name('offers.bulk-action');
+    Route::get('offers/test-bulk', [\App\Http\Controllers\Seller\OfferController::class, 'testBulkAction'])->name('offers.test-bulk');
 
     // Message Management
-    Route::get('messages', [App\Http\Controllers\Seller\MessageController::class, 'index'])->name('messages.index');
-    Route::get('messages/{conversationId}', [App\Http\Controllers\Seller\MessageController::class, 'show'])->name('messages.show');
-    Route::post('messages/{conversationId}/reply', [App\Http\Controllers\Seller\MessageController::class, 'reply'])->name('messages.reply');
-    Route::post('messages/{message}/mark-read', [App\Http\Controllers\Seller\MessageController::class, 'markAsRead'])->name('messages.mark-read');
-    Route::post('messages/bulk-mark-read', [App\Http\Controllers\Seller\MessageController::class, 'bulkMarkAsRead'])->name('messages.bulk-mark-read');
+    Route::get('messages', [\App\Http\Controllers\Seller\MessageController::class, 'index'])->name('messages.index');
+    Route::get('messages/{conversationId}', [\App\Http\Controllers\Seller\MessageController::class, 'show'])->name('messages.show');
+    Route::post('messages/{conversationId}/reply', [\App\Http\Controllers\Seller\MessageController::class, 'reply'])->name('messages.reply');
+    Route::post('messages/{message}/mark-read', [\App\Http\Controllers\Seller\MessageController::class, 'markAsRead'])->name('messages.mark-read');
+    Route::post('messages/bulk-mark-read', [\App\Http\Controllers\Seller\MessageController::class, 'bulkMarkAsRead'])->name('messages.bulk-mark-read');
 
     // Favorites
-    Route::get('favorites', [App\Http\Controllers\Seller\FavoriteController::class, 'index'])->name('favorites.index');
+    Route::get('favorites', [FavoriteController::class, 'index'])->name('favorites.index');
 
     // Payment Methods
-    Route::resource('payment-methods', \App\Http\Controllers\Seller\PaymentMethodController::class);
+    Route::resource('payment-methods', PaymentMethodController::class);
 
     // Shop Posts
-    Route::resource('shop-posts', \App\Http\Controllers\ShopPostController::class);
+    Route::resource('shop-posts', ShopPostController::class);
 });
 
 /*
@@ -516,12 +559,12 @@ Route::middleware('auth')->prefix('buyer')->name('buyer.')->group(function () {
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('messages', [MessageController::class, 'buyerIndex'])->name('messages.index');
     Route::get('messages/{conversationId}', [MessageController::class, 'show'])->name('messages.show');
-    
+
     // Buyer Offer Management
-    Route::get('offers/available-products', [App\Http\Controllers\Buyer\OfferController::class, 'getAvailableProducts'])->name('offers.available-products');
-    Route::post('offers/{productId}/create', [App\Http\Controllers\Buyer\OfferController::class, 'createNewOffer'])->name('offers.create');
-    Route::get('offers/{offerId}/details', [App\Http\Controllers\Buyer\OfferController::class, 'showDetails'])->name('offers.details');
-    Route::post('offers/{offerId}/respond', [App\Http\Controllers\Buyer\OfferController::class, 'respondToCounterOffer'])->name('offers.respond');
+    Route::get('offers/available-products', [\App\Http\Controllers\Buyer\OfferController::class, 'getAvailableProducts'])->name('offers.available-products');
+    Route::post('offers/{productId}/create', [\App\Http\Controllers\Buyer\OfferController::class, 'createNewOffer'])->name('offers.create');
+    Route::get('offers/{offerId}/details', [\App\Http\Controllers\Buyer\OfferController::class, 'showDetails'])->name('offers.details');
+    Route::post('offers/{offerId}/respond', [\App\Http\Controllers\Buyer\OfferController::class, 'respondToCounterOffer'])->name('offers.respond');
 });
 
 /*

@@ -37,6 +37,8 @@ class Dispute extends Model
     const STATUS_RESOLVED = 'resolved';
     const STATUS_APPEALED = 'appealed';
     const STATUS_APPEAL_UNDER_REVIEW = 'appeal_under_review';
+    const STATUS_APPEAL_APPROVED = 'appeal_approved';
+    const STATUS_APPEAL_REJECTED = 'appeal_rejected';
     const STATUS_FINAL = 'final';
     const STATUS_MUTUALLY_RESOLVED = 'mutually_resolved';
 
@@ -54,6 +56,8 @@ class Dispute extends Model
     const DECISION_PARTIAL_REFUND = 'partial_refund';
     const DECISION_NO_ACTION = 'no_action';
     const DECISION_MUTUAL_AGREEMENT = 'mutual_agreement';
+    const DECISION_APPEAL_APPROVED = 'appeal_approved';
+    const DECISION_APPEAL_REJECTED = 'appeal_rejected';
 
     // Relationships
     public function order(): BelongsTo
@@ -158,7 +162,29 @@ class Dispute extends Model
             return false;
         }
 
-        return $this->isResolved() && !$this->appeal;
+        // Allow appeals for all disputes that don't already have an appeal
+        if (!$this->appeal) {
+            // If no appeal deadline is set, set one automatically
+            if (!$this->appeal_deadline) {
+                $this->setAppealDeadline();
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    public function canAppealMutualResolution(): bool
+    {
+        // Can appeal mutual resolution if:
+        // 1. Has mutual resolution terms
+        // 2. Both parties haven't agreed (or one party disagrees)
+        // 3. No existing appeal
+        // 4. Appeal is allowed
+        return $this->mutual_resolution_terms && 
+               (!$this->buyer_agreed_at || !$this->seller_agreed_at) &&
+               !$this->appeal && 
+               $this->can_appeal;
     }
 
     public function isAppealDeadlineExpired(): bool
@@ -183,6 +209,8 @@ class Dispute extends Model
             self::STATUS_RESOLVED => 'badge-success',
             self::STATUS_APPEALED => 'badge-warning',
             self::STATUS_APPEAL_UNDER_REVIEW => 'badge-info',
+            self::STATUS_APPEAL_APPROVED => 'badge-success',
+            self::STATUS_APPEAL_REJECTED => 'badge-danger',
             self::STATUS_FINAL => 'badge-secondary',
             self::STATUS_MUTUALLY_RESOLVED => 'badge-success',
             default => 'badge-light'
@@ -210,6 +238,8 @@ class Dispute extends Model
             self::DECISION_PARTIAL_REFUND => 'Partial Refund',
             self::DECISION_NO_ACTION => 'No Action',
             self::DECISION_MUTUAL_AGREEMENT => 'Mutual Agreement',
+            self::DECISION_APPEAL_APPROVED => 'Appeal Approved',
+            self::DECISION_APPEAL_REJECTED => 'Appeal Rejected',
             default => 'Pending'
         };
     }
