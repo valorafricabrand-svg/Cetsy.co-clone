@@ -1,13 +1,34 @@
 @extends('layouts.app')
-@section('title','Sales Analytics')
+@section('title','Analytics Dashboard')
 
 @push('styles')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         /* glassy cards */
-        .glass {background:rgba(255,255,255,.8);backdrop-filter:blur(6px)}
+        .glass {
+            background: rgba(255,255,255,.8);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(0,0,0,.05);
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+        .glass:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+        }
+        .analytics-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg,#e9ecef,#fff);
+            box-shadow: 0 2px 6px rgba(0,0,0,.1);
+        }
         @media (prefers-color-scheme:dark){
-            .glass {background:rgba(35,35,35,.55);}
+            .glass {
+                background: rgba(35,35,35,.55);
+                border-color: rgba(255,255,255,.1);
+            }
+            .analytics-icon {
+                background: linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.05));
+                box-shadow: 0 2px 6px rgba(0,0,0,.4);
+            }
         }
     </style>
 @endpush
@@ -16,23 +37,49 @@
 <div class="content">
     <div class="container-xxl">
 
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h4 fw-semibold mb-1">Analytics Dashboard</h1>
+                <p class="text-muted small mb-0">Monitor your shop performance at a glance.</p>
+            </div>
+            <form method="GET" class="d-flex align-items-center gap-2" id="rangeForm">
+                <select name="range" class="form-select form-select-sm" id="rangeSelect">
+                    <option value="today"    {{ $range=='today'    ? 'selected' : '' }}>Today</option>
+                    <option value="yesterday"{{ $range=='yesterday'? 'selected' : '' }}>Yesterday</option>
+                    <option value="week"     {{ $range=='week'     ? 'selected' : '' }}>Last 7 Days</option>
+                    <option value="2weeks"   {{ $range=='2weeks'   ? 'selected' : '' }}>Last 14 Days</option>
+                    <option value="1month"   {{ $range=='1month'   ? 'selected' : '' }}>Last 1 Month</option>
+                    <option value="2months"  {{ $range=='2months'  ? 'selected' : '' }}>Last 2 Months</option>
+                    <option value="3months"  {{ $range=='3months'  ? 'selected' : '' }}>Last 3 Months</option>
+                    <option value="6months"  {{ $range=='6months'  ? 'selected' : '' }}>Last 6 Months</option>
+                    <option value="custom"   {{ $range=='custom'   ? 'selected' : '' }}>Custom</option>
+                </select>
+                <div id="customRange" class="d-flex align-items-center gap-2 {{ $range!='custom' ? 'd-none' : '' }}">
+                    <input type="date" name="start" value="{{ $startDate }}" class="form-control form-control-sm">
+                    <span class="text-muted">to</span>
+                    <input type="date" name="end" value="{{ $endDate }}" class="form-control form-control-sm">
+                    <button class="btn btn-primary btn-sm" type="submit">Apply</button>
+                </div>
+            </form>
+        </div>
+
         {{-- ======================= KPIs ======================= --}}
         <div class="row g-4 mb-4">
             <x-analytics.card title="Total Sales"
                               :value="get_currency().' '.number_format($kpi->total_sales,2)"
-                              icon="bi bi-currency-dollar text-primary"/>
+                              icon="fas fa-dollar-sign text-primary"/>
             <x-analytics.card title="Total Orders"
                               :value="$kpi->total_orders"
-                              icon="bi bi-bag-check-fill text-success"/>
+                              icon="fas fa-shopping-cart text-success"/>
             <x-analytics.card title="Avg Order Value"
                               :value="get_currency().' '.number_format($kpi->avg_order_value,2)"
-                              icon="bi bi-graph-up-arrow text-warning"/>
+                              icon="fas fa-chart-line text-warning"/>
         </div>
 
         {{-- ======================= Revenue & Orders chart ======================= --}}
-        <div class="card shadow border-0 mb-5 glass">
+        <div class="card shadow-sm border-0 rounded-3 mb-5 glass">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                <h6 class="fw-semibold mb-0">Revenue & Orders <small class="text-muted">(12 Months)</small></h6>
+                <h6 class="fw-semibold mb-0">Revenue & Orders <small class="text-muted">({{ $rangeLabel }})</small></h6>
                 {{-- toggle --}}
                 <div class="btn-group btn-group-sm" role="group" id="chartToggle">
                     <button class="btn btn-outline-secondary active" data-target="revenue">Revenue</button>
@@ -48,11 +95,11 @@
         {{-- ======================= Top products ======================= --}}
         <div class="row g-4 mb-4">
             <div class="col-lg-6">
-                <div class="card shadow border-0 glass h-100">
+                <div class="card shadow-sm border-0 rounded-3 glass h-100">
                     <div class="card-header bg-transparent border-0 fw-semibold">Top Products</div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table align-middle mb-0">
+                            <table class="table table-striped table-hover align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Product</th>
@@ -81,11 +128,11 @@
 
             {{-- Listing performance --}}
             <div class="col-lg-6">
-                <div class="card shadow border-0 glass h-100">
+                <div class="card shadow-sm border-0 rounded-3 glass h-100">
                     <div class="card-header bg-transparent border-0 fw-semibold">Listing Performance</div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table align-middle mb-0">
+                            <table class="table table-striped table-hover align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Product</th>
@@ -106,11 +153,12 @@
                                         <td class="text-end">{{ $p->views ?? 0 }}</td>
                                         <td class="text-end">{{ $p->sales ?? 0 }}</td>
                                         <td>
-                                            <div class="progress" style="height:6px">
-                                                <div class="progress-bar {{ $bar }}"
+                                            <div class="progress rounded-pill" style="height:6px">
+                                                <div class="progress-bar {{ $bar }} rounded-pill"
                                                      role="progressbar"
                                                      style="width: {{ $conv }}%"
-                                                     title="{{ $conv }}%">
+                                                     data-bs-toggle="tooltip"
+                                                     data-bs-title="{{ $conv }}%">
                                                 </div>
                                             </div>
                                             <small class="text-muted">{{ $conv }}%</small>
@@ -130,15 +178,23 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
 <script>
 (() => {
+    /** ------- range selector ------- **/
+    const rangeSelect = document.getElementById('rangeSelect');
+    const customRange = document.getElementById('customRange');
+    rangeSelect?.addEventListener('change', () => {
+        const isCustom = rangeSelect.value === 'custom';
+        customRange.classList.toggle('d-none', !isCustom);
+        if (!isCustom) rangeSelect.form.submit();
+    });
+
     /** ------- charts data from PHP ------- **/
-    const months  = @json(array_keys($monthly));
-    const revenue = @json(array_values($monthly));
-    const orders  = @json(array_values(
-        collect($monthly)->map(fn($v,$k)=> $kpi->total_orders ? round($v/($kpi->total_sales/$kpi->total_orders)) : 0)->toArray()
-    ));
+    const labels  = @json($chart['labels']);
+    const revenue = @json($chart['revenue']);
+    const orders  = @json($chart['orders']);
 
     /** ------- chart helpers ------- **/
     const gradient = (ctx, color) => {
@@ -153,7 +209,7 @@
     const revenueChart = new Chart(revCtx, {
         type:'bar',
         data:{
-            labels: months,
+            labels: labels,
             datasets:[{
                 label:'Revenue',
                 data: revenue,
@@ -174,7 +230,7 @@
     const ordersChart = new Chart(ordCtx, {
         type:'line',
         data:{
-            labels: months,
+            labels: labels,
             datasets:[{
                 label:'Orders',
                 data: orders,
@@ -203,6 +259,9 @@
             document.getElementById('ordersChart').parentElement.classList.toggle('d-none', target!=='orders');
         });
     });
+
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
 })();
 </script>
 @endpush

@@ -81,6 +81,12 @@
               {{ __('My Orders') }}
             </x-nav-link>
           @endif
+
+          {{-- Evidence Requests for all users --}}
+          <x-nav-link :href="route('evidence-requests.index')"
+                      :active="request()->routeIs('evidence-requests.*')">
+            {{ __('Evidence Requests') }}
+          </x-nav-link>
         @endauth
       </div>
 

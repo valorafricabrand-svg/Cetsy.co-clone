@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title','KYC Verification')
+
 @section('content')
 <div class="content">
   <div class="row justify-content-center">
@@ -49,7 +51,7 @@
             @endif
 
             @if($kyc->admin_notes)
-              <div class="card card-bg-light border-info mb-4">
+              <div class="card bg-light border-info mb-4">
                 <div class="card-body">
                   <h6 class="card-title">Admin Notes</h6>
                   <p class="card-text">{{ $kyc->admin_notes }}</p>
@@ -65,53 +67,54 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label for="first_name" class="form-label">First Name</label>
-                  <input type="text" id="first_name" name="first_name" class="form-control" required>
+                  <input type="text" id="first_name" name="first_name" class="form-control" value="{{ old('first_name', $kyc->first_name ?? '') }}" required>
                   <div class="invalid-feedback">Please enter your first name.</div>
                 </div>
                 <div class="col-md-6">
                   <label for="last_name" class="form-label">Last Name</label>
-                  <input type="text" id="last_name" name="last_name" class="form-control" required>
+                  <input type="text" id="last_name" name="last_name" class="form-control" value="{{ old('last_name', $kyc->last_name ?? '') }}" required>
                   <div class="invalid-feedback">Please enter your last name.</div>
                 </div>
                 <div class="col-md-6">
                   <label for="email" class="form-label">Email</label>
-                  <input type="email" id="email" name="email" class="form-control" required>
+                  <input type="email" id="email" name="email" class="form-control" value="{{ old('email', $kyc->email ?? auth()->user()->email) }}" required>
                   <div class="invalid-feedback">Please enter a valid email.</div>
                 </div>
                 <div class="col-md-6">
                   <label for="phone" class="form-label">Phone</label>
-                  <input type="text" id="phone" name="phone" class="form-control" required>
+                  <input type="text" id="phone" name="phone" class="form-control" value="{{ old('phone', $kyc->phone ?? '') }}" required>
                   <div class="invalid-feedback">Please enter your phone number.</div>
                 </div>
                 <div class="col-md-6">
                   <label for="id_number" class="form-label">ID Number</label>
-                  <input type="text" id="id_number" name="id_number" class="form-control" required>
+                  <input type="text" id="id_number" name="id_number" class="form-control" value="{{ old('id_number', $kyc->id_number ?? '') }}" required>
                   <div class="invalid-feedback">Please enter your ID number.</div>
                 </div>
                 <div class="col-md-6">
                   <label for="id_type" class="form-label">ID Type</label>
+                  @php $selectedIdType = old('id_type', $kyc->id_type ?? '') @endphp
                   <select id="id_type" name="id_type" class="form-select" required>
-                    <option value="" selected disabled>Select ID Type</option>
-                    <option value="national_id">National ID</option>
-                    <option value="passport">Passport</option>
-                    <option value="driver_license">Driver's License</option>
+                    <option value="" disabled {{ $selectedIdType ? '' : 'selected' }}>Select ID Type</option>
+                    <option value="national_id" {{ $selectedIdType === 'national_id' ? 'selected' : '' }}>National ID</option>
+                    <option value="passport" {{ $selectedIdType === 'passport' ? 'selected' : '' }}>Passport</option>
+                    <option value="driver_license" {{ $selectedIdType === 'driver_license' ? 'selected' : '' }}>Driver's License</option>
                   </select>
                   <div class="invalid-feedback">Please select an ID type.</div>
                 </div>
 
                 <div class="col-12">
                   <label for="id_front" class="form-label">Upload ID Front (PDF/JPG/PNG)</label>
-                  <input class="form-control" type="file" id="id_front" name="id_front" accept=".pdf,.jpg,.jpeg,.png" required>
+                  <input class="form-control" type="file" id="id_front" name="id_front" accept=".pdf,.jpg,.jpeg,.png" {{ $kyc?->id_front ? '' : 'required' }}>
                   <div class="invalid-feedback">Please upload the front of your ID.</div>
                 </div>
                 <div class="col-12">
                   <label for="id_back" class="form-label">Upload ID Back (PDF/JPG/PNG)</label>
-                  <input class="form-control" type="file" id="id_back" name="id_back" accept=".pdf,.jpg,.jpeg,.png" required>
+                  <input class="form-control" type="file" id="id_back" name="id_back" accept=".pdf,.jpg,.jpeg,.png" {{ $kyc?->id_back ? '' : 'required' }}>
                   <div class="invalid-feedback">Please upload the back of your ID.</div>
                 </div>
                 <div class="col-12">
                   <label for="selfie" class="form-label">Upload Selfie</label>
-                  <input class="form-control" type="file" id="selfie" name="selfie" accept=".jpg,.jpeg,.png" required>
+                  <input class="form-control" type="file" id="selfie" name="selfie" accept=".jpg,.jpeg,.png" {{ $kyc?->selfie ? '' : 'required' }}>
                   <div class="invalid-feedback">Please upload a selfie.</div>
                 </div>
               </div>

@@ -245,10 +245,12 @@
           @endforeach
         </div>
 
-        {{-- Pagination --}}
-        @if($products->hasPages())
+        {{-- Load More Button --}}
+        @if($products->hasMorePages())
           <div class="mt-4 d-flex justify-content-center">
-            {{ $products->links('pagination::bootstrap-5') }}
+            <button id="loadMore" class="btn btn-outline-secondary" data-next-page-url="{{ $products->nextPageUrl() }}">
+              Load More
+            </button>
           </div>
         @endif
       </div>
@@ -666,6 +668,42 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(() => alert('Shop URL copied!'))
         .catch(() => alert('Copy failed, please try manually.'));
     };
+
+    const loadMoreBtn = document.getElementById('loadMore');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => {
+        const btn = loadMoreBtn;
+        const nextUrl = btn.dataset.nextPageUrl;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+
+        fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            doc.querySelectorAll('#gridItems .product-item').forEach(el => gridView.appendChild(el));
+            doc.querySelectorAll('#listItems .product-item').forEach(el => listView.appendChild(el));
+
+            const newBtn = doc.getElementById('loadMore');
+            if (newBtn && newBtn.dataset.nextPageUrl) {
+              btn.dataset.nextPageUrl = newBtn.dataset.nextPageUrl;
+              btn.disabled = false;
+              btn.textContent = 'Load More';
+            } else {
+              btn.remove();
+            }
+            applyFilters();
+            applySort();
+          })
+          .catch(() => {
+            btn.disabled = false;
+            btn.textContent = 'Load More';
+          });
+      });
+    }
   });
 </script>
 @endpush

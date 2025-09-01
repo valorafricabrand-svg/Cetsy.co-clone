@@ -45,8 +45,13 @@ use App\Http\Controllers\Seller\{
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 // Safaricom callback (must be reachable publicly)
-Route::post('/wallet/deposit/mpesa/callback', [WalletDepositController::class, 'mpesaCallback'])
+Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
     ->name('wallet.deposit.mpesa.callback');
+
+
+
+Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])->name('wallet.deposit.mpesa.callback');
+Route::post('/wallet/deposit/mpesa/timeout',  [WalletController::class, 'mpesaTimeout'])->name('wallet.deposit.mpesa.timeout');
 
 
 // pages
@@ -84,6 +89,9 @@ Route::get('/search', [ProductController::class, 'search'])->name('search');
 Route::get('/listings', [ProductController::class, 'listings'])->name('listings');
 Route::get('/listing/{slug}', [ProductController::class, 'listing'])->name('listing.show');
 Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])->name('category.show');
+
+// All shops listing
+Route::get('/shops', [ShopController::class, 'publicIndex'])->name('shops.index');
 
 // Shop public profile
 Route::get('/shop/{id}', [ShopController::class, 'showPublic'])->name('shop.show');
@@ -276,7 +284,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     
     //notification routes
-    Route::get('/admin/notification', [AdminNotificationController::class, 'index'])->name('admin.notifications.index');
+    Route::get('/admin/notifications', [AdminNotificationController::class, 'index'])->name('admin.notifications.index');
     
     // Chat
     Route::get('/orders/{order}/chat', [OrderMessageController::class, 'show'])->name('orders.chat.show');
@@ -304,6 +312,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
         ->name('wallet.deposit.mpesa.stk');
+
+        // Poll status (frontend “listens” by polling this)
+ Route::get ('/wallet/deposit/mpesa/status/{ref}', [WalletController::class, 'mpesaStatus'])->name('wallet.deposit.mpesa.status');
 
     // Account
     Route::prefix('account')->name('account.')->group(function () {
@@ -334,6 +345,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'showAppealForm'])->name('appeal.create');
         Route::post('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'submitAppeal'])->name('appeal.store');
     });
+
+    // Evidence Requests (Binance-style)
+    Route::prefix('evidence-requests')->name('evidence-requests.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\EvidenceRequestController::class, 'index'])->name('index');
+        Route::get('/{evidenceRequest}', [\App\Http\Controllers\EvidenceRequestController::class, 'show'])->name('show');
+        Route::post('/{evidenceRequest}/submit', [\App\Http\Controllers\EvidenceRequestController::class, 'submit'])->name('submit');
+    });
     
 });
 
@@ -342,7 +360,7 @@ Route::middleware('auth')->group(function () {
 | Admin Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
     Route::resource('wallets', AdminWalletController::class)->except(['create', 'store']);
@@ -371,12 +389,25 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::resource('categories', CategoryController::class);
 
     Route::get('kyc', [KycController::class, 'index'])->name('kyc.index');
+    Route::get('kyc/{kyc}', [KycController::class, 'show'])->name('kyc.show');
     Route::patch('kyc/{kyc}', [KycController::class, 'update'])->name('kyc.update');
     Route::get('kyc/{kyc}', [KycController::class, 'showDetails'])->name('kyc.showDetails');
 
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
     Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    
+    // Messages
+    Route::get('messages', [\App\Http\Controllers\Admin\MessageController::class, 'index'])->name('messages.index');
+    Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\MessageController::class, 'show'])->name('messages.show');
+
+    // Users
+    Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
+
+    // Categories
+    Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
 
     Route::post('subscriptions/deactivate-expired', [AdminSubscriptionController::class, 'deactivateExpired'])->name('subscriptions.deactivate-expired');
 
@@ -414,6 +445,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'appeals'])->name('index');
         Route::get('/{appeal}', [\App\Http\Controllers\Admin\DisputeController::class, 'showAppeal'])->name('show');
         Route::post('/{appeal}/review', [\App\Http\Controllers\Admin\DisputeController::class, 'reviewAppeal'])->name('review.store');
+        Route::post('/{appeal}/request-evidence', [\App\Http\Controllers\Admin\DisputeController::class, 'requestEvidence'])->name('request-evidence');
+        Route::post('/{appeal}/close', [\App\Http\Controllers\Admin\DisputeController::class, 'closeAppeal'])->name('close');
     });
 
 });
@@ -493,19 +526,19 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     Route::get('buyers/{buyer}', [BuyerController::class, 'show'])->name('buyers.show');
 
     // Offer Management
-    Route::resource('offers', OfferController::class);
-    Route::post('offers/{offer}/accept', [OfferController::class, 'accept'])->name('offers.accept');
-    Route::post('offers/{offer}/decline', [OfferController::class, 'decline'])->name('offers.decline');
-    Route::post('offers/{offer}/counter', [OfferController::class, 'counterOffer'])->name('offers.counter');
-    Route::post('offers/bulk-action', [OfferController::class, 'bulkAction'])->name('offers.bulk-action');
-    Route::get('offers/test-bulk', [OfferController::class, 'testBulkAction'])->name('offers.test-bulk');
+    Route::resource('offers', \App\Http\Controllers\Seller\OfferController::class);
+    Route::post('offers/{offer}/accept', [\App\Http\Controllers\Seller\OfferController::class, 'accept'])->name('offers.accept');
+    Route::post('offers/{offer}/decline', [\App\Http\Controllers\Seller\OfferController::class, 'decline'])->name('offers.decline');
+    Route::post('offers/{offer}/counter', [\App\Http\Controllers\Seller\OfferController::class, 'counterOffer'])->name('offers.counter');
+    Route::post('offers/bulk-action', [\App\Http\Controllers\Seller\OfferController::class, 'bulkAction'])->name('offers.bulk-action');
+    Route::get('offers/test-bulk', [\App\Http\Controllers\Seller\OfferController::class, 'testBulkAction'])->name('offers.test-bulk');
 
     // Message Management
-    Route::get('messages', [MessageController::class, 'index'])->name('messages.index');
-    Route::get('messages/{conversationId}', [MessageController::class, 'show'])->name('messages.show');
-    Route::post('messages/{conversationId}/reply', [MessageController::class, 'reply'])->name('messages.reply');
-    Route::post('messages/{message}/mark-read', [MessageController::class, 'markAsRead'])->name('messages.mark-read');
-    Route::post('messages/bulk-mark-read', [MessageController::class, 'bulkMarkAsRead'])->name('messages.bulk-mark-read');
+    Route::get('messages', [\App\Http\Controllers\Seller\MessageController::class, 'index'])->name('messages.index');
+    Route::get('messages/{conversationId}', [\App\Http\Controllers\Seller\MessageController::class, 'show'])->name('messages.show');
+    Route::post('messages/{conversationId}/reply', [\App\Http\Controllers\Seller\MessageController::class, 'reply'])->name('messages.reply');
+    Route::post('messages/{message}/mark-read', [\App\Http\Controllers\Seller\MessageController::class, 'markAsRead'])->name('messages.mark-read');
+    Route::post('messages/bulk-mark-read', [\App\Http\Controllers\Seller\MessageController::class, 'bulkMarkAsRead'])->name('messages.bulk-mark-read');
 
     // Favorites
     Route::get('favorites', [FavoriteController::class, 'index'])->name('favorites.index');
@@ -530,10 +563,10 @@ Route::middleware('auth')->prefix('buyer')->name('buyer.')->group(function () {
     Route::get('messages/{conversationId}', [MessageController::class, 'show'])->name('messages.show');
 
     // Buyer Offer Management
-    Route::get('offers/available-products', [OfferController::class, 'getAvailableProducts'])->name('offers.available-products');
-    Route::post('offers/{productId}/create', [OfferController::class, 'createNewOffer'])->name('offers.create');
-    Route::get('offers/{offerId}/details', [OfferController::class, 'showDetails'])->name('offers.details');
-    Route::post('offers/{offerId}/respond', [OfferController::class, 'respondToCounterOffer'])->name('offers.respond');
+    Route::get('offers/available-products', [\App\Http\Controllers\Buyer\OfferController::class, 'getAvailableProducts'])->name('offers.available-products');
+    Route::post('offers/{productId}/create', [\App\Http\Controllers\Buyer\OfferController::class, 'createNewOffer'])->name('offers.create');
+    Route::get('offers/{offerId}/details', [\App\Http\Controllers\Buyer\OfferController::class, 'showDetails'])->name('offers.details');
+    Route::post('offers/{offerId}/respond', [\App\Http\Controllers\Buyer\OfferController::class, 'respondToCounterOffer'])->name('offers.respond');
 });
 
 /*

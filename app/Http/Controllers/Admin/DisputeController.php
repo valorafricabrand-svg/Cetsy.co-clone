@@ -6,19 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Dispute;
 use App\Models\DisputeMessage;
 use App\Models\Appeal;
+use App\Notifications\EvidenceRequestNotification;
+use App\Notifications\AppealResolvedNotification;
+use App\Notifications\AppealClosedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon;
+use App\Models\EvidenceRequest;
 
 class DisputeController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-        $this->middleware('admin');
-    }
-
     /**
      * Display a listing of all disputes
      */
@@ -176,6 +175,8 @@ class DisputeController extends Controller
     public function appeals(Request $request)
     {
         $status = $request->get('status');
+        $dispute_type = $request->get('dispute_type');
+        $date_range = $request->get('date_range');
 
         $query = Appeal::with(['dispute', 'appealedBy', 'reviewedBy'])
             ->orderBy('created_at', 'desc');
@@ -184,14 +185,38 @@ class DisputeController extends Controller
             $query->where('status', $status);
         }
 
+        if ($dispute_type) {
+            $query->whereHas('dispute', function($q) use ($dispute_type) {
+                $q->where('type', $dispute_type);
+            });
+        }
+
+        if ($date_range) {
+            switch ($date_range) {
+                case 'today':
+                    $query->whereDate('created_at', today());
+                    break;
+                case 'week':
+                    $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                    break;
+                case 'month':
+                    $query->whereMonth('created_at', now()->month);
+                    break;
+            }
+        }
+
         $appeals = $query->paginate(20);
 
-        $statusCounts = Appeal::selectRaw('status, count(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
+        // Calculate statistics
+        $stats = [
+            'total_appeals' => Appeal::count(),
+            'pending_appeals' => Appeal::where('status', 'pending')->count(),
+            'evidence_requested' => Appeal::where('status', 'evidence_requested')->count(),
+            'resolved_today' => Appeal::whereDate('created_at', today())
+                ->whereIn('status', ['approved', 'rejected'])->count(),
+        ];
 
-        return view('admin.disputes.appeals', compact('appeals', 'statusCounts'));
+        return view('admin.appeals.index', compact('appeals', 'stats'));
     }
 
     /**
@@ -201,51 +226,102 @@ class DisputeController extends Controller
     {
         $appeal->load(['dispute', 'appealedBy', 'reviewedBy']);
         
-        return view('admin.disputes.show-appeal', compact('appeal'));
+        return view('admin.appeals.show', compact('appeal'));
     }
 
     /**
-     * Review an appeal
+     * Review and resolve an appeal (Binance-style)
      */
     public function reviewAppeal(Request $request, Appeal $appeal)
     {
-        if (!$appeal->isPending()) {
-            return back()->withErrors(['error' => 'This appeal has already been reviewed.']);
-        }
-
         $data = $request->validate([
-            'decision' => ['required', Rule::in(['approved', 'rejected'])],
-            'review_notes' => 'required|string|max:1000'
+            'decision' => 'required|in:approved,rejected',
+            'review_notes' => 'required|string|max:2000',
+            'dispute_resolution' => 'nullable|string|max:1000',
+            'refund_amount' => 'nullable|numeric|min:0|max:999999.99',
+            'resolution_notes' => 'nullable|string|max:1000'
         ]);
 
-        DB::transaction(function () use ($appeal, $data) {
-            if ($data['decision'] === 'approved') {
-                $appeal->approve($data['review_notes'], Auth::id());
-                
-                // Create system message
-                DisputeMessage::create([
-                    'dispute_id' => $appeal->dispute_id,
-                    'user_id' => 1, // System user ID
-                    'message' => 'Appeal approved. Dispute under review.',
-                    'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
-                    'is_internal' => false
+        try {
+            DB::transaction(function () use ($appeal, $data) {
+                // Update appeal status
+                $appeal->update([
+                    'status' => $data['decision'] === 'approved' ? Appeal::STATUS_APPROVED : Appeal::STATUS_REJECTED,
+                    'decision' => $data['decision'],
+                    'review_notes' => $data['review_notes'],
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now()
                 ]);
-            } else {
-                $appeal->reject($data['review_notes'], Auth::id());
-                
-                // Create system message
-                DisputeMessage::create([
-                    'dispute_id' => $appeal->dispute_id,
-                    'user_id' => 1, // System user ID
-                    'message' => 'Appeal rejected. Dispute closed.',
-                    'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
-                    'is_internal' => false
-                ]);
-            }
-        });
 
-        return redirect()->route('admin.disputes.appeals')
-            ->with('success', 'Appeal reviewed successfully.');
+                // Update dispute based on appeal decision
+                if ($data['decision'] === 'approved') {
+                    // Appeal approved - update dispute resolution
+                    $disputeData = [
+                        'status' => 'appeal_approved',
+                        'resolved_at' => now(),
+                        'resolution' => $data['dispute_resolution'] ?? 'Appeal approved by Cetsy support team.',
+                        'decision' => 'appeal_approved'
+                    ];
+
+                    if (isset($data['refund_amount']) && $data['refund_amount'] > 0) {
+                        $disputeData['refund_amount'] = $data['refund_amount'];
+                    }
+
+                    $appeal->dispute->update($disputeData);
+
+                    // Create system message
+                    DisputeMessage::create([
+                        'dispute_id' => $appeal->dispute_id,
+                        'user_id' => 1, // System user ID
+                        'message' => "Appeal APPROVED. {$data['review_notes']}",
+                        'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                        'is_internal' => false
+                    ]);
+
+                } else {
+                    // Appeal rejected - mark dispute as final
+                    $appeal->dispute->update([
+                        'status' => 'appeal_rejected',
+                        'resolved_at' => now(),
+                        'resolution' => $data['dispute_resolution'] ?? 'Appeal rejected by Cetsy support team.',
+                        'decision' => 'appeal_rejected',
+                        'can_appeal' => false
+                    ]);
+
+                    // Create system message
+                    DisputeMessage::create([
+                        'dispute_id' => $appeal->dispute_id,
+                        'user_id' => 1, // System user ID
+                        'message' => "Appeal REJECTED. {$data['review_notes']}",
+                        'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                        'is_internal' => false
+                    ]);
+                }
+
+                // Send notifications to both parties
+                $appeal->dispute->buyer->notify(new AppealResolvedNotification($appeal));
+                $appeal->dispute->seller->notify(new AppealResolvedNotification($appeal));
+            });
+
+            \Log::info('Appeal reviewed successfully', [
+                'appeal_id' => $appeal->id,
+                'decision' => $data['decision'],
+                'reviewed_by' => auth()->id()
+            ]);
+
+            return redirect()->route('admin.appeals.show', $appeal->id)
+                ->with('success', "Appeal {$data['decision']} successfully. Dispute has been resolved.");
+
+        } catch (\Exception $e) {
+            \Log::error('Error reviewing appeal: ' . $e->getMessage(), [
+                'appeal_id' => $appeal->id,
+                'data' => $data,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->withErrors(['error' => 'Failed to review appeal. Please try again.']);
+        }
     }
 
     /**
@@ -314,6 +390,7 @@ class DisputeController extends Controller
             'resolved_disputes' => Dispute::resolved()->count(),
             'appealed_disputes' => Dispute::appealed()->count(),
             'final_disputes' => Dispute::final()->count(),
+            'mutually_resolved_disputes' => Dispute::mutuallyResolved()->count(),
             'total_appeals' => Appeal::count(),
             'pending_appeals' => Appeal::pending()->count(),
             'approved_appeals' => Appeal::approved()->count(),
@@ -333,5 +410,169 @@ class DisputeController extends Controller
             ->get();
 
         return view('admin.disputes.statistics', compact('stats', 'monthlyTrends', 'typeDistribution'));
+    }
+
+    /**
+     * Request evidence from both parties (Binance-style)
+     */
+    public function requestEvidence(Request $request, Appeal $appeal)
+    {
+        // Debug: Log the incoming request
+        \Log::info('Evidence request received', [
+            'appeal_id' => $appeal->id,
+            'request_data' => $request->all(),
+            'user_id' => auth()->id()
+        ]);
+
+        $data = $request->validate([
+            'message' => 'required|string|max:1000',
+            'evidence_types' => 'required|array|min:1',
+            'evidence_types.*' => 'string|in:screenshots,documents,photos,videos,receipts,communication_logs,bank_statements,tracking_info,other',
+            'deadline_days' => 'required|integer|min:1|max:30'
+        ]);
+
+        // Ensure proper types and validate
+        $data['deadline_days'] = (int) $data['deadline_days'];
+        $data['evidence_types'] = array_map('strval', $data['evidence_types']);
+        
+        // Debug: Log the processed data
+        \Log::info('Evidence request data processed', [
+            'deadline_days' => $data['deadline_days'],
+            'evidence_types' => $data['evidence_types'],
+            'message' => $data['message']
+        ]);
+        
+        // Additional validation
+        if ($data['deadline_days'] < 1 || $data['deadline_days'] > 30) {
+            \Log::warning('Invalid deadline days', ['deadline_days' => $data['deadline_days']]);
+            return back()->withErrors(['deadline_days' => 'Deadline must be between 1 and 30 days.']);
+        }
+        
+        if (empty($data['evidence_types'])) {
+            \Log::warning('No evidence types selected');
+            return back()->withErrors(['evidence_types' => 'At least one evidence type must be selected.']);
+        }
+
+        $deadline = Carbon::now()->addDays($data['deadline_days']);
+
+        try {
+            DB::transaction(function () use ($appeal, $data, $deadline) {
+                // Create evidence request for buyer
+                $buyerEvidenceRequest = EvidenceRequest::create([
+                    'appeal_id' => $appeal->id,
+                    'user_id' => $appeal->dispute->buyer_id,
+                    'party_type' => 'buyer',
+                    'request_message' => $data['message'],
+                    'required_evidence_types' => $data['evidence_types'],
+                    'deadline' => $deadline,
+                    'status' => 'pending'
+                ]);
+
+                // Create evidence request for seller
+                $sellerEvidenceRequest = EvidenceRequest::create([
+                    'appeal_id' => $appeal->id,
+                    'user_id' => $appeal->dispute->seller_id,
+                    'party_type' => 'seller',
+                    'request_message' => $data['message'],
+                    'required_evidence_types' => $data['evidence_types'],
+                    'deadline' => $deadline,
+                    'status' => 'pending'
+                ]);
+
+                // Send notifications to both parties
+                $appeal->dispute->buyer->notify(new EvidenceRequestNotification($buyerEvidenceRequest));
+                $appeal->dispute->seller->notify(new EvidenceRequestNotification($sellerEvidenceRequest));
+
+                // Update appeal status
+                $appeal->update(['status' => Appeal::STATUS_EVIDENCE_REQUESTED]);
+
+                // Create system message
+                DisputeMessage::create([
+                    'dispute_id' => $appeal->dispute_id,
+                    'user_id' => 1, // System user ID
+                    'message' => "Evidence requested from both parties. Deadline: {$deadline->format('M d, Y \a\t g:i A')}",
+                    'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                    'is_internal' => false
+                ]);
+            });
+
+            \Log::info('Evidence request successful', [
+                'appeal_id' => $appeal->id,
+                'deadline' => $deadline->format('Y-m-d H:i:s')
+            ]);
+            
+            return redirect()->route('admin.appeals.show', $appeal->id)
+                ->with('success', 'Evidence requested from both parties successfully.');
+                
+        } catch (\Exception $e) {
+            \Log::error('Error requesting evidence: ' . $e->getMessage(), [
+                'appeal_id' => $appeal->id,
+                'data' => $data,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->withErrors(['error' => 'Failed to request evidence. Please try again.']);
+        }
+    }
+
+    /**
+     * Close appeal without resolution (for cases where evidence is insufficient)
+     */
+    public function closeAppeal(Request $request, Appeal $appeal)
+    {
+        $data = $request->validate([
+            'closure_reason' => 'required|string|max:1000',
+            'closure_notes' => 'nullable|string|max:1000'
+        ]);
+
+        try {
+            DB::transaction(function () use ($appeal, $data) {
+                // Update appeal status to closed
+                $appeal->update([
+                    'status' => 'closed',
+                    'review_notes' => "Appeal closed: {$data['closure_reason']}",
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now()
+                ]);
+
+                // Update dispute to maintain current status but mark appeal as closed
+                $appeal->dispute->update([
+                    'can_appeal' => false
+                ]);
+
+                // Create system message
+                DisputeMessage::create([
+                    'dispute_id' => $appeal->dispute_id,
+                    'user_id' => 1, // System user ID
+                    'message' => "Appeal CLOSED: {$data['closure_reason']}",
+                    'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                    'is_internal' => false
+                ]);
+
+                // Send notifications to both parties
+                $appeal->dispute->buyer->notify(new AppealClosedNotification($appeal));
+                $appeal->dispute->seller->notify(new AppealClosedNotification($appeal));
+            });
+
+            \Log::info('Appeal closed successfully', [
+                'appeal_id' => $appeal->id,
+                'closure_reason' => $data['closure_reason'],
+                'closed_by' => auth()->id()
+            ]);
+
+            return redirect()->route('admin.appeals.show', $appeal->id)
+                ->with('success', 'Appeal closed successfully.');
+
+        } catch (\Exception $e) {
+            \Log::error('Error closing appeal: ' . $e->getMessage(), [
+                'appeal_id' => $appeal->id,
+                'data' => $data,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->withErrors(['error' => 'Failed to close appeal. Please try again.']);
+        }
     }
 }

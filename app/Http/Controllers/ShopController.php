@@ -116,8 +116,37 @@ public function create()
         return view('shops.show', compact('shop', 'paymentMethods', 'subscription', 'isHolidayMode', 'activeProducts', 'pausedProducts'));
     }
 
+    /**
+     * Display a paginated list of all shops on the marketplace.
+     */
+    public function publicIndex(Request $request)
+    {
+        $query = Shop::query()
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->latest();
 
-public function showPublic($id)
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('country')) {
+            $query->where('country', $request->country);
+        }
+
+        $shops = $query->paginate(12);
+
+        $countries = Country::orderBy('name')->get()->keyBy('id');
+
+        return themed_view('shops', compact('shops', 'countries'));
+    }
+
+
+public function showPublic(Request $request, $id)
 {
     $shop = Shop::whereSlug($id)->firstOrFail();
 
@@ -126,6 +155,10 @@ public function showPublic($id)
         ->with('media')
         ->latest()
         ->paginate(12);
+
+    if ($request->ajax()) {
+        return view('theme.' . theme() . '.partials.shop-products', compact('products'))->render();
+    }
 
     return themed_view('shop', compact('shop', 'products'));
 }

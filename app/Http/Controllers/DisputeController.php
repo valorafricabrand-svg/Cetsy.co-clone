@@ -523,4 +523,91 @@ class DisputeController extends Controller
         return redirect()->route('disputes.show', $dispute->id)
             ->with('success', 'Appeal submitted successfully. It will be reviewed within 48 hours.');
     }
+
+    /**
+     * Initiate mutual resolution
+     */
+    public function initiateMutualResolution(Request $request, Dispute $dispute)
+    {
+        $user = Auth::user();
+
+        // Check if user is authorized
+        $isAuthorized = $dispute->buyer_id === $user->id || $dispute->seller_id === $user->id;
+        if (!$isAuthorized) {
+            abort(403, 'Unauthorized access to dispute.');
+        }
+
+        if (!$dispute->canBeMutuallyResolved()) {
+            return back()->withErrors(['error' => 'This dispute cannot be resolved mutually at this stage.']);
+        }
+
+        $data = $request->validate([
+            'terms' => 'required|string|max:1000'
+        ]);
+
+        DB::transaction(function () use ($dispute, $data, $user) {
+            // Initiate mutual resolution
+            $dispute->initiateMutualResolution($data['terms'], $user->id);
+
+            // Create system message
+            DisputeMessage::create([
+                'dispute_id' => $dispute->id,
+                'user_id' => 1, // System user ID
+                'message' => "Mutual resolution proposed: {$data['terms']}",
+                'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                'is_internal' => false
+            ]);
+        });
+
+        return back()->with('success', 'Mutual resolution proposed. Waiting for the other party to agree.');
+    }
+
+    /**
+     * Agree to mutual resolution
+     */
+    public function agreeToMutualResolution(Request $request, Dispute $dispute)
+    {
+        $user = Auth::user();
+
+        // Check if user is authorized
+        $isAuthorized = $dispute->buyer_id === $user->id || $dispute->seller_id === $user->id;
+        if (!$isAuthorized) {
+            abort(403, 'Unauthorized access to dispute.');
+        }
+
+        if (!$dispute->mutual_resolution_terms) {
+            return back()->withErrors(['error' => 'No mutual resolution terms have been proposed.']);
+        }
+
+        DB::transaction(function () use ($dispute, $user) {
+            // Agree to mutual resolution
+            $isResolved = $dispute->agreeToMutualResolution($user->id);
+
+            if ($isResolved) {
+                // Create system message for successful resolution
+                DisputeMessage::create([
+                    'dispute_id' => $dispute->id,
+                    'user_id' => 1, // System user ID
+                    'message' => 'Both parties have agreed to the mutual resolution. Dispute closed.',
+                    'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                    'is_internal' => false
+                ]);
+            } else {
+                // Create message for partial agreement
+                DisputeMessage::create([
+                    'dispute_id' => $dispute->id,
+                    'user_id' => 1, // System user ID
+                    'message' => 'One party has agreed to the mutual resolution. Waiting for the other party.',
+                    'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                    'is_internal' => false
+                ]);
+            }
+        });
+
+        if ($dispute->isMutuallyResolved()) {
+            return back()->with('success', 'Dispute has been mutually resolved and closed.');
+        } else {
+            return back()->with('success', 'You have agreed to the mutual resolution. Waiting for the other party.');
+        }
+    }
 }

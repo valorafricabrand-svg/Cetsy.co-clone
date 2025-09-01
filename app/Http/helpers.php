@@ -2,6 +2,7 @@
 use App\Models\Setting;
 use App\Models\Shop;
 use App\Models\Country;
+use App\Models\Product;
 
 function favicon_url(){
 
@@ -69,18 +70,24 @@ function shop(){
   }
 
 
-   function wallet(){
+   function wallet($status = 'completed'){
      $walletBalance = \App\Models\Wallet::where('user_id', Auth::id())
+                            ->where('status', $status)
                             ->selectRaw('SUM(credit - debit) as balance')
                             ->value('balance') ?? 0;
 
         return $walletBalance;
   }
 
+   function wallet_on_hold(){
+     return wallet('on_hold');
+   }
 
-     function admin_wallet() {
 
-     $walletBalance = \App\Models\Wallet::selectRaw('SUM(credit - debit) as balance')
+     function admin_wallet($status = 'completed') {
+
+     $walletBalance = \App\Models\Wallet::where('status', $status)
+                            ->selectRaw('SUM(credit - debit) as balance')
                             ->value('balance') ?? 0;
 
         return $walletBalance;
@@ -90,6 +97,22 @@ function shop(){
   function get_currency() {
     return setting('default_currency');
  }
+
+if (! function_exists('apply_discount')) {
+    /**
+     * Calculate the discounted price for a given product.
+     *
+     * @param  float  $price      Base or variant price.
+     * @param  int    $productId  ID of the product.
+     * @return float              Price after applying any product or deal discount.
+     */
+    function apply_discount(float $price, int $productId): float
+    {
+        $product = Product::find($productId);
+
+        return $product ? $product->applyDiscount($price) : $price;
+    }
+}
 
 
 if (! function_exists('setting')) {
