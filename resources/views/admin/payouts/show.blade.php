@@ -20,6 +20,12 @@
                 <span>Status</span>
                 <span class="text-capitalize">{{ $payout->status }}</span>
             </li>
+            @if($payout->paymentMethod)
+            <li class="list-group-item d-flex justify-content-between">
+                <span>Payment Method</span>
+                <span>{{ optional($payout->paymentMethod->paymentType)->name }} — {{ $payout->paymentMethod->account_name }}</span>
+            </li>
+            @endif
             <li class="list-group-item"><span class="fw-semibold">Meta / Bank details</span><br>
                 <pre class="mb-0 small bg-light p-2">{{ json_encode($payout->meta, JSON_PRETTY_PRINT) }}</pre>
             </li>

@@ -7,6 +7,7 @@ use App\Models\Activity;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
+use App\Models\PaymentType;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\Wallet;
@@ -120,6 +121,7 @@ class WalletController extends Controller
         // Fetch payment methods for the current user's shop
         $shop = Shop::where('user_id', Auth::id())->first();
         $paymentMethods = collect();
+        $paymentTypes = collect();
 
         if ($shop) {
             $paymentMethods = PaymentMethod::where('shop_id', $shop->id)
@@ -127,7 +129,20 @@ class WalletController extends Controller
                 ->get();
         }
 
-        return view('wallet.index', compact('transactions', 'balance', 'onHold', 'paymentMethods'));
+        // Active payment types for inline add form
+        $paymentTypes = PaymentType::where('status', 'active')->orderBy('name')->get();
+
+        // settings-backed payout config
+        $rawFee    = (float) (function_exists('setting') ? setting('fee_rate', 1.5) : 1.5);
+        $feeRate   = $rawFee > 1 ? $rawFee / 100 : $rawFee; // normalize to decimal
+        $minAmount = (float) (function_exists('setting') ? setting('min_amount', 1) : 1);
+
+        $maxPayout = $feeRate > 0 ? max(0, floor(($balance / (1 + $feeRate)) * 100) / 100) : $balance;
+
+        return view(
+            'wallet.index',
+            compact('transactions', 'balance', 'onHold', 'paymentMethods', 'paymentTypes', 'feeRate', 'minAmount', 'maxPayout')
+        );
     }
 
     public function depositForm()
