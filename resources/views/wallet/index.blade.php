@@ -103,14 +103,17 @@
         {{-- amount --}}
         <div class="mb-3">
             <label class="form-label fw-semibold">Amount</label>
-            <input type="number"
-                   name="amount"
-                   class="form-control @error('amount') is-invalid @enderror"
-                   step="0.01"
-                   min="{{ number_format($minAmount, 2, '.', '') }}"
-                    max="{{ number_format($maxPayout, 2, '.', '') }}"
-                   value="{{ old('amount') }}"
-                   required>
+            <div class="input-group">
+              <input type="number"
+                     name="amount"
+                     class="form-control @error('amount') is-invalid @enderror"
+                     step="0.01"
+                     min="{{ number_format($minAmount, 2, '.', '') }}"
+                     max="{{ number_format($maxPayout, 2, '.', '') }}"
+                     value="{{ old('amount') }}"
+                     required>
+              <button class="btn btn-outline-secondary" type="button" id="payoutMaxBtn" tabindex="-1">Max</button>
+            </div>
             <div class="invalid-feedback">@error('amount') {{ $message }} @else Required @enderror</div>
             <small class="text-muted d-block">Available: {{ get_currency() }} {{ number_format($balance,2) }}</small>
             <small class="text-muted d-block">Max request (before fee deducted): {{ get_currency() }} {{ number_format($maxPayout,2) }}</small>
@@ -157,7 +160,7 @@
     </div>
 
     <div class="modal-footer">
-        <button class="btn btn-primary">
+        <button id="payoutSubmitBtn" class="btn btn-primary" type="submit">
             Submit&nbsp;Request
         </button>
     </div>
@@ -282,6 +285,9 @@
     const feeRate = {{ json_encode($feeRate) }};
     const feeEl = document.getElementById('payoutFee');
     const netEl = document.getElementById('payoutNet');
+    const methodSel = document.querySelector('#payoutModal select[name="method"]');
+    const submitBtn = document.getElementById('payoutSubmitBtn');
+    const maxBtn = document.getElementById('payoutMaxBtn');
     const fmt = (n) => (isFinite(n) ? Number(n).toFixed(2) : '0.00');
     function recalc(){
       const amt = parseFloat(input.value || '0');
@@ -290,8 +296,33 @@
       if (feeEl) feeEl.textContent = fmt(fee);
       if (netEl) netEl.textContent = fmt(net);
     }
+    function updateSubmitDisabled(){
+      let disabled = false;
+      const v = parseFloat(input.value || '');
+      const min = parseFloat(input.min || '0');
+      const max = parseFloat(input.max || '0');
+      if (!isFinite(v) || v < min || v > max) disabled = true;
+      if (methodSel && (!methodSel.value || methodSel.value === '')) disabled = true;
+      if (submitBtn) submitBtn.disabled = disabled;
+    }
     input.addEventListener('input', recalc);
+    input.addEventListener('input', updateSubmitDisabled);
+    if (methodSel) methodSel.addEventListener('change', updateSubmitDisabled);
+    if (maxBtn) maxBtn.addEventListener('click', function(){
+      if (input && input.max) {
+        input.value = input.max;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+    const modalEl = document.getElementById('payoutModal');
+    if (modalEl) {
+      modalEl.addEventListener('shown.bs.modal', function(){
+        recalc();
+        updateSubmitDisabled();
+      });
+    }
     recalc();
+    updateSubmitDisabled();
   })();
   // Auto-open payout modal if requested (after adding method)
   @if(session('open_payout_modal') || $errors->has('amount') || $errors->has('method'))
