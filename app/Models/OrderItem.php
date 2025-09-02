@@ -21,7 +21,14 @@ class OrderItem extends Model
         'price',
         'shipping_profile_id',  // Add this field here
         'shipping_cost',
-        'variation_summary'
+        'variation_summary',
+        'downloaded_at',
+        'download_count',
+    ];
+
+    protected $casts = [
+        'downloaded_at' => 'datetime',
+        'download_count' => 'integer',
     ];
 
     /**

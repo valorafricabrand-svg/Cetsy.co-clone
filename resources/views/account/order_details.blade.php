@@ -1,7 +1,63 @@
-{{-- resources/views/orders/show.blade.php --}}
+﻿{{-- resources/views/orders/show.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Order Details')
+
+@push('styles')
+<style>
+  /* Compact summary chips below header */
+  .chip { display:inline-flex; align-items:center; gap:.45rem; padding:.35rem .6rem; border-radius:999px; background:#f1f3f5; font-size:.8125rem; }
+  .chip i { opacity:.85; }
+  .chip .label-muted { color:#6c757d; }
+
+  /* Print stylesheet: clean invoice look */
+  @media print {
+    @page { margin: 12mm; }
+    html, body { background: #fff !important; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12px; }
+
+    /* Hide nav/footer/UI chrome and actions */
+    nav, .navbar, footer, .footer, .btn-toolbar, .btn, .alert, .modal, .chip, .stepper, .no-print { display: none !important; }
+
+    /* Expand content */
+    .container, .container-xxl, .content { max-width: 100% !important; padding: 0 !important; }
+
+    /* Headings */
+    h1, h2, h3, h4, h5 { color: #000 !important; }
+
+    /* Cards and tables with clear borders */
+    .card { box-shadow: none !important; border: 1px solid #000 !important; page-break-inside: avoid; }
+    .card-header { border-bottom: 1px solid #000 !important; }
+    .card-body { padding: 12px !important; }
+    .table { border-collapse: collapse !important; }
+    .table th, .table td { border: 1px solid #000 !important; }
+    .table thead { border-bottom: 2px solid #000 !important; }
+    .table-striped > tbody > tr:nth-of-type(odd) { --bs-table-accent-bg: transparent !important; }
+
+    /* Badges render as plain framed text */
+    .badge { background: transparent !important; color: #000 !important; border: 1px solid #000 !important; }
+
+    /* Links without URLs appended */
+    a[href]::after { content: '' !important; }
+  }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"], .has-tooltip'));
+    tooltipTriggerList.forEach(function (el) { try { new bootstrap.Tooltip(el); } catch(e) {} });
+  });
+  // Allow quick Ctrl/Cmd+P to show clean print
+  window.addEventListener('keydown', function(e){
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+      document.body.classList.add('printing');
+      setTimeout(function(){ document.body.classList.remove('printing'); }, 2000);
+    }
+  });
+</script>
+@endpush
 
 @section('content')
 <div class="content">
@@ -19,7 +75,7 @@
         {{-- Title --}}
         <h2 class="mb-0 text-success fw-semibold d-flex align-items-center gap-1">
           <i class="bi bi-receipt-cutoff"></i>
-          Order&nbsp;#{{ $order->id }}&nbsp;Details
+          Order&nbsp;#{{ $order->id }}&nbsp;&mdash;&nbsp;Details
         </h2>
 
         {{-- Action buttons --}}
@@ -27,26 +83,38 @@
 
           @if($order->status === \App\Models\Order::STATUS_PENDING)
             <a href="{{ route('pay_now', $order->id) }}"
-               class="btn btn-primary btn-lg d-flex align-items-center gap-2 px-4 py-2">
+               class="btn btn-primary btn-lg d-flex align-items-center gap-2 px-4 py-2"
+               data-bs-toggle="tooltip" data-bs-placement="bottom" title="Proceed to payment for this order">
               <i class="bi bi-credit-card fs-5"></i>
               <span>Pay&nbsp;Now</span>
             </a>
           @endif
 
           <a href="{{ route('orders.chat.show', $order->id) }}"
-             class="btn btn-outline-info btn-lg d-flex align-items-center gap-2 px-4 py-2">
+             class="btn btn-outline-info btn-lg d-flex align-items-center gap-2 px-4 py-2"
+             data-bs-toggle="tooltip" data-bs-placement="bottom" title="Open conversation about this order">
             <i class="bi bi-chat-dots fs-5"></i>
             <span>Messages</span>
           </a>
 
+          <button type="button"
+                  class="btn btn-outline-secondary btn-lg d-flex align-items-center gap-2 px-4 py-2 no-print"
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Print a clean invoice view"
+                  onclick="window.print()">
+            <i class="bi bi-printer fs-5"></i>
+            <span>Print</span>
+          </button>
+
           <a href="{{ route('account.orders') }}"
-             class="btn btn-outline-secondary btn-lg d-flex align-items-center gap-2 px-4 py-2">
+             class="btn btn-outline-secondary btn-lg d-flex align-items-center gap-2 px-4 py-2"
+             data-bs-toggle="tooltip" data-bs-placement="bottom" title="Return to your orders">
             <i class="bi bi-arrow-left-circle fs-5"></i>
             <span>Back</span>
           </a>
 
           @if($order->status === \App\Models\Order::STATUS_SHIPPED)
-            <button class="btn btn-outline-success btn-lg d-flex align-items-center gap-2 px-4 py-2"
+            <button class="btn btn-outline-success btn-lg d-flex align-items-center gap-2 px-4 py-2 has-tooltip"
+                    data-bs-placement="bottom" title="Confirm you received the order"
                     data-bs-toggle="modal"
                     data-bs-target="#deliverModal-{{ $order->id }}">
               <i class="bi bi-check2-circle fs-5"></i>
@@ -56,6 +124,30 @@
           @endif
 
         </div>
+      </div>
+
+      {{-- Summary chips: status, placed, items, total --}}
+      <div class="mt-3 d-flex flex-wrap gap-2">
+        <span class="chip">
+          <i class="bi bi-activity"></i>
+          <span class="label-muted">Status:</span>
+          <span class="badge {{ $order->getStatusBadgeClass() }} text-uppercase">{{ ucfirst($order->status) }}</span>
+        </span>
+        <span class="chip">
+          <i class="bi bi-calendar-event"></i>
+          <span class="label-muted">Placed:</span>
+          <span>{{ $order->created_at->format('d M Y') }}</span>
+        </span>
+        <span class="chip">
+          <i class="bi bi-bag"></i>
+          <span class="label-muted">Items:</span>
+          <span>{{ $order->items->sum('quantity') }}</span>
+        </span>
+        <span class="chip">
+          <i class="bi bi-cash-coin"></i>
+          <span class="label-muted">Total:</span>
+          <span class="fw-semibold">{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</span>
+        </span>
       </div>
     </div>
 
@@ -176,7 +268,8 @@
 
     {{-- ===== ORDER ITEMS (uses variation_summary, hides shipping for digital) + DOWNLOADS ===== --}}
     @php
-      $canReviewOrder = ($order->status === \App\Models\Order::STATUS_DELIVERED);
+      $canReviewDelivered = ($order->status === \App\Models\Order::STATUS_DELIVERED);
+      $canReviewDigitalIfCompleted = ($order->status === \App\Models\Order::STATUS_COMPLETED) || $canReviewDelivered;
     @endphp
 
     @if($order->items->count())
@@ -230,8 +323,7 @@
                     $lineTotal    = $lineSubtotal + $shipCost;
 
                     // image
-                    $thumbUrl = $product?->featured_image
-                        ?: ($product?->media->first()?->url ? asset('storage/'.$product->media->first()->url) : null);
+                    $thumbUrl = product_thumb_url($product);
 
                     // Downloads: allow on Processing/Completed for digital products
                     $canDownload = in_array(
@@ -266,12 +358,12 @@
                           <span class="badge bg-secondary ms-1">Digital</span>
                         @endif
                       @else
-                        <span class="text-muted">N/A</span>
+                        <span class="text-muted">&mdash;</span>
                       @endif
                     </td>
 
                     {{-- Variation: saved summary --}}
-                    <td>{{ $item->variation_summary ?? '—' }}</td>
+                    <td>@if($item->variation_summary) {{ $item->variation_summary }} @else &mdash; @endif</td>
 
                     {{-- Qty --}}
                     <td>{{ $qty }}</td>
@@ -293,12 +385,17 @@
                       @if($reviewed)
                         <span class="badge bg-success d-inline-flex align-items-center gap-1">
                           <i class="bi bi-check-circle"></i>
-                          {{ $item->review->rating }} ⭐
+                          {{ $item->review->rating }} &#9733;
                         </span>
-                      @elseif($canReviewOrder)
-                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
-                          <i class="bi bi-star"></i> Review
-                        </button>
+                      @elseif($canReviewDelivered || ($product && $product->type === 'digital' && $canReviewDigitalIfCompleted))
+                        @php $downloaded = !empty($item->downloaded_at); @endphp
+                        @if($product && $product->type === 'digital' && ! $downloaded)
+                          <span class="text-muted small">Download required to review</span>
+                        @else
+                          <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
+                            <i class="bi bi-star"></i> Review
+                          </button>
+                        @endif
                       @else
                         <span class="text-muted small">Available after delivery</span>
                       @endif
@@ -321,7 +418,7 @@
                           </ul>
                         </div>
                       @else
-                        <span class="text-muted">—</span>
+                        <span class="text-muted">&mdash;</span>
                       @endif
                     </td>
                   </tr>
@@ -399,16 +496,22 @@
   </div>
 </div>
 
-{{-- ===== REVIEW MODALS (only when Delivered and not already reviewed) ===== --}}
+{{-- ===== REVIEW MODALS (Delivered for physical; Completed/Delivered + download for digital) ===== --}}
 @foreach($order->items as $item)
-  @if($canReviewOrder && !$item->review)
+  @php
+    $isDigital = optional($item->product)->type === 'digital';
+    $allowReviewModal = $isDigital
+      ? ($canReviewDigitalIfCompleted && !empty($item->downloaded_at))
+      : $canReviewDelivered;
+  @endphp
+  @if($allowReviewModal && !$item->review)
     @php($modalId = 'reviewModal_'.$item->id)
     <div class="modal fade" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg">
         <form method="POST" action="{{ route('orders.items.reviews.store',[$item->order_id,$item->id]) }}" class="modal-content">
           @csrf
           <div class="modal-header">
-            <h5 class="modal-title">Review – {{ optional($item->product)->name }}</h5>
+            <h5 class="modal-title">Review &mdash; {{ optional($item->product)->name }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
 
@@ -416,14 +519,14 @@
             <div class="mb-3">
               <label class="form-label fw-semibold">Rating</label>
               <select name="rating" class="form-select" required>
-                <option value="" hidden>Choose…</option>
+<option value="" hidden>Choose&hellip;</option>
                 @for($i=5;$i>=1;$i--)
-                  <option value="{{ $i }}">{{ $i }} ⭐</option>
+                  <option value="{{ $i }}">{{ $i }} &#9733;</option>
                 @endfor
               </select>
             </div>
             <div class="mb-3">
-              <label class="form-label fw-semibold">Comment <span class="text-muted">(optional)</span></label>
+              <label class="form-label fw-semibold">Comment <span class="text-muted">&mdash;</span></label>
               <textarea name="comment" rows="4" class="form-control" placeholder="Share details of your experience"></textarea>
             </div>
           </div>
@@ -439,3 +542,8 @@
   @endif
 @endforeach
 @endsection
+
+
+
+
+

@@ -6,16 +6,10 @@
 
   {{-- Thumbnail --}}
   <div class="ratio ratio-1x1 rounded-top overflow-hidden">
-    @if($item->featured_image)
-      <img src="{{ $item->featured_image }}"
+    @php($thumb = product_thumb_url($item))
+    <img src="{{ $thumb }}"
          alt="{{ $item->name }}"
          class="w-100 h-100 object-fit-cover">
-    @else
-  <img src="{{ asset('storage/' . ($item->media->first()->url ?? 'placeholder.jpg')) }}"
-         alt="{{ $item->name }}"
-         class="w-100 h-100 object-fit-cover">
-    @endif
-  
   </div>
 
   <div class="card-body p-2 d-flex flex-column">

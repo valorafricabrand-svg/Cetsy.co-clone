@@ -57,6 +57,31 @@ class DigitalFileController extends Controller
             abort(404, 'File not found.');
         }
 
+        // Mark download confirmation on related order items for this user/product
+        try {
+            \App\Models\OrderItem::where('product_id', $file->product_id)
+                ->whereHas('order', function($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->whereIn('status', [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED, \App\Models\Order::STATUS_DELIVERED]);
+                })
+                ->get()
+                ->each(function($item){
+                    $item->download_count = (int) $item->download_count + 1;
+                    if (empty($item->downloaded_at)) {
+                        $item->downloaded_at = now();
+                    }
+                    $item->save();
+                });
+        } catch (\Throwable $e) {
+            // do not block download on logging failure
+            \Log::warning('Failed to mark digital download', [
+                'file_id' => $file->id,
+                'product_id' => $file->product_id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         // Force-download so it doesn't open in browser
         return $disk->download($path, $filename);
     }

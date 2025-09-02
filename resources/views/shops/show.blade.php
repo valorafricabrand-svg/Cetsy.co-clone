@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('content')
 
@@ -251,7 +251,7 @@
 
       {{-- Placeholder for listings --}}
       <div class="text-center text-muted mt-4">
-        (Product listings will appear here soon…)
+        (Product listings will appear here soon&hellip;)
       </div>
 
     </div>
@@ -365,7 +365,7 @@
                     <i class="fas fa-info-circle me-2"></i>
                     Your subscription will expire on {{ $subscription->end_date->format('M d, Y') }}
                     @if($subscription->end_date->diffInDays(now()) <= 7)
-                      <span class="text-warning fw-bold">(Expires soon!)</span>
+                      <span class="text-warning fw-bold">(Expires soon&hellip;))</span>
                     @endif
                   </div>
                 </div>

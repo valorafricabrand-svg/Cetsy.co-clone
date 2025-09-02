@@ -16,6 +16,7 @@ class BulkPriceController extends Controller
         $shopId = shop_id(); // remove if you don't want shop scoping
 
         $products = Product::query()
+            ->with(['media','shop'])
             ->where('shop_id', $shopId)
             ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->q.'%'))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->category_id))
