@@ -15,19 +15,21 @@
         {{-- View Payouts --}}
         @if(auth()->user()->isSeller())
         <a href="{{ route('seller.payouts.index') }}" class="btn btn-outline-primary">
-            <i class="fas fa-sync-alt me-1"></i> View Payouts
+            <i class="fas fa-receipt me-1"></i> View Payouts
         </a>
         @endif
         <a href="{{ route('wallet.deposit.form') }}" class="btn btn-success">
             <i class="fas fa-plus me-1"></i> Deposit Funds
         </a>
 
-        <button class="btn btn-primary btn-lg mt-3 mt-md-0"
-                data-bs-toggle="modal"
-                data-bs-target="#payoutModal"
-                @disabled($balance < $minAmount || ($paymentMethods?->count() ?? 0) === 0)>
-            Request&nbsp;Payout
-        </button>
+        @if(auth()->user()->isSeller())
+          <button class="btn btn-primary btn-lg mt-3 mt-md-0"
+                  data-bs-toggle="modal"
+                  data-bs-target="#payoutModal"
+                  @disabled($balance < $minAmount || ($paymentMethods?->count() ?? 0) === 0)>
+              Request&nbsp;Payout
+          </button>
+        @endif
 
         
         <a href="{{ route('wallet.index') }}" class="btn btn-outline-primary">
@@ -138,45 +140,17 @@
             <div class="invalid-feedback">@error('method') {{ $message }} @else Required @enderror</div>
             @if(($paymentMethods?->count() ?? 0) === 0)
               <div class="form-text">
-                No payout methods yet. <a href="{{ route('seller.payment-methods.index') }}">Add one</a> to continue.
+                No payout methods yet. <a href="{{ route('seller.payment-methods.index') }}" target="_blank">Add one</a> to continue or use the button below.
               </div>
             @endif
         </div>
 
-        {{-- Inline: Add new payout method --}}
+        {{-- Add new payout method (separate modal trigger) --}}
         <div class="mb-3">
-          <a class="small" data-bs-toggle="collapse" href="#addPayoutMethod" role="button" aria-expanded="false" aria-controls="addPayoutMethod">
-            + Add a new payout method
-          </a>
-          <div class="collapse mt-2" id="addPayoutMethod">
-            <div class="card card-body">
-              <form action="{{ route('seller.payment-methods.store') }}" method="POST">
-                @csrf
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Type</label>
-                    <select name="payment_type_id" class="form-select" required>
-                      <option hidden value="">Choose&hellip;</option>
-                      @foreach($paymentTypes as $type)
-                        <option value="{{ $type->id }}">{{ $type->name }}</option>
-                      @endforeach
-                    </select>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Account Name</label>
-                    <input type="text" class="form-control" name="account_name" required>
-                  </div>
-                  <div class="col-md-12">
-                    <label class="form-label">Account Number</label>
-                    <input type="text" class="form-control" name="account_number" required>
-                  </div>
-                </div>
-                <div class="text-end mt-3">
-                  <button class="btn btn-outline-primary btn-sm">Save Method</button>
-                </div>
-              </form>
-            </div>
-          </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#addPayoutMethodModal">
+            <i class="bi bi-plus-lg"></i> Add Payout Method
+          </button>
+          <small class="text-muted ms-2">After saving, this page refreshes and you can submit the payout.</small>
         </div>
 
         
@@ -189,8 +163,47 @@
     </div>
 </form>
 
-    </div>
 </div>
+</div>
+
+{{-- Add Payout Method Modal (separate to avoid nested forms) --}}
+<div class="modal fade" id="addPayoutMethodModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form action="{{ route('seller.payment-methods.store') }}" method="POST" class="modal-content needs-validation" novalidate>
+      @csrf
+      <input type="hidden" name="redirect_to" value="{{ route('wallet.index') }}">
+      <input type="hidden" name="open_payout" value="1">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Payout Method</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Type</label>
+            <select name="payment_type_id" class="form-select" required>
+              <option hidden value="">Choose&hellip;</option>
+              @foreach($paymentTypes as $type)
+                <option value="{{ $type->id }}">{{ $type->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Account Name</label>
+            <input type="text" class="form-control" name="account_name" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Account Number</label>
+            <input type="text" class="form-control" name="account_number" required>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary">Save Method</button>
+      </div>
+    </form>
+  </div>
+  </div>
 
 
             {{-- Filters --}}
@@ -280,5 +293,12 @@
     input.addEventListener('input', recalc);
     recalc();
   })();
+  // Auto-open payout modal if requested (after adding method)
+  @if(session('open_payout_modal') || $errors->has('amount') || $errors->has('method'))
+    document.addEventListener('DOMContentLoaded', function(){
+      var el = document.getElementById('payoutModal');
+      if (el) { try { new bootstrap.Modal(el).show(); } catch(e) {} }
+    });
+  @endif
 </script>
 @endpush
