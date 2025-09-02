@@ -496,11 +496,22 @@ public function storeOrder(Request $request)
     public function ship(Request $request, Order $order)
     {
         $data = $request->validate([
-            'courier'     => 'required|string|max:100',
-            'tracking_no' => 'required|string|max:120',
-            'shipped_at'  => 'nullable|date',
-            'ship_notes'  => 'nullable|string|max:1000',
+            'courier'        => 'required|string|max:100',
+            'courier_other'  => 'nullable|string|max:100',
+            'tracking_no'    => 'required|string|max:120',
+            'shipped_at'     => 'nullable|date',
+            'ship_notes'     => 'nullable|string|max:1000',
         ]);
+
+        // If 'Manual'/'Other' selected, require a typed courier name
+        $selected = strtolower((string)($data['courier'] ?? ''));
+        $typed    = trim((string)($request->input('courier_other', '')));
+        if (in_array($selected, ['other','manual'], true)) {
+            if ($typed === '') {
+                return back()->withErrors(['courier_other' => 'Please enter a courier name.'])->withInput();
+            }
+            $data['courier'] = mb_substr($typed, 0, 100);
+        }
 
         DB::transaction(function () use ($order, $data) {
             $order->update([

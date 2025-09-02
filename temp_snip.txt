@@ -1,0 +1,40 @@
+                        <input class="form-check-input" type="checkbox" id="apply_all"
+                               @change="setAll(true)" :checked="applyAll">
+                        <label class="form-check-label" for="apply_all">Apply to ALL filtered products</label>
+                    </div>
+                    <div class="form-check mt-1">
+                        <input class="form-check-input" type="checkbox" id="apply_selected"
+                               @change="setAll(false)" :checked="!applyAll">
+                        <label class="form-check-label" for="apply_selected">Apply only to selected rows</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Products list --}}
+        <div class="card">
+            <div class="card-header bg-light fw-semibold d-flex justify-content-between">
+                <span>Products ({{ $products->total() }})</span>
+                <span class="small text-muted">Showing {{ $products->firstItem() }}–{{ $products->lastItem() }}</span>
+            </div>
+            <div class="table-responsive" style="max-height:60vh;overflow:auto;">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:32px;">
+                                <input type="checkbox" @change="togglePage($event)" x-ref="page_select" :disabled="applyAll">
+                            </th>
+                            <th>Name</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">Sale Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($products as $p)
+                            <tr>
+                                <td>
+                                    <input type="checkbox"
+                                           name="product_ids[]"
+                                           value="{{ $p->id }}"
+                                           :disabled="applyAll"
+                                           x-model="selectedIds">

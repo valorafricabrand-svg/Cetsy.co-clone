@@ -224,7 +224,8 @@
                 }
 
                 $lineSub  = $unit * $qty; // product subtotal (no shipping)
-                $thumbUrl = product_thumb_url($product);
+                $thumbUrl = $product?->featured_image
+                              ?: ($product?->media->first()?->url ? asset('storage/'.$product->media->first()->url) : asset('placeholder.jpg'));
               @endphp
               <tr>
                 <td>{{ $loop->iteration }}</td>
@@ -496,7 +497,8 @@
                     $isDigital = $product && $product->type === 'digital';
                     $profiles = $product?->shippingProfiles ?? collect();
                     $selected = $item->shipping_profile_id;
-                    $thumbUrl = product_thumb_url($product);
+                    $thumbUrl = $product?->featured_image
+                                 ?: ($product?->media->first()?->url ? asset('storage/'.$product->media->first()->url) : null);
                   @endphp
                   <tr>
                     <td>
@@ -579,3 +581,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
+

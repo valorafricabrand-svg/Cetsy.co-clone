@@ -184,7 +184,6 @@ Route::get('/products/{product}/variation-types/{type}/manage', [ProductVariatio
 
 
 
-
 // web.php
 Route::post('/products/{product}/shipping/rows',           [ProductShippingController::class, 'storeShippingRow'])
     ->name('products.shipping.rows.store');
@@ -360,13 +359,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/{dispute}/messages', [\App\Http\Controllers\DisputeController::class, 'addMessage'])->name('messages.store');
         Route::get('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'showAppealForm'])->name('appeal.create');
         Route::post('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'submitAppeal'])->name('appeal.store');
-    });
-
-    // Evidence Requests (Binance-style)
-    Route::prefix('evidence-requests')->name('evidence-requests.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\EvidenceRequestController::class, 'index'])->name('index');
-        Route::get('/{evidenceRequest}', [\App\Http\Controllers\EvidenceRequestController::class, 'show'])->name('show');
-        Route::post('/{evidenceRequest}/submit', [\App\Http\Controllers\EvidenceRequestController::class, 'submit'])->name('submit');
+        Route::post('/{dispute}/mutual-resolution', [\App\Http\Controllers\DisputeController::class, 'initiateMutualResolution'])->name('mutual-resolution.initiate');
+        Route::post('/{dispute}/mutual-resolution/agree', [\App\Http\Controllers\DisputeController::class, 'agreeToMutualResolution'])->name('mutual-resolution.agree');
+        
+        // Evidence Request Responses
+        Route::post('/evidence-requests/{evidenceRequest}/respond', [\App\Http\Controllers\EvidenceRequestController::class, 'respond'])->name('disputes.evidence-requests.respond');
     });
     
 });
@@ -410,6 +407,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('kyc/{kyc}', [KycController::class, 'showDetails'])->name('kyc.showDetails');
 
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
+    Route::put('settings/{setting}', [AdminSetting::class, 'update'])->name('settings.update');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
     Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
     

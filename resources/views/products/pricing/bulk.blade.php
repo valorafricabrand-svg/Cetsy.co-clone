@@ -4,7 +4,7 @@
 @section('title', 'Bulk Price Editor')
 
 @section('content')
-<div class="content" x-data="bulkPricer()">
+<div class="content" x-data="bulkPricer({{ (int)($shopId ?? 0) }})">
 
     <h2 class="mb-4">
         <i class="bi bi-cash-coin me-1"></i> Bulk Price Editor
@@ -97,6 +97,7 @@
                                @change="setAll(false)" :checked="!applyAll">
                         <label class="form-check-label" for="apply_selected">Apply only to selected rows</label>
                     </div>
+                    <div class="form-text">When "Apply to ALL" is on, row checkboxes are disabled.</div>
                 </div>
             </div>
         </div>
@@ -114,31 +115,67 @@
                             <th style="width:32px;">
                                 <input type="checkbox" @change="togglePage($event)" x-ref="page_select" :disabled="applyAll">
                             </th>
-                            <th>Name</th>
+                            <th>Item</th>
                             <th class="text-end">Price</th>
                             <th class="text-end">Sale Price</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($products as $p)
+                            @php
+                                $thumb = null; $mediaType = 'image';
+                                if (!empty($p->featured_image)) {
+                                    $thumb = str_starts_with($p->featured_image, 'http')
+                                        ? $p->featured_image
+                                        : asset('storage/' . ltrim($p->featured_image, '/'));
+                                } else {
+                                    $firstMedia = $p->media->first();
+                                    if ($firstMedia) {
+                                        $thumb = asset('storage/' . ltrim($firstMedia->url ?? '', '/'));
+                                        $mediaType = $firstMedia->type ?? 'image';
+                                    } else {
+                                        $shopLogo = ($p->shop && $p->shop->logo)
+                                                    ? asset('storage/' . ltrim($p->shop->logo, '/'))
+                                                    : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
+                                        $thumb = $shopLogo;
+                                        $mediaType = 'image';
+                                    }
+                                }
+                            @endphp
                             <tr>
                                 <td>
                                     <input type="checkbox"
+                                           class="form-check-input"
                                            name="product_ids[]"
                                            value="{{ $p->id }}"
                                            :disabled="applyAll"
                                            x-model="selectedIds">
                                 </td>
-                                <td>{{ $p->name }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if($thumb)
+                                            @if($mediaType === 'video')
+                                                <span class="bg-light rounded" style="width:44px;height:44px;display:inline-block;"></span>
+                                            @else
+                                                <img src="{{ $thumb ?? setting('favicon_url') }}" alt="{{ $p->name }}"
+                                                     style="width:44px;height:44px;object-fit:cover;border-radius:.5rem;">
+                                            @endif
+                                        @endif
+                                        <div class="fw-medium text-truncate" style="max-width:420px;" title="{{ $p->name }}">{{ $p->name }}</div>
+                                    </div>
+                                </td>
                                 <td class="text-end">{{ number_format($p->price,2) }}</td>
-                                <td class="text-end">{{ number_format($p->sale_price,2) }}</td>
+                                <td class="text-end">{{ number_format($p->sale_price ?? $p->discount_price ?? 0, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
             <div class="card-footer">
-                {{ $products->links() }}
+
+
+
+                   {{ $products->appends(request()->query())->links('pagination::bootstrap-5') }}
             </div>
         </div>
 
@@ -146,6 +183,7 @@
             <button class="btn btn-primary">
                 <i class="bi bi-check2-circle me-1"></i> Apply Update
             </button>
+            <div id="selected-hidden-container"></div>
         </div>
     </form>
 </div>
@@ -153,19 +191,45 @@
 
 @push('scripts')
 <script>
-function bulkPricer(){
+function bulkPricer(shopId = 0){
     return {
-        applyAll: true,
+        storageKey: `bulkPricer:${shopId}`,
+        applyAll: false,
         selectedIds: [],
+
+        init(){
+            // Load persisted state
+            const saved = this.readStorage();
+            if(saved){
+                this.applyAll = !!saved.applyAll;
+                this.selectedIds = Array.isArray(saved.selected) ? saved.selected : [];
+            }
+
+            // Reflect selection on this page's checkboxes
+            this.$nextTick(() => {
+                this.syncPageCheckboxes();
+                this.updateHeaderCheckbox();
+            });
+
+            // Watchers to persist state
+            this.$watch('applyAll', () => {
+                if(this.applyAll){
+                    // Clear page toggle and disable checkboxes
+                    if(this.$refs.page_select){ this.$refs.page_select.checked = false; }
+                }
+                this.persist();
+            });
+            this.$watch('selectedIds', () => {
+                this.persist();
+                this.updateHeaderCheckbox();
+            });
+        },
 
         setAll(isAll){
             this.applyAll = isAll;
             if(isAll){
-                // clear selections
-                this.selectedIds = [];
-                if(this.$refs.page_select){
-                    this.$refs.page_select.checked = false;
-                }
+                // keep selections but disable inputs; allow switching back without losing
+                if(this.$refs.page_select){ this.$refs.page_select.checked = false; }
             }
         },
 
@@ -184,11 +248,55 @@ function bulkPricer(){
             }
         },
 
+        syncPageCheckboxes(){
+            const boxes = document.querySelectorAll('input[name="product_ids[]"]');
+            boxes.forEach(b => { b.checked = this.selectedIds.includes(b.value); });
+        },
+
+        updateHeaderCheckbox(){
+            const boxes = [...document.querySelectorAll('input[name="product_ids[]"]:not(:disabled)')];
+            if(!this.$refs.page_select || boxes.length === 0){ return; }
+            const allChecked = boxes.every(b => this.selectedIds.includes(b.value));
+            const anyChecked = boxes.some(b => this.selectedIds.includes(b.value));
+            this.$refs.page_select.indeterminate = !allChecked && anyChecked;
+            this.$refs.page_select.checked = allChecked;
+        },
+
+        persist(){
+            const data = { applyAll: this.applyAll, selected: this.selectedIds };
+            try { localStorage.setItem(this.storageKey, JSON.stringify(data)); } catch(e) {}
+        },
+        readStorage(){
+            try { return JSON.parse(localStorage.getItem(this.storageKey)); } catch(e) { return null; }
+        },
+        mergeFromStorage(){
+            const saved = this.readStorage();
+            if(saved && Array.isArray(saved.selected)){
+                const set = new Set([ ...this.selectedIds, ...saved.selected ]);
+                this.selectedIds = Array.from(set);
+            }
+        },
+
         confirmSubmit(){
+            // Ensure we have merged any persisted selection
+            this.mergeFromStorage();
+
             if(!this.applyAll && this.selectedIds.length === 0){
                 alert('Select at least one product or choose "Apply to ALL".');
                 return false;
             }
+
+            // Inject hidden inputs for all selected ids so they submit from any page
+            const container = document.getElementById('selected-hidden-container');
+            if(container){ container.innerHTML = ''; }
+            this.selectedIds.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'product_ids[]';
+                input.value = id;
+                container.appendChild(input);
+            });
+
             return confirm('Are you sure you want to update prices? This cannot be undone.');
         }
     }

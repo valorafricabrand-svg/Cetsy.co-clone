@@ -39,7 +39,10 @@ class Setting extends Model
         // Payment
         'paypal_client_id',
         'default_currency',
-        'paypal_transaction_fee_percent'
+        'paypal_transaction_fee_percent',
+
+        // Shipping defaults
+        'couriers_json',
     ];
 
     /**
