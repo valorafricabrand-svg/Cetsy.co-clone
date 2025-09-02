@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'All Reviews')
 
@@ -485,6 +485,36 @@
         <div class="page-header">
             <h1 class="page-title">All Reviews</h1>
         </div>
+
+        <form method="GET" class="mb-3 d-flex flex-wrap gap-2 align-items-end">
+            <div>
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    @php($s = request('status'))
+                    <option value="">All</option>
+                    <option value="pending" {{ $s==='pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="approved" {{ $s==='approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="rejected" {{ $s==='rejected' ? 'selected' : '' }}>Rejected</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Rating</label>
+                <select name="rating" class="form-select">
+                    @php($r = (int) request('rating'))
+                    <option value="">Any</option>
+                    @for($i=5;$i>=1;$i--)
+                      <option value="{{ $i }}" {{ $r===$i ? 'selected' : '' }}>{{ $i }} ★</option>
+                    @endfor
+                </select>
+            </div>
+            <div class="flex-grow-1">
+                <label class="form-label">Search</label>
+                <input type="text" name="q" value="{{ request('q') }}" class="form-control" placeholder="Comment, shop, or user">
+            </div>
+            <div>
+                <button class="btn btn-outline-secondary">Filter</button>
+            </div>
+        </form>
         
         @if(session('success'))
             <div class="alert alert-success alert-dismissible" id="successAlert">
@@ -502,14 +532,25 @@
             </div>
         @endif
 
+        <form method="POST" id="bulkForm">
+            @csrf
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="small text-muted">Select rows to bulk approve/delete</div>
+              <div class="d-flex gap-2">
+                <button type="submit" formaction="{{ route('admin.reviews.bulk-approve') }}" class="btn btn-success btn-sm" onclick="return confirm('Approve selected reviews?')">Bulk Approve</button>
+                <button type="submit" formaction="{{ route('admin.reviews.bulk-delete') }}" class="btn btn-danger btn-sm" onclick="return confirm('Delete selected reviews?')">Bulk Delete</button>
+              </div>
+            </div>
         <div class="table-container">
             <table class="table">
                 <thead>
                     <tr>
+                        <th style="width:28px"><input type="checkbox" id="checkAll"></th>
                         <th>Customer</th>
                         <th>Shop</th>
                         <th>Rating</th>
                         <th>Review</th>
+                        <th>Status</th>
                         <th>Date</th>
                         <th style="text-align: right;">Actions</th>
                     </tr>
@@ -517,6 +558,7 @@
                 <tbody>
                     @forelse($reviews as $review)
                         <tr>
+                            <td data-label="Select"><input type="checkbox" name="ids[]" value="{{ $review->id }}" class="row-check"></td>
                             <td data-label="Customer">
                                 <div class="customer-info">
                                     <div class="customer-avatar">
@@ -546,6 +588,18 @@
                                     {{ $review->comment ?? '<span class="no-comment">No comment provided</span>' }}
                                 </div>
                             </td>
+                            <td data-label="Status">
+                                @if($review->approved)
+                                    <span class="badge bg-success">Approved</span>
+                                @elseif($review->rejected_at)
+                                    <span class="badge bg-danger">Rejected</span>
+                                    @if($review->rejection_reason)
+                                        <div class="text-muted small">{{ Str::limit($review->rejection_reason, 80) }}</div>
+                                    @endif
+                                @else
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                @endif
+                            </td>
                             <td data-label="Date">
                                 <div class="date-wrapper">
                                     <div class="date-badge">
@@ -561,7 +615,7 @@
                             </td>
                             <td data-label="Actions">
                                 <div class="action-buttons">
-                                    @if(!$review->approved)
+                                    @if(!$review->approved && !$review->rejected_at)
                                         <form action="{{ route('admin.reviews.approve', $review->id) }}" method="POST">
                                             @csrf
                                             @method('PATCH')
@@ -570,13 +624,19 @@
                                                 Approve
                                             </button>
                                         </form>
-                                    @else
+                                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#rejectModal-{{ $review->id }}">
+                                            <i class="fas fa-ban" style="margin-right: 0.375rem;"></i>
+                                            Reject
+                                        </button>
+                                    @elseif($review->approved)
                                         <span class="status-approved">
                                             <i class="fas fa-check-circle"></i>
                                             Approved
                                         </span>
+                                    @else
+                                        <span class="badge bg-danger">Rejected</span>
                                     @endif
-                                    
+
                                     <form action="{{ route('admin.reviews.destroy', $review->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this review?');">
                                         @csrf
                                         @method('DELETE')
@@ -588,6 +648,27 @@
                                 </div>
                             </td>
                         </tr>
+                        {{-- Reject Modal --}}
+                        <div class="modal fade" id="rejectModal-{{ $review->id }}" tabindex="-1" aria-hidden="true">
+                          <div class="modal-dialog">
+                            <form method="POST" action="{{ route('admin.reviews.reject', $review->id) }}" class="modal-content">
+                              @csrf
+                              @method('PATCH')
+                              <div class="modal-header">
+                                <h5 class="modal-title">Reject Review</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                              </div>
+                              <div class="modal-body">
+                                <label class="form-label">Reason</label>
+                                <textarea name="reason" class="form-control" rows="3" required placeholder="Explain why this review is rejected"></textarea>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button class="btn btn-warning">Confirm Reject</button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
                     @empty
                         <tr>
                             <td colspan="6">
@@ -613,6 +694,7 @@
                 </div>
             @endif
         </div>
+        </form>
     </div>
 </div>
 
@@ -637,5 +719,10 @@ function closeAlert(alertId) {
         }, 200);
     }
 }
+
+// Bulk select
+document.getElementById('checkAll')?.addEventListener('change', function(){
+  document.querySelectorAll('.row-check').forEach(cb => { cb.checked = this.checked; });
+});
 </script>
 @endsection
