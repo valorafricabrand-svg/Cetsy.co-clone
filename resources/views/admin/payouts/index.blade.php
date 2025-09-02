@@ -13,7 +13,7 @@
             <div class="input-group w-auto">
                 <select name="status" class="form-select">
                     <option value="">All statuses</option>
-                    @foreach(['pending','approved','rejected','paid'] as $s)
+                    @foreach(['pending','approved','sent','rejected','paid'] as $s)
                         <option value="{{ $s }}" {{ request('status')===$s ? 'selected' : '' }}>
                             {{ ucfirst($s) }}
                         </option>
@@ -44,7 +44,15 @@
                                 <td>{{ $p->wallet->user->name ?? $p->user_id }}</td>
                                 <td>{{ get_currency() }} {{ number_format($p->amount,2) }}</td>
                                 <td>
-                                  <span class="badge text-bg-{{ $p->status === 'pending' ? 'warning' : ($p->status === 'approved' ? 'info' : ($p->status === 'paid' ? 'success' : 'secondary')) }} text-uppercase">{{ $p->status }}</span>
+                                  @php
+                                    $badge = 'secondary';
+                                    if ($p->status === 'pending') $badge='warning';
+                                    elseif ($p->status === 'approved') $badge='info';
+                                    elseif ($p->status === 'sent') $badge='primary';
+                                    elseif ($p->status === 'paid') $badge='success';
+                                    elseif ($p->status === 'rejected') $badge='danger';
+                                  @endphp
+                                  <span class="badge text-bg-{{ $badge }} text-uppercase">{{ $p->status }}</span>
                                 </td>
                                 <td>{{ optional(optional($p->paymentMethod)->paymentType)->name ?? '—' }}</td>
                                 <td>{{ $p->created_at->format('d M Y') }}</td>

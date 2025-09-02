@@ -39,7 +39,11 @@ class PayoutRequestController extends Controller
     public function approve(PayoutRequest $payout)
     {
         abort_if($payout->status !== 'pending', 409, 'Not pending.');
-        $payout->update(['status' => 'approved']);
+        $payout->update([
+            'status'       => 'approved',
+            'approved_at'  => now(),
+            'approved_by'  => auth()->id(),
+        ]);
 
         // Notify seller via email (best-effort)
         try {
@@ -89,6 +93,8 @@ class PayoutRequestController extends Controller
             $payout->update([
                 'status'       => 'rejected',
                 'admin_reason' => $request->reason,
+                'rejected_by'  => auth()->id(),
+                'rejected_at'  => now(),
             ]);
         });
 
@@ -130,6 +136,7 @@ class PayoutRequestController extends Controller
             $meta['txn_reference'] = $request->input('txn_reference');
         }
 
+        $autoSent = false;
         if ($disburse === 'auto' && $payout->paymentMethod && $payout->paymentMethod->paymentType) {
             $typeName = strtolower($payout->paymentMethod->paymentType->name);
             $account  = (string) $payout->paymentMethod->account_number;
@@ -145,6 +152,7 @@ class PayoutRequestController extends Controller
                     $data = $resp['data'] ?? [];
                     $meta['paypal'] = $data;
                     $meta['txn_reference'] = $meta['txn_reference'] ?? ($data['batch_header']['payout_batch_id'] ?? null);
+                    $autoSent = true;
                 } elseif (str_contains($typeName, 'mpesa') || str_contains($typeName, 'm-pesa')) {
                     // Normalize MSISDN to 2547XXXXXXXX
                     $msisdn = preg_replace('/\D+/', '', $account);
@@ -163,6 +171,7 @@ class PayoutRequestController extends Controller
                     }
                     $meta['mpesa'] = $resp['data'] ?? [];
                     $meta['txn_reference'] = $meta['txn_reference'] ?? ($meta['mpesa']['ConversationID'] ?? $ref);
+                    $autoSent = true;
                 }
             } catch (\Throwable $e) {
                 Log::error('Auto disbursement failed', ['payout_id' => $payout->id, 'error' => $e->getMessage()]);
@@ -170,28 +179,47 @@ class PayoutRequestController extends Controller
             }
         }
 
-        $payout->status  = 'paid';
-        $payout->paid_at = now();
+        if ($autoSent) {
+            // Mark as sent; final paid will be set by webhook callback
+            $payout->status  = 'sent';
+            $payout->paid_at = $payout->paid_at ?? null;
+            $meta['sent_at'] = $meta['sent_at'] ?? now()->toISOString();
+        } else {
+            // Manual confirmation: mark as paid
+            $payout->status  = 'paid';
+            $payout->paid_at = now();
+            $payout->paid_by = auth()->id();
+        }
         $payout->meta    = $meta;
         $payout->save();
 
-        Activity::create([
-            'user_id'      => $payout->user_id,
-            'is_read'      => false,
-            'description'  => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been marked as paid',
-            'type'         => \App\Models\Activity::TYPE_PAYOUT,
-            'related_id'   => $payout->id,
-            'related_type' => 'payout',
-        ]);
+        if ($autoSent) {
+            Activity::create([
+                'user_id'      => $payout->user_id,
+                'is_read'      => false,
+                'description'  => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been sent and is awaiting confirmation',
+                'type'         => \App\Models\Activity::TYPE_PAYOUT,
+                'related_id'   => $payout->id,
+                'related_type' => 'payout',
+            ]);
+        } else {
+            Activity::create([
+                'user_id'      => $payout->user_id,
+                'is_read'      => false,
+                'description'  => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been marked as paid',
+                'type'         => \App\Models\Activity::TYPE_PAYOUT,
+                'related_id'   => $payout->id,
+                'related_type' => 'payout',
+            ]);
+            // Email notify
+            try {
+                $payout->loadMissing('user');
+                if ($payout->user && $payout->user->email) {
+                    \Mail::to($payout->user->email)->send(new \App\Mail\PayoutPaidMail($payout, $payout->user));
+                }
+            } catch (\Throwable $e) { }
+        }
 
-        // Email notify
-        try {
-            $payout->loadMissing('user');
-            if ($payout->user && $payout->user->email) {
-                \Mail::to($payout->user->email)->send(new \App\Mail\PayoutPaidMail($payout, $payout->user));
-            }
-        } catch (\Throwable $e) { }
-
-        return back()->with('success', 'Payout marked as paid.');
+        return back()->with('success', $autoSent ? 'Payout sent; awaiting confirmation.' : 'Payout marked as paid.');
     }
 }
