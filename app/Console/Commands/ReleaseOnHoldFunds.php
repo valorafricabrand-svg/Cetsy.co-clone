@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use App\Models\Order;
 use App\Models\Wallet;
 use App\Models\Payment;
@@ -24,7 +25,12 @@ class ReleaseOnHoldFunds extends Command
 
         $orders = Order::where('status', Order::STATUS_SHIPPED)
             ->where('updated_at', '<=', $cutoff)
-            ->with(['shop:id,user_id', 'payments:id,order_id,local_transaction_id'])
+            ->with([
+                'shop:id,user_id,name',
+                'shop.user:id,name,email',
+                'user:id,name,email',
+                'payments:id,order_id,local_transaction_id'
+            ])
             ->get();
 
         if ($orders->isEmpty()) {
@@ -35,7 +41,8 @@ class ReleaseOnHoldFunds extends Command
         $released = 0;
 
         foreach ($orders as $order) {
-            DB::transaction(function () use ($order, &$released) {
+            $justReleased = false;
+            DB::transaction(function () use ($order, &$released, &$justReleased) {
                 // Mark order completed and delivered_at if not set
                 $order->update([
                     'status'       => Order::STATUS_COMPLETED,
@@ -62,8 +69,33 @@ class ReleaseOnHoldFunds extends Command
 
                 if ($affected > 0) {
                     $released += $affected;
+                    $justReleased = true;
                 }
             });
+
+            // Send notifications if any wallet rows were released for this order
+            if ($justReleased) {
+                try {
+                    $order->loadMissing(['shop.user', 'user']);
+                    $buyer  = $order->user;
+                    $seller = optional($order->shop)->user;
+
+                    if ($seller && !empty($seller->email)) {
+                        Mail::to($seller->email)->send(
+                            new \App\Mail\OrderAutoReleasedSellerMail($order, $seller, $buyer, $order->shop)
+                        );
+                    }
+                    if ($buyer && !empty($buyer->email)) {
+                        Mail::to($buyer->email)->send(
+                            new \App\Mail\OrderAutoReleasedBuyerMail($order, $buyer, $order->shop, $seller)
+                        );
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('Failed to send auto-release emails: '.$e->getMessage(), [
+                        'order_id' => $order->id,
+                    ]);
+                }
+            }
         }
 
         $this->info("Processed {$orders->count()} orders; released {$released} wallet rows.");
@@ -71,4 +103,3 @@ class ReleaseOnHoldFunds extends Command
         return 0;
     }
 }
-
