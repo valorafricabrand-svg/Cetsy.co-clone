@@ -105,8 +105,8 @@
         </div>
         <div class="card-body">
           @foreach ([
-            'Tracking No' => $order->tracking_no ?? '-',
-            'Courier'     => $order->courier ?? '-',
+            'Tracking No' => $order->tracking_no ?? '—',
+            'Courier'     => $order->courier ?? '—',
             'Items'       => $order->items->sum('quantity'),
             'Subtotal'    => "{$symbol} ".number_format($order->subtotal,2),
           ] as $label => $value)
@@ -163,7 +163,7 @@
         <div class="card-body">
           <p class="mb-1"><strong>Name:</strong> {{ $order->full_name }}</p>
           <p class="mb-1"><strong>Email:</strong> {{ $order->email }}</p>
-          <p class="mb-3"><strong>Phone:</strong> {{ $order->phone ?? '-' }}</p>
+          <p class="mb-3"><strong>Phone:</strong> {{ $order->phone ?? '—' }}</p>
 
           <p class="fw-semibold mb-1">Shipping Address</p>
           <address class="mb-3">
@@ -193,7 +193,6 @@
               <th>#</th>
               <th>Image</th>
               <th>Product</th>
-              <th>Listing ID</th>
               <th>Variation</th>
               <th class="text-center">Qty</th>
               <th class="text-end">Price</th>
@@ -224,7 +223,8 @@
                 }
 
                 $lineSub  = $unit * $qty; // product subtotal (no shipping)
-                $thumbUrl = product_thumb_url($product);
+                $thumbUrl = $product?->featured_image
+                              ?: ($product?->media->first()?->url ? asset('storage/'.$product->media->first()->url) : asset('placeholder.jpg'));
               @endphp
               <tr>
                 <td>{{ $loop->iteration }}</td>
@@ -252,16 +252,15 @@
                     <span class="badge bg-secondary ms-1">Digital</span>
                   @endif
                 </td>
-                <td>{{ $product->id ?? $item->product_id ?? 'N/A' }}</td>
 
                 {{-- Saved textual summary; no variations table required --}}
-                <td>{{ $item->variation_summary ?? '-' }}</td>
+                <td>{{ $item->variation_summary ?? '—' }}</td>
 
                 <td class="text-center">{{ $qty }}</td>
                 <td class="text-end">{{ $symbol }} {{ number_format($unit,2) }}</td>
 
-                {{-- Shipping profile / cost hidden (shown as dash) for digital --}}
-                <td>{{ $isDigital ? '-' : $shipLabel }}</td>
+                {{-- Shipping profile / cost hidden (shown as em dash) for digital --}}
+                <td>{{ $isDigital ? '—' : $shipLabel }}</td>
                 <td class="text-end">{{ $symbol }} {{ number_format($isDigital ? 0 : $shipCost,2) }}</td>
 
                 {{-- Product subtotal (without shipping) --}}
@@ -315,6 +314,23 @@
             @endforeach
           </tbody>
         </table>
+      </div>
+    </div>
+  @endif
+
+  {{-- ADDITIONAL INFO --}}
+  @if($order->order_notes || $order->promo_code)
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+        <i class="fa-solid fa-info-circle"></i> Additional Information
+      </div>
+      <div class="card-body">
+        @if($order->order_notes)
+          <p><strong>Order Notes:</strong> {{ $order->order_notes }}</p>
+        @endif
+        @if($order->promo_code)
+          <p><strong>Promo Code:</strong> {{ $order->promo_code }}</p>
+        @endif
       </div>
     </div>
   @endif
@@ -394,7 +410,7 @@
   </div>
 @endif
 
-{{-- SHIPPING MODAL (PROCESSING + Ship) --}}
+{{-- SHIPPING MODAL (PROCESSING → Ship) --}}
 @if($order->status === \App\Models\Order::STATUS_PROCESSING)
   <div class="modal fade" id="shipModal" tabindex="-1" aria-labelledby="shipModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -418,42 +434,21 @@
         </div>
 
         <div class="modal-body">
-          @php
-            // SAFELY PREDEFINE ALL COURIER VARS ONCE
-            $couriers = (array) (couriers_list() ?? []);
-            $courierValue = old('courier', $order->courier ?? null);
-            $standardList = array_merge($couriers, ['Courier','Postal service','Express','Manual','Other']);
-            // in_array with strict to avoid truthy/loose surprises
-            $isCustomCourier = $courierValue && !in_array($courierValue, $standardList, true);
-            $showOther = $isCustomCourier || in_array(strtolower((string)$courierValue), ['manual','other'], true);
-          @endphp
-
           <div class="row g-3 mb-4">
             <div class="col-md-6">
               <div class="form-floating">
-                <select class="form-select" id="courierSelect" name="courier" data-target="#courierOtherWrap" required>
-                  <option value="" disabled {{ $courierValue ? '' : 'selected' }}>Select courier...</option>
-                  @foreach($couriers as $c)
-                    <option value="{{ $c }}" {{ (string)$courierValue === (string)$c ? 'selected' : '' }}>{{ $c }}</option>
-                  @endforeach
-                  <option value="manual" {{ strtolower((string)$courierValue)==='manual' ? 'selected' : '' }}>Manual</option>
-                  <option value="other"  {{ $showOther && strtolower((string)$courierValue)!=='manual' ? 'selected' : '' }}>Other</option>
+                <select class="form-select" id="courierSelect" name="courier" required>
+                  <option value="" disabled selected>Select courier…</option>
+                  <option>Wells Fargo</option>
+                  <option>DHL</option>
+                  <option>Fargo Courier</option>
+                  <option>G4S</option>
+                  <option value="other">Other / Manual</option>
                 </select>
                 <label for="courierSelect">Courier *</label>
                 <div class="invalid-feedback">Please select a courier.</div>
               </div>
-
-              <div class="form-floating mt-2" id="courierOtherWrap" style="display: {{ $showOther ? 'block' : 'none' }};">
-                <input type="text"
-                       class="form-control"
-                       id="courierOtherInput"
-                       name="courier_other"
-                       placeholder="Courier name"
-                       value="{{ old('courier_other', $isCustomCourier ? (string)$courierValue : '') }}">
-                <label for="courierOtherInput">Courier name (if Manual/Other)</label>
-              </div>
             </div>
-
             <div class="col-md-6">
               <div class="form-floating">
                 <input type="text" class="form-control" id="trackingInput" name="tracking_no" placeholder="ABC123" required>
@@ -461,14 +456,12 @@
                 <div class="invalid-feedback">Tracking number required.</div>
               </div>
             </div>
-
             <div class="col-md-6">
               <div class="form-floating">
-                <input type="date" class="form-control" id="shipDateInput" name="shipped_at" value="{{ old('shipped_at', now()->toDateString()) }}">
+                <input type="date" class="form-control" id="shipDateInput" name="shipping_date" value="{{ now()->toDateString() }}">
                 <label for="shipDateInput">Shipping date</label>
               </div>
             </div>
-
             <div class="col-md-6">
               <div class="form-floating">
                 <textarea class="form-control" id="shipNotes" name="ship_notes" style="height: 100px;"></textarea>
@@ -482,9 +475,7 @@
             <table class="table table-bordered align-middle mb-0">
               <thead class="table-light">
                 <tr>
-                  <th>Image</th>
                   <th>Product</th>
-                  <th>Listing ID</th>
                   <th class="text-center">Qty</th>
                   <th>Shipping Profile</th>
                 </tr>
@@ -496,16 +487,9 @@
                     $isDigital = $product && $product->type === 'digital';
                     $profiles = $product?->shippingProfiles ?? collect();
                     $selected = $item->shipping_profile_id;
-                    $thumbUrl = product_thumb_url($product);
                   @endphp
                   <tr>
-                    <td>
-                      @if($thumbUrl)
-                        <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" style="width:48px;height:48px;object-fit:cover;border-radius:.375rem;">
-                      @endif
-                    </td>
                     <td>{{ $product->name ?? 'N/A' }} @if($isDigital)<span class="badge bg-secondary ms-1">Digital</span>@endif</td>
-                    <td>{{ $product->id ?? $item->product_id ?? 'N/A' }}</td>
                     <td class="text-center">{{ (int)($item->quantity ?? 1) }}</td>
                     <td>
                       <input type="hidden" name="order_items[{{ $item->id }}][id]" value="{{ $item->id }}">
@@ -565,17 +549,8 @@ document.addEventListener('DOMContentLoaded', () => {
       form.classList.add('was-validated');
     });
   });
-
-  // Courier Manual/Other toggle
-  const courierSelect = document.getElementById('courierSelect');
-  const courierWrap   = document.getElementById('courierOtherWrap');
-  const toggleCourier = () => {
-    if(!courierSelect || !courierWrap) return;
-    const v = (courierSelect.value || '').toLowerCase();
-    courierWrap.style.display = (v === 'other' || v === 'manual') ? 'block' : 'none';
-  };
-  courierSelect && courierSelect.addEventListener('change', toggleCourier);
-  toggleCourier();
 });
 </script>
 @endpush
+
+

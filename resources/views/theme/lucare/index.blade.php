@@ -104,17 +104,12 @@
         <div class="col" data-aos="zoom-in">
           <div class="card h-100 border-0 shadow-sm product-card">
             <a href="{{ route('listing.show', $product) }}" class="d-block">
-              @if($img = $product->media->first())
-                <img src="{{ asset('storage/'.$img->url) }}"
-                     alt="{{ $product->name }}"
-                     class="card-img-top"
-                     style="height:200px;object-fit:cover"
-                     loading="lazy">
-              @else
-                <div class="bg-secondary h-100 d-flex align-items-center justify-content-center text-white" style="height:200px">
-                  No Image
-                </div>
-              @endif
+              @php($thumb = product_thumb_url($product))
+              <img src="{{ $thumb }}"
+                   alt="{{ $product->name }}"
+                   class="card-img-top"
+                   style="height:200px;object-fit:cover"
+                   loading="lazy">
             </a>
             <div class="card-body d-flex flex-column">
               <h5 class="card-title text-truncate mb-1">

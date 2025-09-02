@@ -66,6 +66,9 @@ public function update(Request $request, Setting $setting)
         'paypal_client_id'  => 'nullable|string|max:255',
         'paypal_transaction_fee_percent'  => 'nullable|string|max:255',
         'default_currency'  => 'required|string|size:3',
+
+        // Shipping defaults
+        'couriers'          => 'nullable|string',
     ]);
 
     /* ----------------------------------------------------------
@@ -84,6 +87,15 @@ public function update(Request $request, Setting $setting)
     /* ----------------------------------------------------------
      | 3. Persist to DB                                          |
      ---------------------------------------------------------- */
+    // Couriers list: parse textarea into JSON array
+    if (array_key_exists('couriers', $validated)) {
+        $lines = preg_split("/\r\n|\r|\n/", (string) $validated['couriers']);
+        $lines = array_map('trim', $lines);
+        $lines = array_values(array_filter($lines, fn($v) => $v !== ''));
+        $validated['couriers_json'] = json_encode($lines);
+        unset($validated['couriers']);
+    }
+
     $setting->update($validated);
 
     /* ----------------------------------------------------------

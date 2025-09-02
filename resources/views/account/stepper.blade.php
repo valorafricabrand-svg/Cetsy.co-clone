@@ -1,7 +1,7 @@
-{{-- ===== ORDER JOURNEY & ACTIONS – Font Awesome icons ===== --}}
+{{-- ===== ORDER JOURNEY & ACTIONS — Font Awesome icons ===== --}}
 
 @php
-    /** 1️⃣  Status → label & FA icon */
+    /** 1) Status + label & FA icon */
     $journeySteps = [
         \App\Models\Order::STATUS_PENDING    => ['label' => 'Pending Payment', 'icon' => 'fas fa-wallet'],
         \App\Models\Order::STATUS_PROCESSING => ['label' => 'Processing',      'icon' => 'fas fa-cogs'],
@@ -42,7 +42,7 @@
       Order&nbsp;Progress
     </h5>
 
-    {{-- 2️⃣  Visual stepper --}}
+    {{-- 2) Visual stepper --}}
     <div class="stepper mb-4">
       @foreach($journeySteps as $code => $meta)
         @php
@@ -65,12 +65,12 @@
       @endforeach
     </div>
 
-    {{-- 3️⃣  Info text --}}
+    {{-- 3) Info text --}}
     <p class="small text-muted mb-4">
       Email notifications are sent at every step. Refresh this page anytime for real-time status.
     </p>
 
-    {{-- 4️⃣  Action buttons --}}
+    {{-- 4) Action buttons --}}
     @if($order->status === \App\Models\Order::STATUS_PENDING)
     <div class="d-flex flex-wrap gap-3">
         <a href="{{ route('pay_now', $order->id) }}"
