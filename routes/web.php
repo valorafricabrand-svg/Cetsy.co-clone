@@ -530,6 +530,9 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     // Payout Management
     Route::get('payouts', [PayoutRequestController::class, 'index'])->name('payouts.index');
     Route::post('payouts', [PayoutRequestController::class, 'store'])->name('payouts.store');
+    Route::get('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyForm'])->name('payouts.verify');
+    Route::post('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyOtp'])->name('payouts.verify.submit');
+    Route::post('payouts/{payout}/resend-otp', [PayoutRequestController::class, 'resendOtp'])->name('payouts.verify.resend');
 
     // Services
     Route::resource('services', ServiceController::class);

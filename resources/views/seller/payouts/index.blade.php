@@ -19,6 +19,7 @@
                           <th>#</th>
                           <th>Amount</th>
                           <th>Status</th>
+                          <th>Action</th>
                           <th>Requested&nbsp;On</th>
                       </tr>
                   </thead>
@@ -29,6 +30,13 @@
                               <td>{{ get_currency() }} {{ number_format($req->amount,2) }}</td>
                               <td class="text-capitalize">{{ $req->status }}</td>
                               <td>{{ $req->created_at->format('d M Y') }}</td>
+                              <td>
+                                @if($req->status === 'otp_pending')
+                                  <a href="{{ route('seller.payouts.verify', $req) }}" class="btn btn-sm btn-primary">Verify</a>
+                                @else
+                                  <span class="text-muted">—</span>
+                                @endif
+                              </td>
                           </tr>
                       @empty
                           <tr>

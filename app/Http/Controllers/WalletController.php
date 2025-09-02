@@ -11,6 +11,7 @@ use App\Models\PaymentType;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\Wallet;
+use App\Models\PayoutRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -139,9 +140,15 @@ class WalletController extends Controller
 
         $maxPayout = $feeRate > 0 ? max(0, floor(($balance / (1 + $feeRate)) * 100) / 100) : $balance;
 
+        // Show alert if user has a payout awaiting OTP verification
+        $otpPendingPayout = PayoutRequest::where('user_id', Auth::id())
+            ->where('status', 'otp_pending')
+            ->latest('id')
+            ->first();
+
         return view(
             'wallet.index',
-            compact('transactions', 'balance', 'onHold', 'paymentMethods', 'paymentTypes', 'feeRate', 'minAmount', 'maxPayout')
+            compact('transactions', 'balance', 'onHold', 'paymentMethods', 'paymentTypes', 'feeRate', 'minAmount', 'maxPayout', 'otpPendingPayout')
         );
     }
 
