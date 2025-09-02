@@ -597,6 +597,29 @@ public function storeOrder(Request $request)
                 ->update(['status' => 'completed']);
         });
 
+        // Create activities for both parties
+        try {
+            $sellerId = $order->shop->user_id;
+            Activity::create([
+                'user_id'     => $sellerId,
+                'is_read'     => false,
+                'description' => 'Funds released for Order #'.$order->id,
+                'type'        => \App\Models\Activity::TYPE_PAYOUT,
+                'related_id'  => $order->id,
+                'related_type'=> 'order',
+            ]);
+            Activity::create([
+                'user_id'     => $order->user_id,
+                'is_read'     => false,
+                'description' => 'You marked Order #'.$order->id.' as delivered. Thank you!',
+                'type'        => \App\Models\Activity::TYPE_ORDER,
+                'related_id'  => $order->id,
+                'related_type'=> 'order',
+            ]);
+        } catch (\Throwable $e) {
+            // non-fatal
+        }
+
         try {
             $order->load(['items.product', 'shop.user', 'user']);
             $buyer     = $order->user;
