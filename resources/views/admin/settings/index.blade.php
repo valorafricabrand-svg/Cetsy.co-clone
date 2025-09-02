@@ -158,9 +158,9 @@
       </div>
     </div>
 
-<!-- ========== PAYMENT & CURRENCY ========== -->
+<!-- ========== PAYMENT, CURRENCY & PAYOUTS ========== -->
 <div class="card shadow-sm mb-4">
-  <div class="card-header bg-light fw-semibold">Payment &amp; Currency</div>
+  <div class="card-header bg-light fw-semibold">Payment, Currency &amp; Payouts</div>
 
   <div class="card-body">
     <div class="row g-3">
@@ -186,7 +186,7 @@
         @error('default_currency') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
 
-      {{-- NEW: PayPal Fee % --}}
+      {{-- PayPal Fee % --}}
       <div class="col-md-2">
         <label class="form-label">PayPal&nbsp;Fee&nbsp;%</label>
         <input type="number"
@@ -196,6 +196,29 @@
                step="0.0001" min="0" max="10"
                placeholder="0.0398" title="Enter as decimal e.g. 0.0398 for 3.98 %">
         @error('paypal_transaction_fee_percent') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
+      {{-- Payout Fee % (store as percent, e.g., 1.5) --}}
+      <div class="col-md-2">
+        <label class="form-label">Payout&nbsp;Fee&nbsp;%</label>
+        <input type="number"
+               name="fee_rate"
+               class="form-control @error('fee_rate') is-invalid @enderror"
+               value="{{ old('fee_rate', $settings->fee_rate) }}"
+               step="0.01" min="0" max="100"
+               placeholder="1.5" title="Enter as percent, e.g. 1.5 for 1.5%">
+        @error('fee_rate') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
+      {{-- Minimum Payout Amount --}}
+      <div class="col-md-4">
+        <label class="form-label">Minimum&nbsp;Payout&nbsp;Amount</label>
+        <input type="number"
+               name="min_amount"
+               class="form-control @error('min_amount') is-invalid @enderror"
+               value="{{ old('min_amount', number_format($settings->min_amount,2,'.','')) }}"
+               step="0.01" min="0">
+        @error('min_amount') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
 
     </div>
