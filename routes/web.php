@@ -168,7 +168,6 @@ Route::prefix('products/{product}')->name('products.')->group(function () {
 
 
 
-
 // web.php
 Route::post   ('/products/{product}/shipping/rows',           [ProductShippingController::class, 'storeShippingRow'])
      ->name('products.shipping.rows.store');
