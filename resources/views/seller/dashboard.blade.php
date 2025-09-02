@@ -96,7 +96,7 @@
                     'href'  => route('products.index')
                 ],
                 [
-                    'value' => get_currency().number_format(wallet(),2),
+                    'value' => get_currency().number_format(wallet(),2) . "<small class='text-muted ms-1'>(On Hold: " . get_currency().number_format(wallet('on_hold'),2) . ")</small>",
                     'label' => 'Wallet Balance',
                     'icon'  => 'fas fa-wallet',
                     'class' => 'text-success',
@@ -168,10 +168,16 @@
                   : asset('storage/' . ltrim($product->featured_image, '/'));
       } else {
           $firstMedia = $product->media->first();
-          $thumb = $firstMedia
-                  ? asset('storage/' . ltrim($firstMedia->url, '/'))
-                  : asset('storage/placeholder.jpg');
-          $mediaType = $firstMedia->type ?? 'image';
+          if ($firstMedia) {
+              $thumb = asset('storage/' . ltrim($firstMedia->url, '/'));
+              $mediaType = $firstMedia->type ?? 'image';
+          } else {
+              $shopLogo = ($product->shop && $product->shop->logo)
+                          ? asset('storage/' . ltrim($product->shop->logo, '/'))
+                          : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
+              $thumb = $shopLogo;
+              $mediaType = 'image';
+          }
       }
     @endphp
 

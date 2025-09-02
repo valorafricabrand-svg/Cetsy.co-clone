@@ -44,7 +44,7 @@ class ProductController extends Controller
         $shopId = $shop->id;
 
         // Base query
-        $query = Product::with('media')
+        $query = Product::with(['media','shop'])
             ->where('shop_id', $shopId);
 
         // Apply search
@@ -597,11 +597,19 @@ public function listing(string $slug)
         return $summary;
     }
 
-    public function listings()
-    {
-        $products = Product::where('is_active', 1)->with('media')->latest()->paginate(16);
-        return themed_view('listings', compact('products'));
+public function listings(Request $request)
+{
+    $query = Product::where('is_active', 1)->with(['media','shop']);
+
+    if ($request->filled('type')) {
+        $query->where('type', $request->type);
     }
+
+    $products = $query->latest()->paginate(16);
+
+    return themed_view('listings', compact('products'));
+}
+
 
 
 

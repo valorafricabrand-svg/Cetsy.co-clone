@@ -20,6 +20,7 @@ class PayoutRequestController extends Controller
     {
         // available balance
         $balance = Wallet::where('user_id', Auth::id())
+            ->where('status', 'completed')
             ->selectRaw('SUM(credit) - SUM(debit) AS bal')
             ->value('bal') ?? 0;
 
@@ -38,6 +39,7 @@ public function store(Request $request)
        1️⃣  Get numeric balance for validation
     --------------------------------------------------*/
     $balance = Wallet::where('user_id', Auth::id())
+        ->where('status', 'completed')
         ->selectRaw('SUM(credit) - SUM(debit) AS balance')
         ->value('balance') ?? 0;
 

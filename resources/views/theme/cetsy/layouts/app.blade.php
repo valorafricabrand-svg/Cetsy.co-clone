@@ -106,12 +106,21 @@
       --bs-dropdown-min-width: 230px;
       border-radius: .5rem;
       box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
+      will-change: transform;
     }
     .dropdown-item:hover, .dropdown-item:focus { background: #eaf7ef; color: #198754; }
     .rotate { transition: transform .25s ease; }
+    .nav-item.dropdown.show > a .rotate { transform: rotate(180deg); }
+    .dropdown-submenu.show > a .rotate { transform: rotate(90deg); }
 
     /* Multi-level submenu */
-    .dropdown-submenu > .dropdown-menu { top: -0.25rem; left: 100%; margin-left: .15rem; }
+    .dropdown-submenu { position: relative; } /* anchor child menu positioning */
+    .dropdown-submenu > .dropdown-menu {
+      top: 0;
+      left: 100%;
+      margin-top: -0.25rem; /* overlap for seamless hover */
+      margin-left: .125rem;
+    }
     .dropdown-submenu.no-children > a .rotate { display: none; }
 
     /* Mobile category chips */
@@ -177,6 +186,10 @@
                 <i class="fas fa-search"></i>
               </button>
             </form>
+            {{-- Primary navigation links --}}
+            <ul class="navbar-nav ms-3">
+              <li class="nav-item"><a class="nav-link" href="{{ route('shops.index') }}">Shops</a></li>
+            </ul>
 
             {{-- Cart + User (desktop) --}}
             <ul class="navbar-nav ms-auto align-items-center" x-data="cartDropdown()" x-init="fetchCart()">
@@ -207,7 +220,7 @@
                 @endif
 
                 <li class="nav-item dropdown d-none d-lg-block">
-                  <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
                     {{ auth()->user()->name }}
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
@@ -281,6 +294,11 @@
               <a class="btn btn-outline-secondary btn-sm w-100" href="{{ route('login') }}">Log In</a>
             </div>
           @endauth
+          <div class="mb-3">
+            <a href="{{ route('shops.index') }}" class="btn btn-outline-success w-100">
+              <i class="fas fa-store me-1"></i> Browse Shops
+            </a>
+          </div>
 
           {{-- Quick Category Chips --}}
           @php
@@ -344,12 +362,12 @@
               $kids = $cat->childrenRecursive;
               $has  = $kids->isNotEmpty();
               echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
-              echo   '<a class="dropdown-item d-flex justify-content-between align-items-center" href="'.($has?'#':route('category.show',$cat->slug)).'">';
+              echo   '<a class="dropdown-item d-flex justify-content-between align-items-center" href="'.($has?'#':route('category.show',$cat->slug)).'" role="menuitem" tabindex="-1">';
               echo     e($cat->name);
               if($has) echo '<i class="fas fa-chevron-right ms-2 rotate" aria-hidden="true"></i>';
               echo   '</a>';
               if($has){
-                echo '<ul class="dropdown-menu">';
+                echo '<ul class="dropdown-menu" role="menu">';
                 $renderCatsDesktop($kids);
                 echo '</ul>';
               }
@@ -363,7 +381,13 @@
             <ul class="nav">
               @foreach($mainCategories as $main)
                 <li class="nav-item dropdown">
-                  <a class="nav-link text-white py-2" href="#" id="catDD{{ $main->id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                  <a class="nav-link text-white py-2 dropdown-toggle"
+                     href="#"
+                     id="catDD{{ $main->id }}"
+                     data-bs-toggle="dropdown"
+                     data-bs-auto-close="outside"
+                     aria-expanded="false"
+                     role="button">
                     {{ $main->name }}
                     @if($main->childrenRecursive->isNotEmpty())
                       <i class="fas fa-chevron-down ms-1 rotate" aria-hidden="true"></i>
@@ -371,7 +395,7 @@
                   </a>
 
                   @if($main->childrenRecursive->isNotEmpty())
-                    <ul class="dropdown-menu" aria-labelledby="catDD{{ $main->id }}">
+                    <ul class="dropdown-menu" aria-labelledby="catDD{{ $main->id }}" role="menu">
                       {!! $renderCatsDesktop($main->childrenRecursive) !!}
                     </ul>
                   @endif
@@ -384,7 +408,7 @@
 
       @push('styles')
       <style>
-        /* Desktop hover open + overflow flip */
+        /* Desktop hover open for all levels */
         @media (min-width:992px) {
           .nav-item.dropdown:hover > .dropdown-menu { display:block; }
           .dropdown-submenu:hover  > .dropdown-menu { display:block; }
@@ -395,42 +419,146 @@
       @push('scripts')
       <script>
       document.addEventListener('DOMContentLoaded', () => {
-        // Desktop submenu flip + sibling close
-        document.querySelectorAll('.dropdown-submenu > a').forEach(anchor => {
-          anchor.addEventListener('click', e => {
-            const sub = anchor.nextElementSibling;
-            if (sub && sub.classList.contains('dropdown-menu')) {
-              e.preventDefault();
-              const parentLi = anchor.parentElement;
-              const open = parentLi.classList.toggle('show');
-              sub.classList.toggle('show', open);
+        const isDesktop = () => window.matchMedia('(min-width: 992px)').matches;
 
-              if (open) {
-                const rect = sub.getBoundingClientRect();
-                if (rect.right > window.innerWidth) {
-                  sub.style.left = 'auto';
-                  sub.style.right = '100%';
-                } else {
-                  sub.style.left = '100%';
-                  sub.style.right = 'auto';
-                }
+        // Utility: flip submenu left if overflowing
+        const positionSubmenu = (menu) => {
+          if (!menu) return;
+          // Reset to default
+          menu.style.left = '100%';
+          menu.style.right = 'auto';
+          const rect = menu.getBoundingClientRect();
+          const pad = 16;
+          if (rect.right > window.innerWidth - pad) {
+            menu.style.left = 'auto';
+            menu.style.right = '100%';
+          }
+        };
+
+        // Open/close helpers for submenus
+        const openSub = (li) => {
+          const sub = li.querySelector(':scope > .dropdown-menu');
+          if (!sub) return;
+          li.classList.add('show');
+          sub.classList.add('show');
+          positionSubmenu(sub);
+        };
+        const closeSub = (li) => {
+          const sub = li.querySelector(':scope > .dropdown-menu');
+          li.classList.remove('show');
+          if (sub) {
+            sub.classList.remove('show');
+            sub.style.left = '';
+            sub.style.right = '';
+          }
+          // Also close nested children
+          li.querySelectorAll(':scope .dropdown-submenu.show').forEach(n => {
+            n.classList.remove('show');
+            const m = n.querySelector(':scope > .dropdown-menu');
+            if (m) m.classList.remove('show');
+          });
+        };
+
+        // Hover behavior for top-level dropdowns (desktop only)
+        document.querySelectorAll('.nav-item.dropdown').forEach(item => {
+          const menu = item.querySelector(':scope > .dropdown-menu');
+          item.addEventListener('mouseenter', () => {
+            if (!isDesktop() || !menu) return;
+            clearTimeout(item._leaveTimer);
+            item.classList.add('show');
+            menu.classList.add('show');
+            // keep stable placement (no popper jitter)
+            menu.setAttribute('data-bs-popper', 'static');
+          });
+          item.addEventListener('mouseleave', () => {
+            if (!menu) return;
+            item._leaveTimer = setTimeout(() => {
+              item.classList.remove('show');
+              menu.classList.remove('show');
+            }, 150);
+          });
+        });
+
+        // Hover behavior for all nested submenus (desktop only)
+        const bindSubmenus = () => {
+          document.querySelectorAll('.dropdown-submenu').forEach(li => {
+            li.removeEventListener('mouseenter', li._enterHandler || (()=>{}));
+            li.removeEventListener('mouseleave', li._leaveHandler || (()=>{}));
+
+            li._enterHandler = () => {
+              if (isDesktop()) {
+                clearTimeout(li._leaveTimer);
+                openSub(li);
               }
+            };
+            li._leaveHandler = () => {
+              if (isDesktop()) {
+                li._leaveTimer = setTimeout(() => closeSub(li), 150);
+              }
+            };
 
-              // Close siblings
-              parentLi.parentElement.querySelectorAll(':scope > .dropdown-submenu.show').forEach(li => {
-                if (li !== parentLi) {
-                  li.classList.remove('show');
-                  li.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+            li.addEventListener('mouseenter', li._enterHandler);
+            li.addEventListener('mouseleave', li._leaveHandler);
+
+            // Keyboard: ArrowRight opens, Esc closes
+            const trigger = li.querySelector(':scope > a.dropdown-item');
+            if (trigger) {
+              trigger.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight') {
+                  e.preventDefault();
+                  openSub(li);
+                  const firstChild = li.querySelector(':scope > .dropdown-menu .dropdown-item');
+                  if (firstChild) firstChild.focus();
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  closeSub(li);
+                  trigger.focus();
                 }
               });
+            }
+          });
+        };
+        bindSubmenus();
+
+        // Re-calc positions on resize/scroll
+        window.addEventListener('resize', () => {
+          document.querySelectorAll('.dropdown-menu.show').forEach(positionSubmenu);
+        });
+        window.addEventListener('scroll', () => {
+          document.querySelectorAll('.dropdown-menu.show').forEach(positionSubmenu);
+        });
+
+        // Touch/mobile: keep click-to-open for accessibility
+        // If user taps a parent (with children), prevent navigation and toggle
+        document.querySelectorAll('.dropdown-submenu > a.dropdown-item').forEach(a => {
+          a.addEventListener('click', (e) => {
+            const li = a.parentElement;
+            const hasChild = !!li.querySelector(':scope > .dropdown-menu');
+            if (hasChild && !isDesktop()) {
+              e.preventDefault();
+              li.classList.toggle('show');
+              const sub = li.querySelector(':scope > .dropdown-menu');
+              if (sub) sub.classList.toggle('show');
             }
           });
         });
 
         // Close all on outside click or Esc (desktop)
-        const closeAll = () => document.querySelectorAll('.dropdown-menu.show,.dropdown-submenu.show')
-          .forEach(el => { el.classList.remove('show'); el.style.left=''; el.style.right=''; });
-        document.addEventListener('click', e => { if (!e.target.closest('nav')) closeAll(); });
+        const closeAll = () => document.querySelectorAll('.dropdown-menu.show, .dropdown-submenu.show, .nav-item.dropdown.show')
+          .forEach(el => {
+            if (el.classList.contains('nav-item')) {
+              el.classList.remove('show');
+            } else if (el.classList.contains('dropdown-menu')) {
+              el.classList.remove('show');
+              el.style.left=''; el.style.right='';
+            } else {
+              el.classList.remove('show');
+            }
+          });
+
+        document.addEventListener('click', e => {
+          if (!e.target.closest('nav')) closeAll();
+        });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
       });
       </script>

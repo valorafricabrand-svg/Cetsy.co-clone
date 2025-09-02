@@ -39,14 +39,21 @@
                             <p class="mb-0">The appeal deadline has passed. You can no longer appeal this decision.</p>
                         </div>
                     @else
-                        <div class="alert alert-warning">
-                            <h6 class="alert-heading">Appeal Deadline</h6>
-                            <p class="mb-0">
-                                You have <strong>{{ $dispute->getAppealDeadlineDaysLeft() }} days</strong> remaining to submit your appeal.
-                                <br>
-                                <small class="text-muted">Deadline: {{ $dispute->appeal_deadline->format('M d, Y \a\t g:i A') }}</small>
-                            </p>
-                        </div>
+                        @if($dispute->appeal_deadline)
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading">Appeal Deadline</h6>
+                                <p class="mb-0">
+                                    You have <strong>{{ $dispute->getAppealDeadlineDaysLeft() }} days</strong> remaining to submit your appeal.
+                                    <br>
+                                    <small class="text-muted">Deadline: {{ $dispute->appeal_deadline->format('M d, Y \a\t g:i A') }}</small>
+                                </p>
+                            </div>
+                        @else
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading">Appeal Available</h6>
+                                <p class="mb-0">You can submit an appeal at any time. There is no deadline for this dispute.</p>
+                            </div>
+                        @endif
 
                         <form action="{{ route('disputes.appeal.store', $dispute->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf
@@ -152,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Countdown timer for appeal deadline
-    @if(!$dispute->isAppealDeadlineExpired())
+    @if($dispute->appeal_deadline && !$dispute->isAppealDeadlineExpired())
         const deadline = new Date('{{ $dispute->appeal_deadline }}').getTime();
         
         const countdown = setInterval(function() {

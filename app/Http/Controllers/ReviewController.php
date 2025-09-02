@@ -30,14 +30,28 @@ class ReviewController extends Controller
      */
     public function store(Request $request, Order $order, OrderItem $item)
     {
-        
-
         $data = $request->validate([
             'rating'  => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:2000',
         ]);
 
         abort_if($item->review, 409, 'You have already reviewed this item.');
+
+        // Gate digital products until download is confirmed
+        if (optional($item->product)->type === 'digital') {
+            if (empty($item->downloaded_at)) {
+                return back()->with('warning', 'Please download your digital item before leaving a review.')
+                            ->withInput();
+            }
+        }
+
+        // Gate physical products until delivered
+        if (optional($item->product)->type === 'physical') {
+            if ($order->status !== \App\Models\Order::STATUS_DELIVERED) {
+                return back()->with('warning', 'You can review this item after it is delivered.')
+                            ->withInput();
+            }
+        }
 
         $data['shop_id'] = $item->product->shop_id;
 

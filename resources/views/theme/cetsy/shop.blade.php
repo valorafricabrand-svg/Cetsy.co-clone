@@ -232,8 +232,24 @@
         {{-- List View --}}
         <div id="listView" class="list-group d-none">
           @foreach($products as $product)
+            @php
+              if (!empty($product->featured_image)) {
+                  $thumbUrl = str_starts_with($product->featured_image, 'http')
+                            ? $product->featured_image
+                            : asset('storage/' . ltrim($product->featured_image, '/'));
+              } else {
+                  $firstMedia = $product->media->first();
+                  if ($firstMedia) {
+                      $thumbUrl = asset('storage/' . ltrim($firstMedia->url, '/'));
+                  } else {
+                      $thumbUrl = ($product->shop && $product->shop->logo)
+                                  ? asset('storage/' . ltrim($product->shop->logo, '/'))
+                                  : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
+                  }
+              }
+            @endphp
             <div class="list-group-item product-item d-flex align-items-center" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ $product->average_rating }}">
-              <img src="{{ $product->featured_image }}" alt="{{ $product->name }}" class="rounded" style="width:80px; height:80px; object-fit:cover;">
+              <img src="{{ $thumbUrl }}" alt="{{ $product->name }}" class="rounded" style="width:80px; height:80px; object-fit:cover;">
               <div class="ms-3 flex-grow-1">
                 <h6 class="mb-1">{{ $product->name }}</h6>
                 <small class="text-muted">${{ number_format($product->price,2) }}</small>
@@ -245,10 +261,12 @@
           @endforeach
         </div>
 
-        {{-- Pagination --}}
-        @if($products->hasPages())
+        {{-- Load More Button --}}
+        @if($products->hasMorePages())
           <div class="mt-4 d-flex justify-content-center">
-            {{ $products->links('pagination::bootstrap-5') }}
+            <button id="loadMore" class="btn btn-outline-secondary" data-next-page-url="{{ $products->nextPageUrl() }}">
+              Load More
+            </button>
           </div>
         @endif
       </div>
@@ -355,7 +373,7 @@
           <div class="card shadow-sm">
             <div class="card-header bg-white fw-semibold">Shop Policies</div>
             <div class="card-body">
-              {!! nl2br(e($shop->policies)) !!}
+              {!! $shop->policies !!}
             </div>
           </div>
         @else
@@ -666,6 +684,42 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(() => alert('Shop URL copied!'))
         .catch(() => alert('Copy failed, please try manually.'));
     };
+
+    const loadMoreBtn = document.getElementById('loadMore');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => {
+        const btn = loadMoreBtn;
+        const nextUrl = btn.dataset.nextPageUrl;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+
+        fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            doc.querySelectorAll('#gridItems .product-item').forEach(el => gridView.appendChild(el));
+            doc.querySelectorAll('#listItems .product-item').forEach(el => listView.appendChild(el));
+
+            const newBtn = doc.getElementById('loadMore');
+            if (newBtn && newBtn.dataset.nextPageUrl) {
+              btn.dataset.nextPageUrl = newBtn.dataset.nextPageUrl;
+              btn.disabled = false;
+              btn.textContent = 'Load More';
+            } else {
+              btn.remove();
+            }
+            applyFilters();
+            applySort();
+          })
+          .catch(() => {
+            btn.disabled = false;
+            btn.textContent = 'Load More';
+          });
+      });
+    }
   });
 </script>
 @endpush

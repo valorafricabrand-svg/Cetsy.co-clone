@@ -5,7 +5,7 @@
 <div class="content">
   <h1 class="mb-4 fw-bold">Site Settings</h1>
 
-  <form action="{{ route('settings.update', $settings->id) }}"
+  <form action="{{ route('admin.settings.update', $settings->id) }}"
         method="POST"
         enctype="multipart/form-data"
         class="needs-validation"
@@ -201,6 +201,28 @@
     </div>
   </div>
 </div>
+
+    <!-- ========== SHIPPING DEFAULTS ========== -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light fw-semibold">Shipping Defaults</div>
+      <div class="card-body">
+        @php
+          $couriersFromSettings = '';
+          try {
+            $arr = json_decode($settings->couriers_json ?? '[]', true);
+            if (is_array($arr) && !empty($arr)) {
+              $couriersFromSettings = implode("\n", $arr);
+            }
+          } catch (\Throwable $e) {}
+          if ($couriersFromSettings === '') {
+            $couriersFromSettings = implode("\n", couriers_list());
+          }
+        @endphp
+        <label class="form-label">Default Couriers (one per line)</label>
+        <textarea name="couriers" rows="6" class="form-control" placeholder="e.g. DHL\nFedEx\nUPS">{{ old('couriers', $couriersFromSettings) }}</textarea>
+        <div class="form-text">Shown in "Service" selects. Sellers can still choose Manual/Other to type a custom courier.</div>
+      </div>
+    </div>
 
     <!-- Action Buttons -->
     <div class="text-end">
