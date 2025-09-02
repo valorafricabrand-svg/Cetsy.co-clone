@@ -72,7 +72,7 @@ class OfferController extends Controller
             $query->where('offer_price', '<=', $request->price_max);
         }
 
-        $offers = $query->orderBy('id', 'desc')->paginate(20);
+        $offers = $query->orderBy('id', 'desc')->paginate(20)->withQueryString();
 
         // Get summary statistics
         $allOffers = Offer::whereIn('product_id', $productIds);
@@ -177,7 +177,10 @@ class OfferController extends Controller
                 ]);
             }
 
-            $message = 'Offer accepted successfully. Order #' . $order->id . ' has been created.';
+            $message = 'Offer accepted successfully. Order #' . $order->id . ' has been created. ';
+            // Provide a quick Pay Now link you can share with the buyer
+            $payUrl = route('pay_now', $order->total_amount);
+            $message .= 'Share this Pay Now link with the buyer: ' . $payUrl . '.';
             if ($emailSent) {
                 $message .= ' The buyer has been notified via email.';
             } else {
@@ -238,7 +241,17 @@ class OfferController extends Controller
         $order->order_notes = "Order created from accepted offer #{$offer->id}";
         
         // Calculate totals
-        $subtotal = $offer->offer_price;
+        // Business rule: If seller is accepting a counter offer, bill the original offer amount
+        // unless the buyer accepted the counter (handled on buyer side).
+        $subtotal = (float) $offer->offer_price;
+        if ($offer->is_counter_offer) {
+            if (method_exists($offer, 'extractOriginalOfferInfo')) {
+                $orig = $offer->extractOriginalOfferInfo();
+                if ($orig && isset($orig->offer_price)) {
+                    $subtotal = (float) $orig->offer_price;
+                }
+            }
+        }
         $shippingCost = 0; // Default shipping cost, can be calculated based on shipping profile
         $totalAmount = $subtotal + $shippingCost;
         

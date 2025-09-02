@@ -576,9 +576,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                             @endif
                                             
                                             <div class="mb-1">
+                                                @if($dispute->status === 'pending')
                                                 <span class="badge bg-warning text-dark">
                                                     <i class="bi bi-exclamation-triangle"></i> Dispute: {{ ucfirst($dispute->status) }}
                                                 </span>
+                                                @elseif($dispute->status === 'under_review')
+                                                <span class="badge bg-info text-dark">
+                                                    <i class="bi bi-search"></i> Dispute: {{ ucfirst($dispute->status) }}
+                                                </span>
+                                                @elseif($dispute->status === 'resolved' || $dispute->status === 'mutually_resolved')
+                                                <span class="badge bg-success text-dark">
+                                                    <i class="bi bi-check-circle"></i> Dispute: {{ ucfirst($dispute->status) }}
+                                                </span>
+                                                @endif
                                             </div>
                                             
                                             @if($dispute->status === 'pending')

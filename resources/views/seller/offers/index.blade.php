@@ -188,7 +188,7 @@
                     @forelse($offers as $offer)
                         <tr>
                             <td>
-                                @if($offer->is_negotiable)
+                                @if($offer->status === 'pending')
                                     <input type="checkbox" class="form-check-input offer-checkbox" value="{{ $offer->id }}">
                                 @endif
                             </td>
@@ -204,16 +204,8 @@
                                         </div>
                                     @endif -->
 
-                                    @if($img = $offer->product->media->first())
-                                        <img src="{{ asset('storage/'.$img->url) }}"
-                                            class="rounded"
-                                            style="height:40px;object-fit:cover;" alt="{{ $offer->product->name }}">
-                                    @else
-                                        <div class="bg-light d-flex align-items-center justify-content-center"
-                                            style="height:220px;">
-                                            <span class="text-muted">No Image</span>
-                                        </div>
-                                    @endif
+                                    @php($thumb = product_thumb_url($offer->product))
+                                    <img src="{{ $thumb }}" class="rounded" style="width:40px;height:40px;object-fit:cover;" alt="{{ $offer->product->name }}">
                                     <div class="flex-grow-1">
                                         <span class="fw-semibold text-dark d-block" title="{{ $offer->product->name ?? '-' }}">
                                             {{ \Illuminate\Support\Str::limit($offer->product->name ?? '-', 25) }}
@@ -264,6 +256,9 @@
                                 <div class="d-flex gap-2 justify-content-end">
                                     <a href="{{ route('seller.offers.show', $offer->id) }}" class="btn btn-outline-primary btn-sm">
                                         <i class="bi bi-eye me-1"></i>View
+                                    </a>
+                                    <a href="{{ route('seller.messages.index', ['user' => $offer->buyer_id, 'product' => $offer->product_id]) }}" class="btn btn-outline-info btn-sm" title="Message buyer about this product">
+                                        <i class="bi bi-chat-dots me-1"></i>Message
                                     </a>
                                     @if($offer->is_negotiable)
                                         <div class="dropdown">
