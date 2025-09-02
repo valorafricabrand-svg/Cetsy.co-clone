@@ -112,7 +112,14 @@
                      max="{{ number_format($maxPayout, 2, '.', '') }}"
                      value="{{ old('amount') }}"
                      required>
-              <button class="btn btn-outline-secondary" type="button" id="payoutMaxBtn" tabindex="-1">Max</button>
+              <button class="btn btn-outline-secondary"
+                      type="button"
+                      id="payoutMaxBtn"
+                      tabindex="-1"
+                      aria-label="Use available balance"
+                      data-bs-toggle="tooltip"
+                      data-bs-placement="top"
+                      title="Use available balance" @disabled($maxPayout <= 0)>Max</button>
             </div>
             <div class="invalid-feedback">@error('amount') {{ $message }} @else Required @enderror</div>
             <small class="text-muted d-block">Available: {{ get_currency() }} {{ number_format($balance,2) }}</small>
@@ -123,6 +130,9 @@
             <small class="text-muted d-block">
               Estimated fee: <span id="payoutFee">0.00</span> &middot; You receive: <span id="payoutNet">0.00</span>
             </small>
+            @if($maxPayout <= 0)
+              <small class="text-danger d-block">Insufficient balance to request a payout. Increase your available balance or wait for on-hold funds to be released.</small>
+            @endif
         </div>
 
         {{-- method --}}
@@ -159,7 +169,8 @@
         
     </div>
 
-    <div class="modal-footer">
+    <div class="modal-footer d-flex align-items-center justify-content-between">
+        <span class="badge bg-secondary" id="payoutNetBadge">You receive: {{ get_currency() }} 0.00</span>
         <button id="payoutSubmitBtn" class="btn btn-primary" type="submit">
             Submit&nbsp;Request
         </button>
@@ -289,12 +300,15 @@
     const submitBtn = document.getElementById('payoutSubmitBtn');
     const maxBtn = document.getElementById('payoutMaxBtn');
     const fmt = (n) => (isFinite(n) ? Number(n).toFixed(2) : '0.00');
+    const currency = {{ json_encode(get_currency()) }};
+    const netBadge = document.getElementById('payoutNetBadge');
     function recalc(){
       const amt = parseFloat(input.value || '0');
       const fee = Math.round((amt * feeRate) * 100) / 100;
       const net = Math.max(0, amt - fee);
       if (feeEl) feeEl.textContent = fmt(fee);
       if (netEl) netEl.textContent = fmt(net);
+      if (netBadge) netBadge.textContent = 'You receive: ' + currency + ' ' + fmt(net);
     }
     function updateSubmitDisabled(){
       let disabled = false;
@@ -309,11 +323,24 @@
     input.addEventListener('input', updateSubmitDisabled);
     if (methodSel) methodSel.addEventListener('change', updateSubmitDisabled);
     if (maxBtn) maxBtn.addEventListener('click', function(){
-      if (input && input.max) {
-        input.value = input.max;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
+      if (!input) return;
+      const maxStr = input.max || '0';
+      const maxVal = parseFloat(maxStr);
+      const minVal = parseFloat(input.min || '0');
+      if (!isFinite(maxVal)) return;
+      // Confirm if max is effectively zero or below minimum
+      if (maxVal <= 0.01 || maxVal < minVal) {
+        const msg = 'Your maximum payout is very low or below the minimum threshold. You likely need more available balance. Continue to fill Max?';
+        if (!window.confirm(msg)) return;
       }
+      input.value = maxStr;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
     });
+    // Disable Max button dynamically based on max value
+    (function syncMaxBtnDisabled(){
+      const maxVal = parseFloat(input.max || '0');
+      if (maxBtn) maxBtn.disabled = !(isFinite(maxVal) && maxVal > 0);
+    })();
     const modalEl = document.getElementById('payoutModal');
     if (modalEl) {
       modalEl.addEventListener('shown.bs.modal', function(){
@@ -323,6 +350,14 @@
     }
     recalc();
     updateSubmitDisabled();
+  })();
+  // Bootstrap tooltip init (best-effort)
+  (function(){
+    try {
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el){
+        new bootstrap.Tooltip(el);
+      });
+    } catch (e) {}
   })();
   // Auto-open payout modal if requested (after adding method)
   @if(session('open_payout_modal') || $errors->has('amount') || $errors->has('method'))

@@ -14,7 +14,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         \App\Console\Commands\ReleaseOnHoldFunds::class,
-        \App\Console\Commands\ProcessApprovedPayouts::class,
+        // Legacy: ProcessApprovedPayouts removed from schedule and command list
     ];
 
     /**
@@ -25,8 +25,7 @@ class Kernel extends ConsoleKernel
         // Auto-release on-hold funds for shipped orders after grace period
         $schedule->command('orders:release-onhold')->hourly();
 
-        // Keep existing payouts processor on schedule if desired
-        $schedule->command('process:approved-payouts')->everyTenMinutes();
+        // Removed legacy process:approved-payouts from schedule
     }
 
     /**
@@ -39,4 +38,3 @@ class Kernel extends ConsoleKernel
         require base_path('routes/console.php');
     }
 }
-
