@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -144,7 +143,7 @@ class DisputeController extends Controller
             ]);
         });
 
-        return redirect()->route('admin.disputes.show', $dispute->id)
+        return redirect()->route('admin.admin-disputes.show', $dispute->id)
             ->with('success', 'Dispute resolved successfully.');
     }
 
@@ -374,7 +373,7 @@ class DisputeController extends Controller
             ]);
         });
 
-        return redirect()->route('admin.disputes.show', $dispute->id)
+        return redirect()->route('admin.admin-disputes.show', $dispute->id)
             ->with('success', 'Dispute finalized successfully.');
     }
 
@@ -576,3 +575,4 @@ class DisputeController extends Controller
         }
     }
 }
+
