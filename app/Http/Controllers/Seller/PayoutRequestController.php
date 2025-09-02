@@ -81,6 +81,8 @@ class PayoutRequestController extends Controller
                 'otp_hash'        => $otpHash,
                 'otp_expires_at'  => $otpExpires,
                 'otp_attempts'    => 0,
+                'otp_resend_count'=> 0,
+                'otp_last_sent_at'=> now()->toISOString(),
             ],
         ]);
 
@@ -240,5 +242,24 @@ class PayoutRequestController extends Controller
         } catch (\Throwable $e) {}
 
         return back()->with('success', 'A new verification code has been sent.');
+    }
+
+    /**
+     * Cancel an OTP-pending payout request.
+     */
+    public function cancel(PayoutRequest $payout)
+    {
+        abort_if($payout->user_id !== Auth::id(), 403);
+        abort_if($payout->status !== 'otp_pending', 409, 'This payout can no longer be cancelled.');
+
+        $meta = $payout->meta ?? [];
+        $meta['cancelled_at'] = now()->toISOString();
+
+        $payout->update([
+            'status' => 'cancelled',
+            'meta'   => $meta,
+        ]);
+
+        return redirect()->route('seller.payouts.index')->with('success', 'Payout request cancelled.');
     }
 }

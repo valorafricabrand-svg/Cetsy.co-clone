@@ -36,6 +36,11 @@
       @csrf
       <button class="btn btn-link p-0" {{ $canResend ? '' : 'disabled' }} title="{{ isset($canResendAt) && !$canResend ? 'You can resend at '.$canResendAt->format('H:i:s') : '' }}">Resend code</button>
     </form>
+    <form method="POST" action="{{ route('seller.payouts.cancel', $payout) }}" class="d-inline ms-3"
+          onsubmit="return confirm('Cancel this payout request?');">
+      @csrf
+      <button class="btn btn-link text-danger p-0">Cancel request</button>
+    </form>
   </div>
   </div>
 @endsection

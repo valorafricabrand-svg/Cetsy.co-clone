@@ -13,7 +13,7 @@
             <div class="input-group w-auto">
                 <select name="status" class="form-select">
                     <option value="">All statuses</option>
-                    @foreach(['pending','approved','sent','rejected','failed','paid'] as $s)
+                    @foreach(['otp_pending','pending','approved','sent','rejected','failed','paid','cancelled'] as $s)
                         <option value="{{ $s }}" {{ request('status')===$s ? 'selected' : '' }}>
                             {{ ucfirst($s) }}
                         </option>

@@ -185,7 +185,13 @@
       <i class="bi bi-shield-lock me-2"></i>
       You have a payout request (ID #{{ $otpPendingPayout->id }}) awaiting verification.
     </div>
-    <a class="btn btn-sm btn-primary" href="{{ route('seller.payouts.verify', $otpPendingPayout) }}">Verify Now</a>
+    <div class="d-flex align-items-center gap-2">
+      <a class="btn btn-sm btn-primary" href="{{ route('seller.payouts.verify', $otpPendingPayout) }}">Verify Now</a>
+      <form action="{{ route('seller.payouts.cancel', $otpPendingPayout) }}" method="POST" onsubmit="return confirm('Cancel this payout request?');">
+        @csrf
+        <button class="btn btn-sm btn-outline-danger">Cancel</button>
+      </form>
+    </div>
   </div>
 @endif
 </div>

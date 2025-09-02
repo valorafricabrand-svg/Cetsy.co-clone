@@ -19,8 +19,8 @@
                           <th>#</th>
                           <th>Amount</th>
                           <th>Status</th>
-                          <th>Action</th>
                           <th>Requested&nbsp;On</th>
+                          <th>Action</th>
                       </tr>
                   </thead>
                   <tbody>
@@ -30,9 +30,13 @@
                               <td>{{ get_currency() }} {{ number_format($req->amount,2) }}</td>
                               <td class="text-capitalize">{{ $req->status }}</td>
                               <td>{{ $req->created_at->format('d M Y') }}</td>
-                              <td>
+                              <td class="text-nowrap">
                                 @if($req->status === 'otp_pending')
                                   <a href="{{ route('seller.payouts.verify', $req) }}" class="btn btn-sm btn-primary">Verify</a>
+                                  <form action="{{ route('seller.payouts.cancel', $req) }}" method="POST" class="d-inline" onsubmit="return confirm('Cancel this payout request?');">
+                                    @csrf
+                                    <button class="btn btn-sm btn-outline-danger">Cancel</button>
+                                  </form>
                                 @else
                                   <span class="text-muted">—</span>
                                 @endif
