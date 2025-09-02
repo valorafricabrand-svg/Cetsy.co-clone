@@ -69,6 +69,7 @@ public function update(Request $request, Setting $setting)
         // Payout settings (fee stored as percent; e.g. 1.5 for 1.5%)
         'fee_rate'          => 'nullable|numeric|min:0|max:100',
         'min_amount'        => 'nullable|numeric|min:0',
+        'auto_release_days' => 'nullable|integer|min:1|max:365',
 
         // Shipping defaults
         'couriers'          => 'nullable|string',
