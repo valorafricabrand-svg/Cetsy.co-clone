@@ -13,7 +13,7 @@
             <div class="input-group w-auto">
                 <select name="status" class="form-select">
                     <option value="">All statuses</option>
-                    @foreach(['pending','approved','sent','rejected','paid'] as $s)
+                    @foreach(['pending','approved','sent','rejected','failed','paid'] as $s)
                         <option value="{{ $s }}" {{ request('status')===$s ? 'selected' : '' }}>
                             {{ ucfirst($s) }}
                         </option>
@@ -50,7 +50,7 @@
                                     elseif ($p->status === 'approved') $badge='info';
                                     elseif ($p->status === 'sent') $badge='primary';
                                     elseif ($p->status === 'paid') $badge='success';
-                                    elseif ($p->status === 'rejected') $badge='danger';
+                                    elseif ($p->status === 'rejected' || $p->status === 'failed') $badge='danger';
                                   @endphp
                                   <span class="badge text-bg-{{ $badge }} text-uppercase">{{ $p->status }}</span>
                                 </td>
