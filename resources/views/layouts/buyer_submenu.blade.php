@@ -1,112 +1,102 @@
 @php
-    $active = fn($routes) => collect((array) $routes)
-        ->contains(fn($r) => request()->routeIs($r));
+    use Illuminate\Support\Facades\Route as RouteFacade;
+    $active = fn($routes) => collect((array) $routes)->contains(fn($r) => request()->routeIs($r));
+    // Balances
     $walletBalance = wallet();
-    $walletBalanceFormatted = number_format($walletBalance, 2);
-    $hasShop = \App\Models\Shop::where('user_id', Auth::id())->exists();
-    // Unread messages count for buyer
+    $walletBalanceFormatted = number_format((float) $walletBalance, 2);
+    // Counters
     $unreadMessages = \App\Models\Message::where('receiver_id', Auth::id())
         ->where('is_read', false)
         ->count();
+    $pendingOrders  = \App\Models\Order::where('user_id', Auth::id())
+        ->where('status','pending')
+        ->count();
+    $favoritesCount = \App\Models\Wishlist::where('user_id', Auth::id())->count();
+    $offersPending  = \App\Models\Offer::where('buyer_id', Auth::id())->where('status','pending')->count();
 @endphp
 
 @if(Auth::user()->isBuyer())
     <style>
-        .badge-unread {
-            background: #dc3545 !important;
-            color: #fff !important;
-            font-size: 0.8rem;
-            padding: 0.35em 0.7em;
-            border-radius: 1rem;
-            margin-left: 0.5rem;
-            vertical-align: middle;
-        }
+        .badge-pill { border-radius: 1rem; }
     </style>
-    <nav class="d-flex flex-column h-100 bg-white border-end shadow-sm p-3" style="min-height: 100vh; width: 250px;" aria-label="Buyer Sidebar">
-        <!-- Dashboard -->
-        <div class="mb-2">
-            <a
-                href="{{ route('buyer.dashboard') }}"
-                class="nav-link d-flex align-items-center mt-2 {{ $active('buyer.dashboard') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
-                aria-current="page"
-            >
-                <i class="fas fa-tachometer-alt me-2 text-success"></i>
-                Dashboard
-            </a>
-        </div>
-        <div class="mb-2">
-            <a
-                href="{{ route('wallet.index') }}" 
-                class="nav-link d-flex align-items-center mt-2 bg-light text-success fw-bold rounded px-2 py-2"
-                role="status"
-            >
-                <i class="fas fa-dollar-sign me-2 text-success"></i>
-                Balance: USD {{ $walletBalanceFormatted }}
-            </a>
-        </div>
-        <!-- My Orders -->
-        <div class="mb-2">
-            <a
-                href="{{ route('account.orders') }}"
-                class="nav-link d-flex align-items-center mt-2 {{ $active('account.orders') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
-            >
-                <i class="fas fa-box me-2 text-success"></i>
-                My Orders
+    <nav class="d-flex flex-column h-100 bg-white border-end shadow-sm p-3" style="min-height: 100vh; width: 260px;" aria-label="Buyer Sidebar">
+        <!-- Balance card -->
+        <div class="card mb-3 border-0 shadow-sm">
+            <a href="{{ route('wallet.index') }}" class="text-decoration-none text-dark">
+                <div class="card-body d-flex align-items-center">
+                    <i class="fas fa-wallet fa-lg text-success me-2"></i>
+                    <div>
+                        <small class="text-muted">Balance</small>
+                        <div class="fw-semibold">{{ get_currency() }} {{ $walletBalanceFormatted }}</div>
+                    </div>
+                </div>
             </a>
         </div>
 
-
-
-        
-        <!-- Payments -->
-        <div class="mb-2">
-            <a
-                href="{{ route('account.payments') }}"
-                class="nav-link d-flex align-items-center mt-2 {{ $active('account.payments') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
-            >
-                <i class="fas fa-credit-card me-2 text-success"></i>
-                Payments
+        <!-- Group: Overview -->
+        <div class="list-group mb-3">
+            <div class="list-group-item bg-light fw-semibold text-uppercase small text-muted">Overview</div>
+            <a href="{{ route('buyer.dashboard') }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $active('buyer.dashboard') ? 'active' : '' }}">
+                <i class="fas fa-tachometer-alt me-2" style="width:18px;"></i>
+                <span>Dashboard</span>
             </a>
         </div>
-        <div class="mb-2">
-            <a
-                href="{{ route('buyer.messages.index') }}"
-                class="nav-link d-flex align-items-center mt-2 {{ $active('messages.index') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
-            >
-                <i class="fas fa-comments me-2 text-success"></i>
-                Messages
-                @if($unreadMessages)
-                    <span class="badge badge-unread">{{ $unreadMessages }}</span>
+
+        <!-- Group: Orders & Payments -->
+        <div class="list-group mb-3">
+            <div class="list-group-item bg-light fw-semibold text-uppercase small text-muted">Orders &amp; Payments</div>
+            <a href="{{ route('account.orders') }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $active('account.orders') ? 'active' : '' }}">
+                <i class="fas fa-box me-2" style="width:18px;"></i>
+                <span>My Orders</span>
+                @if($pendingOrders>0)
+                    <span class="badge bg-danger ms-auto badge-pill">{{ $pendingOrders }}</span>
+                @endif
+            </a>
+            @if(RouteFacade::has('account.payments'))
+            <a href="{{ route('account.payments') }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $active('account.payments') ? 'active' : '' }}">
+                <i class="fas fa-credit-card me-2" style="width:18px;"></i>
+                <span>Payments</span>
+            </a>
+            @endif
+        </div>
+
+        <!-- Group: Messaging -->
+        <div class="list-group mb-3">
+            <div class="list-group-item bg-light fw-semibold text-uppercase small text-muted">Messaging</div>
+            <a href="{{ route('buyer.messages.index') }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $active('buyer.messages.*') ? 'active' : '' }}">
+                <i class="fas fa-comments me-2" style="width:18px;"></i>
+                <span>Messages</span>
+                @if($unreadMessages>0)
+                    <span class="badge bg-danger ms-auto badge-pill">{{ $unreadMessages }}</span>
                 @endif
             </a>
         </div>
 
-        <div class="mb-2">
-            <a
-                href="{{ route('buyer.favorites') }}"
-                class="nav-link d-flex align-items-center mt-2 {{ $active('buyer.favorites') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
-            >
-                <i class="fas fa-heart me-2 text-success"></i>
-                Favorites
+        <!-- Group: Favorites & Offers -->
+        <div class="list-group mb-3">
+            <div class="list-group-item bg-light fw-semibold text-uppercase small text-muted">Saved &amp; Offers</div>
+            <a href="{{ route('buyer.favorites') }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $active('buyer.favorites') ? 'active' : '' }}">
+                <i class="fas fa-heart me-2" style="width:18px;"></i>
+                <span>Favorites</span>
+                @if($favoritesCount>0)
+                    <span class="badge bg-secondary ms-auto badge-pill">{{ $favoritesCount }}</span>
+                @endif
+            </a>
+            <a href="{{ route('buyer.offers') }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $active('buyer.offers') ? 'active' : '' }}">
+                <i class="fas fa-hand-holding-usd me-2" style="width:18px;"></i>
+                <span>Offers</span>
+                @if($offersPending>0)
+                    <span class="badge bg-warning text-dark ms-auto badge-pill">{{ $offersPending }}</span>
+                @endif
             </a>
         </div>
-        <div class="mb-2">
-            <a
-                href="{{ route('buyer.offers') }}"
-                class="nav-link d-flex align-items-center mt-2 {{ $active('buyer.offers') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
-            >
-                <i class="fas fa-heart me-2 text-success"></i>
-                Offers
-            </a>
-        </div>
-        <!-- Profiles -->
-        <div class="mb-2">
-            <a
-                href="{{ route('profile.edit') }}"
-                class="nav-link d-flex align-items-center mt-2 {{ $active('profile.edit') ? 'bg-light text-success fw-bold rounded px-2 py-2' : 'text-dark py-2' }}"
-            >
-                <i class="fas fa-user me-2 text-success"></i>
-                Profiles
+
+        <!-- Group: Account -->
+        <div class="list-group mb-3">
+            <div class="list-group-item bg-light fw-semibold text-uppercase small text-muted">Account</div>
+            <a href="{{ route('profile.edit') }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $active('profile.edit') ? 'active' : '' }}">
+                <i class="fas fa-user me-2" style="width:18px;"></i>
+                <span>Profile</span>
             </a>
         </div>
     </nav>
