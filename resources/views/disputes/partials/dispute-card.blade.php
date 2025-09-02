@@ -48,9 +48,13 @@
             </div>
         @endif
 
-        @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
+        @if($dispute->canBeAppealed())
             <div class="alert alert-info small mb-3">
-                <strong>Appeal Deadline:</strong> {{ $dispute->getAppealDeadlineDaysLeft() }} days left
+                @if($dispute->appeal_deadline)
+                    <strong>Appeal Deadline:</strong> {{ $dispute->getAppealDeadlineDaysLeft() }} days left
+                @else
+                    <strong>Appeal Available:</strong> Submit immediately
+                @endif
             </div>
         @endif
 

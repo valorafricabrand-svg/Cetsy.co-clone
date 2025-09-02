@@ -462,7 +462,9 @@ public function storeOrder(Request $request)
             'balance'    => 0,
             'reference'  => $localTxId,
             'method'     => $method,
-            'description'=> 'Order payment',
+            'description'=> 'Order payment (on hold)',
+            'status'     => 'on_hold',
+            'meta'       => ['order_id' => $order->id],
         ]);
 
         // Emails
@@ -571,10 +573,29 @@ public function storeOrder(Request $request)
     {
         abort_unless($order->status === Order::STATUS_SHIPPED, 422, 'Only shipped orders can be marked as delivered.');
 
-        DB::transaction(fn () => $order->update([
-            'status'       => Order::STATUS_DELIVERED,
-            'delivered_at' => now(),
-        ]));
+        DB::transaction(function () use ($order) {
+            // 1) Mark order as completed and set delivered_at timestamp
+            $order->update([
+                'status'       => Order::STATUS_COMPLETED,
+                'delivered_at' => now(),
+            ]);
+
+            // 2) Release seller funds that were on hold for this order
+            $sellerId = $order->shop->user_id;
+            Wallet::where('user_id', $sellerId)
+                ->where('status', 'on_hold')
+                ->where(function ($q) use ($order) {
+                    $q->where('meta->order_id', $order->id)
+                      ->orWhere('reference', function ($sub) use ($order) {
+                          // Match any payment reference for this order if meta is missing
+                          $sub->select('local_transaction_id')
+                              ->from((new Payment)->getTable())
+                              ->where('order_id', $order->id)
+                              ->limit(1);
+                      });
+                })
+                ->update(['status' => 'completed']);
+        });
 
         try {
             $order->load(['items.product', 'shop.user', 'user']);
@@ -593,7 +614,7 @@ public function storeOrder(Request $request)
             ]);
         }
 
-        return back()->with('success', 'Order marked as delivered.');
+        return back()->with('success', 'Order marked as delivered. Funds released to seller.');
     }
 
     /**
