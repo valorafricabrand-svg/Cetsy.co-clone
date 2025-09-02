@@ -12,10 +12,47 @@ class UserController extends Controller
     /**
      * Display a paginated listing of the users.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::where('user_type', 'seller')->paginate(15);
-        return view('admin.users.index', compact('users'));
+        $status     = $request->query('status'); // active|inactive|all
+        $kycStatus  = $request->query('kyc_status');
+        $q          = trim((string) $request->query('q'));
+
+        $users = User::query()
+            ->where('user_type', 'seller')
+            ->with(['shop:id,user_id,name', 'kyc:id,user_id,status'])
+            ->when($status === 'active', fn($q) => $q->where('is_active', 1))
+            ->when($status === 'inactive', fn($q) => $q->where('is_active', 0))
+            ->when($kycStatus, function ($query) use ($kycStatus) {
+                $query->whereHas('kyc', fn($k) => $k->where('status', $kycStatus));
+            })
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('name', 'like', "%$q%")
+                        ->orWhere('email', 'like', "%$q%")
+                        ->orWhereHas('shop', fn($s) => $s->where('name', 'like', "%$q%"));
+                });
+            })
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->withQueryString();
+
+        // Lightweight wallet balances (completed only)
+        // Attach computed balance to each user (avoid N+1 heavy queries on huge datasets)
+        if ($users->count()) {
+            $userIds = $users->pluck('id');
+            $balances = \App\Models\Wallet::selectRaw('user_id, COALESCE(SUM(credit - debit),0) as bal')
+                ->whereIn('user_id', $userIds)
+                ->where('status', 'completed')
+                ->groupBy('user_id')
+                ->pluck('bal', 'user_id');
+            $users->getCollection()->transform(function ($u) use ($balances) {
+                $u->wallet_balance = (float) ($balances[$u->id] ?? 0);
+                return $u;
+            });
+        }
+
+        return view('admin.users.index', compact('users', 'status', 'kycStatus', 'q'));
     }
 
     /**
