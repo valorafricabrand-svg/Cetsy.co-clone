@@ -8,6 +8,9 @@ use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Activity;
+use Illuminate\Support\Facades\Log;
+use App\Helpers\SafaricomDarajaHelper;
+use App\Helpers\PayPalHelper;
 
 class PayoutRequestController extends Controller
 {
@@ -37,6 +40,15 @@ class PayoutRequestController extends Controller
     {
         abort_if($payout->status !== 'pending', 409, 'Not pending.');
         $payout->update(['status' => 'approved']);
+
+        // Notify seller via email (best-effort)
+        try {
+            $payout->loadMissing('user');
+            if ($payout->user && $payout->user->email) {
+                \Mail::to($payout->user->email)->send(new \App\Mail\PayoutApprovedMail($payout, $payout->user));
+            }
+        } catch (\Throwable $e) { }
+
         return back()->with('success', 'Payout approved. Remember to send funds!');
     }
 
@@ -89,6 +101,14 @@ class PayoutRequestController extends Controller
             'related_type' => 'payout',
         ]);
 
+        // Email notify
+        try {
+            $payout->loadMissing('user');
+            if ($payout->user && $payout->user->email) {
+                \Mail::to($payout->user->email)->send(new \App\Mail\PayoutRejectedMail($payout, $payout->user, (string) $request->reason));
+            }
+        } catch (\Throwable $e) { }
+
         return back()->with('success', 'Payout rejected & amount refunded.');
     }
 
@@ -99,13 +119,61 @@ class PayoutRequestController extends Controller
 
         $request->validate([
             'txn_reference' => 'nullable|string|max:255',
+            'disburse'      => 'nullable|in:manual,auto',
         ]);
 
-        $payout->update([
-            'status'              => 'paid',
-            'meta->txn_reference' => $request->txn_reference,
-            'paid_at'             => now(),
-        ]);
+        $disburse = $request->input('disburse', 'manual');
+
+        // Build meta safely
+        $meta = $payout->meta ?? [];
+        if ($request->filled('txn_reference')) {
+            $meta['txn_reference'] = $request->input('txn_reference');
+        }
+
+        if ($disburse === 'auto' && $payout->paymentMethod && $payout->paymentMethod->paymentType) {
+            $typeName = strtolower($payout->paymentMethod->paymentType->name);
+            $account  = (string) $payout->paymentMethod->account_number;
+            $amount   = (float) $payout->amount;
+            $note     = 'Seller payout #'.$payout->id;
+
+            try {
+                if (str_contains($typeName, 'paypal')) {
+                    $resp = PayPalHelper::createPayout($account, $amount, $note, 'payout_'.$payout->id);
+                    if (($resp['status'] ?? 'error') !== 'success') {
+                        return back()->withErrors(['paid' => 'PayPal payout failed: '.($resp['message'] ?? 'Unknown error')]);
+                    }
+                    $data = $resp['data'] ?? [];
+                    $meta['paypal'] = $data;
+                    $meta['txn_reference'] = $meta['txn_reference'] ?? ($data['batch_header']['payout_batch_id'] ?? null);
+                } elseif (str_contains($typeName, 'mpesa') || str_contains($typeName, 'm-pesa')) {
+                    // Normalize MSISDN to 2547XXXXXXXX
+                    $msisdn = preg_replace('/\D+/', '', $account);
+                    if (str_starts_with($msisdn, '0') && strlen($msisdn) === 10) {
+                        $msisdn = '254'.substr($msisdn,1);
+                    } elseif (str_starts_with($msisdn, '7') && strlen($msisdn) === 9) {
+                        $msisdn = '254'.$msisdn;
+                    }
+                    if (!preg_match('/^2547\d{8}$/', $msisdn)) {
+                        return back()->withErrors(['paid' => 'Invalid M-Pesa phone number format for B2C.']);
+                    }
+                    $ref = 'PAYOUT-'.$payout->id;
+                    $resp = SafaricomDarajaHelper::initiateB2CPayment($msisdn, $amount, $ref);
+                    if (($resp['status'] ?? 'error') !== 'success') {
+                        return back()->withErrors(['paid' => 'M-Pesa payout failed: '.($resp['message'] ?? 'Unknown error')]);
+                    }
+                    $meta['mpesa'] = $resp['data'] ?? [];
+                    $meta['txn_reference'] = $meta['txn_reference'] ?? ($meta['mpesa']['ConversationID'] ?? $ref);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Auto disbursement failed', ['payout_id' => $payout->id, 'error' => $e->getMessage()]);
+                return back()->withErrors(['paid' => 'Automatic disbursement failed: '.$e->getMessage()]);
+            }
+        }
+
+        $payout->status  = 'paid';
+        $payout->paid_at = now();
+        $payout->meta    = $meta;
+        $payout->save();
 
         Activity::create([
             'user_id'      => $payout->user_id,
@@ -116,7 +184,14 @@ class PayoutRequestController extends Controller
             'related_type' => 'payout',
         ]);
 
+        // Email notify
+        try {
+            $payout->loadMissing('user');
+            if ($payout->user && $payout->user->email) {
+                \Mail::to($payout->user->email)->send(new \App\Mail\PayoutPaidMail($payout, $payout->user));
+            }
+        } catch (\Throwable $e) { }
+
         return back()->with('success', 'Payout marked as paid.');
     }
 }
-

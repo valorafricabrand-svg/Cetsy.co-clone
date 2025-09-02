@@ -75,19 +75,88 @@
 {{-- Mark paid modal --}}
 <div class="modal fade" id="paidModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
-    <form method="POST" action="{{ route('admin.payouts.paid',$payout) }}" class="modal-content">
+    <form method="POST" action="{{ route('admin.payouts.paid',$payout) }}" class="modal-content needs-validation" novalidate>
         @csrf
         <div class="modal-header"><h5 class="modal-title">Mark as Paid</h5></div>
         <div class="modal-body">
+            <div class="alert alert-info small">
+                <div><span class="fw-semibold">Seller:</span> {{ $payout->wallet->user->name ?? $payout->user_id }}</div>
+                <div><span class="fw-semibold">Amount:</span> {{ get_currency() }} {{ number_format($payout->amount,2) }}</div>
+                @if($payout->paymentMethod)
+                  <div><span class="fw-semibold">Method:</span> {{ optional($payout->paymentMethod->paymentType)->name }} — {{ $payout->paymentMethod->account_name }}</div>
+                @endif
+            </div>
             <div class="mb-3">
                 <label class="form-label">Transaction Reference (optional)</label>
                 <input type="text" name="txn_reference" class="form-control">
             </div>
+            @php
+              $methodName = optional(optional($payout->paymentMethod)->paymentType)->name;
+              $methodAccount = optional($payout->paymentMethod)->account_number;
+              $supportsAuto = false;
+              $autoLabel = 'Automatic via Method';
+              if ($methodName) {
+                $n = strtolower($methodName);
+                if (str_contains($n,'paypal')) { $supportsAuto = true; $autoLabel = 'Automatic via PayPal'; }
+                if (str_contains($n,'mpesa') || str_contains($n,'m-pesa')) { $supportsAuto = true; $autoLabel = 'Automatic via M-Pesa'; }
+              }
+            @endphp
+            <div class="mb-3">
+              <label class="form-label">Disbursement</label>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="disburse" id="disb_manual" value="manual" checked>
+                <label class="form-check-label" for="disb_manual">Manual (I sent funds outside the system)</label>
+              </div>
+              @if($supportsAuto)
+              <div class="form-check mt-1">
+                <input class="form-check-input" type="radio" name="disburse" id="disb_auto" value="auto">
+                <label class="form-check-label" for="disb_auto">{{ $autoLabel }} <span class="text-muted">({{ $methodAccount }})</span></label>
+              </div>
+              @else
+              <div class="form-text">This payout method doesn’t support automated disbursement.</div>
+              @endif
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="1" id="confirmPaidCheck" required>
+                <label class="form-check-label" for="confirmPaidCheck">
+                    I confirm the funds were sent to the seller.
+                </label>
+                <div class="invalid-feedback">Please confirm funds were sent.</div>
+            </div>
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-primary">Confirm Paid</button>
+        <div class="modal-footer d-flex align-items-center justify-content-between">
+            <span class="badge bg-secondary">Paying: {{ get_currency() }} {{ number_format($payout->amount,2) }}</span>
+            <button id="confirmPaidBtn" class="btn btn-primary" disabled>Confirm Paid</button>
         </div>
     </form>
   </div>
 </div>
+@push('scripts')
+<script>
+  (function(){
+    const modal = document.getElementById('paidModal');
+    if(!modal) return;
+    modal.addEventListener('shown.bs.modal', function(){
+      const chk = document.getElementById('confirmPaidCheck');
+      const btn = document.getElementById('confirmPaidBtn');
+      if(!chk || !btn) return;
+      function sync(){ btn.disabled = !chk.checked; }
+      chk.addEventListener('change', sync);
+      sync();
+    });
+  })();
+  // Basic client-side Bootstrap validation
+  (function(){
+    document.querySelectorAll('.needs-validation').forEach(function(form){
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
+@endpush
 @endsection
