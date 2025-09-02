@@ -31,6 +31,30 @@
             </li>
         </ul>
 
+        {{-- DISBURSEMENT DETAILS --}}
+        @php
+          $methodName = optional(optional($payout->paymentMethod)->paymentType)->name;
+          $supportsAuto = false; $autoLabel = 'Automatic via Method';
+          if ($methodName) {
+            $n = strtolower($methodName);
+            if (str_contains($n,'paypal')) { $supportsAuto = true; $autoLabel = 'Automatic via PayPal'; }
+            if (str_contains($n,'mpesa') || str_contains($n,'m-pesa')) { $supportsAuto = true; $autoLabel = 'Automatic via M-Pesa'; }
+          }
+        @endphp
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-white fw-semibold">Disbursement Details</div>
+          <div class="card-body small">
+            <div class="row g-3">
+              <div class="col-md-4"><span class="fw-semibold">Supports Auto:</span> {{ $supportsAuto ? 'Yes' : 'No' }}</div>
+              <div class="col-md-4"><span class="fw-semibold">Method:</span> {{ $methodName ?? 'N/A' }}</div>
+              <div class="col-md-4"><span class="fw-semibold">Current Status:</span> <span class="text-capitalize">{{ $payout->status }}</span></div>
+            </div>
+            @if($payout->status === 'sent')
+              <div class="alert alert-info mt-3 mb-0">Awaiting provider confirmation. You can resend automatic payout or override with manual mark paid.</div>
+            @endif
+          </div>
+        </div>
+
         {{-- ACTION BUTTONS --}}
         @if($payout->status === 'pending')
             <form method="POST" action="{{ route('admin.payouts.approve',$payout) }}" class="d-inline">
@@ -42,10 +66,14 @@
             <button class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#rejectModal">
                 Reject
             </button>
-        @elseif($payout->status === 'approved')
+        @elseif(in_array($payout->status, ['approved','sent']))
             <!-- Mark as paid -->
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paidModal">
-                Mark&nbsp;Paid
+                {{ $payout->status === 'sent' ? 'Resend/Mark Paid' : 'Mark Paid' }}
+            </button>
+            <!-- Mark failed -->
+            <button class="btn btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#failModal">
+                Mark Failed & Refund
             </button>
         @endif
 
@@ -131,6 +159,27 @@
     </form>
   </div>
 </div>
+
+{{-- Fail modal --}}
+<div class="modal fade" id="failModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ route('admin.payouts.fail',$payout) }}" class="modal-content needs-validation" novalidate>
+        @csrf
+        <div class="modal-header"><h5 class="modal-title">Mark as Failed & Refund</h5></div>
+        <div class="modal-body">
+            <div class="mb-3">
+                <label class="form-label">Reason (shown to seller)</label>
+                <textarea name="reason" class="form-control" required></textarea>
+                <div class="invalid-feedback">Please provide a reason.</div>
+            </div>
+            <div class="alert alert-warning small">This will refund the payout amount{{ data_get($payout->meta,'fee',0)>0 ? ' and fee' : '' }} to the seller's wallet and mark the request as failed.</div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline-danger">Confirm Fail & Refund</button>
+        </div>
+    </form>
+  </div>
+  </div>
 @push('scripts')
 <script>
   (function(){

@@ -39,7 +39,11 @@ class PayoutRequestController extends Controller
     public function approve(PayoutRequest $payout)
     {
         abort_if($payout->status !== 'pending', 409, 'Not pending.');
-        $payout->update(['status' => 'approved']);
+        $payout->update([
+            'status'       => 'approved',
+            'approved_at'  => now(),
+            'approved_by'  => auth()->id(),
+        ]);
 
         // Notify seller via email (best-effort)
         try {
@@ -89,6 +93,8 @@ class PayoutRequestController extends Controller
             $payout->update([
                 'status'       => 'rejected',
                 'admin_reason' => $request->reason,
+                'rejected_by'  => auth()->id(),
+                'rejected_at'  => now(),
             ]);
         });
 
@@ -115,7 +121,7 @@ class PayoutRequestController extends Controller
     /* MARK PAID */
     public function markPaid(Request $request, PayoutRequest $payout)
     {
-        abort_if($payout->status !== 'approved', 409, 'Must be approved first.');
+        abort_unless(in_array($payout->status, ['approved','sent']), 409, 'Must be approved or sent.');
 
         $request->validate([
             'txn_reference' => 'nullable|string|max:255',
@@ -130,6 +136,7 @@ class PayoutRequestController extends Controller
             $meta['txn_reference'] = $request->input('txn_reference');
         }
 
+        $autoSent = false;
         if ($disburse === 'auto' && $payout->paymentMethod && $payout->paymentMethod->paymentType) {
             $typeName = strtolower($payout->paymentMethod->paymentType->name);
             $account  = (string) $payout->paymentMethod->account_number;
@@ -145,6 +152,7 @@ class PayoutRequestController extends Controller
                     $data = $resp['data'] ?? [];
                     $meta['paypal'] = $data;
                     $meta['txn_reference'] = $meta['txn_reference'] ?? ($data['batch_header']['payout_batch_id'] ?? null);
+                    $autoSent = true;
                 } elseif (str_contains($typeName, 'mpesa') || str_contains($typeName, 'm-pesa')) {
                     // Normalize MSISDN to 2547XXXXXXXX
                     $msisdn = preg_replace('/\D+/', '', $account);
@@ -163,6 +171,7 @@ class PayoutRequestController extends Controller
                     }
                     $meta['mpesa'] = $resp['data'] ?? [];
                     $meta['txn_reference'] = $meta['txn_reference'] ?? ($meta['mpesa']['ConversationID'] ?? $ref);
+                    $autoSent = true;
                 }
             } catch (\Throwable $e) {
                 Log::error('Auto disbursement failed', ['payout_id' => $payout->id, 'error' => $e->getMessage()]);
@@ -170,28 +179,114 @@ class PayoutRequestController extends Controller
             }
         }
 
-        $payout->status  = 'paid';
-        $payout->paid_at = now();
+        if ($autoSent) {
+            // Mark as sent; final paid will be set by webhook callback
+            $payout->status  = 'sent';
+            $payout->paid_at = $payout->paid_at ?? null;
+            $meta['sent_at'] = $meta['sent_at'] ?? now()->toISOString();
+        } else {
+            // Manual confirmation: mark as paid
+            $payout->status  = 'paid';
+            $payout->paid_at = now();
+            $payout->paid_by = auth()->id();
+        }
         $payout->meta    = $meta;
         $payout->save();
+
+        if ($autoSent) {
+            Activity::create([
+                'user_id'      => $payout->user_id,
+                'is_read'      => false,
+                'description'  => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been sent and is awaiting confirmation',
+                'type'         => \App\Models\Activity::TYPE_PAYOUT,
+                'related_id'   => $payout->id,
+                'related_type' => 'payout',
+            ]);
+        } else {
+            Activity::create([
+                'user_id'      => $payout->user_id,
+                'is_read'      => false,
+                'description'  => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been marked as paid',
+                'type'         => \App\Models\Activity::TYPE_PAYOUT,
+                'related_id'   => $payout->id,
+                'related_type' => 'payout',
+            ]);
+            // Email notify
+            try {
+                $payout->loadMissing('user');
+                if ($payout->user && $payout->user->email) {
+                    \Mail::to($payout->user->email)->send(new \App\Mail\PayoutPaidMail($payout, $payout->user));
+                }
+            } catch (\Throwable $e) { }
+        }
+
+        return back()->with('success', $autoSent ? 'Payout sent; awaiting confirmation.' : 'Payout marked as paid.');
+    }
+
+    /**
+     * Mark a payout as failed and refund seller (manual override).
+     */
+    public function fail(Request $request, PayoutRequest $payout)
+    {
+        abort_unless(in_array($payout->status, ['approved','sent']), 409, 'Only approved or sent payouts can be marked failed.');
+
+        $data = $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        DB::transaction(function () use ($payout, $data) {
+            $fee = (float) (data_get($payout->meta, 'fee', 0));
+
+            Wallet::create([
+                'user_id'     => $payout->user_id,
+                'credit'      => $payout->amount,
+                'debit'       => 0,
+                'balance'     => 0,
+                'type'        => 'payout_failure_refund',
+                'reference'   => \Illuminate\Support\Str::uuid(),
+                'description' => 'Refund for failed payout #' . $payout->id,
+            ]);
+
+            if ($fee > 0) {
+                Wallet::create([
+                    'user_id'     => $payout->user_id,
+                    'credit'      => $fee,
+                    'debit'       => 0,
+                    'balance'     => 0,
+                    'type'        => 'withdrawal_fee_refund',
+                    'reference'   => \Illuminate\Support\Str::uuid(),
+                    'description' => 'Withdrawal fee refund for payout #' . $payout->id,
+                ]);
+            }
+
+            $meta = $payout->meta ?? [];
+            $meta['failed_reason'] = $data['reason'];
+            $meta['failed_at'] = now()->toISOString();
+
+            $payout->update([
+                'status'       => 'failed',
+                'admin_reason' => $data['reason'],
+                'meta'         => $meta,
+            ]);
+        });
 
         Activity::create([
             'user_id'      => $payout->user_id,
             'is_read'      => false,
-            'description'  => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been marked as paid',
+            'description'  => 'Your payout request of $' . number_format($payout->amount, 2) . ' has failed and was refunded',
             'type'         => \App\Models\Activity::TYPE_PAYOUT,
             'related_id'   => $payout->id,
             'related_type' => 'payout',
         ]);
 
-        // Email notify
+        // Optional email (reuse rejection template for failure notification)
         try {
             $payout->loadMissing('user');
             if ($payout->user && $payout->user->email) {
-                \Mail::to($payout->user->email)->send(new \App\Mail\PayoutPaidMail($payout, $payout->user));
+                \Mail::to($payout->user->email)->send(new \App\Mail\PayoutRejectedMail($payout, $payout->user, (string) $data['reason']));
             }
         } catch (\Throwable $e) { }
 
-        return back()->with('success', 'Payout marked as paid.');
+        return back()->with('success', 'Payout marked as failed and refunded.');
     }
 }

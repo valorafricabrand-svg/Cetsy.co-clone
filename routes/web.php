@@ -423,6 +423,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{payout}/approve', 'approve')->name('approve');
         Route::post('/{payout}/reject', 'reject')->name('reject');
         Route::post('/{payout}/paid', 'markPaid')->name('paid');
+        Route::post('/{payout}/fail', 'fail')->name('fail');
     });
 
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
