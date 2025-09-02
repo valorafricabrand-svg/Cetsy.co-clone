@@ -394,6 +394,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('kyc/{kyc}', [KycController::class, 'showDetails'])->name('kyc.showDetails');
 
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
+    Route::put('settings/{setting}', [AdminSetting::class, 'update'])->name('settings.update');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
     Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
     

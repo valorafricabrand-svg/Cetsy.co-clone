@@ -168,10 +168,16 @@
                   : asset('storage/' . ltrim($product->featured_image, '/'));
       } else {
           $firstMedia = $product->media->first();
-          $thumb = $firstMedia
-                  ? asset('storage/' . ltrim($firstMedia->url, '/'))
-                  : asset('storage/placeholder.jpg');
-          $mediaType = $firstMedia->type ?? 'image';
+          if ($firstMedia) {
+              $thumb = asset('storage/' . ltrim($firstMedia->url, '/'));
+              $mediaType = $firstMedia->type ?? 'image';
+          } else {
+              $shopLogo = ($product->shop && $product->shop->logo)
+                          ? asset('storage/' . ltrim($product->shop->logo, '/'))
+                          : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
+              $thumb = $shopLogo;
+              $mediaType = 'image';
+          }
       }
     @endphp
 

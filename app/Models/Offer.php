@@ -108,12 +108,15 @@ class Offer extends Model
 
     public function getStatusLabelAttribute()
     {
+        if ($this->status === 'pending') {
+            // Clarify which side is expected to respond
+            return $this->is_counter_offer ? 'Pending buyer response' : 'Pending seller response';
+        }
         return match ($this->status) {
-            'pending' => 'Pending',
             'accepted' => 'Accepted',
             'declined' => 'Declined',
-            'expired' => 'Expired',
-            default => ucfirst($this->status),
+            'expired'  => 'Expired',
+            default    => ucfirst((string)$this->status),
         };
     }
 
