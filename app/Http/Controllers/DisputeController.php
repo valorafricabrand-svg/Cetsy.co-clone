@@ -345,22 +345,33 @@ class DisputeController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
-        // Get order messages (if they exist)
+        // Get order messages (if they exist) - ONLY from the specific order involved in this dispute
         $orderMessages = collect();
         if ($dispute->order && method_exists($dispute->order, 'messages')) {
+            // Double-check that we're only getting messages from this specific order
             $orderMessages = $dispute->order->messages()
+                ->where('order_id', $dispute->order->id) // Explicitly filter by order ID
                 ->with('user')
                 ->orderBy('created_at', 'asc')
                 ->get()
-                ->map(function ($message) {
+                ->filter(function ($message) use ($dispute) {
+                    // Additional validation to ensure message belongs to this order
+                    return $message->order_id === $dispute->order->id;
+                })
+                ->map(function ($message) use ($dispute) {
                     // Ensure type is set for existing messages
                     if (empty($message->type)) {
                         $message->type = $message->getTypeAttribute(null);
                     }
                     
+                    // Add dispute context to ensure this message belongs to the right order
+                    $message->dispute_order_id = $dispute->order->id;
+                    
                     // Debug logging
                     \Log::info('Order message processed', [
                         'message_id' => $message->id,
+                        'order_id' => $message->order_id,
+                        'dispute_order_id' => $dispute->order->id,
                         'type' => $message->type,
                         'has_type' => isset($message->type),
                         'has_attachments' => isset($message->attachments),
@@ -374,7 +385,17 @@ class DisputeController extends Controller
         // Combine and sort all messages chronologically
         $allMessages = $disputeMessages->concat($orderMessages)
             ->sortBy('created_at')
-            ->values();
+            ->values()
+            ->filter(function ($message) use ($dispute) {
+                // Additional validation to ensure messages belong to this dispute's context
+                if (isset($message->dispute_id)) {
+                    return $message->dispute_id === $dispute->id;
+                }
+                if (isset($message->order_id)) {
+                    return $message->order_id === $dispute->order->id;
+                }
+                return false; // Skip messages without proper context
+            });
 
         // Add message source indicator and debug user data
         $allMessages = $allMessages->map(function ($message) use ($dispute) {
@@ -398,6 +419,17 @@ class DisputeController extends Controller
         // Get order details for context
         $order = $dispute->order;
         $orderItems = $order ? $order->items()->with('product')->get() : collect();
+
+        // Debug logging for message counts
+        \Log::info('Dispute messages loaded', [
+            'dispute_id' => $dispute->id,
+            'order_id' => $order ? $order->id : 'N/A',
+            'dispute_messages_count' => $disputeMessages->count(),
+            'order_messages_count' => $orderMessages->count(),
+            'total_messages_count' => $allMessages->count(),
+            'dispute_message_ids' => $disputeMessages->pluck('id')->toArray(),
+            'order_message_ids' => $orderMessages->pluck('id')->toArray()
+        ]);
 
         return view('disputes.show', compact(
             'dispute', 
@@ -693,26 +725,19 @@ class DisputeController extends Controller
                 ];
             }
         } elseif ($dispute->status === Dispute::STATUS_UNDER_REVIEW) {
-            // For disputes under review, allow appeals if admin review takes too long
+            // For disputes under review, allow appeals after 5 minutes
             $reviewStartTime = $dispute->updated_at ?? $dispute->created_at;
-            $maxReviewTime = 72; // 72 hours for admin review
+            $maxReviewTime = 5; // 5 minutes for admin review
             
-            if ($reviewStartTime->diffInHours(now()) < $maxReviewTime) {
+            if ($reviewStartTime->diffInMinutes(now()) < $maxReviewTime) {
                 return [
                     'eligible' => false,
-                    'message' => 'Appeals during admin review can only be submitted after ' . $maxReviewTime . ' hours of review time.'
+                    'message' => 'Appeals during admin review can only be submitted after ' . $maxReviewTime . ' minutes of review time.'
                 ];
             }
         } elseif ($dispute->status === Dispute::STATUS_PENDING) {
-            // For pending disputes, allow appeals if seller doesn't respond within 24 hours
-            $sellerResponseDeadline = 24; // 24 hours for seller response
-            
-            if ($dispute->created_at->diffInHours(now()) < $sellerResponseDeadline) {
-                return [
-                    'eligible' => false,
-                    'message' => 'Appeals for pending disputes can only be submitted after ' . $sellerResponseDeadline . ' hours of no seller response.'
-                ];
-            }
+            // For pending disputes, allow immediate appeals
+            // No time restriction - users can appeal immediately if needed
         }
 
         // Check 4: User appeal eligibility - Ensure user hasn't appealed before

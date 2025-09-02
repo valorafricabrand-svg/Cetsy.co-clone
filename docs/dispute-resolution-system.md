@@ -60,7 +60,7 @@ Buyer encounters issue → Creates dispute → System notifies seller → Disput
 
 ### 2. Initial Review
 ```
-Seller responds → Dispute status: UNDER_REVIEW → Admin review within 72 hours
+Seller responds → Dispute status: UNDER_REVIEW → Admin review within 5 minutes
 ```
 
 **Seller Response:**
