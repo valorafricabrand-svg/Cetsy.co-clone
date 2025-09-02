@@ -32,7 +32,7 @@
                                 <a href="{{ route('disputes.index') }}" class="btn btn-outline-secondary btn-sm">
                                     <i class="bi bi-arrow-left"></i> Back to Disputes
                                 </a>
-                                @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
+                                @if($dispute->canBeAppealed())
                                     <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-warning btn-sm">
                                         <i class="bi bi-gavel"></i> Appeal
                                     </a>
@@ -175,9 +175,14 @@
             <div class="card mb-4">
                 <div class="card-header bg-light">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-box"></i> Order Context
-                        </h5>
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="bi bi-box"></i> Order Context
+                            </h5>
+                            <small class="text-muted">
+                                This dispute is related to Order #{{ $order->id }} from {{ $order->shop->name ?? 'the shop' }}
+                            </small>
+                        </div>
                         <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-eye"></i> View Full Order
                         </a>
@@ -415,20 +420,24 @@
                         @endif
                     @endif
 
-                    @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
+                    @if($dispute->canBeAppealed())
                         <div class="alert alert-info">
                             <h6 class="alert-heading">Appeal Available</h6>
-                            <p class="mb-2">You have {{ $dispute->getAppealDeadlineDaysLeft() }} days to appeal this decision.</p>
-                            <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-warning">
-                                Submit Appeal
-                            </a>
+                            @if($dispute->appeal_deadline)
+                                <p class="mb-2">You have {{ $dispute->getAppealDeadlineDaysLeft() }} days to appeal this decision.</p>
+                            @else
+                                <p class="mb-2">You can submit an appeal for immediate review.</p>
+                            @endif
+                            <button type="button" class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#appealModal">
+                                    <i class="bi bi-gavel"></i> Submit Appeal
+                                </button>
                         </div>
                     @endif
 
                     {{-- Appeal Button Section --}}
                     @if($dispute->canBeAppealed() || 
-                         ($dispute->status === 'under_review' && $dispute->created_at->diffInHours(now()) >= 72) ||
-                         ($dispute->status === 'pending' && $dispute->created_at->diffInHours(now()) >= 24))
+                         ($dispute->status === 'under_review' && $dispute->created_at->diffInMinutes(now()) >= 5) ||
+                         $dispute->status === 'pending')
                         <div class="card mb-4 border-warning">
                             <div class="card-header bg-warning text-dark">
                                 <h6 class="mb-0">
@@ -446,12 +455,12 @@
                                 @elseif($dispute->status === 'under_review')
                                     <p class="mb-3">If the admin review is taking too long or you have concerns about the process, you can submit an appeal.</p>
                                     <small class="d-block text-muted mb-3">
-                                        Available after 72 hours of admin review
+                                        Available after 5 minutes of admin review
                                     </small>
                                 @elseif($dispute->status === 'pending')
                                     <p class="mb-3">If the seller is not responding to your dispute, you can submit an appeal for immediate review.</p>
                                     <small class="d-block text-muted mb-3">
-                                        Available after 24 hours of no seller response
+                                        Available immediately - no waiting period required
                                     </small>
                                 @endif
                                 
@@ -831,7 +840,7 @@
 
             {{-- Appeal Progress Section (Binance-style) --}}
             @if($dispute->appeal)
-                <div class="card mb-4 border-info">
+                <div class="card mb-4 border-info" style="display: none;">
                     <div class="card-header bg-info text-white">
                         <h6 class="mb-0">
                             <i class="bi bi-balance-scale"></i> Appeal Progress
@@ -1344,10 +1353,17 @@
             <div class="card">
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-chat-dots"></i> Complete Communication History
-                            <span class="badge bg-secondary ms-2">{{ $allMessages->count() }} messages</span>
-                        </h5>
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="bi bi-chat-dots"></i> Complete Communication History
+                                <span class="badge bg-secondary ms-2">{{ $allMessages->count() }} messages</span>
+                            </h5>
+                            @if($order)
+                                <small class="text-muted">
+                                    <i class="bi bi-box"></i> Order #{{ $order->id }} - {{ $order->shop->name ?? 'Shop' }}
+                                </small>
+                            @endif
+                        </div>
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-outline-primary active" data-filter="all">
                                 <i class="bi bi-chat-dots"></i> All ({{ $allMessages->count() }})
@@ -1362,9 +1378,34 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    @if($order)
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Communication Context:</strong> This communication history shows all messages related to <strong>Order #{{ $order->id }}</strong> 
+                            from <strong>{{ $order->shop->name ?? 'the shop' }}</strong>. It includes both order-related communications and dispute-specific messages.
+                            
+                            <div class="mt-2 small">
+                                <strong>Message Breakdown:</strong>
+                                <span class="badge bg-info me-2">{{ $orderMessages->count() }} Order Messages</span>
+                                <span class="badge bg-warning me-2">{{ $disputeMessages->count() }} Dispute Messages</span>
+                                <span class="badge bg-secondary">{{ $allMessages->count() }} Total Messages</span>
+                            </div>
+                        </div>
+                    @endif
+                    
                     <div class="messages-container" style="max-height: 600px; overflow-y: auto;">
                         @forelse($allMessages as $message)
                             @php
+                                // Validate that this message belongs to the current dispute's order
+                                if (isset($message->order_id) && $order && $message->order_id !== $order->id) {
+                                    continue; // Skip messages from other orders
+                                }
+                                
+                                // Validate dispute messages belong to this dispute
+                                if (isset($message->dispute_id) && $message->dispute_id !== $dispute->id) {
+                                    continue; // Skip messages from other disputes
+                                }
+                                
                                 // Safely determine message type and class
                                 $messageType = $message->type ?? 'unknown';
                                 $messageClass = 'default-message';
@@ -1589,7 +1630,14 @@
                             <div class="text-center text-muted py-5">
                                 <i class="bi bi-chat-dots fs-1 mb-3"></i>
                                 <h5>No messages yet</h5>
-                                <p>Start the conversation by sending a message below.</p>
+                                <p>
+                                    @if($order)
+                                        No communication history found for Order #{{ $order->id }}.
+                                    @else
+                                        No communication history found for this dispute.
+                                    @endif
+                                    Start the conversation by sending a message below.
+                                </p>
                             </div>
                         @endforelse
                     </div>
