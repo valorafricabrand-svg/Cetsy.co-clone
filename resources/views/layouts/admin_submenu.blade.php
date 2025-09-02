@@ -1,4 +1,4 @@
-﻿@if(Auth::user()->isAdmin())
+@if(Auth::user()->isAdmin())
   @php
     // Small counters for quick attention
     try {
