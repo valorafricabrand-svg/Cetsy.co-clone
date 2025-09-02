@@ -476,6 +476,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
 /*
 |--------------------------------------------------------------------------
+
 | Seller Routes - Subscription Management (No Active Subscription Required)
 |--------------------------------------------------------------------------
 */
