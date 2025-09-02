@@ -21,12 +21,30 @@
 
 <div class="mb-3">
   <label class="form-label">Service</label>
+  @php($couriers = couriers_list())
   <select name="row[service]" class="form-select" x-model="row.service">
-    <option value="Other">Other</option>
-    <option value="Postal service">Postal service</option>
-    <option value="Courier">Courier</option>
-    <option value="Express">Express</option>
+    @if(!empty($couriers))
+      <optgroup label="Common Couriers">
+        @foreach($couriers as $c)
+          <option value="{{ $c }}">{{ $c }}</option>
+        @endforeach
+      </optgroup>
+    @endif
+    <optgroup label="Generic Services">
+      <option value="Courier">Courier</option>
+      <option value="Postal service">Postal service</option>
+      <option value="Express">Express</option>
+      <option value="Manual">Manual</option>
+      <option value="Other">Other</option>
+    </optgroup>
   </select>
+</div>
+
+<div class="mb-3" x-show="row.service==='Other' || row.service==='Manual'">
+  <label class="form-label">Courier name</label>
+  <input type="text" name="row[service_other]" class="form-control" placeholder="Enter courier (e.g., DHL, Rider, etc.)">
+  <div class="form-text">Shown when Service is Other/Manual.</div>
+  
 </div>
 
 <div class="row gx-2 mb-3">

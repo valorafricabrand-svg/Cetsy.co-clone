@@ -25,9 +25,8 @@
                         @foreach($favorites as $product)
                             <div class="col-md-3">
                                 <div class="card shadow-sm border-0 h-100">
-                                    @if($product->media->first())
-                                        <img src="{{ asset('storage/' . $product->media->first()->url) }}" class="card-img-top" alt="{{ $product->name }}">
-                                    @endif
+                                    @php($thumb = product_thumb_url($product))
+                                    <img src="{{ $thumb }}" class="card-img-top" alt="{{ $product->name }}">
                                     <div class="card-body text-center">
                                         <h6 class="card-title">{{ $product->name }}</h6>
                                         <p class="text-muted mb-1">{{ get_currency() }} {{ number_format($product->price, 2) }}</p>

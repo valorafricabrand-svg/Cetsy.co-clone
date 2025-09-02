@@ -224,7 +224,8 @@
                 }
 
                 $lineSub  = $unit * $qty; // product subtotal (no shipping)
-                $thumbUrl = product_thumb_url($product);
+                $thumbUrl = $product?->featured_image
+                              ?: ($product?->media->first()?->url ? asset('storage/'.$product->media->first()->url) : asset('placeholder.jpg'));
               @endphp
               <tr>
                 <td>{{ $loop->iteration }}</td>
@@ -349,13 +350,9 @@
               @endif
             </div>
             
-            @if($dispute->canBeAppealed())
+            @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
               <div class="alert alert-warning small mb-2">
-                @if($dispute->appeal_deadline)
-                  <strong>Appeal Deadline:</strong> {{ $dispute->getAppealDeadlineDaysLeft() }} days remaining
-                @else
-                  <strong>Appeal Available:</strong> Submit immediately
-                @endif
+                <strong>Appeal Deadline:</strong> {{ $dispute->getAppealDeadlineDaysLeft() }} days remaining
               </div>
             @endif
             
@@ -371,7 +368,7 @@
               <i class="fa-solid fa-eye me-1"></i> View Details
             </a>
             
-            @if($dispute->canBeAppealed())
+            @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
               <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-warning btn-sm">
                 <i class="fa-solid fa-gavel me-1"></i> Appeal
               </a>
@@ -500,7 +497,8 @@
                     $isDigital = $product && $product->type === 'digital';
                     $profiles = $product?->shippingProfiles ?? collect();
                     $selected = $item->shipping_profile_id;
-                    $thumbUrl = product_thumb_url($product);
+                    $thumbUrl = $product?->featured_image
+                                 ?: ($product?->media->first()?->url ? asset('storage/'.$product->media->first()->url) : null);
                   @endphp
                   <tr>
                     <td>
@@ -583,3 +581,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
+

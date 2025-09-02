@@ -1,0 +1,166 @@
+public function accept($id)
+    {
+        $offer = Offer::with(['product', 'buyer'])->findOrFail($id);
+        
+        // Ensure the offer belongs to the seller's product
+        $user = auth()->user();
+        $shop = $user->shop;
+        
+        if (!$shop || !$shop->products()->where('id', $offer->product_id)->exists()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Check if offer can be accepted
+        if (!$offer->canBeAccepted()) {
+            return back()->with('warning', 'This offer cannot be accepted.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Update offer status
+            $offer->update(['status' => 'accepted']);
+
+            // Create order from the accepted offer
+            $order = $this->createOrderFromOffer($offer);
+
+            DB::commit();
+
+            // Send email notification to buyer
+            $emailSent = false;
+            try {
+                Mail::to($offer->buyer->email)
+                    ->send(new OfferAcceptedMail($offer, $order));
+                $emailSent = true;
+                \Log::info('Offer accepted email sent successfully', [
+                    'offer_id' => $offer->id,
+                    'buyer_email' => $offer->buyer->email,
+                    'seller_id' => $user->id,
+                    'order_id' => $order->id
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send offer accepted email', [
+                    'offer_id' => $offer->id,
+                    'buyer_email' => $offer->buyer->email,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // Create activity record for the buyer (outside of email try-catch)
+            try {
+                Activity::create([
+                    'user_id' => $offer->buyer->id,
+                    'is_read' => false,
+                    'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' has been accepted by ' . $user->name,
+                    'type' => \App\Models\Activity::TYPE_OFFER,
+                    'related_id' => $offer->id,
+                    'related_type' => 'offer'
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to create activity record for offer acceptance', [
+                    'offer_id' => $offer->id,
+                    'buyer_id' => $offer->buyer->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            $message = 'Offer accepted successfully. Order #' . $order->id . ' has been created.';
+            if ($emailSent) {
+                $message .= ' The buyer has been notified via email.';
+            } else {
+                $message .= ' Email notification failed to send.';
+            }
+
+            return back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Failed to accept offer and create order', [
+                'offer_id' => $offer->id,
+                'error' => $e->getMessage()
+            ]);
+            return back()->with('error', 'Failed to accept offer. Please try again.');
+        }
+    }
+
+    /**
+     * Create an order from an accepted offer
+     */
+    private function createOrderFromOffer(Offer $offer)
+    {
+        $buyer = $offer->buyer;
+        $product = $offer->product;
+        $shop = $product->shop;
+
+        // Create the order
+        $order = new Order();
+        $order->user_id = $buyer->id;
+        $order->shop_id = $shop->id;
+        
+        // Set customer details
+        $order->full_name = $buyer->name;
+        $order->email = $buyer->email;
+        $order->phone = $buyer->phone ?? 'N/A';
+        
+        // Set shipping address (use buyer's default address if available, otherwise use basic info)
+        $order->shipping_country_id = $buyer->country_id ?? 1; // Default to first country
+        $order->shipping_address_1 = $buyer->address ?? 'Address to be provided';
+        $order->shipping_address_2 = null;
+        $order->shipping_city = $buyer->city ?? 'City to be provided';
+        $order->shipping_state = null;
+        $order->shipping_postal_code = null;
+        
+        // Set billing same as shipping for now
+        $order->billing_same_as_shipping = true;
+        $order->billing_country_id = $order->shipping_country_id;
+        $order->billing_address_1 = $order->shipping_address_1;
+        $order->billing_address_2 = $order->shipping_address_2;
+        $order->billing_city = $order->shipping_city;
+        $order->billing_state = $order->shipping_state;
+        $order->billing_postal_code = $order->shipping_postal_code;
+        
+        // Set order details
+        $order->shipping_method = 'standard';
+        $order->payment_method = 'pending';
+        $order->order_notes = "Order created from accepted offer #{$offer->id}";
+        
+        // Calculate totals
+        $subtotal = $offer->offer_price;
+        $shippingCost = 0; // Default shipping cost, can be calculated based on shipping profile
+        $totalAmount = $subtotal + $shippingCost;
+        
+        $order->subtotal = $subtotal;
+        $order->shipping_cost = $shippingCost;
+        $order->total_amount = $totalAmount;
+        $order->status = 'pending';
+        
+        $order->save();
+
+        // Create order item
+        $orderItem = new OrderItem();
+        $orderItem->order_id = $order->id;
+        $orderItem->product_id = $product->id;
+        $orderItem->product_variation_id = null; // No variation for now
+        $orderItem->quantity = 1; // Default to 1 quantity
+        $orderItem->price = $offer->offer_price;
+        $orderItem->shipping_profile_id = null; // Default shipping profile
+        $orderItem->shipping_cost = $shippingCost;
+        $orderItem->save();
+
+        // Link the order back to the offer
+        $offer->update(['order_id' => $order->id]);
+
+        // Create activity record for the buyer
+        Activity::create([
+            'user_id' => $buyer->id,
+            'is_read' => false,
+            'description' => 'You received a new order from ' . $shop->user->name,
+            'type' => \App\Models\Activity::TYPE_ORDER,
+            'related_id' => $order->id,
+            'related_type' => 'order'
+        ]);
+
+        return $order;
+    }
+
+    

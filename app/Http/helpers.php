@@ -148,6 +148,73 @@ if (! function_exists('theme')) {
     }
 }
 
+if (! function_exists('product_thumb_url')) {
+    /**
+     * Build a product thumbnail URL with fallbacks:
+     * 1) featured_image (absolute or storage path)
+     * 2) first media item
+     * 3) product->shop->logo
+     * 4) setting('favicon_url')
+     * 5) storage/placeholder.jpg
+     */
+    function product_thumb_url($product): string
+    {
+        if (! $product) {
+            return setting('favicon_url') ?: asset('storage/placeholder.jpg');
+        }
+
+        $fi = $product->featured_image ?? null;
+        if (!empty($fi)) {
+            return str_starts_with($fi, 'http') ? $fi : asset('storage/' . ltrim($fi, '/'));
+        }
+
+        $firstMedia = method_exists($product, 'media') ? $product->media->first() : null;
+        if ($firstMedia && !empty($firstMedia->url)) {
+            return asset('storage/' . ltrim($firstMedia->url, '/'));
+        }
+
+        $shopLogo = ($product->shop && $product->shop->logo)
+            ? asset('storage/' . ltrim($product->shop->logo, '/'))
+            : null;
+        if ($shopLogo) {
+            return $shopLogo;
+        }
+
+        return setting('favicon_url') ?: asset('storage/placeholder.jpg');
+    }
+}
+
+
+if (! function_exists('couriers_list')) {
+    /**
+     * Return a list of default couriers from settings (JSON),
+     * or a sensible fallback list if not configured.
+     */
+    function couriers_list(): array
+    {
+        $default = [
+            'DHL','FedEx','UPS','USPS','Royal Mail','DPD','Evri','GLS',
+            'Canada Post','Australia Post','PostNL','La Poste','SEUR','Correos','Aramex','TNT',
+        ];
+
+        $raw = setting('couriers_json');
+        if (!empty($raw)) {
+            try {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded) && !empty($decoded)) {
+                    // Normalize: trim strings and remove empties
+                    $list = array_values(array_filter(array_map('trim', $decoded), fn($v) => $v !== ''));
+                    if (!empty($list)) {
+                        return $list;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        return $default;
+    }
+}
+
 
  function country_name($id){
     if (!$id) {

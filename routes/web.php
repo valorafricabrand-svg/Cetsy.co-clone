@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\{
     PayoutRequestController as AdminPayoutRequestController,
     PaymentController,
     PaymentTypeController,
+    PaymentMethodController as AdminPaymentMethodController,
     CategoryAttributeController,
     ProductReportController as AdminProductReportController,
     AdminWalletController,
@@ -392,8 +393,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('kyc/{kyc}', [KycController::class, 'showDetails'])->name('kyc.showDetails');
 
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
+    Route::put('settings/{setting}', [AdminSetting::class, 'update'])->name('settings.update');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
     Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::patch('reviews/{review}/approve', [ReviewController::class, 'approve'])->name('reviews.approve');
+    Route::patch('reviews/{review}/reject', [ReviewController::class, 'reject'])->name('reviews.reject');
+    Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::post('reviews/bulk-approve', [ReviewController::class, 'bulkApprove'])->name('reviews.bulk-approve');
+    Route::post('reviews/bulk-delete', [ReviewController::class, 'bulkDelete'])->name('reviews.bulk-delete');
     
     // Messages
     Route::get('messages', [\App\Http\Controllers\Admin\MessageController::class, 'index'])->name('messages.index');
@@ -419,6 +426,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+    // Seller payment methods (admin view)
+    Route::get('payment-methods', [AdminPaymentMethodController::class, 'index'])->name('payment-methods.index');
     
     //Payment Types
     Route::resource('payment-types', PaymentTypeController::class);

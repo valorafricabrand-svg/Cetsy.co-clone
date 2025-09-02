@@ -5,7 +5,7 @@
 <div class="content">
   <h1 class="mb-4 fw-bold">Site Settings</h1>
 
-  <form action="{{ route('settings.update', $settings->id) }}"
+  <form action="{{ route('admin.settings.update', $settings->id) }}"
         method="POST"
         enctype="multipart/form-data"
         class="needs-validation"
@@ -158,9 +158,9 @@
       </div>
     </div>
 
-<!-- ========== PAYMENT & CURRENCY ========== -->
+<!-- ========== PAYMENT, CURRENCY & PAYOUTS ========== -->
 <div class="card shadow-sm mb-4">
-  <div class="card-header bg-light fw-semibold">Payment &amp; Currency</div>
+  <div class="card-header bg-light fw-semibold">Payment, Currency &amp; Payouts</div>
 
   <div class="card-body">
     <div class="row g-3">
@@ -186,7 +186,7 @@
         @error('default_currency') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
 
-      {{-- NEW: PayPal Fee % --}}
+      {{-- PayPal Fee % --}}
       <div class="col-md-2">
         <label class="form-label">PayPal&nbsp;Fee&nbsp;%</label>
         <input type="number"
@@ -198,9 +198,54 @@
         @error('paypal_transaction_fee_percent') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
 
+      {{-- Payout Fee % (store as percent, e.g., 1.5) --}}
+      <div class="col-md-2">
+        <label class="form-label">Payout&nbsp;Fee&nbsp;%</label>
+        <input type="number"
+               name="fee_rate"
+               class="form-control @error('fee_rate') is-invalid @enderror"
+               value="{{ old('fee_rate', $settings->fee_rate) }}"
+               step="0.01" min="0" max="100"
+               placeholder="1.5" title="Enter as percent, e.g. 1.5 for 1.5%">
+        @error('fee_rate') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
+      {{-- Minimum Payout Amount --}}
+      <div class="col-md-4">
+        <label class="form-label">Minimum&nbsp;Payout&nbsp;Amount</label>
+        <input type="number"
+               name="min_amount"
+               class="form-control @error('min_amount') is-invalid @enderror"
+               value="{{ old('min_amount', number_format($settings->min_amount,2,'.','')) }}"
+               step="0.01" min="0">
+        @error('min_amount') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
     </div>
   </div>
 </div>
+
+    <!-- ========== SHIPPING DEFAULTS ========== -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light fw-semibold">Shipping Defaults</div>
+      <div class="card-body">
+        @php
+          $couriersFromSettings = '';
+          try {
+            $arr = json_decode($settings->couriers_json ?? '[]', true);
+            if (is_array($arr) && !empty($arr)) {
+              $couriersFromSettings = implode("\n", $arr);
+            }
+          } catch (\Throwable $e) {}
+          if ($couriersFromSettings === '') {
+            $couriersFromSettings = implode("\n", couriers_list());
+          }
+        @endphp
+        <label class="form-label">Default Couriers (one per line)</label>
+        <textarea name="couriers" rows="6" class="form-control" placeholder="e.g. DHL\nFedEx\nUPS">{{ old('couriers', $couriersFromSettings) }}</textarea>
+        <div class="form-text">Shown in "Service" selects. Sellers can still choose Manual/Other to type a custom courier.</div>
+      </div>
+    </div>
 
     <!-- Action Buttons -->
     <div class="text-end">

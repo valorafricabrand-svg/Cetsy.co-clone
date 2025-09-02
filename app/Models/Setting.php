@@ -39,7 +39,13 @@ class Setting extends Model
         // Payment
         'paypal_client_id',
         'default_currency',
-        'paypal_transaction_fee_percent'
+        'paypal_transaction_fee_percent',
+        // Payouts
+        'fee_rate',        // percent, e.g. 1.5
+        'min_amount',      // minimum payout amount
+
+        // Shipping defaults
+        'couriers_json',
     ];
 
     /**
@@ -66,6 +72,8 @@ class Setting extends Model
         'youtube_url'      => '',
 
         'paypal_client_id' => '',
+        'fee_rate'         => 1.5,
+        'min_amount'       => 1.0,
         // 'default_currency' => 'USD', // uncomment if you want a hard default
     ];
 

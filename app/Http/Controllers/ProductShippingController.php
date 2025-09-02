@@ -31,6 +31,11 @@ class ProductShippingController extends Controller
         $locationType     = $row['location_type']  ?? 'country';          // country | everywhere_else
         $destCountryId    = $locationType === 'country' ? ($row['country_id'] ?? null) : null;
         $service          = $row['service']        ?? 'Other';
+        $serviceOther     = trim((string)($row['service_other'] ?? ''));
+        if (in_array(strtolower($service), ['other','manual'], true) && $serviceOther !== '') {
+            // Use the provided courier name when user chose Other/Manual
+            $service = substr($serviceOther, 0, 100);
+        }
         $daysMin          = $row['days_min']       ?? null;
         $daysMax          = $row['days_max']       ?? null;
         $chargeType       = $row['charge_type']    ?? 'fixed';            // fixed | free
@@ -89,10 +94,16 @@ class ProductShippingController extends Controller
         $baseRate        = $chargeType === 'free' ? 0 : (float) ($payload['price_one']        ?? $row->base_rate);
         $additionalRate  = $chargeType === 'free' ? 0 : (float) ($payload['price_additional'] ?? $row->additional_rate);
 
+        $service = $payload['service']   ?? $row->service;
+        $serviceOther = trim((string)($payload['service_other'] ?? ''));
+        if (in_array(strtolower($service), ['other','manual'], true) && $serviceOther !== '') {
+            $service = substr($serviceOther, 0, 100);
+        }
+
         $row->update([
             'dest_location_type' => $locationType,
             'dest_country_id'    => $destCountryId,
-            'service'            => $payload['service']   ?? $row->service,
+            'service'            => $service,
             'days_min'           => $payload['days_min']  ?? $row->days_min,
             'days_max'           => $payload['days_max']  ?? $row->days_max,
             'charge_type'        => $chargeType,

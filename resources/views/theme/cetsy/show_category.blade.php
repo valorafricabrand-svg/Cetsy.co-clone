@@ -219,7 +219,9 @@
                 $thumb = $item->featured_image
                           ?? (isset($item->media) && $item->media->first()
                                 ? asset('storage/'.$item->media->first()->url)
-                                : asset('storage/placeholder.jpg'));
+                                : (($item->shop && $item->shop->logo)
+                                      ? asset('storage/' . ltrim($item->shop->logo,'/'))
+                                      : (setting('favicon_url') ?: asset('storage/placeholder.jpg'))));
                 $avg  = round($item->reviews_avg_rating ?? 0);
                 $cnt  = (int) ($item->reviews_count ?? 0);
                 $basePrice  = $item->price;
@@ -315,3 +317,4 @@
   </script>
   @endpush
 @endsection
+

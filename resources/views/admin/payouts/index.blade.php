@@ -32,6 +32,7 @@
                             <th>Seller</th>
                             <th>Amount</th>
                             <th>Status</th>
+                            <th>Method</th>
                             <th>Requested</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -42,7 +43,10 @@
                                 <td>{{ $p->id }}</td>
                                 <td>{{ $p->wallet->user->name ?? $p->user_id }}</td>
                                 <td>{{ get_currency() }} {{ number_format($p->amount,2) }}</td>
-                                <td class="text-capitalize">{{ $p->status }}</td>
+                                <td>
+                                  <span class="badge text-bg-{{ $p->status === 'pending' ? 'warning' : ($p->status === 'approved' ? 'info' : ($p->status === 'paid' ? 'success' : 'secondary')) }} text-uppercase">{{ $p->status }}</span>
+                                </td>
+                                <td>{{ optional(optional($p->paymentMethod)->paymentType)->name ?? '—' }}</td>
                                 <td>{{ $p->created_at->format('d M Y') }}</td>
                                 <td class="text-end">
                                     <a href="{{ route('admin.payouts.show',$p) }}"
