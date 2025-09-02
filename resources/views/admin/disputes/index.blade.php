@@ -9,7 +9,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0">Dispute Management</h1>
                 <div>
-                    <a href="{{ route('admin.disputes.statistics') }}" class="btn btn-info">
+                    <a href="{{ route('admin.admin-disputes.statistics') }}" class="btn btn-info">
                         <i class="fas fa-chart-bar"></i> Statistics
                     </a>
                 </div>
@@ -18,7 +18,7 @@
             <!-- Filters -->
             <div class="card mb-4">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('admin.disputes.index') }}" class="row g-3">
+                    <form method="GET" action="{{ route('admin.admin-disputes.index') }}" class="row g-3">
                         <div class="col-md-3">
                             <label for="status" class="form-label">Status</label>
                             <select name="status" id="status" class="form-select">
@@ -172,18 +172,18 @@
                                             <td>{{ $dispute->created_at->format('M d, Y') }}</td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('admin.disputes.show', $dispute->id) }}" 
+                                                    <a href="{{ route('admin.admin-disputes.show', $dispute->id) }}" 
                                                        class="btn btn-sm btn-outline-primary">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
                                                     @if($dispute->isPending() || $dispute->isUnderReview())
-                                                        <a href="{{ route('admin.disputes.resolve.create', $dispute->id) }}" 
+                                                        <a href="{{ route('admin.admin-disputes.resolve.create', $dispute->id) }}" 
                                                            class="btn btn-sm btn-outline-success">
                                                             <i class="fas fa-check"></i>
                                                         </a>
                                                     @endif
                                                     @if($dispute->isAppealed())
-                                                        <a href="{{ route('admin.disputes.finalize.store', $dispute->id) }}" 
+                                                        <a href="{{ route('admin.admin-disputes.finalize.store', $dispute->id) }}" 
                                                            class="btn btn-sm btn-outline-warning">
                                                             <i class="fas fa-gavel"></i>
                                                         </a>
