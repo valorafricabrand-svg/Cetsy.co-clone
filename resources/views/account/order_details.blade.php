@@ -149,6 +149,17 @@
           <span class="fw-semibold">{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</span>
         </span>
       </div>
+
+      @php
+        $hasDigital = $order->items->contains(function($it){ return optional($it->product)->type === 'digital'; });
+        $needsDownload = $order->items->contains(function($it){ return optional($it->product)->type === 'digital' && empty($it->downloaded_at); });
+      @endphp
+      @if($hasDigital && $needsDownload)
+        <div class="alert alert-info mt-3 mb-0" role="alert">
+          <i class="bi bi-cloud-download me-2"></i>
+          Digital order: funds release and reviews unlock after your first download.
+        </div>
+      @endif
     </div>
 
     {{-- ===== SHOP DETAILS ===== --}}
