@@ -224,6 +224,78 @@ class PayoutRequestController extends Controller
     }
 
     /**
+     * Resend automatic disbursement using the selected payout method.
+     * Only available for approved or sent payouts and for methods that support automation.
+     */
+    public function resendAuto(PayoutRequest $payout)
+    {
+        abort_unless(in_array($payout->status, ['approved','sent']), 409, 'Only approved or sent payouts can be resent.');
+        abort_unless($payout->paymentMethod && $payout->paymentMethod->paymentType, 400, 'Missing payout method');
+
+        $typeName = strtolower($payout->paymentMethod->paymentType->name);
+        $account  = (string) $payout->paymentMethod->account_number;
+        $amount   = (float) $payout->amount;
+        $note     = 'Seller payout #'.$payout->id.' (resend)';
+
+        // Only proceed if method is PayPal or M-Pesa
+        abort_unless(str_contains($typeName, 'paypal') || str_contains($typeName, 'mpesa') || str_contains($typeName, 'm-pesa'), 400, 'Method not supported for auto resend');
+
+        $meta = $payout->meta ?? [];
+
+        try {
+            if (str_contains($typeName, 'paypal')) {
+                $resp = \App\Helpers\PayPalHelper::createPayout($account, $amount, $note, 'payout_'.$payout->id);
+                if (($resp['status'] ?? 'error') !== 'success') {
+                    return back()->withErrors(['resend' => 'PayPal payout failed: '.($resp['message'] ?? 'Unknown error')]);
+                }
+                $data = $resp['data'] ?? [];
+                $meta['paypal'] = $data;
+                $meta['txn_reference'] = $meta['txn_reference'] ?? ($data['batch_header']['payout_batch_id'] ?? null);
+            } else {
+                // Normalize M-Pesa MSISDN
+                $msisdn = preg_replace('/\D+/', '', $account);
+                if (str_starts_with($msisdn, '0') && strlen($msisdn) === 10) {
+                    $msisdn = '254'.substr($msisdn,1);
+                } elseif (str_starts_with($msisdn, '7') && strlen($msisdn) === 9) {
+                    $msisdn = '254'.$msisdn;
+                }
+                if (!preg_match('/^2547\d{8}$/', $msisdn)) {
+                    return back()->withErrors(['resend' => 'Invalid M-Pesa phone number format for B2C.']);
+                }
+                $ref = 'PAYOUT-'.$payout->id.'-RS';
+                $resp = \App\Helpers\SafaricomDarajaHelper::initiateB2CPayment($msisdn, $amount, $ref);
+                if (($resp['status'] ?? 'error') !== 'success') {
+                    return back()->withErrors(['resend' => 'M-Pesa payout failed: '.($resp['message'] ?? 'Unknown error')]);
+                }
+                $meta['mpesa'] = $resp['data'] ?? [];
+                $meta['txn_reference'] = $meta['txn_reference'] ?? ($meta['mpesa']['ConversationID'] ?? $ref);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Auto resend failed', ['payout_id' => $payout->id, 'error' => $e->getMessage()]);
+            return back()->withErrors(['resend' => 'Automatic resend failed: '.$e->getMessage()]);
+        }
+
+        // Update payout to sent and bump resend counter
+        $meta['sent_at'] = now()->toISOString();
+        $meta['resend_count'] = (int) ($meta['resend_count'] ?? 0) + 1;
+        $payout->status = 'sent';
+        $payout->meta   = $meta;
+        $payout->save();
+
+        // Activity for seller
+        \App\Models\Activity::create([
+            'user_id'      => $payout->user_id,
+            'is_read'      => false,
+            'description'  => 'Your payout request of $' . number_format($payout->amount, 2) . ' has been re-sent and is awaiting confirmation',
+            'type'         => \App\Models\Activity::TYPE_PAYOUT,
+            'related_id'   => $payout->id,
+            'related_type' => 'payout',
+        ]);
+
+        return back()->with('success', 'Payout re-sent; awaiting confirmation.');
+    }
+
+    /**
      * Mark a payout as failed and refund seller (manual override).
      */
     public function fail(Request $request, PayoutRequest $payout)
