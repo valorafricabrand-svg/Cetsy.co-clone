@@ -5,7 +5,30 @@
 <div class="content py-4">
     <div class="container-xxl" style="max-width: 700px">
 
-        <h2 class="mb-4">Payout&nbsp;#{{ $payout->id }}</h2>
+        <h2 class="mb-2">Payout&nbsp;#{{ $payout->id }}</h2>
+        @php
+          $st = $payout->status;
+          $stepApproved = in_array($st, ['approved','sent','paid','failed','rejected']);
+          $stepSent     = in_array($st, ['sent','paid','failed']);
+          $stepPaid     = ($st === 'paid');
+          $stepFailed   = in_array($st, ['failed','rejected']);
+        @endphp
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+          <span class="badge {{ 'bg-success' }}"><i class="bi bi-check2 me-1"></i> Requested</span>
+          <span class="badge {{ $stepApproved ? 'bg-success' : 'bg-secondary' }}">
+            <i class="bi {{ $stepApproved ? 'bi-check2' : 'bi-dot' }} me-1"></i> Approved
+          </span>
+          <span class="badge {{ $stepSent ? 'bg-success' : 'bg-secondary' }}">
+            <i class="bi {{ $stepSent ? 'bi-check2' : 'bi-dot' }} me-1"></i> Sent
+          </span>
+          @if($stepFailed)
+            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Failed</span>
+          @else
+            <span class="badge {{ $stepPaid ? 'bg-success' : 'bg-secondary' }}">
+              <i class="bi {{ $stepPaid ? 'bi-check2' : 'bi-dot' }} me-1"></i> Paid
+            </span>
+          @endif
+        </div>
 
         <ul class="list-group mb-4">
             <li class="list-group-item d-flex justify-content-between">
@@ -55,6 +78,39 @@
           </div>
         </div>
 
+        {{-- AUDIT TIMELINE --}}
+        @php
+          $approvedBy = $payout->approved_by ? optional(\App\Models\User::find($payout->approved_by))->name : null;
+          $paidBy     = $payout->paid_by ? optional(\App\Models\User::find($payout->paid_by))->name : null;
+          $rejectedBy = $payout->rejected_by ? optional(\App\Models\User::find($payout->rejected_by))->name : null;
+          $sentAtIso  = data_get($payout->meta,'sent_at');
+          try { $sentAtFmt = $sentAtIso ? \Carbon\Carbon::parse($sentAtIso)->format('d M Y, H:i') : null; } catch (\Throwable $e) { $sentAtFmt = $sentAtIso; }
+          $failedReason = data_get($payout->meta,'failed_reason');
+        @endphp
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-white fw-semibold">Audit Timeline</div>
+          <div class="card-body small">
+            <div class="row gy-2">
+              <div class="col-12"><span class="fw-semibold">Requested:</span> {{ $payout->created_at?->format('d M Y, H:i') }}</div>
+              @if($payout->approved_at)
+                <div class="col-12"><span class="fw-semibold">Approved:</span> {{ $payout->approved_at->format('d M Y, H:i') }} @if($approvedBy) <span class="text-muted">by {{ $approvedBy }}</span> @endif</div>
+              @endif
+              @if(!empty($sentAtFmt))
+                <div class="col-12"><span class="fw-semibold">Sent:</span> {{ $sentAtFmt }}</div>
+              @endif
+              @if($payout->paid_at)
+                <div class="col-12"><span class="fw-semibold">Paid:</span> {{ $payout->paid_at->format('d M Y, H:i') }} @if($paidBy) <span class="text-muted">(manual by {{ $paidBy }})</span> @endif</div>
+              @endif
+              @if($payout->rejected_at)
+                <div class="col-12"><span class="fw-semibold">Rejected:</span> {{ $payout->rejected_at->format('d M Y, H:i') }} @if($rejectedBy) <span class="text-muted">by {{ $rejectedBy }}</span> @endif</div>
+              @endif
+              @if($payout->status === 'failed')
+                <div class="col-12"><span class="fw-semibold">Failed:</span> {{ data_get($payout->meta,'failed_at') ?? '' }} @if($failedReason) <span class="text-muted">&mdash; {{ $failedReason }}</span> @endif</div>
+              @endif
+            </div>
+          </div>
+        </div>
+
         {{-- ACTION BUTTONS --}}
         @if($payout->status === 'pending')
             <form method="POST" action="{{ route('admin.payouts.approve',$payout) }}" class="d-inline">
@@ -71,10 +127,32 @@
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paidModal">
                 {{ $payout->status === 'sent' ? 'Resend/Mark Paid' : 'Mark Paid' }}
             </button>
+            @if($supportsAuto && $payout->status === 'sent')
+            <form method="POST" action="{{ route('admin.payouts.resend',$payout) }}" class="d-inline">
+                @csrf
+                <button class="btn btn-outline-primary ms-2" title="Retry provider payout without opening the modal">Resend Automatic</button>
+            </form>
+            @endif
             <!-- Mark failed -->
             <button class="btn btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#failModal">
                 Mark Failed & Refund
             </button>
+        @endif
+
+        {{-- FLASH / ERROR MESSAGES --}}
+        @if(session('success'))
+          <div class="alert alert-success mt-3">{{ session('success') }}</div>
+        @endif
+        @if($errors->has('paid') || $errors->has('resend'))
+          <div class="alert alert-danger mt-3">
+            <div class="fw-semibold mb-1">Payment Provider Error</div>
+            @if($errors->has('paid'))
+              <div>{{ $errors->first('paid') }}</div>
+            @endif
+            @if($errors->has('resend'))
+              <div>{{ $errors->first('resend') }}</div>
+            @endif
+          </div>
         @endif
 
         <a href="{{ route('admin.payouts.index') }}" class="btn btn-link ms-2">Back</a>
@@ -206,6 +284,48 @@
       }, false);
     });
   })();
+
+  // Toast notifications (less intrusive)
+  (function(){
+    const successMsg = @json(session('success'));
+    const paidErr    = @json($errors->first('paid'));
+    const resendErr  = @json($errors->first('resend'));
+    const container  = document.getElementById('payoutToasts');
+    if (!container) return;
+
+    function showToast(opts){
+      const { title, body, color } = opts;
+      const el = document.createElement('div');
+      el.className = 'toast align-items-center text-bg-' + (color||'primary') + ' border-0 mb-2';
+      el.setAttribute('role','alert');
+      el.setAttribute('aria-live','assertive');
+      el.setAttribute('aria-atomic','true');
+      el.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            <div class="fw-semibold">${title||'Notice'}</div>
+            <div>${body||''}</div>
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>`;
+      container.appendChild(el);
+      try { new bootstrap.Toast(el, { delay: 5000 }).show(); } catch(e) {}
+    }
+
+    if (successMsg) {
+      showToast({ title: 'Success', body: successMsg, color: 'success' });
+    }
+    if (paidErr) {
+      showToast({ title: 'Payment Error', body: paidErr, color: 'danger' });
+    }
+    if (resendErr) {
+      showToast({ title: 'Resend Error', body: resendErr, color: 'danger' });
+    }
+  })();
 </script>
 @endpush
+<!-- Toast container -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
+  <div id="payoutToasts"></div>
+  </div>
 @endsection
