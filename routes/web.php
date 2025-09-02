@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\{
     ReviewController,
     AdminNotificationController
 };
+use App\Http\Controllers\Webhooks\PayoutWebhookController;
 use App\Http\Controllers\Buyer\BuyerDashboard;
 use App\Http\Controllers\Seller\{
     DashboardController as SellerDashboard,
@@ -585,5 +586,10 @@ Route::middleware('auth')->prefix('buyer')->name('buyer.')->group(function () {
 */
 Route::middleware(['auth'])->resource('settings', AdminSetting::class)
     ->only(['index', 'edit', 'update']);
+
+// Webhooks (public endpoints)
+Route::post('/webhooks/paypal', [PayoutWebhookController::class, 'paypal'])->name('webhooks.paypal');
+Route::post('/daraja/b2c/result', [PayoutWebhookController::class, 'darajaB2CResult'])->name('webhooks.daraja.b2c.result');
+Route::post('/daraja/b2c/timeout', [PayoutWebhookController::class, 'darajaB2CTimeout'])->name('webhooks.daraja.b2c.timeout');
 
 require __DIR__ . '/auth.php';
