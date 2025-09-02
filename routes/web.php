@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\{
     PayoutRequestController as AdminPayoutRequestController,
     PaymentController,
     PaymentTypeController,
+    PaymentMethodController as AdminPaymentMethodController,
     CategoryAttributeController,
     ProductReportController as AdminProductReportController,
     AdminWalletController,
@@ -420,6 +421,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+    // Seller payment methods (admin view)
+    Route::get('payment-methods', [AdminPaymentMethodController::class, 'index'])->name('payment-methods.index');
     
     //Payment Types
     Route::resource('payment-types', PaymentTypeController::class);

@@ -1,90 +1,73 @@
 @if(Auth::user()->isAdmin())
   @php
-    $navItems = [
+    $groups = [
       [
-        'label' => 'Dashboard',
-        'url'   => route('admin.dashboard'),
-        'icon'  => 'fas fa-tachometer-alt',
+        'title' => 'Overview',
+        'items' => [
+          ['label' => 'Dashboard', 'icon' => 'fas fa-tachometer-alt', 'url' => route('admin.dashboard'), 'match' => ['admin.dashboard']],
+          ['label' => 'Reports',   'icon' => 'fas fa-chart-bar',      'url' => route('admin.reports'),   'match' => ['admin.reports']],
+        ],
       ],
       [
-        'label' => 'Sellers',
-        'url'   => route('admin.users.index'),
-        'icon'  => 'fas fa-users',
+        'title' => 'Commerce',
+        'items' => [
+          ['label' => 'Product Listings', 'icon' => 'fas fa-box',        'url' => route('admin.products.index'),       'match' => ['admin.products.*']],
+          ['label' => 'Categories',       'icon' => 'fas fa-cogs',       'url' => route('admin.categories.index'),     'match' => ['admin.categories.*']],
+          ['label' => 'Product Reports',  'icon' => 'fas fa-flag',       'url' => route('admin.product-reports.index'),'match' => ['admin.product-reports.*']],
+          ['label' => 'Reviews',          'icon' => 'fas fa-star',       'url' => route('admin.reviews.index'),        'match' => ['admin.reviews.*']],
+        ],
       ],
       [
-        'label' => 'Product Listings',
-        'url'   => route('admin.products.index'),
-        'icon'  => 'fas fa-box',
+        'title' => 'Orders & Disputes',
+        'items' => [
+          ['label' => 'Disputes', 'icon' => 'fas fa-gavel',           'url' => route('admin.admin-disputes.index'), 'match' => ['admin.admin-disputes.*']],
+          ['label' => 'Appeals',  'icon' => 'fas fa-balance-scale',   'url' => route('admin.appeals.index'),        'match' => ['admin.appeals.*']],
+        ],
       ],
       [
-        'label' => 'Reports',
-        'url'   => route('admin.reports'),
-        'icon'  => 'fas fa-chart-bar',
+        'title' => 'Sellers',
+        'items' => [
+          ['label' => 'Sellers',        'icon' => 'fas fa-users',     'url' => route('admin.users.index'),     'match' => ['admin.users.*']],
+          ['label' => 'KYC Management', 'icon' => 'fas fa-id-card',   'url' => route('admin.kyc.index'),       'match' => ['admin.kyc.*']],
+        ],
       ],
       [
-        'label' => 'KYC Management',
-        'url'   => route('admin.kyc.index'),
-        'icon'  => 'fas fa-id-card',
+        'title' => 'Payments',
+        'items' => [
+          ['label' => 'Payout Requests',        'icon' => 'fas fa-money-check-alt', 'url' => route('admin.payouts.index'),           'match' => ['admin.payouts.*']],
+          ['label' => 'Seller Payment Methods', 'icon' => 'fas fa-university',      'url' => route('admin.payment-methods.index'),   'match' => ['admin.payment-methods.*']],
+          ['label' => 'Payment Types',          'icon' => 'fas fa-credit-card',     'url' => route('admin.payment-types.index'),     'match' => ['admin.payment-types.*']],
+          ['label' => 'Payments',               'icon' => 'fas fa-shopping-cart',   'url' => route('admin.payments.index'),          'match' => ['admin.payments.*']],
+        ],
       ],
       [
-        'label' => 'Categories',
-        'url'   => route('admin.categories.index'),
-        'icon'  => 'fas fa-cogs',
-      ],
-      [
-        'label' => 'Settings',
-        'url'   => route('admin.settings'),
-        'icon'  => 'fas fa-cogs',
-      ],
-      [
-        'label' => 'Payout Requests',
-        'url'   => route('admin.payouts.index'),
-        'icon'  => 'fas fa-money-check-alt',
-      ],
-      [
-        'label' => 'Payment Types',
-        'url'   => route('admin.payment-types.index'),
-        'icon'  => 'fas fa-credit-card',
-      ],
-      [
-        'label' => 'Payments',
-        'url'   => route('admin.payments.index'),
-        'icon'  => 'fas fa-shopping-cart',
-      ],
-      [
-        'label' => 'Product Reports',
-        'url'   => route('admin.product-reports.index'),
-        'icon'  => 'fas fa-flag',
-      ],
-      [
-        'label' => 'Reviews',
-        'url'   => route('admin.reviews.index'),
-        'icon'  => 'fas fa-star',
-      ],
-      [
-        'label' => 'Disputes',
-        'url'   => route('admin.admin-disputes.index'),
-        'icon'  => 'fas fa-gavel',
-      ],
-      [
-        'label' => 'Appeals',
-        'url'   => route('admin.appeals.index'),
-        'icon'  => 'fas fa-balance-scale',
+        'title' => 'System',
+        'items' => [
+          ['label' => 'Settings', 'icon' => 'fas fa-gear', 'url' => route('admin.settings'), 'match' => ['admin.settings','admin.settings.*']],
+        ],
       ],
     ];
   @endphp
 
-  @foreach($navItems as $item)
-    <div class="nav-item-wrapper">
-      <a href="{{ $item['url'] }}"
-         class="nav-link d-flex align-items-center text-decoration-none text-dark py-2">
-        <span class="nav-link-icon me-2">
-          <i class="{{ $item['icon'] }}" style="color: #027333;"></i>
-        </span>
-        <span class="nav-link-text fw-bold" style="font-size: 0.9rem;">
-          {{ $item['label'] }}
-        </span>
-      </a>
+  <div class="card shadow-sm border-0">
+    <div class="list-group list-group-flush">
+      @foreach($groups as $group)
+        <div class="list-group-item bg-light fw-semibold text-uppercase small text-muted">
+          {{ $group['title'] }}
+        </div>
+        @foreach($group['items'] as $item)
+          @php
+            $patterns = (array) ($item['match'] ?? []);
+            $active = false;
+            foreach ($patterns as $p) { if (request()->routeIs($p)) { $active = true; break; } }
+          @endphp
+          <a href="{{ $item['url'] }}"
+             class="list-group-item list-group-item-action d-flex align-items-center {{ $active ? 'active' : '' }}">
+            <i class="{{ $item['icon'] }} me-2" style="width: 18px; color: {{ $active ? '#fff' : '#027333' }};"></i>
+            <span class="fw-medium">{{ $item['label'] }}</span>
+          </a>
+        @endforeach
+      @endforeach
     </div>
-  @endforeach
+  </div>
 @endif
