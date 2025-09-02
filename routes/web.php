@@ -348,6 +348,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/{dispute}/mutual-resolution', [\App\Http\Controllers\DisputeController::class, 'initiateMutualResolution'])->name('mutual-resolution.initiate');
         Route::post('/{dispute}/mutual-resolution/agree', [\App\Http\Controllers\DisputeController::class, 'agreeToMutualResolution'])->name('mutual-resolution.agree');
         
+        // Mark Dispute as Closed
+        Route::post('/{dispute}/close', [\App\Http\Controllers\DisputeController::class, 'markAsClosed'])->name('close');
+        
         // Evidence Request Responses
         Route::post('/evidence-requests/{evidenceRequest}/respond', [\App\Http\Controllers\EvidenceRequestController::class, 'respond'])->name('disputes.evidence-requests.respond');
     });
@@ -403,8 +406,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('reviews/bulk-delete', [ReviewController::class, 'bulkDelete'])->name('reviews.bulk-delete');
     
     // Messages
-    Route::get('messages', [\App\Http\Controllers\Admin\MessageController::class, 'index'])->name('messages.index');
-    Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\MessageController::class, 'show'])->name('messages.show');
+    Route::get('messages', [\App\Http\Controllers\Admin\AdminMessageController::class, 'index'])->name('messages.index');
+    Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\AdminMessageController::class, 'show'])->name('messages.show');
 
     // Users
     Route::get('users', [UserController::class, 'index'])->name('users.index');

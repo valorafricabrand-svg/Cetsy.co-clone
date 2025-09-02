@@ -240,6 +240,7 @@ class DisputeController extends Controller
                     'order_id' => $order->id,
                     'buyer_id' => $buyerId,
                     'seller_id' => $sellerId,
+                    'created_by' => Auth::id(),
                     'type' => $data['type'],
                     'status' => Dispute::STATUS_PENDING,
                     'description' => $data['description'],
@@ -1206,6 +1207,69 @@ class DisputeController extends Controller
                 'recipient_id' => $recipient->id
             ]);
             throw $e; // Re-throw to be caught by the main try-catch
+        }
+    }
+
+    /**
+     * Mark dispute as closed by the initiator or admin
+     */
+    public function markAsClosed(Request $request, Dispute $dispute)
+    {
+        // Check if the authenticated user is the dispute creator or an admin
+        if (Auth::id() !== $dispute->created_by && !Auth::user()->isAdmin()) {
+            return back()->with('error', 'Only the dispute creator or admin can mark this dispute as closed.');
+        }
+
+        // Check if dispute can be closed
+        if ($dispute->status === 'closed' || $dispute->status === 'resolved') {
+            return back()->with('error', 'This dispute cannot be closed as it is already ' . $dispute->status . '.');
+        }
+
+        try {
+            // Get closure notes if provided
+            $closureNotes = $request->input('closure_notes');
+            
+            // Update dispute status
+            $dispute->update([
+                'status' => 'closed',
+                'closed_at' => now(),
+                'closed_by' => Auth::id()
+            ]);
+
+            // Create a system message to record the closure
+            if (Auth::user()->isAdmin()) {
+                $closedBy = 'admin';
+            } else {
+                $closedBy = 'creator';
+            }
+            $message = "Dispute marked as closed by the {$closedBy}.";
+            if ($closureNotes) {
+                $message .= "\n\nClosure Notes: " . $closureNotes;
+            }
+            
+            DisputeMessage::create([
+                'dispute_id' => $dispute->id,
+                'user_id' => null, // System message
+                'message' => $message,
+                'type' => 'system_message',
+                'is_dispute_message' => true
+            ]);
+
+            if (Auth::user()->isAdmin()) {
+                $closedBy = 'admin';
+            } else {
+                $closedBy = 'you (creator)';
+            }
+            return back()->with('success', "Dispute has been marked as closed successfully by {$closedBy}.");
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to mark dispute as closed', [
+                'dispute_id' => $dispute->id,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage()
+            ]);
+
+            return back()->with('error', 'Failed to mark dispute as closed. Please try again.');
         }
     }
 }
