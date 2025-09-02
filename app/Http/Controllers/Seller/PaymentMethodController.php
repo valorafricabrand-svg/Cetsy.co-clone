@@ -65,6 +65,14 @@ class PaymentMethodController extends Controller
 
         PaymentMethod::create($validated);
 
+        // If a redirect target is provided (e.g., from wallet modal), honor it
+        $redirectTo = $request->input('redirect_to');
+        if ($redirectTo) {
+            return redirect($redirectTo)
+                ->with('success', 'Payment method created successfully.')
+                ->with('open_payout_modal', (bool) $request->boolean('open_payout'));
+        }
+
         return redirect()
             ->route('seller.payment-methods.index')
             ->with('success', 'Payment method created successfully.');
