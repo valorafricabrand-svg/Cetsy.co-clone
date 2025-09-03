@@ -32,7 +32,7 @@
                                 <a href="{{ route('disputes.index') }}" class="btn btn-outline-secondary btn-sm">
                                     <i class="bi bi-arrow-left"></i> Back to Disputes
                                 </a>
-                                @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
+                                @if($dispute->canBeAppealed())
                                     <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-warning btn-sm">
                                         <i class="bi bi-gavel"></i> Appeal
                                     </a>
@@ -175,9 +175,14 @@
             <div class="card mb-4">
                 <div class="card-header bg-light">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-box"></i> Order Context
-                        </h5>
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="bi bi-box"></i> Order Context
+                            </h5>
+                            <small class="text-muted">
+                                This dispute is related to Order #{{ $order->id }} from {{ $order->shop->name ?? 'the shop' }}
+                            </small>
+                        </div>
                         <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-eye"></i> View Full Order
                         </a>
@@ -334,690 +339,13 @@
                         </div>
                     @endif
 
-                    @if($dispute->appeal)
-                        <div class="alert alert-warning">
-                            <h6 class="alert-heading">Appeal Status</h6>
-                            <p class="mb-2"><strong>Reason:</strong> {{ $dispute->appeal->reason }}</p>
-                            <p class="mb-2"><strong>Status:</strong> {{ ucfirst($dispute->appeal->status) }}</p>
-                            @if($dispute->appeal->review_notes)
-                                <p class="mb-0"><strong>Review Notes:</strong> {{ $dispute->appeal->review_notes }}</p>
-                            @endif
-                        </div>
-                        
-                        {{-- Appeal Evidence Files Section --}}
-                        @if($dispute->appeal->new_evidence && count($dispute->appeal->new_evidence) > 0)
-                            <div class="card mb-4 border-warning">
-                                <div class="card-header bg-warning text-dark">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-paperclip"></i> Appeal Evidence Files
-                                        <span class="badge bg-dark ms-2">{{ count($dispute->appeal->new_evidence) }} file(s)</span>
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="alert alert-info">
-                                        <h6 class="alert-heading">Appeal Evidence</h6>
-                                        <p class="mb-0">These files were submitted with the appeal by <strong>{{ $dispute->appeal->appealedBy->name }}</strong> on {{ $dispute->appeal->created_at->format('M d, Y \a\t g:i A') }}.</p>
-                                    </div>
-                                    
-                                    <div class="row g-3">
-                                        @foreach($dispute->appeal->new_evidence as $index => $file)
-                                            <div class="col-md-4 col-sm-6 col-12">
-                                                <div class="evidence-item border rounded p-3 text-center h-100">
-                                                    @if(in_array($file['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
-                                                        <img src="{{ Storage::url($file['path']) }}" 
-                                                             alt="{{ $file['filename'] }}" 
-                                                             class="img-fluid rounded mb-2" 
-                                                             style="max-height: 120px; width: 100%; object-fit: cover; cursor: pointer;"
-                                                             onclick="openImageModal('{{ Storage::url($file['path']) }}', '{{ $file['filename'] }}')"
-                                                             title="Click to view full size">
-                                                    @elseif(in_array($file['mime_type'], ['application/pdf']))
-                                                        <div class="bg-danger text-white rounded p-3 mb-2">
-                                                            <i class="bi bi-file-pdf fs-1"></i>
-                                                        </div>
-                                                    @elseif(in_array($file['mime_type'], ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']))
-                                                        <div class="bg-primary text-white rounded p-3 mb-2">
-                                                            <i class="bi bi-file-word fs-1"></i>
-                                                        </div>
-                                                    @else
-                                                        <div class="bg-secondary text-white rounded p-3 mb-2">
-                                                            <i class="bi bi-file-earmark fs-1"></i>
-                                                        </div>
-                                                    @endif
-                                                    
-                                                    <div class="evidence-info">
-                                                        <div class="fw-bold text-truncate mb-2" title="{{ $file['filename'] }}">
-                                                            {{ Str::limit($file['filename'], 25) }}
-                                                        </div>
-                                                        <div class="small text-muted mb-2">
-                                                            {{ number_format($file['size'] / 1024, 1) }} KB
-                                                        </div>
-                                                        <div class="d-flex gap-1 justify-content-center">
-                                                            <a href="{{ Storage::url($file['path']) }}" 
-                                                               target="_blank" 
-                                                               class="btn btn-sm btn-outline-primary">
-                                                                <i class="bi bi-eye"></i> View
-                                                            </a>
-                                                            <a href="{{ Storage::url($file['path']) }}" 
-                                                               download="{{ $file['filename'] }}"
-                                                               class="btn btn-sm btn-outline-secondary">
-                                                                <i class="bi bi-download"></i> Download
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                    
-                                    {{-- Evidence descriptions removed as field doesn't exist in Appeal model --}}
-                                </div>
-                            </div>
-                        @endif
-                    @endif
 
-                    @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
-                        <div class="alert alert-info">
-                            <h6 class="alert-heading">Appeal Available</h6>
-                            <p class="mb-2">You have {{ $dispute->getAppealDeadlineDaysLeft() }} days to appeal this decision.</p>
-                            <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-warning">
-                                Submit Appeal
-                            </a>
-                        </div>
-                    @endif
-
-                    {{-- Appeal Button Section --}}
-                    @if($dispute->canBeAppealed() || 
-                         ($dispute->status === 'under_review' && $dispute->created_at->diffInHours(now()) >= 72) ||
-                         ($dispute->status === 'pending' && $dispute->created_at->diffInHours(now()) >= 24))
-                        <div class="card mb-4 border-warning">
-                            <div class="card-header bg-warning text-dark">
-                                <h6 class="mb-0">
-                                    <i class="bi bi-gavel"></i> Submit Appeal
-                                </h6>
-                            </div>
-                            <div class="card-body text-center">
-                                @if($dispute->status === 'resolved')
-                                    <p class="mb-3">If you disagree with the decision, you can submit an appeal for review.</p>
-                                    @if($dispute->appeal_deadline)
-                                        <small class="d-block text-muted mb-3">
-                                            Appeal deadline: {{ $dispute->appeal_deadline->format('M d, Y \a\t g:i A') }}
-                                        </small>
-                                    @endif
-                                @elseif($dispute->status === 'under_review')
-                                    <p class="mb-3">If the admin review is taking too long or you have concerns about the process, you can submit an appeal.</p>
-                                    <small class="d-block text-muted mb-3">
-                                        Available after 72 hours of admin review
-                                    </small>
-                                @elseif($dispute->status === 'pending')
-                                    <p class="mb-3">If the seller is not responding to your dispute, you can submit an appeal for immediate review.</p>
-                                    <small class="d-block text-muted mb-3">
-                                        Available after 24 hours of no seller response
-                                    </small>
-                                @endif
-                                
-                                <button type="button" class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#appealModal">
-                                    <i class="bi bi-gavel"></i> Submit Appeal
-                                </button>
-                            </div>
-                        </div>
-                    @endif
-
-                    @if($dispute->isAppealDeadlineExpired() && $dispute->can_appeal)
-                        <div class="alert alert-danger">
-                            <h6 class="alert-heading">Appeal Deadline Expired</h6>
-                            <p class="mb-0">The appeal deadline has passed. This decision is now final.</p>
-                        </div>
-                    @endif
-
-                    {{-- Evidence Requests Section --}}
-                    @if($dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
-                        <div class="card mb-4 border-info">
-                            <div class="card-header bg-info text-white">
-                                <h6 class="mb-0">
-                                    <i class="bi bi-file-earmark-text"></i> Evidence Requests
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                @foreach($dispute->appeal->evidenceRequests as $evidenceRequest)
-                                    <div class="evidence-request-item border rounded p-3 mb-3 {{ $evidenceRequest->isOverdue() ? 'border-danger' : 'border-info' }}">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h6 class="mb-0">
-                                                Evidence Request #{{ $evidenceRequest->id }}
-                                                @if($evidenceRequest->isOverdue())
-                                                    <span class="badge bg-danger ms-2">Overdue</span>
-                                                @elseif($evidenceRequest->status === 'pending')
-                                                    <span class="badge bg-warning ms-2">Pending</span>
-                                                @elseif($evidenceRequest->status === 'responded')
-                                                    <span class="badge bg-success ms-2">Responded</span>
-                                                @endif
-                                            </h6>
-                                            <small class="text-muted">
-                                                Deadline: {{ $evidenceRequest->deadline->format('M d, Y \a\t g:i A') }}
-                                            </small>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <strong>Requested From:</strong> {{ $evidenceRequest->requestedFrom->name }}
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <strong>Message:</strong>
-                                            <div class="mt-2 p-3 bg-light rounded">
-                                                {!! nl2br(e($evidenceRequest->message)) !!}
-                                            </div>
-                                        </div>
-                                        
-                                        @if($evidenceRequest->required_evidence_types)
-                                            <div class="mb-3">
-                                                <strong>Required Evidence Types:</strong>
-                                                <div class="mt-2">
-                                                    @foreach($evidenceRequest->required_evidence_types as $type)
-                                                        <span class="badge bg-secondary me-1">{{ ucwords(str_replace('_', ' ', $type)) }}</span>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        @endif
-                                        
-                                        @if($evidenceRequest->status === 'responded' && $evidenceRequest->submitted_evidence)
-                                            <div class="mb-3">
-                                                <strong>Submitted Evidence:</strong>
-                                                <div class="mt-2">
-                                                    @foreach($evidenceRequest->submitted_evidence as $evidence)
-                                                        <div class="evidence-item border rounded p-2 mb-2">
-                                                            <strong>{{ $evidence['filename'] }}</strong>
-                                                            <br>
-                                                            <small class="text-muted">{{ $evidence['description'] ?? 'No description' }}</small>
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        @endif
-                                        
-                                        @if($evidenceRequest->status === 'pending' && $evidenceRequest->requested_from === auth()->id())
-                                            <div class="mt-3">
-                                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#evidenceResponseModal-{{ $evidenceRequest->id }}">
-                                                    <i class="bi bi-upload"></i> Submit Evidence Response
-                                                </button>
-                                            </div>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
                     
-                    {{-- Evidence Responses Section (Organized by Party) --}}
-                    @if($dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
-                        @php
-                            $respondedRequests = $dispute->appeal->evidenceRequests->where('status', 'responded');
-                            $buyerEvidenceResponses = collect();
-                            $sellerEvidenceResponses = collect();
-                            
-                            // Organize evidence responses by party
-                            foreach($respondedRequests as $evidenceRequest) {
-                                if ($evidenceRequest->submitted_evidence && count($evidenceRequest->submitted_evidence) > 0) {
-                                    $evidenceData = [
-                                        'evidenceRequest' => $evidenceRequest,
-                                        'evidence' => $evidenceRequest->submitted_evidence,
-                                        'response_notes' => $evidenceRequest->response_notes,
-                                        'responded_at' => $evidenceRequest->responded_at,
-                                        'requested_from' => $evidenceRequest->requestedFrom
-                                    ];
-                                    
-                                    // Determine if it's buyer or seller evidence
-                                    if ($evidenceRequest->requested_from === $dispute->buyer_id) {
-                                        $buyerEvidenceResponses->push($evidenceData);
-                                    } else {
-                                        $sellerEvidenceResponses->push($evidenceData);
-                                    }
-                                }
-                            }
-                        @endphp
-                        
-                        {{-- Buyer Evidence Responses --}}
-                        @if($buyerEvidenceResponses->isNotEmpty())
-                            <div class="card mb-4 border-primary">
-                                <div class="card-header bg-primary text-white">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-person-fill"></i> Buyer Evidence Responses
-                                        <span class="badge bg-light text-dark ms-2">{{ $buyerEvidenceResponses->count() }} response(s)</span>
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="alert alert-primary">
-                                        <h6 class="alert-heading">Evidence Responses from {{ $dispute->buyer->name }}</h6>
-                                        <p class="mb-0">Evidence files submitted by the buyer in response to evidence requests.</p>
-                                    </div>
-                                    
-                                    @foreach($buyerEvidenceResponses as $evidenceData)
-                                        <div class="evidence-response-item border rounded p-3 mb-3">
-                                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                                <h6 class="mb-0">
-                                                    <i class="bi bi-person-circle"></i> 
-                                                    Response from {{ $evidenceData['requested_from']->name }}
-                                                </h6>
-                                                <span class="badge bg-success">Responded {{ $evidenceData['responded_at']->format('M d, Y \a\t g:i A') }}</span>
-                                            </div>
-                                            
-                                            @if($evidenceData['response_notes'])
-                                                <div class="mb-3">
-                                                    <strong>Response Notes:</strong>
-                                                    <div class="mt-2 p-3 bg-light rounded">
-                                                        {{ $evidenceData['response_notes'] }}
-                                                    </div>
-                                                </div>
-                                            @endif
-                                            
-                                            @if($evidenceData['evidence'] && count($evidenceData['evidence']) > 0)
-                                                <div class="mb-3">
-                                                    <strong>Submitted Evidence Files:</strong>
-                                                    <div class="row g-3 mt-2">
-                                                        @foreach($evidenceData['evidence'] as $evidence)
-                                                            <div class="col-md-4 col-sm-6 col-12">
-                                                                <div class="evidence-item border rounded p-3 text-center h-100">
-                                                                    @if(in_array($evidence['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
-                                                                        <img src="{{ Storage::url($evidence['path']) }}" 
-                                                                             alt="{{ $evidence['filename'] }}" 
-                                                                             class="img-fluid rounded mb-2" 
-                                                                             style="max-height: 100px; width: 100%; object-fit: cover; cursor: pointer;"
-                                                                             onclick="openImageModal('{{ Storage::url($evidence['path']) }}', '{{ $evidence['filename'] }}')"
-                                                                             title="Click to view full size">
-                                                                    @elseif(in_array($evidence['mime_type'], ['application/pdf']))
-                                                                        <div class="bg-danger text-white rounded p-2 mb-2">
-                                                                            <i class="bi bi-file-pdf fs-4"></i>
-                                                                        </div>
-                                                                    @elseif(in_array($evidence['mime_type'], ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']))
-                                                                        <div class="bg-primary text-white rounded p-2 mb-2">
-                                                                            <i class="bi bi-file-word fs-4"></i>
-                                                                        </div>
-                                                                    @else
-                                                                        <div class="bg-secondary text-white rounded p-2 mb-2">
-                                                                            <i class="bi bi-file-earmark fs-4"></i>
-                                                                        </div>
-                                                                    @endif
-                                                                    
-                                                                    <div class="evidence-info">
-                                                                        <div class="fw-bold text-truncate mb-2" title="{{ $evidence['filename'] }}">
-                                                                            {{ Str::limit($evidence['filename'], 20) }}
-                                                                        </div>
-                                                                        <div class="small text-muted mb-2">
-                                                                            {{ number_format($evidence['size'] / 1024, 1) }} KB
-                                                                        </div>
-                                                                        <div class="d-flex gap-1 justify-content-center">
-                                                                            <a href="{{ Storage::url($evidence['path']) }}" 
-                                                                               target="_blank" 
-                                                                               class="btn btn-sm btn-outline-primary">
-                                                                                <i class="bi bi-eye"></i> View
-                                                                            </a>
-                                                                            <a href="{{ Storage::url($evidence['path']) }}" 
-                                                                               download="{{ $evidence['filename'] }}"
-                                                                               class="btn btn-sm btn-outline-secondary">
-                                                                                <i class="bi bi-download"></i> Download
-                                                                            </a>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                    
-                                    {{-- Buyer Evidence Summary --}}
-                                    <div class="mt-4 p-3 bg-light rounded">
-                                        <h6 class="mb-2">Buyer Evidence Summary</h6>
-                                        @php
-                                            $buyerTotalFiles = $buyerEvidenceResponses->sum(function($data) {
-                                                return count($data['evidence']);
-                                            });
-                                            $buyerTotalSize = $buyerEvidenceResponses->sum(function($data) {
-                                                return collect($data['evidence'])->sum('size');
-                                            });
-                                        @endphp
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <strong>Total Files:</strong> {{ $buyerTotalFiles }}
-                                            </div>
-                                            <div class="col-md-6">
-                                                <strong>Total Size:</strong> {{ number_format($buyerTotalSize / 1024 / 1024, 2) }} MB
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                        
-                        {{-- Seller Evidence Responses --}}
-                        @if($sellerEvidenceResponses->isNotEmpty())
-                            <div class="card mb-4 border-success">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-shop"></i> Seller Evidence Responses
-                                        <span class="badge bg-light text-dark ms-2">{{ $sellerEvidenceResponses->count() }} response(s)</span>
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="alert alert-success">
-                                        <h6 class="alert-heading">Evidence Responses from {{ $order && $order->shop && $order->shop->name ? $order->shop->name : $dispute->seller->name }}</h6>
-                                        <p class="mb-0">Evidence files submitted by the seller in response to evidence requests.</p>
-                                    </div>
-                                    
-                                    @foreach($sellerEvidenceResponses as $evidenceData)
-                                        <div class="evidence-response-item border rounded p-3 mb-3">
-                                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                                <h6 class="mb-0">
-                                                    <i class="bi bi-shop"></i> 
-                                                    Response from {{ $evidenceData['requested_from']->name }}
-                                                </h6>
-                                                <span class="badge bg-success">Responded {{ $evidenceData['responded_at']->format('M d, Y \a\t g:i A') }}</span>
-                                            </div>
-                                            
-                                            @if($evidenceData['response_notes'])
-                                                <div class="mb-3">
-                                                    <strong>Response Notes:</strong>
-                                                    <div class="mt-2 p-3 bg-light rounded">
-                                                        {{ $evidenceData['response_notes'] }}
-                                                    </div>
-                                                </div>
-                                            @endif
-                                            
-                                            @if($evidenceData['evidence'] && count($evidenceData['evidence']) > 0)
-                                                <div class="mb-3">
-                                                    <strong>Submitted Evidence Files:</strong>
-                                                    <div class="row g-3 mt-2">
-                                                        @foreach($evidenceData['evidence'] as $evidence)
-                                                            <div class="col-md-4 col-sm-6 col-12">
-                                                                <div class="evidence-item border rounded p-3 text-center h-100">
-                                                                    @if(in_array($evidence['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
-                                                                        <img src="{{ Storage::url($evidence['path']) }}" 
-                                                                             alt="{{ $evidence['filename'] }}" 
-                                                                             class="img-fluid rounded mb-2" 
-                                                                             style="max-height: 100px; width: 100%; object-fit: cover; cursor: pointer;"
-                                                                             onclick="openImageModal('{{ Storage::url($evidence['path']) }}', '{{ $evidence['filename'] }}')"
-                                                                             title="Click to view full size">
-                                                                    @elseif(in_array($evidence['mime_type'], ['application/pdf']))
-                                                                        <div class="bg-danger text-white rounded p-2 mb-2">
-                                                                            <i class="bi bi-file-pdf fs-4"></i>
-                                                                        </div>
-                                                                    @elseif(in_array($evidence['mime_type'], ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']))
-                                                                        <div class="bg-primary text-white rounded p-2 mb-2">
-                                                                            <i class="bi bi-file-word fs-4"></i>
-                                                                        </div>
-                                                                    @else
-                                                                        <div class="bg-secondary text-white rounded p-2 mb-2">
-                                                                            <i class="bi bi-file-earmark fs-4"></i>
-                                                                        </div>
-                                                                    @endif
-                                                                    
-                                                                    <div class="evidence-info">
-                                                                        <div class="fw-bold text-truncate mb-2" title="{{ $evidence['filename'] }}">
-                                                                            {{ Str::limit($evidence['filename'], 20) }}
-                                                                        </div>
-                                                                        <div class="small text-muted mb-2">
-                                                                            {{ number_format($evidence['size'] / 1024, 1) }} KB
-                                                                        </div>
-                                                                        <div class="d-flex gap-1 justify-content-center">
-                                                                            <a href="{{ Storage::url($evidence['path']) }}" 
-                                                                               target="_blank" 
-                                                                               class="btn btn-sm btn-outline-primary">
-                                                                                <i class="bi bi-eye"></i> View
-                                                                            </a>
-                                                                            <a href="{{ Storage::url($evidence['path']) }}" 
-                                                                               download="{{ $evidence['filename'] }}"
-                                                                               class="btn btn-sm btn-outline-secondary">
-                                                                                <i class="bi bi-download"></i> Download
-                                                                            </a>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                    
-                                    {{-- Seller Evidence Summary --}}
-                                    <div class="mt-4 p-3 bg-light rounded">
-                                        <h6 class="mb-2">Seller Evidence Summary</h6>
-                                        @php
-                                            $sellerTotalFiles = $sellerEvidenceResponses->sum(function($data) {
-                                                return count($data['evidence']);
-                                            });
-                                            $sellerTotalSize = $sellerEvidenceResponses->sum(function($data) {
-                                                return collect($data['evidence'])->sum('size');
-                                            });
-                                        @endphp
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <strong>Total Files:</strong> {{ $sellerTotalFiles }}
-                                            </div>
-                                            <div class="col-md-6">
-                                                <strong>Total Size:</strong> {{ number_format($sellerTotalSize / 1024 / 1024, 2) }} MB
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                    @endif
+                    
                 </div>
             </div>
 
-            {{-- General Appeal Section --}}
-            @if($dispute->canBeAppealed() && (auth()->id() === $dispute->buyer_id || auth()->id() === $dispute->seller_id))
-                <div class="card mb-4 border-warning">
-                    <div class="card-header bg-warning text-dark">
-                        <h6 class="mb-0">
-                            <i class="bi bi-gavel"></i> Need Support Team Intervention?
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <p class="mb-2">If you need assistance from our support team, you can submit an appeal at any time.</p>
-                                <small class="text-muted">This will allow our support team to review your case and provide assistance.</small>
-                            </div>
-                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#appealModal">
-                                <i class="bi bi-gavel"></i> Appeal to Support Team
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            {{-- Appeal Progress Section (Binance-style) --}}
-            @if($dispute->appeal)
-                <div class="card mb-4 border-info">
-                    <div class="card-header bg-info text-white">
-                        <h6 class="mb-0">
-                            <i class="bi bi-balance-scale"></i> Appeal Progress
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Appeal Status</h6>
-                                <p><strong>Status:</strong> 
-                                    <span class="badge bg-{{ $dispute->appeal->status === 'pending' ? 'warning' : ($dispute->appeal->status === 'evidence_requested' ? 'info' : ($dispute->appeal->status === 'approved' ? 'success' : 'danger')) }}">
-                                        {{ ucfirst(str_replace('_', ' ', $dispute->appeal->status)) }}
-                                    </span>
-                                </p>
-                                <p><strong>Appealed By:</strong> {{ $dispute->appeal->appealedBy->name }}</p>
-                                <p><strong>Appealed At:</strong> {{ $dispute->appeal->created_at->format('M d, Y \a\t g:i A') }}</p>
-                                <p><strong>Reason:</strong> {{ $dispute->appeal->reason }}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>Evidence Requests</h6>
-                                @if($dispute->appeal->status === 'evidence_requested')
-                                    @php
-                                        $userEvidenceRequest = null;
-                                        if (auth()->id() === $dispute->buyer_id) {
-                                            $userEvidenceRequest = $dispute->appeal->buyerEvidenceRequest;
-                                        } elseif (auth()->id() === $dispute->seller_id) {
-                                            $userEvidenceRequest = $dispute->appeal->sellerEvidenceRequest;
-                                        }
-                                    @endphp
-                                    
-                                    {{-- Debug Information --}}
-                                    
-                                    
-                                    @if($userEvidenceRequest)
-                                        <div class="alert alert-{{ $userEvidenceRequest->status === 'submitted' ? 'success' : 'warning' }}">
-                                            <h6 class="alert-heading">
-                                                @if($userEvidenceRequest->status === 'submitted')
-                                                    <i class="bi bi-check-circle"></i> Evidence Submitted
-                                                @else
-                                                    <i class="bi bi-clock"></i> Evidence Required
-                                                @endif
-                                            </h6>
-                                            
-                                            @if($userEvidenceRequest->status === 'pending')
-                                                <p class="mb-2"><strong>Deadline:</strong> {{ $userEvidenceRequest->deadline->format('M d, Y \a\t g:i A') }}</p>
-                                                <p class="mb-2"><strong>Days Left:</strong> {{ $userEvidenceRequest->getDaysUntilDeadline() }}</p>
-                                                <p class="mb-3">{{ $userEvidenceRequest->request_message }}</p>
-                                                
-                                                <div class="d-grid">
-                                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#submitEvidenceModal">
-                                                        <i class="bi bi-upload"></i> Submit Evidence
-                                                    </button>
-                                                </div>
-                                            @elseif($userEvidenceRequest->status === 'submitted')
-                                                <p class="mb-2"><strong>Submitted:</strong> {{ $userEvidenceRequest->submitted_at->format('M d, Y \a\t g:i A') }}</p>
-                                                <p class="mb-2"><strong>Description:</strong> {{ $userEvidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
-                                                
-                                                <div class="d-grid">
-                                                    <a href="{{ route('evidence-requests.show', $userEvidenceRequest->id) }}" class="btn btn-outline-success">
-                                                        <i class="bi bi-eye"></i> View Submitted Evidence
-                                                    </a>
-                                                </div>
-                                            @else
-                                                {{-- Show submit button for any status that's not submitted --}}
-                                                <p class="mb-2"><strong>Deadline:</strong> {{ $userEvidenceRequest->deadline->format('M d, Y \a\t g:i A') }}</p>
-                                                <p class="mb-2"><strong>Days Left:</strong> {{ $userEvidenceRequest->getDaysUntilDeadline() }}</p>
-                                                <p class="mb-3">{{ $userEvidenceRequest->request_message }}</p>
-                                                <p class="mb-3 text-muted"><strong>Current Status:</strong> {{ ucfirst($userEvidenceRequest->status) }}</p>
-                                                
-                                                <div class="d-grid">
-                                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#submitEvidenceModal">
-                                                        <i class="bi bi-upload"></i> Submit Evidence
-                                                    </button>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @endif
-                                    
-                                    <!-- Show both parties' evidence status -->
-                                    <div class="mt-3">
-                                        <h6>Both Parties Evidence Status</h6>
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <div class="evidence-status-card border rounded p-2 text-center">
-                                                    <strong>Buyer</strong>
-                                                    @if($dispute->appeal->buyerEvidenceRequest)
-                                                        <div class="mt-1">
-                                                            <span class="badge bg-{{ $dispute->appeal->buyerEvidenceRequest->getStatusBadgeClass() }}">
-                                                                {{ ucfirst($dispute->appeal->buyerEvidenceRequest->status) }}
-                                                            </span>
-                                                        </div>
-                                                        @if($dispute->appeal->buyerEvidenceRequest->status === 'submitted')
-                                                            <small class="text-muted d-block mt-1">
-                                                                Submitted: {{ $dispute->appeal->buyerEvidenceRequest->submitted_at->format('M d, g:i A') }}
-                                                            </small>
-                                                        @endif
-                                                    @else
-                                                        <div class="mt-1">
-                                                            <span class="badge bg-secondary">Pending</span>
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="evidence-status-card border rounded p-2 text-center">
-                                                    <strong>Seller</strong>
-                                                    @if($dispute->appeal->sellerEvidenceRequest)
-                                                        <div class="mt-1">
-                                                            <span class="badge bg-{{ $dispute->appeal->sellerEvidenceRequest->getStatusBadgeClass() }}">
-                                                                {{ ucfirst($dispute->appeal->sellerEvidenceRequest->status) }}
-                                                            </span>
-                                                        </div>
-                                                        @if($dispute->appeal->sellerEvidenceRequest->status === 'submitted')
-                                                            <small class="text-muted d-block mt-1">
-                                                                Submitted: {{ $dispute->appeal->sellerEvidenceRequest->submitted_at->format('M d, g:i A') }}
-                                                            </small>
-                                                        @endif
-                                                    @else
-                                                        <div class="mt-1">
-                                                            <span class="badge bg-secondary">Pending</span>
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- View All Evidence Button -->
-                                        @if(($dispute->appeal->buyerEvidenceRequest && $dispute->appeal->buyerEvidenceRequest->status === 'submitted') || 
-                                             ($dispute->appeal->sellerEvidenceRequest && $dispute->appeal->sellerEvidenceRequest->status === 'submitted'))
-                                            <div class="mt-3 text-center">
-                                                <a href="{{ route('evidence-requests.show', $userEvidenceRequest ? $userEvidenceRequest->id : $dispute->appeal->buyerEvidenceRequest->id) }}" 
-                                                   class="btn btn-outline-info btn-sm">
-                                                    <i class="bi bi-eye"></i> View All Evidence & Progress
-                                                </a>
-                                            </div>
-                                        @endif
-                                    </div>
-                                @else
-                                    <p class="text-muted">Evidence requests will appear here when the support team requests them.</p>
-                                @endif
-                            </div>
-                        </div>
-                        
-                        <!-- Appeal Timeline -->
-                        <div class="mt-4">
-                            <h6>Appeal Timeline</h6>
-                            <div class="timeline">
-                                <div class="timeline-item">
-                                    <div class="timeline-marker bg-primary"></div>
-                                    <div class="timeline-content">
-                                        <h6 class="timeline-title">Appeal Submitted</h6>
-                                        <p class="timeline-text">{{ $dispute->appeal->created_at->format('M d, Y \a\t g:i A') }}</p>
-                                        <p class="timeline-text">{{ $dispute->appeal->appealedBy->name }} submitted an appeal</p>
-                                    </div>
-                                </div>
-
-                                @if($dispute->appeal->status === 'evidence_requested')
-                                    <div class="timeline-item">
-                                        <div class="timeline-marker bg-warning"></div>
-                                        <div class="timeline-content">
-                                            <h6 class="timeline-title">Evidence Requested</h6>
-                                            <p class="timeline-text">Cetsy support team requested evidence from both parties</p>
-                                            @if($dispute->appeal->buyerEvidenceRequest)
-                                                <p class="timeline-text">Deadline: {{ $dispute->appeal->buyerEvidenceRequest->deadline->format('M d, Y \a\t g:i A') }}</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endif
-
-                                @if($dispute->appeal->status === 'approved' || $dispute->appeal->status === 'rejected')
-                                    <div class="timeline-item">
-                                        <div class="timeline-marker bg-{{ $dispute->appeal->status === 'approved' ? 'success' : 'danger' }}"></div>
-                                        <div class="timeline-content">
-                                            <h6 class="timeline-title">Appeal {{ ucfirst($dispute->appeal->status) }}</h6>
-                                            <p class="timeline-text">{{ $dispute->appeal->reviewed_at->format('M d, Y \a\t g:i A') }}</p>
-                                            @if($dispute->appeal->review_notes)
-                                                <p class="timeline-text">{{ $dispute->appeal->review_notes }}</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
+            
 
             {{-- Mutual Resolution Section --}}
             @if($dispute->canBeMutuallyResolved())
@@ -1134,98 +462,7 @@
                 </div>
             @endif
 
-            {{-- All Evidence Files Section (Always Visible) --}}
-            @if($dispute->evidence && count($dispute->evidence) > 0)
-                <div class="card mb-4 border-primary">
-                    <div class="card-header bg-primary text-white">
-                        <h6 class="mb-0">
-                            <i class="bi bi-files"></i> All Evidence Files
-                            <span class="badge bg-light text-dark ms-2">{{ count($dispute->evidence) }} file(s)</span>
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-primary">
-                            <h6 class="alert-heading">Evidence Files Overview</h6>
-                            <p class="mb-0">All evidence files submitted for this dispute. These files are visible to all parties involved.</p>
-                        </div>
-                        
-                        <div class="row g-3">
-                            @foreach($dispute->evidence as $file)
-                                <div class="col-md-4 col-sm-6 col-12">
-                                    <div class="evidence-item border rounded p-3 text-center h-100">
-                                        @if(in_array($file['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
-                                            <img src="{{ Storage::url($file['path']) }}" 
-                                                 alt="{{ $file['filename'] }}" 
-                                                 class="img-fluid rounded mb-2" 
-                                                 style="max-height: 120px; width: 100%; object-fit: cover; cursor: pointer;"
-                                                 onclick="openImageModal('{{ Storage::url($file['path']) }}', '{{ $file['filename'] }}')"
-                                                 title="Click to view full size">
-                                        @elseif(in_array($file['mime_type'], ['application/pdf']))
-                                            <div class="bg-danger text-white rounded p-3 mb-2">
-                                                <i class="bi bi-file-pdf fs-1"></i>
-                                            </div>
-                                        @elseif(in_array($file['mime_type'], ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']))
-                                            <div class="bg-primary text-white rounded p-3 mb-2">
-                                                <i class="bi bi-file-word fs-1"></i>
-                                            </div>
-                                        @else
-                                            <div class="bg-secondary text-white rounded p-3 mb-2">
-                                                <i class="bi bi-file-earmark fs-1"></i>
-                                            </div>
-                                        @endif
-                                        
-                                        <div class="evidence-info">
-                                            <div class="fw-bold text-truncate mb-2" title="{{ $file['filename'] }}">
-                                                {{ Str::limit($file['filename'], 25) }}
-                                            </div>
-                                            <div class="small text-muted mb-2">
-                                                {{ number_format($file['size'] / 1024, 1) }} KB
-                                            </div>
-                                            <div class="small text-primary mb-2">
-                                                <i class="bi bi-upload"></i> Initial Evidence
-                                            </div>
-                                            <div class="d-flex gap-1 justify-content-center">
-                                                <a href="{{ Storage::url($file['path']) }}" 
-                                                   target="_blank" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye"></i> View
-                                                </a>
-                                                <a href="{{ Storage::url($file['path']) }}" 
-                                                   download="{{ $file['filename'] }}"
-                                                   class="btn btn-sm btn-outline-secondary">
-                                                    <i class="bi bi-download"></i> Download
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        
-                        {{-- Evidence Files Summary --}}
-                        <div class="mt-4 p-3 bg-light rounded">
-                            <h6 class="mb-2">Evidence Files Summary</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <strong>Total Files:</strong> {{ count($dispute->evidence) }}
-                                </div>
-                                <div class="col-md-6">
-                                    <strong>Total Size:</strong> {{ number_format(collect($dispute->evidence)->sum('size') / 1024 / 1024, 2) }} MB
-                                </div>
-                            </div>
-                            <div class="mt-2">
-                                <strong>File Types:</strong>
-                                @php
-                                    $fileTypes = collect($dispute->evidence)->groupBy('mime_type')->map(function($group) {
-                                        return $group->count() . ' ' . pathinfo($group->first()['filename'], PATHINFO_EXTENSION);
-                                    })->join(', ');
-                                @endphp
-                                {{ $fileTypes }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
+            
 
             <!-- All Message Attachments Section -->
             @php
@@ -1344,27 +581,52 @@
             <div class="card">
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-chat-dots"></i> Complete Communication History
-                            <span class="badge bg-secondary ms-2">{{ $allMessages->count() }} messages</span>
-                        </h5>
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="bi bi-chat-dots"></i> Complete Communication History
+                                <span class="badge bg-secondary ms-2">{{ $disputeMessages->count() }} messages</span>
+                            </h5>
+                            @if($order)
+                                <small class="text-muted">
+                                    <i class="bi bi-box"></i> Order #{{ $order->id }} - {{ $order->shop->name ?? 'Shop' }}
+                                </small>
+                            @endif
+                        </div>
                         <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-outline-primary active" data-filter="all">
-                                <i class="bi bi-chat-dots"></i> All ({{ $allMessages->count() }})
-                            </button>
-                            <button type="button" class="btn btn-outline-info" data-filter="order">
-                                <i class="bi bi-chat"></i> Order ({{ $orderMessages->count() }})
-                            </button>
-                            <button type="button" class="btn btn-outline-warning" data-filter="dispute">
+                            <button type="button" class="btn btn-outline-warning active" data-filter="dispute">
                                 <i class="bi bi-exclamation-triangle"></i> Dispute ({{ $disputeMessages->count() }})
                             </button>
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
+                    @if($order)
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Communication Context:</strong> This communication history shows dispute-specific messages related to <strong>Order #{{ $order->id }}</strong> 
+                            from <strong>{{ $order->shop->name ?? 'the shop' }}</strong>. It includes only dispute-related communications and evidence uploads.
+                            
+                            <div class="mt-2 small">
+                                <strong>Message Breakdown:</strong>
+                                <span class="badge bg-warning me-2">{{ $disputeMessages->count() }} Dispute Messages</span>
+                                <span class="badge bg-secondary">{{ $disputeMessages->count() }} Total Messages</span>
+                            </div>
+                        </div>
+                    @endif
+                    
                     <div class="messages-container" style="max-height: 600px; overflow-y: auto;">
-                        @forelse($allMessages as $message)
+                        @forelse($disputeMessages as $message)
                             @php
+                                // Validate that this message belongs to the current dispute's order
+                                if (isset($message->order_id) && $order && $message->order_id !== $order->id) {
+                                    continue; // Skip messages from other orders
+                                }
+                                
+                                // Validate dispute messages belong to this dispute
+                                if (isset($message->dispute_id) && $message->dispute_id !== $dispute->id) {
+                                    continue; // Skip messages from other disputes
+                                }
+                                
                                 // Safely determine message type and class
                                 $messageType = $message->type ?? 'unknown';
                                 $messageClass = 'default-message';
@@ -1589,7 +851,14 @@
                             <div class="text-center text-muted py-5">
                                 <i class="bi bi-chat-dots fs-1 mb-3"></i>
                                 <h5>No messages yet</h5>
-                                <p>Start the conversation by sending a message below.</p>
+                                <p>
+                                    @if($order)
+                                        No communication history found for Order #{{ $order->id }}.
+                                    @else
+                                        No communication history found for this dispute.
+                                    @endif
+                                    Start the conversation by sending a message below.
+                                </p>
                             </div>
                         @endforelse
                     </div>
@@ -1660,10 +929,15 @@
                         </a>
                         @endif
                         
-                        @if($dispute->canBeAppealed())
-                            <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-warning">
-                                <i class="fas fa-gavel"></i> Submit Appeal
-                            </a>
+                        @if($dispute->status !== 'resolved' && $dispute->status !== 'closed' && $dispute->status !== 'final' && (auth()->id() === $dispute->created_by || auth()->user()->isAdmin()))
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#closeDisputeModal">
+                                <i class="bi bi-check-circle"></i> 
+                                @if(auth()->user()->isAdmin())
+                                    Close Dispute (Admin)
+                                @elseif(auth()->id() === $dispute->created_by)
+                                    Close Dispute 
+                                @endif
+                            </button>
                         @endif
                     </div>
                 </div>
@@ -1681,15 +955,68 @@
                             <div class="timeline-content">
                                 <h6 class="mb-1">Dispute Created</h6>
                                 <small class="text-muted">{{ $dispute->created_at->format('M d, Y g:i A') }}</small>
+                                @if($dispute->createdBy)
+                                    <br><small class="text-muted">by {{ $dispute->createdBy->name }}</small>
+                                @endif
                             </div>
                         </div>
 
-                        @if($dispute->isUnderReview())
+                        @if($dispute->status === 'pending')
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Status: Pending</h6>
+                                    <small class="text-muted">Awaiting response from the other party</small>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($dispute->status === 'under_review')
                             <div class="timeline-item">
                                 <div class="timeline-marker bg-info"></div>
                                 <div class="timeline-content">
-                                    <h6 class="mb-1">Under Review</h6>
-                                    <small class="text-muted">Being reviewed by Cetsy support</small>
+                                    <h6 class="mb-1">Status: Under Review</h6>
+                                    <small class="text-muted">Being reviewed by Cetsy support team</small>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($dispute->status === 'appealed')
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Status: Appealed</h6>
+                                    <small class="text-muted">Dispute has been appealed for review</small>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($dispute->status === 'appeal_under_review')
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Status: Appeal Under Review</h6>
+                                    <small class="text-muted">Appeal is being reviewed by support team</small>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($dispute->status === 'appeal_approved')
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Status: Appeal Approved</h6>
+                                    <small class="text-muted">Appeal has been approved</small>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($dispute->status === 'appeal_rejected')
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-danger"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Status: Appeal Rejected</h6>
+                                    <small class="text-muted">Appeal has been rejected</small>
                                 </div>
                             </div>
                         @endif
@@ -1708,7 +1035,7 @@
                             <div class="timeline-item">
                                 <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
-                                    <h6 class="mb-1">Buyer Agreed</h6>
+                                    <h6 class="mb-1">Buyer Agreed to Resolution</h6>
                                     <small class="text-muted">{{ $dispute->buyer_agreed_at->format('M d, Y g:i A') }}</small>
                                 </div>
                             </div>
@@ -1718,41 +1045,59 @@
                             <div class="timeline-item">
                                 <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
-                                    <h6 class="mb-1">Seller Agreed</h6>
+                                    <h6 class="mb-1">Seller Agreed to Resolution</h6>
                                     <small class="text-muted">{{ $dispute->seller_agreed_at->format('M d, Y g:i A') }}</small>
                                 </div>
                             </div>
                         @endif
 
-                        @if($dispute->isResolved())
+                        @if($dispute->status === 'mutually_resolved')
                             <div class="timeline-item">
                                 <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
-                                    <h6 class="mb-1">Resolved</h6>
-                                    <small class="text-muted">{{ $dispute->resolved_at->format('M d, Y g:i A') }}</small>
+                                    <h6 class="mb-1">Status: Mutually Resolved</h6>
+                                    <small class="text-muted">Both parties agreed to resolution terms</small>
                                 </div>
                             </div>
                         @endif
 
-                        @if($dispute->appeal)
+                        @if($dispute->status === 'resolved')
                             <div class="timeline-item">
-                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
-                                    <h6 class="mb-1">Appeal Submitted</h6>
-                                    <small class="text-muted">{{ $dispute->appeal->created_at->format('M d, Y g:i A') }}</small>
+                                    <h6 class="mb-1">Status: Resolved</h6>
+                                    <small class="text-muted">{{ $dispute->resolved_at ? $dispute->resolved_at->format('M d, Y g:i A') : 'Resolution completed' }}</small>
+                                    @if($dispute->resolvedBy)
+                                        <br><small class="text-muted">by {{ $dispute->resolvedBy->name }}</small>
+                                    @endif
                                 </div>
                             </div>
                         @endif
 
-                        @if($dispute->isFinal())
+                        @if($dispute->status === 'closed')
                             <div class="timeline-item">
-                                <div class="timeline-marker bg-secondary"></div>
+                                <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
-                                    <h6 class="mb-1">Final Decision</h6>
+                                    <h6 class="mb-1">Status: Closed</h6>
+                                    <small class="text-muted">{{ $dispute->closed_at ? $dispute->closed_at->format('M d, Y g:i A') : 'Dispute closed' }}</small>
+                                    @if($dispute->closedBy)
+                                        <br><small class="text-muted">by {{ $dispute->closedBy->name }}</small>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($dispute->status === 'final')
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-dark"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Status: Final Decision</h6>
                                     <small class="text-muted">No further appeals possible</small>
                                 </div>
                             </div>
                         @endif
+
+                        
                     </div>
                 </div>
             </div>
@@ -2576,4 +1921,54 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     @endif
 @endif
+
+{{-- Close Dispute Modal --}}
+<div class="modal fade" id="closeDisputeModal" tabindex="-1" aria-labelledby="closeDisputeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="closeDisputeModalLabel">
+                    <i class="bi bi-check-circle"></i> Close Dispute
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('disputes.close', $dispute->id) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    @if(auth()->user()->isAdmin())
+                        <div class="alert alert-warning">
+                            <i class="bi bi-shield-check"></i>
+                            <strong>Admin Action:</strong> You are closing this dispute as an administrator.
+                        </div>
+                    @endif
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Closing Dispute:</strong> This action will mark the dispute as closed. Only the dispute creator or admin users can close disputes. Please ensure all issues have been resolved before proceeding.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="closure_notes" class="form-label">Additional Notes (Optional)</label>
+                        <textarea name="closure_notes" id="closure_notes" rows="3" class="form-control" 
+                            placeholder="Provide any additional details about the resolution or closure..."></textarea>
+                        <div class="form-text">
+                            Optional: Add any additional context about how the dispute was resolved.
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Important:</strong> Once closed, this dispute cannot be reopened. Make sure all parties are satisfied with the resolution.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Confirm Close Dispute
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection

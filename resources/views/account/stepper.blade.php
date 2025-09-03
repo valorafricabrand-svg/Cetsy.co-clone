@@ -1,4 +1,4 @@
-{{-- ===== ORDER JOURNEY & ACTIONS — Font Awesome icons ===== --}}
+{{-- ===== ORDER JOURNEY & ACTIONS â€” Font Awesome icons ===== --}}
 
 @php
     /** 1) Status + label & FA icon */
@@ -7,6 +7,7 @@
         \App\Models\Order::STATUS_PROCESSING => ['label' => 'Processing',      'icon' => 'fas fa-cogs'],
         \App\Models\Order::STATUS_SHIPPED    => ['label' => 'Shipped',         'icon' => 'fas fa-truck'],
         \App\Models\Order::STATUS_DELIVERED  => ['label' => 'Delivered',       'icon' => 'fas fa-house-user'],
+        \App\Models\Order::STATUS_COMPLETED  => ['label' => 'Completed',       'icon' => 'fas fa-check-circle'],
         \App\Models\Order::STATUS_CANCELLED  => ['label' => 'Cancelled',       'icon' => 'fas fa-ban'],
     ];
 
@@ -83,3 +84,11 @@
 
   </div>
 </div>
+
+
+
+
+
+
+
+

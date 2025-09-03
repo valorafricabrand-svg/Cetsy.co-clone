@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Wallet Transactions')
 
@@ -9,25 +9,27 @@
 
             {{-- Header --}}
           {{-- Header --}}
-<div class="d-flex align-items-center justify-content-between mb-4">
+<div class="d-flex align-items-center justify-content-between mb-2">
     <h2 class="h5 fw-semibold mb-0">Wallet Overview</h2>
     <div class="d-flex align-items-center gap-2">
         {{-- View Payouts --}}
         @if(auth()->user()->isSeller())
         <a href="{{ route('seller.payouts.index') }}" class="btn btn-outline-primary">
-            <i class="fas fa-sync-alt me-1"></i> View Payouts
+            <i class="fas fa-receipt me-1"></i> View Payouts
         </a>
         @endif
         <a href="{{ route('wallet.deposit.form') }}" class="btn btn-success">
             <i class="fas fa-plus me-1"></i> Deposit Funds
         </a>
 
-        <button class="btn btn-primary btn-lg mt-3 mt-md-0"
-                data-bs-toggle="modal"
-                data-bs-target="#payoutModal"
-                @disabled($balance < 1)>
-            Request&nbsp;Payout
-        </button>
+        @if(auth()->user()->isSeller())
+          <button class="btn btn-primary btn-lg mt-3 mt-md-0"
+                  data-bs-toggle="modal"
+                  data-bs-target="#payoutModal"
+                  @disabled($balance < $minAmount || ($paymentMethods?->count() ?? 0) === 0)>
+              Request&nbsp;Payout
+          </button>
+        @endif
 
         
         <a href="{{ route('wallet.index') }}" class="btn btn-outline-primary">
@@ -72,6 +74,16 @@
 
 
 
+@if(($paymentMethods?->count() ?? 0) === 0)
+  <div class="alert alert-warning d-flex align-items-center gap-2">
+    <i class="fas fa-exclamation-triangle"></i>
+    <div>
+      Add a payout method to request payouts.
+      <a href="{{ route('seller.payment-methods.index') }}" class="alert-link">Manage methods</a>.
+    </div>
+  </div>
+@endif
+
 {{-- Payout modal --}}
 <div class="modal fade" id="payoutModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -91,16 +103,36 @@
         {{-- amount --}}
         <div class="mb-3">
             <label class="form-label fw-semibold">Amount</label>
-            <input type="number"
-                   name="amount"
-                   class="form-control @error('amount') is-invalid @enderror"
-                   step="0.01"
-                   min="1"
-                   max="{{ $balance }}"
-                   value="{{ old('amount') }}"
-                   required>
+            <div class="input-group">
+              <input type="number"
+                     name="amount"
+                     class="form-control @error('amount') is-invalid @enderror"
+                     step="0.01"
+                     min="{{ number_format($minAmount, 2, '.', '') }}"
+                     max="{{ number_format($maxPayout, 2, '.', '') }}"
+                     value="{{ old('amount') }}"
+                     required>
+              <button class="btn btn-outline-secondary"
+                      type="button"
+                      id="payoutMaxBtn"
+                      tabindex="-1"
+                      aria-label="Use available balance"
+                      data-bs-toggle="tooltip"
+                      data-bs-placement="top"
+                      title="Use available balance" @disabled($maxPayout <= 0)>Max</button>
+            </div>
             <div class="invalid-feedback">@error('amount') {{ $message }} @else Required @enderror</div>
-            <small class="text-muted">Available: {{ get_currency() }} {{ number_format($balance,2) }}</small>
+            <small class="text-muted d-block">Available: {{ get_currency() }} {{ number_format($balance,2) }}</small>
+            <small class="text-muted d-block">Max request (before fee deducted): {{ get_currency() }} {{ number_format($maxPayout,2) }}</small>
+            <small class="text-muted d-block">
+              Fee rate: {{ number_format($feeRate * 100, 2) }}% &middot; Minimum: {{ get_currency() }} {{ number_format($minAmount,2) }}
+            </small>
+            <small class="text-muted d-block">
+              Estimated fee: <span id="payoutFee">0.00</span> &middot; You receive: <span id="payoutNet">0.00</span>
+            </small>
+            @if($maxPayout <= 0)
+              <small class="text-danger d-block">Insufficient balance to request a payout. Increase your available balance or wait for on-hold funds to be released.</small>
+            @endif
         </div>
 
         {{-- method --}}
@@ -109,30 +141,99 @@
             <select name="method"
                     class="form-select @error('method') is-invalid @enderror"
                     required>
-                <option hidden value="">Choose…</option>
+                <option hidden value="">Choose&hellip;</option>
                 @forelse($paymentMethods as $paymentMethod)
                     <option value="{{ $paymentMethod->id }}" {{ old('method') == $paymentMethod->id ? 'selected' : '' }}>
                         {{ $paymentMethod->paymentType->name }} - {{ $paymentMethod->account_name }}
                     </option>
                 @empty
                     <option value="">No payment methods found</option>
-                @endif
+                @endforelse
             </select>
             <div class="invalid-feedback">@error('method') {{ $message }} @else Required @enderror</div>
+            @if(($paymentMethods?->count() ?? 0) === 0)
+              <div class="form-text">
+                No payout methods yet. <a href="{{ route('seller.payment-methods.index') }}" target="_blank">Add one</a> to continue or use the button below.
+              </div>
+            @endif
+        </div>
+
+        {{-- Add new payout method (separate modal trigger) --}}
+        <div class="mb-3">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#addPayoutMethodModal">
+            <i class="bi bi-plus-lg"></i> Add Payout Method
+          </button>
+          <small class="text-muted ms-2">After saving, this page refreshes and you can submit the payout.</small>
         </div>
 
         
     </div>
 
-    <div class="modal-footer">
-        <button class="btn btn-primary">
+    <div class="modal-footer d-flex align-items-center justify-content-between">
+        <span class="badge bg-secondary" id="payoutNetBadge">You receive: {{ get_currency() }} 0.00</span>
+        <button id="payoutSubmitBtn" class="btn btn-primary" type="submit">
             Submit&nbsp;Request
         </button>
     </div>
 </form>
 
-    </div>
 </div>
+
+@if(!empty($otpPendingPayout))
+  <div class="alert alert-warning d-flex align-items-center justify-content-between">
+    <div>
+      <i class="bi bi-shield-lock me-2"></i>
+      You have a payout request (ID #{{ $otpPendingPayout->id }}) awaiting verification.
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <a class="btn btn-sm btn-primary" href="{{ route('seller.payouts.verify', $otpPendingPayout) }}">Verify Now</a>
+      <form action="{{ route('seller.payouts.cancel', $otpPendingPayout) }}" method="POST" onsubmit="return confirm('Cancel this payout request?');">
+        @csrf
+        <button class="btn btn-sm btn-outline-danger">Cancel</button>
+      </form>
+    </div>
+  </div>
+@endif
+</div>
+
+{{-- Add Payout Method Modal (separate to avoid nested forms) --}}
+<div class="modal fade" id="addPayoutMethodModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form action="{{ route('seller.payment-methods.store') }}" method="POST" class="modal-content needs-validation" novalidate>
+      @csrf
+      <input type="hidden" name="redirect_to" value="{{ route('wallet.index') }}">
+      <input type="hidden" name="open_payout" value="1">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Payout Method</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Type</label>
+            <select name="payment_type_id" class="form-select" required>
+              <option hidden value="">Choose&hellip;</option>
+              @foreach($paymentTypes as $type)
+                <option value="{{ $type->id }}">{{ $type->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Account Name</label>
+            <input type="text" class="form-control" name="account_name" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Account Number</label>
+            <input type="text" class="form-control" name="account_number" required>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary">Save Method</button>
+      </div>
+    </form>
+  </div>
+  </div>
 
 
             {{-- Filters --}}
@@ -142,8 +243,8 @@
                         <option value="">All Types</option>
                         <option value="credit" {{ request('type') === 'credit' ? 'selected' : '' }}>Credit</option>
                         <option value="debit" {{ request('type') === 'debit' ? 'selected' : '' }}>Debit</option>
-                    </select>
-                </div>
+            </select>
+        </div>
                 <div class="col-md-3">
                     <input type="date" name="from" value="{{ request('from') }}" class="form-control" placeholder="From date">
                 </div>
@@ -202,3 +303,84 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+  (function(){
+    const input = document.querySelector('#payoutModal input[name="amount"]');
+    if(!input) return;
+    const feeRate = {{ json_encode($feeRate) }};
+    const feeEl = document.getElementById('payoutFee');
+    const netEl = document.getElementById('payoutNet');
+    const methodSel = document.querySelector('#payoutModal select[name="method"]');
+    const submitBtn = document.getElementById('payoutSubmitBtn');
+    const maxBtn = document.getElementById('payoutMaxBtn');
+    const fmt = (n) => (isFinite(n) ? Number(n).toFixed(2) : '0.00');
+    const currency = {{ json_encode(get_currency()) }};
+    const netBadge = document.getElementById('payoutNetBadge');
+    function recalc(){
+      const amt = parseFloat(input.value || '0');
+      const fee = Math.round((amt * feeRate) * 100) / 100;
+      const net = Math.max(0, amt - fee);
+      if (feeEl) feeEl.textContent = fmt(fee);
+      if (netEl) netEl.textContent = fmt(net);
+      if (netBadge) netBadge.textContent = 'You receive: ' + currency + ' ' + fmt(net);
+    }
+    function updateSubmitDisabled(){
+      let disabled = false;
+      const v = parseFloat(input.value || '');
+      const min = parseFloat(input.min || '0');
+      const max = parseFloat(input.max || '0');
+      if (!isFinite(v) || v < min || v > max) disabled = true;
+      if (methodSel && (!methodSel.value || methodSel.value === '')) disabled = true;
+      if (submitBtn) submitBtn.disabled = disabled;
+    }
+    input.addEventListener('input', recalc);
+    input.addEventListener('input', updateSubmitDisabled);
+    if (methodSel) methodSel.addEventListener('change', updateSubmitDisabled);
+    if (maxBtn) maxBtn.addEventListener('click', function(){
+      if (!input) return;
+      const maxStr = input.max || '0';
+      const maxVal = parseFloat(maxStr);
+      const minVal = parseFloat(input.min || '0');
+      if (!isFinite(maxVal)) return;
+      // Confirm if max is effectively zero or below minimum
+      if (maxVal <= 0.01 || maxVal < minVal) {
+        const msg = 'Your maximum payout is very low or below the minimum threshold. You likely need more available balance. Continue to fill Max?';
+        if (!window.confirm(msg)) return;
+      }
+      input.value = maxStr;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    // Disable Max button dynamically based on max value
+    (function syncMaxBtnDisabled(){
+      const maxVal = parseFloat(input.max || '0');
+      if (maxBtn) maxBtn.disabled = !(isFinite(maxVal) && maxVal > 0);
+    })();
+    const modalEl = document.getElementById('payoutModal');
+    if (modalEl) {
+      modalEl.addEventListener('shown.bs.modal', function(){
+        recalc();
+        updateSubmitDisabled();
+      });
+    }
+    recalc();
+    updateSubmitDisabled();
+  })();
+  // Bootstrap tooltip init (best-effort)
+  (function(){
+    try {
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el){
+        new bootstrap.Tooltip(el);
+      });
+    } catch (e) {}
+  })();
+  // Auto-open payout modal if requested (after adding method)
+  @if(session('open_payout_modal') || $errors->has('amount') || $errors->has('method'))
+    document.addEventListener('DOMContentLoaded', function(){
+      var el = document.getElementById('payoutModal');
+      if (el) { try { new bootstrap.Modal(el).show(); } catch(e) {} }
+    });
+  @endif
+</script>
+@endpush

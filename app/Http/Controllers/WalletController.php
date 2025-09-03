@@ -7,9 +7,11 @@ use App\Models\Activity;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
+use App\Models\PaymentType;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\Wallet;
+use App\Models\PayoutRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -46,14 +48,16 @@ class WalletController extends Controller
             $newBalance = $prev + $credit - $debit;
 
             $data = array_merge([
-                'user_id'    => $userId,
-                'credit'     => $credit,
-                'debit'      => $debit,
-                'balance'    => $newBalance,
-                'reference'  => strtoupper(uniqid('TXN-')),
-                'method'     => $overrides['method'] ?? 'wallet',
-                'description'=> $overrides['description'] ?? null,
-                'external_id'=> $overrides['external_id'] ?? null, // e.g. CheckoutRequestID, PayPal order id
+                'user_id'     => $userId,
+                'credit'      => $credit,
+                'debit'       => $debit,
+                'balance'     => $newBalance,
+                'reference'   => strtoupper(uniqid('TXN-')),
+                'method'      => $overrides['method'] ?? 'wallet',
+                'description' => $overrides['description'] ?? null,
+                'status'      => $overrides['status'] ?? 'completed',
+                'external_id' => $overrides['external_id'] ?? null, // e.g. CheckoutRequestID, PayPal order id
+                'meta'        => $overrides['meta'] ?? null,
             ], $overrides);
 
             /** @var Wallet $row */
@@ -103,14 +107,22 @@ class WalletController extends Controller
             $query->whereDate('created_at', '<=', $request->to);
         }
 
-    $transactions = $query->orderBy('created_at', 'desc')->paginate(10);
-    $balance = Wallet::where('user_id', Auth::id())
-                ->selectRaw('SUM(credit - debit) as balance')
-                ->value('balance') ?? 0;
+        $transactions = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        $balance = Wallet::where('user_id', Auth::id())
+            ->where('status', 'completed')
+            ->selectRaw('SUM(credit - debit) as balance')
+            ->value('balance') ?? 0;
+
+        $onHold = Wallet::where('user_id', Auth::id())
+            ->where('status', 'on_hold')
+            ->selectRaw('SUM(credit - debit) as balance')
+            ->value('balance') ?? 0;
 
         // Fetch payment methods for the current user's shop
         $shop = Shop::where('user_id', Auth::id())->first();
         $paymentMethods = collect();
+        $paymentTypes = collect();
 
         if ($shop) {
             $paymentMethods = PaymentMethod::where('shop_id', $shop->id)
@@ -118,8 +130,27 @@ class WalletController extends Controller
                 ->get();
         }
 
-    return view('wallet.index', compact('transactions', 'balance', 'paymentMethods'));
-}
+        // Active payment types for inline add form
+        $paymentTypes = PaymentType::where('status', 'active')->orderBy('name')->get();
+
+        // settings-backed payout config
+        $rawFee    = (float) (function_exists('setting') ? setting('fee_rate', 1.5) : 1.5);
+        $feeRate   = $rawFee > 1 ? $rawFee / 100 : $rawFee; // normalize to decimal
+        $minAmount = (float) (function_exists('setting') ? setting('min_amount', 1) : 1);
+
+        $maxPayout = $feeRate > 0 ? max(0, floor(($balance / (1 + $feeRate)) * 100) / 100) : $balance;
+
+        // Show alert if user has a payout awaiting OTP verification
+        $otpPendingPayout = PayoutRequest::where('user_id', Auth::id())
+            ->where('status', 'otp_pending')
+            ->latest('id')
+            ->first();
+
+        return view(
+            'wallet.index',
+            compact('transactions', 'balance', 'onHold', 'paymentMethods', 'paymentTypes', 'feeRate', 'minAmount', 'maxPayout', 'otpPendingPayout')
+        );
+    }
 
     public function depositForm()
     {
@@ -235,23 +266,22 @@ public function handlePayPalDeposit(Request $request)
             'phone'      => ['required', 'string', 'max:20'],
         ]);
 
-        $user   = $request->user();
-        $usd    = (float) $request->input('usd_amount');
-        $rate   = (float) env('USD_TO_KES', 130);
-        $kes    = (int) ceil($usd * $rate);
-        $ref    = 'WALLET' . $user->id;
-        $desc   = 'Wallet Topup';
+        $user = $request->user();
+        $usd  = (float) $request->input('usd_amount');
+        $rate = (float) env('USD_TO_KES', 130);
+        $kes  = (int) ceil($usd * $rate);
 
-    
-$phone = ltrim($request->input('phone'), '0+');
-    if (!str_starts_with($phone, '254')) {
-        $phone = '254' . $phone;
-    }
+        $phone = $this->normalizeMsisdn($request->input('phone'));
+        if (!$phone) {
+            return response()->json(['success' => false, 'message' => 'Invalid Safaricom number. Use 07XXXXXXXX, 7XXXXXXXX or 2547XXXXXXXX.'], 422);
+        }
 
+        // Prepare reference shown in M-Pesa statement
+        $accountRef = 'WALLET-' . $user->id;
+        $desc       = 'Wallet Topup';
 
-
-        $resp = SafaricomDarajaHelper::stkPushRequest($phone, $kes, $ref, $desc);
-
+        // 1) Call Daraja
+        $resp = SafaricomDarajaHelper::stkPushRequest($phone, $kes, $accountRef, $desc);
         if (($resp['status'] ?? '') !== 'success') {
             return response()->json([
                 'success' => false,
@@ -265,23 +295,20 @@ $phone = ltrim($request->input('phone'), '0+');
         $checkoutId = $data['CheckoutRequestID']  ?? null;
         $merchantId = $data['MerchantRequestID']  ?? null;
 
-        // Store a PENDING marker row so user sees the attempt in history (optional)
-        // Use external_id to dedupe later in callback before crediting again.
-        Wallet::firstOrCreate(
-            [
-                'user_id'    => $user->id,
-                'external_id'=> $checkoutId ?: $merchantId,
-                'method'     => 'mpesa_stk',
-                'credit'     => 0,
-                'debit'      => 0,
-                'balance'    => $this->currentBalance($user->id), // keep same until callback confirms
-            ],
-            [
-                'reference'   => strtoupper(uniqid('TXN-')),
-                'description' => 'M-Pesa STK initiated (KES ' . $kes . ' for $' . number_format($usd, 2) . ')',
-                'meta'        => json_encode(['rate' => $rate]),
-            ]
-        );
+        // 3) Create a local pending marker the UI can poll by "reference"
+        $markerRef = 'STK-' . Str::upper(Str::random(12));
+        Wallet::create([
+            'user_id'     => $user->id,
+            'credit'      => 0,
+            'debit'       => 0,
+            'balance'     => $this->currentBalance($user->id),
+            'reference'   => $markerRef,          // <-- public ref used by frontend
+            'method'      => 'mpesa_stk',
+            'status'      => 'on_hold',           // visible in UI
+            'external_id' => $checkoutId ?: $merchantId, // save CheckoutRequestID (prefer)
+            'description' => 'M-Pesa STK initiated (KES ' . number_format($kes) . ' ≈ $' . number_format($usd, 2) . ')',
+            'meta'        => json_encode(['rate' => $rate, 'kes_intent' => $kes]),
+        ]);
 
         return response()->json([
             'success'      => true,
@@ -490,7 +517,7 @@ $phone = ltrim($request->input('phone'), '0+');
      | Listing payments (wallet / paypal)
      |-------------------------------------------------------------- */
 
-     public function payListing(Request $request, $id)
+public function payListing(Request $request, $id)
 {
     // 1) Fetch the product
     $product = Product::findOrFail($id);
@@ -548,10 +575,7 @@ $phone = ltrim($request->input('phone'), '0+');
         Activity::create([
             'user_id' => Auth::id(),
             'is_read' => false,
-            'description' => 'You paid for a listing fee of $' . number_format($fee, 2),
-            'type' => \App\Models\Activity::TYPE_WALLET,
-            'related_id' => $wallet->id,
-            'related_type' => 'wallet'
+            'description' => 'You paid for a listing fee of $' . number_format($fee, 2)
         ]);
     }
 
@@ -743,20 +767,29 @@ public function payOrder(Request $request, $id)
         try {
             // Load relationships for email
             $order->load(['items.product', 'shop.user']);
-            $buyer     = $order->user;
-            $shopOwner = $shop?->user;
-
-            if ($shopOwner) {
-                \Mail::to($shopOwner->email)->send(new \App\Mail\PaymentSuccessShopOwnerMail(
-                    $order, $shopOwner, $buyer, $shop, $payment
-                ));
-            }
-
-            if ($buyer) {
-                \Mail::to($buyer->email)->send(new \App\Mail\PaymentSuccessBuyerMail(
-                    $order, $buyer, $shop, $payment
-                ));
-            }
+            
+            // Get the buyer (order user)
+            $buyer = $order->user;
+            
+            // Get the shop owner
+            $shopOwner = $shop->user;
+            
+            // Send email to shop owner
+            \Mail::to($shopOwner->email)->send(new \App\Mail\PaymentSuccessShopOwnerMail(
+                $order, 
+                $shopOwner, 
+                $buyer, 
+                $shop,
+                $payment
+            ));
+            
+            // Send email to buyer
+            \Mail::to($buyer->email)->send(new \App\Mail\PaymentSuccessBuyerMail(
+                $order, 
+                $buyer, 
+                $shop,
+                $payment
+            ));
 
             // Create activity record for the seller
             Activity::create([

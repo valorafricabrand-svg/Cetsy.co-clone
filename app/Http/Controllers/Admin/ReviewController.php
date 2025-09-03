@@ -13,10 +13,63 @@ class ReviewController extends Controller
      */
     public function index(Request $request)
     {
+        $status = $request->query('status'); // pending|approved|rejected|null
+        $rating = $request->query('rating'); // 1..5
+        $q      = trim((string) $request->query('q'));
+
         $reviews = Review::with(['shop', 'user', 'order'])
+            ->when($status === 'pending', function ($query) {
+                $query->where(function ($q) {
+                    $q->whereNull('approved')->orWhere('approved', false);
+                })->whereNull('rejected_at');
+            })
+            ->when($status === 'approved', fn($q) => $q->where('approved', true))
+            ->when($status === 'rejected', fn($q) => $q->whereNotNull('rejected_at'))
+            ->when(in_array((int)$rating, [1,2,3,4,5], true), fn($q) => $q->where('rating', (int)$rating))
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('comment', 'like', "%$q%")
+                        ->orWhereHas('shop', fn($s) => $s->where('name', 'like', "%$q%"))
+                        ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%$q%"));
+                });
+            })
             ->orderByDesc('id')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
+
         return view('admin.reviews.index', compact('reviews'));
+    }
+
+    /**
+     * Bulk approve selected reviews.
+     */
+    public function bulkApprove(Request $request)
+    {
+        $ids = (array) $request->input('ids', []);
+        if (empty($ids)) {
+            return back()->with('error', 'No reviews selected.');
+        }
+
+        Review::whereIn('id', $ids)->update([
+            'approved'    => true,
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Selected reviews approved.');
+    }
+
+    /**
+     * Bulk delete selected reviews.
+     */
+    public function bulkDelete(Request $request)
+    {
+        $ids = (array) $request->input('ids', []);
+        if (empty($ids)) {
+            return back()->with('error', 'No reviews selected.');
+        }
+        Review::whereIn('id', $ids)->delete();
+        return back()->with('success', 'Selected reviews deleted.');
     }
 
     /**
@@ -49,6 +102,26 @@ class ReviewController extends Controller
         ]);
 
         return back()->with('success', 'Review has been approved.');
+    }
+
+    /**
+     * Reject a review with a reason.
+     */
+    public function reject(Request $request, $id)
+    {
+        $data = $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $review = Review::findOrFail($id);
+        $review->update([
+            'approved'          => false,
+            'rejected_at'       => now(),
+            'rejected_by'       => auth()->id(),
+            'rejection_reason'  => $data['reason'],
+        ]);
+
+        return back()->with('success', 'Review rejected.');
     }
 
     /**

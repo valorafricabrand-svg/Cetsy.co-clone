@@ -22,6 +22,34 @@
         </a>
     </div>
 
+    <form method="GET" class="row g-3 mb-3">
+        <div class="col-md-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+                <option value="">All</option>
+                <option value="active" {{ request('status')==='active' ? 'selected' : '' }}>Active</option>
+                <option value="inactive" {{ request('status')==='inactive' ? 'selected' : '' }}>Inactive</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">KYC Status</label>
+            <select name="kyc_status" class="form-select">
+                <option value="">Any</option>
+                @foreach(['pending','approved','rejected'] as $s)
+                    <option value="{{ $s }}" {{ request('kyc_status')===$s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Search</label>
+            <input type="text" class="form-control" name="q" value="{{ request('q') }}" placeholder="Name, email, or shop name">
+        </div>
+        <div class="col-md-2 d-grid">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-outline-secondary">Filter</button>
+        </div>
+    </form>
+
     @if($users->count())
         <div class="table-responsive">
             <table class="table table-hover align-middle">
@@ -30,8 +58,10 @@
                         <th scope="col">#</th>
                         <th scope="col">Name</th>
                         <th scope="col">Email</th>
-                        <th scope="col">Type</th>
+                        <th scope="col">Shop</th>
+                        <th scope="col">KYC</th>
                         <th scope="col">Status</th>
+                        <th scope="col" class="text-end">Wallet</th>
                         <th scope="col" class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -43,10 +73,25 @@
                             </th>
                             <td>{{ $user->name }}</td>
                             <td>{{ $user->email }}</td>
-                            <td>{{ $user->user_type }}</td>
-                            <td>{{ $user->is_active ? 'Active' : 'Inactive' }}</td>
+                            <td>{{ optional($user->shop)->name ?? '—' }}</td>
+                            <td>
+                                @php($kyc = optional($user->kyc)->status)
+                                @if($kyc==='approved')
+                                  <span class="badge bg-success">Approved</span>
+                                @elseif($kyc==='pending')
+                                  <span class="badge bg-warning text-dark">Pending</span>
+                                @elseif($kyc==='rejected')
+                                  <span class="badge bg-danger">Rejected</span>
+                                @else
+                                  <span class="badge bg-secondary">N/A</span>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="badge {{ $user->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $user->is_active ? 'Active' : 'Inactive' }}</span>
+                            </td>
+                            <td class="text-end">{{ get_currency() }} {{ number_format((float)($user->wallet_balance ?? 0),2) }}</td>
                             <td class="text-end">
-                            <a href="{{ route('admin.sellers.login-as', $user->id) }}" 
+                                <a href="{{ route('admin.sellers.login-as', $user->id) }}" 
                                                class="btn btn-sm btn-outline-success me-2"
                                                onclick="return confirm('Are you sure you want to login as this seller?')">
                                                 <i class="fas fa-user-secret me-1"></i> Login as Seller

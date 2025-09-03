@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Carbon\Carbon;
 
 class Appeal extends Model
@@ -63,6 +64,16 @@ class Appeal extends Model
     public function evidenceRequests(): HasMany
     {
         return $this->hasMany(EvidenceRequest::class);
+    }
+
+    public function buyerEvidenceRequest(): HasOne
+    {
+        return $this->hasOne(EvidenceRequest::class)->where('requested_from', $this->dispute->buyer_id);
+    }
+
+    public function sellerEvidenceRequest(): HasOne
+    {
+        return $this->hasOne(EvidenceRequest::class)->where('requested_from', $this->dispute->seller_id);
     }
 
     // Scopes

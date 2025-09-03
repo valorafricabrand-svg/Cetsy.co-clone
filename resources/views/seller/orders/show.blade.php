@@ -349,9 +349,13 @@
               @endif
             </div>
             
-            @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
+            @if($dispute->canBeAppealed())
               <div class="alert alert-warning small mb-2">
-                <strong>Appeal Deadline:</strong> {{ $dispute->getAppealDeadlineDaysLeft() }} days remaining
+                @if($dispute->appeal_deadline)
+                  <strong>Appeal Deadline:</strong> {{ $dispute->getAppealDeadlineDaysLeft() }} days remaining
+                @else
+                  <strong>Appeal Available:</strong> Submit immediately
+                @endif
               </div>
             @endif
             
@@ -367,7 +371,7 @@
               <i class="fa-solid fa-eye me-1"></i> View Details
             </a>
             
-            @if($dispute->canBeAppealed() && !$dispute->isAppealDeadlineExpired())
+            @if($dispute->canBeAppealed())
               <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-warning btn-sm">
                 <i class="fa-solid fa-gavel me-1"></i> Appeal
               </a>

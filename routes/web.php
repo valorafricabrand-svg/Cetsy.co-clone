@@ -41,14 +41,14 @@ use App\Http\Controllers\Admin\{
     PayoutRequestController as AdminPayoutRequestController,
     PaymentController,
     PaymentTypeController,
+    PaymentMethodController as AdminPaymentMethodController,
     CategoryAttributeController,
     ProductReportController as AdminProductReportController,
     AdminWalletController,
     ReviewController,
-    AdminNotificationController,
-    DisputeController,
-    NotificationController
+    AdminNotificationController
 };
+use App\Http\Controllers\Webhooks\PayoutWebhookController;
 use App\Http\Controllers\Buyer\BuyerDashboard;
 use App\Http\Controllers\Seller\{
     DashboardController as SellerDashboard,
@@ -123,9 +123,9 @@ Route::get('/shop/{id}', [ShopController::class, 'showPublic'])->name('shop.show
 
 // Cart
 Route::prefix('cart')->name('cart.')->group(function () {
-    Route::get('/',        [CartController::class, 'viewCart'])->name('view');
-    Route::post('/add',    [CartController::class, 'addToCart'])->name('add');
-    Route::post('/buy',    [CartController::class, 'addToBuy'])->name('buy');
+    Route::get('/', [CartController::class, 'viewCart'])->name('view');
+    Route::post('/add', [CartController::class, 'addToCart'])->name('add');
+    Route::post('/buy', [CartController::class, 'addToBuy'])->name('buy');
     Route::post('/remove', [CartController::class, 'removeFromCart'])->name('remove');
     Route::post('/update', [CartController::class, 'updateCart'])->name('update');
 
@@ -224,6 +224,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/products/{product}/status', [ProductController::class, 'changeStatus'])
         ->name('products.changeStatus');
 
+    // Variation routes
     Route::prefix('products/{product}')->group(function () {
         Route::post('variation‑types', [VariationController::class, 'storeType'])
             ->name('variationTypes.store');
@@ -339,6 +340,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/logout', [AccountController::class, 'logout'])->name('logout');
     });
 
+    // Buyer favorites and offers
     Route::get('buyer/favorites', [ProductController::class, 'favorites'])->name('buyer.favorites');
     Route::get('buyer/offers', [ProductController::class, 'offers'])->name('buyer.offers');
 
@@ -359,6 +361,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/{dispute}/mutual-resolution', [\App\Http\Controllers\DisputeController::class, 'initiateMutualResolution'])->name('mutual-resolution.initiate');
         Route::post('/{dispute}/mutual-resolution/agree', [\App\Http\Controllers\DisputeController::class, 'agreeToMutualResolution'])->name('mutual-resolution.agree');
         
+        // Mark Dispute as Closed
+        Route::post('/{dispute}/close', [\App\Http\Controllers\DisputeController::class, 'markAsClosed'])->name('close');
+        
         // Evidence Request Responses
         Route::post('/evidence-requests/{evidenceRequest}/respond', [\App\Http\Controllers\EvidenceRequestController::class, 'respond'])->name('disputes.evidence-requests.respond');
     });
@@ -372,12 +377,6 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
-    // Admin Reviews
-    Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
-    Route::patch('reviews/{id}/approve', [ReviewController::class, 'approve'])->name('reviews.approve');
-    Route::delete('reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
-
-    // Wallets
     Route::resource('wallets', AdminWalletController::class)->except(['create', 'store']);
     Route::delete('wallets/bulk', [AdminWalletController::class, 'bulk'])->name('wallets.bulk');
     Route::patch('kyc/bulk', [KycController::class, 'bulk'])->name('kyc.bulk');
@@ -388,20 +387,20 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::get('sellers/{userId}/login-as', [UserController::class, 'loginAs'])->name('sellers.login-as');
     Route::get('return-from-impersonation', [UserController::class, 'returnFromImpersonation'])->name('return-from-impersonation');
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+    Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
+    // Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
 
-    // Products
-    Route::resource('products', ProductController::class);
-    Route::post('products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
+    /* update + destroy — shallow, no category prefix */
+    Route::put(
+        '/category-attributes/{attribute}',
+        [CategoryAttributeController::class, 'update']
+    )->name('category-attributes.update');
 
-    // Admin Notifications
-    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
-    Route::post('notifications/{id}/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
-    Route::get('notifications/recent', [NotificationController::class, 'getRecent'])->name('notifications.recent');
-
-    // Category attributes
-    Route::put('category-attributes/{attribute}', [CategoryAttributeController::class, 'update'])->name('category-attributes.update');
-    Route::delete('category-attributes/{attribute}', [CategoryAttributeController::class, 'destroy'])->name('category-attributes.destroy');
+    Route::delete(
+        '/category-attributes/{attribute}',
+        [CategoryAttributeController::class, 'destroy']
+    )->name('category-attributes.destroy');
     Route::resource('categories', CategoryController::class);
 
     // KYC
@@ -415,10 +414,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('settings/{setting}', [AdminSetting::class, 'update'])->name('settings.update');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
     Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::patch('reviews/{review}/approve', [ReviewController::class, 'approve'])->name('reviews.approve');
+    Route::patch('reviews/{review}/reject', [ReviewController::class, 'reject'])->name('reviews.reject');
+    Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::post('reviews/bulk-approve', [ReviewController::class, 'bulkApprove'])->name('reviews.bulk-approve');
+    Route::post('reviews/bulk-delete', [ReviewController::class, 'bulkDelete'])->name('reviews.bulk-delete');
     
     // Messages
-    Route::get('messages', [\App\Http\Controllers\Admin\MessageController::class, 'index'])->name('messages.index');
-    Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\MessageController::class, 'show'])->name('messages.show');
+    Route::get('messages', [\App\Http\Controllers\Admin\AdminMessageController::class, 'index'])->name('messages.index');
+    Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\AdminMessageController::class, 'show'])->name('messages.show');
 
     // Users
     Route::get('users', [UserController::class, 'index'])->name('users.index');
@@ -430,16 +434,24 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::post('subscriptions/deactivate-expired', [AdminSubscriptionController::class, 'deactivateExpired'])->name('subscriptions.deactivate-expired');
 
+    // Payout Requests
     Route::prefix('payout-requests')->name('payouts.')->controller(AdminPayoutRequestController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{payout}', 'show')->name('show');
         Route::post('/{payout}/approve', 'approve')->name('approve');
         Route::post('/{payout}/reject', 'reject')->name('reject');
         Route::post('/{payout}/paid', 'markPaid')->name('paid');
+        Route::post('/{payout}/resend', 'resendAuto')->name('resend');
+        Route::post('/{payout}/fail', 'fail')->name('fail');
     });
 
+    // Payments
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+    // Seller payment methods (admin view)
+    Route::get('payment-methods', [AdminPaymentMethodController::class, 'index'])->name('payment-methods.index');
+    
+    //Payment Types
     Route::resource('payment-types', PaymentTypeController::class);
 
     // Product Reports
@@ -467,9 +479,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     });
 });
 
-
 /*
 |--------------------------------------------------------------------------
+
 | Seller Routes - Subscription Management (No Active Subscription Required)
 |--------------------------------------------------------------------------
 */
@@ -507,36 +519,37 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
 | Seller Routes - Active Subscription Required
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])
-    ->prefix('seller')
-    ->name('seller.')
-    ->group(function () {
-
-        // Dashboard & Analytics
-        Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
-        Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
+    // Dashboard & Analytics
+    Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
+    Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
         // Holiday Mode
         Route::post('holiday-mode/enable', [SellerDashboard::class, 'enableHolidayMode'])->name('holiday-mode.enable');
         Route::post('holiday-mode/disable', [SellerDashboard::class, 'disableHolidayMode'])->name('holiday-mode.disable');
 
-        // Order Management
-        Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
-        Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
-        Route::get('order/payments', [OrderController::class, 'orderPayments'])->name('orders.payments');
-        Route::patch('orders/{order}/process', [OrderController::class, 'process'])->name('orders.process');
-        Route::post('orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
-        Route::patch('orders/{order}/cancel', [OrderController::class, 'sellerCancel'])->name('orders.cancel');
 
-        Route::resource('shipping_profiles', ShippingProfileController::class)->except(['show']);
+    // Order Management
+    Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('order/payments', [OrderController::class, 'orderPayments'])->name('orders.payments');
+    Route::patch('orders/{order}/process', [OrderController::class, 'process'])->name('orders.process');
+    Route::post('orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
+    Route::patch('orders/{order}/cancel', [OrderController::class, 'sellerCancel'])->name('orders.cancel');
 
-        // KYC Management
-        Route::get('kyc', [KycController::class, 'show'])->name('kyc');
-        Route::post('kyc', [KycController::class, 'submit'])->name('kyc.submit');
+    Route::resource('shipping_profiles', ShippingProfileController::class)
+        ->except(['show']);
+    // KYC Management
+    Route::get('kyc', [KycController::class, 'show'])->name('kyc');
+    Route::post('kyc', [KycController::class, 'submit'])->name('kyc.submit');
 
-        // Payout Management
-        Route::get('payouts', [PayoutRequestController::class, 'index'])->name('payouts.index');
-        Route::post('payouts', [PayoutRequestController::class, 'store'])->name('payouts.store');
+    // Payout Management
+    Route::get('payouts', [PayoutRequestController::class, 'index'])->name('payouts.index');
+    Route::post('payouts', [PayoutRequestController::class, 'store'])->name('payouts.store');
+    Route::get('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyForm'])->name('payouts.verify')->withoutMiddleware(['ensure.seller.subscription']);
+    Route::post('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyOtp'])->name('payouts.verify.submit')->withoutMiddleware(['ensure.seller.subscription']);
+    Route::post('payouts/{payout}/resend-otp', [PayoutRequestController::class, 'resendOtp'])->name('payouts.verify.resend')->withoutMiddleware(['ensure.seller.subscription']);
+    Route::post('payouts/{payout}/cancel', [PayoutRequestController::class, 'cancel'])->name('payouts.cancel')->withoutMiddleware(['ensure.seller.subscription']);
 
         // Services
         Route::resource('services', ServiceController::class);
@@ -570,7 +583,6 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])
         Route::resource('shop-posts', ShopPostController::class);
     });
 
-
 /*
 |--------------------------------------------------------------------------
 | Buyer Routes
@@ -597,5 +609,10 @@ Route::middleware('auth')->prefix('buyer')->name('buyer.')->group(function () {
 */
 Route::middleware(['auth'])->resource('settings', AdminSetting::class)
     ->only(['index', 'edit', 'update']);
+
+// Webhooks (public endpoints)
+Route::post('/webhooks/paypal', [PayoutWebhookController::class, 'paypal'])->name('webhooks.paypal');
+Route::post('/daraja/b2c/result', [PayoutWebhookController::class, 'darajaB2CResult'])->name('webhooks.daraja.b2c.result');
+Route::post('/daraja/b2c/timeout', [PayoutWebhookController::class, 'darajaB2CTimeout'])->name('webhooks.daraja.b2c.timeout');
 
 require __DIR__ . '/auth.php';
