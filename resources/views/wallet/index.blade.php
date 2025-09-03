@@ -9,7 +9,7 @@
 
             {{-- Header --}}
           {{-- Header --}}
-<div class="d-flex align-items-center justify-content-between mb-4">
+<div class="d-flex align-items-center justify-content-between mb-2">
     <h2 class="h5 fw-semibold mb-0">Wallet Overview</h2>
     <div class="d-flex align-items-center gap-2">
         {{-- View Payouts --}}
@@ -178,6 +178,22 @@
 </form>
 
 </div>
+
+@if(!empty($otpPendingPayout))
+  <div class="alert alert-warning d-flex align-items-center justify-content-between">
+    <div>
+      <i class="bi bi-shield-lock me-2"></i>
+      You have a payout request (ID #{{ $otpPendingPayout->id }}) awaiting verification.
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <a class="btn btn-sm btn-primary" href="{{ route('seller.payouts.verify', $otpPendingPayout) }}">Verify Now</a>
+      <form action="{{ route('seller.payouts.cancel', $otpPendingPayout) }}" method="POST" onsubmit="return confirm('Cancel this payout request?');">
+        @csrf
+        <button class="btn btn-sm btn-outline-danger">Cancel</button>
+      </form>
+    </div>
+  </div>
+@endif
 </div>
 
 {{-- Add Payout Method Modal (separate to avoid nested forms) --}}

@@ -16,12 +16,15 @@ class PayoutRequest extends Model
         'payment_method_id',
         'paid_at',
         'admin_reason',
+        'approved_by','approved_at','paid_by','rejected_by','rejected_at',
     ];
 
     protected $casts = [
         'meta'    => 'array',
         'paid_at' => 'datetime',
         'amount'  => 'float',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     public function wallet() { return $this->belongsTo(Wallet::class); }
