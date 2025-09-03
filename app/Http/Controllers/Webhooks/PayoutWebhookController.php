@@ -6,20 +6,22 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\PayoutRequest;
+use App\Helpers\PayPalHelper;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PayoutPaidMail;
 
 class PayoutWebhookController extends Controller
 {
     // PayPal Payouts webhook endpoint
     public function paypal(Request $request)
     {
+        $raw = $request->getContent();
         $payload = $request->json()->all();
         $headers = $request->headers->all();
 
-        // Basic guard: ensure webhook id matches configured one if present
-        $expectedId = env('PAYPAL_WEBHOOK_ID');
-        $webhookId  = $payload['id'] ?? ($payload['webhook_id'] ?? null);
-        if ($expectedId && $webhookId && $webhookId !== $expectedId) {
-            Log::warning('PayPal webhook ID mismatch', ['expected' => $expectedId, 'got' => $webhookId]);
+        // Robust verification via PayPal API
+        if (!PayPalHelper::verifyWebhook($headers, $raw)) {
+            Log::warning('PayPal webhook verification failed');
             return response()->json(['ok' => false], 400);
         }
 
@@ -35,11 +37,22 @@ class PayoutWebhookController extends Controller
                 $meta['paypal_webhook'] = $payload;
                 if (in_array($eventType, ['PAYMENT.PAYOUTS-ITEM.SUCCEEDED', 'PAYMENT.PAYOUTS-ITEM.COMPLETED'])) {
                     $meta['txn_reference'] = $meta['txn_reference'] ?? ($resource['payout_batch_id'] ?? ($resource['transaction_id'] ?? null));
+                    $previous = $payout->status;
                     $payout->status  = 'paid';
                     $payout->paid_at = $payout->paid_at ?? now();
                 }
                 $payout->meta = $meta;
                 $payout->save();
+
+                // Notify if transitioned to paid
+                if (($payout->wasChanged('status') && $payout->status === 'paid') || ($previous ?? null) !== 'paid') {
+                    try {
+                        $payout->loadMissing('user');
+                        if ($payout->user && $payout->user->email) {
+                            Mail::to($payout->user->email)->send(new PayoutPaidMail($payout, $payout->user));
+                        }
+                    } catch (\Throwable $e) { }
+                }
             }
         }
 
@@ -61,8 +74,18 @@ class PayoutWebhookController extends Controller
                 $meta = $payout->meta ?? [];
                 $meta['mpesa_result'] = $payload;
                 if ((string) $code === '0') {
+                    $previous = $payout->status;
                     $payout->status  = 'paid';
                     $payout->paid_at = $payout->paid_at ?? now();
+                    // Optionally notify seller when transitioning to paid
+                    if (($previous ?? null) !== 'paid') {
+                        try {
+                            $payout->loadMissing('user');
+                            if ($payout->user && $payout->user->email) {
+                                Mail::to($payout->user->email)->send(new PayoutPaidMail($payout, $payout->user));
+                            }
+                        } catch (\Throwable $e) { }
+                    }
                 }
                 $payout->meta = $meta;
                 $payout->save();
@@ -82,4 +105,3 @@ class PayoutWebhookController extends Controller
         return response()->json(['ok' => true]);
     }
 }
-

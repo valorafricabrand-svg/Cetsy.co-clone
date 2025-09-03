@@ -364,6 +364,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/{dispute}/mutual-resolution', [\App\Http\Controllers\DisputeController::class, 'initiateMutualResolution'])->name('mutual-resolution.initiate');
         Route::post('/{dispute}/mutual-resolution/agree', [\App\Http\Controllers\DisputeController::class, 'agreeToMutualResolution'])->name('mutual-resolution.agree');
         
+        // Mark Dispute as Closed
+        Route::post('/{dispute}/close', [\App\Http\Controllers\DisputeController::class, 'markAsClosed'])->name('close');
+        
         // Evidence Request Responses
         Route::post('/evidence-requests/{evidenceRequest}/respond', [\App\Http\Controllers\EvidenceRequestController::class, 'respond'])->name('disputes.evidence-requests.respond');
     });
@@ -419,8 +422,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('reviews/bulk-delete', [ReviewController::class, 'bulkDelete'])->name('reviews.bulk-delete');
     
     // Messages
-    Route::get('messages', [\App\Http\Controllers\Admin\MessageController::class, 'index'])->name('messages.index');
-    Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\MessageController::class, 'show'])->name('messages.show');
+    Route::get('messages', [\App\Http\Controllers\Admin\AdminMessageController::class, 'index'])->name('messages.index');
+    Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\AdminMessageController::class, 'show'])->name('messages.show');
 
     // Users
     Route::get('users', [UserController::class, 'index'])->name('users.index');
@@ -439,6 +442,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{payout}/approve', 'approve')->name('approve');
         Route::post('/{payout}/reject', 'reject')->name('reject');
         Route::post('/{payout}/paid', 'markPaid')->name('paid');
+        Route::post('/{payout}/resend', 'resendAuto')->name('resend');
+        Route::post('/{payout}/fail', 'fail')->name('fail');
     });
 
     // Payments
@@ -542,6 +547,10 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     // Payout Management
     Route::get('payouts', [PayoutRequestController::class, 'index'])->name('payouts.index');
     Route::post('payouts', [PayoutRequestController::class, 'store'])->name('payouts.store');
+    Route::get('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyForm'])->name('payouts.verify')->withoutMiddleware(['ensure.seller.subscription']);
+    Route::post('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyOtp'])->name('payouts.verify.submit')->withoutMiddleware(['ensure.seller.subscription']);
+    Route::post('payouts/{payout}/resend-otp', [PayoutRequestController::class, 'resendOtp'])->name('payouts.verify.resend')->withoutMiddleware(['ensure.seller.subscription']);
+    Route::post('payouts/{payout}/cancel', [PayoutRequestController::class, 'cancel'])->name('payouts.cancel')->withoutMiddleware(['ensure.seller.subscription']);
 
     // Services
     Route::resource('services', ServiceController::class);

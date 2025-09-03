@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\DB;
 use App\Models\PaymentMethod;
 use App\Models\Shop;
 use App\Models\Activity;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class PayoutRequestController extends Controller
 {
@@ -60,44 +63,130 @@ class PayoutRequestController extends Controller
             ->first();
         abort_if(!$paymentMethod, 403, 'Invalid payout method');
 
-        DB::transaction(function () use ($request, $amount, $fee, $feeRate) {
+        // Create payout request in OTP pending state; do NOT debit wallet yet
+        $otp = random_int(100000, 999999);
+        $otpHash = Hash::make((string) $otp);
+        $otpExpires = now()->addMinutes(10)->toISOString();
+
+        $payout = PayoutRequest::create([
+            'wallet_id'         => null,
+            'user_id'           => Auth::id(),
+            'amount'            => $amount,
+            'payment_method_id' => $request->method,
+            'status'            => 'otp_pending',
+            'meta'              => [
+                'method'          => $request->method,
+                'fee'             => $fee,
+                'fee_rate'        => $feeRate,
+                'otp_hash'        => $otpHash,
+                'otp_expires_at'  => $otpExpires,
+                'otp_attempts'    => 0,
+                'otp_resend_count'=> 0,
+                'otp_last_sent_at'=> now()->toISOString(),
+            ],
+        ]);
+
+        // Send OTP email (best-effort)
+        try {
+            $user = Auth::user();
+            if ($user && $user->email) {
+                \Mail::to($user->email)->send(new \App\Mail\PayoutOtpMail($payout, $user, $otp));
+            }
+        } catch (\Throwable $e) {}
+
+        return redirect()->route('seller.payouts.verify', $payout)
+            ->with('success', 'We sent a verification code to your email. Enter it to confirm the payout request.');
+    }
+
+    /**
+     * Show OTP verification form.
+     */
+    public function verifyForm(PayoutRequest $payout)
+    {
+        abort_if($payout->user_id !== Auth::id(), 403);
+        abort_if($payout->status !== 'otp_pending', 409, 'This payout is not awaiting verification.');
+        $meta = $payout->meta ?? [];
+        $lastSentIso = data_get($meta, 'otp_last_sent_at');
+        $resendCount = (int) data_get($meta, 'otp_resend_count', 0);
+        $cooldownSec = 120; // 2 minutes
+        $canResendAt = null;
+        if ($lastSentIso) {
+            try { $canResendAt = Carbon::parse($lastSentIso)->addSeconds($cooldownSec); } catch (\Throwable $e) {}
+        }
+        return view('seller.payouts.verify', compact('payout', 'resendCount', 'canResendAt', 'cooldownSec'));
+    }
+
+    /**
+     * Handle OTP verification and finalize payout request (debit wallet and set status pending).
+     */
+    public function verifyOtp(Request $request, PayoutRequest $payout)
+    {
+        abort_if($payout->user_id !== Auth::id(), 403);
+        abort_if($payout->status !== 'otp_pending', 409, 'This payout is not awaiting verification.');
+
+        $data = $request->validate([
+            'code' => 'required|string|min:4|max:8',
+        ]);
+
+        $meta = $payout->meta ?? [];
+        $expires = data_get($meta, 'otp_expires_at');
+        $hash    = data_get($meta, 'otp_hash');
+        $attempts= (int) data_get($meta, 'otp_attempts', 0);
+        if ($attempts >= 5) {
+            return back()->withErrors(['code' => 'Too many attempts. Please request a new payout.']);
+        }
+        if ($expires && now()->greaterThan(\Carbon\Carbon::parse($expires))) {
+            return back()->withErrors(['code' => 'This code has expired. Please request a new payout.']);
+        }
+        if (!$hash || !Hash::check($data['code'], $hash)) {
+            $meta['otp_attempts'] = $attempts + 1;
+            $payout->update(['meta' => $meta]);
+            return back()->withErrors(['code' => 'Invalid code. Please try again.']);
+        }
+
+        // Passed verification; proceed with wallet debits within a transaction
+        DB::transaction(function () use ($payout, &$meta) {
+            $userId = $payout->user_id;
+            $amount = (float) $payout->amount;
+            $fee    = (float) ($meta['fee'] ?? 0);
+            $feeRate= (float) ($meta['fee_rate'] ?? 0);
+
             $debitRow = Wallet::create([
-                'user_id'     => Auth::id(),
+                'user_id'     => $userId,
                 'credit'      => 0,
                 'debit'       => $amount,
                 'balance'     => 0,
                 'type'        => 'payout_request',
-                'reference'   => \Illuminate\Support\Str::uuid(),
+                'reference'   => Str::uuid(),
                 'description' => 'Payout request (net) debit',
             ]);
 
-            $feeRow = Wallet::create([
-                'user_id'     => Auth::id(),
-                'credit'      => 0,
-                'debit'       => $fee,
-                'balance'     => 0,
-                'type'        => 'withdrawal_fee',
-                'reference'   => \Illuminate\Support\Str::uuid(),
-                'description' => 'Withdrawal fee',
-                'meta'        => ['rate' => $feeRate],
-            ]);
+            $feeRow = null;
+            if ($fee > 0) {
+                $feeRow = Wallet::create([
+                    'user_id'     => $userId,
+                    'credit'      => 0,
+                    'debit'       => $fee,
+                    'balance'     => 0,
+                    'type'        => 'withdrawal_fee',
+                    'reference'   => Str::uuid(),
+                    'description' => 'Withdrawal fee',
+                    'meta'        => ['rate' => $feeRate],
+                ]);
+            }
 
-            PayoutRequest::create([
-                'wallet_id'         => $debitRow->id,
-                'user_id'           => Auth::id(),
-                'amount'            => $amount,
-                'payment_method_id' => $request->method,
-                'status'            => 'pending',
-                'meta'              => [
-                    'method'        => $request->method,
-                    'fee'           => $fee,
-                    'fee_wallet_id' => $feeRow->id,
-                    'fee_rate'      => $feeRate,
-                ],
+            $meta['fee_wallet_id'] = $feeRow?->id;
+            unset($meta['otp_hash'], $meta['otp_expires_at'], $meta['otp_attempts']);
+            $meta['otp_verified_at'] = now()->toISOString();
+
+            $payout->update([
+                'wallet_id' => $debitRow->id,
+                'status'    => 'pending',
+                'meta'      => $meta,
             ]);
 
             Activity::create([
-                'user_id'      => Auth::id(),
+                'user_id'      => $userId,
                 'is_read'      => false,
                 'description'  => 'You submitted a new payout request of $' . number_format($amount, 2),
                 'type'         => \App\Models\Activity::TYPE_PAYOUT,
@@ -106,6 +195,71 @@ class PayoutRequestController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Payout request submitted!');
+        return redirect()->route('seller.payouts.index')->with('success', 'Verification successful. Your payout request was submitted.');
+    }
+
+    /**
+     * Resend OTP with rate limiting.
+     */
+    public function resendOtp(PayoutRequest $payout)
+    {
+        abort_if($payout->user_id !== Auth::id(), 403);
+        abort_if($payout->status !== 'otp_pending', 409, 'This payout is not awaiting verification.');
+
+        $meta = $payout->meta ?? [];
+        $resendCount = (int) data_get($meta, 'otp_resend_count', 0);
+        $lastSentIso = data_get($meta, 'otp_last_sent_at');
+        $cooldownSec = 120; // 2 minutes
+        $maxResends  = 3;
+
+        if ($resendCount >= $maxResends) {
+            return back()->withErrors(['code' => 'You have reached the maximum number of resend attempts. Please create a new payout request.']);
+        }
+        if ($lastSentIso) {
+            try {
+                $next = Carbon::parse($lastSentIso)->addSeconds($cooldownSec);
+                if (now()->lt($next)) {
+                    $wait = $next->diffInSeconds(now());
+                    return back()->withErrors(['code' => 'Please wait '.$wait.' seconds before requesting another code.']);
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        $otp = (string) random_int(100000, 999999);
+        $meta['otp_hash'] = Hash::make($otp);
+        $meta['otp_expires_at'] = now()->addMinutes(10)->toISOString();
+        $meta['otp_attempts'] = 0; // reset attempts on resend
+        $meta['otp_resend_count'] = $resendCount + 1;
+        $meta['otp_last_sent_at'] = now()->toISOString();
+
+        $payout->update(['meta' => $meta]);
+
+        try {
+            $user = Auth::user();
+            if ($user && $user->email) {
+                \Mail::to($user->email)->send(new \App\Mail\PayoutOtpMail($payout, $user, $otp));
+            }
+        } catch (\Throwable $e) {}
+
+        return back()->with('success', 'A new verification code has been sent.');
+    }
+
+    /**
+     * Cancel an OTP-pending payout request.
+     */
+    public function cancel(PayoutRequest $payout)
+    {
+        abort_if($payout->user_id !== Auth::id(), 403);
+        abort_if($payout->status !== 'otp_pending', 409, 'This payout can no longer be cancelled.');
+
+        $meta = $payout->meta ?? [];
+        $meta['cancelled_at'] = now()->toISOString();
+
+        $payout->update([
+            'status' => 'cancelled',
+            'meta'   => $meta,
+        ]);
+
+        return redirect()->route('seller.payouts.index')->with('success', 'Payout request cancelled.');
     }
 }

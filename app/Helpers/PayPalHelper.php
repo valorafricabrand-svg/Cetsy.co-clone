@@ -89,5 +89,56 @@ class PayPalHelper
             return ['status' => 'error', 'message' => $e->getMessage()];
         }
     }
-}
 
+    /**
+     * Verify PayPal webhook signature by calling PayPal's verify API.
+     * Returns true when verification_status === SUCCESS.
+     *
+     * @param array $headers HTTP request headers (as array with string keys)
+     * @param string $rawBody Raw JSON body
+     */
+    public static function verifyWebhook(array $headers, string $rawBody): bool
+    {
+        $mode = env('PAYPAL_MODE', 'sandbox');
+        $base = $mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+        $token = self::getAccessToken();
+        $webhookId = env('PAYPAL_WEBHOOK_ID');
+        if (!$token || !$webhookId) {
+            Log::warning('PayPal webhook verification skipped (missing token or webhook id).');
+            return false;
+        }
+
+        // PayPal headers (case-insensitive):
+        $map = [];
+        foreach ($headers as $k => $v) {
+            $key = strtolower($k);
+            // $v can be string or array
+            $map[$key] = is_array($v) ? (string) ($v[0] ?? '') : (string) $v;
+        }
+
+        $payload = [
+            'transmission_id' => $map['paypal-transmission-id'] ?? '',
+            'transmission_time' => $map['paypal-transmission-time'] ?? '',
+            'cert_url' => $map['paypal-cert-url'] ?? '',
+            'auth_algo' => $map['paypal-auth-algo'] ?? '',
+            'transmission_sig' => $map['paypal-transmission-sig'] ?? '',
+            'webhook_id' => $webhookId,
+            'webhook_event' => json_decode($rawBody, true) ?: [],
+        ];
+
+        try {
+            $resp = Http::withToken($token)
+                ->acceptJson()
+                ->post($base . '/v1/notifications/verify-webhook-signature', $payload);
+            if (!$resp->successful()) {
+                Log::error('PayPal verify webhook call failed', ['status' => $resp->status(), 'body' => $resp->body()]);
+                return false;
+            }
+            $data = $resp->json();
+            return isset($data['verification_status']) && $data['verification_status'] === 'SUCCESS';
+        } catch (\Throwable $e) {
+            Log::error('PayPal verify webhook exception', ['error' => $e->getMessage()]);
+            return false;
+        }
+    }
+}
