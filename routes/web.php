@@ -46,7 +46,8 @@ use App\Http\Controllers\Admin\{
     ProductReportController as AdminProductReportController,
     AdminWalletController,
     ReviewController,
-    AdminNotificationController
+    AdminNotificationController,
+    DisputeController
 };
 use App\Http\Controllers\Webhooks\PayoutWebhookController;
 use App\Http\Controllers\Buyer\BuyerDashboard;
