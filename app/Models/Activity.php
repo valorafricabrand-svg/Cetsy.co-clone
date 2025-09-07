@@ -13,6 +13,12 @@ class Activity extends Model
         return $this->belongsTo(User::class);
     }
 
+    // Add this method - alias for user relationship
+    public function causer()
+    {
+        return $this->user();
+    }
+
     // Constants for notification types
     const TYPE_MESSAGE = 'message';
     const TYPE_OFFER = 'offer';

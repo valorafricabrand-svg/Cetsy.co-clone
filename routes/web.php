@@ -299,9 +299,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 
-    //notification routes
-    Route::get('/admin/notifications', [AdminNotificationController::class, 'index'])->name('admin.notifications.index');
-    
     // Chat
     Route::get('/orders/{order}/chat', [OrderMessageController::class, 'show'])->name('orders.chat.show');
     Route::get('/orders/{order}/chat/messages', [OrderMessageController::class, 'fetch'])->name('orders.chat.fetch');
@@ -327,8 +324,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
         ->name('wallet.deposit.mpesa.stk');
 
-        // Poll status (frontend “listens” by polling this)
- Route::get ('/wallet/deposit/mpesa/status/{ref}', [WalletController::class, 'mpesaStatus'])->name('wallet.deposit.mpesa.status');
+    // Poll status (frontend “listens” by polling this)
+    Route::get('/wallet/deposit/mpesa/status/{ref}', [WalletController::class, 'mpesaStatus'])->name('wallet.deposit.mpesa.status');
 
     // Account
     Route::prefix('account')->name('account.')->group(function () {
@@ -361,14 +358,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'submitAppeal'])->name('appeal.store');
         Route::post('/{dispute}/mutual-resolution', [\App\Http\Controllers\DisputeController::class, 'initiateMutualResolution'])->name('mutual-resolution.initiate');
         Route::post('/{dispute}/mutual-resolution/agree', [\App\Http\Controllers\DisputeController::class, 'agreeToMutualResolution'])->name('mutual-resolution.agree');
-        
+
         // Mark Dispute as Closed
         Route::post('/{dispute}/close', [\App\Http\Controllers\DisputeController::class, 'markAsClosed'])->name('close');
-        
+
         // Evidence Request Responses
         Route::post('/evidence-requests/{evidenceRequest}/respond', [\App\Http\Controllers\EvidenceRequestController::class, 'respond'])->name('disputes.evidence-requests.respond');
     });
 });
+
 
 /*
 |--------------------------------------------------------------------------
@@ -420,7 +418,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     Route::post('reviews/bulk-approve', [ReviewController::class, 'bulkApprove'])->name('reviews.bulk-approve');
     Route::post('reviews/bulk-delete', [ReviewController::class, 'bulkDelete'])->name('reviews.bulk-delete');
-    
+
     // Messages
     Route::get('messages', [\App\Http\Controllers\Admin\AdminMessageController::class, 'index'])->name('messages.index');
     Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\AdminMessageController::class, 'show'])->name('messages.show');
@@ -432,7 +430,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Categories
     Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::get('categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
-
+    // Make sure you have this route defined
     Route::post('subscriptions/deactivate-expired', [AdminSubscriptionController::class, 'deactivateExpired'])->name('subscriptions.deactivate-expired');
 
     // Payout Requests
@@ -451,7 +449,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
     // Seller payment methods (admin view)
     Route::get('payment-methods', [AdminPaymentMethodController::class, 'index'])->name('payment-methods.index');
-    
+
     //Payment Types
     Route::resource('payment-types', PaymentTypeController::class);
 
@@ -479,7 +477,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{appeal}/close', [\App\Http\Controllers\Admin\DisputeController::class, 'closeAppeal'])->name('close');
     });
 });
-
+Route::post('/admin/categories/{category}/attributes', [CategoryAttributeController::class, 'store'])
+    ->name('admin.categories.attributes.store');
 /*
 |--------------------------------------------------------------------------
 
@@ -525,9 +524,9 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
-        // Holiday Mode
-        Route::post('holiday-mode/enable', [SellerDashboard::class, 'enableHolidayMode'])->name('holiday-mode.enable');
-        Route::post('holiday-mode/disable', [SellerDashboard::class, 'disableHolidayMode'])->name('holiday-mode.disable');
+    // Holiday Mode
+    Route::post('holiday-mode/enable', [SellerDashboard::class, 'enableHolidayMode'])->name('holiday-mode.enable');
+    Route::post('holiday-mode/disable', [SellerDashboard::class, 'disableHolidayMode'])->name('holiday-mode.disable');
 
 
     // Order Management
@@ -552,12 +551,12 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     Route::post('payouts/{payout}/resend-otp', [PayoutRequestController::class, 'resendOtp'])->name('payouts.verify.resend')->withoutMiddleware(['ensure.seller.subscription']);
     Route::post('payouts/{payout}/cancel', [PayoutRequestController::class, 'cancel'])->name('payouts.cancel')->withoutMiddleware(['ensure.seller.subscription']);
 
-        // Services
-        Route::resource('services', ServiceController::class);
+    // Services
+    Route::resource('services', ServiceController::class);
 
-        // Buyer Management
-        Route::get('buyers', [BuyerController::class, 'index'])->name('buyers.index');
-        Route::get('buyers/{buyer}', [BuyerController::class, 'show'])->name('buyers.show');
+    // Buyer Management
+    Route::get('buyers', [BuyerController::class, 'index'])->name('buyers.index');
+    Route::get('buyers/{buyer}', [BuyerController::class, 'show'])->name('buyers.show');
 
     // Offer Management
     Route::resource('offers', \App\Http\Controllers\Seller\OfferController::class);
@@ -574,15 +573,15 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     Route::post('messages/{message}/mark-read', [\App\Http\Controllers\Seller\MessageController::class, 'markAsRead'])->name('messages.mark-read');
     Route::post('messages/bulk-mark-read', [\App\Http\Controllers\Seller\MessageController::class, 'bulkMarkAsRead'])->name('messages.bulk-mark-read');
 
-        // Favorites
-        Route::get('favorites', [FavoriteController::class, 'index'])->name('favorites.index');
+    // Favorites
+    Route::get('favorites', [FavoriteController::class, 'index'])->name('favorites.index');
 
-        // Payment Methods
-        Route::resource('payment-methods', PaymentMethodController::class);
+    // Payment Methods
+    Route::resource('payment-methods', PaymentMethodController::class);
 
-        // Shop Posts
-        Route::resource('shop-posts', ShopPostController::class);
-    });
+    // Shop Posts
+    Route::resource('shop-posts', ShopPostController::class);
+});
 
 /*
 |--------------------------------------------------------------------------
