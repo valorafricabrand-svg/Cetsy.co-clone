@@ -27,8 +27,7 @@ use App\Http\Controllers\{
     BulkPriceController,
     ProductReportController,
     ProductShippingController,
-    ProductVariationController,
-    ShopPostController
+    ProductVariationController
 };
 
 use App\Http\Controllers\Admin\{
@@ -298,6 +297,9 @@ Route::middleware('auth')->group(function () {
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
+    //notification routes
+    Route::get('/admin/notifications', [AdminNotificationController::class, 'index'])->name('admin.notifications.index');
 
     // Chat
     Route::get('/orders/{order}/chat', [OrderMessageController::class, 'show'])->name('orders.chat.show');
