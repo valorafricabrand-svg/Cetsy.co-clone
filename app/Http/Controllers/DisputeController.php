@@ -368,8 +368,8 @@ class DisputeController extends Controller
                     // Add dispute context to ensure this message belongs to the right order
                     $message->dispute_order_id = $dispute->order->id;
                     
-                    // Debug logging
-                    \Log::info('Order message processed', [
+                    // Debug logging (only in debug mode)
+                    if (config('app.debug')) { \Log::debug('Order message processed', [
                         'message_id' => $message->id,
                         'order_id' => $message->order_id,
                         'dispute_order_id' => $dispute->order->id,
@@ -377,7 +377,7 @@ class DisputeController extends Controller
                         'has_type' => isset($message->type),
                         'has_attachments' => isset($message->attachments),
                         'attachments_count' => is_array($message->attachments) ? count($message->attachments) : 0
-                    ]);
+                    ]); }
                     
                     return $message;
                 });
@@ -403,8 +403,8 @@ class DisputeController extends Controller
             $message->is_dispute_message = $message->dispute_id === $dispute->id;
             $message->is_order_message = !$message->is_dispute_message;
             
-            // Debug user data
-            \Log::info('Message user data', [
+            // Debug user data (only in debug mode)
+            if (config('app.debug')) { \Log::debug('Message user data', [
                 'message_id' => $message->id,
                 'user_id' => $message->user_id,
                 'has_user' => isset($message->user),
@@ -412,7 +412,7 @@ class DisputeController extends Controller
                 'user_photo' => $message->user->profile_photo_url ?? 'NO_USER_PHOTO',
                 'is_dispute_message' => $message->is_dispute_message,
                 'is_order_message' => $message->is_order_message
-            ]);
+            ]); }
             
             return $message;
         });
@@ -503,6 +503,9 @@ class DisputeController extends Controller
      */
     public function showAppealForm(Dispute $dispute)
     {
+        if (!config('disputes.enable_appeals')) {
+            abort(404);
+        }
         $user = Auth::user();
 
         // Check if user is authorized to appeal (either buyer or specifically involved as seller)
@@ -525,6 +528,9 @@ class DisputeController extends Controller
      */
     public function submitAppeal(Request $request, Dispute $dispute)
     {
+        if (!config('disputes.enable_appeals')) {
+            abort(404);
+        }
         \Log::info('=== APPEAL SUBMISSION STARTED ===', [
             'dispute_id' => $dispute->id,
             'user_id' => Auth::id(),
@@ -1251,8 +1257,7 @@ class DisputeController extends Controller
                 'dispute_id' => $dispute->id,
                 'user_id' => null, // System message
                 'message' => $message,
-                'type' => 'system_message',
-                'is_dispute_message' => true
+                'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE
             ]);
 
             if (Auth::user()->isAdmin()) {
