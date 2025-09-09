@@ -36,10 +36,10 @@
       ],
       [
         'title' => 'Orders & Disputes',
-        'items' => [
-          ['label' => 'Disputes', 'icon' => 'fas fa-gavel',           'url' => route('admin.admin-disputes.index'), 'match' => ['admin.admin-disputes.*'], 'count' => $openDisputes],
-          ['label' => 'Appeals',  'icon' => 'fas fa-balance-scale',   'url' => route('admin.appeals.index'),        'match' => ['admin.appeals.*'],        'count' => $openAppeals],
-        ],
+        'items' => array_values(array_filter([
+          ['label' => 'Disputes', 'icon' => 'fas fa-gavel',         'url' => route('admin.admin-disputes.index'), 'match' => ['admin.admin-disputes.*'], 'count' => $openDisputes],
+          config('disputes.enable_appeals') ? ['label' => 'Appeals',  'icon' => 'fas fa-balance-scale', 'url' => route('admin.appeals.index'), 'match' => ['admin.appeals.*'], 'count' => ($openAppeals ?? 0)] : null,
+        ])),
       ],
       [
         'title' => 'Sellers',
@@ -91,5 +91,4 @@
     </div>
   </div>
 @endif
-
 
