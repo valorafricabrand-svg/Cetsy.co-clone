@@ -66,13 +66,13 @@
         {{-- ======================= KPIs ======================= --}}
         <div class="row g-4 mb-4">
             <x-analytics.card title="Total Sales"
-                              :value="get_currency().' '.number_format($kpi->total_sales,2)"
+                              :value="shop_currency().' '.number_format($kpi->total_sales,2)"
                               icon="fas fa-dollar-sign text-primary"/>
             <x-analytics.card title="Total Orders"
                               :value="$kpi->total_orders"
                               icon="fas fa-shopping-cart text-success"/>
             <x-analytics.card title="Avg Order Value"
-                              :value="get_currency().' '.number_format($kpi->avg_order_value,2)"
+                              :value="shop_currency().' '.number_format($kpi->avg_order_value,2)"
                               icon="fas fa-chart-line text-warning"/>
         </div>
 
@@ -116,7 +116,7 @@
                                             <span>{{ Str::limit($p->name, 30) }}</span>
                                         </td>
                                         <td class="text-end">{{ $p->qty_sold }}</td>
-                                        <td class="text-end">{{ get_currency() }} {{ number_format($p->revenue,2) }}</td>
+                                        <td class="text-end">{{ shop_currency() }} {{ number_format($p->revenue,2) }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>

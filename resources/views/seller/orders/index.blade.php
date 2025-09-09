@@ -547,7 +547,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 @php
                                     $row      = $orders->firstItem() + $loop->index;
                                     $qtyTotal = $order->items->sum('quantity');
-                                    $symbol   = get_currency();
+                                    $symbol   = shop_currency($order->shop ?? null);
                                     $dispute  = $order->disputes()->latest()->first();
                                 @endphp
                                 <tr>
@@ -555,7 +555,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <td>{{ $order->full_name }}</td>
                                     <td>{{ $order->phone ?? '—' }}</td>
                                     <td class="text-center">{{ $qtyTotal }}</td>
-                                    <td class="text-end">{{ $symbol }} {{ number_format($order->total_amount,2) }}</td>
+                                    <td class="text-end">{{ shop_currency($order->shop ?? null) }} {{ number_format($order->total_amount,2) }}</td>
                                     <td>
                                         <a href="{{ route('orders.index', ['status'=>$order->status, 'search'=>$searchId]) }}"
                                            class="badge {{ $order->getStatusBadgeClass() }} text-capitalize">
