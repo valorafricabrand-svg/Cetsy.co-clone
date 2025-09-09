@@ -123,6 +123,32 @@
             @include('seller.orders.modals.delivered')
           @endif
 
+          {{-- Dispute actions: show continue if exists, else allow create for eligible statuses --}}
+          @php
+            $dispute = $order->disputes()->latest()->first();
+          @endphp
+          @if($dispute)
+            <a href="{{ route('disputes.show', $dispute->id) }}"
+               class="btn btn-warning btn-lg d-flex align-items-center gap-2 px-4 py-2"
+               data-bs-toggle="tooltip" data-bs-placement="bottom" title="View and continue your dispute">
+              <i class="bi bi-exclamation-triangle fs-5"></i>
+              <span>Continue Dispute</span>
+            </a>
+          @else
+            @if(in_array($order->status, [
+              \App\Models\Order::STATUS_PROCESSING,
+              \App\Models\Order::STATUS_SHIPPED,
+              \App\Models\Order::STATUS_DELIVERED
+            ]))
+              <a href="{{ route('disputes.create', ['order_id' => $order->id]) }}"
+                 class="btn btn-outline-warning btn-lg d-flex align-items-center gap-2 px-4 py-2"
+                 data-bs-toggle="tooltip" data-bs-placement="bottom" title="Open a dispute for this order">
+                <i class="bi bi-exclamation-triangle fs-5"></i>
+                <span>Create Dispute</span>
+              </a>
+            @endif
+          @endif
+
         </div>
       </div>
 
@@ -542,7 +568,6 @@
   @endif
 @endforeach
 @endsection
-
 
 
 

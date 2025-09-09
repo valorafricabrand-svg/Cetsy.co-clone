@@ -32,7 +32,7 @@
                                 <a href="{{ route('disputes.index') }}" class="btn btn-outline-secondary btn-sm">
                                     <i class="bi bi-arrow-left"></i> Back to Disputes
                                 </a>
-                                @if($dispute->canBeAppealed())
+                                @if(config('disputes.enable_appeals') && $dispute->canBeAppealed())
                                     <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-warning btn-sm">
                                         <i class="bi bi-gavel"></i> Appeal
                                     </a>
@@ -981,7 +981,7 @@
                             </div>
                         @endif
 
-                        @if($dispute->status === 'appealed')
+                        @if(config('disputes.enable_appeals') && $dispute->status === 'appealed')
                             <div class="timeline-item">
                                 <div class="timeline-marker bg-warning"></div>
                                 <div class="timeline-content">
@@ -991,7 +991,7 @@
                             </div>
                         @endif
 
-                        @if($dispute->status === 'appeal_under_review')
+                        @if(config('disputes.enable_appeals') && $dispute->status === 'appeal_under_review')
                             <div class="timeline-item">
                                 <div class="timeline-marker bg-warning"></div>
                                 <div class="timeline-content">
@@ -1001,7 +1001,7 @@
                             </div>
                         @endif
 
-                        @if($dispute->status === 'appeal_approved')
+                        @if(config('disputes.enable_appeals') && $dispute->status === 'appeal_approved')
                             <div class="timeline-item">
                                 <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
@@ -1011,7 +1011,7 @@
                             </div>
                         @endif
 
-                        @if($dispute->status === 'appeal_rejected')
+                        @if(config('disputes.enable_appeals') && $dispute->status === 'appeal_rejected')
                             <div class="timeline-item">
                                 <div class="timeline-marker bg-danger"></div>
                                 <div class="timeline-content">
@@ -1106,6 +1106,7 @@
 </div>
 
 {{-- Appeal Modal --}}
+@if(config('disputes.enable_appeals'))
 <div class="modal fade" id="appealModal" tabindex="-1" aria-labelledby="appealModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -1208,9 +1209,10 @@
         </div>
     </div>
 </div>
+@endif
 
 {{-- Evidence Response Modals --}}
-@if($dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
+@if(config('disputes.enable_appeals') && $dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
     @foreach($dispute->appeal->evidenceRequests as $evidenceRequest)
         @if($evidenceRequest->status === 'pending' && $evidenceRequest->requested_from === auth()->id())
             <div class="modal fade" id="evidenceResponseModal-{{ $evidenceRequest->id }}" tabindex="-1" aria-labelledby="evidenceResponseModalLabel-{{ $evidenceRequest->id }}" aria-hidden="true">
@@ -1222,7 +1224,7 @@
                             </h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <form action="{{ route('disputes.disputes.evidence-requests.respond', $evidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
+                        <form action="{{ route('disputes.evidence-requests.respond', $evidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <div class="modal-body">
                                 <div class="alert alert-info">
@@ -1774,7 +1776,7 @@ document.addEventListener('DOMContentLoaded', function() {
 @endpush
 
 {{-- Appeal Modal --}}
-@if($dispute->canBeAppealed() && (auth()->id() === $dispute->buyer_id || auth()->id() === $dispute->seller_id))
+@if(config('disputes.enable_appeals') && $dispute->canBeAppealed() && (auth()->id() === $dispute->buyer_id || auth()->id() === $dispute->seller_id))
 <div class="modal fade" id="appealModal" tabindex="-1" aria-labelledby="appealModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -1823,7 +1825,7 @@ document.addEventListener('DOMContentLoaded', function() {
 @endif
 
 {{-- Evidence Submission Modal --}}
-@if($dispute->appeal && $dispute->appeal->status === 'evidence_requested')
+@if(config('disputes.enable_appeals') && $dispute->appeal && $dispute->appeal->status === 'evidence_requested')
     @php
         $userEvidenceRequest = null;
         if (auth()->id() === $dispute->buyer_id) {
