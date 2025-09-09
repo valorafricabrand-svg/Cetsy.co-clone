@@ -101,6 +101,12 @@ class _AuthenticatedView extends StatelessWidget {
               ),
               const Divider(height: 1),
               ListTile(
+                leading: const Icon(Icons.alternate_email_outlined),
+                title: const Text('Change Email'),
+                onTap: () => Navigator.pushNamed(context, '/change-email'),
+              ),
+              const Divider(height: 1),
+              ListTile(
                 leading: const Icon(Icons.check_circle_outline),
                 title: const Text('Status'),
                 subtitle: Text(user.isActive ? 'Active' : 'Inactive'),
@@ -129,11 +135,7 @@ class _AuthenticatedView extends StatelessWidget {
                 leading: const Icon(Icons.receipt_long_outlined),
                 title: const Text('My Orders'),
                 subtitle: const Text('View your recent purchases'),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Orders screen coming soon')),
-                  );
-                },
+                onTap: () => Navigator.pushNamed(context, '/orders'),
               ),
               const Divider(height: 1),
               ListTile(

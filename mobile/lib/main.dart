@@ -12,6 +12,9 @@ import 'screens/forgot_password_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/edit_profile_screen.dart';
 import 'screens/change_password_screen.dart';
+import 'screens/order_history_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/change_email_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -143,6 +146,9 @@ class CetsyApp extends StatelessWidget {
         '/forgot-password': (_) => const ForgotPasswordScreen(),
         '/edit-profile': (_) => const EditProfileScreen(),
         '/change-password': (_) => const ChangePasswordScreen(),
+        '/orders': (_) => const OrderHistoryScreen(),
+        '/login': (_) => const LoginScreen(),
+        '/change-email': (_) => const ChangeEmailScreen(),
       },
     );
   }

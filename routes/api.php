@@ -24,8 +24,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/products', [ProductController::class, 'store']);
     Route::get('/my/products', [ProductController::class, 'myProducts']);
+    Route::get('/orders', [\App\Http\Controllers\API\OrderController::class, 'index']);
     Route::post('/orders', [\App\Http\Controllers\API\OrderController::class, 'store']);
     Route::post('/profile', [ProfileController::class, 'update']);
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::post('/change-password', [PasswordController::class, 'change']);
+    Route::post('/change-email', [ProfileController::class, 'changeEmail']);
 });

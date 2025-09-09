@@ -40,5 +40,47 @@ class ProfileController extends Controller
 
         return response()->json(['user' => $user->refresh()]);
     }
-}
 
+    /**
+     * Change email with verification: requires current_password, new unique email.
+     * Sets email_verified_at to null and sends verification notification.
+     */
+    public function changeEmail(Request $request)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $data = $request->validate([
+            'current_password' => ['required','string'],
+            'email' => ['required','email','max:255','unique:users,email'],
+        ]);
+
+        if (! \Illuminate\Support\Facades\Hash::check($data['current_password'], $user->password)) {
+            return response()->json([
+                'message' => 'The current password is incorrect.',
+                'errors' => ['current_password' => ['The current password is incorrect.']],
+            ], 422);
+        }
+
+        $user->email = $data['email'];
+        $user->email_verified_at = null;
+        $user->save();
+
+        // Send verification email if supported
+        if (method_exists($user, 'sendEmailVerificationNotification')) {
+            try { $user->sendEmailVerificationNotification(); } catch (\Throwable $e) {}
+        }
+
+        // Optionally force re-login by revoking all tokens
+        if (method_exists($user, 'tokens')) {
+            $user->tokens()->delete();
+        }
+
+        return response()->json([
+            'message' => 'Email updated. Please verify your new email address.',
+            'relogin_required' => true,
+        ], 200);
+    }
+}

@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -8,6 +8,7 @@ import 'package:mime/mime.dart';
 import '../config/constants.dart';
 import '../models/user.dart';
 
+import 'package:flutter/foundation.dart';
 class UserService {
   static Future<User> fetchMe(String token) async {
     final url = Uri.parse("${Constants.baseUrl}/user");
@@ -65,6 +66,30 @@ class UserService {
       }
       throw Exception(data['message'] ?? 'Failed to update profile');
     }
+  }
+
+  static Future<bool> changeEmail({
+    required String token,
+    required String currentPassword,
+    required String email,
+  }) async {
+    final url = Uri.parse("${Constants.baseUrl}/change-email");
+    final res = await http.post(
+      url,
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: {
+        'current_password': currentPassword,
+        'email': email,
+      },
+    );
+    final data = jsonDecode(res.body);
+    if (res.statusCode == 200) {
+      return data['relogin_required'] == true;
+    }
+    throw Exception(data['message'] ?? 'Failed to change email');
   }
 }
 

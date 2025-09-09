@@ -15,6 +15,25 @@ use Illuminate\Support\Facades\Validator;
 class OrderController extends Controller
 {
     /**
+     * List authenticated user's recent orders with items summary.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $orders = \App\Models\Order::with(['items.product:id,name'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->paginate(10, [
+                'id','status','total_amount','subtotal','created_at','shop_id','payment_method'
+            ]);
+
+        return response()->json($orders);
+    }
+    /**
      * Create an order from a cart payload.
      *
      * Expected JSON:
@@ -152,4 +171,3 @@ class OrderController extends Controller
         });
     }
 }
-

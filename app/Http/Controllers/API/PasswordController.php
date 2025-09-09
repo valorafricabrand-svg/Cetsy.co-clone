@@ -95,14 +95,14 @@ class PasswordController extends Controller
             'password' => Hash::make($request->password),
         ])->save();
 
-        // Optionally keep current token; revoke other tokens
+        // Enforce token rotation: revoke all tokens, including current
         if (method_exists($user, 'tokens')) {
-            $currentId = optional($request->user()->currentAccessToken())->id;
-            $user->tokens()
-                ->when($currentId, fn($q) => $q->where('id', '!=', $currentId))
-                ->delete();
+            $user->tokens()->delete();
         }
 
-        return response()->json(['message' => 'Password changed successfully.']);
+        return response()->json([
+            'message' => 'Password changed successfully.',
+            'relogin_required' => true,
+        ]);
     }
 }
