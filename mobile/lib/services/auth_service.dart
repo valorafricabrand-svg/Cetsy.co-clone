@@ -183,4 +183,17 @@ class AuthService {
       throw Exception('Failed to change password.');
     }
   }
+
+  /// Logout from API (best-effort) using current token
+  static Future<void> logout(String token) async {
+    final url = Uri.parse("${Constants.baseUrl}/logout");
+    try {
+      await http.post(url, headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      });
+    } catch (_) {
+      // ignore network errors here
+    }
+  }
 }

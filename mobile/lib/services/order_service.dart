@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../config/constants.dart';
+import '../models/order.dart';
 
 class OrderService {
   static Future<Map<String, dynamic>> placeOrder({
@@ -42,5 +43,35 @@ class OrderService {
       return list.map((e) => OrderSummary.fromJson(e as Map<String, dynamic>)).toList();
     }
     throw Exception('Failed to load orders');
+  }
+
+  static Future<OrderPage> fetchOrdersPage(String token, {int page = 1}) async {
+    final url = Uri.parse("${Constants.baseUrl}/orders?page=$page");
+    final res = await http.get(url, headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data is Map<String, dynamic>) {
+        return OrderPage.fromPaginatedJson(data);
+      }
+      // If API returns bare array
+      final list = (data as List?)?.map((e) => OrderSummary.fromJson(e as Map<String, dynamic>)).toList() ?? const <OrderSummary>[];
+      return OrderPage(orders: list, hasNext: false);
+    }
+    throw Exception('Failed to load orders');
+  }
+
+  static Future<Map<String, dynamic>> fetchOrder(String token, int id) async {
+    final url = Uri.parse("${Constants.baseUrl}/orders/$id");
+    final res = await http.get(url, headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    throw Exception('Failed to load order');
   }
 }

@@ -142,6 +142,11 @@ class _AuthenticatedView extends StatelessWidget {
                 leading: const Icon(Icons.logout),
                 title: const Text('Logout'),
                 onTap: () async {
+                  final auth = context.read<AuthProvider>();
+                  final token = auth.token;
+                  if (token != null) {
+                    await AuthService.logout(token);
+                  }
                   await onLogout();
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
