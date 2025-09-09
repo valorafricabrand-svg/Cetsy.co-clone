@@ -180,16 +180,27 @@
 </div>
 
 @if(!empty($otpPendingPayout))
-  <div class="alert alert-warning d-flex align-items-center justify-content-between">
-    <div>
-      <i class="bi bi-shield-lock me-2"></i>
-      You have a payout request (ID #{{ $otpPendingPayout->id }}) awaiting verification.
-    </div>
-    <div class="d-flex align-items-center gap-2">
-      <a class="btn btn-sm btn-primary" href="{{ route('seller.payouts.verify', $otpPendingPayout) }}">Verify Now</a>
-      <form action="{{ route('seller.payouts.cancel', $otpPendingPayout) }}" method="POST" onsubmit="return confirm('Cancel this payout request?');">
+  <div id="payout-verify-inline" class="card shadow-sm border-0 mt-3">
+    <div class="card-header bg-white fw-semibold">Verify Payout</div>
+    <div class="card-body">
+      <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.submit') ? route('seller.payouts.otp.submit', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/verify')) }}" class="row g-3 align-items-end">
         @csrf
-        <button class="btn btn-sm btn-outline-danger">Cancel</button>
+        <div class="col-md-6">
+          <label class="form-label">Verification Code</label>
+          <input type="text" name="code" class="form-control @error('code') is-invalid @enderror" placeholder="6-digit code" required>
+          @error('code') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+        <div class="col-md-6 d-flex gap-2">
+          <button class="btn btn-primary">Verify &amp; Submit</button>
+          <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.resend') ? route('seller.payouts.otp.resend', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/resend-otp')) }}" class="d-inline">
+            @csrf
+            <button type="submit" class="btn btn-link">Resend code</button>
+          </form>
+          <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.cancel') ? route('seller.payouts.otp.cancel', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/cancel')) }}" class="d-inline" onsubmit="return confirm('Cancel this payout request?');">
+            @csrf
+            <button class="btn btn-link text-danger">Cancel</button>
+          </form>
+        </div>
       </form>
     </div>
   </div>
@@ -307,12 +318,18 @@
 @push('scripts')
 <script>
   (function(){
-    const input = document.querySelector('#payoutModal input[name="amount"]');
+    // Support inline payout form (preferred) or fallback to old modal selectors
+    let input = document.querySelector('#payout-inline input[name="amount"]');
+    let methodSel = document.querySelector('#payout-inline select[name="method"]');
+    if(!input){
+      input = document.querySelector('#payoutModal input[name="amount"]');
+      methodSel = document.querySelector('#payoutModal select[name="method"]');
+    }
     if(!input) return;
     const feeRate = {{ json_encode($feeRate) }};
     const feeEl = document.getElementById('payoutFee');
     const netEl = document.getElementById('payoutNet');
-    const methodSel = document.querySelector('#payoutModal select[name="method"]');
+    // methodSel defined above
     const submitBtn = document.getElementById('payoutSubmitBtn');
     const maxBtn = document.getElementById('payoutMaxBtn');
     const fmt = (n) => (isFinite(n) ? Number(n).toFixed(2) : '0.00');
@@ -357,13 +374,6 @@
       const maxVal = parseFloat(input.max || '0');
       if (maxBtn) maxBtn.disabled = !(isFinite(maxVal) && maxVal > 0);
     })();
-    const modalEl = document.getElementById('payoutModal');
-    if (modalEl) {
-      modalEl.addEventListener('shown.bs.modal', function(){
-        recalc();
-        updateSubmitDisabled();
-      });
-    }
     recalc();
     updateSubmitDisabled();
   })();

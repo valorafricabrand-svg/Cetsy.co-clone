@@ -14,7 +14,7 @@
     @if($errors->any())
       <div class="alert alert-danger">{{ $errors->first() }}</div>
     @endif
-    <form method="POST" action="{{ route('seller.payouts.verify.submit', $payout) }}" class="card shadow-sm border-0 p-3 mb-3">
+    <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.submit') ? route('seller.payouts.otp.submit', $payout) : url('/seller/payouts/'.$payout->id.'/verify')) }}" class="card shadow-sm border-0 p-3 mb-3">
       @csrf
       <div class="mb-3">
         <label class="form-label">Verification Code</label>
@@ -32,11 +32,11 @@
         $canResend = now()->gte($canResendAt);
       }
     @endphp
-    <form method="POST" action="{{ route('seller.payouts.verify.resend', $payout) }}" class="d-inline">
+    <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.resend') ? route('seller.payouts.otp.resend', $payout) : url('/seller/payouts/'.$payout->id.'/resend-otp')) }}" class="d-inline">
       @csrf
       <button class="btn btn-link p-0" {{ $canResend ? '' : 'disabled' }} title="{{ isset($canResendAt) && !$canResend ? 'You can resend at '.$canResendAt->format('H:i:s') : '' }}">Resend code</button>
     </form>
-    <form method="POST" action="{{ route('seller.payouts.cancel', $payout) }}" class="d-inline ms-3"
+    <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.cancel') ? route('seller.payouts.otp.cancel', $payout) : url('/seller/payouts/'.$payout->id.'/cancel')) }}" class="d-inline ms-3"
           onsubmit="return confirm('Cancel this payout request?');">
       @csrf
       <button class="btn btn-link text-danger p-0">Cancel request</button>

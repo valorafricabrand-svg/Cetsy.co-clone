@@ -41,9 +41,11 @@ class CartScreen extends StatelessWidget {
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  ...cart.items.values.map((item) {
+                  ...cart.items.entries.map((entry) {
+                    final key = entry.key;
+                    final item = entry.value;
                     final p = item.product;
-                    final unitPrice = p.discountPrice ?? p.price;
+                    final unitPrice = item.unitPrice;
                     return Card(
                       child: Column(
                         children: [
@@ -56,8 +58,12 @@ class CartScreen extends StatelessWidget {
                             ),
                             title: Text(p.name,
                                 maxLines: 1, overflow: TextOverflow.ellipsis),
-                            subtitle:
-                                Text('KES ${fmt.format(unitPrice)} each'),
+                            subtitle: Text(
+                              'KES ${fmt.format(unitPrice)} each' +
+                                  (item.variationLabel != null && item.variationLabel!.isNotEmpty
+                                      ? '\n${item.variationLabel}'
+                                      : ''),
+                            ),
                             trailing: SizedBox(
                               width: 132,
                               child: Row(
@@ -65,9 +71,8 @@ class CartScreen extends StatelessWidget {
                                 children: [
                                   IconButton(
                                     tooltip: 'Decrease',
-                                    onPressed: () =>
-                                        context.read<CartProvider>().setQty(
-                                            p.id, item.qty - 1),
+                                    onPressed: () => context.read<CartProvider>().setQtyByKey(
+                                        key, item.qty - 1),
                                     icon: const Icon(
                                         Icons.remove_circle_outline),
                                   ),
@@ -76,16 +81,14 @@ class CartScreen extends StatelessWidget {
                                           fontWeight: FontWeight.w700)),
                                   IconButton(
                                     tooltip: 'Increase',
-                                    onPressed: () =>
-                                        context.read<CartProvider>().setQty(
-                                            p.id, item.qty + 1),
+                                    onPressed: () => context.read<CartProvider>().setQtyByKey(
+                                        key, item.qty + 1),
                                     icon: const Icon(Icons.add_circle_outline),
                                   ),
                                 ],
                               ),
                             ),
-                            onLongPress: () =>
-                                context.read<CartProvider>().remove(p.id),
+                            onLongPress: () => context.read<CartProvider>().removeByKey(key),
                           ),
                           if (p.shippingProfiles.isNotEmpty)
                             Padding(
@@ -107,9 +110,8 @@ class CartScreen extends StatelessWidget {
                                   if (id == null) return;
                                   final profile = p.shippingProfiles
                                       .firstWhere((sp) => sp.id == id);
-                                  context
-                                      .read<CartProvider>()
-                                      .setShippingProfile(p.id, profile);
+                                  context.read<CartProvider>().setShippingProfileByKey(
+                                      key, profile);
                                 },
                               ),
                             ),
