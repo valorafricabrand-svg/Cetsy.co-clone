@@ -12,7 +12,7 @@
 
 @section('content')
 @php
-  $symbol = get_currency();
+  $symbol = shop_currency($order->shop ?? null);
 @endphp
 
 <div class="content">
