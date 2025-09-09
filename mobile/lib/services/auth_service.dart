@@ -149,4 +149,37 @@ class AuthService {
       }
     }
   }
+
+  /// Change password for the authenticated user
+  static Future<void> changePassword({
+    required String token,
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    final url = Uri.parse("${Constants.baseUrl}/change-password");
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: {
+        'current_password': currentPassword,
+        'password': newPassword,
+        'password_confirmation': confirmPassword,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return;
+    }
+    try {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to change password.');
+    } catch (_) {
+      throw Exception('Failed to change password.');
+    }
+  }
 }
