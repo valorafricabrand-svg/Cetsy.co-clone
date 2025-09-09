@@ -55,3 +55,25 @@ class OrderSummary {
   }
 }
 
+class OrderPage {
+  final List<OrderSummary> orders;
+  final bool hasNext;
+  final int? nextPage;
+
+  const OrderPage({
+    required this.orders,
+    required this.hasNext,
+    this.nextPage,
+  });
+
+  factory OrderPage.fromPaginatedJson(Map<String, dynamic> json) {
+    final list = (json['data'] as List?) ?? const [];
+    final orders = list.map((e) => OrderSummary.fromJson(e as Map<String, dynamic>)).toList();
+    final meta = json['meta'] as Map<String, dynamic>?;
+    final current = (meta?['current_page'] as num?)?.toInt();
+    final last = (meta?['last_page'] as num?)?.toInt();
+    final hasNext = (current != null && last != null) ? current < last : false;
+    final next = hasNext && current != null ? current + 1 : null;
+    return OrderPage(orders: orders, hasNext: hasNext, nextPage: next);
+  }
+}

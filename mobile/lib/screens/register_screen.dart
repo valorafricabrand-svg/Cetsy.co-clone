@@ -183,10 +183,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           label: "Full Name",
                           icon: Icons.badge_outlined,
                         ),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty)
-                                ? "Enter your name"
-                                : null,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return 'Enter your name';
+                          if (value.trim().length < 2) return 'Name must be at least 2 characters';
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 14),
 
@@ -202,8 +203,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           if (value == null || value.isEmpty) {
                             return "Enter your email";
                           }
-                          final emailReg =
-                              RegExp(r"^[\w\.\-]+@([\w\-]+\.)+[a-zA-Z]{2,}$");
+                          final emailReg = RegExp(r'^[\w\.-]+@([\w-]+\.)+[A-Za-z]{2,}$');
                           if (!emailReg.hasMatch(value.trim())) {
                             return "Enter a valid email";
                           }
@@ -264,10 +264,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                         ),
-                        validator: (value) =>
-                            (value == null || value.length < 6)
-                                ? "Password must be at least 6 characters"
-                                : null,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Enter a password';
+                          if (value.length < 8) return 'At least 8 characters';
+                          final hasLetter = RegExp(r'[A-Za-z]').hasMatch(value);
+                          final hasDigit = RegExp(r'\d').hasMatch(value);
+                          if (!hasLetter || !hasDigit) return 'Use letters and numbers';
+                          return null;
+                        },
                       ),
 
                       const SizedBox(height: 18),

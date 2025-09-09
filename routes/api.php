@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my/products', [ProductController::class, 'myProducts']);
     Route::get('/orders', [\App\Http\Controllers\API\OrderController::class, 'index']);
     Route::post('/orders', [\App\Http\Controllers\API\OrderController::class, 'store']);
+    Route::get('/orders/{order}', [\App\Http\Controllers\API\OrderController::class, 'show']);
     Route::post('/profile', [ProfileController::class, 'update']);
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::post('/change-password', [PasswordController::class, 'change']);
