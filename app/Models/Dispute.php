@@ -167,6 +167,9 @@ class Dispute extends Model
 
     public function canBeAppealed(): bool
     {
+        if (!config('disputes.enable_appeals')) {
+            return false;
+        }
         if (!$this->can_appeal) {
             return false;
         }
@@ -277,7 +280,11 @@ class Dispute extends Model
             'resolved_at' => Carbon::now()
         ]);
 
-        $this->setAppealDeadline();
+        if (config('disputes.enable_appeals')) {
+            $this->setAppealDeadline();
+        } else {
+            $this->update(['can_appeal' => false]);
+        }
     }
 
     public function markAsAppealed(): void

@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 use App\Models\Country;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WelcomeBuyerMail;
+use App\Mail\WelcomeSellerMail;
 
 class RegisteredUserController extends Controller
 {
@@ -52,6 +55,18 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
         Auth::login($user);
+
+        // Send welcome email based on user type
+        try {
+            if ($user->user_type === 'seller') {
+                Mail::to($user->email)->send(new WelcomeSellerMail($user));
+            } else {
+                Mail::to($user->email)->send(new WelcomeBuyerMail($user));
+            }
+        } catch (\Throwable $e) {
+            // Avoid blocking registration on mail failures; consider logging
+            \Log::warning('Welcome email failed: ' . $e->getMessage());
+        }
 
         // If seller, redirect to subscription page
         if ($user->user_type === 'seller') {
