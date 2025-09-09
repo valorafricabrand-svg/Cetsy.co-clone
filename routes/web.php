@@ -538,10 +538,10 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
     // Payout Management
     Route::get('payouts', [PayoutRequestController::class, 'index'])->name('payouts.index');
     Route::post('payouts', [PayoutRequestController::class, 'store'])->name('payouts.store');
-    Route::get('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyForm'])->name('payouts.verify')->withoutMiddleware(['ensure.seller.subscription']);
-    Route::post('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyOtp'])->name('payouts.verify.submit')->withoutMiddleware(['ensure.seller.subscription']);
-    Route::post('payouts/{payout}/resend-otp', [PayoutRequestController::class, 'resendOtp'])->name('payouts.verify.resend')->withoutMiddleware(['ensure.seller.subscription']);
-    Route::post('payouts/{payout}/cancel', [PayoutRequestController::class, 'cancel'])->name('payouts.cancel')->withoutMiddleware(['ensure.seller.subscription']);
+    Route::get('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyForm'])->name('payouts.otp.verify')->withoutMiddleware(['ensure.seller.subscription','seller']);
+    Route::post('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyOtp'])->name('payouts.otp.submit')->withoutMiddleware(['ensure.seller.subscription','seller']);
+    Route::post('payouts/{payout}/resend-otp', [PayoutRequestController::class, 'resendOtp'])->name('payouts.otp.resend')->withoutMiddleware(['ensure.seller.subscription','seller']);
+    Route::post('payouts/{payout}/cancel', [PayoutRequestController::class, 'cancel'])->name('payouts.otp.cancel')->withoutMiddleware(['ensure.seller.subscription','seller']);
 
     // Services
     Route::resource('services', ServiceController::class);
@@ -608,3 +608,15 @@ Route::post('/daraja/b2c/result', [PayoutWebhookController::class, 'darajaB2CRes
 Route::post('/daraja/b2c/timeout', [PayoutWebhookController::class, 'darajaB2CTimeout'])->name('webhooks.daraja.b2c.timeout');
 
 require __DIR__ . '/auth.php';
+
+
+// Fallback OTP routes (ensure named routes exist even if group middleware changes)
+Route::middleware('auth')->group(function () {
+    Route::get('/seller/payouts/{payout}/verify', [\App\Http\Controllers\Seller\PayoutRequestController::class, 'verifyForm'])->name('seller.payouts.otp.verify');
+    Route::post('/seller/payouts/{payout}/verify', [\App\Http\Controllers\Seller\PayoutRequestController::class, 'verifyOtp'])->name('seller.payouts.otp.submit');
+    Route::post('/seller/payouts/{payout}/resend-otp', [\App\Http\Controllers\Seller\PayoutRequestController::class, 'resendOtp'])->name('seller.payouts.otp.resend');
+    Route::post('/seller/payouts/{payout}/cancel', [\App\Http\Controllers\Seller\PayoutRequestController::class, 'cancel'])->name('seller.payouts.otp.cancel');
+});
+
+
+   

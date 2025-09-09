@@ -15,7 +15,7 @@ use App\Models\WishlistItem;
 use App\Models\Kyc;
 use App\Models\Subscription;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
