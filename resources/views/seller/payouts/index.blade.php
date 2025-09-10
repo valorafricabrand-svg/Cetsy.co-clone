@@ -7,8 +7,25 @@
 
       <h3 class="mb-4">Payout Requests</h3>
 
+      @if(!empty($otpPending))
+        <div class="alert alert-warning d-flex align-items-center justify-content-between">
+          <div>
+            <i class="bi bi-shield-lock me-2"></i>
+            You have a payout request (ID #{{ $otpPending->id }}) awaiting verification.
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <a href="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.verify') ? route('seller.payouts.otp.verify', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/verify')) }}" class="btn btn-sm btn-primary">Continue Verification</a>
+            <form action="{{ route('seller.payouts.otp.cancel', $otpPending) }}" method="POST" class="d-inline" onsubmit="return confirm('Cancel this payout request?');">
+              @csrf
+              <button class="btn btn-sm btn-outline-danger">Cancel</button>
+            </form>
+          </div>
+        </div>
+      @endif
+      
+
       <div class="alert alert-info mb-4">
-          Available balance: {{ get_currency() }} {{ number_format($balance,2) }}
+          Available balance: {{ shop_currency() }} {{ number_format($balance,2) }}
       </div>
 
       <div class="card shadow-sm border-0">
@@ -27,13 +44,13 @@
                       @forelse($requests as $req)
                           <tr>
                               <td>{{ $req->id }}</td>
-                              <td>{{ get_currency() }} {{ number_format($req->amount,2) }}</td>
+                              <td>{{ shop_currency() }} {{ number_format($req->amount,2) }}</td>
                               <td class="text-capitalize">{{ $req->status }}</td>
                               <td>{{ $req->created_at->format('d M Y') }}</td>
                               <td class="text-nowrap">
                                 @if($req->status === 'otp_pending')
-                                  <a href="{{ route('seller.payouts.verify', $req) }}" class="btn btn-sm btn-primary">Verify</a>
-                                  <form action="{{ route('seller.payouts.cancel', $req) }}" method="POST" class="d-inline" onsubmit="return confirm('Cancel this payout request?');">
+                                  <a href="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.verify') ? route('seller.payouts.otp.verify', $req) : url('/seller/payouts/'.$req->id.'/verify')) }}" class="btn btn-sm btn-primary">Verify</a>
+                                  <form action="{{ route('seller.payouts.otp.cancel', $req) }}" method="POST" class="d-inline" onsubmit="return confirm('Cancel this payout request?');">
                                     @csrf
                                     <button class="btn btn-sm btn-outline-danger">Cancel</button>
                                   </form>

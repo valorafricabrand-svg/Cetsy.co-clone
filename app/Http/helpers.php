@@ -79,12 +79,12 @@ function shop(){
         return $walletBalance;
   }
 
-   function wallet_on_hold(){
+  function wallet_on_hold(){
      return wallet('on_hold');
    }
 
 
-     function admin_wallet($status = 'completed') {
+  function admin_wallet($status = 'completed') {
 
      $walletBalance = \App\Models\Wallet::where('status', $status)
                             ->selectRaw('SUM(credit - debit) as balance')
@@ -96,6 +96,43 @@ function shop(){
 
   function get_currency() {
     return setting('default_currency');
+ }
+
+ /**
+  * Determine the currency symbol for a given shop/context, falling back to default.
+  * Accepts: \App\Models\Shop instance, an object with ->shop, a shop id, or null (uses current seller).
+  */
+ function shop_currency($context = null) {
+    try {
+        // 1) Explicit Shop instance
+        if ($context instanceof \App\Models\Shop) {
+            return $context->currency ?: get_currency();
+        }
+
+        // 2) Any object with a loaded 'shop' relation (e.g., Order, Product)
+        if (is_object($context) && isset($context->shop) && $context->shop instanceof \App\Models\Shop) {
+            return $context->shop->currency ?: get_currency();
+        }
+
+        // 3) Shop id
+        if (is_numeric($context)) {
+            $shop = \App\Models\Shop::find((int)$context);
+            if ($shop) {
+                return $shop->currency ?: get_currency();
+            }
+        }
+
+        // 4) Current seller's shop
+        if (function_exists('auth') && auth()->check()) {
+            $shop = \App\Models\Shop::where('user_id', auth()->id())->first();
+            if ($shop && !empty($shop->currency)) {
+                return $shop->currency;
+            }
+        }
+    } catch (\Throwable $e) {
+        // Fallback to default on any error
+    }
+    return get_currency();
  }
 
 if (! function_exists('apply_discount')) {

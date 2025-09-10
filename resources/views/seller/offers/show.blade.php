@@ -80,7 +80,7 @@
                                         <dd class="col-sm-8">
                                             <span class="badge bg-info">Yes</span>
                                             @if($offer->originalOffer)
-                                                <br><small class="text-muted">Original: {{ get_currency() }} {{ number_format($offer->originalOffer->offer_price, 2) }}</small>
+                                                <br><small class="text-muted">Original: {{ shop_currency() }} {{ number_format($offer->originalOffer->offer_price, 2) }}</small>
                                             @endif
                                         </dd>
                                     @endif
@@ -164,7 +164,7 @@
                                                                 $diffPercent = $historyOffer->getPriceDifferencePercentage();
                                                             @endphp
                                                             <span class="small {{ $diff > 0 ? 'text-success' : 'text-danger' }}">
-                                                                ({{ $diff > 0 ? '+' : '' }}{{ get_currency() }} {{ number_format(abs($diff), 2) }}, 
+                                                                ({{ $diff > 0 ? '+' : '' }}{{ shop_currency() }} {{ number_format(abs($diff), 2) }}, 
                                                                 {{ $diff > 0 ? '+' : '' }}{{ number_format($diffPercent, 1) }}%)
                                                             </span>
                                                         @endif
@@ -242,7 +242,7 @@
                             
                             <dl class="row mb-0">
                                 <dt class="col-6">Listed Price</dt>
-                                <dd class="col-6">{{ get_currency() }} {{ number_format($offer->product->price ?? 0, 2) }}</dd>
+                                <dd class="col-6">{{ shop_currency() }} {{ number_format($offer->product->price ?? 0, 2) }}</dd>
                                 
                                 <dt class="col-6">Offer Price</dt>
                                 <dd class="col-6 fw-bold text-success">{{ $offer->formatted_price }}</dd>
@@ -343,7 +343,7 @@
                     <div class="mb-3">
                         <label class="form-label">Counter Price <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <span class="input-group-text">{{ get_currency() }}</span>
+                            <span class="input-group-text">{{ shop_currency() }}</span>
                             <input type="number" name="counter_price" class="form-control" step="0.01" min="0.01" 
                                    value="{{ $offer->offer_price }}" required>
                         </div>

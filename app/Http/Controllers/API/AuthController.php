@@ -4,9 +4,11 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Shop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -33,6 +35,23 @@ class AuthController extends Controller
             'country_id' => $request->country_id,
             'is_active'  => true,
         ]);
+
+        // Auto-create a basic shop for sellers so they can list products via API.
+        if ($user->user_type === User::TYPE_SELLER && !$user->shop) {
+            $base = Str::slug($user->name . ' Shop');
+            $slug = $base;
+            $i = 1;
+            while (Shop::where('slug', $slug)->exists()) {
+                $slug = $base . '-' . $i++;
+            }
+            Shop::create([
+                'user_id' => $user->id,
+                'name'    => $slug,
+                'slug'    => $slug,
+            ]);
+            // refresh relation
+            $user->load('shop');
+        }
 
         return response()->json([
             'token' => $user->createToken('cetsy_token')->plainTextToken,
