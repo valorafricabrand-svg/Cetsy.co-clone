@@ -240,7 +240,6 @@
                                                 ({{ $diff > 0 ? '+' : '' }}{{ number_format($diffPercent, 1) }}%)
                                             </span>
                                         @endif
-                                    @endif
                                 </div>
                             </td>
                             <td>

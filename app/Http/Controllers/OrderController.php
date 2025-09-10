@@ -596,8 +596,6 @@ public function storeOrder(Request $request)
                 })
                 ->update(['status' => 'completed']);
         });
-<<<<<<< HEAD
-=======
 
         // Create activities for both parties
         try {
@@ -621,7 +619,6 @@ public function storeOrder(Request $request)
         } catch (\Throwable $e) {
             // non-fatal
         }
->>>>>>> development
 
         try {
             $order->load(['items.product', 'shop.user', 'user']);
