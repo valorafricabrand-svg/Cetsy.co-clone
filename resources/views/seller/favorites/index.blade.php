@@ -115,7 +115,7 @@
                                     <div class="flex-grow-1">
                                         <h6 class="mb-1 fw-bold">{{ $product->name }}</h6>
                                         <div class="d-flex align-items-center gap-3">
-                                            <span class="badge bg-primary">{{ get_currency() }} {{ number_format($product->price, 2) }}</span>
+                                            <span class="badge bg-primary">{{ shop_currency() }} {{ number_format($product->price, 2) }}</span>
                                             <span class="badge bg-success">{{ $favoriteCount }} favorites</span>
                                             <span class="badge bg-info">{{ $uniqueBuyers }} unique customers</span>
                                         </div>

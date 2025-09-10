@@ -1,5 +1,6 @@
 // lib/models/product.dart
 import 'shipping_profile.dart';
+import 'variation.dart';
 
 class Product {
   final int id;
@@ -9,6 +10,8 @@ class Product {
   final String? image;         // featured image path or full URL
   final double? discountPrice; // nullable → easier null-checks
   final List<ShippingProfile> shippingProfiles;
+  final List<VariationType> variationTypes;
+  final List<Variant> variants;
 
   // ─────────────────────────  ctor  ─────────────────────────
   const Product({
@@ -19,6 +22,8 @@ class Product {
     this.image,
     this.discountPrice,
     this.shippingProfiles = const [],
+    this.variationTypes = const [],
+    this.variants = const [],
   });
 
   // ─────────────────────────  Getters  ─────────────────────────
@@ -49,6 +54,14 @@ class Product {
                 ?.map((e) => ShippingProfile.fromJson(e))
                 .toList() ??
             const [],
+        variationTypes: (json['variation_types'] as List?)
+                ?.map((e) => VariationType.fromJson(e))
+                .toList() ??
+            const [],
+        variants: (json['variants'] as List?)
+                ?.map((e) => Variant.fromJson(e))
+                .toList() ??
+            const [],
       );
 
   Map<String, dynamic> toJson() => {
@@ -60,6 +73,8 @@ class Product {
         'discount_price': discountPrice,
         'shipping_profiles':
             shippingProfiles.map((e) => e.toJson()).toList(),
+        'variation_types': variationTypes.map((e) => e.toJson()).toList(),
+        'variants': variants.map((e) => e.toJson()).toList(),
       };
 
   /// Converts a list of dynamic maps to a strongly-typed `List<Product>`.
@@ -75,6 +90,8 @@ class Product {
     String? image,
     double? discountPrice,
     List<ShippingProfile>? shippingProfiles,
+    List<VariationType>? variationTypes,
+    List<Variant>? variants,
   }) =>
       Product(
         id: id ?? this.id,
@@ -84,10 +101,12 @@ class Product {
         image: image ?? this.image,
         discountPrice: discountPrice ?? this.discountPrice,
         shippingProfiles: shippingProfiles ?? this.shippingProfiles,
+        variationTypes: variationTypes ?? this.variationTypes,
+        variants: variants ?? this.variants,
       );
 
   // For easier debugging
   @override
   String toString() =>
-      'Product(id: $id, name: $name, price: $price, discount: $discountPrice, shippingProfiles: ${shippingProfiles.length})';
+      'Product(id: $id, name: $name, price: $price, discount: $discountPrice, shippingProfiles: ${shippingProfiles.length}, variants: ${variants.length})';
 }

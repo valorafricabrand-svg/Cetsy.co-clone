@@ -10,6 +10,11 @@ import 'screens/product_detail_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/main_shell.dart';
+import 'screens/edit_profile_screen.dart';
+import 'screens/change_password_screen.dart';
+import 'screens/order_history_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/change_email_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -123,7 +128,7 @@ class CetsyApp extends StatelessWidget {
             borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: Colors.white,
           elevation: 2,
           shape: RoundedRectangleBorder(
@@ -139,6 +144,11 @@ class CetsyApp extends StatelessWidget {
         ProductDetailScreen.route: (_) => const ProductDetailScreen(),
         '/register': (_) => const RegisterScreen(),
         '/forgot-password': (_) => const ForgotPasswordScreen(),
+        '/edit-profile': (_) => const EditProfileScreen(),
+        '/change-password': (_) => const ChangePasswordScreen(),
+        '/orders': (_) => const OrderHistoryScreen(),
+        '/login': (_) => const LoginScreen(),
+        '/change-email': (_) => const ChangeEmailScreen(),
       },
     );
   }

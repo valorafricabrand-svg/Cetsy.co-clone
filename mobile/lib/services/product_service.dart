@@ -40,4 +40,14 @@ class ProductService {
       throw Exception("Failed to load products");
     }
   }
+
+  static Future<Product> getProduct(int id) async {
+    final uri = Uri.parse("${Constants.baseUrl}/products/$id");
+    final response = await http.get(uri, headers: {'Accept': 'application/json'});
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      return Product.fromJson(decoded as Map<String, dynamic>);
+    }
+    throw Exception('Failed to load product');
+  }
 }
