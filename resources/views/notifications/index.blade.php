@@ -308,6 +308,7 @@
 @endSection
 
 @section('content')
+<div class="content">
 <div class="notifications-container">
     <!-- Page Header -->
     <div class="page-header">
@@ -443,6 +444,7 @@
             </form>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Success Toast Template -->
