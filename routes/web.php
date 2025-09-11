@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CurrencySelectionController;
 use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
     CategoryController, CartController, CheckoutController, OrderController,
@@ -46,6 +47,10 @@ use App\Http\Controllers\Seller\{
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+// Currency selector (session + cookie)
+Route::post('/set-currency', [CurrencySelectionController::class, 'set'])->name('currency.set');
+// Optional GET fallback to avoid 404 if a GET is sent
+Route::get('/set-currency', [CurrencySelectionController::class, 'set'])->name('currency.set.get');
 // Safaricom callback (must be reachable publicly)
 Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
     ->name('wallet.deposit.mpesa.callback');

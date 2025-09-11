@@ -29,7 +29,7 @@
           <h2 class="h5 fw-semibold mt-5">Jaat Payments (Funds Received by Sellers)</h2>
           <p class="mb-4">
             Sellers can accept payments via Visa, Mastercard, American Express, M-Pesa, Airtel Money,
-            and PayPal (USD or KES) through Jaat’s payment gateway.
+            and PayPal (USD or {{ get_currency() }}) through Jaat’s payment gateway.
           </p>
 
           <!-- Taxes -->
@@ -113,3 +113,4 @@
     </div>
   </section>
 @endsection
+

@@ -86,7 +86,7 @@
                                 'failed'  => 'danger',
                             ][$payment->status] ?? 'dark';
 
-                            $symbol = config('app.currency_symbol', 'KES');
+                            $symbol = currency_symbol();
                         @endphp
                         <tr>
                             <td>{{ $payment->id }}</td>
@@ -103,9 +103,7 @@
                                 </span>
                             </td>
 
-                            <td class="text-end">
-                                {{ $symbol }} {{ number_format($payment->total_amount, 2) }}
-                            </td>
+                            <td class="text-end">{{ money($payment->total_amount) }}</td>
 
                             <td>
                                 <span class="d-inline-flex align-items-center gap-1 text-capitalize">

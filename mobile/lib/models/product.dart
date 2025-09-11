@@ -9,6 +9,11 @@ class Product {
   final double price;
   final String? image;         // featured image path or full URL
   final double? discountPrice; // nullable → easier null-checks
+  final String? type;
+  final int? shopId;
+  final int? shopUserId;
+  final List<String> media; // relative paths or full URLs
+  final List<int> mediaIds; // IDs matching media list order
   final List<ShippingProfile> shippingProfiles;
   final List<VariationType> variationTypes;
   final List<Variant> variants;
@@ -21,6 +26,11 @@ class Product {
     required this.price,
     this.image,
     this.discountPrice,
+    this.type,
+    this.shopId,
+    this.shopUserId,
+    this.media = const [],
+    this.mediaIds = const [],
     this.shippingProfiles = const [],
     this.variationTypes = const [],
     this.variants = const [],
@@ -47,9 +57,28 @@ class Product {
         price: double.tryParse(json['price'].toString()) ?? 0.0,
         // Try both common keys: featured_image or just image
         image: json['featured_image'] ?? json['image'],
-        discountPrice: json['discount_price'] == null
-            ? null
-            : double.tryParse(json['discount_price'].toString()),
+        // Prefer server-computed discounted_price (mirrors web), fallback to discount_price column
+        discountPrice: (() {
+          final dp = json['discounted_price'] ?? json['discount_price'];
+          if (dp == null) return null;
+          return double.tryParse(dp.toString());
+        })(),
+        type: json['type'],
+        shopId: (json['shop'] is Map && (json['shop']['id'] != null)) ? json['shop']['id'] as int : null,
+        shopUserId: (json['shop'] is Map && (json['shop']['user_id'] != null)) ? json['shop']['user_id'] as int : null,
+        media: (json['media'] as List?)
+                ?.map((e) {
+                  final m = e as Map<String, dynamic>;
+                  final u = (m['url'] ?? m['image'])?.toString();
+                  return u ?? '';
+                })
+                .where((e) => e.isNotEmpty)
+                .toList() ??
+            const [],
+        mediaIds: (json['media'] as List?)
+                ?.map((e) => (e as Map<String,dynamic>)['id'] as int)
+                .toList() ??
+            const [],
         shippingProfiles: (json['shipping_profiles'] as List?)
                 ?.map((e) => ShippingProfile.fromJson(e))
                 .toList() ??
@@ -71,6 +100,11 @@ class Product {
         'price': price,
         'image': image,
         'discount_price': discountPrice,
+        'type': type,
+        'shop_id': shopId,
+        'shop_user_id': shopUserId,
+        'media': media,
+        'media_ids': mediaIds,
         'shipping_profiles':
             shippingProfiles.map((e) => e.toJson()).toList(),
         'variation_types': variationTypes.map((e) => e.toJson()).toList(),
@@ -89,6 +123,10 @@ class Product {
     double? price,
     String? image,
     double? discountPrice,
+    String? type,
+    int? shopId,
+    int? shopUserId,
+    List<String>? media,
     List<ShippingProfile>? shippingProfiles,
     List<VariationType>? variationTypes,
     List<Variant>? variants,
@@ -100,6 +138,11 @@ class Product {
         price: price ?? this.price,
         image: image ?? this.image,
         discountPrice: discountPrice ?? this.discountPrice,
+        type: type ?? this.type,
+        shopId: shopId ?? this.shopId,
+        shopUserId: shopUserId ?? this.shopUserId,
+        media: media ?? this.media,
+        mediaIds: mediaIds ?? this.mediaIds,
         shippingProfiles: shippingProfiles ?? this.shippingProfiles,
         variationTypes: variationTypes ?? this.variationTypes,
         variants: variants ?? this.variants,

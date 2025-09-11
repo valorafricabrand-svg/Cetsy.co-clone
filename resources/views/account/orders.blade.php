@@ -49,7 +49,7 @@
                     <br><small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
                   @endif
                 </td>
-                <td>{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</td>
+                <td>{{ money() }}</td>
                 <td>
                   <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-sm btn-outline-secondary me-1">View</a>
                   @if($order->status === \App\Models\Order::STATUS_PENDING)
@@ -122,3 +122,5 @@
   </div>
 </div>
 @endsection
+
+

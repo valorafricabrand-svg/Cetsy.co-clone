@@ -149,6 +149,42 @@
         x-data="cartDropdown()"
         x-init="fetchCart()"
       >
+
+        {{-- Currency selector --}}
+        @php
+          try {
+            $currentCurrency = get_currency();
+            $navCurrencies = \App\Models\Currency::where('is_active', true)->orderBy('code')->get(['code','symbol']);
+          } catch (\Throwable $e) {
+            $currentCurrency = get_currency();
+            $navCurrencies = collect([
+              (object)['code' => 'USD','symbol' => '$'],
+              (object)['code' => 'EUR','symbol' => '€'],
+              (object)['code' => 'GBP','symbol' => '£'],
+              (object)['code' => 'KES','symbol' => 'KES'],
+            ]);
+          }
+        @endphp
+        <li class="nav-item dropdown me-3">
+          <a class="nav-link dropdown-toggle text-dark" href="#" id="currencyDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-coins me-1"></i>{{ $currentCurrency }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="currencyDropdown">
+            <li class="px-2">
+              @php $currencyAction = \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency'); @endphp
+              <form method="POST" action="{{ $currencyAction }}" id="currencySetFormFront">
+                @csrf
+                <select name="code" class="form-select form-select-sm" onchange="this.form.submit()">
+                  @foreach($navCurrencies as $c)
+                    <option value="{{ $c->code }}" @selected(strtoupper($c->code) === strtoupper($currentCurrency))>
+                      {{ $c->symbol ? $c->symbol.' ' : '' }}{{ strtoupper($c->code) }}
+                    </option>
+                  @endforeach
+                </select>
+              </form>
+            </li>
+          </ul>
+        </li>
       
 
            {{-- Cart --}}

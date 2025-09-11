@@ -191,8 +191,46 @@
               <li class="nav-item"><a class="nav-link" href="{{ route('shops.index') }}">Shops</a></li>
             </ul>
 
-            {{-- Cart + User (desktop) --}}
+            {{-- Currency + Cart + User (desktop) --}}
             <ul class="navbar-nav ms-auto align-items-center" x-data="cartDropdown()" x-init="fetchCart()">
+              {{-- Currency selector --}}
+              @php
+                try {
+                  $currentCurrency = get_currency();
+                  $navCurrencies = \App\Models\Currency::where('is_active', true)->orderBy('code')->get(['code','symbol']);
+                } catch (\Throwable $e) {
+                  $currentCurrency = get_currency();
+                  $navCurrencies = collect([
+                    (object)['code' => 'USD','symbol' => '$'],
+                    (object)['code' => 'EUR','symbol' => '€'],
+                    (object)['code' => 'GBP','symbol' => '£'],
+                    (object)['code' => 'KES','symbol' => 'KES'],
+                  ]);
+                }
+              @endphp
+              <li class="nav-item dropdown me-2 d-none d-lg-block">
+                <a class="nav-link dropdown-toggle" href="#" id="currencyMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="fas fa-coins me-1"></i>{{ $currentCurrency }}
+                </a>
+                <div class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="currencyMenu" style="min-width: 220px;">
+                  @php $currencyGet = \Illuminate\Support\Facades\Route::has('currency.set.get') ? route('currency.set.get') : url('/set-currency'); @endphp
+                  <ul class="list-unstyled mb-0">
+                    @foreach($navCurrencies as $c)
+                      @php $code = strtoupper($c->code); $is = $code === strtoupper($currentCurrency); @endphp
+                      <li>
+                        <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="{{ $currencyGet }}?code={{ $code }}">
+                          <span>
+                            {{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}
+                          </span>
+                          @if($is)
+                            <i class="fas fa-check text-success"></i>
+                          @endif
+                        </a>
+                      </li>
+                    @endforeach
+                  </ul>
+                </div>
+              </li>
               @php $cartCount = (int) count(session('cart', [])); @endphp
               <li class="nav-item me-2 d-none d-lg-block">
                 <a href="{{ route('cart.view') }}" class="nav-link position-relative text-dark" aria-label="View cart">
@@ -276,6 +314,35 @@
           <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body d-flex flex-column">
+          {{-- Currency selector (mobile) --}}
+          @php
+            try {
+              $currentCurrency = get_currency();
+              $navCurrencies = \App\Models\Currency::where('is_active', true)->orderBy('code')->get(['code','symbol']);
+            } catch (\Throwable $e) {
+              $currentCurrency = get_currency();
+              $navCurrencies = collect([
+                (object)['code' => 'USD','symbol' => '$'],
+                (object)['code' => 'EUR','symbol' => '€'],
+                (object)['code' => 'GBP','symbol' => '£'],
+                (object)['code' => 'KES','symbol' => 'KES'],
+              ]);
+            }
+          @endphp
+          <div class="mb-3">
+            @php $currencyAction = \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency'); @endphp
+            <form method="POST" action="{{ $currencyAction }}" class="d-flex align-items-center gap-2">
+              @csrf
+              <label for="currencySelectMobile" class="form-label mb-0"><i class="fas fa-coins me-1"></i>Currency</label>
+              <select id="currencySelectMobile" name="code" class="form-select form-select-sm" style="max-width: 160px;" onchange="this.form.submit()">
+                @foreach($navCurrencies as $c)
+                  <option value="{{ $c->code }}" @selected(strtoupper($c->code) === strtoupper($currentCurrency))>
+                    {{ $c->symbol ? $c->symbol.' ' : '' }}{{ strtoupper($c->code) }}
+                  </option>
+                @endforeach
+              </select>
+            </form>
+          </div>
           @auth
             <div class="mb-3">
               <div class="fw-semibold mb-1">Hi, {{ auth()->user()->name }}</div>

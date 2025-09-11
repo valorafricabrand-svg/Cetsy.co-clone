@@ -37,7 +37,7 @@
               <strong>Engage with saved items.</strong> When a customer “favorites” your product, send a friendly message or limited-time discount to encourage purchase.
             </li>
             <li class="list-group-item border-0 ps-0 mb-2">
-              <strong>Consider Lucare Ads.</strong> Boost visibility for new launches or bestsellers with targeted ads starting at <span class="text-nowrap">KES 150/day</span>.
+              <strong>Consider Lucare Ads.</strong> Boost visibility for new launches or bestsellers with targeted ads starting at <span class="text-nowrap">{{ get_currency() }} 150/day</span>.
             </li>
             <li class="list-group-item border-0 ps-0 mb-2">
               <strong>Offer bundle deals.</strong> Combine complementary items—like cleanser + toner or lipstick + liner—to increase average order value.
@@ -60,3 +60,4 @@
     </div>
   </section>
 @endsection
+

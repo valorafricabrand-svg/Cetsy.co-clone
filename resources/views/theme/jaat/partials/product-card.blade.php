@@ -29,23 +29,23 @@
     </div>
 
     {{-- Price --}}
- @php
+@php
     $basePrice = $item->price;
     $finalPrice = $item->discounted_price;
 @endphp
 
-@if($finalPrice < $basePrice)
+@if(is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
   <div class="d-flex align-items-baseline gap-3 mb-3">
     <span class="fw-bold text-success">
-      {{ get_currency() }} {{ number_format($finalPrice, 2) }}
+      {{ money($finalPrice) }}
     </span>
     <span class="text-muted text-decoration-line-through">
-      {{ get_currency() }} {{ number_format($basePrice, 2) }}
+      {{ money($basePrice) }}
     </span>
   </div>
 @else
   <p class="fw-bold text-success mb-3">
-    {{ get_currency() }} {{ number_format($basePrice, 2) }}
+    {{ money($basePrice) }}
   </p>
 @endif
 
@@ -53,3 +53,4 @@
 
   </div>
 </a>
+

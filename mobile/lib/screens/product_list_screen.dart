@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import '../providers/currency_provider.dart';
 // lib/screens/product_list_screen.dart
 import 'dart:async';
 
@@ -15,13 +17,14 @@ import '../providers/cart_provider.dart';
 import 'product_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({super.key});
+  const ProductListScreen({super.key, this.initialType});
+  final String? initialType; // physical | service | digital | null
 
   @override
   State<ProductListScreen> createState() => _ProductListScreenState();
 }
 
-class _ProductListScreenState extends State<ProductListScreen> {
+  class _ProductListScreenState extends State<ProductListScreen> {
   // Brand color
   static const Color cetsyGreen = Color(0xFF198754);
 
@@ -30,15 +33,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final _minCtl = TextEditingController();
   final _maxCtl = TextEditingController();
   final _scrollCtl = ScrollController();
-
-  int _page = 1;
-  bool _showTopFab = false;
-  Timer? _debounce;
-  final _priceFmt = NumberFormat.decimalPattern();
+  
+    int _page = 1;
+    bool _showTopFab = false;
+    Timer? _debounce;
+    final _priceFmt = NumberFormat.decimalPattern();
+    String? _selectedType; // null = All, 'physical' | 'service' | 'digital'
 
   @override
   void initState() {
     super.initState();
+    // Apply initial type filter if provided
+    _selectedType = widget.initialType;
     _fetch();
     _scrollCtl.addListener(_onScroll);
   }
@@ -59,17 +65,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
     final show = _scrollCtl.offset > 400;
     if (show != _showTopFab) setState(() => _showTopFab = show);
   }
-
-  void _fetch() {
-    setState(() {
-      _products = ProductService.fetchProducts(
-        page: _page,
-        keyword: _keywordCtl.text.trim(),
-        minPrice: double.tryParse(_minCtl.text),
-        maxPrice: double.tryParse(_maxCtl.text),
-      );
-    });
-  }
+  
+    void _fetch() {
+      setState(() {
+        _products = ProductService.fetchProducts(
+          page: _page,
+          keyword: _keywordCtl.text.trim(),
+          minPrice: double.tryParse(_minCtl.text),
+          maxPrice: double.tryParse(_maxCtl.text),
+          type: _selectedType,
+        );
+      });
+    }
 
   void _applyDebounced() {
     _debounce?.cancel();
@@ -195,6 +202,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   ),
                 ),
               ),
+              // Type selector (All, Products, Services, Digital)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: _buildTypeSelector(),
+                ),
+              ),
               _buildProductGrid(),
               SliverToBoxAdapter(child: _buildPagination()),
               const SliverToBoxAdapter(child: SizedBox(height: 40)),
@@ -245,6 +259,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
     if (_maxCtl.text.trim().isNotEmpty) {
       chips.add(_filterChip('Max: ${_maxCtl.text.trim()}', () {
         _maxCtl.clear();
+        _applyDebounced();
+      }));
+    }
+    if (_selectedType != null && _selectedType!.isNotEmpty) {
+      final label = _selectedType == 'service'
+          ? 'Services'
+          : _selectedType == 'digital'
+              ? 'Digital'
+              : 'Products';
+      chips.add(_filterChip('Type: $label', () {
+        _selectedType = null;
         _applyDebounced();
       }));
     }
@@ -395,6 +420,24 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             ),
                           ),
                         ),
+                      if (p.type != null && p.type != 'physical')
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black87.withOpacity(0.7),
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(10),
+                              ),
+                            ),
+                            child: Text(
+                              p.type == 'service' ? 'Service' : 'Digital',
+                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
 
                       // 👉 Quick action: Add to cart
                       Positioned(
@@ -468,7 +511,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       Row(
                         children: [
                           Text(
-                            'KES ${_priceFmt.format(displayPrice)}',
+                            '\ ${_priceFmt.format(context.watch<CurrencyProvider>().convert(displayPrice))}',
                             style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 16,
@@ -478,7 +521,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           if (hasDiscount) ...[
                             const SizedBox(width: 8),
                             Text(
-                              'KES ${_priceFmt.format(p.price)}',
+                              '\ ${_priceFmt.format(context.watch<CurrencyProvider>().convert(p.price))}',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey.shade600,
@@ -692,4 +735,55 @@ class _ProductListScreenState extends State<ProductListScreen> {
     if (w >= 700) return 3;
     return 2;
   }
+
+  Widget _buildTypeSelector() {
+    Widget chip({required String label, String? value}) {
+      final selected = _selectedType == value;
+      return Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: ChoiceChip(
+          selected: selected,
+          label: Text(label),
+          onSelected: (_) {
+            setState(() {
+              _selectedType = value;
+              _page = 1;
+            });
+            _fetch();
+          },
+          selectedColor: cetsyGreen.withOpacity(.15),
+          labelStyle: TextStyle(
+            color: selected ? cetsyGreen : Colors.black87,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          chip(label: 'All Listings', value: null),
+          chip(label: 'Products', value: 'physical'),
+          chip(label: 'Services', value: 'service'),
+          chip(label: 'Digital', value: 'digital'),
+        ],
+      ),
+    );
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

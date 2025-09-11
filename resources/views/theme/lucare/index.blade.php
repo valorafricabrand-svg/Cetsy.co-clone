@@ -115,7 +115,7 @@
               <h5 class="card-title text-truncate mb-1">
                 <a href="{{ route('listing.show', $product) }}" class="text-dark">{{ $product->name }}</a>
               </h5>
-              <p class="text-primary fw-bold mb-3">KES {{ number_format($product->price,2) }}</p>
+              <p class="text-primary fw-bold mb-3">{{ money($product->price) }}</p>
               <div class="mt-auto d-flex justify-content-between">
                 <a href="{{ route('listing.show', $product) }}"
                    class="btn btn-outline-primary btn-sm">
@@ -197,3 +197,4 @@
   document.addEventListener('DOMContentLoaded', () => AOS.init({ duration: 800, once: true }));
 </script>
 @endpush
+

@@ -15,12 +15,12 @@
       @foreach($order->items as $item)
         <li class="py-4 flex justify-between">
           <span>{{ $item->product->name }} (×{{ $item->quantity }})</span>
-          <span>KES {{ number_format($item->total_price,2) }}</span>
+          <span>{{ money($item->total_price) }}</span>
         </li>
       @endforeach
       <li class="pt-4 flex justify-between font-semibold">
         <span>Total</span>
-        <span>KES {{ number_format($order->total_amount,2) }}</span>
+        <span>{{ money($order->total_amount) }}</span>
       </li>
     </ul>
   </div>
@@ -31,3 +31,4 @@
   </a>
 </div>
 @endsection
+

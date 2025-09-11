@@ -68,6 +68,40 @@
         </div>
 
         <ul class="navbar-nav navbar-nav-icons flex-row">
+            {{-- Currency selector --}}
+            @php
+                try {
+                    $currentCurrency = get_currency();
+                    $navCurrencies = \App\Models\Currency::where('is_active', true)->orderBy('code')->get(['code','symbol']);
+                } catch (\Throwable $e) {
+                    $currentCurrency = get_currency();
+                    $navCurrencies = collect([
+                        (object)['code' => 'USD','symbol' => '$'],
+                        (object)['code' => 'EUR','symbol' => '€'],
+                        (object)['code' => 'GBP','symbol' => '£'],
+                        (object)['code' => 'KES','symbol' => 'KES'],
+                    ]);
+                }
+            @endphp
+            <li class="nav-item me-2 dropdown">
+                <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Select currency">
+                    <i class="fas fa-coins"></i>
+                    <span class="ms-1">{{ $currentCurrency }}</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end p-2" style="min-width: 180px;">
+                    @php $currencyAction = \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency'); @endphp
+                    <form method="POST" action="{{ $currencyAction }}" id="currencySetForm">
+                        @csrf
+                        <select name="code" class="form-select form-select-sm" onchange="this.form.submit()">
+                            @foreach($navCurrencies as $c)
+                                <option value="{{ $c->code }}" @selected(strtoupper($c->code) === strtoupper($currentCurrency))>
+                                    {{ $c->symbol ? $c->symbol.' ' : '' }}{{ strtoupper($c->code) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
+                </div>
+            </li>
             @foreach($navItems[$role] as $item)
                 @if(isset($item['is_dropdown']) && $item['is_dropdown'])
                     <li class="nav-item me-2 dropdown">
