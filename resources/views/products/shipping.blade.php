@@ -15,7 +15,7 @@
 @section('content')
 @php
   $current = Route::currentRouteName();
-  $currency = $currency ?? (config('app.currency_symbol') ?? 'KES');
+  $currency = $currency ?? currency_symbol();
 @endphp
 
 <div class="content">

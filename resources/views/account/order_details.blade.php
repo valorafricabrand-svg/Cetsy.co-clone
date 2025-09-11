@@ -1,4 +1,4 @@
-﻿{{-- resources/views/orders/show.blade.php --}}
+{{-- resources/views/orders/show.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Order Details')
@@ -123,32 +123,6 @@
             @include('seller.orders.modals.delivered')
           @endif
 
-          {{-- Dispute actions: show continue if exists, else allow create for eligible statuses --}}
-          @php
-            $dispute = $order->disputes()->latest()->first();
-          @endphp
-          @if($dispute)
-            <a href="{{ route('disputes.show', $dispute->id) }}"
-               class="btn btn-warning btn-lg d-flex align-items-center gap-2 px-4 py-2"
-               data-bs-toggle="tooltip" data-bs-placement="bottom" title="View and continue your dispute">
-              <i class="bi bi-exclamation-triangle fs-5"></i>
-              <span>Continue Dispute</span>
-            </a>
-          @else
-            @if(in_array($order->status, [
-              \App\Models\Order::STATUS_PROCESSING,
-              \App\Models\Order::STATUS_SHIPPED,
-              \App\Models\Order::STATUS_DELIVERED
-            ]))
-              <a href="{{ route('disputes.create', ['order_id' => $order->id]) }}"
-                 class="btn btn-outline-warning btn-lg d-flex align-items-center gap-2 px-4 py-2"
-                 data-bs-toggle="tooltip" data-bs-placement="bottom" title="Open a dispute for this order">
-                <i class="bi bi-exclamation-triangle fs-5"></i>
-                <span>Create Dispute</span>
-              </a>
-            @endif
-          @endif
-
         </div>
       </div>
 
@@ -172,7 +146,7 @@
         <span class="chip">
           <i class="bi bi-cash-coin"></i>
           <span class="label-muted">Total:</span>
-          <span class="fw-semibold">{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</span>
+          <span class="fw-semibold">{{ money() }}</span>
         </span>
       </div>
 
@@ -231,15 +205,15 @@
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Subtotal:</span>
-                <span>{{ get_currency() }} {{ number_format($order->subtotal,2) }}</span>
+                <span>{{ money() }}</span>
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Shipping Fee:</span>
-                <span>{{ get_currency() }} {{ number_format($order->shipping_cost,2) }}</span>
+                <span>{{ money() }}</span>
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Total Amount:</span>
-                <span class="fw-bold">{{ get_currency() }} {{ number_format($order->total_amount,2) }}</span>
+                <span class="fw-bold">{{ money() }}</span>
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
                 <span class="fw-semibold">Status:</span>
@@ -406,16 +380,16 @@
                     <td>{{ $qty }}</td>
 
                     {{-- Unit Price --}}
-                    <td>{{ get_currency() }} {{ number_format($unit, 2) }}</td>
+                    <td>{{ money() }}</td>
 
                     {{-- Shipping profile (or hidden for digital) --}}
                     <td>{{ $label }}</td>
 
                     {{-- Shipping cost --}}
-                    <td>{{ get_currency() }} {{ number_format($shipCost, 2) }}</td>
+                    <td>{{ money() }}</td>
 
                     {{-- Line total --}}
-                    <td class="fw-semibold">{{ get_currency() }} {{ number_format($lineTotal, 2) }}</td>
+                    <td class="fw-semibold">{{ money() }}</td>
 
                     {{-- Review (only after delivery) --}}
                     <td class="text-center">
@@ -497,7 +471,7 @@
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $pay->local_transaction_id }}</td>
                     <td>{{ ucfirst($pay->payment_method) }}</td>
-                    <td>{{ get_currency() }} {{ number_format($pay->total_amount,2) }}</td>
+                    <td>{{ money() }}</td>
                     <td>
                       <span class="badge {{ $isCompleted ? 'bg-success' : 'bg-secondary' }}">
                         {{ $statusLabel }}
@@ -579,6 +553,9 @@
   @endif
 @endforeach
 @endsection
+
+
+
 
 
 

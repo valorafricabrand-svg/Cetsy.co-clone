@@ -9,12 +9,14 @@ class ProductService {
     String? keyword,
     double? minPrice,
     double? maxPrice,
+    String? type, // physical | digital | service
   }) async {
     final queryParams = {
       'page': page.toString(),
       if (keyword != null && keyword.isNotEmpty) 'search': keyword,
       if (minPrice != null) 'min_price': minPrice.toString(),
       if (maxPrice != null) 'max_price': maxPrice.toString(),
+      if (type != null && type.isNotEmpty) 'type': type,
     };
 
     final uri = Uri.parse("${Constants.baseUrl}/products")

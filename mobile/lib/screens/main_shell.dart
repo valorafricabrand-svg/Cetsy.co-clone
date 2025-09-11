@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/cart_provider.dart';
+import '../providers/auth_provider.dart';
 import 'cart_screen.dart';
 import 'home_screen.dart';
 import 'product_list_screen.dart';
 import 'profile_screen.dart';
-import 'search_screen.dart';
+// import 'search_screen.dart';
+import 'order_history_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -31,7 +33,7 @@ class MainShellState extends State<MainShell> {
     _tabs = [
       HomeScreen(onShop: () => _setIndex(1)),
       const ProductListScreen(),
-      const SearchScreen(),
+      const OrderHistoryScreen(),
       const CartScreen(),
       const ProfileScreen(),
     ];
@@ -46,6 +48,8 @@ class MainShellState extends State<MainShell> {
         index: _index,
         children: _tabs,
       ),
+      floatingActionButton: _buildFab(context),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: NavigationBar(
         height: 65,
         selectedIndex: _index,
@@ -63,9 +67,9 @@ class MainShellState extends State<MainShell> {
             label: 'Shop',
           ),
           const NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search),
-            label: 'Search',
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long),
+            label: 'Orders',
           ),
           NavigationDestination(
             icon: cartCount > 0
@@ -85,4 +89,16 @@ class MainShellState extends State<MainShell> {
       ),
     );
   }
+
+  Widget? _buildFab(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final isSeller = auth.user?.userType == 'seller';
+    if (!isSeller) return null;
+    return FloatingActionButton.extended(
+      onPressed: () => Navigator.pushNamed(context, '/add-listing'),
+      icon: const Icon(Icons.add_box_outlined),
+      label: const Text('Add Listing'),
+    );
+  }
 }
+

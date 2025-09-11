@@ -68,6 +68,43 @@
         </div>
 
         <ul class="navbar-nav navbar-nav-icons flex-row">
+            {{-- Currency selector --}}
+            @php
+                try {
+                    $currentCurrency = get_currency();
+                    $navCurrencies = \App\Models\Currency::where('is_active', true)->orderBy('code')->get(['code','symbol']);
+                } catch (\Throwable $e) {
+                    $currentCurrency = get_currency();
+                    $navCurrencies = collect([
+                        (object)['code' => 'USD','symbol' => '$'],
+                        (object)['code' => 'EUR','symbol' => '€'],
+                        (object)['code' => 'GBP','symbol' => '£'],
+                        (object)['code' => 'KES','symbol' => 'KES'],
+                    ]);
+                }
+            @endphp
+            <li class="nav-item me-2 dropdown">
+                <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Select currency">
+                    <i class="fas fa-coins"></i>
+                    <span class="ms-1">{{ $currentCurrency }}</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end p-2" style="min-width: 220px;">
+                    @php $currencyGet = \Illuminate\Support\Facades\Route::has('currency.set.get') ? route('currency.set.get') : url('/set-currency'); @endphp
+                    <ul class="list-unstyled mb-0">
+                        @foreach($navCurrencies as $c)
+                            @php $code = strtoupper($c->code); $is = $code === strtoupper($currentCurrency); @endphp
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="{{ $currencyGet }}?code={{ $code }}">
+                                    <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
+                                    @if($is)
+                                        <i class="fas fa-check text-success"></i>
+                                    @endif
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </li>
             @foreach($navItems[$role] as $item)
                 @if(isset($item['is_dropdown']) && $item['is_dropdown'])
                     <li class="nav-item me-2 dropdown">

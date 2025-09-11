@@ -11,6 +11,9 @@ class Product extends Model
 {
     use HasFactory;
 
+    // Ensure computed price (after deals or product discount) appears in JSON
+    protected $appends = ['discounted_price'];
+
     protected $fillable = [
         'shop_id',
         'category_id',
