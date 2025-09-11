@@ -330,18 +330,19 @@
             }
           @endphp
           <div class="mb-3">
-            @php $currencyAction = \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency'); @endphp
-            <form method="POST" action="{{ $currencyAction }}" class="d-flex align-items-center gap-2">
-              @csrf
-              <label for="currencySelectMobile" class="form-label mb-0"><i class="fas fa-coins me-1"></i>Currency</label>
-              <select id="currencySelectMobile" name="code" class="form-select form-select-sm" style="max-width: 160px;" onchange="this.form.submit()">
-                @foreach($navCurrencies as $c)
-                  <option value="{{ $c->code }}" @selected(strtoupper($c->code) === strtoupper($currentCurrency))>
-                    {{ $c->symbol ? $c->symbol.' ' : '' }}{{ strtoupper($c->code) }}
-                  </option>
-                @endforeach
-              </select>
-            </form>
+            @php $currencyGet = \Illuminate\Support\Facades\Route::has('currency.set.get') ? route('currency.set.get') : url('/set-currency'); @endphp
+            <label class="form-label mb-1"><i class="fas fa-coins me-1"></i>Currency</label>
+            <div class="list-group list-group-flush">
+              @foreach($navCurrencies as $c)
+                @php $code = strtoupper($c->code); $is = $code === strtoupper($currentCurrency); @endphp
+                <a href="{{ $currencyGet }}?code={{ $code }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ $is ? 'active' : '' }}">
+                  <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
+                  @if($is)
+                    <i class="fas fa-check"></i>
+                  @endif
+                </a>
+              @endforeach
+            </div>
           </div>
           @auth
             <div class="mb-3">

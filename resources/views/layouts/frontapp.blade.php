@@ -171,17 +171,20 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="currencyDropdown">
             <li class="px-2">
-              @php $currencyAction = \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency'); @endphp
-              <form method="POST" action="{{ $currencyAction }}" id="currencySetFormFront">
-                @csrf
-                <select name="code" class="form-select form-select-sm" onchange="this.form.submit()">
-                  @foreach($navCurrencies as $c)
-                    <option value="{{ $c->code }}" @selected(strtoupper($c->code) === strtoupper($currentCurrency))>
-                      {{ $c->symbol ? $c->symbol.' ' : '' }}{{ strtoupper($c->code) }}
-                    </option>
-                  @endforeach
-                </select>
-              </form>
+              @php $currencyGet = \Illuminate\Support\Facades\Route::has('currency.set.get') ? route('currency.set.get') : url('/set-currency'); @endphp
+              <ul class="list-unstyled mb-0">
+                @foreach($navCurrencies as $c)
+                  @php $code = strtoupper($c->code); $is = $code === strtoupper($currentCurrency); @endphp
+                  <li>
+                    <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="{{ $currencyGet }}?code={{ $code }}">
+                      <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
+                      @if($is)
+                        <i class="fas fa-check text-success"></i>
+                      @endif
+                    </a>
+                  </li>
+                @endforeach
+              </ul>
             </li>
           </ul>
         </li>
