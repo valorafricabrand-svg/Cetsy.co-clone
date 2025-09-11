@@ -1,4 +1,6 @@
-﻿// lib/screens/product_detail_screen.dart
+import 'package:provider/provider.dart';
+import '../providers/currency_provider.dart';
+// lib/screens/product_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:photo_view/photo_view.dart';
@@ -9,6 +11,8 @@ import '../config/constants.dart';
 import '../models/product.dart';
 import '../models/variation.dart';
 import '../providers/cart_provider.dart';
+import '../providers/auth_provider.dart';
+import 'manage_listing_screen.dart';
 import '../services/product_service.dart';
 import 'checkout_screen.dart';
 
@@ -60,9 +64,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ? variantPrice
         : (product.discountPrice ?? product.price);
 
+    final auth = context.watch<AuthProvider>();
+    final canManage = auth.user != null && auth.user!.userType == 'seller' && product.shopUserId != null && auth.user!.id == product.shopUserId;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(product.name, overflow: TextOverflow.ellipsis),
+        actions: [
+          if (canManage)
+            IconButton(
+              tooltip: 'Manage Listing',
+              icon: const Icon(Icons.settings),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ManageListingScreen(productId: product.id)),
+              ),
+            ),
+        ],
       ),
       body: ListView(
         padding: EdgeInsets.zero,
@@ -98,13 +116,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 Row(
                   children: [
                     Text(
-                      'KES ${priceFmt.format(displayPrice)}',
+                      '\ ${priceFmt.format(displayPrice)}',
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     if (variant == null && (product.discountPrice != null && product.discountPrice! < product.price)) ...[
                       const SizedBox(width: 8),
                       Text(
-                        'KES ${priceFmt.format(product.price)}',
+                        '\ ${priceFmt.format(product.price)}',
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.grey,
@@ -304,3 +322,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Open link: $url')));
   }
 }
+
+
+
+
+
+

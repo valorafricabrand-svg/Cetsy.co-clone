@@ -1,5 +1,8 @@
+import 'package:provider/provider.dart';
+import '../providers/currency_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../config/constants.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
@@ -50,8 +53,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       [
                         _row('Status', (_order!['status'] ?? '').toString().toUpperCase()),
                         _row('Payment', (_order!['payment_method'] ?? '').toString().toUpperCase()),
-                        _row('Subtotal', 'KES ${fmt.format(_order!['subtotal'] ?? 0)}'),
-                        _row('Total', 'KES ${fmt.format(_order!['total_amount'] ?? 0)}'),
+                        _row('Subtotal', '\ ${fmt.format(_order!['subtotal'] ?? 0)}'),
+                        _row('Total', '\ ${fmt.format(_order!['total_amount'] ?? 0)}'),
                         _row('Date', (_order!['created_at'] ?? '').toString()),
                       ],
                     ),
@@ -126,7 +129,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     const Icon(Icons.shopping_bag_outlined),
                     const SizedBox(width: 8),
                     Expanded(child: Text(name)),
-                    Text('x$qty  KES ${fmt.format(price)}'),
+                    Text('x$qty  \ ${fmt.format(price)}'),
                   ],
                 ),
               );
@@ -137,4 +140,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     );
   }
 }
+
+
+
+
+
+
 

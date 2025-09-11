@@ -9,4 +9,7 @@ class Constants {
   // Shared Preferences Keys
   static const String authTokenKey = "auth_token";
   static const String userKey = "logged_in_user";
+
+  // Default currency code (used by UI labels)
+  static const String currency = "USD";
 }

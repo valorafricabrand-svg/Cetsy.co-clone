@@ -149,6 +149,45 @@
         x-data="cartDropdown()"
         x-init="fetchCart()"
       >
+
+        {{-- Currency selector --}}
+        @php
+          try {
+            $currentCurrency = get_currency();
+            $navCurrencies = \App\Models\Currency::where('is_active', true)->orderBy('code')->get(['code','symbol']);
+          } catch (\Throwable $e) {
+            $currentCurrency = get_currency();
+            $navCurrencies = collect([
+              (object)['code' => 'USD','symbol' => '$'],
+              (object)['code' => 'EUR','symbol' => '€'],
+              (object)['code' => 'GBP','symbol' => '£'],
+              (object)['code' => 'KES','symbol' => 'KES'],
+            ]);
+          }
+        @endphp
+        <li class="nav-item dropdown me-3">
+          <a class="nav-link dropdown-toggle text-dark" href="#" id="currencyDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-coins me-1"></i>{{ $currentCurrency }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="currencyDropdown">
+            <li class="px-2">
+              @php $currencyGet = \Illuminate\Support\Facades\Route::has('currency.set.get') ? route('currency.set.get') : url('/set-currency'); @endphp
+              <ul class="list-unstyled mb-0">
+                @foreach($navCurrencies as $c)
+                  @php $code = strtoupper($c->code); $is = $code === strtoupper($currentCurrency); @endphp
+                  <li>
+                    <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="{{ $currencyGet }}?code={{ $code }}">
+                      <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
+                      @if($is)
+                        <i class="fas fa-check text-success"></i>
+                      @endif
+                    </a>
+                  </li>
+                @endforeach
+              </ul>
+            </li>
+          </ul>
+        </li>
       
 
            {{-- Cart --}}

@@ -37,7 +37,7 @@
 
           <h2 class="h5 fw-semibold mt-4">Shipping &amp; Delivery</h2>
           <p class="mb-3">
-            Lucare offers free nationwide delivery on orders over KES 2,500. Standard shipping fees apply for smaller orders as shown at checkout.
+            Lucare offers free nationwide delivery on orders over {{ get_currency() }} 2,500. Standard shipping fees apply for smaller orders as shown at checkout.
           </p>
           <p class="mb-4">
             Vendors must ship orders within 2 business days. Delays beyond 5 business days must be communicated to Lucare support and the buyer.
@@ -66,3 +66,4 @@
     </div>
   </section>
 @endsection
+

@@ -47,7 +47,7 @@
                                 </h2>
 
                                 <p class="fw-bold text-primary mb-3">
-                                    KES {{ number_format($product->price, 2) }}
+                                    {{ money($product->price) }}
                                 </p>
 
                                 <div class="mt-auto">
@@ -79,3 +79,4 @@
         </div>
     </section>
 @endsection
+

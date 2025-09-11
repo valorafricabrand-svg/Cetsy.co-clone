@@ -1,5 +1,8 @@
+import 'package:provider/provider.dart';
+import '../providers/currency_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../config/constants.dart';
 import 'package:provider/provider.dart';
 
 import '../models/order.dart';
@@ -125,7 +128,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text('KES ${fmt.format(o.total)}',
+                            Text('\ ${fmt.format(o.total)}',
                                 style: const TextStyle(fontWeight: FontWeight.w800)),
                             Text('Items: ${o.items.length}',
                                 style: const TextStyle(color: Colors.black54)),
@@ -149,3 +152,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     );
   }
 }
+
+
+
+
+
+

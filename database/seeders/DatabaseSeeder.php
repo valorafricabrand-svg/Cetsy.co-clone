@@ -13,8 +13,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        
-
-          $this->call(ProcessingTimeSeeder::class);
+        $this->call([
+            ProcessingTimeSeeder::class,
+            CurrencySeeder::class,
+        ]);
     }
 }

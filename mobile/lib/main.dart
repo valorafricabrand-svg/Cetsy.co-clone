@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
-import 'providers/cart_provider.dart'; // 👈 NEW
+import 'providers/cart_provider.dart';
+import 'providers/currency_provider.dart';
 
 // Screens
 import 'screens/product_detail_screen.dart';
@@ -15,6 +16,8 @@ import 'screens/change_password_screen.dart';
 import 'screens/order_history_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/change_email_screen.dart';
+import 'screens/wallet_screen.dart';
+import 'screens/add_product_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +28,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => CurrencyProvider()..load()),
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider<CartProvider>(create: (_) => CartProvider()), // 👈 NEW
       ],
@@ -149,7 +153,17 @@ class CetsyApp extends StatelessWidget {
         '/orders': (_) => const OrderHistoryScreen(),
         '/login': (_) => const LoginScreen(),
         '/change-email': (_) => const ChangeEmailScreen(),
+        '/wallet': (_) => const WalletScreen(),
+        // Backward compat route and new naming
+        '/add-product': (_) => const AddProductScreen(),
+        '/add-listing': (_) => const AddProductScreen(),
       },
     );
   }
 }
+
+
+
+
+
+

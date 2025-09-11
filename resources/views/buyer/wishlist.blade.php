@@ -50,7 +50,7 @@
                                     </a>
                                 </h5>
                                 <p class="text-muted fw-semibold mb-0">
-                                    {{ get_currency() }} {{ number_format($product->price, 2) }}
+                                    {{ money() }}
                                 </p>
                             </div>
 
@@ -78,3 +78,5 @@
     </div>
 </div>
 @endsection
+
+
