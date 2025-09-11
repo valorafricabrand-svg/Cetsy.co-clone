@@ -92,7 +92,7 @@
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h6 class="card-title mb-1">Avg Value</h6>
-                            <h4 class="mb-0">{{ get_currency() }} {{ number_format($stats['avg_value'] ?? 0, 2) }}</h4>
+                            <h4 class="mb-0">{{ shop_currency() }} {{ number_format($stats['avg_value'] ?? 0, 2) }}</h4>
                         </div>
                     </div>
                 </div>
@@ -236,7 +236,7 @@
                                         @if($diff != 0)
                                             <span class="small {{ $diff > 0 ? 'text-success' : 'text-danger' }}">
                                                 <i class="bi {{ $diff > 0 ? 'bi-arrow-up' : 'bi-arrow-down' }} me-1"></i>
-                                                {{ $diff > 0 ? '+' : '' }}{{ get_currency() }} {{ number_format(abs($diff), 2) }}
+                                                {{ $diff > 0 ? '+' : '' }}{{ shop_currency() }} {{ number_format(abs($diff), 2) }}
                                                 ({{ $diff > 0 ? '+' : '' }}{{ number_format($diffPercent, 1) }}%)
                                             </span>
                                         @endif
@@ -351,7 +351,7 @@
                     <div class="mb-3">
                         <label class="form-label">Counter Price</label>
                         <div class="input-group">
-                            <span class="input-group-text">{{ get_currency() }}</span>
+                            <span class="input-group-text">{{ shop_currency() }}</span>
                             <input type="number" name="counter_price" class="form-control" step="0.01" min="0.01" required>
                         </div>
                         <div class="form-text">Enter your counter offer price</div>

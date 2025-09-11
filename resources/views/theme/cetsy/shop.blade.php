@@ -373,7 +373,7 @@
           <div class="card shadow-sm">
             <div class="card-header bg-white fw-semibold">Shop Policies</div>
             <div class="card-body">
-              {!! nl2br(e($shop->policies)) !!}
+              {!! $shop->policies !!}
             </div>
           </div>
         @else

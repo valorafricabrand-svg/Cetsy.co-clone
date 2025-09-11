@@ -62,63 +62,75 @@
                 </div>
             </div>
 
-            <!-- Status Summary -->
-            <div class="row mb-4">
+            <!-- Status Summary (clickable filters) -->
+            @php
+                $baseQuery = request()->except(['status','page']);
+                $active = fn($s) => request('status') === $s || ($s === null && !request()->filled('status'));
+                $cardClasses = function($isActive) {
+                    return 'card text-center ' . ($isActive ? 'border-primary shadow-sm' : '');
+                };
+            @endphp
+            <div class="row mb-4 g-3">
                 <div class="col-md-2">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h5 class="card-title text-primary">{{ $statusCounts['pending'] ?? 0 }}</h5>
-                            <p class="card-text small">Pending</p>
+                    <a class="text-decoration-none d-block" href="{{ route('admin.admin-disputes.index', array_merge($baseQuery, ['status' => 'pending'])) }}">
+                        <div class="{{ $cardClasses($active('pending')) }}">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary">{{ $statusCounts['pending'] ?? 0 }}</h5>
+                                <p class="card-text small mb-0">Pending</p>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-md-2">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h5 class="card-title text-info">{{ $statusCounts['under_review'] ?? 0 }}</h5>
-                            <p class="card-text small">Under Review</p>
+                    <a class="text-decoration-none d-block" href="{{ route('admin.admin-disputes.index', array_merge($baseQuery, ['status' => 'under_review'])) }}">
+                        <div class="{{ $cardClasses($active('under_review')) }}">
+                            <div class="card-body">
+                                <h5 class="card-title text-info">{{ $statusCounts['under_review'] ?? 0 }}</h5>
+                                <p class="card-text small mb-0">Under Review</p>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-md-2">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h5 class="card-title text-success">{{ $statusCounts['resolved'] ?? 0 }}</h5>
-                            <p class="card-text small">Resolved</p>
+                    <a class="text-decoration-none d-block" href="{{ route('admin.admin-disputes.index', array_merge($baseQuery, ['status' => 'resolved'])) }}">
+                        <div class="{{ $cardClasses($active('resolved')) }}">
+                            <div class="card-body">
+                                <h5 class="card-title text-success">{{ $statusCounts['resolved'] ?? 0 }}</h5>
+                                <p class="card-text small mb-0">Resolved</p>
+                            </div>
                         </div>
-                    </div>
+                    </a>
+                </div>
+                
+                <div class="col-md-2">
+                    <a class="text-decoration-none d-block" href="{{ route('admin.admin-disputes.index', array_merge($baseQuery, ['status' => 'final'])) }}">
+                        <div class="{{ $cardClasses($active('final')) }}">
+                            <div class="card-body">
+                                <h5 class="card-title text-secondary">{{ $statusCounts['final'] ?? 0 }}</h5>
+                                <p class="card-text small mb-0">Final</p>
+                            </div>
+                        </div>
+                    </a>
                 </div>
                 <div class="col-md-2">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h5 class="card-title text-warning">{{ $statusCounts['appealed'] ?? 0 }}</h5>
-                            <p class="card-text small">Appealed</p>
+                    <a class="text-decoration-none d-block" href="{{ route('admin.admin-disputes.index', array_merge($baseQuery, ['status' => 'mutually_resolved'])) }}">
+                        <div class="{{ $cardClasses($active('mutually_resolved')) }}">
+                            <div class="card-body">
+                                <h5 class="card-title text-success">{{ $statusCounts['mutually_resolved'] ?? 0 }}</h5>
+                                <p class="card-text small mb-0">Mutually Resolved</p>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-md-2">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h5 class="card-title text-secondary">{{ $statusCounts['final'] ?? 0 }}</h5>
-                            <p class="card-text small">Final</p>
+                    <a class="text-decoration-none d-block" href="{{ route('admin.admin-disputes.index', $baseQuery) }}">
+                        <div class="{{ $cardClasses($active(null)) }}">
+                            <div class="card-body">
+                                <h5 class="card-title text-dark">{{ array_sum($statusCounts) }}</h5>
+                                <p class="card-text small mb-0">Total</p>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h5 class="card-title text-success">{{ $statusCounts['mutually_resolved'] ?? 0 }}</h5>
-                            <p class="card-text small">Mutually Resolved</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card text-center">
-                        <div class="card-body">
-                            <h5 class="card-title text-dark">{{ array_sum($statusCounts) }}</h5>
-                            <p class="card-text small">Total</p>
-                        </div>
-                    </div>
+                    </a>
                 </div>
             </div>
 
