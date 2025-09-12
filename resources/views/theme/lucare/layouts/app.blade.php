@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="currency-set-url" content="{{ \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency') }}">
   <meta name="robots" content="index, follow">
 
   <!-- Dynamic Title -->
@@ -120,8 +122,48 @@
               </button>
             </form>
 
-            {{-- Cart + User --}}
+            {{-- Currency + Cart + User --}}
             <ul class="navbar-nav ms-auto align-items-center" x-data="cartDropdown()" x-init="fetchCart()">
+              {{-- Currency selector --}}
+              @php
+                try {
+                  $currentCurrency = get_currency();
+                  $navCurrencies = \App\Models\Currency::where('is_active', true)->orderBy('code')->get(['code','symbol']);
+                } catch (\Throwable $e) {
+                  $currentCurrency = get_currency();
+                  $navCurrencies = collect([
+                    (object)['code' => 'USD','symbol' => '$'],
+                    (object)['code' => 'EUR','symbol' => '€'],
+                    (object)['code' => 'GBP','symbol' => '£'],
+                    (object)['code' => 'KES','symbol' => 'KES'],
+                  ]);
+                }
+              @endphp
+              <li class="nav-item dropdown me-2 d-none d-lg-block">
+                <a class="nav-link dropdown-toggle" href="#" id="currencyMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="fas fa-coins me-1"></i>{{ $currentCurrency }}
+                </a>
+                <div class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="currencyMenu" style="min-width: 220px;">
+                  <ul class="list-unstyled mb-0">
+                    @php $siteDefault = setting('default_currency', 'USD') ?: 'USD'; @endphp
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center justify-content-between {{ strtoupper($currentCurrency) === strtoupper($siteDefault) ? 'active' : '' }}" href="#" data-currency-reset="1">
+                        <span>Use Site Default ({{ strtoupper($siteDefault) }})</span>
+                        @if(strtoupper($currentCurrency) === strtoupper($siteDefault)) <i class="fas fa-check text-success"></i> @endif
+                      </a>
+                    </li>
+                    @foreach($navCurrencies as $c)
+                      @php $code = strtoupper($c->code); $is = $code === strtoupper($currentCurrency); @endphp
+                      <li>
+                        <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="#" data-currency-code="{{ $code }}">
+                          <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
+                          @if($is) <i class="fas fa-check text-success"></i> @endif
+                        </a>
+                      </li>
+                    @endforeach
+                  </ul>
+                </div>
+              </li>
               {{-- Cart --}}
               @php $cartCount = count(session('cart', [])); @endphp
               <li class="nav-item me-3">
@@ -237,11 +279,42 @@
         .dropdown-submenu:hover > .dropdown-menu { display:block; }
       }
       </style>
-      @endpush
+  @endpush
 
-      @push('scripts')
-      <script>
-      document.addEventListener('DOMContentLoaded',()=>{
+  @push('scripts')
+  <script>
+  // Background currency switch (no visible URL)
+  (function(){
+    function onReady(fn){ if(document.readyState!=='loading'){fn();} else {document.addEventListener('DOMContentLoaded',fn);} }
+    onReady(function(){
+      var els = document.querySelectorAll('[data-currency-code]');
+      if(!els.length) return;
+      var token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      var action = document.querySelector('meta[name="currency-set-url"]')?.getAttribute('content') || '/set-currency';
+      els.forEach(function(el){
+        el.addEventListener('click', function(e){
+          e.preventDefault();
+          var reset = el.hasAttribute('data-currency-reset');
+          var code = el.getAttribute('data-currency-code');
+          if(!reset && !code) return;
+          try {
+            fetch(action, {
+              method: 'POST',
+              headers: {
+                'X-CSRF-TOKEN': token || '',
+                'Accept': 'application/json, text/plain, */*',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+              },
+              credentials: 'same-origin',
+              body: reset ? 'reset=1' : ('code=' + encodeURIComponent(code))
+            }).then(function(){ location.reload(); })
+              .catch(function(){ location.reload(); });
+          } catch(_){ location.reload(); }
+        });
+      });
+    });
+  })();
+  document.addEventListener('DOMContentLoaded',()=>{
         document.querySelectorAll('.dropdown-submenu > a').forEach(anchor=>{
           anchor.addEventListener('click',e=>{
             const sub = anchor.nextElementSibling;

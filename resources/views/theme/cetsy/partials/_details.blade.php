@@ -22,20 +22,14 @@
   {{-- Price --}}
   @if ($finalPrice < $basePrice)
     <div class="d-flex align-items-baseline gap-3 mb-3">
-      <span class="fw-bold text-success">
-        {{ get_currency() }} {{ number_format($finalPrice, 2) }}
-      </span>
+      <span class="fw-bold text-success">{{ money($finalPrice, null) }}</span>
       @if ($discountPercent > 0)
         <span class="badge bg-danger bg-opacity-10 text-danger">-{{ $discountPercent }}%</span>
       @endif
-      <span class="text-muted text-decoration-line-through">
-        {{ get_currency() }} {{ number_format($basePrice, 2) }}
-      </span>
+      <span class="text-muted text-decoration-line-through">{{ money($basePrice, null) }}</span>
     </div>
   @else
-    <p class="fw-bold text-success mb-3">
-      {{ get_currency() }} {{ number_format($basePrice, 2) }}
-    </p>
+    <p class="fw-bold text-success mb-3">{{ money($basePrice, null) }}</p>
   @endif
 
   {{-- Shop & Stock badges --}}

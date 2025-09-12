@@ -77,7 +77,7 @@ class WalletService {
     throw Exception('Failed to fetch status');
   }
 
-  static Future<void> requestPayout({
+  static Future<Map<String, dynamic>> requestPayout({
     required String token,
     required double amount,
     int? paymentMethodId,
@@ -90,9 +90,57 @@ class WalletService {
       'amount': amount.toString(),
       if (paymentMethodId != null) 'payment_method_id': paymentMethodId.toString(),
     });
-    if (res.statusCode == 201) return;
     final data = jsonDecode(res.body);
-    throw Exception(data['message'] ?? 'Payout request failed');
+    if (res.statusCode == 201 && data is Map<String, dynamic>) {
+      return data;
+    }
+    if (data is Map && data['requires_otp'] == true) return data as Map<String, dynamic>;
+    throw Exception((data is Map ? (data['message'] ?? data['error']) : null) ?? 'Payout request failed');
+  }
+
+  static Future<void> verifyPayoutOtp({
+    required String token,
+    required int payoutId,
+    required String code,
+  }) async {
+    final url = Uri.parse("${Constants.baseUrl}/wallet/payout/$payoutId/verify");
+    final res = await http.post(url, headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    }, body: {
+      'code': code,
+    });
+    if (res.statusCode == 200) return;
+    final data = jsonDecode(res.body);
+    throw Exception(data['message'] ?? 'Verification failed');
+  }
+
+  static Future<void> resendPayoutOtp({
+    required String token,
+    required int payoutId,
+  }) async {
+    final url = Uri.parse("${Constants.baseUrl}/wallet/payout/$payoutId/resend-otp");
+    final res = await http.post(url, headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+    if (res.statusCode == 200) return;
+    final data = jsonDecode(res.body);
+    throw Exception(data['message'] ?? 'Failed to resend code');
+  }
+
+  static Future<void> cancelPayout({
+    required String token,
+    required int payoutId,
+  }) async {
+    final url = Uri.parse("${Constants.baseUrl}/wallet/payout/$payoutId/cancel");
+    final res = await http.post(url, headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+    if (res.statusCode == 200) return;
+    final data = jsonDecode(res.body);
+    throw Exception(data['message'] ?? 'Failed to cancel payout');
   }
 
   static Future<WalletPage> fetchTransactionsPage(

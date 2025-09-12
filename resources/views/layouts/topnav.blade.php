@@ -91,10 +91,19 @@
                 <div class="dropdown-menu dropdown-menu-end p-2" style="min-width: 220px;">
                     @php $currencyGet = \Illuminate\Support\Facades\Route::has('currency.set.get') ? route('currency.set.get') : url('/set-currency'); @endphp
                     <ul class="list-unstyled mb-0">
+                        @php $siteDefault = setting('default_currency', 'USD') ?: 'USD'; @endphp
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center justify-content-between {{ strtoupper($currentCurrency) === strtoupper($siteDefault) ? 'active' : '' }}" href="#" data-currency-reset="1">
+                                <span>Use Site Default ({{ strtoupper($siteDefault) }})</span>
+                                @if(strtoupper($currentCurrency) === strtoupper($siteDefault))
+                                    <i class="fas fa-check text-success"></i>
+                                @endif
+                            </a>
+                        </li>
                         @foreach($navCurrencies as $c)
                             @php $code = strtoupper($c->code); $is = $code === strtoupper($currentCurrency); @endphp
                             <li>
-                                <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="{{ $currencyGet }}?code={{ $code }}">
+                                <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="#" data-currency-code="{{ $code }}">
                                     <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
                                     @if($is)
                                         <i class="fas fa-check text-success"></i>

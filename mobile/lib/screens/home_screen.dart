@@ -15,6 +15,7 @@ import '../config/constants.dart';
 import 'login_screen.dart';
 import 'paypal_checkout_screen.dart';
 import 'product_list_screen.dart';
+import 'payout_otp_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.onShop});
@@ -526,10 +527,23 @@ class _HomeScreenState extends State<HomeScreen> {
               if (amt == null || amt <= 0) return;
               Navigator.pop(context);
               try {
-                await WalletService.requestPayout(token: token, amount: amt);
+                final resp = await WalletService.requestPayout(token: token, amount: amt);
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payout requested')));
-                _load();
+                if ((resp['requires_otp'] ?? false) == true) {
+                  final payoutId = (resp['payout_id'] ?? 0) as int;
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PayoutOtpScreen(payoutId: payoutId),
+                    ),
+                  );
+                  if (!mounted) return;
+                  // After returning, refresh wallet summary
+                  _load();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payout requested')));
+                  _load();
+                }
               } catch (e) {
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
