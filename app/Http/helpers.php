@@ -176,10 +176,10 @@ if (! function_exists('convert_usd')) {
 
 if (! function_exists('money')) {
     /** Format amount using default currency with USD-based conversion. */
-    function money(float $amountUsd, ?int $precision = null): string
-    {
-        $code = get_currency();
-        $value = convert_usd($amountUsd, $code);
+  function money(float $amountUsd, ?int $precision = null): string
+  {
+      $code = get_currency();
+      $value = convert_usd($amountUsd, $code);
         // Determine decimals if not provided (prefer DB)
         $dec = 2;
         if ($precision === null) {
@@ -194,7 +194,15 @@ if (! function_exists('money')) {
         } else {
             $dec = $precision;
         }
-        return $code.' '.number_format($value, $dec);
+      return $code.' '.number_format($value, $dec);
+  }
+}
+
+// Backward-compat alias used by some legacy views
+if (! function_exists('shop_currency')) {
+    function shop_currency(): string
+    {
+        return get_currency();
     }
 }
 
