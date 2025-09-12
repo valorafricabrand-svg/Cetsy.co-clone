@@ -349,15 +349,20 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [\App\Http\Controllers\DisputeController::class, 'store'])->name('store');
         Route::get('/{dispute}', [\App\Http\Controllers\DisputeController::class, 'show'])->name('show');
         Route::post('/{dispute}/messages', [\App\Http\Controllers\DisputeController::class, 'addMessage'])->name('messages.store');
-        Route::get('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'showAppealForm'])->name('appeal.create');
-        Route::post('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'submitAppeal'])->name('appeal.store');
-    });
-
-    // Evidence Requests (Binance-style)
-    Route::prefix('evidence-requests')->name('evidence-requests.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\EvidenceRequestController::class, 'index'])->name('index');
-        Route::get('/{evidenceRequest}', [\App\Http\Controllers\EvidenceRequestController::class, 'show'])->name('show');
-        Route::post('/{evidenceRequest}/submit', [\App\Http\Controllers\EvidenceRequestController::class, 'submit'])->name('submit');
+        if (config('disputes.enable_appeals')) {
+            Route::get('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'showAppealForm'])->name('appeal.create');
+            Route::post('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'submitAppeal'])->name('appeal.store');
+        }
+        Route::post('/{dispute}/mutual-resolution', [\App\Http\Controllers\DisputeController::class, 'initiateMutualResolution'])->name('mutual-resolution.initiate');
+        Route::post('/{dispute}/mutual-resolution/agree', [\App\Http\Controllers\DisputeController::class, 'agreeToMutualResolution'])->name('mutual-resolution.agree');
+        
+        // Mark Dispute as Closed
+        Route::post('/{dispute}/close', [\App\Http\Controllers\DisputeController::class, 'markAsClosed'])->name('close');
+        
+        // Evidence Request Responses
+        if (config('disputes.enable_appeals')) {
+            Route::post('/evidence-requests/{evidenceRequest}/respond', [\App\Http\Controllers\EvidenceRequestController::class, 'respond'])->name('evidence-requests.respond');
+        }
     });
     
 });
@@ -411,8 +416,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('reviews/bulk-delete', [ReviewController::class, 'bulkDelete'])->name('reviews.bulk-delete');
     
     // Messages
-    Route::get('messages', [\App\Http\Controllers\Admin\MessageController::class, 'index'])->name('messages.index');
-    Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\MessageController::class, 'show'])->name('messages.show');
+    Route::get('messages', [\App\Http\Controllers\Admin\AdminMessageController::class, 'index'])->name('messages.index');
+    Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\AdminMessageController::class, 'show'])->name('messages.show');
 
     // Users
     Route::get('users', [UserController::class, 'index'])->name('users.index');
@@ -453,18 +458,22 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{dispute}/resolve', [\App\Http\Controllers\Admin\DisputeController::class, 'showResolveForm'])->name('resolve.create');
         Route::post('/{dispute}/resolve', [\App\Http\Controllers\Admin\DisputeController::class, 'resolve'])->name('resolve.store');
         Route::post('/{dispute}/messages', [\App\Http\Controllers\Admin\DisputeController::class, 'addMessage'])->name('messages.store');
-        Route::post('/{dispute}/finalize', [\App\Http\Controllers\Admin\DisputeController::class, 'finalizeDispute'])->name('finalize.store');
+        if (config('disputes.enable_appeals')) {
+            Route::post('/{dispute}/finalize', [\App\Http\Controllers\Admin\DisputeController::class, 'finalizeDispute'])->name('finalize.store');
+        }
         Route::get('/statistics', [\App\Http\Controllers\Admin\DisputeController::class, 'statistics'])->name('statistics');
     });
 
     // Appeals
-    Route::prefix('appeals')->name('appeals.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'appeals'])->name('index');
-        Route::get('/{appeal}', [\App\Http\Controllers\Admin\DisputeController::class, 'showAppeal'])->name('show');
-        Route::post('/{appeal}/review', [\App\Http\Controllers\Admin\DisputeController::class, 'reviewAppeal'])->name('review.store');
-        Route::post('/{appeal}/request-evidence', [\App\Http\Controllers\Admin\DisputeController::class, 'requestEvidence'])->name('request-evidence');
-        Route::post('/{appeal}/close', [\App\Http\Controllers\Admin\DisputeController::class, 'closeAppeal'])->name('close');
-    });
+    if (config('disputes.enable_appeals')) {
+        Route::prefix('appeals')->name('appeals.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'appeals'])->name('index');
+            Route::get('/{appeal}', [\App\Http\Controllers\Admin\DisputeController::class, 'showAppeal'])->name('show');
+            Route::post('/{appeal}/review', [\App\Http\Controllers\Admin\DisputeController::class, 'reviewAppeal'])->name('review.store');
+            Route::post('/{appeal}/request-evidence', [\App\Http\Controllers\Admin\DisputeController::class, 'requestEvidence'])->name('request-evidence');
+            Route::post('/{appeal}/close', [\App\Http\Controllers\Admin\DisputeController::class, 'closeAppeal'])->name('close');
+        });
+    }
 
 });
 

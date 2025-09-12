@@ -14,11 +14,12 @@ class Dispute extends Model
     use HasFactory;
 
     protected $fillable = [
-        'order_id', 'buyer_id', 'seller_id', 'type', 'status', 
+        'order_id', 'buyer_id', 'seller_id', 'created_by', 'type', 'status', 
         'description', 'evidence', 'resolution', 'resolved_by', 
         'resolved_at', 'appeal_deadline', 'can_appeal',
         'decision', 'refund_amount', 'admin_notes',
-        'mutual_resolution_terms', 'buyer_agreed_at', 'seller_agreed_at'
+        'mutual_resolution_terms', 'buyer_agreed_at', 'seller_agreed_at',
+        'closed_at', 'closed_by'
     ];
 
     protected $casts = [
@@ -29,6 +30,7 @@ class Dispute extends Model
         'refund_amount' => 'decimal:2',
         'buyer_agreed_at' => 'datetime',
         'seller_agreed_at' => 'datetime',
+        'closed_at' => 'datetime',
     ];
 
     // Status constants
@@ -41,6 +43,7 @@ class Dispute extends Model
     const STATUS_APPEAL_REJECTED = 'appeal_rejected';
     const STATUS_FINAL = 'final';
     const STATUS_MUTUALLY_RESOLVED = 'mutually_resolved';
+    const STATUS_CLOSED = 'closed';
 
     // Type constants
     const TYPE_CUSTOMS_FEES = 'customs_fees';
@@ -80,6 +83,16 @@ class Dispute extends Model
         return $this->belongsTo(User::class, 'resolved_by');
     }
 
+    public function closedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'closed_by');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function messages(): HasMany
     {
         return $this->hasMany(DisputeMessage::class);
@@ -88,6 +101,11 @@ class Dispute extends Model
     public function appeal(): HasOne
     {
         return $this->hasOne(Appeal::class);
+    }
+
+    public function evidenceRequests(): HasMany
+    {
+        return $this->hasMany(EvidenceRequest::class);
     }
 
     // Scopes
@@ -149,6 +167,9 @@ class Dispute extends Model
 
     public function canBeAppealed(): bool
     {
+        if (!config('disputes.enable_appeals')) {
+            return false;
+        }
         if (!$this->can_appeal) {
             return false;
         }
@@ -208,6 +229,7 @@ class Dispute extends Model
             self::STATUS_APPEAL_REJECTED => 'badge-danger',
             self::STATUS_FINAL => 'badge-secondary',
             self::STATUS_MUTUALLY_RESOLVED => 'badge-success',
+            self::STATUS_CLOSED => 'badge-secondary',
             default => 'badge-light'
         };
     }
@@ -258,7 +280,11 @@ class Dispute extends Model
             'resolved_at' => Carbon::now()
         ]);
 
-        $this->setAppealDeadline();
+        if (config('disputes.enable_appeals')) {
+            $this->setAppealDeadline();
+        } else {
+            $this->update(['can_appeal' => false]);
+        }
     }
 
     public function markAsAppealed(): void
@@ -344,5 +370,13 @@ class Dispute extends Model
             'can_appeal' => false,
             'resolved_at' => Carbon::now()
         ]);
+    }
+
+    /**
+     * Check if the dispute is closed
+     */
+    public function isClosed(): bool
+    {
+        return $this->status === self::STATUS_CLOSED;
     }
 }

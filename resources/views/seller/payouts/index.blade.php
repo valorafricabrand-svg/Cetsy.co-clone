@@ -31,7 +31,7 @@
       @endif
 
       <div class="alert alert-info mb-4">
-          Available balance: {{ get_currency() }} {{ number_format($balance,2) }}
+          Available balance: {{ shop_currency() }} {{ number_format($balance,2) }}
       </div>
 
       <div class="card shadow-sm border-0">
@@ -50,7 +50,7 @@
                       @forelse($requests as $req)
                           <tr>
                               <td>{{ $req->id }}</td>
-                              <td>{{ get_currency() }} {{ number_format($req->amount,2) }}</td>
+                              <td>{{ shop_currency() }} {{ number_format($req->amount,2) }}</td>
                               <td class="text-capitalize">{{ $req->status }}</td>
                               <td>{{ $req->created_at->format('d M Y') }}</td>
                               <td class="text-nowrap">

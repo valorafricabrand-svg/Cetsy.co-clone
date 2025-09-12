@@ -186,7 +186,24 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     public function productReviews()
-{
-    return $this->hasMany(ProductReview::class);
-}
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    /**
+     * User has many disputes (as buyer or seller)
+     */
+    public function disputes()
+    {
+        return Dispute::where('buyer_id', $this->id)
+                      ->orWhere('seller_id', $this->id);
+    }
+
+    /**
+     * User has many appeals
+     */
+    public function appeals()
+    {
+        return $this->hasMany(Appeal::class, 'appealed_by');
+    }
 }

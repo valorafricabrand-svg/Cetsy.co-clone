@@ -275,7 +275,7 @@
             </div>
             <div class="col-12 d-flex justify-content-between">
               <span class="text-muted">Currency</span>
-              <span class="fw-medium">{{ $shop->currency }}</span>
+              <span class="fw-medium"> {{ $shop->currency }}</span>
             </div>
             <div class="col-12">
               <div class="d-flex justify-content-between align-items-center">
@@ -348,7 +348,7 @@
               </div>
               <div class="col-12 d-flex justify-content-between">
                 <span class="text-muted">Plan Amount</span>
-                <span class="fw-medium">${{ number_format($subscription->amount, 2) }}</span>
+                <span class="fw-medium">{{ get_currency()}} {{ number_format($subscription->amount, 2) }}</span>
               </div>
               <div class="col-12 d-flex justify-content-between">
                 <span class="text-muted">Start Date</span>
