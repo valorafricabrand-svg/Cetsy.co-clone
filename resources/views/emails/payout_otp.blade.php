@@ -1,19 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Verify Your Payout</title>
-  <style>body{font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#333;padding:20px}.header{background:#0d6efd;color:#fff;padding:16px;border-radius:8px 8px 0 0}.content{background:#f8f9fa;padding:18px;border-radius:0 0 8px 8px}.code{font-size:28px;font-weight:700;letter-spacing:4px;background:#fff;padding:10px 16px;border-radius:8px;display:inline-block;margin:8px 0}</style>
-</head>
-<body>
-  <div class="header"><h2 style="margin:0">Verify Your Payout</h2></div>
-  <div class="content">
-    <p>Hi {{ $user->name }},</p>
-    <p>Use the code below to verify your payout request #{{ $payout->id }} for {{ get_currency() }} {{ number_format($payout->amount,2) }}.</p>
-    <div class="code">{{ $code }}</div>
-    <p>This code expires in 10 minutes.</p>
-    <p>You can also enter the code on the verification page.</p>
-  </div>
-</body>
-</html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Verify your payout</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; line-height: 1.5;">
+    <h2>Verify your payout request</h2>
+    <p>Hello {{ $user->name }},</p>
+    <p>Your payout request (ID #{{ $payout->id }}) requires verification. Use the code below to confirm:</p>
+    <p style="font-size: 24px; font-weight: bold;">{{ $code }}</p>
+    <p>This code expires in 10 minutes. If you did not request this, you can ignore this email.</p>
+    <p>Thank you,<br>{{ config('app.name') }}</p>
+  </body>
+  </html>
 

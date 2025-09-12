@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="robots" content="index, follow">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="currency-set-url" content="{{ \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency') }}">
 
     <!-- Dynamic Title -->
     <title>@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')</title>
@@ -173,10 +175,19 @@
             <li class="px-2">
               @php $currencyGet = \Illuminate\Support\Facades\Route::has('currency.set.get') ? route('currency.set.get') : url('/set-currency'); @endphp
               <ul class="list-unstyled mb-0">
+                @php $siteDefault = setting('default_currency', 'USD') ?: 'USD'; @endphp
+                <li>
+                  <a class="dropdown-item d-flex align-items-center justify-content-between {{ strtoupper($currentCurrency) === strtoupper($siteDefault) ? 'active' : '' }}" href="#" data-currency-reset="1">
+                    <span>Use Site Default ({{ strtoupper($siteDefault) }})</span>
+                    @if(strtoupper($currentCurrency) === strtoupper($siteDefault))
+                      <i class="fas fa-check text-success"></i>
+                    @endif
+                  </a>
+                </li>
                 @foreach($navCurrencies as $c)
                   @php $code = strtoupper($c->code); $is = $code === strtoupper($currentCurrency); @endphp
                   <li>
-                    <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="{{ $currencyGet }}?code={{ $code }}">
+                    <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="#" data-currency-code="{{ $code }}">
                       <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
                       @if($is)
                         <i class="fas fa-check text-success"></i>
@@ -618,8 +629,42 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="{{ asset('') }}/{{ asset('') }}/../smtpjs.com/v3/smtp.js"></script>
 
 
-@yield('scripts')
- @stack('scripts')
+  @yield('scripts')
+  @stack('scripts')
+
+<script>
+  // Background currency switch (no URL params)
+  (function(){
+    function onReady(fn){ if(document.readyState!=='loading'){fn();} else {document.addEventListener('DOMContentLoaded',fn);} }
+    onReady(function(){
+      var els = document.querySelectorAll('[data-currency-code]');
+      if(!els.length) return;
+      var token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      var action = document.querySelector('meta[name="currency-set-url"]')?.getAttribute('content') || '/set-currency';
+      els.forEach(function(el){
+        el.addEventListener('click', function(e){
+          e.preventDefault();
+          var reset = el.hasAttribute('data-currency-reset');
+          var code = el.getAttribute('data-currency-code');
+          if(!reset && !code) return;
+          try {
+            fetch(action, {
+              method: 'POST',
+              headers: {
+                'X-CSRF-TOKEN': token || '',
+                'Accept': 'application/json, text/plain, */*',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+              },
+              credentials: 'same-origin',
+              body: reset ? 'reset=1' : ('code=' + encodeURIComponent(code))
+            }).then(function(){ location.reload(); })
+              .catch(function(){ location.reload(); });
+          } catch(_){ location.reload(); }
+        });
+      });
+    });
+  })();
+</script>
 
 
 

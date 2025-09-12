@@ -19,9 +19,9 @@ function logo_url(){
 
 
 function price($price = 0){
-  
-   $currency_sign = get_currency();
-    return $currency_sign.' '.$price;
+    // Backward-compatible: assumes $price is in USD base; formats in selected currency
+    $amount = is_numeric($price) ? (float) $price : 0.0;
+    return money($amount, null);
 }
 
 function settings() {
@@ -95,18 +95,33 @@ function shop(){
 
 
   function get_currency() {
-    // Prefer a session-selected currency, then cookie, then site default
+    // Priority: Auth user's preference -> session override -> cookie -> site default
+    try {
+        if (function_exists('auth') && auth()->check()) {
+            $u = auth()->user();
+            if (!empty($u->preferred_currency) && strlen($u->preferred_currency) === 3) {
+                return strtoupper($u->preferred_currency);
+            }
+        }
+    } catch (\Throwable $e) {}
+
     try {
         $sessionCode = session()->has('currency_code') ? session('currency_code') : null;
-    } catch (\Throwable $e) { $sessionCode = null; }
+        if (!empty($sessionCode) && strlen($sessionCode) === 3) {
+            return strtoupper($sessionCode);
+        }
+    } catch (\Throwable $e) {}
 
-    $cookieCode = request()->cookies->get('currency_code');
+    try {
+        $cookieCode = request()->cookies->get('currency_code');
+        if (!empty($cookieCode) && strlen($cookieCode) === 3) {
+            return strtoupper($cookieCode);
+        }
+    } catch (\Throwable $e) {}
+
     $default = setting('default_currency', 'USD') ?: 'USD';
-
-    $code = $sessionCode ?: $cookieCode ?: $default;
-    $code = strtoupper((string) $code);
-    if (strlen($code) !== 3) return 'USD';
-    return $code;
+    $code = strtoupper((string) $default);
+    return strlen($code) === 3 ? $code : 'USD';
  }
 
 // ---- Currency conversion helpers (server-side) ----
@@ -161,11 +176,25 @@ if (! function_exists('convert_usd')) {
 
 if (! function_exists('money')) {
     /** Format amount using default currency with USD-based conversion. */
-    function money(float $amountUsd, ?int $precision = 2): string
+    function money(float $amountUsd, ?int $precision = null): string
     {
         $code = get_currency();
         $value = convert_usd($amountUsd, $code);
-        return $code.' '.number_format($value, $precision ?? 2);
+        // Determine decimals if not provided (prefer DB)
+        $dec = 2;
+        if ($precision === null) {
+            try {
+                if (class_exists('App\\Models\\Currency')) {
+                    $c = \App\Models\Currency::where('code', $code)->first();
+                    if ($c && is_numeric($c->decimal_places)) {
+                        $dec = max(0, min(6, (int) $c->decimal_places));
+                    }
+                }
+            } catch (\Throwable $e) {}
+        } else {
+            $dec = $precision;
+        }
+        return $code.' '.number_format($value, $dec);
     }
 }
 
@@ -224,24 +253,41 @@ if (! function_exists('apply_discount')) {
 
 if (! function_exists('setting')) {
     /**
-     * Retrieve a setting value by key (column name), or return default.
-     *
-     * @param  string  $key
-     * @param  mixed   $default
-     * @return mixed
+     * Get a setting value by logical key.
+     * Supports two storage models:
+     * 1) Column-based single row (e.g., default_currency on the main settings row)
+     * 2) Key-value rows (option_key/option_value)
      */
     function setting(string $key, $default = null)
     {
-        static $settings;
+        static $cachedRow = null;
 
-        // cache the row so we only hit the DB once
-        if (! $settings) {
-            $settings = Setting::first();
-        }
+        // Try key-value store first if the table uses option_key/option_value
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('settings', 'option_key')) {
+                $val = Setting::where('option_key', $key)->value('option_value');
+                if ($val !== null) return $val;
+            }
+        } catch (\Throwable $e) {}
 
-        return $settings && isset($settings->$key)
-            ? $settings->$key
-            : $default;
+        // Fallback to column-based single-row model
+        try {
+            if (! $cachedRow) {
+                // Prefer a row without option_key if the column exists
+                if (\Illuminate\Support\Facades\Schema::hasColumn('settings', 'option_key')) {
+                    $cachedRow = Setting::whereNull('option_key')->orderByDesc('id')->first();
+                    // If none, fallback to any row
+                    if (! $cachedRow) $cachedRow = Setting::orderByDesc('id')->first();
+                } else {
+                    $cachedRow = Setting::orderByDesc('id')->first();
+                }
+            }
+            if ($cachedRow && isset($cachedRow->$key)) {
+                return $cachedRow->$key;
+            }
+        } catch (\Throwable $e) {}
+
+        return $default;
     }
 }
 

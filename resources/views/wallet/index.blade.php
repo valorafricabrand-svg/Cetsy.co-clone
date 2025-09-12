@@ -386,7 +386,7 @@
     } catch (e) {}
   })();
   // Auto-open payout modal if requested (after adding method)
-  @if(session('open_payout_modal') || $errors->has('amount') || $errors->has('method'))
+  @if(session('open_payout_modal') || request()->boolean('open_payout') || $errors->has('amount') || $errors->has('method'))
     document.addEventListener('DOMContentLoaded', function(){
       var el = document.getElementById('payoutModal');
       if (el) { try { new bootstrap.Modal(el).show(); } catch(e) {} }

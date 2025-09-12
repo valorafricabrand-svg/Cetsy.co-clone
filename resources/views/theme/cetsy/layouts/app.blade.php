@@ -6,6 +6,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="robots" content="index, follow">
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="currency-set-url" content="{{ \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency') }}">
+  <meta name="default-currency" content="{{ setting('default_currency','USD') }}">
 
   <!-- Dynamic Title -->
   <title>@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')</title>
@@ -197,14 +199,15 @@
               @php
                 try {
                   $currentCurrency = get_currency();
-                  $navCurrencies = \App\Models\Currency::where('is_active', true)->orderBy('code')->get(['code','symbol']);
+                  $navCurrencies = \App\Models\Currency::where('is_active', true)
+                    ->orderBy('code')->get(['code','symbol','usd_rate','decimal_places']);
                 } catch (\Throwable $e) {
                   $currentCurrency = get_currency();
                   $navCurrencies = collect([
-                    (object)['code' => 'USD','symbol' => '$'],
-                    (object)['code' => 'EUR','symbol' => '€'],
-                    (object)['code' => 'GBP','symbol' => '£'],
-                    (object)['code' => 'KES','symbol' => 'KES'],
+                    (object)['code' => 'USD','symbol' => '$','usd_rate'=>1.0,'decimal_places'=>2],
+                    (object)['code' => 'EUR','symbol' => '€','usd_rate'=>0.92,'decimal_places'=>2],
+                    (object)['code' => 'GBP','symbol' => '£','usd_rate'=>0.78,'decimal_places'=>2],
+                    (object)['code' => 'KES','symbol' => 'KES','usd_rate'=>(float) env('USD_TO_KES',130),'decimal_places'=>2],
                   ]);
                 }
               @endphp
@@ -214,11 +217,27 @@
                 </a>
                 <div class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="currencyMenu" style="min-width: 220px;">
                   @php $currencyGet = \Illuminate\Support\Facades\Route::has('currency.set.get') ? route('currency.set.get') : url('/set-currency'); @endphp
-                  <ul class="list-unstyled mb-0">
+                  <ul class="list-unstyled mb-0 d-none">
+                    {{-- Use site default option (clears override) --}}
+                    @php 
+                      $siteDefault = setting('default_currency', 'USD') ?: 'USD'; 
+                      $defaultRow = null;
+                      try { $defaultRow = \App\Models\Currency::where('code',$siteDefault)->first(); } catch (\Throwable $e) {}
+                      $defRate = $defaultRow ? (float) $defaultRow->usd_rate : 1.0;
+                      $defDec  = $defaultRow && $defaultRow->decimal_places !== null ? (int) $defaultRow->decimal_places : 2;
+                    @endphp
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center justify-content-between {{ strtoupper($currentCurrency) === strtoupper($siteDefault) ? 'active' : '' }}" href="#" data-currency-reset="1" data-rate="{{ $defRate }}" data-decimals="{{ $defDec }}">
+                        <span>Use Site Default ({{ strtoupper($siteDefault) }})</span>
+                        @if(strtoupper($currentCurrency) === strtoupper($siteDefault))
+                          <i class="fas fa-check text-success"></i>
+                        @endif
+                      </a>
+                    </li>
                     @foreach($navCurrencies as $c)
                       @php $code = strtoupper($c->code); $is = $code === strtoupper($currentCurrency); @endphp
                       <li>
-                        <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="{{ $currencyGet }}?code={{ $code }}">
+                        <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="#" data-currency-code="{{ $code }}" data-rate="{{ (float) ($c->usd_rate ?? 0) }}" data-decimals="{{ (int) ($c->decimal_places ?? 2) }}">
                           <span>
                             {{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}
                           </span>
@@ -229,6 +248,26 @@
                       </li>
                     @endforeach
                   </ul>
+                  @php $siteDefault = setting('default_currency', 'USD') ?: 'USD'; @endphp
+                  <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency') }}" class="mt-2">
+                    @csrf
+                    <div class="mb-2 small fw-semibold">Choose Currency</div>
+                    <div class="list-group list-group-flush" style="max-height: 200px; overflow:auto;">
+                      @foreach($navCurrencies as $c)
+                        @php $code = strtoupper($c->code); @endphp
+                        <label class="list-group-item d-flex align-items-center justify-content-between">
+                          <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
+                          <input type="radio" name="code" value="{{ $code }}" @checked(strtoupper($currentCurrency)=== $code) />
+                        </label>
+                      @endforeach
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-success mt-2 w-100">Update</button>
+                  </form>
+                  <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency') }}" class="mt-2">
+                    @csrf
+                    <input type="hidden" name="reset" value="1" />
+                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Use Site Default ({{ strtoupper($siteDefault) }})</button>
+                  </form>
                 </div>
               </li>
               @php $cartCount = (int) count(session('cart', [])); @endphp
@@ -332,17 +371,27 @@
           <div class="mb-3">
             @php $currencyGet = \Illuminate\Support\Facades\Route::has('currency.set.get') ? route('currency.set.get') : url('/set-currency'); @endphp
             <label class="form-label mb-1"><i class="fas fa-coins me-1"></i>Currency</label>
-            <div class="list-group list-group-flush">
-              @foreach($navCurrencies as $c)
-                @php $code = strtoupper($c->code); $is = $code === strtoupper($currentCurrency); @endphp
-                <a href="{{ $currencyGet }}?code={{ $code }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ $is ? 'active' : '' }}">
-                  <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
-                  @if($is)
-                    <i class="fas fa-check"></i>
-                  @endif
-                </a>
-              @endforeach
-            </div>
+            @php $siteDefault = setting('default_currency', 'USD') ?: 'USD'; @endphp
+            <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency') }}">
+              @csrf
+              <div class="list-group list-group-flush" style="max-height: 260px; overflow:auto;">
+                @foreach($navCurrencies as $c)
+                  @php $code = strtoupper($c->code); @endphp
+                  <label class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
+                    <input type="radio" name="code" value="{{ $code }}" @checked(strtoupper($currentCurrency)=== $code) />
+                  </label>
+                @endforeach
+              </div>
+              <div class="d-grid gap-2 mt-2">
+                <button class="btn btn-sm btn-success" type="submit">Update</button>
+              </div>
+            </form>
+            <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency') }}" class="mt-2">
+              @csrf
+              <input type="hidden" name="reset" value="1" />
+              <button class="btn btn-sm btn-outline-secondary w-100" type="submit">Use Site Default ({{ strtoupper($siteDefault) }})</button>
+            </form>
           </div>
           @auth
             <div class="mb-3">
@@ -762,5 +811,57 @@
   {{-- Page-level scripts --}}
   @yield('scripts')
   @stack('scripts')
+
+  <!-- Background currency switch (no URL params) -->
+  <script>
+    (function(){
+      function onReady(fn){ if(document.readyState!=='loading'){fn();} else {document.addEventListener('DOMContentLoaded',fn);} }
+      onReady(function(){
+        var els = document.querySelectorAll('[data-currency-code]');
+        if(!els.length) return;
+        var token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        var action = document.querySelector('meta[name="currency-set-url"]')?.getAttribute('content') || '/set-currency';
+        var defaultCode = (document.querySelector('meta[name="default-currency"]').getAttribute('content')||'USD').toUpperCase();
+        els.forEach(function(el){
+          el.addEventListener('click', function(e){
+            e.preventDefault();
+            var reset = el.hasAttribute('data-currency-reset');
+            var code = el.getAttribute('data-currency-code');
+            if(!reset && !code) return;
+            try{
+              fetch(action, {
+                method: 'POST',
+                headers: {
+                  'X-CSRF-TOKEN': token || '',
+                  'Accept': 'application/json, text/plain, */*',
+                  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                credentials: 'same-origin',
+                body: reset ? 'reset=1' : ('code=' + encodeURIComponent(code))
+              }).then(function(r){ return r.json().catch(function(){ return {}; }); })
+                .then(function(o){
+                  // Update nav label immediately
+                  var newCode = (o && o.currency) ? String(o.currency).toUpperCase() : (reset ? defaultCode : code.toUpperCase());
+                  var toggle = document.getElementById('currencyMenu');
+                  if (toggle) { toggle.innerHTML = '<i class="fas fa-coins me-1"></i>'+ newCode; }
+                  // Update active markers in dropdown
+                  document.querySelectorAll('[data-currency-code], [data-currency-reset]').forEach(function(a){ a.classList.remove('active'); });
+                  if (reset) {
+                    var defItem = document.querySelector('[data-currency-reset]');
+                    if (defItem) defItem.classList.add('active');
+                  } else {
+                    var sel = document.querySelector('[data-currency-code="'+ newCode +'"]');
+                    if (sel) sel.classList.add('active');
+                  }
+                  // Fallback: reload to update all prices
+                  setTimeout(function(){ location.reload(); }, 50);
+                })
+                .catch(function(){ location.reload(); });
+            }catch(_){ location.reload(); }
+          });
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

@@ -19,7 +19,7 @@
   // The price to display on listing:
   // - If variants exist with prices => "From {lowest variant}"
   // - Else => product sale/base price (show strike-through if discounted)
-  $format = fn($n) => number_format((float)$n, 2);
+  $formatMoney = fn($n) => money((float)$n, null);
 
   // Decide how to render:
   $hasVariantPricing = $lowestVariantPrice !== null;
@@ -85,17 +85,17 @@
       {{-- Variant-based listing price: show the lowest as "From" --}}
       <div class="mb-3">
         <div class="small text-muted lh-1">From</div>
-        <div class="fw-bold text-success">{{ $currency }} {{ $format($lowestVariantPrice) }}</div>
+        <div class="fw-bold text-success">{{ $formatMoney($lowestVariantPrice) }}</div>
       </div>
     @else
       {{-- No variant pricing, use product pricing with discount display if applicable --}}
       @if ($salePrice < $basePrice)
         <div class="d-flex align-items-baseline gap-3 mb-3">
-          <span class="fw-bold text-success">{{ $currency }} {{ $format($salePrice) }}</span>
-          <span class="text-muted text-decoration-line-through">{{ $currency }} {{ $format($basePrice) }}</span>
+          <span class="fw-bold text-success">{{ $formatMoney($salePrice) }}</span>
+          <span class="text-muted text-decoration-line-through">{{ $formatMoney($basePrice) }}</span>
         </div>
       @else
-        <p class="fw-bold text-success mb-3">{{ $currency }} {{ $format($basePrice) }}</p>
+        <p class="fw-bold text-success mb-3">{{ $formatMoney($basePrice) }}</p>
       @endif
     @endif
 
