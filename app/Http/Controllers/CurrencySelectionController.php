@@ -12,6 +12,25 @@ class CurrencySelectionController extends Controller
      */
     public function set(Request $request)
     {
+        // Allow either 'code' (3 letters) or 'reset=1' to clear override
+        $reset = (bool) $request->boolean('reset');
+        if ($reset) {
+            session()->forget('currency_code');
+            if (auth()->check()) {
+                $u = auth()->user();
+                $u->preferred_currency = null;
+                $u->save();
+            }
+            $default = setting('default_currency', 'USD') ?: 'USD';
+            $resp = response()->json(['message' => 'Currency reset', 'currency' => strtoupper($default)]);
+            // Clear cookie
+            $resp->headers->clearCookie('currency_code', '/', null, false, false);
+            if ($request->wantsJson()) {
+                return $resp;
+            }
+            return back()->with('status', 'Currency reset to site default')->withCookie(cookie('currency_code', null, -1));
+        }
+
         $data = $request->validate([
             'code' => ['required','string','size:3'],
         ]);
@@ -34,10 +53,22 @@ class CurrencySelectionController extends Controller
             return back()->with('error', 'Unsupported currency selection.');
         }
 
-        // Persist in session and cookie (180 days)
-        session(['currency_code' => $code]);
-        return back()->withCookie(cookie('currency_code', $code, 60 * 24 * 180))
-                     ->with('status', 'Currency updated to ' . $code);
+        // Persist: user preference if logged in, else session
+        if (auth()->check()) {
+            $user = auth()->user();
+            $user->preferred_currency = $code;
+            $user->save();
+        } else {
+            session(['currency_code' => $code]);
+        }
+
+        $resp = response()->json(['message' => 'Currency updated', 'currency' => $code]);
+        // Set cookie as a resilient fallback (180 days)
+        $resp->headers->setCookie(cookie('currency_code', $code, 60 * 24 * 180, '/'));
+        if ($request->wantsJson()) {
+            return $resp;
+        }
+
+        return back()->with('status', 'Currency updated to ' . $code)->withCookie(cookie('currency_code', $code, 60 * 24 * 180, '/'));
     }
 }
-

@@ -12,7 +12,7 @@
     <img src="{{ $product->featured_image }}" alt="{{ $product->name }}" class="rounded" style="width:80px; height:80px; object-fit:cover;">
     <div class="ms-3 flex-grow-1">
       <h6 class="mb-1">{{ $product->name }}</h6>
-      <small class="text-muted">${{ number_format($product->price,2) }}</small>
+      <small class="text-muted">{{ money((float)$product->price, null) }}</small>
     </div>
     <button class="btn btn-sm btn-success" onclick="addToCart({{ $product->id }})">
       <i class="fas fa-cart-plus"></i>

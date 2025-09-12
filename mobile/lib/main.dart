@@ -18,6 +18,7 @@ import 'screens/login_screen.dart';
 import 'screens/change_email_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/add_product_screen.dart';
+import 'screens/payout_otp_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -154,6 +155,7 @@ class CetsyApp extends StatelessWidget {
         '/login': (_) => const LoginScreen(),
         '/change-email': (_) => const ChangeEmailScreen(),
         '/wallet': (_) => const WalletScreen(),
+        PayoutOtpScreen.route: (_) => const PayoutOtpScreen(payoutId: 0), // placeholder; use MaterialPageRoute for actual id
         // Backward compat route and new naming
         '/add-product': (_) => const AddProductScreen(),
         '/add-listing': (_) => const AddProductScreen(),

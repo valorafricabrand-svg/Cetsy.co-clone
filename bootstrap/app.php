@@ -22,6 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'kyc.after.two.sales' => \App\Http\Middleware\RequireKycAfterTwoSales::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
+
+        // Apply currency from query/header/cookie and keep it in session/cookie
+        // Run for all requests (web + api) so mobile can pass X-Currency too
+        $middleware->append(\App\Http\Middleware\ApplyCurrency::class);
+        // Ensure every request has a 'currency' input merged so form submissions carry it implicitly
+        $middleware->append(\App\Http\Middleware\AttachCurrencyToRequest::class);
     })
     ->withCommands([
         \App\Console\Commands\DeactivateExpiredSubscriptions::class,

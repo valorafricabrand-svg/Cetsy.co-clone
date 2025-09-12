@@ -5,7 +5,14 @@
 <div class="content py-4">
   <div class="container-xxl">
 
-      <h3 class="mb-4">Payout Requests</h3>
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <h3 class="mb-0">Payout Requests</h3>
+        <div>
+          <a href="{{ route('wallet.index', ['open_payout' => 1]) }}" class="btn btn-sm btn-primary">
+            Request Payout
+          </a>
+        </div>
+      </div>
 
       @if(!empty($otpPending))
         <div class="alert alert-warning d-flex align-items-center justify-content-between">
@@ -22,7 +29,6 @@
           </div>
         </div>
       @endif
-      
 
       <div class="alert alert-info mb-4">
           Available balance: {{ get_currency() }} {{ number_format($balance,2) }}
@@ -55,7 +61,7 @@
                                     <button class="btn btn-sm btn-outline-danger">Cancel</button>
                                   </form>
                                 @else
-                                  <span class="text-muted">—</span>
+                                  <span class="text-muted">-</span>
                                 @endif
                               </td>
                           </tr>

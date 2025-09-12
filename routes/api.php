@@ -56,6 +56,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Wallet
     Route::get('/wallet/summary', [ApiWalletController::class, 'summary']);
     Route::post('/wallet/payout', [ApiWalletController::class, 'requestPayout']);
+    Route::post('/wallet/payout/{payout}/verify', [ApiWalletController::class, 'verifyPayoutOtp']);
+    Route::post('/wallet/payout/{payout}/resend-otp', [ApiWalletController::class, 'resendPayoutOtp']);
+    Route::post('/wallet/payout/{payout}/cancel', [ApiWalletController::class, 'cancelPayout']);
     Route::get('/wallet/transactions', [ApiWalletController::class, 'transactions']);
     Route::get('/wallet/paypal/config', [ApiWalletController::class, 'paypalConfig']);
     // Map M-Pesa STK deposit to existing web controller actions
