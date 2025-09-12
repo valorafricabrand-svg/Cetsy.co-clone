@@ -201,7 +201,7 @@ Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('r
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth','verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
     
@@ -482,7 +482,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 | Seller Routes - Subscription Management (No Active Subscription Required)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
+Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('seller.')->group(function () {
 
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
@@ -516,7 +516,7 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
 | Seller Routes - Active Subscription Required
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
+Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
     // Dashboard & Analytics
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
@@ -585,7 +585,7 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
 | Buyer Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->prefix('buyer')->name('buyer.')->group(function () {
+Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(function () {
     Route::get('dashboard', [BuyerDashboard::class, 'index'])->name('dashboard');
     Route::get('orders/{order}', [AccountController::class, 'orderDetails'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
