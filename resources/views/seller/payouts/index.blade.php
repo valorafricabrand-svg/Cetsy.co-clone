@@ -31,8 +31,44 @@
       @endif
 
       <div class="alert alert-info mb-4">
-          Available balance: {{ shop_currency() }} {{ number_format($balance,2) }}
+          Available balance: {{ get_currency() }} {{ number_format($balance,2) }}
       </div>
+
+      @if(!empty($otpPending))
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-white fw-semibold">
+            Verify Payout Request #{{ $otpPending->id }}
+          </div>
+          <div class="card-body">
+            @if(session('success'))
+              <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+            @if($errors->any())
+              <div class="alert alert-danger">{{ $errors->first() }}</div>
+            @endif
+
+            <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.submit') ? route('seller.payouts.otp.submit', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/verify')) }}" class="row g-3 align-items-end">
+              @csrf
+              <div class="col-md-6">
+                <label class="form-label">Verification Code</label>
+                <input type="text" name="code" class="form-control @error('code') is-invalid @enderror" placeholder="6-digit code" required>
+                @error('code') <div class="invalid-feedback">{{ $message }}</div> @enderror
+              </div>
+              <div class="col-md-6 d-flex gap-2">
+                <button class="btn btn-primary">Verify &amp; Submit</button>
+                <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.resend') ? route('seller.payouts.otp.resend', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/resend-otp')) }}" class="d-inline">
+                  @csrf
+                  <button type="submit" class="btn btn-link">Resend code</button>
+                </form>
+                <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.cancel') ? route('seller.payouts.otp.cancel', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/cancel')) }}" class="d-inline" onsubmit="return confirm('Cancel this payout request?');">
+                  @csrf
+                  <button class="btn btn-link text-danger">Cancel</button>
+                </form>
+              </div>
+            </form>
+          </div>
+        </div>
+      @endif
 
       <div class="card shadow-sm border-0">
           <div class="table-responsive">
@@ -50,7 +86,7 @@
                       @forelse($requests as $req)
                           <tr>
                               <td>{{ $req->id }}</td>
-                              <td>{{ shop_currency() }} {{ number_format($req->amount,2) }}</td>
+                              <td>{{ get_currency() }} {{ number_format($req->amount,2) }}</td>
                               <td class="text-capitalize">{{ $req->status }}</td>
                               <td>{{ $req->created_at->format('d M Y') }}</td>
                               <td class="text-nowrap">
