@@ -76,7 +76,7 @@ class Setting extends Model
         'fee_rate'         => 1.5,
         'min_amount'       => 1.0,
         'auto_release_days'=> 3,
-        // 'default_currency' => 'USD', // uncomment if you want a hard default
+        'default_currency' => 'USD',
     ];
 
     /**

@@ -25,6 +25,9 @@ class Kernel extends ConsoleKernel
         // Auto-release on-hold funds for shipped orders after grace period
         $schedule->command('orders:release-onhold')->hourly();
 
+        // Update FX rates daily at 01:00
+        $schedule->command('rates:update')->dailyAt('01:00');
+
         // Removed legacy process:approved-payouts from schedule
     }
 

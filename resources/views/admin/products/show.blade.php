@@ -98,10 +98,10 @@
                         <small class="text-muted">Pricing</small>
                         <div class="d-flex align-items-center">
                             @if($product->discount_price)
-                                <span class="h4 text-danger me-2">KES {{ number_format($product->discount_price) }}</span>
-                                <span class="text-muted text-decoration-line-through">KES {{ number_format($product->price) }}</span>
+                                <span class="h4 text-danger me-2">{{ money($product->discount_price) }}</span>
+                                <span class="text-muted text-decoration-line-through">{{ money($product->price) }}</span>
                             @else
-                                <span class="h4">KES {{ number_format($product->price) }}</span>
+                                <span class="h4">{{ money($product->price) }}</span>
                             @endif
                         </div>
                     </div>
@@ -462,3 +462,4 @@ function deleteProduct() {
 }
 </script>
 @endsection
+

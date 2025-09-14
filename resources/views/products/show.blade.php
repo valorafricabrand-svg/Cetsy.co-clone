@@ -186,15 +186,15 @@
         @if($finalPrice < $basePrice)
           <div class="d-flex align-items-baseline gap-3 mb-3">
             <span class="fw-bold text-success">
-              {{ get_currency() }} {{ number_format($finalPrice, 2) }}
+              {{ money() }}
             </span>
             <span class="text-muted text-decoration-line-through">
-              {{ get_currency() }} {{ number_format($basePrice, 2) }}
+              {{ money() }}
             </span>
           </div>
         @else
           <p class="fw-bold text-success mb-3">
-            {{ get_currency() }} {{ number_format($basePrice, 2) }}
+            {{ money() }}
           </p>
         @endif
       </div>
@@ -284,7 +284,7 @@
               <input type="hidden" name="plan" value="monthly">
               <button class="btn btn-outline-success">
                 Renew Monthly<br>
-                <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
+                <small>{{ money($monthlyFee) }}</small>
               </button>
             </form>
             <form method="POST" action="{{ route('products.pay-fee', $product) }}">
@@ -292,7 +292,7 @@
               <input type="hidden" name="plan" value="4months">
               <button class="btn btn-success">
                 Renew 4-Month<br>
-                <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>
+                <small>{{ money($baseFee) }}</small>
               </button>
             </form>
           </div>
@@ -322,7 +322,7 @@
             <input type="hidden" name="plan" value="monthly">
             <button class="btn btn-outline-success">
               Pay Monthly<br>
-              <small>{{ get_currency() }}{{ number_format($monthlyFee,2) }}</small>
+              <small>{{ money($monthlyFee) }}</small>
             </button>
           </form>
           <form method="POST" action="{{ route('products.pay-fee', $product) }}">
@@ -330,7 +330,7 @@
             <input type="hidden" name="plan" value="4months">
             <button class="btn btn-success">
               Pay 4-Month<br>
-              <small>{{ get_currency() }}{{ number_format($baseFee,2) }}</small>
+              <small>{{ money($baseFee) }}</small>
             </button>
           </form>
         </div>
@@ -358,3 +358,4 @@
 
 </div>
 @endsection
+

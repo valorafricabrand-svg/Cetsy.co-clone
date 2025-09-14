@@ -39,7 +39,7 @@
                     <i class="fas fa-wallet fa-3x text-warning"></i>
                 </div>
                 <h5 class="card-title fw-bold text-warning">Account Balance</h5>
-                <p class="fs-5 text-muted mb-0">{{ number_format($accountBalance, 2) }} KES</p>
+                <p class="fs-5 text-muted mb-0">{{ money($accountBalance) }}</p>
             </div>
         </a>
     </div>
@@ -66,7 +66,7 @@
                                 </p>
                                 <p class="mb-0">
                                     <strong>Status:</strong> {{ ucfirst($order->status) }} |
-                                    <strong>Total:</strong> {{ number_format($order->total, 2) }} KES
+                                    <strong>Total:</strong> {{ money($order->total) }}
                                 </p>
                             </div>
                             @if($order->status == 'pending')
@@ -98,7 +98,7 @@
                                 <img src="{{ url('/') }}/storage/{{ $product->photo }}" alt="{{ $product->name }}" class="card-img-top" alt="{{ $product->name }}">
                                 <div class="card-body text-center">
                                     <h6 class="card-title">{{ $product->name }}</h6>
-                                    <p class="text-muted">{{ number_format($product->price, 2) }} KES</p>
+                                    <p class="text-muted">{{ money($product->price) }}</p>
                                     <a href="{{ route('product_details', $product->slug) }}" class="btn btn-sm btn-primary">View Product</a>
                                 </div>
                             </div>
@@ -110,3 +110,4 @@
     </div>
 </div>
 @endsection
+

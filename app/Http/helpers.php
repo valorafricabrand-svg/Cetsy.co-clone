@@ -19,9 +19,9 @@ function logo_url(){
 
 
 function price($price = 0){
-  
-   $currency_sign = get_currency();
-    return $currency_sign.' '.$price;
+    // Backward-compatible: assumes $price is in USD base; formats in selected currency
+    $amount = is_numeric($price) ? (float) $price : 0.0;
+    return money($amount, null);
 }
 
 function settings() {
@@ -79,12 +79,12 @@ function shop(){
         return $walletBalance;
   }
 
-  function wallet_on_hold(){
+   function wallet_on_hold(){
      return wallet('on_hold');
    }
 
 
-  function admin_wallet($status = 'completed') {
+     function admin_wallet($status = 'completed') {
 
      $walletBalance = \App\Models\Wallet::where('status', $status)
                             ->selectRaw('SUM(credit - debit) as balance')
@@ -95,45 +95,152 @@ function shop(){
 
 
   function get_currency() {
-    return setting('default_currency');
- }
-
- /**
-  * Determine the currency symbol for a given shop/context, falling back to default.
-  * Accepts: \App\Models\Shop instance, an object with ->shop, a shop id, or null (uses current seller).
-  */
- function shop_currency($context = null) {
+    // Priority: Auth user's preference -> session override -> cookie -> site default
     try {
-        // 1) Explicit Shop instance
-        if ($context instanceof \App\Models\Shop) {
-            return $context->currency ?: get_currency();
-        }
-
-        // 2) Any object with a loaded 'shop' relation (e.g., Order, Product)
-        if (is_object($context) && isset($context->shop) && $context->shop instanceof \App\Models\Shop) {
-            return $context->shop->currency ?: get_currency();
-        }
-
-        // 3) Shop id
-        if (is_numeric($context)) {
-            $shop = \App\Models\Shop::find((int)$context);
-            if ($shop) {
-                return $shop->currency ?: get_currency();
-            }
-        }
-
-        // 4) Current seller's shop
         if (function_exists('auth') && auth()->check()) {
-            $shop = \App\Models\Shop::where('user_id', auth()->id())->first();
-            if ($shop && !empty($shop->currency)) {
-                return $shop->currency;
+            $u = auth()->user();
+            if (!empty($u->preferred_currency) && strlen($u->preferred_currency) === 3) {
+                return strtoupper($u->preferred_currency);
             }
         }
-    } catch (\Throwable $e) {
-        // Fallback to default on any error
-    }
-    return get_currency();
+    } catch (\Throwable $e) {}
+
+    try {
+        $sessionCode = session()->has('currency_code') ? session('currency_code') : null;
+        if (!empty($sessionCode) && strlen($sessionCode) === 3) {
+            return strtoupper($sessionCode);
+        }
+    } catch (\Throwable $e) {}
+
+    try {
+        $cookieCode = request()->cookies->get('currency_code');
+        if (!empty($cookieCode) && strlen($cookieCode) === 3) {
+            return strtoupper($cookieCode);
+        }
+    } catch (\Throwable $e) {}
+
+    $default = setting('default_currency', 'USD') ?: 'USD';
+    $code = strtoupper((string) $default);
+    return strlen($code) === 3 ? $code : 'USD';
  }
+
+// ---- Currency conversion helpers (server-side) ----
+if (! function_exists('fx_rates')) {
+    /**
+     * Return decoded USD-based rates from settings.
+     * @return array<string,float>
+     */
+    function fx_rates(): array
+    {
+        $json = setting('exchange_rates_json');
+        if (empty($json)) return [];
+        try {
+            $arr = json_decode($json, true);
+            return is_array($arr) ? $arr : [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+}
+
+if (! function_exists('fx_rate')) {
+    /** Get USD→code rate. Missing => 1.0 for USD, else 0.0 */
+    function fx_rate(string $code): float
+    {
+        $code = strtoupper($code);
+        if ($code === 'USD') return 1.0;
+        // Prefer DB table if present
+        try {
+            if (class_exists('App\\Models\\Currency')) {
+                $c = \App\Models\Currency::where('code', $code)->first();
+                if ($c && $c->usd_rate > 0) return (float) $c->usd_rate;
+            }
+        } catch (\Throwable $e) {}
+        // Fallback to settings JSON
+        $rates = fx_rates();
+        $r = $rates[$code] ?? null;
+        return $r ? (float) $r : 0.0;
+    }
+}
+
+if (! function_exists('convert_usd')) {
+    /** Convert an amount from USD to target currency (default: site default). */
+    function convert_usd(float $amountUsd, ?string $to = null): float
+    {
+        $to = $to ? strtoupper($to) : get_currency();
+        $rate = fx_rate($to);
+        if ($rate <= 0) return round($amountUsd, 2);
+        return round($amountUsd * $rate, 2);
+    }
+}
+
+if (! function_exists('money')) {
+    /** Format amount using default currency with USD-based conversion. */
+  function money(float $amountUsd, ?int $precision = null): string
+  {
+      $code = get_currency();
+      $value = convert_usd($amountUsd, $code);
+        // Determine decimals if not provided (prefer DB)
+        $dec = 2;
+        if ($precision === null) {
+            try {
+                if (class_exists('App\\Models\\Currency')) {
+                    $c = \App\Models\Currency::where('code', $code)->first();
+                    if ($c && is_numeric($c->decimal_places)) {
+                        $dec = max(0, min(6, (int) $c->decimal_places));
+                    }
+                }
+            } catch (\Throwable $e) {}
+        } else {
+            $dec = $precision;
+        }
+      return $code.' '.number_format($value, $dec);
+  }
+}
+
+// Backward-compat alias used by some legacy views
+if (! function_exists('shop_currency')) {
+    function shop_currency(): string
+    {
+        return get_currency();
+    }
+}
+
+if (! function_exists('currency_symbol')) {
+    /** Map currency code to symbol for display (fallback to code). */
+    function currency_symbol(?string $code = null): string
+    {
+        $code = strtoupper($code ?: get_currency());
+        // Prefer DB symbol if set
+        try {
+            if (class_exists('App\\Models\\Currency')) {
+                $c = \App\Models\Currency::where('code', $code)->first();
+                if ($c && !empty($c->symbol)) return $c->symbol;
+            }
+        } catch (\Throwable $e) {}
+        return match ($code) {
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            'JPY' => '¥',
+            'INR' => '₹',
+            'NGN' => '₦',
+            'AUD' => 'A$',
+            'CAD' => 'C$',
+            default => $code,
+        };
+    }
+}
+
+if (! function_exists('symbol_money')) {
+    /** Format with currency symbol instead of code. */
+    function symbol_money(float $amountUsd, ?int $precision = 2): string
+    {
+        $code = get_currency();
+        $value = convert_usd($amountUsd, $code);
+        return currency_symbol($code).' '.number_format($value, $precision ?? 2);
+    }
+}
 
 if (! function_exists('apply_discount')) {
     /**
@@ -154,24 +261,41 @@ if (! function_exists('apply_discount')) {
 
 if (! function_exists('setting')) {
     /**
-     * Retrieve a setting value by key (column name), or return default.
-     *
-     * @param  string  $key
-     * @param  mixed   $default
-     * @return mixed
+     * Get a setting value by logical key.
+     * Supports two storage models:
+     * 1) Column-based single row (e.g., default_currency on the main settings row)
+     * 2) Key-value rows (option_key/option_value)
      */
     function setting(string $key, $default = null)
     {
-        static $settings;
+        static $cachedRow = null;
 
-        // cache the row so we only hit the DB once
-        if (! $settings) {
-            $settings = Setting::first();
-        }
+        // Try key-value store first if the table uses option_key/option_value
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('settings', 'option_key')) {
+                $val = Setting::where('option_key', $key)->value('option_value');
+                if ($val !== null) return $val;
+            }
+        } catch (\Throwable $e) {}
 
-        return $settings && isset($settings->$key)
-            ? $settings->$key
-            : $default;
+        // Fallback to column-based single-row model
+        try {
+            if (! $cachedRow) {
+                // Prefer a row without option_key if the column exists
+                if (\Illuminate\Support\Facades\Schema::hasColumn('settings', 'option_key')) {
+                    $cachedRow = Setting::whereNull('option_key')->orderByDesc('id')->first();
+                    // If none, fallback to any row
+                    if (! $cachedRow) $cachedRow = Setting::orderByDesc('id')->first();
+                } else {
+                    $cachedRow = Setting::orderByDesc('id')->first();
+                }
+            }
+            if ($cachedRow && isset($cachedRow->$key)) {
+                return $cachedRow->$key;
+            }
+        } catch (\Throwable $e) {}
+
+        return $default;
     }
 }
 
@@ -450,3 +574,4 @@ if (! function_exists('couriers_list')) {
 
 
 ?>
+

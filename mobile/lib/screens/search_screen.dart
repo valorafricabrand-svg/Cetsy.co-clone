@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import '../providers/currency_provider.dart';
 // lib/screens/search_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -20,6 +22,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final _queryCtl = TextEditingController();
   Future<List<Product>>? _results;
   final _fmt = NumberFormat.decimalPattern();
+  String? _selectedType; // null | 'physical' | 'service' | 'digital'
 
   @override
   void dispose() {
@@ -31,7 +34,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final q = _queryCtl.text.trim();
     if (q.isEmpty) return;
     setState(() {
-      _results = ProductService.fetchProducts(keyword: q);
+      _results = ProductService.fetchProducts(keyword: q, type: _selectedType);
     });
   }
 
@@ -62,6 +65,15 @@ class _SearchScreenState extends State<SearchScreen> {
             icon: const Icon(Icons.search),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(46),
+          child: Container(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+            decoration: const BoxDecoration(color: Colors.white),
+            child: _buildTypeChips(),
+          ),
+        ),
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -94,13 +106,34 @@ class _SearchScreenState extends State<SearchScreen> {
                       final p = items[i];
                       final url = _imageUrlFrom(p.image);
                       final price = p.discountPrice ?? p.price;
+                      final isSpecial = p.type != null && p.type != 'physical';
+                      final typeLabel = p.type == 'service'
+                          ? 'Service'
+                          : (p.type == 'digital' ? 'Digital' : null);
                       return ListTile(
                         leading: url != null
                             ? Image.network(url, width: 56, height: 56, fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported))
                             : const Icon(Icons.image_not_supported),
-                        title: Text(p.name),
-                        subtitle: Text('KES ${_fmt.format(price)}'),
+                        title: Row(
+                          children: [
+                            Expanded(child: Text(p.name, overflow: TextOverflow.ellipsis)),
+                            if (typeLabel != null)
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.black87.withOpacity(.08),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  typeLabel,
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                          ],
+                        ),
+                        subtitle: Text('\ ${_fmt.format(price)}'),
                         onTap: () => Navigator.pushNamed(
                           context,
                           ProductDetailScreen.route,
@@ -114,4 +147,46 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
     );
   }
+
+  Widget _buildTypeChips() {
+    Widget chip({required String label, String? value}) {
+      final selected = _selectedType == value;
+      return Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: ChoiceChip(
+          selected: selected,
+          label: Text(label),
+          onSelected: (_) {
+            setState(() => _selectedType = value);
+            // If we already have results, re-run search with updated type
+            if (_results != null) _search();
+          },
+          selectedColor: cetsyGreen.withOpacity(.15),
+          labelStyle: TextStyle(
+            color: selected ? cetsyGreen : Colors.black87,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          chip(label: 'All', value: null),
+          chip(label: 'Products', value: 'physical'),
+          chip(label: 'Services', value: 'service'),
+          chip(label: 'Digital', value: 'digital'),
+        ],
+      ),
+    );
+  }
 }
+
+
+
+
+
+
+

@@ -1,6 +1,9 @@
+import 'package:provider/provider.dart';
+import '../providers/currency_provider.dart';
 // lib/screens/checkout_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../config/constants.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/cart_provider.dart';
@@ -131,7 +134,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             leading: const Icon(Icons.shopping_bag),
                             title: Text(p.name),
                             subtitle: Text(
-                              'x${item.qty}  @ KES ${fmt.format(unit)}' +
+                              'x${item.qty}  @ \ ${fmt.format(unit)}' +
                                   (item.variationLabel != null && item.variationLabel!.isNotEmpty
                                       ? '\n${item.variationLabel}'
                                       : ''),
@@ -224,14 +227,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Items: KES ${fmt.format(cart.total)}',
+                      'Items: \ ${fmt.format(cart.total)}',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: CheckoutScreen.cetsyGreen,
                       ),
                     ),
                     Text(
-                      'Shipping: KES ${fmt.format(cart.shippingTotal)}',
+                      'Shipping: \ ${fmt.format(cart.shippingTotal)}',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: CheckoutScreen.cetsyGreen,
@@ -239,7 +242,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Total: KES ${fmt.format(cart.grandTotal)}',
+                      'Total: \ ${fmt.format(cart.grandTotal)}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -263,3 +266,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 }
+
+
+
+
+
+

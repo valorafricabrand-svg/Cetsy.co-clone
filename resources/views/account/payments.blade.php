@@ -16,7 +16,7 @@
                         <th>Shop</th>
                         <th>Date</th>
                         <th>Status</th>
-                        <th>Total (KES)</th>
+                        <th>Total ({{ get_currency() }})</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,7 +38,7 @@
                                     {{ ucfirst($pay->payment_status) }}
                                 </span>
                             </td>
-                            <td>KSh {{ number_format($pay->total_amount, 2) }}</td>
+                            <td>{{ money($pay->total_amount) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -51,3 +51,4 @@
     @endif
 </div>
 @endsection
+

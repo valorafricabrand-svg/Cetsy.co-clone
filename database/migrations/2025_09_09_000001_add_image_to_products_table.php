@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             if (!Schema::hasColumn('products', 'image')) {
-                $table->string('image')->nullable()->after('discount_price');
+                $table->string('image')->nullable()->after('id');
             }
         });
     }
