@@ -176,7 +176,7 @@ if (! function_exists('convert_usd')) {
 
 if (! function_exists('money')) {
     /** Format amount using default currency with USD-based conversion. */
-  function money(float $amountUsd, ?int $precision = null): string
+  function money(float $amountUsd = 0.0, ?int $precision = null): string
   {
       $code = get_currency();
       $value = convert_usd($amountUsd, $code);
