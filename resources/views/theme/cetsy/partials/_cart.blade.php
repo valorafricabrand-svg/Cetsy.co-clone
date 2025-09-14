@@ -66,6 +66,8 @@
          class="d-flex align-items-baseline gap-3 mb-3"
          data-currency="{{ $currency }}"
          data-default-amount="{{ $defaultDisplayPrice }}"
+         data-fx-rate="{{ max(0, (float) fx_rate($currency)) }}"
+         data-decimals="@php($__dec=2)@php(try{ $__c=\App\Models\Currency::where('code',$currency)->first(); if($__c){$__dec=max(0,min(6,(int)$__c->decimal_places));}}catch(\Throwable $e){}){{ $__dec }}"
          data-variant-index='@json($variantIndex)'>
       <span class="fw-bold text-success">
         <span id="js-from-label" class="me-1 small text-muted">From</span>
@@ -82,6 +84,8 @@
            class="d-flex align-items-baseline gap-3 mb-3"
            data-currency="{{ $currency }}"
            data-default-amount="{{ $salePrice }}"
+           data-fx-rate="{{ max(0, (float) fx_rate($currency)) }}"
+           data-decimals="@php($__dec=2)@php(try{ $__c=\App\Models\Currency::where('code',$currency)->first(); if($__c){$__dec=max(0,min(6,(int)$__c->decimal_places));}}catch(\Throwable $e){}){{ $__dec }}"
            data-variant-index='{}'>
         <span class="fw-bold text-success">
           <span id="js-price-amount">{{ $currency }} {{ $format($salePrice) }}</span>
@@ -98,6 +102,8 @@
          class="fw-bold text-success mb-3"
          data-currency="{{ $currency }}"
          data-default-amount="{{ $basePrice }}"
+         data-fx-rate="{{ max(0, (float) fx_rate($currency)) }}"
+         data-decimals="@php($__dec=2)@php(try{ $__c=\App\Models\Currency::where('code',$currency)->first(); if($__c){$__dec=max(0,min(6,(int)$__c->decimal_places));}}catch(\Throwable $e){}){{ $__dec }}"
          data-variant-index='{}'>
         <span id="js-price-amount">{{ $currency }} {{ $format($basePrice) }}</span>
       </p>
@@ -268,6 +274,8 @@
 
     const currency   = priceBlock.getAttribute('data-currency') || '';
     const defaultAmt = parseFloat(priceBlock.getAttribute('data-default-amount') || '0') || 0;
+    const fxRate     = Math.max(0, parseFloat(priceBlock.getAttribute('data-fx-rate') || '0') || 0);
+    const decimals   = Math.max(0, parseInt(priceBlock.getAttribute('data-decimals') || '2', 10) || 2);
 
     // variant-index: { "1-12-33": { id: 7, price: 999.00, options:[1,12,33] }, ... }
     const variantIndex = JSON.parse(priceBlock.getAttribute('data-variant-index') || '{}');
@@ -311,7 +319,8 @@
     }
 
     function fmt(amount) {
-      return currency + ' ' + Number(amount).toFixed(2);
+      const r = fxRate > 0 ? fxRate : 1;
+      return currency + ' ' + (Number(amount) * r).toFixed(decimals);
     }
 
     function allChosen() {

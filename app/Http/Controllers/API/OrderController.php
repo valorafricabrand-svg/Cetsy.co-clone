@@ -170,4 +170,53 @@ class OrderController extends Controller
             ], 201);
         });
     }
+
+    /**
+     * Show a single order with items and shipping details for the authenticated user.
+     */
+    public function show(Request $request, \App\Models\Order $order)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+        if ($order->user_id !== $user->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $order->load(['items.product:id,name,featured_image']);
+
+        return response()->json([
+            'id' => $order->id,
+            'status' => $order->status,
+            'subtotal' => (float) $order->subtotal,
+            'total_amount' => (float) $order->total_amount,
+            'tax_amount' => (float) ($order->tax_amount ?? 0),
+            'payment_method' => $order->payment_method,
+            'created_at' => $order->created_at,
+            // Shipping details
+            'shipping' => [
+                'full_name' => $order->full_name,
+                'email' => $order->email,
+                'phone' => $order->phone,
+                'country_id' => $order->shipping_country_id,
+                'address_1' => $order->shipping_address_1,
+                'address_2' => $order->shipping_address_2,
+                'city' => $order->shipping_city,
+                'state' => $order->shipping_state,
+                'postal_code' => $order->shipping_postal_code,
+            ],
+            'items' => $order->items->map(function ($it) {
+                return [
+                    'product_id' => $it->product_id,
+                    'product' => [
+                        'name' => optional($it->product)->name,
+                        'featured_image' => optional($it->product)->featured_image,
+                    ],
+                    'quantity' => (int) $it->quantity,
+                    'price' => (float) $it->price,
+                ];
+            }),
+        ]);
+    }
 }

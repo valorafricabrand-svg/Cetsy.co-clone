@@ -129,13 +129,13 @@
                                 <td>
                                     @if($product->discount_price)
                                         <div>
-                                            <span class="text-danger fw-bold">KES {{ number_format($product->discount_price) }}</span><br>
+                                            <span class="text-danger fw-bold">{{ money($product->discount_price) }}</span><br>
                                             <small class="text-muted text-decoration-line-through">
-                                                KES {{ number_format($product->price) }}
+                                                {{ money($product->price) }}
                                             </small>
                                         </div>
                                     @else
-                                        <span class="fw-bold">KES {{ number_format($product->price) }}</span>
+                                        <span class="fw-bold">{{ money($product->price) }}</span>
                                     @endif
                                 </td>
                                 <td>
@@ -288,3 +288,4 @@
 
 @endforeach
 @endsection
+

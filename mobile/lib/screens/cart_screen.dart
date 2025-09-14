@@ -1,6 +1,9 @@
+import 'package:provider/provider.dart';
+import '../providers/currency_provider.dart';
 // lib/screens/cart_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../config/constants.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/cart_provider.dart';
@@ -59,7 +62,7 @@ class CartScreen extends StatelessWidget {
                             title: Text(p.name,
                                 maxLines: 1, overflow: TextOverflow.ellipsis),
                             subtitle: Text(
-                              'KES ${fmt.format(unitPrice)} each' +
+                              '\ ${fmt.format(unitPrice)} each' +
                                   (item.variationLabel != null && item.variationLabel!.isNotEmpty
                                       ? '\n${item.variationLabel}'
                                       : ''),
@@ -170,14 +173,14 @@ class CartScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Items: KES ${fmt.format(subtotal)}',
+                Text('Items: \ ${fmt.format(subtotal)}',
                     style: const TextStyle(
                         fontWeight: FontWeight.w600, color: cetsyGreen)),
-                Text('Shipping: KES ${fmt.format(shipping)}',
+                Text('Shipping: \ ${fmt.format(shipping)}',
                     style: const TextStyle(
                         fontWeight: FontWeight.w600, color: cetsyGreen)),
                 const SizedBox(height: 4),
-                Text('Total: KES ${fmt.format(grand)}',
+                Text('Total: \ ${fmt.format(grand)}',
                     style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -216,3 +219,9 @@ class CartScreen extends StatelessWidget {
     }
   }
 }
+
+
+
+
+
+

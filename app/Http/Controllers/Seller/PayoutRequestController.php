@@ -130,7 +130,7 @@ class PayoutRequestController extends Controller
                 'auth_id'   => Auth::id(),
                 'ip'        => request()->ip(),
             ]);
-            abort(403);
+            return redirect()->route('seller.payouts.index')->withErrors('You are not allowed to access that payout request.');
         }
         if ($payout->status !== 'otp_pending') {
             Log::warning('payout.verifyForm wrong_status', [
@@ -178,7 +178,7 @@ class PayoutRequestController extends Controller
                 'auth_id'   => Auth::id(),
                 'ip'        => $request->ip(),
             ]);
-            abort(403);
+            return redirect()->route('seller.payouts.index')->withErrors('You are not allowed to verify this payout.');
         }
         if ($payout->status !== 'otp_pending') {
             Log::warning('payout.verifyOtp wrong_status', [
@@ -341,7 +341,7 @@ class PayoutRequestController extends Controller
                 'auth_id'   => Auth::id(),
                 'ip'        => request()->ip(),
             ]);
-            abort(403);
+            return back()->withErrors(['code' => 'You are not allowed to resend this code.']);
         }
         if ($payout->status !== 'otp_pending') {
             Log::warning('payout.resendOtp wrong_status', [
@@ -430,7 +430,7 @@ class PayoutRequestController extends Controller
                 'owner_id'  => $payout->user_id,
                 'auth_id'   => Auth::id(),
             ]);
-            abort(403);
+            return redirect()->route('seller.payouts.index')->withErrors('You are not allowed to cancel this payout.');
         }
         if ($payout->status !== 'otp_pending') {
             Log::warning('payout.cancel wrong_status', [

@@ -49,18 +49,56 @@
                     <br><small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
                   @endif
                 </td>
-                <td>{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</td>
+                <td>{{ money() }}</td>
                 <td>
                   <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-sm btn-outline-secondary me-1">View</a>
-                  {{-- conditional removed (moved to details) --}}
-                    {{-- Pay Now moved to order details --}}
-                  {{-- end conditional removed --}}
+                  @if($order->status === \App\Models\Order::STATUS_PENDING)
+                    <a href="{{ route('pay_now', $order->id) }}" class="btn btn-sm btn-primary">Pay Now</a>
+                  @endif
 
-                  {{-- Actions moved to order details page: Messages button removed from list --}}
+                   <a href="{{ route('orders.chat.show', $order->id) }}"
+           class="btn btn-sm btn-outline-info me-1">
+          Messages
+        </a>
 
-        {{-- Dispute actions moved to order details page --}}
+        {{-- Dispute Section --}}
+        @php
+            $dispute = $order->disputes()->latest()->first();
+        @endphp
+        
+        @if($dispute)
+            {{-- Show existing dispute status --}}
+            <div class="mt-2">
+                <span class="badge bg-warning text-dark">
+                    <i class="bi bi-exclamation-triangle"></i> Dispute: {{ ucfirst($dispute->status) }}
+                </span>
+                <a href="{{ route('disputes.show', $dispute->id) }}" 
+                   class="btn btn-sm btn-warning ms-1">
+                    <i class="bi bi-chat-dots"></i> Continue Dispute
+                </a>
+            </div>
+        @else
+            {{-- Show create dispute button for eligible orders --}}
+            @if(in_array($order->status, [
+                \App\Models\Order::STATUS_PROCESSING, 
+                \App\Models\Order::STATUS_SHIPPED, 
+                \App\Models\Order::STATUS_DELIVERED
+            ]))
+                <a href="{{ route('disputes.create', ['order_id' => $order->id]) }}" 
+                   class="btn btn-sm btn-outline-warning ms-1">
+                    <i class="bi bi-exclamation-triangle"></i> Create Dispute
+                </a>
+            @endif
+        @endif
 
-          {{-- Mark Delivered moved to order details page --}}
+          @if ($order->status === \App\Models\Order::STATUS_SHIPPED)
+                <button class="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deliverModal-{{ $order->id }}">
+                    <i class="bi bi-check2-circle"></i> Mark Delivered
+                </button>
+                @include('seller.orders.modals.delivered')
+            @endif
                 </td>
               </tr>
             @endforeach
@@ -84,4 +122,5 @@
   </div>
 </div>
 @endsection
+
 

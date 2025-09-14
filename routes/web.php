@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CurrencySelectionController;
 use App\Http\Controllers\{
     HomeController,
     ProfileController,
@@ -67,6 +68,10 @@ use App\Http\Controllers\Seller\{
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+// Currency selector (session + cookie)
+Route::post('/set-currency', [CurrencySelectionController::class, 'set'])->name('currency.set');
+// Optional GET fallback to avoid 404 if a GET is sent
+Route::get('/set-currency', [CurrencySelectionController::class, 'set'])->name('currency.set.get');
 // Safaricom callback (must be reachable publicly)
 Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
     ->name('wallet.deposit.mpesa.callback');
@@ -210,7 +215,7 @@ Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('r
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth','verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
@@ -488,7 +493,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 | Seller Routes - Subscription Management (No Active Subscription Required)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
+Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('seller.')->group(function () {
 
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
@@ -522,7 +527,7 @@ Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(
 | Seller Routes - Active Subscription Required
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
+Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
     // Dashboard & Analytics
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
@@ -591,7 +596,7 @@ Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('sel
 | Buyer Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->prefix('buyer')->name('buyer.')->group(function () {
+Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(function () {
     Route::get('dashboard', [BuyerDashboard::class, 'index'])->name('dashboard');
     Route::get('orders/{order}', [AccountController::class, 'orderDetails'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');

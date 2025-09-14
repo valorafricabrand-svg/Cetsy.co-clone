@@ -213,11 +213,11 @@
                   {{-- Price (exact parity with partial logic) --}}
                   @if(isset($finalPrice, $basePrice) && is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
                     <div class="d-flex align-items-baseline gap-2 justify-content-md-end mb-2">
-                      <span class="fw-bold text-success">{{ get_currency() }} {{ number_format($finalPrice, 2) }}</span>
-                      <span class="text-muted text-decoration-line-through">{{ get_currency() }} {{ number_format($basePrice, 2) }}</span>
+                      <span class="fw-bold text-success">{{ money($finalPrice) }}</span>
+                      <span class="text-muted text-decoration-line-through">{{ money($basePrice) }}</span>
                     </div>
                   @elseif(isset($basePrice))
-                    <div class="h5 mb-2 text-success">{{ get_currency() }} {{ number_format($basePrice, 2) }}</div>
+                    <div class="h5 mb-2 text-success">{{ money($basePrice) }}</div>
                   @else
                     <div class="text-muted small mb-2">Contact for price</div>
                   @endif
@@ -303,5 +303,6 @@
   </script>
   @endpush
 @endsection
+
 
 

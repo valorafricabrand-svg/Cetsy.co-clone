@@ -31,7 +31,7 @@
               Review your cart before checkout. Once payment is confirmed, orders enter processing—changes may incur delays.
             </li>
             <li class="list-group-item border-0 ps-0 mb-2">
-              We offer free delivery on orders over KES 2,500—otherwise, shipping fees apply as shown at checkout. Track your parcel via the link in your email.
+              We offer free delivery on orders over {{ get_currency() }} 2,500—otherwise, shipping fees apply as shown at checkout. Track your parcel via the link in your email.
             </li>
             <li class="list-group-item border-0 ps-0 mb-2">
               Upon receiving your order, inspect packaging seals and expiry labels. Report any damage or discrepancies via chat within 24 hours.
@@ -60,3 +60,4 @@
     </div>
   </section>
 @endsection
+

@@ -35,7 +35,7 @@
               <strong>Engage with favourites.</strong> When a shopper favourites your item, send a warm message—maybe offer a small discount or suggest related products.
             </li>
             <li class="list-group-item border-0 ps-0 mb-2">
-              <strong>Consider paid ads.</strong> Boost visibility with Jaat Ads from as little as <span class="text-nowrap">KES 150/day</span> to drive traffic to key listings.
+              <strong>Consider paid ads.</strong> Boost visibility with Jaat Ads from as little as <span class="text-nowrap">{{ get_currency() }} 150/day</span> to drive traffic to key listings.
             </li>
             <li class="list-group-item border-0 ps-0 mb-2">
               <strong>Promote your shop services.</strong> Highlight extras such as custom engraving or gift-wrapping in your Services tab and cross-link to relevant listings.
@@ -58,3 +58,4 @@
     </div>
   </section>
 @endsection
+
