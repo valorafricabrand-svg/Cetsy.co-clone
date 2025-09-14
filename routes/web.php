@@ -53,12 +53,17 @@ Route::post('/set-currency', [CurrencySelectionController::class, 'set'])->name(
 Route::get('/set-currency', [CurrencySelectionController::class, 'set'])->name('currency.set.get');
 // Safaricom callback (must be reachable publicly)
 Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
-    ->name('wallet.deposit.mpesa.callback');
+    ->name('wallet.deposit.mpesa.callback')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 
 
 
-Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])->name('wallet.deposit.mpesa.callback');
-Route::post('/wallet/deposit/mpesa/timeout',  [WalletController::class, 'mpesaTimeout'])->name('wallet.deposit.mpesa.timeout');
+Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
+    ->name('wallet.deposit.mpesa.callback')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+Route::post('/wallet/deposit/mpesa/timeout',  [WalletController::class, 'mpesaTimeout'])
+    ->name('wallet.deposit.mpesa.timeout')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 
 
 // pages
@@ -608,9 +613,15 @@ Route::middleware(['auth'])->resource('settings', AdminSetting::class)
     ->only(['index', 'edit', 'update']);
 
 // Webhooks (public endpoints)
-Route::post('/webhooks/paypal', [PayoutWebhookController::class, 'paypal'])->name('webhooks.paypal');
-Route::post('/daraja/b2c/result', [PayoutWebhookController::class, 'darajaB2CResult'])->name('webhooks.daraja.b2c.result');
-Route::post('/daraja/b2c/timeout', [PayoutWebhookController::class, 'darajaB2CTimeout'])->name('webhooks.daraja.b2c.timeout');
+Route::post('/webhooks/paypal', [PayoutWebhookController::class, 'paypal'])
+    ->name('webhooks.paypal')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+Route::post('/daraja/b2c/result', [PayoutWebhookController::class, 'darajaB2CResult'])
+    ->name('webhooks.daraja.b2c.result')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+Route::post('/daraja/b2c/timeout', [PayoutWebhookController::class, 'darajaB2CTimeout'])
+    ->name('webhooks.daraja.b2c.timeout')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 
 require __DIR__ . '/auth.php';
 
@@ -623,5 +634,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/seller/payouts/{payout}/cancel', [\App\Http\Controllers\Seller\PayoutRequestController::class, 'cancel'])->name('seller.payouts.otp.cancel');
 });
 
-
-   
+// Local session debug helpers (safe to keep; only for local env)
+if (app()->environment('local')) {
+    Route::get('/__session/test', function () {
+        session(['__ok' => now()->toISOString()]);
+        return response('session set');
+    });
+    Route::post('/__session/test', function () {
+        return session()->has('__ok') ? response('session ok') : response('session missing', 400);
+    });
+}
