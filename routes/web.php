@@ -303,10 +303,7 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 
-    //notification routes
-    Route::get('/admin/notifications', [AdminNotificationController::class, 'index'])->name('admin.notifications.index');
-
-    // Chat
+   // Chat
     Route::get('/orders/{order}/chat', [OrderMessageController::class, 'show'])->name('orders.chat.show');
     Route::get('/orders/{order}/chat/messages', [OrderMessageController::class, 'fetch'])->name('orders.chat.fetch');
     Route::post('/orders/{order}/chat', [OrderMessageController::class, 'send'])->name('orders.chat.send');

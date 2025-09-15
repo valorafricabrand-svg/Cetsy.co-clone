@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Activity;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
@@ -12,6 +11,7 @@ class NotificationController extends Controller
     public function index()
     {
         $user = Auth::user();
+        // Fetch notifications for this admin only
         $notifications = Activity::with('causer')
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
