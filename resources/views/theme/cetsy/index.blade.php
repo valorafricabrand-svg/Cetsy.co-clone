@@ -256,37 +256,15 @@
 <!-- ===================================== -->
 <!-- Featured Products -->
 <!-- ===================================== -->
-<section class="bg-light py-5">
-  <div class="container">
-    <div class="section-head d-flex align-items-center justify-content-between mb-4">
-      <div>
-        <span class="eyebrow"><i class="fas fa-fire"></i> Popular</span>
-        <h2 class="h3 fw-bold mb-0 mt-2">Featured Products for You</h2>
-      </div>
-    </div>
-
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-      @forelse($featuredProducts as $item)
-        <div class="col-6 col-md-3 col-lg-3 reveal">
-          @include('theme.'.theme().'.partials.product-card', ['item' => $item])
-        </div>
-      @empty
-        <div class="col-12 text-center text-muted">
-          No featured products at this time.
-        </div>
-      @endforelse
-    </div>
-
-    @if($featuredProducts->count() > 0)
-      <div class="text-center mt-4 reveal reveal-delay-2">
-       <a href="{{ route('listings', ['type' => 'physical']) }}" class="btn btn-success btn-lg btn-pill px-4">
-  <i class="fas fa-list-ul me-2"></i> View All Products
-</a>
-
-      </div>
-    @endif
-  </div>
-</section>
+@include('theme.'.theme().'.partials.product-carousel', [
+    'items' => $featuredProducts,
+    'title' => Auth::check() ? 'Just for You' : 'Discover What's Hot',
+    'subtitle' => Auth::check() ? 'Curated from your orders, favorites, and recent views.' : 'Sign in to personalize your picks and get recommendations tailored to you.',
+    'eyebrow' => Auth::check() ? 'Tailored Picks' : 'Trending Now',
+    'eyebrowIcon' => Auth::check() ? 'fa-wand-magic-sparkles' : 'fa-fire',
+    'seeMoreUrl' => route('listings', ['type' => 'physical']),
+    'seeMoreLabel' => 'Browse all products'
+])
 
 <!-- ===================================== -->
 <!-- Most Trending Services -->
