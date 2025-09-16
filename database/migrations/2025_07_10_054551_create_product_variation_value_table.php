@@ -11,6 +11,10 @@ return new class extends Migration
      */
 public function up(): void
 {
+    if (Schema::hasTable('product_variation_value')) {
+        Schema::drop('product_variation_value');
+    }
+
     Schema::create('product_variation_value', function (Blueprint $table) {
         $table->id();
         $table->foreignId('product_variation_id')
