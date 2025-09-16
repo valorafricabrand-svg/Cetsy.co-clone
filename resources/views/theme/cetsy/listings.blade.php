@@ -250,6 +250,16 @@
   </section>
 
   {{-- View toggle + autosubmit --}}
+@include('theme.'.theme().'.partials.product-carousel', [
+    'items' => $recommendedProducts ?? collect(),
+    'title' => 'Because you viewed similar items',
+    'subtitle' => 'Hand-picked from categories and styles you've been browsing.',
+    'eyebrow' => 'Recommended',
+    'eyebrowIcon' => 'fa-wand-magic-sparkles',
+    'seeMoreUrl' => route('listings'),
+    'seeMoreLabel' => 'Keep exploring'
+])
+
   @push('scripts')
   <script>
     document.addEventListener('DOMContentLoaded', () => {
