@@ -80,9 +80,16 @@ function shop(){
      $walletBalance = \App\Models\Wallet::where('user_id', $id)
                             ->where('status', $status)
                             ->selectRaw('SUM(credit - debit) as balance')
-                            ->value('balance') ?? 0;
+                            ->value('balance');
 
-        return $walletBalance;
+     if ($walletBalance === null || abs((float) $walletBalance) < 0.00001) {
+         $walletBalance = \App\Models\Wallet::where('user_id', $id)
+                                ->where('status', $status)
+                                ->latest('id')
+                                ->value('balance') ?? 0;
+     }
+
+        return (float) $walletBalance;
   }
 
    function wallet_on_hold(){
