@@ -258,7 +258,7 @@
 <!-- ===================================== -->
 @include('theme.'.theme().'.partials.product-carousel', [
     'items' => $featuredProducts,
-    'title' => Auth::check() ? 'Just for You' : 'Discover What's Hot',
+    'title' => Auth::check() ? 'Just for You' : 'Discover What\'s Hot',
     'subtitle' => Auth::check() ? 'Curated from your orders, favorites, and recent views.' : 'Sign in to personalize your picks and get recommendations tailored to you.',
     'eyebrow' => Auth::check() ? 'Tailored Picks' : 'Trending Now',
     'eyebrowIcon' => Auth::check() ? 'fa-wand-magic-sparkles' : 'fa-fire',
