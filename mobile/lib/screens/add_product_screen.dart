@@ -166,7 +166,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
           }
         } catch (_) {}
 
+        if (!mounted) return;
         await _showSuccessAndMaybeManage(context, id);
+        if (!mounted) return;
         _formKey.currentState!.reset();
         setState(() { _imageFile = null; _digitalFile = null; });
       } else {
@@ -226,7 +228,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           child: Column(
             children: [
               DropdownButtonFormField<String>(
-                value: _type,
+                initialValue: _type,
                 decoration: const InputDecoration(labelText: 'Listing Type'),
                 items: const [
                   DropdownMenuItem(value: 'physical', child: Text('Product')),
@@ -241,7 +243,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
-                value: _categoryId,
+                initialValue: _categoryId,
                 decoration: const InputDecoration(labelText: 'Category'),
                 items: _categories.map((c) => DropdownMenuItem<int>(
                   value: c['id'] as int,
@@ -325,7 +327,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 Row(children: [
                   OutlinedButton.icon(onPressed: _pickDigital, icon: const Icon(Icons.attach_file), label: const Text('Attach Digital File')),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(_digitalFile?.path.split('/')?.last ?? '')),
+                  Expanded(child: Text(_digitalFile?.path.split('/').last ?? '')),
                 ]),
               ],
               const SizedBox(height: 20),

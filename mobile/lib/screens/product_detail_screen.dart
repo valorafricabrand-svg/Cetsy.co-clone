@@ -1,11 +1,11 @@
 import 'package:provider/provider.dart';
-import '../providers/currency_provider.dart';
+import '../utils/money_utils.dart';
+// import '../providers/currency_provider.dart';
 // lib/screens/product_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
+// import 'package:intl/intl.dart';
 
 import '../config/constants.dart';
 import '../models/product.dart';
@@ -56,7 +56,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final routeProduct = ModalRoute.of(context)!.settings.arguments as Product;
     final product = _data ?? routeProduct;
     final imgUrl = _imageUrl(product.image);
-    final priceFmt = NumberFormat.decimalPattern();
+    // final priceFmt = NumberFormat.decimalPattern();
 
     final variant = _matchVariant(product);
     final variantPrice = variant?.price;
@@ -116,13 +116,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 Row(
                   children: [
                     Text(
-                      '\ ${priceFmt.format(displayPrice)}',
+                      context.money(displayPrice),
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     if (variant == null && (product.discountPrice != null && product.discountPrice! < product.price)) ...[
                       const SizedBox(width: 8),
                       Text(
-                        '\ ${priceFmt.format(product.price)}',
+                        context.money(product.price),
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.grey,
@@ -152,7 +152,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: DropdownButtonFormField<int>(
-                        value: value,
+                        initialValue: value,
                         decoration: InputDecoration(labelText: t.name),
                         items: t.options.map((o) => DropdownMenuItem(value: o.id, child: Text(o.value))).toList(),
                         onChanged: (id) {
@@ -322,6 +322,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Open link: $url')));
   }
 }
+
 
 
 

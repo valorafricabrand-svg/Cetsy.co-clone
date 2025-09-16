@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -65,7 +66,7 @@ class _AuthenticatedView extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 30,
-                backgroundColor: ProfileScreen.cetsyGreen.withOpacity(.12),
+                backgroundColor: ProfileScreen.cetsyGreen.withValues(alpha: .12),
                 child: const Icon(Icons.person, size: 34, color: ProfileScreen.cetsyGreen),
               ),
               const SizedBox(width: 14),
@@ -93,6 +94,45 @@ class _AuthenticatedView extends StatelessWidget {
                 leading: const Icon(Icons.verified_user_outlined),
                 title: const Text('Account Type'),
                 subtitle: Text(user.userType),
+              ),
+              if (user.userType != 'seller') ...[
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.storefront_outlined),
+                  title: const Text('Start Selling'),
+                  subtitle: const Text('Add your first listing'),
+                  onTap: () async {
+                    final auth = context.read<AuthProvider>();
+                    final t = auth.token;
+                    if (t != null) {
+                      try {
+                        final upgraded = await UserService.upgradeToSeller(t);
+                        await auth.login(t, upgraded);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Seller mode enabled')),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Upgrade failed: $e')),
+                          );
+                        }
+                      }
+                    }
+                    if (context.mounted) {
+                      Navigator.pushNamed(context, '/add-listing');
+                    }
+                  },
+                ),
+              ],
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.public),
+                title: const Text('Currency & Region'),
+                subtitle: const Text('Select your display currency'),
+                onTap: () => Navigator.pushNamed(context, '/settings'),
               ),
               const Divider(height: 1),
               ListTile(
@@ -188,7 +228,7 @@ class _GuestView extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: ProfileScreen.cetsyGreen.withOpacity(.12),
+                backgroundColor: ProfileScreen.cetsyGreen.withValues(alpha: .12),
                 child: const Icon(Icons.person, size: 32, color: ProfileScreen.cetsyGreen),
               ),
               const SizedBox(width: 14),

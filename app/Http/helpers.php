@@ -70,8 +70,13 @@ function shop(){
   }
 
 
-   function wallet($status = 'completed'){
-     $walletBalance = \App\Models\Wallet::where('user_id', Auth::id())
+   function wallet($status = 'completed', $userId = null){
+     $id = $userId ?? Auth::id();
+     if (!$id) {
+         return 0;
+     }
+
+     $walletBalance = \App\Models\Wallet::where('user_id', $id)
                             ->where('status', $status)
                             ->selectRaw('SUM(credit - debit) as balance')
                             ->value('balance') ?? 0;

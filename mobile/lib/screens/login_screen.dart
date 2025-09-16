@@ -55,35 +55,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
+    final nav = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     try {
       final result = await AuthService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      if (context.mounted) {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        await authProvider.login(result['token'], result['user']);
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainShell()),
-        );
-      }
-    } catch (e) {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Login Failed'),
-          content: Text(e.toString()),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+      if (!mounted) return;
+      await authProvider.login(result['token'], result['user']);
+      await nav.pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainShell()),
       );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Login failed: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -141,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: 70,
                         height: 70,
                         decoration: BoxDecoration(
-                          color: cetsyGreen.withOpacity(.1),
+                          color: cetsyGreen.withValues(alpha: .1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.store_mall_directory,
@@ -161,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Text(
                         "Sign in to continue to Cetsy",
                         style: TextStyle(
-                          color: Colors.black.withOpacity(.6),
+                          color: Colors.black.withValues(alpha: .6),
                           fontSize: 14,
                         ),
                       ),
@@ -296,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Text(
                             "Don't have an account? ",
                             style: TextStyle(
-                              color: Colors.black.withOpacity(.7),
+                              color: Colors.black.withValues(alpha: .7),
                             ),
                           ),
                           TextButton(

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../models/user.dart';
+// import '../models/user.dart';
 import '../providers/auth_provider.dart';
 import '../services/user_service.dart';
 
@@ -78,7 +78,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               CircleAvatar(
                 radius: 34,
-                backgroundColor: const Color(0xFF198754).withOpacity(.12),
+                backgroundColor: const Color(0xFF198754).withValues(alpha: .12),
                 child: const Icon(Icons.person, size: 34, color: Color(0xFF198754)),
               ),
               const SizedBox(width: 12),
