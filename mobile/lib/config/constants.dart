@@ -12,4 +12,8 @@ class Constants {
 
   // Default currency code (used by UI labels)
   static const String currency = "USD";
+
+  // Branding (used for accents in dashboards)
+  // Use 0xFF27B105 (seller brand green) by default.
+  static const int brandPrimaryHex = 0xFF27B105;
 }

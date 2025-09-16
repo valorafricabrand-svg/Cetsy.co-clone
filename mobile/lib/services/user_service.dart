@@ -8,7 +8,7 @@ import 'package:mime/mime.dart';
 import '../config/constants.dart';
 import '../models/user.dart';
 
-import 'package:flutter/foundation.dart';
+// import 'package:flutter/foundation.dart';
 class UserService {
   static Future<User> fetchMe(String token) async {
     final url = Uri.parse("${Constants.baseUrl}/user");
@@ -65,6 +65,34 @@ class UserService {
         return User.fromJson(data['user']);
       }
       throw Exception(data['message'] ?? 'Failed to update profile');
+    }
+  }
+
+  /// Upgrade current authenticated account to seller (if supported by backend)
+  /// Tries POST /seller/upgrade and returns the updated user. If the API
+  /// responds without a user object, it fetches the current user.
+  static Future<User> upgradeToSeller(String token) async {
+    final url = Uri.parse("${Constants.baseUrl}/seller/upgrade");
+    final res = await http.post(
+      url,
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data is Map<String, dynamic> && data['user'] != null) {
+        return User.fromJson(data['user']);
+      }
+      // If response doesn't include user, fetch it
+      return fetchMe(token);
+    }
+    try {
+      final err = jsonDecode(res.body);
+      throw Exception(err['message'] ?? 'Upgrade failed');
+    } catch (_) {
+      throw Exception('Upgrade failed');
     }
   }
 
