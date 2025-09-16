@@ -20,12 +20,36 @@ class DisputeTest extends TestCase
         $seller = User::factory()->create(['user_type' => 'seller']);
         
         // Create shop for seller
-        $shop = Shop::factory()->create(['user_id' => $seller->id]);
+        $shop = Shop::create([
+            'user_id' => $seller->id,
+            'name' => 'Seller Shop',
+            'slug' => 'seller-shop-' . uniqid(),
+            'language' => 'en',
+            'country' => 'KE',
+            'currency' => 'USD',
+            'address' => '123 Market St',
+            'city' => 'Nairobi',
+            'postal' => '00100',
+        ]);
         
         // Create order
-        $order = Order::factory()->create([
+        $order = Order::create([
             'user_id' => $buyer->id,
             'shop_id' => $shop->id,
+            'full_name' => 'Buyer Name',
+            'email' => 'buyer@example.com',
+            'phone' => '1234567890',
+            'shipping_country_id' => 1,
+            'shipping_address_1' => '123 Main St',
+            'shipping_city' => 'Town',
+            'shipping_state' => 'State',
+            'shipping_postal_code' => '10000',
+            'billing_same_as_shipping' => true,
+            'shipping_method' => 'standard',
+            'payment_method' => 'wallet',
+            'subtotal' => 50,
+            'total_amount' => 50,
+            'status' => Order::STATUS_PENDING,
         ]);
 
         // Authenticate as buyer
@@ -46,7 +70,7 @@ class DisputeTest extends TestCase
             'buyer_id' => $buyer->id,
             'seller_id' => $seller->id,
             'type' => 'customs_fees',
-            'status' => 'pending',
+            'status' => Dispute::STATUS_PENDING,
         ]);
     }
 
