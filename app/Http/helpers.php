@@ -3,6 +3,7 @@ use App\Models\Setting;
 use App\Models\Shop;
 use App\Models\Country;
 use App\Models\Product;
+use Illuminate\Support\Facades\Auth;
 
 function favicon_url(){
 
