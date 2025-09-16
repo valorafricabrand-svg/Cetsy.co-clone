@@ -11,9 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        /* -----------------------------------------------------------
-         |  1. product_variations  (SKU / price / stock)
-         |----------------------------------------------------------- */
         Schema::create('product_variations', function (Blueprint $table) {
             $table->id();
 
@@ -29,24 +26,6 @@ return new class extends Migration
 
             $table->timestamps();
         });
-
-        /* -----------------------------------------------------------
-         |  2. product_variation_value  (pivot)
-         |----------------------------------------------------------- */
-        Schema::create('product_variation_value', function (Blueprint $table) {
-            $table->id();
-
-            $table->unsignedBigInteger('product_variation_id');
-            $table->unsignedBigInteger('product_option_value_id');
-
-            $table->timestamps();
-
-            /* prevent duplicate links (variation_id + value_id) */
-            $table->unique(
-                ['product_variation_id', 'product_option_value_id'],
-                'pv_value_unique'
-            );
-        });
     }
 
     /**
@@ -54,7 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_variation_value');
         Schema::dropIfExists('product_variations');
     }
 };
