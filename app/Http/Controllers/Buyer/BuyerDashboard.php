@@ -8,9 +8,9 @@ use App\Models\Address;
 use App\Models\Payment;
 use App\Models\Wishlist;
 use App\Models\WalletTransaction;
-use App\\Services\\Recommendation\\ProductRecommendationService;
+use App\Services\Recommendation\ProductRecommendationService;
 
-use Illuminate\\Support\\Facades\\Auth;
+use Illuminate\Support\Facades\Auth;
 
 class BuyerDashboard extends Controller
 {
