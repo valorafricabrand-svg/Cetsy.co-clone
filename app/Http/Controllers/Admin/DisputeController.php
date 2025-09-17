@@ -141,6 +141,7 @@ class DisputeController extends Controller
         ]);
 
         DB::transaction(function () use ($dispute, $data) {
+            // First, record the resolution details (for audit trail)
             $dispute->markAsResolved(
                 $data['resolution'],
                 $data['decision'],
@@ -152,27 +153,43 @@ class DisputeController extends Controller
                 $dispute->update(['admin_notes' => $data['admin_notes']]);
             }
 
-            // Create admin message
+            // Immediately close the dispute as part of admin resolution
+            $dispute->update([
+                'status'    => \App\Models\Dispute::STATUS_CLOSED,
+                'closed_at' => now(),
+                'closed_by' => Auth::id(),
+                'can_appeal'=> false,
+            ]);
+
+            // Admin internal note
             DisputeMessage::create([
                 'dispute_id' => $dispute->id,
                 'user_id' => Auth::id(),
-                'message' => "Dispute resolved: {$data['resolution']}",
+                'message' => "Dispute resolved and closed: {$data['resolution']}",
                 'type' => DisputeMessage::TYPE_ADMIN_MESSAGE,
                 'is_internal' => true
             ]);
 
-            // Create public system message
+            // Public system messages
             DisputeMessage::create([
                 'dispute_id' => $dispute->id,
                 'user_id' => 1, // System user ID
-                'message' => "Dispute has been resolved. {$dispute->getDecisionLabel()}",
+                'message' => "Dispute resolved. {$dispute->getDecisionLabel()}",
+                'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                'is_internal' => false
+            ]);
+
+            DisputeMessage::create([
+                'dispute_id' => $dispute->id,
+                'user_id' => 1, // System user ID
+                'message' => "Dispute closed by admin.",
                 'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
                 'is_internal' => false
             ]);
         });
 
         return redirect()->route('admin.admin-disputes.show', $dispute->id)
-            ->with('success', 'Dispute resolved successfully.');
+            ->with('success', 'Dispute resolved and closed successfully.');
     }
 
     /**
@@ -605,4 +622,3 @@ class DisputeController extends Controller
         }
     }
 }
-
