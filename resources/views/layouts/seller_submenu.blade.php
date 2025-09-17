@@ -18,6 +18,10 @@
     $favoritesCount = \App\Models\Wishlist::whereIn('product_id', $productIds)->count();
     $pendingOffers  = \App\Models\Offer::whereIn('product_id', $productIds)
                          ->where('status', 'pending')->count();
+    // Pending disputes count for this seller (sidebar badge)
+    $disputesCount  = \App\Models\Dispute::where('seller_id', Auth::id())
+                        ->where('status', \App\Models\Dispute::STATUS_PENDING)
+                        ->count();
 
     // Grouped navigation
     $groups = [
@@ -38,6 +42,9 @@
             ['route'=>'seller.messages.index','icon'=>'fas fa-comments','label'=>'Messages','badge'=>$unreadMessages],
             ['route'=>'seller.offers.index','icon'=>'fas fa-hand-holding-usd','label'=>'Offers','badge'=>$pendingOffers],
             ['route'=>'seller.favorites.index','icon'=>'fas fa-heart','label'=>'Favorites','badge'=>$favoritesCount],
+        ],
+         'Dispute' => [
+            ['route'=>'disputes.index','icon'=>'fas fa-exclamation-triangle','label'=>'Dispute','badge'=>$disputesCount],
         ],
         'Shop & Settings' => [
             ['route'=>'seller.shop.create','icon'=>'fas fa-store','label'=>'My Shop'],

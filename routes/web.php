@@ -50,10 +50,10 @@ use App\Http\Controllers\Seller\{
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
-// Currency selector (session + cookie)
-Route::post('/set-currency', [CurrencySelectionController::class, 'set'])->name('currency.set');
-// Optional GET fallback to avoid 404 if a GET is sent
-Route::get('/set-currency', [CurrencySelectionController::class, 'set'])->name('currency.set.get');
+// Currency selector (accept GET or POST; CSRF not required for this benign action)
+Route::match(['GET','POST'], '/set-currency', [CurrencySelectionController::class, 'set'])
+    ->name('currency.set')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 // Safaricom callback (must be reachable publicly)
 Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
     ->name('wallet.deposit.mpesa.callback')
@@ -631,7 +631,7 @@ Route::post('/daraja/b2c/timeout', [PayoutWebhookController::class, 'darajaB2CTi
     ->name('webhooks.daraja.b2c.timeout')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 
-require __DIR__ . '/auth.php';
+
 
 
 // Fallback OTP routes (ensure named routes exist even if group middleware changes)
@@ -658,3 +658,6 @@ if (app()->environment('local')) {
 
 
 
+require __DIR__ . '/auth.php';
+
+   
