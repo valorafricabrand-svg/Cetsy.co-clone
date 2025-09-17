@@ -3,7 +3,8 @@
 @section('title', 'Edit Blog Post')
 
 @section('content')
-<div class="container-xxl py-4">
+<div class="content">
+  <div class="container-xxl">
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-4">
         <div>
             <h1 class="h3 mb-1">Edit Blog Post</h1>
@@ -19,5 +20,8 @@
         @method('PUT')
         @include('admin.blog.posts._form', ['submitLabel' => 'Save Changes'])
     </form>
+  </div>
 </div>
 @endsection
+
+

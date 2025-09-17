@@ -3,7 +3,8 @@
 @section('title', 'Blog Categories')
 
 @section('content')
-<div class="container-xxl py-4">
+<div class="content">
+  <div class="container-xxl">
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
         <div>
             <h1 class="h3 mb-1">Blog Categories</h1>
@@ -68,6 +69,9 @@
             {{ $categories->links() }}
         </div>
     </div>
+  </div>
 </div>
 @endsection
+
+
 

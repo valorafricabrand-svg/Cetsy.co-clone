@@ -49,6 +49,15 @@ class BlogPost extends Model
         return $this->belongsTo(BlogCategory::class, 'blog_category_id');
     }
 
+    public function scopeLive($query)
+    {
+        return $query->where('status', self::STATUS_PUBLISHED)
+            ->where(function ($q) {
+                $q->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            });
+    }
+
     public function author()
     {
         return $this->belongsTo(User::class, 'user_id');
