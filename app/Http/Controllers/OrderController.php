@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use App\Models\Activity;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -102,6 +103,8 @@ public function index(Request $request)
      */
     public function show(Order $order)
     {
+        $this->authorizeSeller($order);
+
         $order->load('items.product', 'shop.user', 'user', 'disputes');
         return view('seller.orders.show', compact('order'));
     }
@@ -180,22 +183,27 @@ public function storeOrder(Request $request)
     try {
         DB::beginTransaction();
 
+        $stockTracker = [];
+
         // Group prepared rows per shop
         $itemsByShop = [];
 
         foreach ($cart as $rowId => $item) {
             $productId = (int)($item['product_id'] ?? 0);
-            if (!$productId) {
-                continue;
+            if (! $productId) {
+                throw ValidationException::withMessages([
+                    'cart' => 'Your cart contains an invalid item. Please remove it and try again.',
+                ]);
             }
 
             /** @var \App\Models\Product|null $product */
             $product = \App\Models\Product::with(['shop', 'variations']) // variations for price resolution
                         ->find($productId);
 
-            if (!$product || !$product->shop_id) {
-                // Product no longer exists or has no shop; skip this row
-                continue;
+            if (! $product || ! $product->shop_id || ! $this->productIsPurchasable($product)) {
+                throw ValidationException::withMessages([
+                    'cart' => ($product->name ?? 'One of the items in your cart') . ' is no longer available.',
+                ]);
             }
 
             // Build a friendly variation summary if missing
@@ -497,6 +505,8 @@ public function storeOrder(Request $request)
      */
     public function ship(Request $request, Order $order)
     {
+        $this->authorizeSeller($order);
+
         $data = $request->validate([
             'courier'        => 'required|string|max:100',
             'courier_other'  => 'nullable|string|max:100',
@@ -560,6 +570,8 @@ public function storeOrder(Request $request)
             'action' => 'required|string|in:deliver,cancel',
         ])['action'];
 
+        abort_if(auth()->id() !== $order->user_id, 404);
+
         return match ($action) {
             'deliver' => $this->deliver($order),
             'cancel'  => $this->cancel($request, $order),
@@ -571,6 +583,8 @@ public function storeOrder(Request $request)
      */
     private function deliver(Order $order)
     {
+        abort_if(auth()->id() !== $order->user_id, 404);
+
         abort_unless($order->status === Order::STATUS_SHIPPED, 422, 'Only shipped orders can be marked as delivered.');
 
         DB::transaction(function () use ($order) {
@@ -645,6 +659,8 @@ public function storeOrder(Request $request)
      */
     public function cancel(Request $request, Order $order)
     {
+        abort_if(auth()->id() !== $order->user_id, 404);
+
         if (! in_array($order->status, [Order::STATUS_PENDING, Order::STATUS_PROCESSING])) {
             return back()->withErrors('This order can no longer be cancelled.');
         }
