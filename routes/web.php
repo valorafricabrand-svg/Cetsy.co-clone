@@ -24,7 +24,9 @@ use App\Http\Controllers\Admin\{
     ProductReportController as AdminProductReportController,
     AdminWalletController,
     ReviewController,
-    AdminNotificationController
+    AdminNotificationController,
+    BlogPostController as AdminBlogPostController,
+    BlogCategoryController as AdminBlogCategoryController
 };
 use App\Http\Controllers\Webhooks\PayoutWebhookController;
 use App\Http\Controllers\Buyer\BuyerDashboard;
@@ -390,6 +392,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('sellers/{userId}/login-as', [UserController::class, 'loginAs'])->name('sellers.login-as');
     Route::get('return-from-impersonation', [UserController::class, 'returnFromImpersonation'])->name('return-from-impersonation');
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+    Route::resource('blog-posts', AdminBlogPostController::class);
+    Route::resource('blog-categories', AdminBlogCategoryController::class)->except(['show']);
     Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     // Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
 
@@ -644,3 +648,8 @@ if (app()->environment('local')) {
         return session()->has('__ok') ? response('session ok') : response('session missing', 400);
     });
 }
+
+
+
+
+

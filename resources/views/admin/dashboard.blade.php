@@ -16,11 +16,11 @@
     $trendOrdersArray = collect($trendOrders ?? [])->values()->all();
     $ordersIndexRoute = Route::has('admin.orders.index') ? route('admin.orders.index') : (Route::has('orders.index') ? route('orders.index') : '#');
 @endphp
-<div class="container-xxl py-4">
+<div class="content">
     <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between mb-4 gap-3">
         <div>
             <h1 class="h3 mb-1">Business Performance Overview</h1>
-            <p class="text-muted mb-0">Real-time insight across revenue, orders, sellers, customers, and payouts.</p>
+            <p classs="text-muted mb-0">Real-time insight across revenue, orders, sellers, customers, and payouts.</p>
         </div>
         <div class="text-lg-end">
             <span class="badge bg-primary text-white fw-semibold py-2 px-3">Updated {{ now()->format('d M Y, H:i') }}</span>
@@ -229,7 +229,7 @@
                             <tr>
                                 <td>{{ optional($payout->user)->name ?? 'User #'.$payout->user_id }}</td>
                                 <td class="text-end">{{ $currency }} {{ number_format($payout->amount, 2) }}</td>
-                                <td>{{ optional(optional($payout->paymentMethod)->paymentType)->name ?? '—' }}</td>
+                                <td>{{ optional(optional($payout->paymentMethod)->paymentType)->name ?? 'ï¿½' }}</td>
                                 <td><span class="badge bg-warning text-dark text-uppercase">{{ $payout->status }}</span></td>
                             </tr>
                         @empty
