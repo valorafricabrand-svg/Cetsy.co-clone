@@ -18,11 +18,8 @@
     $favoritesCount = \App\Models\Wishlist::whereIn('product_id', $productIds)->count();
     $pendingOffers  = \App\Models\Offer::whereIn('product_id', $productIds)
                          ->where('status', 'pending')->count();
-    // Disputes count (where user is buyer or seller, excluding closed/finalized)
-    $disputesCount  = \App\Models\Dispute::where(function($q){
-                          $q->where('buyer_id', Auth::id())
-                            ->orWhere('seller_id', Auth::id());
-                        })
+    // Pending disputes count for this seller (sidebar badge)
+    $disputesCount  = \App\Models\Dispute::where('seller_id', Auth::id())
                         ->where('status', \App\Models\Dispute::STATUS_PENDING)
                         ->count();
 
@@ -47,7 +44,7 @@
             ['route'=>'seller.favorites.index','icon'=>'fas fa-heart','label'=>'Favorites','badge'=>$favoritesCount],
         ],
          'Dispute' => [
-            ['route'=>'disputes.index','icon'=>'fas fa-exclamation-triangle','label'=>'Dispute'],
+            ['route'=>'disputes.index','icon'=>'fas fa-exclamation-triangle','label'=>'Dispute','badge'=>$disputesCount],
         ],
         'Shop & Settings' => [
             ['route'=>'seller.shop.create','icon'=>'fas fa-store','label'=>'My Shop'],
