@@ -188,21 +188,8 @@
                                                        class="btn btn-sm btn-outline-primary">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                    @if($dispute->isPending() || $dispute->isUnderReview())
-                                                        <a href="{{ route('admin.admin-disputes.resolve.create', $dispute->id) }}" 
-                                                           class="btn btn-sm btn-outline-success" 
-                                                           title="Resolve & Close" aria-label="Resolve & Close">
-                                                            <i class="fas fa-check"></i>
-                                                        </a>
-                                                    @endif
-                                                    @if(config('disputes.enable_appeals') && $dispute->isAppealed())
-                                                        <form action="{{ route('admin.admin-disputes.finalize.store', $dispute->id) }}" method="POST" class="d-inline">
-                                                            @csrf
-                                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Finalize Dispute">
-                                                                <i class="fas fa-gavel"></i>
-                                                            </button>
-                                                        </form>
-                                                    @endif
+                                                    
+                                                    
                                                 </div>
                                             </td>
                                         </tr>
