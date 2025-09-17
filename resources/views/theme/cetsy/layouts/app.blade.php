@@ -727,6 +727,7 @@
             <ul class="list-unstyled mb-0">
               @foreach([
                 'About ' . config('app.name') => url('/about'),
+                'Blog'                       => route('blog.index'),
                 'House Rules & Policy'        => url('/house-policy'),
               ] as $label => $link)
                 <li class="mb-2"><a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">{{ $label }}</a></li>
@@ -865,4 +866,7 @@
   </script>
 </body>
 </html>
+
+
+
 

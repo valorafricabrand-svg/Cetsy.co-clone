@@ -26,7 +26,7 @@
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Body <span class="text-danger">*</span></label>
-                    <textarea name="body" rows="12" class="form-control @error('body') is-invalid @enderror" required>{{ old('body', $post->body) }}</textarea>
+                    <textarea id="description" name="body" rows="12" class="form-control @error('body') is-invalid @enderror" required>{{ old('body', $post->body) }}</textarea>
                     @error('body') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
             </div>
@@ -108,3 +108,4 @@
         </div>
     </div>
 </div>
+
