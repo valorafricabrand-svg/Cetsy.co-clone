@@ -10,9 +10,11 @@ import 'product_list_screen.dart';
 import 'profile_screen.dart';
 // import 'search_screen.dart';
 import 'order_history_screen.dart';
+import '../services/user_service.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  const MainShell({super.key, this.showSellerPrompt = false});
+  final bool showSellerPrompt;
 
   @override
   State<MainShell> createState() => MainShellState();
@@ -53,7 +55,7 @@ class MainShellState extends State<MainShell> {
       bottomNavigationBar: NavigationBar(
         height: 65,
         selectedIndex: _index,
-        indicatorColor: cetsyGreen.withOpacity(.12),
+        indicatorColor: cetsyGreen.withValues(alpha: .12),
         onDestinationSelected: _setIndex,
         destinations: [
           const NavigationDestination(
@@ -99,6 +101,45 @@ class MainShellState extends State<MainShell> {
       icon: const Icon(Icons.add_box_outlined),
       label: const Text('Add Listing'),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Show a prompt for newly registered buyers to start selling
+    if (widget.showSellerPrompt) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final auth = context.read<AuthProvider>();
+        if (auth.user != null && auth.user!.userType != 'seller') {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('Start Selling?'),
+              content: const Text('You registered as a buyer. Would you like to add your first listing now?'),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Not now')),
+                ElevatedButton(
+                  onPressed: () async {
+                    final nav = Navigator.of(context);
+                    Navigator.pop(context);
+                    final auth = context.read<AuthProvider>();
+                    final t = auth.token;
+                    if (t != null) {
+                      try {
+                        final upgraded = await UserService.upgradeToSeller(t);
+                        await auth.login(t, upgraded);
+                      } catch (_) {}
+                    }
+                    await nav.pushNamed('/add-listing');
+                  },
+                  child: const Text('Add Listing'),
+                ),
+              ],
+            ),
+          );
+        }
+      });
+    }
   }
 }
 

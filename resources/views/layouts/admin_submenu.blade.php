@@ -16,6 +16,9 @@
     try {
       $pendingReviews = \App\Models\Review::where(function($q){ $q->whereNull('approved')->orWhere('approved',false); })->count();
     } catch (\Throwable $e) { $pendingReviews = 0; }
+    try {
+      $draftPosts = \App\Models\BlogPost::where('status', \App\Models\BlogPost::STATUS_DRAFT)->count();
+    } catch (\Throwable $e) { $draftPosts = 0; }
 
     $groups = [
       [
@@ -32,6 +35,13 @@
           ['label' => 'Categories',       'icon' => 'fas fa-cogs',       'url' => route('admin.categories.index'),     'match' => ['admin.categories.*']],
           ['label' => 'Product Reports',  'icon' => 'fas fa-flag',       'url' => route('admin.product-reports.index'),'match' => ['admin.product-reports.*']],
           ['label' => 'Reviews',          'icon' => 'fas fa-star',       'url' => route('admin.reviews.index'),        'match' => ['admin.reviews.*'],        'count' => $pendingReviews],
+        ],
+      ],
+      [
+        'title' => 'Content',
+        'items' => [
+          ['label' => 'Blog Posts',      'icon' => 'fas fa-newspaper', 'url' => route('admin.blog-posts.index'),      'match' => ['admin.blog-posts.*'],      'count' => $draftPosts],
+          ['label' => 'Blog Categories', 'icon' => 'fas fa-folder',    'url' => route('admin.blog-categories.index'), 'match' => ['admin.blog-categories.*']],
         ],
       ],
       [
@@ -91,4 +101,6 @@
     </div>
   </div>
 @endif
+
+
 

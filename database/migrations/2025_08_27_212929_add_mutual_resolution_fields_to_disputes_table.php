@@ -12,9 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('disputes', function (Blueprint $table) {
-            $table->text('mutual_resolution_terms')->nullable()->after('admin_notes');
-            $table->timestamp('buyer_agreed_at')->nullable()->after('mutual_resolution_terms');
-            $table->timestamp('seller_agreed_at')->nullable()->after('buyer_agreed_at');
+            if (!Schema::hasColumn('disputes', 'mutual_resolution_terms')) {
+                $table->text('mutual_resolution_terms')->nullable()->after('admin_notes');
+            }
+
+            if (!Schema::hasColumn('disputes', 'buyer_agreed_at')) {
+                $table->timestamp('buyer_agreed_at')->nullable()->after('mutual_resolution_terms');
+            }
+
+            if (!Schema::hasColumn('disputes', 'seller_agreed_at')) {
+                $table->timestamp('seller_agreed_at')->nullable()->after('buyer_agreed_at');
+            }
         });
     }
 
@@ -24,7 +32,17 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('disputes', function (Blueprint $table) {
-            $table->dropColumn(['mutual_resolution_terms', 'buyer_agreed_at', 'seller_agreed_at']);
+            $columns = [];
+
+            foreach (['seller_agreed_at', 'buyer_agreed_at', 'mutual_resolution_terms'] as $column) {
+                if (Schema::hasColumn('disputes', $column)) {
+                    $columns[] = $column;
+                }
+            }
+
+            if (!empty($columns)) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };

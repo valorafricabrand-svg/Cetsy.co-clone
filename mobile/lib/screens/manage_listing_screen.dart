@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -271,7 +270,7 @@ class _ShippingTabState extends State<_ShippingTab> {
         TextField(controller: _profileName, decoration: const InputDecoration(labelText: 'Profile Name')),
         const SizedBox(height: 12),
         DropdownButtonFormField<int>(
-          value: _countryId,
+          initialValue: _countryId,
           decoration: const InputDecoration(labelText: 'Origin Country'),
           items: _countries.map((c) => DropdownMenuItem<int>(value: c['id'] as int, child: Text(c['name'] as String))).toList(),
           onChanged: (v) => setState(() => _countryId = v),
@@ -324,7 +323,7 @@ class _RuleEditor {
           Row(children: [
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: locationType,
+                initialValue: locationType,
                 decoration: const InputDecoration(labelText: 'Location Type'),
                 items: const [
                   DropdownMenuItem(value: 'everywhere_else', child: Text('Everywhere Else')),
@@ -339,7 +338,7 @@ class _RuleEditor {
           if (locationType == 'country') ...[
             const SizedBox(height: 8),
             DropdownButtonFormField<int>(
-              value: countryId,
+              initialValue: countryId,
               decoration: const InputDecoration(labelText: 'Destination Country'),
               items: countries.map((c) => DropdownMenuItem<int>(value: c['id'] as int, child: Text(c['name'] as String))).toList(),
               onChanged: (v) => countryId = v,

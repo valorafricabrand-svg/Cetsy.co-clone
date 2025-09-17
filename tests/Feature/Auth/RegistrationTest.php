@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use App\Models\Country;
 
 class RegistrationTest extends TestCase
 {
@@ -18,11 +19,23 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
+        $country = Country::create([
+            'name' => 'Testland',
+            'currency' => 'USD',
+            'status' => 1,
+            'phone_code' => '+1',
+            'country_code' => 'TL',
+        ]);
+
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'role' => 'buyer',
+            'country_id' => $country->id,
+            'phone' => '1234567890',
+            'terms' => 'on',
         ]);
 
         $this->assertAuthenticated();

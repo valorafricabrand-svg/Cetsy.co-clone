@@ -58,7 +58,16 @@ class OrderService {
       }
       // If API returns bare array
       final list = (data as List?)?.map((e) => OrderSummary.fromJson(e as Map<String, dynamic>)).toList() ?? const <OrderSummary>[];
-      return OrderPage(orders: list, hasNext: false);
+      final total = list.length;
+      return OrderPage(
+        orders: list,
+        hasNext: false,
+        total: total,
+        nextPage: null,
+        currentPage: total > 0 ? 1 : null,
+        lastPage: total > 0 ? 1 : null,
+        perPage: total > 0 ? total : null,
+      );
     }
     throw Exception('Failed to load orders');
   }
@@ -73,5 +82,19 @@ class OrderService {
       return jsonDecode(res.body) as Map<String, dynamic>;
     }
     throw Exception('Failed to load order');
+  }
+
+  /// Pay an order using wallet balance (API mirrors web route)
+  static Future<Map<String, dynamic>> payOrderWithWallet(String token, int orderId) async {
+    final url = Uri.parse("${Constants.baseUrl}/orders/$orderId/wallet");
+    final res = await http.post(url, headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+    final data = jsonDecode(res.body);
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      return (data is Map<String, dynamic>) ? data : <String, dynamic>{'success': true};
+    }
+    throw Exception((data is Map ? (data['message'] ?? data['error']) : null) ?? 'Failed to pay order');
   }
 }

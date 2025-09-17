@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../config/constants.dart';
 import '../models/user.dart';
 
-import 'package:flutter/foundation.dart';
+// import 'package:flutter/foundation.dart';
 class AuthService {
   /// Login with email & password
   static Future<Map<String, dynamic>> login({

@@ -1,8 +1,6 @@
 {{-- resources/views/cart/index.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
-
 @section('title','Your Cart')
-
 @section('main')
 <section class="cart-page py-5 bg-light">
   <div class="container">
@@ -15,18 +13,15 @@
         <div class="alert alert-danger">{{ session('error') }}</div>
       @endif
     </div>
-
     @php
       $cart     = session('cart', []);
       $currency = get_currency();
-
       // Prefetch product types (to detect digital vs physical) with one query
       $productIds   = collect($cart)->pluck('product_id')->filter()->unique()->all();
       $productTypes = $productIds
         ? \App\Models\Product::whereIn('id', $productIds)->pluck('type','id')->toArray()
         : [];
     @endphp
-
     @if($cart === [])
       <div class="text-center py-5">
         <h3>Your cart is empty</h3>
@@ -51,24 +46,19 @@
             @php
               $qty       = (int)($item['quantity'] ?? 1);
               $unitPrice = (float)($item['price'] ?? 0);
-
               // Determine digital/physical
               $typeFromCart = $item['product_type'] ?? null; // if you ever stored it
               $typeFromDb   = $productTypes[$item['product_id']] ?? null;
               $isDigital    = ($typeFromCart ?? $typeFromDb) === 'digital';
-
               // Use profiles snapshot from session for physical products
               $profilesC  = collect($item['shipping_profiles'] ?? []);
               $selectedId = (int)($item['selected_shipping_profile_id'] ?? 0);
-
               // Rate is zero for digital items (hidden UI), otherwise selected profile's base_rate
               $selected   = $profilesC->firstWhere('id', $selectedId);
               $rate       = $isDigital ? 0.0 : (float)($selected['base_rate'] ?? 0.0);
-
               $lineTotal  = ($unitPrice + $rate) * $qty;
               $photoUrl   = $item['photo'] ?? null; // absolute URL already stored by controller
             @endphp
-
             <tr
               data-row-id="{{ $rowId }}"
               data-unit-price="{{ $unitPrice }}"
@@ -94,13 +84,10 @@
                   </div>
                 </div>
               </td>
-
               {{-- Variation --}}
               <td>{{ $item['variation_summary'] ?? '—' }}</td>
-
               {{-- Unit Price --}}
               <td>{{ $currency }} {{ number_format($unitPrice,2) }}</td>
-
               {{-- Quantity --}}
               <td>
                 <div class="d-flex gap-1 justify-content-center align-items-center">
@@ -116,7 +103,6 @@
                   >+</button>
                 </div>
               </td>
-
               {{-- Shipping (hidden/disabled for digital) --}}
               <td>
                 @if($isDigital)
@@ -150,10 +136,8 @@
                   @endif
                 @endif
               </td>
-
               {{-- Line total --}}
               <td class="line-total">{{ $currency }} {{ number_format($lineTotal,2) }}</td>
-
               {{-- Remove --}}
               <td>
                 <form action="{{ route('cart.remove') }}" method="POST" class="d-inline js-remove-form">
@@ -170,15 +154,12 @@
               $grand = collect($cart)->sum(function($i) use ($productTypes) {
                 $qty   = (int)($i['quantity'] ?? 1);
                 $unit  = (float)($i['price'] ?? 0);
-
                 $typeFromCart = $i['product_type'] ?? null;
                 $typeFromDb   = $productTypes[$i['product_id']] ?? null;
                 $isDigital    = ($typeFromCart ?? $typeFromDb) === 'digital';
-
                 $profiles = collect($i['shipping_profiles'] ?? []);
                 $selId    = (int)($i['selected_shipping_profile_id'] ?? 0);
                 $rate     = $isDigital ? 0.0 : (float) optional($profiles->firstWhere('id',$selId))['base_rate'] ?? 0.0;
-
                 return ($unit + $rate) * $qty;
               });
             @endphp
@@ -189,12 +170,10 @@
           </tfoot>
         </table>
       </div>
-
       {{-- Passive fallback form (not used by JS directly, kept for PE) --}}
       <form id="shipping-form" method="POST" action="{{ route('cart.shipping') }}">
         @csrf
       </form>
-
       <div class="d-flex justify-content-between align-items-center">
         <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">Continue Shopping</a>
         <a href="{{ route('cart.checkout') }}" class="btn btn-primary">Proceed to Checkout</a>
@@ -203,16 +182,13 @@
   </div>
 </section>
 @endsection
-
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const CSRF  = '{{ csrf_token() }}';
   const cur   = '{{ $currency }}';
   const flash = document.getElementById('flash-container');
-
   function money(n){ return cur+' '+(+n).toFixed(2); }
-
   function rowTotal($tr){
     const unit      = +$tr.dataset.unitPrice;
     const qty       = +$tr.dataset.quantity;
@@ -224,28 +200,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     return (unit + rate) * qty;
   }
-
   function refreshRow($tr){
     $tr.querySelector('.line-total').textContent = money(rowTotal($tr));
   }
-
   function refreshGrand(){
     let sum=0;
     document.querySelectorAll('tbody tr').forEach($tr => sum += rowTotal($tr));
     document.getElementById('grand-total').textContent = money(sum);
   }
-
   function notify(type,msg){
     flash.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
   }
-
+  function syncRowFromCartSnapshot($tr, rowId, snapshot) {
+    if (!snapshot || !snapshot[rowId]) {
+      $tr.remove();
+      return false;
+    }
+    const entry = snapshot[rowId];
+    const qty   = parseInt(entry.quantity ?? 1, 10);
+    $tr.dataset.quantity = qty;
+    $tr.querySelector('.quantity').textContent = qty;
+    $tr.querySelectorAll('.js-qty-btn[data-action="decrease"]').forEach(btn => btn.disabled = qty <= 1);
+    refreshRow($tr);
+    return true;
+  }
   /* quantity buttons */
   document.querySelectorAll('.js-qty-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const $tr   = btn.closest('tr');
       const rowId = $tr.dataset.rowId;
       const act   = btn.dataset.action;
-
       fetch('{{ route("cart.update") }}',{
         method:'POST',
         headers:{
@@ -254,28 +238,31 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         body:JSON.stringify({row_id:rowId,action:act})
       })
-      .then(r=>r.json())
-      .then(json=>{
-        const qty=json.cart[rowId].quantity;
-        $tr.dataset.quantity=qty;
-        $tr.querySelector('.quantity').textContent=qty;
-        $tr.querySelectorAll('.js-qty-btn[data-action="decrease"]').forEach(b=>b.disabled=qty<=1);
-        refreshRow($tr); refreshGrand();
-        notify('success','Quantity updated.');
+      .then(async response => {
+        const json = await response.json().catch(() => null);
+        if (!response.ok || !json || json.success === false) {
+          const message = (json && json.message) ? json.message : 'Failed to update quantity.';
+          if (json && json.cart) {
+            syncRowFromCartSnapshot($tr, rowId, json.cart);
+          }
+          refreshGrand();
+          notify('danger', message);
+          return;
+        }
+        syncRowFromCartSnapshot($tr, rowId, json.cart);
+        refreshGrand();
+        notify('success', json.message || 'Quantity updated.');
       })
-      .catch(()=>notify('danger','Failed to update quantity.'));
+      .catch(() => notify('danger','Failed to update quantity.'));
     });
   });
-
   /* shipping select (only on physical rows) */
   document.querySelectorAll('.js-shipping-select').forEach(sel=>{
     sel.addEventListener('change',()=>{
       const $tr  = sel.closest('tr');
       const rowId= $tr.dataset.rowId;
-
       // UI first
       refreshRow($tr); refreshGrand();
-
       // Persist selection to session
       fetch('{{ route("cart.shipping") }}',{
         method:'POST',
@@ -290,7 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(()=>notify('danger','Failed to update shipping.'));
     });
   });
-
   // initial totals
   refreshGrand();
 });

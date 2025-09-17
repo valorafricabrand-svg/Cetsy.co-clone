@@ -204,7 +204,9 @@
                                         </div>
                                     @endif -->
 
-                                    @php($thumb = product_thumb_url($offer->product))
+                                    @php
+                                        $thumb = product_thumb_url($offer->product);
+                                    @endphp
                                     <img src="{{ $thumb }}" class="rounded" style="width:40px;height:40px;object-fit:cover;" alt="{{ $offer->product->name }}">
                                     <div class="flex-grow-1">
                                         <span class="fw-semibold text-dark d-block" title="{{ $offer->product->name ?? '-' }}">

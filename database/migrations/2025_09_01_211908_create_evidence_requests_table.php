@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('evidence_requests')) {
+            return;
+        }
+
         Schema::create('evidence_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('appeal_id')->constrained('appeals')->onDelete('cascade');
@@ -25,7 +29,6 @@ return new class extends Migration
             $table->text('response_notes')->nullable(); // Notes from the user's response
             $table->json('submitted_evidence')->nullable(); // Evidence submitted in response
             $table->timestamps();
-    
         });
     }
 
