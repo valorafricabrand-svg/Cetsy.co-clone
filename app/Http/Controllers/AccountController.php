@@ -61,7 +61,9 @@ class AccountController extends Controller
 
 public function orderDetails(Order $order)
 {
-   
+    abort_if(!Auth::check() || $order->user_id !== Auth::id(), 404);
+
+    $order->loadMissing(['items.product', 'shop']);
 
     return view('account.order_details', compact('order'));
 }
