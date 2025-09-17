@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CurrencySelectionController;
 use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
@@ -69,6 +70,9 @@ Route::post('/wallet/deposit/mpesa/timeout',  [WalletController::class, 'mpesaTi
 
 
 // pages
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+
 Route::get('/become-seller', function () {
     return themed_view('pages.become-seller');
 })->name('become-seller');
@@ -648,6 +652,7 @@ if (app()->environment('local')) {
         return session()->has('__ok') ? response('session ok') : response('session missing', 400);
     });
 }
+
 
 
 
