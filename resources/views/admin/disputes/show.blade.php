@@ -1,4 +1,4 @@
-    @extends('layouts.app')
+﻿    @extends('layouts.app')
 
     @section('title', 'Dispute Details')
 
@@ -25,9 +25,9 @@
         @if($dispute->isClosed())
             <div class="alert alert-secondary alert-dismissible fade show" role="alert">
                 <i class="bi bi-lock me-2"></i>
-                <strong>This dispute has been closed by the initiator.</strong>
+                <strong>This dispute has been closed.</strong>
                 <p class="mb-0 mt-2">
-                    The dispute was closed on {{ $dispute->closed_at->format('M d, Y \a\t g:i A') }}
+                    Closed on {{ $dispute->closed_at->format('M d, Y \a\t g:i A') }}
                     @if($dispute->closedBy)
                         by {{ $dispute->closedBy->name }}
                     @endif
@@ -54,14 +54,16 @@
                                 </div>
                                 <p class="text-muted mb-0">
                                     <i class="bi bi-calendar3"></i> Created {{ $dispute->created_at->diffForHumans() }}
-                                    @if($dispute->isResolved())
-                                        • <i class="bi bi-check-circle text-success"></i> Resolved {{ $dispute->resolved_at->diffForHumans() }}
+                                    @if($dispute->isClosed())
+                                        - <i class="bi bi-lock text-secondary"></i> Closed {{ optional($dispute->closed_at)->diffForHumans() }}
+                                    @elseif($dispute->isResolved())
+                                        - <i class="bi bi-check-circle text-success"></i> Resolved {{ optional($dispute->resolved_at)->diffForHumans() }}
                                     @endif
                                 </p>
                             </div>
                             <div class="col-md-4 text-md-end">
                                 <div class="d-flex flex-column flex-sm-row gap-2 justify-content-md-end">
-                                    <a href="{{ route('disputes.index') }}" class="btn btn-outline-secondary btn-sm">
+                                    <a href="{{ auth()->user() && method_exists(auth()->user(), 'isAdmin') && auth()->user()->isAdmin() ? route('admin.admin-disputes.index') : route('disputes.index') }}" class="btn btn-outline-secondary btn-sm">
                                         <i class="bi bi-arrow-left"></i> Back to Disputes
                                     </a>
                                     
@@ -1883,3 +1885,6 @@
     </div>
 
     @endsection
+
+
+

@@ -21,14 +21,23 @@
                     <form method="GET" action="{{ route('admin.admin-disputes.index') }}" class="row g-3">
                         <div class="col-md-3">
                             <label for="status" class="form-label">Status</label>
+                            @php
+                                $statusOptions = [
+                                    'pending' => 'Pending',
+                                    'under_review' => 'Under Review',
+                                    'closed' => 'Closed',
+                                    'mutually_resolved' => 'Mutually Resolved',
+                                ];
+                                if (config('disputes.enable_appeals')) {
+                                    $statusOptions['appealed'] = 'Appealed';
+                                    $statusOptions['final'] = 'Final';
+                                }
+                            @endphp
                             <select name="status" id="status" class="form-select">
                                 <option value="">All Statuses</option>
-                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                <option value="under_review" {{ request('status') == 'under_review' ? 'selected' : '' }}>Under Review</option>
-                                <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
-                                <option value="appealed" {{ request('status') == 'appealed' ? 'selected' : '' }}>Appealed</option>
-                                <option value="final" {{ request('status') == 'final' ? 'selected' : '' }}>Final</option>
-                                <option value="mutually_resolved" {{ request('status') == 'mutually_resolved' ? 'selected' : '' }}>Mutually Resolved</option>
+                                @foreach($statusOptions as $value => $label)
+                                    <option value="{{ $value }}" {{ request('status') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -92,22 +101,11 @@
                     </a>
                 </div>
                 <div class="col-md-2">
-                    <a class="text-decoration-none d-block" href="{{ route('admin.admin-disputes.index', array_merge($baseQuery, ['status' => 'resolved'])) }}">
-                        <div class="{{ $cardClasses($active('resolved')) }}">
+                    <a class="text-decoration-none d-block" href="{{ route('admin.admin-disputes.index', array_merge($baseQuery, ['status' => 'closed'])) }}">
+                        <div class="{{ $cardClasses($active('closed')) }}">
                             <div class="card-body">
-                                <h5 class="card-title text-success">{{ $statusCounts['resolved'] ?? 0 }}</h5>
-                                <p class="card-text small mb-0">Resolved</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                
-                <div class="col-md-2">
-                    <a class="text-decoration-none d-block" href="{{ route('admin.admin-disputes.index', array_merge($baseQuery, ['status' => 'final'])) }}">
-                        <div class="{{ $cardClasses($active('final')) }}">
-                            <div class="card-body">
-                                <h5 class="card-title text-secondary">{{ $statusCounts['final'] ?? 0 }}</h5>
-                                <p class="card-text small mb-0">Final</p>
+                                <h5 class="card-title text-secondary">{{ $statusCounts['closed'] ?? 0 }}</h5>
+                                <p class="card-text small mb-0">Closed</p>
                             </div>
                         </div>
                     </a>
