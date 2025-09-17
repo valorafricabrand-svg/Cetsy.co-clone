@@ -23,4 +23,5 @@ class Activity extends Model
     const TYPE_PAYOUT = 'payout';
     const TYPE_PRODUCT = 'product';
     const TYPE_GENERAL = 'general';
+    const TYPE_DISPUTE = 'dispute';
 }

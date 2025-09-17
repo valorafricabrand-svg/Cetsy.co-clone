@@ -47,17 +47,18 @@ use App\Http\Controllers\Seller\{
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
-// Currency selector (session + cookie)
-Route::post('/set-currency', [CurrencySelectionController::class, 'set'])->name('currency.set');
-// Optional GET fallback to avoid 404 if a GET is sent
-Route::get('/set-currency', [CurrencySelectionController::class, 'set'])->name('currency.set.get');
+// Currency selector (accept GET or POST; CSRF not required for this benign action)
+Route::match(['GET','POST'], '/set-currency', [CurrencySelectionController::class, 'set'])
+    ->name('currency.set')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 // Safaricom callback (must be reachable publicly)
 Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
-    ->name('wallet.deposit.mpesa.callback');
+    ->name('wallet.deposit.mpesa.callback')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 
 
 
-Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])->name('wallet.deposit.mpesa.callback');
+// (removed duplicate callback definition above)
 Route::post('/wallet/deposit/mpesa/timeout',  [WalletController::class, 'mpesaTimeout'])->name('wallet.deposit.mpesa.timeout');
 
 
@@ -612,7 +613,7 @@ Route::post('/webhooks/paypal', [PayoutWebhookController::class, 'paypal'])->nam
 Route::post('/daraja/b2c/result', [PayoutWebhookController::class, 'darajaB2CResult'])->name('webhooks.daraja.b2c.result');
 Route::post('/daraja/b2c/timeout', [PayoutWebhookController::class, 'darajaB2CTimeout'])->name('webhooks.daraja.b2c.timeout');
 
-require __DIR__ . '/auth.php';
+
 
 
 // Fallback OTP routes (ensure named routes exist even if group middleware changes)
@@ -623,5 +624,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/seller/payouts/{payout}/cancel', [\App\Http\Controllers\Seller\PayoutRequestController::class, 'cancel'])->name('seller.payouts.otp.cancel');
 });
 
+
+require __DIR__ . '/auth.php';
 
    

@@ -13,6 +13,13 @@
     $favoritesCount = \App\Models\Wishlist::whereIn('product_id', $productIds)->count();
     $pendingOffers  = \App\Models\Offer::whereIn('product_id', $productIds)
                          ->where('status', 'pending')->count();
+    // Disputes count (where user is buyer or seller, excluding closed/finalized)
+    $disputesCount  = \App\Models\Dispute::where(function($q){
+                          $q->where('buyer_id', Auth::id())
+                            ->orWhere('seller_id', Auth::id());
+                        })
+                        ->where('status', \App\Models\Dispute::STATUS_PENDING)
+                        ->count();
 
     $navItems = [
       ['route'=>'dashboard','icon'=>'fas fa-tachometer-alt','label'=>'Dashboard'],
@@ -22,6 +29,7 @@
       ['route'=>'seller.favorites.index','icon'=>'fas fa-heart','label'=>'Favorites','badge'=>$favoritesCount],
       ['route'=>'orders.index','icon'=>'fas fa-shopping-cart','label'=>'Shop Orders'],
         ['route'=>'account.orders','icon'=>'fas fa-shopping-cart','label'=>'My Orders'],
+      ['route'=>'disputes.index','icon'=>'fas fa-exclamation-triangle','label'=>'Disputes','badge'=>$disputesCount],
       ['route'=>'seller.orders.payments','icon'=>'fas fa-credit-card','label'=>'Payments'],
       ['route'=>'seller.deals.index','icon'=>'fas fa-percent','label'=>'Deals'],
       ['route'=>'seller.shop.create','icon'=>'fas fa-store','label'=>'My Shop'],
@@ -80,4 +88,3 @@
     </ul>
   </aside>
 @endif
-
