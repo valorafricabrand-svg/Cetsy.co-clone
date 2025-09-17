@@ -72,6 +72,7 @@ class DashboardController extends Controller
                 'orders' => 0,
             ]];
         });
+        $monthlyBucketsArray = $monthlyBuckets->toArray();
 
         $firstBucketKey = $monthlyBuckets->keys()->first();
         $firstBucketDate = $firstBucketKey
@@ -83,15 +84,17 @@ class DashboardController extends Controller
 
         foreach ($ordersForTrend as $order) {
             $bucketKey = $order->created_at?->copy()->startOfMonth()->format('Y-m');
-            if (!$bucketKey || !isset($monthlyBuckets[$bucketKey])) {
+            if (!$bucketKey || !array_key_exists($bucketKey, $monthlyBucketsArray)) {
                 continue;
             }
 
-            $monthlyBuckets[$bucketKey]['orders']++;
+            $monthlyBucketsArray[$bucketKey]['orders'] = ($monthlyBucketsArray[$bucketKey]['orders'] ?? 0) + 1;
             if (!in_array($order->status, $excludedStatuses, true)) {
-                $monthlyBuckets[$bucketKey]['revenue'] += (float) $order->total_amount;
+                $monthlyBucketsArray[$bucketKey]['revenue'] = ($monthlyBucketsArray[$bucketKey]['revenue'] ?? 0) + (float) $order->total_amount;
             }
         }
+
+        $monthlyBuckets = collect($monthlyBucketsArray);
 
         $trendLabels = $monthlyBuckets->pluck('label')->values();
         $trendRevenue = $monthlyBuckets->pluck('revenue')->map(fn ($value) => round($value, 2))->values();
