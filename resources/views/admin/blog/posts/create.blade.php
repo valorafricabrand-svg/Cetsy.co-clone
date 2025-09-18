@@ -10,7 +10,7 @@
         <p class="text-muted mb-0">Share updates, announcements, and educational content with your community.</p>
     </div>
 
-    <form method="POST" action="{{ route('admin.blog-posts.store') }}">
+    <form method="POST" action="{{ route('admin.blog-posts.store') }}" enctype="multipart/form-data">
         @csrf
         @include('admin.blog.posts._form', ['submitLabel' => 'Create Post'])
     </form>
@@ -63,3 +63,4 @@
     });
     </script>
 @endpush
+

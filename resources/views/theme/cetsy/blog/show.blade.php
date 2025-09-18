@@ -3,7 +3,7 @@
 @php
     $meta = $post->meta ?? [];
     $description = $meta['description'] ?? strip_tags($post->excerpt ?: \Illuminate\Support\Str::limit($post->body, 180));
-    $heroImage = $post->featured_image ?: asset('assets/img/blog/blog-3.png');
+    $heroImage = $post->featured_image_url ?? asset('assets/img/blog/blog-3.png');
 @endphp
 
 @section('title', $meta['title'] ?? $post->title.' | Cetsy Blog')
@@ -72,7 +72,7 @@
           <div class="list-group list-group-flush">
             @foreach($relatedPosts as $related)
               @php
-                $relatedImage = $related->featured_image ?: asset('assets/img/blog/blog-4.png');
+                $relatedImage = $related->featured_image_url ?? asset('assets/img/blog/blog-4.png');
               @endphp
               <a href="{{ route('blog.show', $related->slug) }}" class="list-group-item list-group-item-action d-flex gap-3 align-items-center">
                 <img src="{{ $relatedImage }}" alt="{{ $related->title }}" class="rounded" style="width: 64px; height: 64px; object-fit: cover;">
@@ -89,4 +89,5 @@
   </div>
 </div>
 @endsection
+
 

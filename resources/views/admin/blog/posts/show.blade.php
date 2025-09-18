@@ -20,8 +20,8 @@
         <div class="col-12 col-xl-8">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body">
-                    @if($blogPost->featured_image)
-                        <img src="{{ $blogPost->featured_image }}" class="img-fluid rounded mb-3" alt="Featured image">
+                    @if($blogPost->featured_image_url)
+                        <img src="{{ $blogPost->featured_image_url }}" class="img-fluid rounded mb-3" alt="Featured image">
                     @endif
                     <article class="prose">
                         {!! nl2br(e($blogPost->body)) !!}
@@ -77,5 +77,6 @@
   </div>
 </div>
 @endsection
+
 
 
