@@ -95,9 +95,15 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Featured Image URL</label>
-                    <input type="text" name="featured_image" value="{{ old('featured_image', $post->featured_image) }}" class="form-control @error('featured_image') is-invalid @enderror" placeholder="https://example.com/image.jpg">
+                    <label class="form-label fw-semibold">Featured Image</label>
+                    @if($post->featured_image_url)
+                        <div class="mb-2">
+                            <img src="{{ $post->featured_image_url }}" alt="Current featured image" class="img-fluid rounded border" style="max-height: 180px; object-fit: cover;">
+                        </div>
+                    @endif
+                    <input type="file" name="featured_image" class="form-control @error('featured_image') is-invalid @enderror" accept="image/*">
                     @error('featured_image') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <small class="text-muted d-block mt-1">JPG or PNG up to 4 MB.</small>
                 </div>
 
                 <div class="d-grid gap-2">

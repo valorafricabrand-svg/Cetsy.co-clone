@@ -15,7 +15,7 @@
         </a>
     </div>
 
-    <form method="POST" action="{{ route('admin.blog-posts.update', $post) }}">
+    <form method="POST" enctype="multipart/form-data" action="{{ route('admin.blog-posts.update', $post) }}">
         @csrf
         @method('PUT')
         @include('admin.blog.posts._form', ['submitLabel' => 'Save Changes'])
@@ -73,4 +73,5 @@
     });
     </script>
 @endpush
+
 

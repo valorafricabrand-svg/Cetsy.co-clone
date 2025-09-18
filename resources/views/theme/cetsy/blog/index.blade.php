@@ -52,7 +52,7 @@
         <div class="col-md-6 col-lg-4">
           <article class="card h-100 shadow-sm border-0">
             @php
-              $image = $post->featured_image ?: asset('assets/img/blog/blog-2.png');
+              $image = $post->featured_image_url ?? asset('assets/img/blog/blog-2.png');
               $excerpt = $post->excerpt ?: \Illuminate\Support\Str::limit(strip_tags($post->body), 160);
             @endphp
             <a href="{{ route('blog.show', $post->slug) }}" class="ratio ratio-16x9">
@@ -78,4 +78,5 @@
   @endif
 </div>
 @endsection
+
 

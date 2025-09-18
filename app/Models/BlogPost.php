@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BlogPost extends Model
 {
@@ -67,4 +69,23 @@ class BlogPost extends Model
     {
         return $query->where('status', self::STATUS_PUBLISHED);
     }
+
+    public function getFeaturedImageUrlAttribute(): ?string
+    {
+        if (!$this->featured_image) {
+            return null;
+        }
+
+        if (Str::startsWith($this->featured_image, ['http://', 'https://', '//'])) {
+            return $this->featured_image;
+        }
+
+        $path = ltrim($this->featured_image, '/');
+        if (Str::startsWith($path, 'storage/')) {
+            $path = substr($path, strlen('storage/'));
+        }
+
+        return Storage::disk('public')->url($path);
+    }
 }
+

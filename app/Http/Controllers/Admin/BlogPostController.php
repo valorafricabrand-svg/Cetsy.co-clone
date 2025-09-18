@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -53,6 +54,13 @@ class BlogPostController extends Controller
     public function store(Request $request)
     {
         $data = $this->validatePost($request);
+
+        if ($request->hasFile('featured_image')) {
+            $data['featured_image'] = $request->file('featured_image')->store('blog/posts', 'public');
+        } else {
+            unset($data['featured_image']);
+        }
+
         $data['user_id'] = Auth::id();
         $data['slug'] = $this->makeUniqueSlug($data['slug'] ?? $data['title']);
         $data = $this->preparePublicationData($data);
@@ -84,6 +92,22 @@ class BlogPostController extends Controller
     public function update(Request $request, BlogPost $blogPost)
     {
         $data = $this->validatePost($request, $blogPost->id);
+
+        if ($request->hasFile('featured_image')) {
+            $data['featured_image'] = $request->file('featured_image')->store('blog/posts', 'public');
+
+            $existingImage = $blogPost->featured_image;
+            if ($existingImage && !Str::startsWith($existingImage, ['http://', 'https://', '//'])) {
+                $storedPath = ltrim($existingImage, '/');
+                if (Str::startsWith($storedPath, 'storage/')) {
+                    $storedPath = substr($storedPath, strlen('storage/'));
+                }
+                Storage::disk('public')->delete($storedPath);
+            }
+        } else {
+            unset($data['featured_image']);
+        }
+
         $data['slug'] = $this->makeUniqueSlug($data['slug'] ?? $data['title'], $blogPost->id);
         $data = $this->preparePublicationData($data, $blogPost);
 
@@ -109,7 +133,7 @@ class BlogPostController extends Controller
             'blog_category_id' => ['nullable', Rule::exists('blog_categories', 'id')],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'body' => ['required', 'string'],
-            'featured_image' => ['nullable', 'string', 'max:500'],
+            'featured_image' => ['nullable', 'image', 'max:4096'],
             'status' => ['required', Rule::in(BlogPost::statuses())],
             'published_at' => ['nullable', 'date'],
             'meta_title' => ['nullable', 'string', 'max:255'],
@@ -158,9 +182,11 @@ class BlogPostController extends Controller
             ? (int) $data['blog_category_id']
             : null;
 
-        $data['featured_image'] = filled($data['featured_image'] ?? null)
-            ? trim($data['featured_image'])
-            : null;
+        if (array_key_exists('featured_image', $data)) {
+            $data['featured_image'] = filled($data['featured_image'])
+                ? trim($data['featured_image'])
+                : null;
+        }
 
         return $data;
     }
@@ -193,3 +219,4 @@ class BlogPostController extends Controller
         return $query->exists();
     }
 }
+
