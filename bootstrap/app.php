@@ -10,11 +10,20 @@ use Illuminate\Console\Scheduling\Schedule;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php', // ✅ Added API route registration
+        api: __DIR__.'/../routes/api.php', // ✅ API routes stay registered
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // ✅ Completely disable CSRF protection (globally)
+        // $middleware->disableCsrfProtection(); // removed: keep CSRF enabled
+
+        // (Alternative approach instead of the line above)
+        // $middleware->web(remove: [
+        //     \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        // ]);
+
+        // Your aliases
         $middleware->alias([
             'seller' => EnsureUserIsSeller::class,
             'ensure.seller.kyc' => EnsureSellerKycIsVerified::class,
@@ -23,10 +32,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
 
-        // Apply currency from query/header/cookie and keep it in session/cookie
-        // Run for all requests (web + api) so mobile can pass X-Currency too
+        // Global middlewares you already had
         $middleware->append(\App\Http\Middleware\ApplyCurrency::class);
-        // Ensure every request has a 'currency' input merged so form submissions carry it implicitly
         $middleware->append(\App\Http\Middleware\AttachCurrencyToRequest::class);
     })
     ->withCommands([
