@@ -1,4 +1,4 @@
-{{-- resources/views/seller/orders/show.blade.php --}}
+﻿{{-- resources/views/seller/orders/show.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Order Details')
@@ -13,6 +13,12 @@
 @section('content')
 @php
   $symbol = shop_currency($order->shop ?? null);
+  $disputes = $order->disputes ?? collect();
+  $activeDispute = null; $resolvedDispute = null;
+  if ($disputes->isNotEmpty()) {
+    $activeDispute = $disputes->where('status', '!=', 'final')->first();
+    $resolvedDispute = $disputes->where('status', 'resolved')->first();
+  }
 @endphp
 
 <div class="content">
@@ -37,12 +43,7 @@
         </button>
         @include('seller.orders.modals.process')
 
-        <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
-                data-bs-toggle="modal"
-                data-bs-target="#cancelModal-{{ $order->id }}">
-          <i class="fa-solid fa-times-circle"></i> Cancel
-        </button>
-        @include('seller.orders.modals.cancel')
+        {{-- Cancel moved into kebab menu --}}
       @elseif($order->status === \App\Models\Order::STATUS_PROCESSING)
         <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1"
                 data-bs-toggle="modal"
@@ -50,50 +51,58 @@
           <i class="fa-solid fa-truck"></i> Ship
         </button>
 
-        <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
-                data-bs-toggle="modal"
-                data-bs-target="#cancelModal-{{ $order->id }}">
-          <i class="fa-solid fa-times-circle"></i> Cancel
-        </button>
-        @include('seller.orders.modals.cancel')
+        {{-- Cancel moved into kebab menu --}}
       @endif
+
+      {{-- More (kebab) menu with dispute/appeal actions --}}
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center"
+                id="moreActions"
+                data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
+                title="More actions">
+          <i class="fa fa-ellipsis-v"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="moreActions">
+          @if($activeDispute)
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('disputes.show', $activeDispute->id) }}">
+                <i class="fa-solid fa-exclamation-triangle text-warning"></i>
+                <span>View Dispute</span>
+              </a>
+            </li>
+          @else
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('disputes.create', ['order_id' => $order->id]) }}">
+                <i class="fa-solid fa-exclamation-triangle text-warning"></i>
+                <span>Initiate Dispute</span>
+              </a>
+            </li>
+          @endif
+          @if(in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2"
+                 href="#" data-bs-toggle="modal" data-bs-target="#cancelModal-{{ $order->id }}">
+                <i class="fa-solid fa-times-circle text-danger"></i>
+                <span>Cancel Order</span>
+              </a>
+            </li>
+          @endif
+          @if($resolvedDispute && method_exists($resolvedDispute,'canBeAppealed') && $resolvedDispute->canBeAppealed())
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('disputes.appeal.create', $resolvedDispute->id) }}">
+                <i class="fa-solid fa-gavel text-danger"></i>
+                <span>Appeal Decision</span>
+              </a>
+            </li>
+          @endif
+        </ul>
+      </div>
     </div>
   </div>
-
-  {{-- INITIATE DISPUTE BUTTON --}}
-  <div class="d-flex justify-content-center mb-3">
-    <a href="{{ route('disputes.create', ['order_id' => $order->id]) }}" 
-       class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1">
-      <i class="fa-solid fa-exclamation-triangle"></i> Initiate Dispute
-    </a>
-  </div>
-
-  {{-- DISPUTE & APPEAL ACTIONS --}}
-  @if($order->disputes && $order->disputes->isNotEmpty())
-    @php
-      $activeDispute = $order->disputes->where('status', '!=', 'final')->first();
-      $resolvedDispute = $order->disputes->where('status', 'resolved')->first();
-    @endphp
-    
-    @if($activeDispute)
-      <div class="d-flex justify-content-center mb-3">
-        <a href="{{ route('disputes.show', $activeDispute->id) }}" 
-           class="btn btn-warning btn-sm d-flex align-items-center gap-1">
-          <i class="fa-solid fa-exclamation-triangle"></i> View Dispute
-        </a>
-      </div>
-    @endif
-
-    @if($resolvedDispute && $resolvedDispute->canBeAppealed())
-      <div class="d-flex justify-content-center mb-3">
-        <a href="{{ route('disputes.appeal.create', $resolvedDispute->id) }}" 
-           class="btn btn-danger btn-sm d-flex align-items-center gap-1">
-          <i class="fa-solid fa-gavel"></i> Appeal Decision
-          <span class="badge bg-light text-dark ms-1">{{ $resolvedDispute->getAppealDeadlineDaysLeft() }}d left</span>
-        </a>
-      </div>
-    @endif
-  @endif
+  {{-- Include cancel modal once for dropdown trigger --}}
+  @include('seller.orders.modals.cancel')
 
   {{-- SUMMARY & CUSTOMER --}}
   <div class="row g-4 mb-4">
@@ -583,3 +592,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
+
+

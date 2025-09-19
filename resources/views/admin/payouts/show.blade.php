@@ -33,7 +33,7 @@
         <ul class="list-group mb-4">
             <li class="list-group-item d-flex justify-content-between">
                 <span>Seller</span>
-                <span>{{ $payout->wallet->user->name ?? $payout->user_id }}</span>
+                <span>{{ optional($payout->user)->name ?? 'User #'.$payout->user_id }}</span>
             </li>
             <li class="list-group-item d-flex justify-content-between">
                 <span>Amount</span>
@@ -186,7 +186,7 @@
         <div class="modal-header"><h5 class="modal-title">Mark as Paid</h5></div>
         <div class="modal-body">
             <div class="alert alert-info small">
-                <div><span class="fw-semibold">Seller:</span> {{ $payout->wallet->user->name ?? $payout->user_id }}</div>
+                <div><span class="fw-semibold">Seller:</span> {{ optional($payout->user)->name ?? 'User #'.$payout->user_id }}</div>
                 <div><span class="fw-semibold">Amount:</span> {{ get_currency() }} {{ number_format($payout->amount,2) }}</div>
                 @if($payout->paymentMethod)
                   <div><span class="fw-semibold">Method:</span> {{ optional($payout->paymentMethod->paymentType)->name }} — {{ $payout->paymentMethod->account_name }}</div>
@@ -329,3 +329,4 @@
   <div id="payoutToasts"></div>
   </div>
 @endsection
+

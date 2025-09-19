@@ -52,16 +52,7 @@
         font-size: 0.75rem;
     }
     
-    /* Action buttons styling */
-    .btn-group-vertical .btn {
-        margin-bottom: 2px;
-    }
-    
-    .btn-group-vertical .btn:last-child {
-        margin-bottom: 0;
-    }
-    
-    /* Enhanced Action Buttons */
+    /* Minimal Action Buttons (only View is used) */
     .action-buttons {
         display: flex;
         flex-direction: column;
@@ -94,7 +85,7 @@
         transform: translateY(0);
     }
     
-    /* Button-specific styling */
+    /* Button-specific styling (only primary outline used) */
     .action-btn.btn-outline-primary {
         color: #0d6efd;
         border-color: #0d6efd;
@@ -107,53 +98,7 @@
         border-color: #0d6efd;
     }
     
-    .action-btn.btn-warning {
-        background-color: #ffc107;
-        border-color: #ffc107;
-        color: #000;
-    }
-    
-    .action-btn.btn-warning:hover {
-        background-color: #e0a800;
-        border-color: #e0a800;
-        color: #000;
-    }
-    
-    .action-btn.btn-outline-danger {
-        color: #dc3545;
-        border-color: #dc3545;
-        background-color: rgba(220, 53, 69, 0.05);
-    }
-    
-    .action-btn.btn-outline-danger:hover {
-        background-color: #dc3545;
-        color: white;
-        border-color: #dc3545;
-    }
-    
-    .action-btn.btn-success {
-        background-color: #198754;
-        border-color: #198754;
-        color: white;
-    }
-    
-    .action-btn.btn-success:hover {
-        background-color: #157347;
-        border-color: #157347;
-        color: white;
-    }
-    
-    .action-btn.btn-info {
-        background-color: #0dcaf0;
-        border-color: #0dcaf0;
-        color: white;
-    }
-    
-    .action-btn.btn-info:hover {
-        background-color: #0aa2c0;
-        border-color: #0aa2c0;
-        color: white;
-    }
+    /* Removed: warning/danger/success/info variants no longer used */
     
     /* Button text styling */
     .btn-text {
@@ -186,36 +131,7 @@
         }
     }
     
-    /* Hover effects for specific button types */
-    .dispute-btn:hover {
-        background-color: #e0a800 !important;
-        border-color: #e0a800 !important;
-        color: #000 !important;
-    }
-    
-    .cancel-btn:hover {
-        background-color: #dc3545 !important;
-        border-color: #dc3545 !important;
-        color: white !important;
-    }
-    
-    .process-btn:hover {
-        background-color: #157347 !important;
-        border-color: #157347 !important;
-        color: white !important;
-    }
-    
-    .ship-btn:hover {
-        background-color: #0aa2c0 !important;
-        border-color: #0aa2c0 !important;
-        color: white !important;
-    }
-    
-        .deliver-btn:hover {
-        background-color: #157347 !important;
-        border-color: #157347 !important;
-        color: white !important;
-    }
+    /* Removed: hover styles for legacy actions (dispute/cancel/process/ship/deliver) */
     
     /* Status Progress Indicator Styles */
     .status-progress {
@@ -638,8 +554,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                         </div>
                                         
                                         <div class="action-buttons">
-                                            {{-- View Order Button --}}
-                                            <a href="{{ route('orders.show', $order) }}"
+                                            {{-- View Order Only; manage actions on the Show page --}}
+                                            <a href="{{ route('seller.orders.show', $order) }}"
                                                class="btn btn-sm btn-outline-primary action-btn"
                                                data-bs-toggle="tooltip"
                                                data-bs-placement="top"
@@ -647,71 +563,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <i class="bi bi-eye"></i>
                                                 <span class="btn-text">View</span>
                                             </a>
-                                            
-                                            {{-- Dispute Button (if exists) --}}
-                                            @if($dispute)
-                                                <a href="{{ route('disputes.show', $dispute->id) }}"
-                                                   class="btn btn-sm btn-warning action-btn dispute-btn"
-                                                   data-bs-toggle="tooltip"
-                                                   data-bs-placement="top"
-                                                   title="Manage Dispute - {{ ucfirst($dispute->status) }}">
-                                                    <i class="bi bi-exclamation-triangle"></i>
-                                                    <span class="btn-text">Dispute</span>
-                                                </a>
-                                            @endif
-                                            
-                                            {{-- Cancel Order Button (for eligible statuses) --}}
-                                            @if(in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
-                                                <button class="btn btn-sm btn-outline-danger action-btn cancel-btn"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#cancelModal-{{ $order->id }}"
-                                                        data-bs-toggle="tooltip"
-                                                        data-bs-placement="top"
-                                                        title="Cancel Order">
-                                                    <i class="bi bi-x-circle"></i>
-                                                    <span class="btn-text">Cancel</span>
-                                                </button>
-                                                @include('seller.orders.modals.cancel')
-                                            @endif
-                                            
-                                            {{-- Process Order Button (for pending orders) --}}
-                                            @if($order->status === \App\Models\Order::STATUS_PENDING)
-                                                <button class="btn btn-sm btn-success action-btn process-btn"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#processModal-{{ $order->id }}"
-                                                        data-bs-toggle="tooltip"
-                                                        data-bs-placement="top"
-                                                        title="Process Order">
-                                                    <i class="bi bi-play-circle"></i>
-                                                    <span class="btn-text">Process</span>
-                                                </button>
-                                            @endif
-                                            
-                                            {{-- Ship Order Button (for processing orders) --}}
-                                            @if($order->status === \App\Models\Order::STATUS_PROCESSING)
-                                                <button class="btn btn-sm btn-info action-btn ship-btn"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#shipModal-{{ $order->id }}"
-                                                        data-bs-toggle="tooltip"
-                                                        data-bs-placement="top"
-                                                        title="Mark as Shipped">
-                                                    <i class="bi bi-truck"></i>
-                                                    <span class="btn-text">Ship</span>
-                                                </button>
-                                            @endif
-                                            
-                                            {{-- Mark Delivered Button (for shipped orders) --}}
-                                            @if($order->status === \App\Models\Order::STATUS_SHIPPED)
-                                                <button class="btn btn-sm btn-success action-btn deliver-btn"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#deliverModal-{{ $order->id }}"
-                                                        data-bs-toggle="tooltip"
-                                                        data-bs-placement="top"
-                                                        title="Mark as Delivered">
-                                                    <i class="bi bi-check-circle"></i>
-                                                    <span class="btn-text">Deliver</span>
-                                                </button>
-                                            @endif
                                         </div>
                                     </td>
                                 </tr>

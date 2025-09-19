@@ -56,6 +56,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
+    final nav = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     try {
       final result = await AuthService.register(
         name: _nameController.text.trim(),
@@ -65,29 +68,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone: _phoneController.text.trim(),
       );
 
-      if (context.mounted) {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        await authProvider.login(result['token'], result['user']);
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainShell()),
-        );
-      }
-    } catch (e) {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Registration Failed'),
-          content: Text(e.toString()),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+      if (!mounted) return;
+      await authProvider.login(result['token'], result['user']);
+      final showSellerPrompt = _selectedUserType == 'buyer';
+      await nav.pushReplacement(
+        MaterialPageRoute(builder: (_) => MainShell(showSellerPrompt: showSellerPrompt)),
       );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Registration failed: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -148,7 +136,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         width: 70,
                         height: 70,
                         decoration: BoxDecoration(
-                          color: cetsyGreen.withOpacity(.1),
+                          color: cetsyGreen.withValues(alpha: .1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.person_add_alt_1, size: 36, color: cetsyGreen),
@@ -169,7 +157,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Text(
                         "Join Cetsy to buy and sell smarter.",
                         style: TextStyle(
-                          color: Colors.black.withOpacity(.6),
+                          color: Colors.black.withValues(alpha: .6),
                           fontSize: 14,
                         ),
                       ),
@@ -225,7 +213,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       // Account Type (Dropdown)
                       DropdownButtonFormField<String>(
-                        value: _selectedUserType,
+                        initialValue: _selectedUserType,
                         items: const [
                           DropdownMenuItem(value: 'buyer', child: Text('Buyer')),
                           DropdownMenuItem(value: 'seller', child: Text('Seller')),
@@ -337,7 +325,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         children: [
                           Text(
                             "Already have an account? ",
-                            style: TextStyle(color: Colors.black.withOpacity(.7)),
+                            style: TextStyle(color: Colors.black.withValues(alpha: .7)),
                           ),
                           TextButton(
                             onPressed: () {

@@ -20,6 +20,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;   
 use App\Models\Activity;
 use App\Models\ShippingProfile;
+use App\Services\Recommendation\ProductRecommendationService;
 use Illuminate\Support\Facades\Schema;
 
 use Carbon\Carbon;
@@ -34,7 +35,14 @@ use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
-       public function index(Request $request)
+    protected ProductRecommendationService $recommendations;
+
+    public function __construct(ProductRecommendationService $recommendations)
+    {
+        $this->recommendations = $recommendations;
+    }
+
+    public function index(Request $request)
     {
         // Resolve shop
         $shop = auth()->user()->shop;
@@ -465,11 +473,7 @@ public function listing(string $slug)
         ->take(8)
         ->get();
 
-    $relatedProducts = Product::where('category_id', $product->category_id)
-        ->where('id','!=',$product->id)
-        ->latest()
-        ->take(8)
-        ->get();
+    $relatedProducts = $this->recommendations->relatedToProduct($product, Auth::user(), 8);
 
     /* ------------------------------------------------------------
      | 5.  Default shipping profile ID for the view (pivot field)
@@ -606,8 +610,9 @@ public function listings(Request $request)
     }
 
     $products = $query->latest()->paginate(16);
+    $recommendedProducts = $this->recommendations->trendingForUser(Auth::user(), 8);
 
-    return themed_view('listings', compact('products'));
+    return themed_view('listings', compact('products', 'recommendedProducts'));
 }
 
 
@@ -624,7 +629,9 @@ public function search(Request $request)
         })
         ->paginate(12);
 
-    return themed_view('listings', compact('products'))->with('q', $q);
+    $recommendedProducts = $this->recommendations->trendingForUser(Auth::user(), 6);
+
+    return themed_view('listings', compact('products', 'recommendedProducts'))->with('q', $q);
 }
 
 

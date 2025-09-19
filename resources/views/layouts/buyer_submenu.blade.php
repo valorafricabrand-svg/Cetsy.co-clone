@@ -13,6 +13,13 @@
         ->count();
     $favoritesCount = \App\Models\Wishlist::where('user_id', Auth::id())->count();
     $offersPending  = \App\Models\Offer::where('buyer_id', Auth::id())->where('status','pending')->count();
+    // Disputes count (where user is buyer or seller, excluding closed/finalized)
+    $disputesCount  = \App\Models\Dispute::where(function($q){
+                          $q->where('buyer_id', Auth::id())
+                            ->orWhere('seller_id', Auth::id());
+                        })
+                        ->where('status', \App\Models\Dispute::STATUS_PENDING)
+                        ->count();
 @endphp
 
 @if(Auth::user()->isBuyer())
@@ -87,6 +94,18 @@
                 <span>Offers</span>
                 @if($offersPending>0)
                     <span class="badge bg-warning text-dark ms-auto badge-pill">{{ $offersPending }}</span>
+                @endif
+            </a>
+        </div>
+
+        <!-- Group: Support -->
+        <div class="list-group mb-3">
+            <div class="list-group-item bg-light fw-semibold text-uppercase small text-muted">Support</div>
+            <a href="{{ route('disputes.index') }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $active('disputes.*') ? 'active' : '' }}">
+                <i class="fas fa-exclamation-triangle me-2" style="width:18px;"></i>
+                <span>Disputes</span>
+                @if($disputesCount>0)
+                    <span class="badge bg-warning text-dark ms-auto badge-pill">{{ $disputesCount }}</span>
                 @endif
             </a>
         </div>

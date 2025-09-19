@@ -19,6 +19,7 @@ import 'screens/change_email_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/add_product_screen.dart';
 import 'screens/payout_otp_screen.dart';
+import 'screens/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -118,7 +119,7 @@ class CetsyApp extends StatelessWidget {
         chipTheme: ChipThemeData(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           backgroundColor: const Color(0xFFEFF7F3),
-          selectedColor: cetsyGreen.withOpacity(.15),
+          selectedColor: cetsyGreen.withValues(alpha: .15),
           side: const BorderSide(color: cetsyGreen),
           labelStyle: const TextStyle(fontWeight: FontWeight.w500),
         ),
@@ -159,6 +160,7 @@ class CetsyApp extends StatelessWidget {
         // Backward compat route and new naming
         '/add-product': (_) => const AddProductScreen(),
         '/add-listing': (_) => const AddProductScreen(),
+        '/settings': (_) => const SettingsScreen(),
       },
     );
   }

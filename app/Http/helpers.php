@@ -3,6 +3,7 @@ use App\Models\Setting;
 use App\Models\Shop;
 use App\Models\Country;
 use App\Models\Product;
+use Illuminate\Support\Facades\Auth;
 
 function favicon_url(){
 
@@ -70,13 +71,25 @@ function shop(){
   }
 
 
-   function wallet($status = 'completed'){
-     $walletBalance = \App\Models\Wallet::where('user_id', Auth::id())
+   function wallet($status = 'completed', $userId = null){
+     $id = $userId ?? Auth::id();
+     if (!$id) {
+         return 0;
+     }
+
+     $walletBalance = \App\Models\Wallet::where('user_id', $id)
                             ->where('status', $status)
                             ->selectRaw('SUM(credit - debit) as balance')
-                            ->value('balance') ?? 0;
+                            ->value('balance');
 
-        return $walletBalance;
+     if ($walletBalance === null || abs((float) $walletBalance) < 0.00001) {
+         $walletBalance = \App\Models\Wallet::where('user_id', $id)
+                                ->where('status', $status)
+                                ->latest('id')
+                                ->value('balance') ?? 0;
+     }
+
+        return (float) $walletBalance;
   }
 
    function wallet_on_hold(){
@@ -176,7 +189,7 @@ if (! function_exists('convert_usd')) {
 
 if (! function_exists('money')) {
     /** Format amount using default currency with USD-based conversion. */
-  function money(float $amountUsd, ?int $precision = null): string
+  function money(float $amountUsd = 0.0, ?int $precision = null): string
   {
       $code = get_currency();
       $value = convert_usd($amountUsd, $code);

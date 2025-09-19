@@ -159,7 +159,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         width: 70,
                         height: 70,
                         decoration: BoxDecoration(
-                          color: cetsyGreen.withOpacity(.1),
+                          color: cetsyGreen.withValues(alpha: .1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.lock_reset, size: 36, color: cetsyGreen),
@@ -182,7 +182,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         'We’ll send you a link to reset your password.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.black.withOpacity(.6),
+                          color: Colors.black.withValues(alpha: .6),
                           fontSize: 14,
                         ),
                       ),

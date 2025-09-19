@@ -60,7 +60,7 @@
                         </div>
                         <h5 class="fw-bold text-info">Offers</h5>
                         <p class="fs-5 text-muted mb-0">
-                            {!! $total_offers . " <small class='text-success ms-1' title='Accepted'>(".$accepted_offers." ✓)</small> <small class='text-danger ms-1' title='Declined'>(".$declined_offers." ✗)</small>" !!}
+                            {!! $total_offers . " <small class='text-success ms-1' title='Accepted'>(".$accepted_offers." &check;)</small> <small class='text-danger ms-1' title='Declined'>(".$declined_offers." &times;)</small>" !!}
                         </p>
                     </div>
                 </a>
@@ -146,6 +146,23 @@
                     </div>
                 </div>
             @endif
+        @if(isset($recommendedProducts) && $recommendedProducts->isNotEmpty())
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
+                    <i class="bi bi-stars text-warning"></i> Recommended For You
+                </div>
+                @include('theme.'.theme().'.partials.product-carousel', [
+                    'items' => $recommendedProducts,
+                    'showHeader' => false,
+                    'wrapperTag' => 'div',
+                    'wrapperClass' => 'card-body pt-3',
+                    'containerClass' => '',
+                    'seeMoreUrl' => route('listings'),
+                    'seeMoreLabel' => 'Browse more'
+                ])
+            </div>
+        @endif
+
         </div>
 
         

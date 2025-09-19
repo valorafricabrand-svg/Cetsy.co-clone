@@ -41,7 +41,7 @@
                         @forelse($payouts as $p)
                             <tr>
                                 <td>{{ $p->id }}</td>
-                                <td>{{ $p->wallet->user->name ?? $p->user_id }}</td>
+                                <td>{{ optional($p->user)->name ?? 'User #'.$p->user_id }}</td>
                                 <td>{{ get_currency() }} {{ number_format($p->amount,2) }}</td>
                                 <td>
                                   @php
@@ -79,3 +79,4 @@
     </div>
 </div>
 @endsection
+
