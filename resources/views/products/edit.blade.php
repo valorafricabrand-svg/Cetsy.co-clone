@@ -401,6 +401,7 @@ tinymce.init({
   browser_contextmenu: true,
   browser_spellcheck: true,
   gecko_spellcheck: true,
+  elementpath: false,
   contextmenu: 'link image inserttable | cell row column',
   branding: false,
   content_css: '{{ asset("css/tinymce-content.css") }}',

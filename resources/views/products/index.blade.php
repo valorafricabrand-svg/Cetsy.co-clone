@@ -50,6 +50,59 @@
         @endforeach
     </div>
 
+    @php
+        $filters = $filters ?? [
+            'price_min' => null,
+            'price_max' => null,
+        'type'      => null,
+        'country_id'=> null,
+        ];
+    @endphp
+
+    <form action="{{ route('products.index') }}" method="GET" class="card shadow-sm border-0 mb-4">
+      <div class="card-body row g-3 align-items-end">
+        <input type="hidden" name="q" value="{{ request('q') }}">
+        <input type="hidden" name="status" value="{{ request('status') }}">
+
+        <div class="col-12 col-md-6 col-xl-4">
+          <label class="form-label">Min Price</label>
+          <input type="number" step="0.01" min="0" name="price_min" class="form-control"
+                 value="{{ $filters['price_min'] ?? '' }}" placeholder="0.00">
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+          <label class="form-label">Max Price</label>
+          <input type="number" step="0.01" min="0" name="price_max" class="form-control"
+                 value="{{ $filters['price_max'] ?? '' }}" placeholder="0.00">
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+          <label class="form-label">Listing Type</label>
+          <select name="type" class="form-select">
+            <option value="">All types</option>
+            @foreach(['physical' => 'Physical', 'digital' => 'Digital', 'service' => 'Service'] as $typeKey => $typeLabel)
+              <option value="{{ $typeKey }}" @selected(($filters['type'] ?? '') === $typeKey)>{{ $typeLabel }}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+          <label class="form-label">Country</label>
+          <select name="country_id" class="form-select">
+            <option value="">All countries</option>
+            @foreach(($availableCountries ?? collect()) as $country)
+              <option value="{{ $country->id }}" @selected(($filters['country_id'] ?? null) == $country->id)>{{ $country->name }}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4 d-flex gap-2 align-items-end justify-content-end">
+          <button type="submit" class="btn btn-primary flex-grow-1"><i class="fas fa-filter me-1"></i> Apply Filters</button>
+          <a href="{{ route('products.index', $resetParams ?? []) }}" class="btn btn-outline-secondary flex-grow-1 text-center" title="Reset filters">Reset</a>
+        </div>
+      </div>
+    </form>
+
     @if($products->count())
         @php
             $grouped = isset($groupedProducts) && $groupedProducts instanceof \Illuminate\Support\Collection

@@ -55,6 +55,13 @@ class ProductController extends Controller
         $query = Product::with(['media','shop'])
             ->where('shop_id', $shopId);
 
+        $filters = [
+            'price_min' => $request->input('price_min'),
+            'price_max' => $request->input('price_max'),
+            'type'      => $request->input('type'),
+            'country_id'=> $request->input('country_id'),
+        ];
+
         // Apply search
         if ($search = $request->input('q')) {
             $query->where(function($q) use ($search) {
@@ -72,11 +79,50 @@ class ProductController extends Controller
             }
         }
 
+        $minPrice = $request->filled('price_min') ? (float) $request->input('price_min') : null;
+        $maxPrice = $request->filled('price_max') ? (float) $request->input('price_max') : null;
+
+        if (! is_null($minPrice) && ! is_null($maxPrice) && $minPrice > $maxPrice) {
+            [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
+        }
+
+        if (! is_null($minPrice)) {
+            $query->where('price', '>=', $minPrice);
+            $filters['price_min'] = $minPrice;
+        }
+
+        if (! is_null($maxPrice)) {
+            $query->where('price', '<=', $maxPrice);
+            $filters['price_max'] = $maxPrice;
+        }
+
+        // Type filter
+        if ($request->filled('type')) {
+            $type = $request->input('type');
+            if (in_array($type, ['physical','digital','service'], true)) {
+                $query->where('type', $type);
+            } else {
+                $filters['type'] = null;
+            }
+        }
+
+        // Country filter
+        if ($request->filled('country_id')) {
+            $countryId = (int) $request->input('country_id');
+            if ($countryId > 0) {
+                $query->where('country_id', $countryId);
+                $filters['country_id'] = $countryId;
+            } else {
+                $filters['country_id'] = null;
+            }
+        }
+
+
         // Fetch paginated products
         $products = $query
             ->latest()
             ->paginate(12)
-            ->appends($request->only(['q','status']));
+            ->appends($request->only(['q','status','price_min','price_max','type','country_id']));
 
         $groupedProducts = $products->getCollection()
             ->groupBy(function ($product) {
@@ -103,7 +149,28 @@ class ProductController extends Controller
             'closed' => $closedCount,
         ];
 
-        return view('products.index', compact('products','statusCounts','groupedProducts'));
+        $countryIds = Product::where('shop_id', $shopId)
+            ->whereNotNull('country_id')
+            ->distinct()
+            ->pluck('country_id');
+
+        $availableCountries = $countryIds->isNotEmpty()
+            ? Country::whereIn('id', $countryIds)->orderBy('name')->get()
+            : collect();
+
+        $resetParams = array_filter([
+            'q' => $request->input('q'),
+            'status' => $request->input('status'),
+        ], fn($value) => !is_null($value) && $value !== '');
+
+        return view('products.index', compact(
+            'products',
+            'statusCounts',
+            'groupedProducts',
+            'availableCountries',
+            'filters',
+            'resetParams'
+        ));
     }
 
 

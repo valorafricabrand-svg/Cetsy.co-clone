@@ -176,7 +176,8 @@ tinymce.init({
   toolbar:'undo redo | styles | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code',
   branding:false,
   browser_spellcheck: true,
-  gecko_spellcheck: true
+  gecko_spellcheck: true,
+  elementpath: false
 });
 </script>
 @endpush
