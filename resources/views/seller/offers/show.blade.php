@@ -10,6 +10,11 @@
                 <p class="text-muted mb-0">Manage and respond to this offer from {{ $offer->buyer->name ?? 'Buyer' }}</p>
             </div>
             <div class="d-flex gap-2">
+                @if($offer && $offer->buyer)
+                    <a href="{{ route('seller.messages.show', $offer->product_id . '-' . $offer->buyer_id) }}" class="btn btn-outline-success">
+                        <i class="bi bi-chat-dots me-1"></i> Message Buyer
+                    </a>
+                @endif
                 <a href="{{ route('seller.offers.index') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-1"></i> Back to Offers
                 </a>
@@ -271,10 +276,31 @@
                     <div class="card-body">
                         @if($offer->buyer)
                             <div class="d-flex align-items-center gap-3 mb-3">
-                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
-                                     style="width:50px;height:50px;">
-                                    <i class="bi bi-person text-primary fs-4"></i>
-                                </div>
+                                @php
+                                    $buyerPhotoUrl = null;
+                                    if (!empty($offer->buyer->photo)) {
+                                        if ($offer->buyer->photo_storage === 's3') {
+                                            try {
+                                                $buyerPhotoUrl = \Illuminate\Support\Facades\Storage::disk('s3')->url($offer->buyer->photo);
+                                            } catch (\Throwable $e) {
+                                                $buyerPhotoUrl = null;
+                                            }
+                                        } else {
+                                            // Default to public storage
+                                            $buyerPhotoUrl = asset('storage/' . $offer->buyer->photo);
+                                        }
+                                    }
+                                @endphp
+
+                                @if($buyerPhotoUrl)
+                                    <img src="{{ $buyerPhotoUrl }}" alt="{{ $offer->buyer->name }}" 
+                                         class="rounded-circle" style="width:50px;height:50px;object-fit:cover;">
+                                @else
+                                    <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width:50px;height:50px;">
+                                        <i class="bi bi-person text-primary fs-4"></i>
+                                    </div>
+                                @endif
                                 <div>
                                     <h6 class="mb-1">{{ $offer->buyer->name }}</h6>
                                     <small class="text-muted">{{ $offer->buyer->email }}</small>

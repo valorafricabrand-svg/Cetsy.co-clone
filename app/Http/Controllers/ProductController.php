@@ -78,6 +78,11 @@ class ProductController extends Controller
             ->paginate(12)
             ->appends($request->only(['q','status']));
 
+        $groupedProducts = $products->getCollection()
+            ->groupBy(function ($product) {
+                return $product->type ?? 'other';
+            });
+
         // Build counts for each status
         $rawCounts = Product::where('shop_id', $shopId)
             ->select('is_active', DB::raw('count(*) as cnt'))
@@ -98,7 +103,7 @@ class ProductController extends Controller
             'closed' => $closedCount,
         ];
 
-        return view('products.index', compact('products','statusCounts'));
+        return view('products.index', compact('products','statusCounts','groupedProducts'));
     }
 
 

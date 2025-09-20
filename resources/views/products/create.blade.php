@@ -39,7 +39,7 @@
       {{-- 1) Listing Name --}}
       <div class="mb-3">
         <label class="form-label fw-semibold">Listing Name</label>
-        <input type="text" name="name"
+        <input type="text" name="name" id="name" spellcheck="true" autocapitalize="sentences" autocomplete="on"
                class="form-control form-control-lg @error('name') is-invalid @enderror"
                value="{{ old('name') }}"
                placeholder="e.g. Handmade Wooden Spoon" required>
@@ -83,7 +83,7 @@
   {{-- Description --}}
           <div class="col-12">
             <label for="description" class="form-label fw-semibold">Description</label>
-            <textarea id="description" name="description" rows="6"
+            <textarea id="description" name="description" rows="6" spellcheck="true"
                       class="form-control @error('description') is-invalid @enderror">{{ old('description') }}</textarea>
             @error('description')<div class="text-danger mt-1">{{ $message }}</div>@enderror
           </div>
@@ -285,6 +285,8 @@ tinymce.init({
 
   /* Let browser context menu & keyboard shortcuts continue to work */
   browser_contextmenu: true,
+  browser_spellcheck: true,
+  gecko_spellcheck: true,
   contextmenu: 'link image inserttable | cell row column',
 
   branding: false,

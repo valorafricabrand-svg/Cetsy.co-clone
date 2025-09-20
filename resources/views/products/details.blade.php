@@ -55,7 +55,8 @@
         <div class="row g-3">
           <div class="col-md-8">
             <label class="form-label fw-semibold">Listing Name</label>
-            <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
+            <input type="text" name="name" id="name" spellcheck="true" autocapitalize="sentences" autocomplete="on"
+                   class="form-control @error('name') is-invalid @enderror"
                    value="{{ old('name', $product->name) }}" required autofocus>
             @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
@@ -84,14 +85,15 @@
 
           <div class="col-md-6">
             <label class="form-label fw-semibold">Short Description</label>
-            <input type="text" name="short_description" class="form-control @error('short_description') is-invalid @enderror"
+            <input type="text" name="short_description" spellcheck="true" autocapitalize="sentences"
+                   class="form-control @error('short_description') is-invalid @enderror"
                    value="{{ old('short_description', $product->short_description ?? '') }}" placeholder="Brief summary">
             @error('short_description') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
           <div class="col-12">
             <label class="form-label fw-semibold">Description</label>
-            <textarea id="description" name="description" rows="8"
+            <textarea id="description" name="description" rows="8" spellcheck="true"
                       class="form-control @error('description') is-invalid @enderror"
                       placeholder="Full product description...">{{ old('description',$product->description ?? '') }}</textarea>
             @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -172,7 +174,9 @@ tinymce.init({
   selector:'#description', height: 400, menubar:true,
   plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
   toolbar:'undo redo | styles | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code',
-  branding:false
+  branding:false,
+  browser_spellcheck: true,
+  gecko_spellcheck: true
 });
 </script>
 @endpush
