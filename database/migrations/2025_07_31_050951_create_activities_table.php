@@ -11,10 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('activities', function (Blueprint $table) {
-            if (!Schema::hasColumn('activities', 'type')) {
-                $table->string('type')->nullable()->after('message');
-            }
+        Schema::create('activities', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->boolean('is_read')->default(false);
+            $table->string('title')->nullable();
+            $table->text('description')->nullable();
+            $table->text('message')->nullable();
+            $table->string('link')->nullable();
+            $table->json('properties')->nullable();
+            $table->nullableMorphs('causer');
+            $table->nullableMorphs('subject');
+            $table->timestamps();
         });
     }
 
@@ -23,10 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('activities', function (Blueprint $table) {
-            if (Schema::hasColumn('activities', 'type')) {
-                $table->dropColumn('type');
-            }
-        });
+        Schema::dropIfExists('activities');
     }
 };

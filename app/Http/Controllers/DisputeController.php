@@ -12,6 +12,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\DisputeInitiatedBuyerMail;
+use App\Mail\DisputeInitiatedSellerMail;
+use App\Mail\DisputeClosedMail;
+use App\Mail\DisputeResponseMail;
+use App\Models\Activity;
 use App\Models\EvidenceRequest;
 
 
@@ -199,9 +205,23 @@ class DisputeController extends Controller
                 return back()->withErrors(['error' => 'You can only create disputes for orders you are involved in (as buyer or seller).']);
             }
 
-            // Check if dispute already exists for this order
-            if (Dispute::where('order_id', $order->id)->exists()) {
-                return back()->withErrors(['error' => 'A dispute already exists for this order.']);
+            // Check if there is an active (not closed) dispute for this order
+            $activeDispute = Dispute::where('order_id', $order->id)
+                ->where(function ($query) {
+                    $query->whereNull('status')
+                          ->orWhere('status', '!=', Dispute::STATUS_CLOSED);
+                })
+                ->latest('created_at')
+                ->first();
+
+            if ($activeDispute) {
+                \Log::info('Dispute creation blocked - active dispute exists', [
+                    'order_id' => $order->id,
+                    'existing_dispute_id' => $activeDispute->id,
+                    'existing_status' => $activeDispute->status,
+                ]);
+
+                return back()->withErrors(['error' => 'A dispute already exists for this order and must be closed before a new one can be created.']);
             }
 
             // Determine if user is buyer or seller
@@ -278,6 +298,50 @@ class DisputeController extends Controller
                 'dispute_id' => $dispute->id,
                 'order_id' => $order->id
             ]);
+
+            $dispute->loadMissing(['buyer', 'seller']);
+            try {
+                if ($dispute->buyer && $dispute->buyer->email) {
+                    Mail::to($dispute->buyer->email)->send(new DisputeInitiatedBuyerMail($dispute));
+                }
+
+                if ($dispute->seller && $dispute->seller->email) {
+                    Mail::to($dispute->seller->email)->send(new DisputeInitiatedSellerMail($dispute));
+                }
+
+                \Log::info('Dispute initiation emails dispatched', [
+                    'dispute_id' => $dispute->id,
+                    'buyer_notified' => (bool) ($dispute->buyer && $dispute->buyer->email),
+                    'seller_notified' => (bool) ($dispute->seller && $dispute->seller->email)
+                ]);
+            } catch (\Throwable $mailException) {
+                \Log::error('Failed to send dispute initiation notifications', [
+                    'dispute_id' => $dispute->id,
+                    'error' => $mailException->getMessage()
+                ]);
+            }
+
+            try {
+                $dispute->loadMissing(['buyer', 'seller']);
+                $initiatorName = Auth::user()->name ?? 'a party';
+                $otherParty = $dispute->buyer_id === Auth::id() ? $dispute->seller : $dispute->buyer;
+
+                if ($otherParty) {
+                    Activity::create([
+                        'user_id' => $otherParty->id,
+                        'is_read' => false,
+                        'description' => 'New dispute #' . $dispute->id . ' opened for order #' . $order->id . ' by ' . $initiatorName . '.',
+                        'type' => Activity::TYPE_DISPUTE,
+                        'related_id' => $dispute->id,
+                        'related_type' => 'dispute'
+                    ]);
+                }
+            } catch (\Throwable $activityException) {
+                \Log::error('Failed to create dispute activity for creation event', [
+                    'dispute_id' => $dispute->id,
+                    'error' => $activityException->getMessage()
+                ]);
+            }
 
             return redirect()->route('disputes.show', $dispute->id)
                 ->with('success', 'Dispute created successfully. The other party has been notified.');
@@ -481,7 +545,7 @@ class DisputeController extends Controller
             }
         }
 
-        DisputeMessage::create([
+        $messageModel = DisputeMessage::create([
             'dispute_id' => $dispute->id,
             'user_id' => $user->id,
             'message' => $data['message'],
@@ -489,6 +553,54 @@ class DisputeController extends Controller
             'type' => $messageType,
             'is_internal' => false
         ]);
+
+        try {
+            $dispute->loadMissing(['buyer', 'seller']);
+            $recipient = $dispute->buyer_id === $user->id ? $dispute->seller : $dispute->buyer;
+
+            if ($recipient) {
+                Activity::create([
+                    'user_id' => $recipient->id,
+                    'is_read' => false,
+                    'description' => $user->name . ' responded to dispute #' . $dispute->id . '.',
+                    'type' => Activity::TYPE_DISPUTE,
+                    'related_id' => $dispute->id,
+                    'related_type' => 'dispute'
+                ]);
+            }
+        } catch (\Throwable $activityException) {
+            \Log::error('Failed to create dispute activity for response event', [
+                'dispute_id' => $dispute->id,
+                'responder_id' => $user->id,
+                'error' => $activityException->getMessage(),
+            ]);
+        }
+
+        // Notify dispute initiator when the other party responds
+        if ($dispute->created_by && $dispute->created_by !== $user->id) {
+            $dispute->loadMissing(['createdBy']);
+            $initiator = $dispute->createdBy;
+
+            if ($initiator && $initiator->email) {
+                try {
+                    $dispute->loadMissing(['order.shop', 'buyer', 'seller']);
+                    Mail::to($initiator->email)->send(new DisputeResponseMail($dispute, $messageModel, $user));
+
+                    \Log::info('Dispute response email sent to initiator', [
+                        'dispute_id' => $dispute->id,
+                        'initiator_id' => $initiator->id,
+                        'responder_id' => $user->id,
+                    ]);
+                } catch (\Throwable $mailException) {
+                    \Log::error('Failed to send dispute response email', [
+                        'dispute_id' => $dispute->id,
+                        'initiator_id' => $initiator->id ?? null,
+                        'responder_id' => $user->id,
+                        'error' => $mailException->getMessage(),
+                    ]);
+                }
+            }
+        }
 
         // Update dispute status to under review if it was pending
         if ($dispute->isPending()) {
@@ -1260,6 +1372,58 @@ class DisputeController extends Controller
                 'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE
             ]);
 
+            // Notify both parties that the dispute has been closed
+            try {
+                $dispute->loadMissing(['buyer', 'seller', 'closedBy', 'order']);
+                $closerName = Auth::user()->name ?? ($dispute->closedBy->name ?? 'support');
+
+                foreach ([$dispute->buyer, $dispute->seller] as $participant) {
+                    if ($participant) {
+                        Activity::create([
+                            'user_id' => $participant->id,
+                            'is_read' => false,
+                            'description' => 'Dispute #' . $dispute->id . ' has been closed by ' . $closerName . '.',
+                            'type' => Activity::TYPE_DISPUTE,
+                            'related_id' => $dispute->id,
+                            'related_type' => 'dispute'
+                        ]);
+                    }
+                }
+            } catch (\Throwable $activityException) {
+                \Log::error('Failed to create dispute activity for closure event', [
+                    'dispute_id' => $dispute->id,
+                    'error' => $activityException->getMessage(),
+                ]);
+            }
+
+            try {
+                $dispute->loadMissing(['buyer', 'seller', 'closedBy', 'order']);
+                $closedByUser = $dispute->closedBy;
+
+                $recipients = [];
+                if ($dispute->buyer && $dispute->buyer->email) {
+                    $recipients[$dispute->buyer->id] = $dispute->buyer;
+                }
+                if ($dispute->seller && $dispute->seller->email) {
+                    $recipients[$dispute->seller->id] = $dispute->seller;
+                }
+
+                foreach ($recipients as $recipient) {
+                    Mail::to($recipient->email)->send(new DisputeClosedMail($dispute, $recipient, $closedByUser));
+                }
+
+                \Log::info('Dispute closure notifications dispatched', [
+                    'dispute_id' => $dispute->id,
+                    'recipient_ids' => array_keys($recipients),
+                ]);
+            } catch (\Throwable $mailException) {
+                \Log::error('Failed to send dispute closure notifications', [
+                    'dispute_id' => $dispute->id,
+                    'error' => $mailException->getMessage(),
+                ]);
+            }
+
+
             if (Auth::user()->isAdmin()) {
                 $closedBy = 'admin';
             } else {
@@ -1278,3 +1442,4 @@ class DisputeController extends Controller
         }
     }
 }
+

@@ -46,6 +46,16 @@
   $defaultDisplayPrice = $lowestVariantPrice ?? $salePrice;
 
   $format = fn($amount) => number_format((float)$amount, 2);
+  // Resolve currency decimal places safely (0..6)
+  $__dec = 2;
+  try {
+      $cur = \App\Models\Currency::where('code', $currency)->first();
+      if ($cur) {
+          $__dec = max(0, min(6, (int) $cur->decimal_places));
+      }
+  } catch (\Throwable $e) {
+      // ignore
+  }
 @endphp
 
 <div class="position-lg-sticky" style="top: 1rem;">
@@ -67,7 +77,7 @@
          data-currency="{{ $currency }}"
          data-default-amount="{{ $defaultDisplayPrice }}"
          data-fx-rate="{{ max(0, (float) fx_rate($currency)) }}"
-         data-decimals="@php($__dec=2)@php(try{ $__c=\App\Models\Currency::where('code',$currency)->first(); if($__c){$__dec=max(0,min(6,(int)$__c->decimal_places));}}catch(\Throwable $e){}){{ $__dec }}"
+         data-decimals="{{ $__dec }}"
          data-variant-index='@json($variantIndex)'>
       <span class="fw-bold text-success">
         <span id="js-from-label" class="me-1 small text-muted">From</span>
@@ -85,7 +95,7 @@
            data-currency="{{ $currency }}"
            data-default-amount="{{ $salePrice }}"
            data-fx-rate="{{ max(0, (float) fx_rate($currency)) }}"
-           data-decimals="@php($__dec=2)@php(try{ $__c=\App\Models\Currency::where('code',$currency)->first(); if($__c){$__dec=max(0,min(6,(int)$__c->decimal_places));}}catch(\Throwable $e){}){{ $__dec }}"
+           data-decimals="{{ $__dec }}"
            data-variant-index='{}'>
         <span class="fw-bold text-success">
           <span id="js-price-amount">{{ $currency }} {{ $format($salePrice) }}</span>
@@ -103,7 +113,7 @@
          data-currency="{{ $currency }}"
          data-default-amount="{{ $basePrice }}"
          data-fx-rate="{{ max(0, (float) fx_rate($currency)) }}"
-         data-decimals="@php($__dec=2)@php(try{ $__c=\App\Models\Currency::where('code',$currency)->first(); if($__c){$__dec=max(0,min(6,(int)$__c->decimal_places));}}catch(\Throwable $e){}){{ $__dec }}"
+         data-decimals="{{ $__dec }}"
          data-variant-index='{}'>
         <span id="js-price-amount">{{ $currency }} {{ $format($basePrice) }}</span>
       </p>
@@ -466,4 +476,3 @@
   })();
 </script>
 @endpush
-@endif

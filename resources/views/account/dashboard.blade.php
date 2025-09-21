@@ -88,23 +88,18 @@
             <h4 class="text-dark mb-3">Recommended for You</h4>
             @if($recommendedProducts->isEmpty())
                 <div class="alert alert-info" role="alert">
-                    No recommended products at the moment.
+                    No recommended products yet. Browse the marketplace to personalize your picks.
                 </div>
             @else
-                <div class="row g-3">
-                    @foreach($recommendedProducts as $product)
-                        <div class="col-md-3">
-                            <div class="card shadow-sm border-0">
-                                <img src="{{ url('/') }}/storage/{{ $product->photo }}" alt="{{ $product->name }}" class="card-img-top" alt="{{ $product->name }}">
-                                <div class="card-body text-center">
-                                    <h6 class="card-title">{{ $product->name }}</h6>
-                                    <p class="text-muted">{{ money($product->price) }}</p>
-                                    <a href="{{ route('product_details', $product->slug) }}" class="btn btn-sm btn-primary">View Product</a>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
+                @include('theme.'.theme().'.partials.product-carousel', [
+                    'items' => $recommendedProducts,
+                    'showHeader' => false,
+                    'wrapperTag' => 'div',
+                    'wrapperClass' => 'recommended-carousel position-relative',
+                    'containerClass' => '',
+                    'seeMoreUrl' => route('listings'),
+                    'seeMoreLabel' => 'Explore marketplace'
+                ])
             @endif
         </div>
     </div>

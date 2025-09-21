@@ -1,13 +1,13 @@
 import 'package:provider/provider.dart';
-import '../providers/currency_provider.dart';
+// import '../providers/currency_provider.dart';
+import '../utils/money_utils.dart';
 // lib/screens/product_list_screen.dart
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:intl/intl.dart';
+// import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:provider/provider.dart';
 
 import '../config/constants.dart';
 import '../models/product.dart';
@@ -37,7 +37,6 @@ class ProductListScreen extends StatefulWidget {
     int _page = 1;
     bool _showTopFab = false;
     Timer? _debounce;
-    final _priceFmt = NumberFormat.decimalPattern();
     String? _selectedType; // null = All, 'physical' | 'service' | 'digital'
 
   @override
@@ -132,7 +131,7 @@ class ProductListScreen extends StatefulWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgGradient = const LinearGradient(
+    const bgGradient = LinearGradient(
       colors: [Color(0xFFEFF7F3), Color(0xFFEAF5F0)],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
@@ -427,7 +426,7 @@ class ProductListScreen extends StatefulWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.black87.withOpacity(0.7),
+                              color: Colors.black87.withValues(alpha: 0.7),
                               borderRadius: const BorderRadius.only(
                                 bottomLeft: Radius.circular(10),
                               ),
@@ -445,7 +444,7 @@ class ProductListScreen extends StatefulWidget {
                         right: 8,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.95),
+                            color: Colors.white.withValues(alpha: 0.95),
                             shape: BoxShape.circle,
                             boxShadow: const [
                               BoxShadow(
@@ -511,7 +510,7 @@ class ProductListScreen extends StatefulWidget {
                       Row(
                         children: [
                           Text(
-                            '\ ${_priceFmt.format(context.watch<CurrencyProvider>().convert(displayPrice))}',
+                            context.money(displayPrice),
                             style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 16,
@@ -521,7 +520,7 @@ class ProductListScreen extends StatefulWidget {
                           if (hasDiscount) ...[
                             const SizedBox(width: 8),
                             Text(
-                              '\ ${_priceFmt.format(context.watch<CurrencyProvider>().convert(p.price))}',
+                              context.money(p.price),
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey.shade600,
@@ -751,7 +750,7 @@ class ProductListScreen extends StatefulWidget {
             });
             _fetch();
           },
-          selectedColor: cetsyGreen.withOpacity(.15),
+          selectedColor: cetsyGreen.withValues(alpha: .15),
           labelStyle: TextStyle(
             color: selected ? cetsyGreen : Colors.black87,
             fontWeight: FontWeight.w600,
@@ -787,3 +786,5 @@ class ProductListScreen extends StatefulWidget {
 
 
 
+
+// ignore_for_file: prefer_const_constructors

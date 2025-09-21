@@ -204,7 +204,9 @@
                                         </div>
                                     @endif -->
 
-                                    @php($thumb = product_thumb_url($offer->product))
+                                    @php
+                                        $thumb = product_thumb_url($offer->product);
+                                    @endphp
                                     <img src="{{ $thumb }}" class="rounded" style="width:40px;height:40px;object-fit:cover;" alt="{{ $offer->product->name }}">
                                     <div class="flex-grow-1">
                                         <span class="fw-semibold text-dark d-block" title="{{ $offer->product->name ?? '-' }}">
@@ -253,44 +255,9 @@
                                 </div>
                             </td>
                             <td class="text-end">
-                                <div class="d-flex gap-2 justify-content-end">
-                                    <a href="{{ route('seller.offers.show', $offer->id) }}" class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-eye me-1"></i>View
-                                    </a>
-                                    <a href="{{ route('seller.messages.index', ['user' => $offer->buyer_id, 'product' => $offer->product_id]) }}" class="btn btn-outline-info btn-sm" title="Message buyer about this product">
-                                        <i class="bi bi-chat-dots me-1"></i>Message
-                                    </a>
-                                    @if($offer->is_negotiable)
-                                        <div class="dropdown">
-                                            <button class="btn btn-outline-success btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                <i class="bi bi-gear me-1"></i>Actions
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <form method="POST" action="{{ route('seller.offers.accept', $offer->id) }}" class="d-inline">
-                                                        @csrf
-                                                        <button type="submit" class="dropdown-item" onclick="return confirm('Accept this offer?')">
-                                                            <i class="bi bi-check-circle text-success me-2"></i>Accept
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <button type="button" class="dropdown-item" data-bs-toggle="modal" 
-                                                            data-bs-target="#declineModal" data-offer-id="{{ $offer->id }}">
-                                                        <i class="bi bi-x-circle text-danger me-2"></i>Decline
-                                                    </button>
-                                                </li>
-                                                <li>
-                                                    <button type="button" class="dropdown-item" data-bs-toggle="modal" 
-                                                            data-bs-target="#counterModal" data-offer-id="{{ $offer->id }}"
-                                                            data-original-price="{{ $offer->offer_price }}">
-                                                        <i class="bi bi-arrow-left-right text-warning me-2"></i>Counter
-                                                    </button>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    @endif
-                                </div>
+                                <a href="{{ route('seller.offers.show', $offer->id) }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
                             </td>
                         </tr>
                     @empty
@@ -311,64 +278,6 @@
     </div>
 </div>
 
-{{-- Decline Modal --}}
-<div class="modal fade" id="declineModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Decline Offer</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" id="declineForm">
-                @csrf
-                <div class="modal-body">
-                    <p>Are you sure you want to decline this offer?</p>
-                    <div class="mb-3">
-                        <label class="form-label">Reason (Optional)</label>
-                        <textarea name="reason" class="form-control" rows="3" placeholder="Provide a reason for declining..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Decline Offer</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-{{-- Counter Offer Modal --}}
-<div class="modal fade" id="counterModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Make Counter Offer</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" id="counterForm">
-                @csrf
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Counter Price</label>
-                        <div class="input-group">
-                            <span class="input-group-text">{{ shop_currency() }}</span>
-                            <input type="number" name="counter_price" class="form-control" step="0.01" min="0.01" required>
-                        </div>
-                        <div class="form-text">Enter your counter offer price</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Message (Optional)</label>
-                        <textarea name="message" class="form-control" rows="3" placeholder="Add a message to your counter offer..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning">Send Counter Offer</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 {{-- Bulk Action Modal --}}
 <div class="modal fade" id="bulkActionModal" tabindex="-1">
@@ -470,28 +379,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Modal handlers
-    const declineModal = document.getElementById('declineModal');
-    const counterModal = document.getElementById('counterModal');
     const bulkActionModal = document.getElementById('bulkActionModal');
-    
-    declineModal.addEventListener('show.bs.modal', function(event) {
-        const button = event.relatedTarget;
-        const offerId = button.getAttribute('data-offer-id');
-        const form = document.getElementById('declineForm');
-        form.action = `/seller/offers/${offerId}/decline`;
-    });
-    
-    counterModal.addEventListener('show.bs.modal', function(event) {
-        const button = event.relatedTarget;
-        const offerId = button.getAttribute('data-offer-id');
-        const originalPrice = button.getAttribute('data-original-price');
-        const form = document.getElementById('counterForm');
-        const priceInput = form.querySelector('input[name="counter_price"]');
-        
-        form.action = `/seller/offers/${offerId}/counter`;
-        priceInput.value = originalPrice;
-        priceInput.focus();
-    });
+    // Per-offer decline/counter moved to offer show page.
     
     // Bulk action form submission handler
     bulkActionModal.addEventListener('show.bs.modal', function(event) {

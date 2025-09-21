@@ -1,9 +1,7 @@
-import 'package:provider/provider.dart';
-import '../providers/currency_provider.dart';
+// removed duplicate provider import
+import '../utils/money_utils.dart';
 // lib/screens/cart_screen.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../config/constants.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/cart_provider.dart';
@@ -17,7 +15,7 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
-    final fmt = NumberFormat.decimalPattern();
+    // currency formatting handled by context.money
 
     return Scaffold(
       appBar: AppBar(
@@ -56,16 +54,14 @@ class CartScreen extends StatelessWidget {
                             contentPadding:
                                 const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             leading: CircleAvatar(
-                              backgroundColor: cetsyGreen.withOpacity(.1),
+                              backgroundColor: cetsyGreen.withValues(alpha: .1),
                               child: const Icon(Icons.shopping_bag, color: cetsyGreen),
                             ),
                             title: Text(p.name,
                                 maxLines: 1, overflow: TextOverflow.ellipsis),
                             subtitle: Text(
-                              '\ ${fmt.format(unitPrice)} each' +
-                                  (item.variationLabel != null && item.variationLabel!.isNotEmpty
-                                      ? '\n${item.variationLabel}'
-                                      : ''),
+                              '${context.money(unitPrice)} each'
+                              '${(item.variationLabel != null && item.variationLabel!.isNotEmpty) ? '\n${item.variationLabel}' : ''}',
                             ),
                             trailing: SizedBox(
                               width: 132,
@@ -98,7 +94,7 @@ class CartScreen extends StatelessWidget {
                               padding:
                                   const EdgeInsets.fromLTRB(16, 0, 16, 12),
                               child: DropdownButtonFormField<int>(
-                                value: item.shippingProfile?.id ??
+                                initialValue: item.shippingProfile?.id ??
                                     p.shippingProfiles.first.id,
                                 decoration: const InputDecoration(
                                     labelText: 'Shipping'),
@@ -106,7 +102,7 @@ class CartScreen extends StatelessWidget {
                                     .map((sp) => DropdownMenuItem(
                                           value: sp.id,
                                           child: Text(
-                                              '${sp.name} (${fmt.format(sp.baseRate)})'),
+                                              '${sp.name} (${context.money(sp.baseRate)})'),
                                         ))
                                     .toList(),
                                 onChanged: (id) {
@@ -123,7 +119,7 @@ class CartScreen extends StatelessWidget {
                     );
                   }),
                   const SizedBox(height: 16),
-                  _totalBar(context, cart.total, cart.shippingTotal, fmt),
+                  _totalBar(context, cart.total, cart.shippingTotal),
                 ],
               ),
       ),
@@ -156,7 +152,7 @@ class CartScreen extends StatelessWidget {
   }
 
   Widget _totalBar(
-      BuildContext context, double subtotal, double shipping, NumberFormat fmt) {
+      BuildContext context, double subtotal, double shipping) {
     final grand = subtotal + shipping;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -173,14 +169,14 @@ class CartScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Items: \ ${fmt.format(subtotal)}',
+                Text('Items: ${context.money(subtotal)}',
                     style: const TextStyle(
                         fontWeight: FontWeight.w600, color: cetsyGreen)),
-                Text('Shipping: \ ${fmt.format(shipping)}',
+                Text('Shipping: ${context.money(shipping)}',
                     style: const TextStyle(
                         fontWeight: FontWeight.w600, color: cetsyGreen)),
                 const SizedBox(height: 4),
-                Text('Total: \ ${fmt.format(grand)}',
+                Text('Total: ${context.money(grand)}',
                     style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,

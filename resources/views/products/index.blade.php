@@ -50,111 +50,114 @@
         @endforeach
     </div>
 
-    @if($products->count())
-        <div class="row g-4">
-            @foreach($products as $product)
-                          <div class="col-md-6 col-lg-4">
-                    {{-- position-relative lets us place the badge --}}
-                    <div class="card position-relative h-100 shadow-sm border-0 rounded-4">
-
-                     
-
-                         @php
-          switch($product->is_active) {
-            case 0: $label='Pending'; $class='warning'; break;
-            case 1: $label='Active';  $class='success'; break;
-            case 2: $label='Paused';  $class='secondary'; break;
-            case 3: $label='Suspended';  $class='secondary'; break;
-            default:$label='Closed';  $class='dark'; break;
-          }
-        @endphp
-        <span class="badge bg-{{ $class }} text-white position-absolute top-0 start-0 m-2">{{ $label }}</span>
-
-
-  @php
-      // If featured_image is a full URL use it; otherwise assume it's a storage path
-      $thumb = null;
-      $mediaType = 'image';
-      if (!empty($product->featured_image)) {
-          $thumb = str_starts_with($product->featured_image, 'http')
-                  ? $product->featured_image
-                  : asset('storage/' . ltrim($product->featured_image, '/'));
-      } else {
-          $firstMedia = $product->media->first();
-          if ($firstMedia) {
-              $thumb = asset('storage/' . ltrim($firstMedia->url, '/'));
-              $mediaType = $firstMedia->type ?? 'image';
-          } else {
-              $shopLogo = ($product->shop && $product->shop->logo)
-                          ? asset('storage/' . ltrim($product->shop->logo, '/'))
-                          : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
-              $thumb = $shopLogo;
-              $mediaType = 'image';
-          }
-      }
+    @php
+        $filters = $filters ?? [
+            'price_min' => null,
+            'price_max' => null,
+        'type'      => null,
+        'country_id'=> null,
+        ];
     @endphp
 
-  
-                        {{-- Image --}}
-                        @if($thumb)
-                            @if($mediaType === 'video')
-                                <video src="{{ $thumb }}" class="card-img-top rounded-top-4" style="height:220px;object-fit:cover;" controls></video>
-                            @else
-                                <img src="{{ $thumb }}"
-                                     class="card-img-top rounded-top-4"
-                                     style="height:220px;object-fit:cover;"
-                                     alt="{{ $product->name }}">
-                            @endif
-                        @else
-                            <div class="bg-light d-flex align-items-center justify-content-center"
-                                 style="height:220px;">
-                                <span class="text-muted">No Media</span>
-                            </div>
-                        @endif
+    <form action="{{ route('products.index') }}" method="GET" class="card shadow-sm border-0 mb-4">
+      <div class="card-body row g-3 align-items-end">
+        <input type="hidden" name="q" value="{{ request('q') }}">
+        <input type="hidden" name="status" value="{{ request('status') }}">
 
-                        {{-- Body --}}
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title mb-1">{{ Str::limit($product->name, 40) }}</h5>
-                            <p class="mb-2 text-muted small">
-                                {{ ucfirst($product->type) }}
-                                @if(!is_null($product->stock))
-                                    | Stock: {{ $product->stock }}
-                                @endif
-                            </p>
-
-                            {{-- Price --}}
-                            <p class="fw-bold mb-3">
-                                @if($product->discount_price)
-                                    <span class="text-danger me-2">
-                                        {{ get_currency() }} {{ number_format($product->discount_price) }}
-                                    </span>
-                                    <span class="text-muted text-decoration-line-through">
-                                        {{ get_currency() }} {{ number_format($product->price) }}
-                                    </span>
-                                @else
-                                    <span>{{ get_currency() }} {{ number_format($product->price) }}</span>
-                                @endif
-                            </p>
-
-                            {{-- Actions --}}
-                            <div class="mt-auto d-flex gap-2">
-                                <a href="{{ route('products.show', $product) }}"
-                                   class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-eye me-1"></i> View
-                                </a>
-                              
-                                <form action="{{ route('products.duplicate', $product) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-outline-success btn-sm">
-                                        <i class="fas fa-copy me-1"></i> Duplicate
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
+        <div class="col-12 col-md-6 col-xl-4">
+          <label class="form-label">Min Price</label>
+          <input type="number" step="0.01" min="0" name="price_min" class="form-control"
+                 value="{{ $filters['price_min'] ?? '' }}" placeholder="0.00">
         </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+          <label class="form-label">Max Price</label>
+          <input type="number" step="0.01" min="0" name="price_max" class="form-control"
+                 value="{{ $filters['price_max'] ?? '' }}" placeholder="0.00">
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+          <label class="form-label">Listing Type</label>
+          <select name="type" class="form-select">
+            <option value="">All types</option>
+            @foreach(['physical' => 'Physical', 'digital' => 'Digital', 'service' => 'Service'] as $typeKey => $typeLabel)
+              <option value="{{ $typeKey }}" @selected(($filters['type'] ?? '') === $typeKey)>{{ $typeLabel }}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+          <label class="form-label">Country</label>
+          <select name="country_id" class="form-select">
+            <option value="">All countries</option>
+            @foreach(($availableCountries ?? collect()) as $country)
+              <option value="{{ $country->id }}" @selected(($filters['country_id'] ?? null) == $country->id)>{{ $country->name }}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4 d-flex gap-2 align-items-end justify-content-end">
+          <button type="submit" class="btn btn-primary flex-grow-1"><i class="fas fa-filter me-1"></i> Apply Filters</button>
+          <a href="{{ route('products.index', $resetParams ?? []) }}" class="btn btn-outline-secondary flex-grow-1 text-center" title="Reset filters">Reset</a>
+        </div>
+      </div>
+    </form>
+
+    @if($products->count())
+        @php
+            $grouped = isset($groupedProducts) && $groupedProducts instanceof \Illuminate\Support\Collection
+                ? $groupedProducts
+                : $products->getCollection()->groupBy(function ($item) {
+                    return $item->type ?? 'other';
+                });
+
+            $sectionMeta = [
+                'physical' => ['title' => 'Products', 'icon' => 'fa-box-open'],
+                'service'  => ['title' => 'Services', 'icon' => 'fa-briefcase'],
+                'digital'  => ['title' => 'Digital Downloads', 'icon' => 'fa-cloud-arrow-down'],
+            ];
+        @endphp
+
+        @foreach($sectionMeta as $type => $meta)
+            @php $items = $grouped->get($type, collect()); @endphp
+            <section class="mb-5">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas {{ $meta['icon'] }} text-muted"></i>
+                        <h4 class="mb-0">{{ $meta['title'] }}</h4>
+                    </div>
+                    <span class="badge bg-light text-dark">{{ $items->count() }}</span>
+                </div>
+
+                @if($items->isEmpty())
+                    <div class="alert alert-light border rounded-3 text-muted mb-0">
+                        No {{ strtolower($meta['title']) }} on this page.
+                    </div>
+                @else
+                    <div class="row g-4">
+                        @foreach($items as $product)
+                            @include('products.partials.listing-card', ['product' => $product])
+                        @endforeach
+                    </div>
+                @endif
+            </section>
+        @endforeach
+
+        @foreach($grouped as $type => $items)
+            @continue(array_key_exists($type, $sectionMeta) || $items->isEmpty())
+            <section class="mb-5">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h4 class="mb-0 text-capitalize">{{ $type }} Listings</h4>
+                    <span class="badge bg-light text-dark">{{ $items->count() }}</span>
+                </div>
+
+                <div class="row g-4">
+                    @foreach($items as $product)
+                        @include('products.partials.listing-card', ['product' => $product])
+                    @endforeach
+                </div>
+            </section>
+        @endforeach
 
         {{-- Pagination --}}
         <div class="mt-5">

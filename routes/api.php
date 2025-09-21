@@ -61,6 +61,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/wallet/payout/{payout}/cancel', [ApiWalletController::class, 'cancelPayout']);
     Route::get('/wallet/transactions', [ApiWalletController::class, 'transactions']);
     Route::get('/wallet/paypal/config', [ApiWalletController::class, 'paypalConfig']);
+    // Pay order via wallet (mirror web route)
+    Route::post('/orders/{order}/wallet', [\App\Http\Controllers\WalletController::class, 'payOrder']);
     // Map M-Pesa STK deposit to existing web controller actions
     Route::post('/wallet/deposit/mpesa/stk', [\App\Http\Controllers\WalletController::class, 'startMpesaStk']);
     Route::get('/wallet/deposit/mpesa/status/{ref}', [\App\Http\Controllers\WalletController::class, 'mpesaStatus']);

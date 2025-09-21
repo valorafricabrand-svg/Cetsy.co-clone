@@ -1,10 +1,11 @@
-import 'package:provider/provider.dart';
-import '../providers/currency_provider.dart';
+// import 'package:provider/provider.dart';
+// import '../providers/currency_provider.dart';
 // lib/screens/search_screen.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+// import 'package:intl/intl.dart';
 
 import '../config/constants.dart';
+import '../utils/money_utils.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import 'product_detail_screen.dart';
@@ -21,7 +22,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   final _queryCtl = TextEditingController();
   Future<List<Product>>? _results;
-  final _fmt = NumberFormat.decimalPattern();
+  // final _fmt = NumberFormat.decimalPattern();
   String? _selectedType; // null | 'physical' | 'service' | 'digital'
 
   @override
@@ -106,7 +107,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       final p = items[i];
                       final url = _imageUrlFrom(p.image);
                       final price = p.discountPrice ?? p.price;
-                      final isSpecial = p.type != null && p.type != 'physical';
+                      // final isSpecial = p.type != null && p.type != 'physical';
                       final typeLabel = p.type == 'service'
                           ? 'Service'
                           : (p.type == 'digital' ? 'Digital' : null);
@@ -123,7 +124,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 margin: const EdgeInsets.only(left: 8),
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: Colors.black87.withOpacity(.08),
+                                  color: Colors.black87.withValues(alpha: .08),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -133,7 +134,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               ),
                           ],
                         ),
-                        subtitle: Text('\ ${_fmt.format(price)}'),
+                        subtitle: Text(context.money(price)),
                         onTap: () => Navigator.pushNamed(
                           context,
                           ProductDetailScreen.route,
@@ -161,7 +162,7 @@ class _SearchScreenState extends State<SearchScreen> {
             // If we already have results, re-run search with updated type
             if (_results != null) _search();
           },
-          selectedColor: cetsyGreen.withOpacity(.15),
+          selectedColor: cetsyGreen.withValues(alpha: .15),
           labelStyle: TextStyle(
             color: selected ? cetsyGreen : Colors.black87,
             fontWeight: FontWeight.w600,
@@ -183,6 +184,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 }
+
 
 
 

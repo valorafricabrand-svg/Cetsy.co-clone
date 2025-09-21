@@ -24,15 +24,9 @@ class WalletController extends Controller
         $user = $request->user();
         if (! $user) return response()->json(['message' => 'Unauthorized'], 401);
 
-        $balance = (float) (Wallet::where('user_id', $user->id)
-            ->where('status', 'completed')
-            ->selectRaw('COALESCE(SUM(credit - debit),0) as balance')
-            ->value('balance') ?? 0);
+        $balance = (float) wallet('completed', $user->id);
 
-        $onHold = (float) (Wallet::where('user_id', $user->id)
-            ->where('status', 'on_hold')
-            ->selectRaw('COALESCE(SUM(credit - debit),0) as balance')
-            ->value('balance') ?? 0);
+        $onHold = (float) wallet('on_hold', $user->id);
 
         $recent = Wallet::where('user_id', $user->id)
             ->latest('id')
@@ -70,10 +64,7 @@ class WalletController extends Controller
             'payment_method_id' => ['nullable','integer'],
         ]);
 
-        $balance = (float) (Wallet::where('user_id', $user->id)
-            ->where('status', 'completed')
-            ->selectRaw('COALESCE(SUM(credit - debit),0) as balance')
-            ->value('balance') ?? 0);
+        $balance = (float) wallet('completed', $user->id);
 
         $rawFee    = (float) (function_exists('setting') ? setting('fee_rate', 1.5) : 1.5);
         $feeRate   = $rawFee > 1 ? $rawFee / 100 : $rawFee;

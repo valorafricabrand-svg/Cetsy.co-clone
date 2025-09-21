@@ -1,3 +1,25 @@
+@extends('layouts.app')
+@section('title', 'Offer Details')
+
+@section('content')
+<div class="content">
+<div class="container-xxl">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h5 mb-0">Offer Details</h2>
+        <div class="d-flex gap-2">
+            <a href="{{ route('buyer.offers') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Back to Offers
+            </a>
+            @if(($offer->product->shop->user_id ?? null))
+                <a href="{{ route('buyer.messages.show', $offer->product_id . '-' . $offer->product->shop->user_id) }}" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-chat-dots me-1"></i>Message Seller
+                </a>
+            @endif
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
 <div class="row">
     <div class="col-md-6">
         <h6 class="mb-3">Product Information</h6>
@@ -87,3 +109,68 @@
     @endforeach
 </div>
 @endif 
+
+@php
+    $hasCounterOffers = $offer->counterOffers && $offer->counterOffers->count() > 0;
+    $canRespond = $offer->status === 'pending' && $hasCounterOffers;
+@endphp
+
+<div class="mt-4">
+    <h6 class="mb-2">Actions</h6>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ route('listing.show', $offer->product->slug ?? $offer->product->id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-eye me-1"></i>View Product
+        </a>
+
+        @if($canRespond)
+        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="collapse" data-bs-target="#respondSection">
+            <i class="bi bi-check-circle me-1"></i>Respond to Counter Offer
+        </button>
+        @endif
+
+        @if(($offer->status === 'accepted') && $offer->order)
+            <a href="{{ route('pay_now', $offer->order->id) }}" class="btn btn-success btn-sm">
+                <i class="bi bi-credit-card me-1"></i>Pay Now
+            </a>
+            <a href="{{ route('buyer.orders.show', $offer->order->id) }}" class="btn btn-outline-info btn-sm">
+                <i class="bi bi-receipt me-1"></i>View Order
+            </a>
+        @endif
+    </div>
+</div>
+
+@if($canRespond)
+<div id="respondSection" class="collapse mt-3">
+    <div class="card border">
+        <div class="card-body">
+            <form method="POST" action="{{ route('buyer.offers.respond', ['offerId' => $offer->id]) }}">
+                @csrf
+                <div class="mb-3">
+                    <label class="form-label">Your Response</label>
+                    <select name="response" class="form-select" required onchange="document.getElementById('counterPriceWrap').style.display = (this.value==='counter') ? 'block' : 'none';">
+                        <option value="">Choose response...</option>
+                        <option value="accept">Accept Counter Offer</option>
+                        <option value="decline">Decline Counter Offer</option>
+                        <option value="counter">Make New Counter Offer</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="counterPriceWrap" style="display:none;">
+                    <label class="form-label">Your Counter Offer Price</label>
+                    <input type="number" name="counter_price" class="form-control" step="0.01" min="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Message (Optional)</label>
+                    <textarea name="message" class="form-control" rows="3" placeholder="Add a message to your response..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Response</button>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+        </div>
+    </div>
+</div>
+</div>
+@endsection

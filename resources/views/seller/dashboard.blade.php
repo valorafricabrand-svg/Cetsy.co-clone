@@ -1,11 +1,19 @@
-{{-- resources/views/dashboard/index.blade.php --}}
+{{-- resources/views/seller/dashboard.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Seller Dashboard')
 
 @section('content')
+@php
+    $brandColor = optional(auth()->user()->shop)->primary_color;
+    // Basic sanitize: accept hex colors (#RGB, #RRGGBB, #RRGGBBAA)
+    if (!is_string($brandColor) || !preg_match('/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/', $brandColor)) {
+        // Fallback if not set or invalid
+        $brandColor = '#27b105';
+    }
+@endphp
 <style>
-    :root { --cetsy-green:#27b105; }
+    :root { --cetsy-green: {{ $brandColor }}; }
 
     /* Brand utilities */
     .brand-text         { color:var(--cetsy-green)!important; }
@@ -18,13 +26,7 @@
     .card.hover-lift      { transition:transform .2s,box-shadow .2s; }
     .card.hover-lift:hover{ transform:translateY(-4px); box-shadow:0 .5rem 1rem rgba(0,0,0,.15); }
 
-    .status-badge{
-        position:absolute;top:.5rem;left:.5rem;
-        font-size:.75rem;padding:.15rem .5rem;
-        border-radius:.25rem;background:#ffc107;color:#000;
-    }
-
-    /* Improved summary card styles */
+    /* Summary cards */
     .summary-card {
         border-radius: 1.25rem !important;
         box-shadow: 0 2px 12px rgba(0,0,0,0.06);
@@ -36,46 +38,60 @@
         justify-content: center;
         background: #fff;
     }
-    .summary-card .icon {
-        font-size: 2.1rem;
-        margin-bottom: 0.5rem;
-    }
-    .summary-card .card-value {
-        font-size: 1.45rem;
-        font-weight: 600;
-        margin-bottom: 0.2rem;
-        line-height: 1.1;
-    }
-    .summary-card .card-label {
-        font-size: 0.98rem;
-        color: #6c757d;
-        font-weight: 400;
-        margin-top: 0.1rem;
-    }
-    .summary-card .card-value small {
-        font-size: 0.95rem;
-        font-weight: 400;
-    }
+    .summary-card .icon { font-size: 2.1rem; margin-bottom: .5rem; color: var(--cetsy-green); }
+    .summary-card .card-value { font-size: 1.45rem; font-weight: 600; margin-bottom: .2rem; line-height: 1.1; }
+    .summary-card .card-label { font-size: .98rem; color: #6c757d; font-weight: 400; margin-top: .1rem; }
+    .summary-card .card-value small { font-size: .95rem; font-weight: 400; }
+
+    /* Misc */
+    .quick-actions .btn { border-radius: 9999px; }
+    .table-compact td, .table-compact th { padding: .5rem .6rem; }
+    .rounded-4 { border-radius: 1rem !important; }
+    /* Use brand color for header icons */
+    .card-header i { color: var(--cetsy-green) !important; }
 </style>
 
 <div class="content">
 
-    {{-- ───────── Header ───────── --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="h4 fw-semibold mb-0">General Report</h2>
-        {{-- Remove holiday mode button and modals from here --}}
-  
-
-
-     <div class="d-flex justify-content-between align-items-center mb-4">
-        
-        <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
-            <i class="fas fa-plus me-1"></i> Add New Listing
-        </a>
+    {{-- Header: shop info + quick actions --}}
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center brand-bg" style="width:48px;height:48px;">
+                <i class="fas fa-store"></i>
+            </div>
+            <div>
+                <h2 class="h4 fw-semibold mb-0">Seller Dashboard</h2>
+                <div class="text-muted small">
+                    {{ optional(auth()->user()->shop)->name ?? 'Your Shop' }}
+                    @isset($activeProducts)
+                        • <span class="text-success">Active: {{ $activeProducts }}</span>
+                    @endisset
+                    @isset($pausedProducts)
+                        • <span class="text-secondary">Paused: {{ $pausedProducts }}</span>
+                    @endisset
+                </div>
+            </div>
+        </div>
+        <div class="quick-actions d-flex flex-wrap gap-2">
+            <a href="{{ route('products.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> New Listing
+            </a>
+            <a href="{{ route('seller.orders.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-receipt me-1"></i> Orders
+            </a>
+            <a href="{{ route('seller.offers.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-handshake me-1"></i> Offers
+            </a>
+            <a href="{{ route('wallet.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-wallet me-1"></i> Wallet
+            </a>
+            <a href="{{ route('seller.analytics.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-chart-line me-1"></i> Analytics
+            </a>
+        </div>
     </div>
-    </div>
 
-    {{-- ───────── Summary Cards ───────── --}}
+    {{-- Summary Cards --}}
     <div class="row gy-4 mb-5">
 
         {{-- Card template --}}
@@ -96,14 +112,14 @@
                     'href'  => route('products.index')
                 ],
                 [
-                    'value' => get_currency().number_format(wallet(),2) . "<small class='text-muted ms-1'>(On Hold: " . get_currency().number_format(wallet('on_hold'),2) . ")</small>",
+                    'value' => get_currency().' '.number_format(wallet(),2) . "<small class='text-muted ms-1'>(On Hold: ".get_currency().' '.number_format(wallet('on_hold'),2) . ")</small>",
                     'label' => 'Wallet Balance',
                     'icon'  => 'fas fa-wallet',
                     'class' => 'text-success',
                     'href'  => route('wallet.index')
                 ],
                 [
-                    'value' => $total_offers . "<small class='text-success ms-1' title='Accepted'>(".$accepted_offers." ✓)</small> <small class='text-danger ms-1' title='Declined'>(".$declined_offers." ✗)</small>",
+                    'value' => $total_offers . "<small class='text-success ms-1' title='Accepted'>(".$accepted_offers." +)</small> <small class='text-danger ms-1' title='Declined'>(".$declined_offers." -)</small>",
                     'label' => 'Offers Received',
                     'icon'  => 'fas fa-handshake',
                     'class' => 'text-primary',
@@ -128,6 +144,64 @@
 
     </div>
 
+    {{-- Two-column: Recent Orders + Quick Links --}}
+    <div class="row g-4 mb-5">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center rounded-top-4">
+                    <div class="fw-semibold"><i class="fas fa-receipt me-2 text-primary"></i>Recent Orders</div>
+                    <a href="{{ route('seller.orders.index') }}" class="small text-decoration-none">View all</a>
+                </div>
+                <div class="card-body">
+                    @if($orders->count())
+                        <div class="table-responsive">
+                            <table class="table table-compact align-middle mb-0">
+                                <thead>
+                                    <tr class="text-muted small">
+                                        <th>ID</th>
+                                        <th>Customer</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($orders as $o)
+                                        <tr>
+                                            <td>#{{ $o->id }}</td>
+                                            <td>{{ optional($o->customer)->name ?? '—' }}</td>
+                                            <td>{{ get_currency() }} {{ number_format($o->total ?? ($o->total_amount ?? 0), 2) }}</td>
+                                            <td><span class="badge {{ $o->getStatusBadgeClass() }}">{{ ucfirst($o->status) }}</span></td>
+                                            <td class="text-muted small">{{ optional($o->created_at)->format('d M Y') }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-muted small">No recent orders.</div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white rounded-top-4 fw-semibold">
+                    <i class="fas fa-bolt me-2 text-warning"></i>Quick Links
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a class="btn btn-outline-primary" href="{{ route('products.index') }}"><i class="fas fa-boxes-stacked me-2"></i> Manage Listings</a>
+                        <a class="btn btn-outline-primary" href="{{ route('seller.analytics.index') }}"><i class="fas fa-chart-line me-2"></i> View Analytics</a>
+                        <a class="btn btn-outline-primary" href="{{ route('seller.payouts.index') }}"><i class="fas fa-money-bill-transfer me-2"></i> Payouts</a>
+                        <a class="btn btn-outline-primary" href="{{ route('seller.messages.index') }}"><i class="fas fa-comments me-2"></i> Messages</a>
+                        <a class="btn btn-outline-primary" href="{{ route('seller.buyers.index') }}"><i class="fas fa-users me-2"></i> Buyers</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Flash success --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show rounded-3">
@@ -136,112 +210,6 @@
         </div>
     @endif
 
-    {{-- ───────── Latest Listings ───────── --}}
-    <h4 class="h5 fw-semibold mb-3">Latest Listings</h4>
-
-    @if($products->count())
-        <div class="row g-4">
-            @foreach($products as $product)
-                <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift position-relative">
-
-                        {{-- Inactive & pay badge --}}
-                       @php
-          switch($product->is_active) {
-            case 0: $label='Pending'; $class='warning'; break;
-            case 1: $label='Active';  $class='success'; break;
-            case 2: $label='Paused';  $class='secondary'; break;
-            case 3: $label='Suspended';  $class='danger'; break;
-            default:$label='Closed';  $class='dark'; break;
-          }
-        @endphp
-        <span class="badge bg-{{ $class }} text-white position-absolute top-0 start-0 m-2">{{ $label }}</span>
-
-
-          @php
-      // If featured_image is a full URL use it; otherwise assume it's a storage path
-      $thumb = null;
-      $mediaType = 'image';
-      if (!empty($product->featured_image)) {
-          $thumb = str_starts_with($product->featured_image, 'http')
-                  ? $product->featured_image
-                  : asset('storage/' . ltrim($product->featured_image, '/'));
-      } else {
-          $firstMedia = $product->media->first();
-          if ($firstMedia) {
-              $thumb = asset('storage/' . ltrim($firstMedia->url, '/'));
-              $mediaType = $firstMedia->type ?? 'image';
-          } else {
-              $shopLogo = ($product->shop && $product->shop->logo)
-                          ? asset('storage/' . ltrim($product->shop->logo, '/'))
-                          : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
-              $thumb = $shopLogo;
-              $mediaType = 'image';
-          }
-      }
-    @endphp
-
-
-                        {{-- Image --}}
-                        @if($thumb)
-                            @if($mediaType === 'video')
-                                <video src="{{ $thumb }}" class="card-img-top rounded-top-4" style="height:220px;object-fit:cover;" controls></video>
-                            @else
-                                <img src="{{ $thumb }}"
-                                     class="card-img-top rounded-top-4"
-                                     style="height:220px;object-fit:cover;" alt="{{ $product->name }}">
-                            @endif
-                        @else
-                            <div class="bg-light d-flex align-items-center justify-content-center"
-                                 style="height:220px;">
-                                <span class="text-muted">No Media</span>
-                            </div>
-                        @endif
-
-                        {{-- Body --}}
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title text-truncate">{{ $product->name }}</h5>
-                            <p class="text-muted small mb-2">
-                                {{ ucfirst($product->type) }}
-                                @if(!is_null($product->stock)) • Stock {{ $product->stock }} @endif
-                            </p>
-
-                            {{-- Price --}}
-                            <p class="fw-bold mb-3">
-                                @if($product->discount_price)
-                                    <span class="text-danger me-1">{{ get_currency() }} {{ number_format($product->discount_price) }}</span>
-                                    <small class="text-muted text-decoration-line-through">
-                                        {{ get_currency() }} {{ number_format($product->price) }}
-                                    </small>
-                                @else
-                                    {{ get_currency() }} {{ number_format($product->price) }}
-                                @endif
-                            </p>
-
-                            {{-- Buttons --}}
-                            <div class="mt-auto d-flex gap-2">
-                                <a href="{{ route('products.show',$product) }}" class="btn btn-sm btn-outline-primary flex-fill">
-                                    View
-                                </a>
-                              
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-
-       
-    @else
-        <div class="alert alert-info rounded-3 text-center py-4">
-            You haven’t listed any products yet.
-            <div class="mt-2">
-                <a href="{{ route('products.create') }}" class="btn btn-sm brand-bg rounded-pill">
-                    <i class="fas fa-plus-circle me-1"></i> Create Your First Product
-                </a>
-            </div>
-        </div>
-    @endif
 </div>
 
 @endsection
