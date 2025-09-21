@@ -262,16 +262,20 @@
                     <thead class="table-light">
                       <tr>
                         <th>Combination</th>
-                        <th style="width:140px;">Price</th>
-                        <th class="text-end" style="width:90px;">Save</th>
+                        <th style="width:160px;">Price</th>
+                        <th class="text-end" style="width:160px;">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       @foreach($variantsForType as $v)
-                        @php $formId = 'variant-form-'.$v->id; @endphp
+                        @php $formId = 'variant-form-'.$type->id.'-'.$v->id; @endphp
                         <form id="{{ $formId }}" action="{{ route('variations.update', $v) }}" method="POST" class="d-none">
                           @csrf
                           @method('PATCH')
+                        </form>
+                        <form id="delete-variant-{{ $type->id }}-{{ $v->id }}" action="{{ route('variations.destroy', $v) }}" method="POST" class="d-none">
+                          @csrf
+                          @method('DELETE')
                         </form>
                         <tr>
                           <td>
@@ -284,7 +288,12 @@
                                    name="price" value="{{ $v->price }}" form="{{ $formId }}" required>
                           </td>
                           <td class="text-end">
-                            <button class="btn btn-sm btn-primary" form="{{ $formId }}">Save</button>
+                            <button class="btn btn-sm btn-primary me-1" form="{{ $formId }}">Save</button>
+                            <button class="btn btn-sm btn-outline-danger"
+                                    form="delete-variant-{{ $type->id }}-{{ $v->id }}"
+                                    onclick="return confirm('Remove this variation? This action cannot be undone.');">
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       @endforeach

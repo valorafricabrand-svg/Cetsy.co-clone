@@ -62,7 +62,8 @@ use App\Http\Controllers\Seller\{
     ServiceController,
     BuyerController,
     FavoriteController,
-    PaymentMethodController
+    PaymentMethodController,
+    ReviewController as SellerReviewController
 };
 
 /*
@@ -600,6 +601,9 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
 
     // Favorites
     Route::get('favorites', [FavoriteController::class, 'index'])->name('favorites.index');
+
+    // Reviews
+    Route::get('reviews', [SellerReviewController::class, 'index'])->name('reviews.index');
 
     // Payment Methods
     Route::resource('payment-methods', PaymentMethodController::class);
