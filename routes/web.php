@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CurrencySelectionController;
 use App\Http\Controllers\{
     HomeController, ProfileController, ShopController, ProductController,
@@ -24,7 +25,9 @@ use App\Http\Controllers\Admin\{
     ProductReportController as AdminProductReportController,
     AdminWalletController,
     ReviewController,
-    AdminNotificationController
+    AdminNotificationController,
+    BlogPostController as AdminBlogPostController,
+    BlogCategoryController as AdminBlogCategoryController
 };
 use App\Http\Controllers\Webhooks\PayoutWebhookController;
 use App\Http\Controllers\Buyer\BuyerDashboard;
@@ -37,7 +40,8 @@ use App\Http\Controllers\Seller\{
     ServiceController,
     BuyerController,
     FavoriteController,
-    PaymentMethodController
+    PaymentMethodController,
+    ReviewController as SellerReviewController
 };
 
 /*
@@ -47,10 +51,10 @@ use App\Http\Controllers\Seller\{
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
-// Currency selector (session + cookie)
-Route::post('/set-currency', [CurrencySelectionController::class, 'set'])->name('currency.set');
-// Optional GET fallback to avoid 404 if a GET is sent
-Route::get('/set-currency', [CurrencySelectionController::class, 'set'])->name('currency.set.get');
+// Currency selector (accept GET or POST; CSRF not required for this benign action)
+Route::match(['GET','POST'], '/set-currency', [CurrencySelectionController::class, 'set'])
+    ->name('currency.set')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 // Safaricom callback (must be reachable publicly)
 Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
     ->name('wallet.deposit.mpesa.callback')
@@ -67,6 +71,9 @@ Route::post('/wallet/deposit/mpesa/timeout',  [WalletController::class, 'mpesaTi
 
 
 // pages
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+
 Route::get('/become-seller', function () {
     return themed_view('pages.become-seller');
 })->name('become-seller');
@@ -390,6 +397,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('sellers/{userId}/login-as', [UserController::class, 'loginAs'])->name('sellers.login-as');
     Route::get('return-from-impersonation', [UserController::class, 'returnFromImpersonation'])->name('return-from-impersonation');
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+    Route::resource('blog-posts', AdminBlogPostController::class);
+    Route::resource('blog-categories', AdminBlogCategoryController::class)->except(['show']);
     Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     // Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
 
@@ -578,6 +587,9 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
     // Favorites
     Route::get('favorites', [FavoriteController::class, 'index'])->name('favorites.index');
 
+    // Reviews
+    Route::get('reviews', [SellerReviewController::class, 'index'])->name('reviews.index');
+
     // Payment Methods
     Route::resource('payment-methods', PaymentMethodController::class);
 
@@ -623,7 +635,7 @@ Route::post('/daraja/b2c/timeout', [PayoutWebhookController::class, 'darajaB2CTi
     ->name('webhooks.daraja.b2c.timeout')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 
-require __DIR__ . '/auth.php';
+
 
 
 // Fallback OTP routes (ensure named routes exist even if group middleware changes)
@@ -644,3 +656,12 @@ if (app()->environment('local')) {
         return session()->has('__ok') ? response('session ok') : response('session missing', 400);
     });
 }
+
+
+
+
+
+
+require __DIR__ . '/auth.php';
+
+   

@@ -1,17 +1,19 @@
 import 'package:provider/provider.dart';
-import '../providers/currency_provider.dart';
+import 'package:fl_chart/fl_chart.dart';
+// import '../providers/currency_provider.dart';
 // lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../models/product.dart';
+import '../models/order.dart';
 import '../models/user.dart';
 import '../services/wallet_service.dart';
 import '../services/order_service.dart';
 import '../services/stats_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../config/constants.dart';
+// import '../config/constants.dart';
+import '../utils/money_utils.dart';
 import 'login_screen.dart';
 import 'paypal_checkout_screen.dart';
 import 'product_list_screen.dart';
@@ -31,9 +33,25 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _wallet;
   Map<String, dynamic>? _sellerStats;
   int _ordersCount = 0;
+  List<OrderSummary> _recentOrders = const [];
+  List<double> _salesSeries = const [];
+  List<String> _salesLabels = const [];
   bool _loading = true;
 
-  static final List<Product> demoProducts = const [
+  double _asDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static const List<Product> demoProducts = [
     Product(id: 1, name: 'Sample T-Shirt', price: 29.99, image: 'assets/images/placeholder.png'),
     Product(id: 2, name: 'Trendy Shoes', price: 59.49, image: 'assets/images/placeholder.png'),
     Product(id: 3, name: 'Classic Watch', price: 120.00, image: 'assets/images/placeholder.png'),
@@ -59,12 +77,24 @@ class _HomeScreenState extends State<HomeScreen> {
         try {
           final stats = await StatsService.sellerStats(auth.token!);
           _sellerStats = stats;
+          final chart = (stats['chart'] is Map) ? stats['chart'] as Map : null;
+          if (chart != null) {
+            final rev = (chart['revenue'] as List?)?.map((e) => _asDouble(e)).toList() ?? const <double>[];
+            final lbl = (chart['labels'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[];
+            _salesSeries = rev;
+            _salesLabels = lbl;
+          }
         } catch (_) {}
       }
       if (!mounted) return;
       setState(() {
         _wallet = w;
-        _ordersCount = orders.orders.length;
+        _ordersCount = orders.total;
+        _recentOrders = orders.orders.take(3).toList();
+        if (_salesSeries.isEmpty && _recentOrders.isNotEmpty) {
+          _salesSeries = _recentOrders.map((o) => o.total).toList().reversed.toList();
+          _salesLabels = _recentOrders.map((o) => '#${o.id}').toList().reversed.toList();
+        }
         _loading = false;
       });
     } catch (_) {
@@ -73,6 +103,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout(BuildContext context) async {
+    final auth = context.read<AuthProvider>();
+    final nav = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -85,10 +118,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     if (ok != true) return;
-    await context.read<AuthProvider>().logout();
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logged out successfully.')));
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (r) => false);
+    await auth.logout();
+    messenger.showSnackBar(const SnackBar(content: Text('Logged out successfully.')));
+    await nav.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (r) => false,
+    );
   }
 
   @override
@@ -121,10 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildDashboard(context, user)
                     else
                       _buildGuestCard(context),
-                    const SizedBox(height: 24),
-                    const Text('Featured Products', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 12),
-                    _buildProductGrid(),
+                    // Removed featured products section for a cleaner dashboard
                   ],
                 ),
               ),
@@ -157,8 +189,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDashboard(BuildContext context, User user) {
-    final bal = ((_wallet?['balance'] ?? 0.0) as num).toStringAsFixed(2);
-    final hold = ((_wallet?['on_hold'] ?? 0.0) as num).toStringAsFixed(2);
+    final bal = context.money(_asDouble(_wallet?['balance']));
+    final hold = context.money(_asDouble(_wallet?['on_hold']));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -169,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: _cardDecoration(),
           child: Row(
             children: [
-              CircleAvatar(radius: 28, backgroundColor: HomeScreen.cetsyGreen.withOpacity(.12), child: const Icon(Icons.person, color: HomeScreen.cetsyGreen, size: 30)),
+              CircleAvatar(radius: 28, backgroundColor: HomeScreen.cetsyGreen.withValues(alpha: .12), child: const Icon(Icons.person, color: HomeScreen.cetsyGreen, size: 30)),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -185,6 +217,23 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 12),
+        // Seller mode banner
+        if (user.userType == 'seller')
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: _cardDecoration(),
+            child: Row(
+              children: const [
+                Icon(Icons.storefront, color: HomeScreen.cetsyGreen),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text('Seller Mode is active — manage your listings and track sales.',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 12),
         // Wallet
         Container(
           padding: const EdgeInsets.all(16),
@@ -197,7 +246,15 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(children: [
                 const Icon(Icons.account_balance_wallet, color: HomeScreen.cetsyGreen),
                 const SizedBox(width: 10),
-                Expanded(child: Text('Balance: \ $bal\nOn Hold: \ $hold')),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Balance: $bal'),
+                      Text('On Hold: $hold'),
+                    ],
+                  ),
+                ),
               ]),
               const SizedBox(height: 12),
               Row(children: [
@@ -209,16 +266,79 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 12),
+        // Sales chart (seller)
+        if (user.userType == 'seller' && _salesSeries.isNotEmpty) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: _cardDecoration(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Sales (recent)', style: TextStyle(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 180,
+                  child: LineChart(
+                    LineChartData(
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 28)),
+                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, meta) {
+                          final i = v.toInt();
+                          if (i < 0 || i >= _salesLabels.length) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(_salesLabels[i], style: const TextStyle(fontSize: 10)),
+                          );
+                        })),
+                      ),
+                      gridData: FlGridData(show: true, drawVerticalLine: false),
+                      borderData: FlBorderData(show: false),
+                      lineBarsData: [
+                        LineChartBarData(
+                          isCurved: true,
+                          color: HomeScreen.cetsyGreen,
+                          barWidth: 2,
+                          dotData: FlDotData(show: false),
+                          spots: List.generate(_salesSeries.length, (i) => FlSpot(i.toDouble(), _salesSeries[i])),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         // Orders summary
         Container(
           padding: const EdgeInsets.all(16),
           decoration: _cardDecoration(),
-          child: Row(children: [
-            const Icon(Icons.receipt_long_outlined),
-            const SizedBox(width: 10),
-            Expanded(child: Text('Recent Orders: $_ordersCount')),
-            TextButton(onPressed: () => Navigator.pushNamed(context, '/orders'), child: const Text('View')),
-          ]),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const Icon(Icons.receipt_long_outlined, color: HomeScreen.cetsyGreen),
+                const SizedBox(width: 10),
+                Expanded(child: Text('Recent Orders ($_ordersCount)', style: const TextStyle(fontWeight: FontWeight.w800))),
+                TextButton(onPressed: () => Navigator.pushNamed(context, '/orders'), child: const Text('View all')),
+              ]),
+              const SizedBox(height: 8),
+              if (_recentOrders.isEmpty)
+                const Text('No recent orders.', style: TextStyle(color: Colors.black54))
+              else ..._recentOrders.map((o) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(children: [
+                      const Icon(Icons.receipt_long, size: 18, color: HomeScreen.cetsyGreen),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text('#${o.id} • ${o.status}')),
+                      Text(context.money(o.total)),
+                    ]),
+                  )),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         // Recent transactions
@@ -231,12 +351,19 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const Text('Recent Transactions', style: TextStyle(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
-                ...((_wallet!['recent'] as List).take(3).map((e) => Row(children: [
-                      Icon((((e['credit'] ?? 0) as num) > 0) ? Icons.call_received : Icons.call_made, color: (((e['credit'] ?? 0) as num) > 0) ? Colors.green : Colors.red, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(((e['description'] ?? e['method']) ?? '').toString())),
-                      Text('\ ' + ((((e['credit'] ?? 0.0) as num) - ((e['debit'] ?? 0.0) as num)).toString())),
-                    ]))),
+                ...((_wallet!['recent'] as List).take(3).map((e) {
+                        final credit = _asDouble(e['credit']);
+                        final debit = _asDouble(e['debit']);
+                        final net = credit - debit;
+                        final isCredit = net >= 0;
+                        final description = ((e['description'] ?? e['method']) ?? '').toString();
+                        return Row(children: [
+                          Icon(isCredit ? Icons.call_received : Icons.call_made, color: isCredit ? Colors.green : Colors.red, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(description)),
+                          Text(context.money(net)),
+                        ]);
+                      })),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(onPressed: () => Navigator.pushNamed(context, '/wallet'), child: const Text('View All')),
@@ -246,34 +373,34 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
         ],
-        // Seller stats + actions
+        // Seller KPIs + quick links
         if (_sellerStats != null) ...[
           Container(
             padding: const EdgeInsets.all(16),
             decoration: _cardDecoration(),
-            child: Row(children: [
-              const Icon(Icons.store_mall_directory_outlined),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Seller Stats', style: TextStyle(fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 4),
-                  Text('Products: ${_sellerStats!['product_count']}'),
-                  Text('Pending Orders: ${_sellerStats!['pending_orders']}'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Seller Dashboard', style: TextStyle(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 10),
+                Row(children: [
+                  Expanded(child: _miniKpi(icon: Icons.inventory_2, label: 'Listings', value: '${_sellerStats!['product_count'] ?? 0}')),
+                  const SizedBox(width: 8),
+                  Expanded(child: _miniKpi(icon: Icons.pending_actions, label: 'Pending', value: '${_sellerStats!['pending_orders'] ?? 0}')),
+                  const SizedBox(width: 8),
+                  Expanded(child: _miniKpi(icon: Icons.wallet, label: 'Wallet', value: context.money(_asDouble(_wallet?['balance'])))),
                 ]),
-              ),
-            ]),
-          ),
-          const SizedBox(height: 10),
-          Row(children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/add-listing'),
-                icon: const Icon(Icons.add_box_outlined),
-                label: const Text('Add Listing'),
-              ),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(child: OutlinedButton.icon(onPressed: () => Navigator.pushNamed(context, '/add-listing'), icon: const Icon(Icons.add_box_outlined), label: const Text('Add Listing'))),
+                  const SizedBox(width: 8),
+                  Expanded(child: OutlinedButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductListScreen())), icon: const Icon(Icons.storefront_outlined), label: const Text('Manage'))),
+                  const SizedBox(width: 8),
+                  Expanded(child: OutlinedButton.icon(onPressed: () => Navigator.pushNamed(context, '/orders'), icon: const Icon(Icons.receipt_long_outlined), label: const Text('Orders'))),
+                ]),
+              ],
             ),
-          ]),
+          ),
           const SizedBox(height: 12),
         ],
         // Shop now + Digital shortcut
@@ -338,6 +465,27 @@ class _HomeScreenState extends State<HomeScreen> {
         boxShadow: const [BoxShadow(blurRadius: 28, offset: Offset(0, 16), color: Color(0x1A000000))],
       );
 
+  Widget _miniKpi({required IconData icon, required String label, required String value}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: HomeScreen.cetsyGreen.withValues(alpha: .12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: HomeScreen.cetsyGreen),
+          const SizedBox(height: 6),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 2),
+          Text(label, style: const TextStyle(color: Colors.black54)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProductGrid() {
     return GridView.builder(
       shrinkWrap: true,
@@ -360,7 +508,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
-                Text('\$${p.price.toStringAsFixed(2)}', style: const TextStyle(color: HomeScreen.cetsyGreen, fontWeight: FontWeight.w700)),
+                Text(context.money(p.price), style: const TextStyle(color: HomeScreen.cetsyGreen, fontWeight: FontWeight.w700)),
               ]),
             ),
           ]),
@@ -431,27 +579,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 12),
                   ElevatedButton(
                     onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
                       final token = context.read<AuthProvider>().token;
                       if (token == null) return;
                       final amt = double.tryParse(amountCtrl.text.trim());
                       if (amt == null || amt <= 0) return;
                       Navigator.pop(ctx);
                       try {
+                        final nav = Navigator.of(context);
+                        final messenger = ScaffoldMessenger.of(context);
                         // persist last used method
                         try {
                           final prefs = await SharedPreferences.getInstance();
                           await prefs.setString('last_topup_method', method);
                         } catch (_) {}
                         if (method == 'paypal') {
-                          if (!mounted) return;
-                          final ok = await Navigator.push(
-                            context,
+                          final ok = await nav.push(
                             MaterialPageRoute(
                               builder: (_) => PaypalCheckoutScreen(amountUsd: amt),
                             ),
                           );
-                          if (ok == true && mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                          if (ok == true) {
+                            messenger.showSnackBar(
                               const SnackBar(content: Text('PayPal payment completed')),
                             );
                             _load();
@@ -462,8 +611,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         final phone = phoneCtrl.text.trim();
                         if (phone.isEmpty) return;
                         final res = await WalletService.startMpesaStk(token: token, amount: amt, phone: phone);
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           const SnackBar(content: Text('STK sent. Awaiting payment...')),
                         );
                         final ref = (res['ref'] ?? '') as String;
@@ -475,15 +623,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               final st = await WalletService.mpesaStatus(token, ref);
                               final status = (st['status'] ?? 'pending') as String;
                               if (status == 'success') {
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   const SnackBar(content: Text('Payment confirmed')),
                                 );
                                 _load();
                                 break;
                               } else if (status == 'failed') {
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   SnackBar(content: Text('Payment failed: ${st['message'] ?? ''}')),
                                 );
                                 break;
@@ -494,8 +640,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           _load();
                         }
                       } catch (e) {
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                        messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
                       }
                     },
                     child: const Text('Top Up'),
@@ -511,12 +656,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showPayout(BuildContext context) {
     final amountCtrl = TextEditingController();
-    final max = (_wallet?['payout']?['max_amount'] ?? 0.0) as num;
+    final max = _asDouble(_wallet?['payout']?['max_amount']);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Request Payout'),
-        content: TextField(controller: amountCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Amount (Max \ ${max.toStringAsFixed(2)})')),
+        content: TextField(controller: amountCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Amount (Max ${max.toStringAsFixed(2)})')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
@@ -531,22 +676,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (!mounted) return;
                 if ((resp['requires_otp'] ?? false) == true) {
                   final payoutId = (resp['payout_id'] ?? 0) as int;
-                  await Navigator.push(
-                    context,
+                  final nav = Navigator.of(context);
+                  await nav.push(
                     MaterialPageRoute(
                       builder: (_) => PayoutOtpScreen(payoutId: payoutId),
                     ),
                   );
-                  if (!mounted) return;
                   // After returning, refresh wallet summary
                   _load();
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payout requested')));
+                  final messenger = ScaffoldMessenger.of(context);
+                  messenger.showSnackBar(const SnackBar(content: Text('Payout requested')));
                   _load();
                 }
               } catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                final messenger = ScaffoldMessenger.of(context);
+                messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
               }
             },
             child: const Text('Submit'),
@@ -556,6 +701,48 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+
+
+
+
+
+
+
+// ignore_for_file: prefer_const_constructors, use_build_context_synchronously, unused_element
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

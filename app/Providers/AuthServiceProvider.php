@@ -1,10 +1,8 @@
 <?php
 
 namespace App\Providers;
-
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use App\Models\Cart;
-use App\Models\CartItem;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 
@@ -18,24 +16,33 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
     ];
-
     /**
      * Register any authentication / authorization services.
      */
     public function boot(): void
     {
-      View::composer('*', function ($view) {
-        $cartCount = 0;
-
-        if (Auth::check()) {
-            $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
-            $cartCount = CartItem::where('cart_id', $cart->id)->sum('quantity');
-        } else {
+        View::composer('*', function ($view) {
             $sessionCart = session('cart', []);
-            $cartCount = array_sum($sessionCart);
-        }
-
-        $view->with('cartCount', $cartCount);
-    });
+            $sessionCount = 0;
+            if (is_array($sessionCart)) {
+                foreach ($sessionCart as $row) {
+                    if (is_array($row)) {
+                        $sessionCount += (int) ($row['quantity'] ?? 0);
+                    }
+                }
+            }
+            if (Auth::check()) {
+                $cartCount = $sessionCount;
+                if ($cartCount === 0) {
+                    $cart = Cart::where('user_id', Auth::id())->first();
+                    if ($cart) {
+                        $cartCount = (int) $cart->items()->sum('quantity');
+                    }
+                }
+            } else {
+                $cartCount = $sessionCount;
+            }
+            $view->with('cartCount', $cartCount);
+        });
     }
 }

@@ -20,6 +20,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;   
 use App\Models\Activity;
 use App\Models\ShippingProfile;
+use App\Services\Recommendation\ProductRecommendationService;
 use Illuminate\Support\Facades\Schema;
 
 use Carbon\Carbon;
@@ -34,7 +35,14 @@ use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
-       public function index(Request $request)
+    protected ProductRecommendationService $recommendations;
+
+    public function __construct(ProductRecommendationService $recommendations)
+    {
+        $this->recommendations = $recommendations;
+    }
+
+    public function index(Request $request)
     {
         // Resolve shop
         $shop = auth()->user()->shop;
@@ -46,6 +54,13 @@ class ProductController extends Controller
         // Base query
         $query = Product::with(['media','shop'])
             ->where('shop_id', $shopId);
+
+        $filters = [
+            'price_min' => $request->input('price_min'),
+            'price_max' => $request->input('price_max'),
+            'type'      => $request->input('type'),
+            'country_id'=> $request->input('country_id'),
+        ];
 
         // Apply search
         if ($search = $request->input('q')) {
@@ -64,11 +79,55 @@ class ProductController extends Controller
             }
         }
 
+        $minPrice = $request->filled('price_min') ? (float) $request->input('price_min') : null;
+        $maxPrice = $request->filled('price_max') ? (float) $request->input('price_max') : null;
+
+        if (! is_null($minPrice) && ! is_null($maxPrice) && $minPrice > $maxPrice) {
+            [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
+        }
+
+        if (! is_null($minPrice)) {
+            $query->where('price', '>=', $minPrice);
+            $filters['price_min'] = $minPrice;
+        }
+
+        if (! is_null($maxPrice)) {
+            $query->where('price', '<=', $maxPrice);
+            $filters['price_max'] = $maxPrice;
+        }
+
+        // Type filter
+        if ($request->filled('type')) {
+            $type = $request->input('type');
+            if (in_array($type, ['physical','digital','service'], true)) {
+                $query->where('type', $type);
+            } else {
+                $filters['type'] = null;
+            }
+        }
+
+        // Country filter
+        if ($request->filled('country_id')) {
+            $countryId = (int) $request->input('country_id');
+            if ($countryId > 0) {
+                $query->where('country_id', $countryId);
+                $filters['country_id'] = $countryId;
+            } else {
+                $filters['country_id'] = null;
+            }
+        }
+
+
         // Fetch paginated products
         $products = $query
             ->latest()
             ->paginate(12)
-            ->appends($request->only(['q','status']));
+            ->appends($request->only(['q','status','price_min','price_max','type','country_id']));
+
+        $groupedProducts = $products->getCollection()
+            ->groupBy(function ($product) {
+                return $product->type ?? 'other';
+            });
 
         // Build counts for each status
         $rawCounts = Product::where('shop_id', $shopId)
@@ -90,7 +149,28 @@ class ProductController extends Controller
             'closed' => $closedCount,
         ];
 
-        return view('products.index', compact('products','statusCounts'));
+        $countryIds = Product::where('shop_id', $shopId)
+            ->whereNotNull('country_id')
+            ->distinct()
+            ->pluck('country_id');
+
+        $availableCountries = $countryIds->isNotEmpty()
+            ? Country::whereIn('id', $countryIds)->orderBy('name')->get()
+            : collect();
+
+        $resetParams = array_filter([
+            'q' => $request->input('q'),
+            'status' => $request->input('status'),
+        ], fn($value) => !is_null($value) && $value !== '');
+
+        return view('products.index', compact(
+            'products',
+            'statusCounts',
+            'groupedProducts',
+            'availableCountries',
+            'filters',
+            'resetParams'
+        ));
     }
 
 
@@ -465,11 +545,7 @@ public function listing(string $slug)
         ->take(8)
         ->get();
 
-    $relatedProducts = Product::where('category_id', $product->category_id)
-        ->where('id','!=',$product->id)
-        ->latest()
-        ->take(8)
-        ->get();
+    $relatedProducts = $this->recommendations->relatedToProduct($product, Auth::user(), 8);
 
     /* ------------------------------------------------------------
      | 5.  Default shipping profile ID for the view (pivot field)
@@ -606,8 +682,9 @@ public function listings(Request $request)
     }
 
     $products = $query->latest()->paginate(16);
+    $recommendedProducts = $this->recommendations->trendingForUser(Auth::user(), 8);
 
-    return themed_view('listings', compact('products'));
+    return themed_view('listings', compact('products', 'recommendedProducts'));
 }
 
 
@@ -624,7 +701,9 @@ public function search(Request $request)
         })
         ->paginate(12);
 
-    return themed_view('listings', compact('products'))->with('q', $q);
+    $recommendedProducts = $this->recommendations->trendingForUser(Auth::user(), 6);
+
+    return themed_view('listings', compact('products', 'recommendedProducts'))->with('q', $q);
 }
 
 

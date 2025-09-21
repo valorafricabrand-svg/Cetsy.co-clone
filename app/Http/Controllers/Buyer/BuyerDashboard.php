@@ -8,12 +8,19 @@ use App\Models\Address;
 use App\Models\Payment;
 use App\Models\Wishlist;
 use App\Models\WalletTransaction;
-use App\Models\Product;
+use App\Services\Recommendation\ProductRecommendationService;
 
 use Illuminate\Support\Facades\Auth;
 
 class BuyerDashboard extends Controller
 {
+    protected ProductRecommendationService $recommendations;
+
+    public function __construct(ProductRecommendationService $recommendations)
+    {
+        $this->recommendations = $recommendations;
+    }
+
     /**
      * Display the buyer dashboard.
      *
@@ -30,7 +37,7 @@ class BuyerDashboard extends Controller
         $wishlistCount = Wishlist::where('user_id', Auth::id())->count();
         $accountBalance = wallet();
         $recentOrders = Order::where('user_id', Auth::id())->latest()->take(5)->get();
-        $recommendedProducts = Product::take(8)->get(); // Replace with recommendation logic
+        $recommendedProducts = $this->recommendations->trendingForUser(Auth::user(), 8);
 
         // Fetch favorites (wish list products)
         $favoriteProducts = Auth::user()->favorites()->with('media')->get();
@@ -57,3 +64,7 @@ class BuyerDashboard extends Controller
         ));
     }
 }
+
+
+
+

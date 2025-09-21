@@ -8,27 +8,33 @@ use App\Models\Address;
 use App\Models\Payment;
 use App\Models\Wishlist;
 use App\Models\WalletTransaction;
-use App\Models\Product;
+use App\Services\Recommendation\ProductRecommendationService;
 
 class AccountController extends Controller
 {
-public function dashboard()
-{
-    $ordersCount = Order::where('user_id', Auth::id())->count();
-    $wishlistCount = Wishlist::where('user_id', Auth::id())->count();
-    $accountBalance = WalletTransaction::where('user_id', Auth::id())->sum('balance');
-    $recentOrders = Order::where('user_id', Auth::id())->latest()->take(5)->get();
-    $recommendedProducts = Product::take(8)->get(); // Replace with recommendation logic
+    protected ProductRecommendationService $recommendations;
 
-    return view('account.dashboard', compact(
-        'ordersCount',
-        'wishlistCount',
-        'accountBalance',
-        'recentOrders',
-        'recommendedProducts'
-    ));
-}
+    public function __construct(ProductRecommendationService $recommendations)
+    {
+        $this->recommendations = $recommendations;
+    }
 
+    public function dashboard()
+    {
+        $ordersCount = Order::where('user_id', Auth::id())->count();
+        $wishlistCount = Wishlist::where('user_id', Auth::id())->count();
+        $accountBalance = WalletTransaction::where('user_id', Auth::id())->sum('balance');
+        $recentOrders = Order::where('user_id', Auth::id())->latest()->take(5)->get();
+        $recommendedProducts = $this->recommendations->trendingForUser(Auth::user(), 8);
+
+        return view('account.dashboard', compact(
+            'ordersCount',
+            'wishlistCount',
+            'accountBalance',
+            'recentOrders',
+            'recommendedProducts'
+        ));
+    }
 
     public function orders(Request $request)
     {
@@ -55,7 +61,9 @@ public function dashboard()
 
 public function orderDetails(Order $order)
 {
-   
+    abort_if(!Auth::check() || $order->user_id !== Auth::id(), 404);
+
+    $order->loadMissing(['items.product', 'shop']);
 
     return view('account.order_details', compact('order'));
 }

@@ -1,8 +1,8 @@
 import 'package:provider/provider.dart';
-import '../providers/currency_provider.dart';
+import '../utils/money_utils.dart';
+// import '../providers/currency_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
+// import 'package:intl/intl.dart';
 
 import '../models/wallet.dart';
 import '../providers/auth_provider.dart';
@@ -62,7 +62,6 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat.decimalPattern();
     return Scaffold(
       appBar: AppBar(title: const Text('Wallet Transactions')),
       body: _loading
@@ -96,8 +95,8 @@ class _WalletScreenState extends State<WalletScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('KES ${fmt.format(net)}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                          Text('Bal: KES ${fmt.format(t.balance)}', style: const TextStyle(color: Colors.black54)),
+                          Text(context.money(net), style: const TextStyle(fontWeight: FontWeight.w800)),
+                          Text('Bal: ${context.money(t.balance)}', style: const TextStyle(color: Colors.black54)),
                         ],
                       ),
                     ),
@@ -134,6 +133,7 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 }
+
 
 
 

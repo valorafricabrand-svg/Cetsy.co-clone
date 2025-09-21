@@ -232,37 +232,11 @@
                             </div>
                         @endif
 
-                        <!-- Action Buttons -->
-                        <div class="d-flex gap-2 mt-3">
-                            <a href="{{ route('listing.show', $offerData['product']->slug ?? $offerData['product']->id) }}" 
-                               class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-eye me-1"></i>View Product
+                        <!-- Action Buttons (only View) -->
+                        <div class="mt-3">
+                            <a href="{{ route('buyer.offers.details', $offerData['latest_offer']->id) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye me-1"></i>View
                             </a>
-                            
-                            @if($offerData['latest_offer']->status === 'pending')
-                                <button type="button" class="btn btn-outline-secondary btn-sm" 
-                                        onclick="showOfferDetails({{ $offerData['latest_offer']->id }})">
-                                    <i class="bi bi-info-circle me-1"></i>Details
-                                </button>
-                            @endif
-                            
-                            @if($offerData['has_counter_offers'] && $offerData['latest_offer']->status === 'pending')
-                                <button type="button" class="btn btn-success btn-sm" 
-                                        onclick="respondToCounterOffer({{ $offerData['latest_offer']->id }})">
-                                    <i class="bi bi-check-circle me-1"></i>Respond
-                                </button>
-                            @endif
-                            
-                            @if($offerData['latest_offer']->status === 'accepted' && $offerData['latest_offer']->order)
-                                <a href="{{ route('pay_now', $offerData['latest_offer']->order->id) }}" 
-                                   class="btn btn-success btn-sm">
-                                    <i class="bi bi-credit-card me-1"></i>Pay Now
-                                </a>
-                                <a href="{{ route('buyer.orders.show', $offerData['latest_offer']->order->id) }}" 
-                                   class="btn btn-outline-info btn-sm">
-                                    <i class="bi bi-receipt me-1"></i>View Order
-                                </a>
-                            @endif
                         </div>
                     </div>
                 </div>
@@ -336,58 +310,6 @@
     </div>
 </div>
 
-<!-- Offer Details Modal -->
-<div class="modal fade" id="offerDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Offer Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="offerDetailsContent">
-                <!-- Content will be loaded here -->
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Counter Offer Response Modal -->
-<div class="modal fade" id="counterOfferModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Respond to Counter Offer</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="counterOfferForm" method="POST" action="{{ route('buyer.offers.respond', ['offerId' => 'OFFER_ID_PLACEHOLDER']) }}">
-                    @csrf
-                    <div class="mb-3">
-                        <label class="form-label">Your Response</label>
-                        <select name="response" class="form-select" required onchange="toggleCounterPriceField(this)">
-                            <option value="">Choose response...</option>
-                            <option value="accept">Accept Counter Offer</option>
-                            <option value="decline">Decline Counter Offer</option>
-                            <option value="counter">Make New Counter Offer</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="counterPriceField" style="display: none;">
-                        <label class="form-label">Your Counter Offer Price</label>
-                        <input type="number" name="counter_price" class="form-control" step="0.01" min="0">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Message (Optional)</label>
-                        <textarea name="message" class="form-control" rows="3" placeholder="Add a message to your response..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="counterOfferForm" class="btn btn-primary">Submit Response</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 @push('styles')
 <style>
@@ -452,17 +374,13 @@ function showNewOfferModal() {
         .then(data => {
             const select = document.querySelector('select[name="product_id"]');
             select.innerHTML = '<option value="">Choose a product...</option>';
-            
-            // Store products globally for use in other functions
             window.availableProducts = data.products;
-            
             data.products.forEach(product => {
                 const option = document.createElement('option');
                 option.value = product.id;
                 option.textContent = `${product.name} - ${product.currency} ${product.price}`;
                 select.appendChild(option);
             });
-            
             new bootstrap.Modal(document.getElementById('newOfferModal')).show();
         });
 }
@@ -470,15 +388,12 @@ function showNewOfferModal() {
 function updateProductInfo() {
     const productId = document.querySelector('select[name="product_id"]').value;
     if (productId) {
-        // Find the selected product from the loaded products
         const selectedProduct = window.availableProducts.find(p => p.id == productId);
         if (selectedProduct) {
             document.getElementById('productInfo').style.display = 'block';
             document.getElementById('productImage').src = selectedProduct.image || '/path/to/default-image.jpg';
             document.getElementById('productName').textContent = selectedProduct.name;
             document.getElementById('productPrice').textContent = `${selectedProduct.currency} ${selectedProduct.price}`;
-            
-            // Store original price for savings calculation
             document.getElementById('productInfo').dataset.originalPrice = selectedProduct.price;
         }
     } else {
@@ -488,12 +403,11 @@ function updateProductInfo() {
 
 function calculateSavings() {
     const originalPrice = parseFloat(document.getElementById('productInfo').dataset.originalPrice || 0);
-    const offerPrice = parseFloat(document.querySelector('input[name="offer_price"]').val() || 0);
-
+    const offerPriceInput = document.querySelector('input[name="offer_price"]');
+    const offerPrice = offerPriceInput ? parseFloat(offerPriceInput.value || 0) : 0;
     if (originalPrice > 0 && offerPrice > 0) {
         const savings = originalPrice - offerPrice;
         const savingsPercentage = ((savings / originalPrice) * 100).toFixed(1);
-        
         document.getElementById('savingsAmount').textContent = '{{ get_currency() }} ' + savings.toFixed(2);
         document.getElementById('savingsPercentage').textContent = savingsPercentage + '%';
         document.getElementById('savingsInfo').style.display = 'block';
@@ -506,12 +420,10 @@ function submitNewOffer() {
     const form = document.getElementById('newOfferForm');
     const formData = new FormData(form);
     const productId = formData.get('product_id');
-    
     if (!productId) {
         alert('Please select a product');
         return;
     }
-    
     fetch(`/buyer/offers/${productId}/create`, {
         method: 'POST',
         body: formData,
@@ -527,33 +439,6 @@ function submitNewOffer() {
             alert('Error: ' + data.message);
         }
     });
-}
-
-function showOfferDetails(offerId) {
-    // Load offer details via AJAX
-    fetch(`/buyer/offers/${offerId}/details`)
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('offerDetailsContent').innerHTML = html;
-            new bootstrap.Modal(document.getElementById('offerDetailsModal')).show();
-        });
-}
-
-function respondToCounterOffer(offerId) {
-    const form = document.getElementById('counterOfferForm');
-    form.action = form.action.replace('OFFER_ID_PLACEHOLDER', offerId);
-    form.reset();
-    document.getElementById('counterPriceField').style.display = 'none';
-    new bootstrap.Modal(document.getElementById('counterOfferModal')).show();
-}
-
-function toggleCounterPriceField(select) {
-    const counterPriceField = document.getElementById('counterPriceField');
-    if (select.value === 'counter') {
-        counterPriceField.style.display = 'block';
-    } else {
-        counterPriceField.style.display = 'none';
-    }
 }
 </script>
 @endpush

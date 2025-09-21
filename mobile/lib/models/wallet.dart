@@ -45,8 +45,7 @@ class WalletPage {
     final current = (meta?['current_page'] as num?)?.toInt();
     final last = (meta?['last_page'] as num?)?.toInt();
     final hasNext = (current != null && last != null) ? current < last : false;
-    final next = hasNext && current != null ? current + 1 : null;
+    final next = hasNext ? (current + 1) : null;
     return WalletPage(items: items, hasNext: hasNext, nextPage: next);
   }
 }
-

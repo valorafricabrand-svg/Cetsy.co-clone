@@ -59,21 +59,48 @@ class OrderPage {
   final List<OrderSummary> orders;
   final bool hasNext;
   final int? nextPage;
+  final int total;
+  final int? currentPage;
+  final int? lastPage;
+  final int? perPage;
 
   const OrderPage({
     required this.orders,
     required this.hasNext,
+    required this.total,
     this.nextPage,
+    this.currentPage,
+    this.lastPage,
+    this.perPage,
   });
+
+  static int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
 
   factory OrderPage.fromPaginatedJson(Map<String, dynamic> json) {
     final list = (json['data'] as List?) ?? const [];
     final orders = list.map((e) => OrderSummary.fromJson(e as Map<String, dynamic>)).toList();
-    final meta = json['meta'] as Map<String, dynamic>?;
-    final current = (meta?['current_page'] as num?)?.toInt();
-    final last = (meta?['last_page'] as num?)?.toInt();
-    final hasNext = (current != null && last != null) ? current < last : false;
-    final next = hasNext && current != null ? current + 1 : null;
-    return OrderPage(orders: orders, hasNext: hasNext, nextPage: next);
+    final meta = (json['meta'] as Map<String, dynamic>?) ?? const {};
+    final current = _asInt(meta['current_page']);
+    final last = _asInt(meta['last_page']);
+    final total = _asInt(meta['total']);
+    final perPage = _asInt(meta['per_page']);
+    final hasNext = (current > 0 && last > 0) ? current < last : false;
+    final next = hasNext ? (current + 1) : null;
+    return OrderPage(
+      orders: orders,
+      hasNext: hasNext,
+      total: total > 0 ? total : orders.length,
+      nextPage: next,
+      currentPage: current > 0 ? current : null,
+      lastPage: last > 0 ? last : null,
+      perPage: perPage > 0 ? perPage : null,
+    );
   }
 }
+
+

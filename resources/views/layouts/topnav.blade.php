@@ -1,6 +1,7 @@
 @php
     // Ensure Activity model is correctly imported in the controller or view
     use App\Models\Activity;
+    use Illuminate\Support\Str;
 
     $user = auth()->user();
     $role = $user->isAdmin() ? 'admin' : ($user->isSeller() ? 'seller' : 'buyer');
@@ -18,6 +19,28 @@
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
+    }
+
+    // Recent Dispute Messages (public)
+    try {
+        $recentDisputeMessages = \App\Models\DisputeMessage::query()
+            ->public()
+            ->with(['dispute', 'user'])
+            ->when(!$user->isAdmin(), function($q) use ($user) {
+                $q->whereHas('dispute', function($qq) use ($user) {
+                    $qq->where('buyer_id', $user->id)
+                       ->orWhere('seller_id', $user->id);
+                })
+                // Only show messages not authored by the current user (incl. system/admin)
+                ->where(function($q2) use ($user) {
+                    $q2->whereNull('user_id')->orWhere('user_id', '!=', $user->id);
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+    } catch (\Throwable $e) {
+        $recentDisputeMessages = collect();
     }
 
     $navItems = [
@@ -131,6 +154,7 @@
                                     <h6 class="mb-0">Recent Notifications</h6>
                                 </div>
                                 <div class="card-body p-0">
+                                    {{-- Recent Activity notifications --}}
                                     @if($recentNotifications->count() > 0)
                                         @foreach($recentNotifications as $notification)
                                             <div class="dropdown-item p-3 border-bottom border-translucent">
@@ -162,6 +186,32 @@
                                         <div class="dropdown-item p-3 text-center">
                                             <p class="mb-0 text-body-quaternary">No notifications</p>
                                         </div>
+                                    @endif
+
+                                    {{-- Recent Dispute messages --}}
+                                    @if($recentDisputeMessages->count() > 0)
+                                        <div class="dropdown-item p-2 bg-light fw-semibold small text-muted">Recent Dispute Messages</div>
+                                        @foreach($recentDisputeMessages as $msg)
+                                            <div class="dropdown-item p-3 border-bottom border-translucent">
+                                                <div class="d-flex align-items-start">
+                                                    <div class="flex-1">
+                                                        <p class="mb-1 text-body-secondary small">
+                                                            @php
+                                                                $from = $msg->user?->name ?? 'System';
+                                                                $snippet = Str::limit(strip_tags($msg->message), 120);
+                                                            @endphp
+                                                            <strong>{{ $from }}:</strong> {{ $snippet }}
+                                                        </p>
+                                                        <small class="text-body-quaternary">{{ $msg->created_at->diffForHumans() }} • Dispute #{{ $msg->dispute_id }}</small>
+                                                        <div class="mt-2">
+                                                            <a href="{{ route('disputes.show', $msg->dispute_id) }}" class="btn btn-sm btn-outline-warning">
+                                                                View Dispute
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     @endif
                                 </div>
                                 @if($recentNotifications->count() > 0)

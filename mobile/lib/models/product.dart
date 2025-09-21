@@ -127,6 +127,7 @@ class Product {
     int? shopId,
     int? shopUserId,
     List<String>? media,
+    List<int>? mediaIds,
     List<ShippingProfile>? shippingProfiles,
     List<VariationType>? variationTypes,
     List<Variant>? variants,
