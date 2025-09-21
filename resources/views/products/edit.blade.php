@@ -50,7 +50,7 @@
           {{-- Name --}}
           <div class="col-12">
             <label for="name" class="form-label fw-semibold">Listing Name</label>
-            <input type="text" id="name" name="name"
+            <input type="text" id="name" name="name" spellcheck="true" autocapitalize="sentences" autocomplete="on"
                    class="form-control @error('name') is-invalid @enderror"
                    value="{{ old('name',$product->name) }}" required autofocus>
             @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -86,7 +86,7 @@
           {{-- Description --}}
           <div class="col-12">
             <label for="description" class="form-label fw-semibold">Description</label>
-            <textarea id="description" name="description" rows="6"
+            <textarea id="description" name="description" rows="6" spellcheck="true"
                       class="form-control @error('description') is-invalid @enderror">{{ old('description',$product->description) }}</textarea>
             @error('description')<div class="text-danger mt-1">{{ $message }}</div>@enderror
           </div>
@@ -399,6 +399,9 @@ tinymce.init({
   fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt',
   lineheight_formats: '1 1.2 1.5 1.8 2 3',
   browser_contextmenu: true,
+  browser_spellcheck: true,
+  gecko_spellcheck: true,
+  elementpath: false,
   contextmenu: 'link image inserttable | cell row column',
   branding: false,
   content_css: '{{ asset("css/tinymce-content.css") }}',

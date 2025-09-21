@@ -35,6 +35,7 @@
         ],
         'Sales' => [
             ['route'=>'seller.orders.index','icon'=>'fas fa-shopping-cart','label'=>'Shop Orders'],
+            ['route'=>'seller.reviews.index','icon'=>'fas fa-star','label'=>'Reviews'],
             ['route'=>'account.orders','icon'=>'fas fa-bag-shopping','label'=>'My Orders'],
             ['route'=>'seller.orders.payments','icon'=>'fas fa-credit-card','label'=>'Payments'],
         ],
