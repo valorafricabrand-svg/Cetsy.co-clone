@@ -1,4 +1,3 @@
-{{-- resources/views/shops/edit.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
@@ -119,11 +118,6 @@
       <div class="card mb-4">
         <div class="card-header fw-semibold">3. Describe Your Shop</div>
         <div class="card-body">
-          <!-- <div class="mb-3">
-            <label for="bio" class="form-label">Shop Description <span class="text-danger">*</span></label>
-            <textarea id="bio" name="bio" class="form-control" rows="4" required>{{ old('bio', $shop->bio) }}</textarea>
-            <div class="form-text">Tell customers about your shop and what makes it special.</div>
-          </div> -->
           <div class="col-12">
           <label for="bio" class="form-label fw-semibold">Description</label>
             <textarea id="bio" name="bio" rows="6"
@@ -258,9 +252,11 @@ document.addEventListener('DOMContentLoaded', function() {
     selector: '#bio',
     plugins: 'image link media code fullscreen',
     toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
-    toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
+    // Hide TinyMCE branding and element path
     menubar: false,
-    height: 300
+    height: 300,
+    branding: false, // Hide "Powered by TinyMCE"
+    elementpath: false // Hide the element path/tag path bar
   });
 
   // Password visibility toggle
@@ -330,5 +326,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 </script>
+
+{{-- Hide TinyMCE code tag bar with CSS fallback --}}
+<style>
+.tox-statusbar__path {
+  display: none !important;
+}
+</style>
 
 @endsection

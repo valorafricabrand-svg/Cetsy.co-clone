@@ -16,17 +16,17 @@ class ShopController extends Controller
     /**
      * Show the "Create Your Shop" form, or redirect if the user already has a shop.
      */
-public function create()
-{
-    if (auth()->user()->shop) {
-        return redirect()->route('seller.shops.show', auth()->user()->shop->slug)
-            ->with('info', 'You already have a shop.');
-    }
-    
-    $countries = Country::all();
+    public function create()
+    {
+        if (auth()->user()->shop) {
+            return redirect()->route('seller.shops.show', auth()->user()->shop->slug)
+                ->with('info', 'You already have a shop.');
+        }
 
-    return view('shops.create', compact('countries'));
-}
+        $countries = Country::all();
+
+        return view('shops.create', compact('countries'));
+    }
 
 
     /**
@@ -50,7 +50,7 @@ public function create()
             'city'             => 'required|string|max:100',
             'postal'           => 'required|string|max:20',
 
-          
+
 
             // Optional logo
             'logo'             => 'nullable|image|max:2048',
@@ -68,15 +68,15 @@ public function create()
         // Handle logo upload
         if ($request->hasFile('logo')) {
             $data['logo'] = $request->file('logo')
-                                   ->store('shops/logos', 'public');
+                ->store('shops/logos', 'public');
         }
 
         // Handle featured image upload
         if ($request->file('featured_image')) {
-            $path = $request->file('featured_image')->store('shops/featured_images','public');
+            $path = $request->file('featured_image')->store('shops/featured_images', 'public');
             $data['featured_image'] = $path;
         }
-        
+
 
         // We don't persist the password field
         unset($data['password']);
@@ -130,7 +130,7 @@ public function create()
             $search = $request->q;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%");
+                    ->orWhere('slug', 'like', "%{$search}%");
             });
         }
 
@@ -146,96 +146,95 @@ public function create()
     }
 
 
-public function showPublic(Request $request, $id)
-{
-    $shop = Shop::whereSlug($id)->firstOrFail();
+    public function showPublic(Request $request, $id)
+    {
+        $shop = Shop::whereSlug($id)->firstOrFail();
 
-    $products = $shop->products()
-        ->where('is_active', 1)
-        ->with('media')
-        ->latest()
-        ->paginate(12);
+        $products = $shop->products()
+            ->where('is_active', 1)
+            ->with('media')
+            ->latest()
+            ->paginate(12);
 
-    if ($request->ajax()) {
-        return view('theme.' . theme() . '.partials.shop-products', compact('products'))->render();
+        if ($request->ajax()) {
+            return view('theme.' . theme() . '.partials.shop-products', compact('products'))->render();
+        }
+
+        return themed_view('shop', compact('shop', 'products'));
     }
 
-    return themed_view('shop', compact('shop', 'products'));
-}
 
 
 
-    
 
 
     /**
- * Show the edit form.
- */
-public function edit(Shop $shop)
-{
-    $countries = Country::all();
+     * Show the edit form.
+     */
+    public function edit(Shop $shop)
+    {
+        $countries = Country::all();
 
-    return view('shops.edit', compact('shop', 'countries'));
-}
-
-/**
- * Persist updates from the edit form.
- */
-public function update(Request $request, Shop $shop)
-{
-    // Authorization - ensure user can only edit their own shop
-    if (Auth::id() !== $shop->user_id) {
-        abort(403, 'You can only edit your own shop.');
+        return view('shops.edit', compact('shop', 'countries'));
     }
 
-    // Validate just the editable fields
-    $data = $request->validate([
-        'language'       => 'required|string|in:English,Swahili',
-        'country'        => 'required|string|exists:countries,id',
-        'currency'       => 'required|string',
-        'name'           => 'required|string|max:255',
-        'slug'           => 'required|string|max:255|unique:shops,slug,' . $shop->id,
-        'bio'            => 'nullable|string|max:1000',
-        'address'        => 'required|string|max:255',
-        'city'           => 'required|string|max:100',
-        'postal'         => 'required|string|max:20',
-        'password'       => ['required','current_password'],
-        'enable_2fa'     => ['required','boolean'],
-        'logo'           => ['nullable','image','max:2048'],
-        'featured_image' => ['nullable','image','max:2048'],
-        'announcement'   => ['nullable','string'],
-        'policies'       => ['nullable','string'],
-    ]);
-
-    // Slug uniqueness fallback if someone cleared it
-    if (empty($data['slug'])) {
-        $data['slug'] = Str::slug($data['name']);
-        if (Shop::where('slug', $data['slug'])->where('id','!=',$shop->id)->exists()) {
-            $data['slug'] .= '-' . time();
+    /**
+     * Persist updates from the edit form.
+     */
+    public function update(Request $request, Shop $shop)
+    {
+        // Authorization - ensure user can only edit their own shop
+        if (Auth::id() !== $shop->user_id) {
+            abort(403, 'You can only edit your own shop.');
         }
+
+        // Validate just the editable fields
+        $data = $request->validate([
+            'language'       => 'required|string|in:English,Swahili',
+            'country'        => 'required|string|exists:countries,id',
+            'currency'       => 'required|string',
+            'name'           => 'required|string|max:255',
+            'slug'           => 'required|string|max:255|unique:shops,slug,' . $shop->id,
+            'bio'            => 'nullable|string|max:1000',
+            'address'        => 'required|string|max:255',
+            'city'           => 'required|string|max:100',
+            'postal'         => 'required|string|max:20',
+            'password'       => ['required', 'current_password'],
+            'enable_2fa'     => ['required', 'boolean'],
+            'logo'           => ['nullable', 'image', 'max:2048'],
+            'featured_image' => ['nullable', 'image', 'max:2048'],
+            'announcement'   => ['nullable', 'string'],
+            'policies'       => ['nullable', 'string'],
+        ]);
+
+        // Slug uniqueness fallback if someone cleared it
+        if (empty($data['slug'])) {
+            $data['slug'] = Str::slug($data['name']);
+            if (Shop::where('slug', $data['slug'])->where('id', '!=', $shop->id)->exists()) {
+                $data['slug'] .= '-' . time();
+            }
+        }
+
+        // Logo upload
+        if ($request->hasFile('logo')) {
+            $data['logo'] = $request->file('logo')
+                ->store('shops/logos', 'public');
+        }
+
+        // Featured image upload
+        if ($request->file('featured_image')) {
+            $path = $request->file('featured_image')->store('shops/featured_images', 'public');
+            $data['featured_image'] = $path;
+        }
+
+        // Remove password from data
+        unset($data['password']);
+
+        // Update the model
+        $shop->update($data);
+
+        return redirect()
+            ->route('seller.shops.show', $shop)
+            ->with('success', 'Shop updated successfully!');
     }
-
-    // Logo upload
-    if ($request->hasFile('logo')) {
-        $data['logo'] = $request->file('logo')
-                               ->store('shops/logos','public');
-    }
-
-    // Featured image upload
-    if ($request->file('featured_image')) {
-        $path = $request->file('featured_image')->store('shops/featured_images','public');
-        $data['featured_image'] = $path;
-    }
-
-    // Remove password from data
-    unset($data['password']);
-
-    // Update the model
-    $shop->update($data);
-
-    return redirect()
-        ->route('seller.shops.show', $shop)
-        ->with('success','Shop updated successfully!');
-}
-
 }
