@@ -61,6 +61,64 @@
           {{-- Add to Cart --}}
           @include('theme.'.theme().'.partials._cart')
 
+          {{-- Shipping Summary --}}
+          @php
+            $currency = get_currency();
+            $isPhysical = ($product->type ?? '') === 'physical';
+            $shipProfiles = $product->shippingProfiles ?? collect();
+
+            // Choose a shipping cost to display: default profile's base_rate, otherwise the lowest base_rate
+            $defaultProfile = $defaultShipId
+              ? $shipProfiles->firstWhere('id', (int) $defaultShipId)
+              : null;
+            $shipCost = null;
+            if ($defaultProfile && isset($defaultProfile->base_rate)) {
+              $shipCost = (float) $defaultProfile->base_rate;
+            } elseif ($shipProfiles->isNotEmpty()) {
+              $shipCost = (float) $shipProfiles->min(fn($sp)=> (float) ($sp->base_rate ?? 0));
+            }
+
+            // Determine pickup availability; fall back to a DB exists() check if attribute not loaded
+            $pickupAvailable = false;
+            if ($shipProfiles->isNotEmpty() && array_key_exists('pickup_available', $shipProfiles->first()->getAttributes())) {
+              $pickupAvailable = $shipProfiles->contains(fn($sp) => (bool) ($sp->pickup_available ?? false));
+            } else {
+              try {
+                $pickupAvailable = $product->shippingProfiles()->where('pickup_available', true)->exists();
+              } catch (\Throwable $e) {
+                $pickupAvailable = false;
+              }
+            }
+          @endphp
+
+          @if($isPhysical)
+            <div class="card border-0 shadow-sm mb-4">
+              <div class="card-body d-flex flex-wrap align-items-center gap-4">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fa-solid fa-truck text-success"></i>
+                  <div class="small">
+                    <div class="fw-semibold">Shipping</div>
+                    @if(!is_null($shipCost))
+                      <div class="text-muted">{{ $shipCost <= 0 ? 'Free' : ($currency.' '.number_format($shipCost, 2)) }}</div>
+                    @else
+                      <div class="text-muted">Calculated at checkout</div>
+                    @endif
+                  </div>
+                </div>
+
+                <div class="vr d-none d-md-block"></div>
+
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fa-solid fa-store {{ $pickupAvailable ? 'text-primary' : 'text-muted' }}"></i>
+                  <div class="small">
+                    <div class="fw-semibold">Pickup</div>
+                    <div class="text-muted">{{ $pickupAvailable ? 'Available' : 'Not available' }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          @endif
+
           {{-- Service Notice --}}
           @include('theme.'.theme().'.partials._service_notice')
 
