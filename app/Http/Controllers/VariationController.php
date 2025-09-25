@@ -204,28 +204,136 @@ class VariationController extends Controller
     }
 
     /** Update an option’s value. */
-    public function updateOption(Request $request, VariationOption $variationOption): RedirectResponse
+    public function updateOption(Request $request, VariationOption $option): RedirectResponse
     {
         $data = $request->validate([
             'value' => [
                 'required', 'string', 'max:255',
                 Rule::unique('variation_options', 'value')
-                    ->where(fn ($q) => $q->where('variation_type_id', $variationOption->variation_type_id))
-                    ->ignore($variationOption->id),
+                    ->where(fn ($q) => $q->where('variation_type_id', $option->variation_type_id))
+                    ->ignore($option->id),
             ],
         ]);
 
-        $variationOption->update(['value' => $data['value']]);
+        $option->update(['value' => $data['value']]);
 
         return back()->with('success', 'Option updated.');
     }
 
     /** Delete an option (detach from all variants first). */
-    public function destroyOption(VariationOption $variationOption): RedirectResponse
+    public function destroyOption(VariationOption $option): RedirectResponse
     {
-        $variationOption->variants()->detach();
-        $variationOption->delete();
+        $optionId   = $option->id;
+        $optionVal  = $option->value;
+        $typeId     = $option->variation_type_id;
 
-        return back()->with('success', 'Option deleted.');
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            // Capture parent type (and product) before deletion so we can redirect
+            $type = $option->variationType()->with('product')->first();
+
+            // Pivot counts before detach
+            $pivotBefore = \Illuminate\Support\Facades\DB::table('variant_variation_option')
+                ->where('variation_option_id', $optionId)
+                ->count();
+
+            \Illuminate\Support\Facades\Log::info('VariationOption delete: start', [
+                'option_id'          => $optionId,
+                'option_value'       => $optionVal,
+                'variation_type_id'  => $typeId,
+                'product_id'         => $type?->product?->id,
+                'pivot_before'       => $pivotBefore,
+            ]);
+
+            $option->variants()->detach();
+
+            // Pivot counts after detach
+            $pivotAfter = \Illuminate\Support\Facades\DB::table('variant_variation_option')
+                ->where('variation_option_id', $optionId)
+                ->count();
+
+            $deleted = $option->delete();
+
+            // Check if row still exists in table after delete
+            $existsAfter = \Illuminate\Support\Facades\DB::table('variation_options')
+                ->where('id', $optionId)
+                ->exists();
+
+            \Illuminate\Support\Facades\Log::info('VariationOption delete: result', [
+                'option_id'    => $optionId,
+                'deleted_flag' => $deleted,
+                'exists_after' => $existsAfter,
+                'pivot_after'  => $pivotAfter,
+            ]);
+
+            // Fallback: force delete via DB if Eloquent delete didn't remove the row
+            if (! $deleted || $existsAfter) {
+                \Illuminate\Support\Facades\Log::warning('Variation option appears not deleted, attempting DB fallback', [
+                    'option_id'    => $optionId,
+                    'deleted_flag' => $deleted,
+                    'exists_after' => $existsAfter,
+                    'pivot_after'  => $pivotAfter,
+                ]);
+
+                // Extra safety: cleanup any remaining pivot rows
+                $forcePivotDeleted = \Illuminate\Support\Facades\DB::table('variant_variation_option')
+                    ->where('variation_option_id', $optionId)
+                    ->delete();
+
+                $forceDeletedRows = 0;
+                try {
+                    $forceDeletedRows = \Illuminate\Support\Facades\DB::table('variation_options')
+                        ->where('id', $optionId)
+                        ->delete();
+                } catch (\Throwable $fe) {
+                    \Illuminate\Support\Facades\Log::error('Variation option DB fallback delete failed', [
+                        'option_id' => $optionId,
+                        'message'   => $fe->getMessage(),
+                    ]);
+                }
+
+                $existsAfterForce = \Illuminate\Support\Facades\DB::table('variation_options')
+                    ->where('id', $optionId)
+                    ->exists();
+
+                \Illuminate\Support\Facades\Log::info('VariationOption delete: fallback result', [
+                    'option_id'          => $optionId,
+                    'force_pivot_deleted' => $forcePivotDeleted,
+                    'force_deleted_rows' => $forceDeletedRows,
+                    'exists_after_force' => $existsAfterForce,
+                ]);
+
+                if ($existsAfterForce) {
+                    \Illuminate\Support\Facades\DB::rollBack();
+
+                    $redirect = back()->with('error', 'Could not delete the option.');
+                    if ($type && $type->product) {
+                        $redirect = redirect()->route('products.variations.manage', [$type->product, $type])
+                            ->with('error', 'Could not delete the option.');
+                    }
+                    return $redirect;
+                }
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            // Redirect back to the manage page to ensure fresh data is loaded
+            if ($type && $type->product) {
+                return redirect()
+                    ->route('products.variations.manage', [$type->product, $type])
+                    ->with('success', 'Option deleted.');
+            }
+
+            return back()->with('success', 'Option deleted.');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            \Illuminate\Support\Facades\Log::error('Failed to delete variation option', [
+                'option_id' => $optionId ?? null,
+                'message'   => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Failed to delete the option. Please try again.');
+        }
     }
 }
+
