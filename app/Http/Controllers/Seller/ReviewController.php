@@ -32,10 +32,7 @@ class ReviewController extends Controller
                 },
                 'user:id,name',
             ])
-            ->where('shop_id', $shop->id)
-            ->whereHas('order', function ($query) {
-                $query->whereIn('status', [Order::STATUS_DELIVERED, Order::STATUS_COMPLETED]);
-            });
+            ->where('shop_id', $shop->id);
 
         if ($search !== '') {
             $baseQuery->where(function ($query) use ($search) {
@@ -83,3 +80,4 @@ class ReviewController extends Controller
         ]);
     }
 }
+
