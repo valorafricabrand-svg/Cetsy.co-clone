@@ -56,8 +56,16 @@ class OrderItem extends Model
     }
 
 
-     public function variation()
+    public function variation()
     {
         return $this->belongsTo(ProductVariation::class, 'product_variation_id');
+    }
+
+    /**
+     * Review left by the buyer for this order item (if any).
+     */
+    public function review()
+    {
+        return $this->hasOne(Review::class, 'order_item_id');
     }
 }

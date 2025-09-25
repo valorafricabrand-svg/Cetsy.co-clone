@@ -139,6 +139,39 @@
             <span>{{ $symbol }} {{ number_format($order->total_amount,2) }}</span>
           </div>
 
+          @php
+            $minDays = null; $maxDays = null;
+            foreach (($order->items ?? []) as $it) {
+              $sp = $it->shippingProfile; // may be null for digital
+              $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
+              $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
+              if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
+              if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
+            }
+            $placedAt = optional($order->created_at);
+            $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
+            $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
+            $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
+            $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
+          @endphp
+          @if(!is_null($minDays) || !is_null($maxDays))
+            <div class="d-flex justify-content-between mb-2">
+              <span class="fw-semibold">Ship by:</span>
+              <span>
+                @if($shipStart && $shipEnd)
+                  Ships within {{ (int)$minDays }}&ndash;{{ (int)$maxDays }} days
+                  ({{ $shipStartLabel }} &ndash; {{ $shipEndLabel }})
+                @elseif(!is_null($minDays))
+                  Ships within {{ (int)$minDays }} days
+                  (by {{ $shipStartLabel }})
+                @elseif(!is_null($maxDays))
+                  Ships by {{ (int)$maxDays }} days
+                  (by {{ $shipEndLabel }})
+                @endif
+              </span>
+            </div>
+          @endif
+
           <div class="d-flex justify-content-between mb-2">
             <span class="fw-semibold">Status:</span>
             <span>
@@ -324,6 +357,46 @@
             @endforeach
           </tbody>
         </table>
+      </div>
+    </div>
+  @endif
+
+  {{-- REVIEWS ON THIS ORDER (visible on Delivered/Completed) --}}
+  @php
+    $isFinished = in_array($order->status, [\App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+    $reviewsOnOrder = $order->items->map(fn($it)=>$it->review)->filter();
+  @endphp
+  @if($isFinished)
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+        <i class="fa-solid fa-star text-warning"></i> Reviews on this Order
+      </div>
+      <div class="card-body">
+        @if($reviewsOnOrder->isEmpty())
+          <div class="text-muted small">No reviews left yet for this order.</div>
+        @else
+          <ul class="list-group list-group-flush">
+            @foreach($order->items as $item)
+              @php $rev = $item->review; @endphp
+              @if($rev)
+                <li class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="fw-semibold">{{ optional($item->product)->name ?? 'Product' }}</div>
+                      <div class="small text-muted">Rating: {{ $rev->rating }} / 5</div>
+                      @if($rev->comment)
+                        <div class="small mt-1">{{ $rev->comment }}</div>
+                      @endif
+                    </div>
+                    <div class="ms-3">
+                      <a href="{{ route('orders.chat.show', $order->id) }}" class="btn btn-sm btn-outline-primary">Respond</a>
+                    </div>
+                  </div>
+                </li>
+              @endif
+            @endforeach
+          </ul>
+        @endif
       </div>
     </div>
   @endif

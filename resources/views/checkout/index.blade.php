@@ -26,6 +26,14 @@
   $user      = auth()->user();
   $cart      = session('cart', []);
   $currency  = get_currency();
+  // Saved addresses (if any) to prefill form
+  $savedShipping = null; $savedBilling = null;
+  try {
+    if ($user) {
+      $savedShipping = \App\Models\Address::where('user_id',$user->id)->where('type','shipping')->first();
+      $savedBilling  = \App\Models\Address::where('user_id',$user->id)->where('type','billing')->first();
+    }
+  } catch (\Throwable $e) { /* ignore */ }
 
   // Prefetch product types once (digital/physical) to decide shipping visibility/costs
   $productIds   = collect($cart)->pluck('product_id')->filter()->unique()->all();
@@ -127,7 +135,7 @@
                 <option value="">Select Country</option>
                 @foreach(\App\Models\Country::orderBy('name')->get() as $c)
                   <option value="{{ $c->id }}"
-                    @selected(old('shipping_country', $user->country_id ?? '') == $c->id)>
+                    @selected(old('shipping_country', optional($savedShipping)->country_id ?? ($user->country_id ?? '')) == $c->id)>
                     {{ $c->name }}
                   </option>
                 @endforeach
@@ -139,7 +147,7 @@
             <div class="col-12">
               <label class="form-label">Address Line 1 <span class="text-danger">*</span></label>
               <input name="shipping_address_1" type="text" class="form-control"
-                     value="{{ old('shipping_address_1') }}" required>
+                     value="{{ old('shipping_address_1', optional($savedShipping)->address_1) }}" required>
               @error('shipping_address_1')<div class="text-danger">{{ $message }}</div>@enderror
             </div>
 
@@ -147,14 +155,14 @@
             <div class="col-12">
               <label class="form-label">Address Line 2</label>
               <input name="shipping_address_2" type="text" class="form-control"
-                     value="{{ old('shipping_address_2') }}">
+                     value="{{ old('shipping_address_2', optional($savedShipping)->address_2) }}">
             </div>
 
             {{-- City --}}
             <div class="col-md-6">
               <label class="form-label">City/Town <span class="text-danger">*</span></label>
               <input name="shipping_city" type="text" class="form-control"
-                     value="{{ old('shipping_city') }}" required>
+                     value="{{ old('shipping_city', optional($savedShipping)->city) }}" required>
               @error('shipping_city')<div class="text-danger">{{ $message }}</div>@enderror
             </div>
 
@@ -162,14 +170,14 @@
             <div class="col-md-6">
               <label class="form-label">State/Province</label>
               <input name="shipping_state" type="text" class="form-control"
-                     value="{{ old('shipping_state') }}">
+                     value="{{ old('shipping_state', optional($savedShipping)->state) }}">
             </div>
 
             {{-- Postal Code --}}
             <div class="col-md-6">
               <label class="form-label">Postal/ZIP Code</label>
               <input name="shipping_postal_code" type="text" class="form-control"
-                     value="{{ old('shipping_postal_code') }}">
+                     value="{{ old('shipping_postal_code', optional($savedShipping)->zip) }}">
             </div>
 
             {{-- Billing same as shipping --}}
@@ -196,7 +204,7 @@
                 <select name="billing_country" class="form-select">
                   <option value="">Select Country</option>
                   @foreach(\App\Models\Country::orderBy('name')->get() as $c)
-                    <option value="{{ $c->id }}" @selected(old('billing_country')==$c->id)>{{ $c->name }}</option>
+                    <option value="{{ $c->id }}" @selected(old('billing_country', optional($savedBilling)->country_id)==$c->id)>{{ $c->name }}</option>
                   @endforeach
                 </select>
               </div>
@@ -204,31 +212,31 @@
               <div class="col-12 mt-2">
                 <label class="form-label">Address Line 1</label>
                 <input name="billing_address_1" type="text" class="form-control"
-                       value="{{ old('billing_address_1') }}">
+                       value="{{ old('billing_address_1', optional($savedBilling)->address_1) }}">
               </div>
 
               <div class="col-12 mt-2">
                 <label class="form-label">Address Line 2</label>
                 <input name="billing_address_2" type="text" class="form-control"
-                       value="{{ old('billing_address_2') }}">
+                       value="{{ old('billing_address_2', optional($savedBilling)->address_2) }}">
               </div>
 
               <div class="col-md-6 mt-2">
                 <label class="form-label">City/Town</label>
                 <input name="billing_city" type="text" class="form-control"
-                       value="{{ old('billing_city') }}">
+                       value="{{ old('billing_city', optional($savedBilling)->city) }}">
               </div>
 
               <div class="col-md-6 mt-2">
                 <label class="form-label">State/Province</label>
                 <input name="billing_state" type="text" class="form-control"
-                       value="{{ old('billing_state') }}">
+                       value="{{ old('billing_state', optional($savedBilling)->state) }}">
               </div>
 
               <div class="col-md-6 mt-2">
                 <label class="form-label">Postal/ZIP Code</label>
                 <input name="billing_postal_code" type="text" class="form-control"
-                       value="{{ old('billing_postal_code') }}">
+                       value="{{ old('billing_postal_code', optional($savedBilling)->zip) }}">
               </div>
             </div>
 

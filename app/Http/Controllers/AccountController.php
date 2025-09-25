@@ -39,7 +39,8 @@ class AccountController extends Controller
     public function orders(Request $request)
     {
         // Start query scoped to current user
-        $query = Order::where('user_id', Auth::id());
+        $query = Order::where('user_id', Auth::id())
+            ->with(['items.shippingProfile.processingTime']);
 
         // If a search term is provided, filter by order ID or status
         if ($search = $request->input('q')) {
@@ -63,7 +64,11 @@ public function orderDetails(Order $order)
 {
     abort_if(!Auth::check() || $order->user_id !== Auth::id(), 404);
 
-    $order->loadMissing(['items.product', 'shop']);
+    $order->loadMissing([
+        'items.product',
+        'items.shippingProfile.processingTime',
+        'shop'
+    ]);
 
     return view('account.order_details', compact('order'));
 }

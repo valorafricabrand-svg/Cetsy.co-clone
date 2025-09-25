@@ -45,6 +45,14 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
     @endif
+    @if($errors->any())
+      <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+        @foreach($errors->all() as $error)
+          <div>{{ $error }}</div>
+        @endforeach
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    @endif
 
     <div class="row g-lg-5">
       {{-- GALLERY --}}
