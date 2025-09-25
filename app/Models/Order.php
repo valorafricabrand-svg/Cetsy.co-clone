@@ -136,4 +136,9 @@ public function disputes()
 }
 
     
+    public function getOrderNumberAttribute(): string
+    {
+        return '#' . str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+    }
+
 }
