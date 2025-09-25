@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Activity;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
+use App\Models\Address;
+use App\Models\Country;
 
 class OrderController extends Controller
 {
@@ -99,13 +101,32 @@ public function index(Request $request)
 }
 
     /**
+     * Check if a product can be purchased.
+     * Mirrors CartController logic to keep behavior consistent during checkout.
+     */
+    private function productIsPurchasable(\App\Models\Product $product): bool
+    {
+        $isActive = $product->getAttribute('is_active');
+        if ($isActive !== null && !(bool) $isActive) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Seller: show a single order.
      */
     public function show(Order $order)
     {
         $this->authorizeSeller($order);
 
-        $order->load('items.product', 'shop.user', 'user', 'disputes');
+        $order->load(
+            'items.product',
+            'items.shippingProfile.processingTime',
+            'shop.user',
+            'user',
+            'disputes'
+        );
         return view('seller.orders.show', compact('order'));
     }
 
@@ -359,6 +380,84 @@ public function storeOrder(Request $request)
         // Clear cart after orders are created
         $request->session()->forget('cart');
 
+        // Persist buyer's shipping and billing addresses for future checkouts
+        try {
+            $userId = auth()->id();
+            if ($userId) {
+                // Save shipping address
+                $shipCountryId = (int)($validated['shipping_country'] ?? 0);
+                $shipCountry   = $shipCountryId ? optional(Country::find($shipCountryId))->name : null;
+                Address::updateOrCreate(
+                    ['user_id' => $userId, 'type' => 'shipping'],
+                    [
+                        'label'      => 'Default',
+                        'full_name'  => $validated['full_name'] ?? null,
+                        'email'      => $validated['email'] ?? null,
+                        'phone'      => $validated['phone'] ?? null,
+                        'country_id' => $shipCountryId ?: null,
+                        'country'    => $shipCountry,
+                        'address_1'  => $validated['shipping_address_1'] ?? null,
+                        'address_2'  => $validated['shipping_address_2'] ?? null,
+                        'address'    => trim(($validated['shipping_address_1'] ?? '').' '.($validated['shipping_address_2'] ?? '')) ?: null,
+                        'city'       => $validated['shipping_city'] ?? null,
+                        'state'      => $validated['shipping_state'] ?? null,
+                        'zip'        => $validated['shipping_postal_code'] ?? null,
+                        'is_default' => true,
+                    ]
+                );
+
+                // Save billing address (same as shipping if indicated)
+                $billingSame = (bool)($validated['billing_same_as_shipping'] ?? false);
+                if ($billingSame) {
+                    Address::updateOrCreate(
+                        ['user_id' => $userId, 'type' => 'billing'],
+                        [
+                            'label'      => 'Default',
+                            'full_name'  => $validated['full_name'] ?? null,
+                            'email'      => $validated['email'] ?? null,
+                            'phone'      => $validated['phone'] ?? null,
+                            'country_id' => $shipCountryId ?: null,
+                            'country'    => $shipCountry,
+                            'address_1'  => $validated['shipping_address_1'] ?? null,
+                            'address_2'  => $validated['shipping_address_2'] ?? null,
+                            'address'    => trim(($validated['shipping_address_1'] ?? '').' '.($validated['shipping_address_2'] ?? '')) ?: null,
+                            'city'       => $validated['shipping_city'] ?? null,
+                            'state'      => $validated['shipping_state'] ?? null,
+                            'zip'        => $validated['shipping_postal_code'] ?? null,
+                            'is_default' => true,
+                        ]
+                    );
+                } else {
+                    $billCountryId = (int)($validated['billing_country'] ?? 0);
+                    $billCountry   = $billCountryId ? optional(Country::find($billCountryId))->name : null;
+                    Address::updateOrCreate(
+                        ['user_id' => $userId, 'type' => 'billing'],
+                        [
+                            'label'      => 'Default',
+                            'full_name'  => $validated['full_name'] ?? null,
+                            'email'      => $validated['email'] ?? null,
+                            'phone'      => $validated['phone'] ?? null,
+                            'country_id' => $billCountryId ?: null,
+                            'country'    => $billCountry,
+                            'address_1'  => $validated['billing_address_1'] ?? null,
+                            'address_2'  => $validated['billing_address_2'] ?? null,
+                            'address'    => trim(($validated['billing_address_1'] ?? '').' '.($validated['billing_address_2'] ?? '')) ?: null,
+                            'city'       => $validated['billing_city'] ?? null,
+                            'state'      => $validated['billing_state'] ?? null,
+                            'zip'        => $validated['billing_postal_code'] ?? null,
+                            'is_default' => true,
+                        ]
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            // Do not fail order on address save issues; log if needed
+            \Log::warning('Address save failed after order', [
+                'user_id' => auth()->id(),
+                'error'   => $e->getMessage(),
+            ]);
+        }
+
         // Notify (left commented as in your original)
         // foreach ($orders as $order) {
         //     $order->load(['items.product', 'shop.user']);
@@ -369,9 +468,17 @@ public function storeOrder(Request $request)
         //     \Mail::to($buyer->email)->send(new \App\Mail\OrderCreatedBuyerMail($order, $buyer, $shopOwner, $shop));
         // }
 
+        // If multiple shop orders were created, show a summary with separate Pay Now links
+        if (count($orders) > 1) {
+            session()->flash('created_order_ids', collect($orders)->pluck('id')->all());
+            return redirect()
+                ->route('buyer.orders.created')
+                ->with('success', 'Your orders were created. You can pay each shop separately.');
+        }
+
         return redirect()
             ->route('buyer.orders.show', $orders[0]->id)
-            ->with('success', 'Your orders have been placed successfully! Please proceed to payment.');
+            ->with('success', 'Your order has been placed! Please proceed to payment.');
     } catch (\Throwable $e) {
         DB::rollBack();
 
@@ -388,6 +495,30 @@ public function storeOrder(Request $request)
         return back()->withErrors(['error' => $msg])->withInput();
     }
 }
+
+    /**
+     * Buyer: show summary of newly created multi-shop orders with separate payment actions.
+     */
+    public function createdSummary(Request $request)
+    {
+        $ids = (array) $request->session()->get('created_order_ids', []);
+        if (empty($ids)) {
+            return redirect()->route('account.orders')
+                ->with('error', 'No new orders to display.');
+        }
+        $orders = Order::with('shop')
+            ->whereIn('id', $ids)
+            ->where('user_id', auth()->id())
+            ->orderBy('id', 'desc')
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return redirect()->route('account.orders')
+                ->with('error', 'No new orders to display.');
+        }
+
+        return view('account.orders_created', compact('orders'));
+    }
 
 
     /**

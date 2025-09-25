@@ -10,6 +10,18 @@
   // Ensure variations+options are available
   $product->loadMissing('variations.options', 'variationTypes.options', 'shop', 'category', 'country');
 
+  // Determine out-of-stock status for physical items
+  $isPhysical = ($product->type ?? '') === 'physical';
+  $hasVariants = $product->variations && $product->variations->count() > 0;
+  if ($hasVariants) {
+      $hasAvailableVariant = $product->variations->contains(function($v){
+          return is_null($v->stock) || (int)$v->stock > 0;
+      });
+      $isOutOfStock = $isPhysical && ! $hasAvailableVariant;
+  } else {
+      $isOutOfStock = $isPhysical && (!is_null($product->stock)) && ((int)$product->stock < 1);
+  }
+
   // Build a compact index: variant-combination key -> {id, price, options:[ids]}
   // Only include variants that have a price.
   $variantIndex = [];
@@ -130,8 +142,8 @@
       </a>
     </span>
     @if ($product->type === 'physical')
-      <span class="badge {{ $product->stock > 0 ? 'bg-primary bg-opacity-10 text-primary' : 'bg-danger bg-opacity-10 text-danger' }}">
-        {{ $product->stock > 0 ? 'In Stock' : 'Out of Stock' }}
+      <span class="badge {{ $isOutOfStock ? 'bg-danger bg-opacity-10 text-danger' : 'bg-primary bg-opacity-10 text-primary' }}">
+        {{ $isOutOfStock ? 'Out of Stock' : 'In Stock' }}
       </span>
     @endif
   </div>
@@ -196,6 +208,9 @@
     <div class="card-body">
       <form method="POST" action="{{ route('cart.add') }}" id="js-cart-form">
         @csrf
+        @if($isOutOfStock)
+          <input type="hidden" id="js-out-of-stock-flag" value="1">
+        @endif
 
         <input type="hidden" name="product_id" value="{{ $product->id }}">
 
@@ -244,20 +259,26 @@
         </div>
 
         {{-- Actions: Add to Cart + Buy Now --}}
+        @if($isOutOfStock)
+          <div class="alert alert-warning small mb-3">
+            This product is out of stock.
+          </div>
+        @endif
+
         <div class="d-grid gap-2 d-sm-flex">
-          <button type="submit" class="btn btn-success btn-lg" id="js-add-to-cart" disabled>
+          <button type="submit" class="btn btn-success btn-lg" id="js-add-to-cart" {{ $isOutOfStock ? 'disabled' : 'disabled' }}>
             <i class="fa-solid fa-cart-plus me-1"></i>
-            <span class="js-cta-label">Select options</span>
+            <span class="js-cta-label">{{ $isOutOfStock ? 'Out of Stock' : 'Select options' }}</span>
           </button>
 
           {{-- Override destination just for this button --}}
           <button type="submit"
-                  class="btn btn-primary btn-lg"
-                  id="js-buy-now"
-                  formaction="{{ route('cart.buy') }}"
-                  disabled>
+                   class="btn btn-primary btn-lg"
+                   id="js-buy-now"
+                   formaction="{{ route('cart.buy') }}"
+                   {{ $isOutOfStock ? 'disabled' : 'disabled' }}>
             <i class="fa-solid fa-bolt me-1"></i>
-            <span class="js-buy-label">Select options</span>
+            <span class="js-buy-label">{{ $isOutOfStock ? 'Out of Stock' : 'Select options' }}</span>
           </button>
         </div>
       </form>
@@ -281,6 +302,8 @@
     const btnBuy            = document.getElementById('js-buy-now');
     const ctaLabel          = btnAdd ? btnAdd.querySelector('.js-cta-label') : null;
     const buyLabel          = btnBuy ? btnBuy.querySelector('.js-buy-label') : null;
+
+    const outOfStock        = !!document.getElementById('js-out-of-stock-flag');
 
     const currency   = priceBlock.getAttribute('data-currency') || '';
     const defaultAmt = parseFloat(priceBlock.getAttribute('data-default-amount') || '0') || 0;
@@ -353,6 +376,13 @@
 
     function setButtonsEnabled(enabled) {
       if (!btnAdd || !btnBuy) return;
+      if (outOfStock) {
+        btnAdd.disabled = true;
+        btnBuy.disabled = true;
+        if (ctaLabel) ctaLabel.textContent = 'Out of Stock';
+        if (buyLabel) buyLabel.textContent = 'Out of Stock';
+        return;
+      }
       btnAdd.disabled = !enabled;
       btnBuy.disabled = !enabled;
       if (ctaLabel) ctaLabel.textContent = enabled ? 'Add to Cart' : 'Select options';

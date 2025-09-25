@@ -131,6 +131,23 @@
                         </option>
                       @endforeach
                     </select>
+                    @php
+                      $sel = $profilesC->firstWhere('id', $selectedId) ?: $profilesC->first();
+                      $minD = isset($sel['proc_min']) ? (int)$sel['proc_min'] : null;
+                      $maxD = isset($sel['proc_max']) ? (int)$sel['proc_max'] : null;
+                      $placedAt = now();
+                      $startLbl = $minD ? ($placedAt->copy()->addDays($minD)->isSameDay($placedAt) ? 'today' : $placedAt->copy()->addDays($minD)->format('M j')) : null;
+                      $endLbl   = $maxD ? ($placedAt->copy()->addDays($maxD)->isSameDay($placedAt) ? 'today' : $placedAt->copy()->addDays($maxD)->format('M j')) : null;
+                    @endphp
+                    <div class="small text-muted js-ship-by-hint mt-1">
+                      @if($minD && $maxD)
+                        Ships within {{ $minD }}–{{ $maxD }} days ({{ $startLbl }} – {{ $endLbl }})
+                      @elseif($minD)
+                        Ships within {{ $minD }} days (by {{ $startLbl }})
+                      @elseif($maxD)
+                        Ships by {{ $maxD }} days (by {{ $endLbl }})
+                      @endif
+                    </div>
                   @else
                     <div class="small text-muted">No shipping profiles ({{ $currency }} 0.00)</div>
                   @endif
@@ -202,6 +219,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function refreshRow($tr){
     $tr.querySelector('.line-total').textContent = money(rowTotal($tr));
+    const hint = $tr.querySelector('.js-ship-by-hint');
+    const sel  = $tr.querySelector('.js-shipping-select');
+    if (hint && sel && sel.selectedOptions.length) {
+      const opt   = sel.selectedOptions[0];
+      const min   = parseInt(opt.getAttribute('data-proc-min') || '', 10);
+      const max   = parseInt(opt.getAttribute('data-proc-max') || '', 10);
+      const today = new Date();
+      const fmt = (d)=> d.toLocaleString('en-US',{month:'short'})+' '+d.getDate();
+      const add = (n)=> { const d=new Date(); d.setDate(d.getDate()+n); return d; };
+      let txt='';
+      if (!isNaN(min) && !isNaN(max)){
+        const s=add(min), e=add(max);
+        const sLbl = (s.toDateString()===today.toDateString()) ? 'today' : fmt(s);
+        const eLbl = (e.toDateString()===today.toDateString()) ? 'today' : fmt(e);
+        txt = `Ships within ${min}–${max} days (${sLbl} – ${eLbl})`;
+      } else if (!isNaN(min)){
+        const s=add(min); const sLbl=(s.toDateString()===today.toDateString())?'today':fmt(s);
+        txt = `Ships within ${min} days (by ${sLbl})`;
+      } else if (!isNaN(max)){
+        const e=add(max); const eLbl=(e.toDateString()===today.toDateString())?'today':fmt(e);
+        txt = `Ships by ${max} days (by ${eLbl})`;
+      }
+      hint.textContent = txt;
+    }
   }
   function refreshGrand(){
     let sum=0;

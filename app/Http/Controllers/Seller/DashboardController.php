@@ -10,6 +10,7 @@ use App\Models\Wishlist;
 use App\Models\WalletTransaction;
 use App\Models\Product;
 use App\Models\Offer;
+use App\Models\Review;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -39,7 +40,7 @@ public function index()
 
     $orders = Order::where('shop_id', $shopId)
         ->orderBy('id', 'desc')
-        ->with(['customer', 'payment'])
+        ->with(['customer', 'payment', 'items.shippingProfile.processingTime'])
         ->take(5)
         ->get();
 
@@ -64,7 +65,22 @@ public function index()
     $pausedProducts = Product::where('shop_id', $shopId)->where('is_active', 2)->count();
     $isHolidayMode = $pausedProducts > 0 && $activeProducts == 0;
 
-    return view('seller.dashboard', compact('orders', 'products', 'total_orders', 'total_products', 'total_offers', 'accepted_offers', 'declined_offers', 'isHolidayMode', 'activeProducts', 'pausedProducts'));
+    // Recent reviews for this shop (from delivered/completed orders)
+    $recentReviews = Review::with(['order:id,user_id,status,created_at', 'orderItem.product:id,name'])
+        ->where('shop_id', $shopId)
+        ->whereHas('order', function($q){
+            $q->whereIn('status', [Order::STATUS_DELIVERED, Order::STATUS_COMPLETED]);
+        })
+        ->latest('created_at')
+        ->take(5)
+        ->get();
+
+    return view('seller.dashboard', compact(
+        'orders', 'products', 'total_orders', 'total_products',
+        'total_offers', 'accepted_offers', 'declined_offers',
+        'isHolidayMode', 'activeProducts', 'pausedProducts',
+        'recentReviews'
+    ));
 }
 
 /**

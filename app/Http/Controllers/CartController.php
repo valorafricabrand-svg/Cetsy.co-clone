@@ -13,22 +13,79 @@ use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
-    public function addToCart(Request $request): RedirectResponse
+    public function addToCart(Request $request): RedirectResponse|JsonResponse
     {
-        $data = $this->validateCartData($request);
-        $this->addItemToSessionCart($data);
-        $link    = route('cart.view');
-        $message = 'Product added to cart successfully! '
-                 . '<a href="'. $link .'" class="text-decoration-underline">View Cart</a>';
-        return back()->with('success', $message);
+        try {
+            $data = $this->validateCartData($request);
+            $this->addItemToSessionCart($data);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product added to cart successfully.',
+                    'redirect'=> route('cart.view'),
+                ]);
+            }
+
+            $link    = route('cart.view');
+            $message = 'Product added to cart successfully! '
+                     . '<a href="'. $link .'" class="text-decoration-underline">View Cart</a>';
+            return back()->with('success', $message);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => collect($e->errors())->flatten()->first() ?? 'Validation failed.',
+                    'errors'  => $e->errors(),
+                ], 422);
+            }
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Throwable $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to add to cart. Please try again.',
+                ], 422);
+            }
+            return back()->withErrors(['cart' => 'Unable to add to cart. Please try again.'])->withInput();
+        }
     }
-    public function addToBuy(Request $request): RedirectResponse
+    public function addToBuy(Request $request): RedirectResponse|JsonResponse
     {
-        $data = $this->validateCartData($request);
-        $this->addItemToSessionCart($data);
-        return redirect()
-            ->route('cart.checkout')
-            ->with('success', 'Proceeding to checkout...');
+        try {
+            $data = $this->validateCartData($request);
+            $this->addItemToSessionCart($data);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product added to cart.',
+                    'redirect'=> route('cart.view'),
+                ]);
+            }
+
+            // Change behavior: after adding, take user to Cart (not Checkout)
+            return redirect()
+                ->route('cart.view')
+                ->with('success', 'Product added to cart.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => collect($e->errors())->flatten()->first() ?? 'Validation failed.',
+                    'errors'  => $e->errors(),
+                ], 422);
+            }
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Throwable $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to add to cart. Please try again.',
+                ], 422);
+            }
+            return back()->withErrors(['cart' => 'Unable to add to cart. Please try again.'])->withInput();
+        }
     }
     public function viewCart(): View
     {
@@ -151,7 +208,7 @@ class CartController extends Controller
      */
     private function profilesForProduct(int $productId): array
     {
-        $profiles = ShippingProfile::with('destCountry')
+        $profiles = ShippingProfile::with(['destCountry','processingTime'])
             ->where('product_id', $productId)
             ->orderByDesc('is_default')
             ->orderBy('name')
@@ -164,6 +221,9 @@ class CartController extends Controller
                 'is_default'         => (bool)$p->is_default,
                 'dest_location_type' => $p->dest_location_type,               // e.g. 'everywhere_else'
                 'dest_country_name'  => optional($p->destCountry)->name,      // safe string or null
+                // Processing days for ship-by hints
+                'proc_min'           => $p->processing_custom_min ?? optional($p->processingTime)->start_day,
+                'proc_max'           => $p->processing_custom_max ?? optional($p->processingTime)->end_day,
             ];
         })->values()->all();
     }
