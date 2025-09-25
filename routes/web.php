@@ -148,8 +148,10 @@ Route::prefix('cart')->name('cart.')->group(function () {
     // persist per-item shipping selection to session
     Route::post('/shipping', [CartController::class, 'updateShippingSelection'])->name('shipping');
 
-    // checkout page
-    Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
+    // checkout page (requires authentication)
+    Route::get('/checkout', [CartController::class, 'checkout'])
+        ->middleware('auth')
+        ->name('checkout');
 });
 
 // routes/web.php
@@ -619,11 +621,13 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
 */
 Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(function () {
     Route::get('dashboard', [BuyerDashboard::class, 'index'])->name('dashboard');
+    // IMPORTANT: static routes must come before dynamic {order} to avoid 404
+    Route::get('orders/created', [OrderController::class, 'createdSummary'])->name('orders.created');
     Route::get('orders/{order}', [AccountController::class, 'orderDetails'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('messages', [MessageController::class, 'buyerIndex'])->name('messages.index');
     Route::get('messages/{conversationId}', [MessageController::class, 'show'])->name('messages.show');
-
+    
     // Buyer Offer Management
     Route::get('offers/available-products', [\App\Http\Controllers\Buyer\OfferController::class, 'getAvailableProducts'])->name('offers.available-products');
     Route::post('offers/{productId}/create', [\App\Http\Controllers\Buyer\OfferController::class, 'createNewOffer'])->name('offers.create');

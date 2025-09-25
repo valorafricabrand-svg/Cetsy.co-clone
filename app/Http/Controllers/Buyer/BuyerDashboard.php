@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\Wishlist;
 use App\Models\WalletTransaction;
 use App\Services\Recommendation\ProductRecommendationService;
+use App\Models\Review;
 
 use Illuminate\Support\Facades\Auth;
 
@@ -37,6 +38,12 @@ class BuyerDashboard extends Controller
         $wishlistCount = Wishlist::where('user_id', Auth::id())->count();
         $accountBalance = wallet();
         $recentOrders = Order::where('user_id', Auth::id())->latest()->take(5)->get();
+        // Recent reviews left by this buyer
+        $myRecentReviews = Review::with(['order:id,status,created_at', 'orderItem.product:id,name,slug'])
+            ->whereHas('order', function($q){ $q->where('user_id', Auth::id()); })
+            ->latest('created_at')
+            ->take(5)
+            ->get();
         $recommendedProducts = $this->recommendations->trendingForUser(Auth::user(), 8);
 
         // Fetch favorites (wish list products)
@@ -60,11 +67,11 @@ class BuyerDashboard extends Controller
             'offers',
             'total_offers',
             'accepted_offers',
-            'declined_offers'
+            'declined_offers',
+            'myRecentReviews'
         ));
     }
 }
-
 
 
 

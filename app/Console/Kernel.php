@@ -29,6 +29,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('rates:update')->dailyAt('01:00');
 
         // Removed legacy process:approved-payouts from schedule
+
+        // Ship-by reminders for buyers and sellers at 08:00 daily
+        $schedule->command('orders:notify-shipby')->dailyAt('08:00');
     }
 
     /**

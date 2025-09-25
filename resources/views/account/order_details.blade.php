@@ -73,10 +73,10 @@
                align-items-start align-items-md-center gap-3">
 
         {{-- Title --}}
-        <h2 class="mb-0 text-success fw-semibold d-flex align-items-center gap-1">
-          <i class="bi bi-receipt-cutoff"></i>
-          Order&nbsp;#{{ $order->id }}&nbsp;&mdash;&nbsp;Details
-        </h2>
+  <h2 class="mb-0 text-success fw-semibold d-flex align-items-center gap-1">
+    <i class="bi bi-receipt-cutoff"></i>
+    Order&nbsp;#{{ $order->id }}&nbsp;&mdash;&nbsp;Details
+  </h2>
 
         {{-- Action buttons --}}
         <div class="btn-toolbar flex-wrap gap-2">
@@ -124,8 +124,87 @@
           @endif
 
         </div>
-      </div>
+  </div>
 
+  {{-- Processing timeline & ship-by notice --}}
+  @php
+    $minDays = null; $maxDays = null;
+    foreach (($order->items ?? []) as $it) {
+      $sp = $it->shippingProfile; // may be null (digital)
+      $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
+      $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
+      if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
+      if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
+    }
+    $placedAt = optional($order->created_at);
+    $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
+    $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
+    $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
+    $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
+
+    $status = (string) $order->status;
+    $stepPlaced     = true;
+    $stepProcessing = in_array($status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+    $stepShipped    = in_array($status, [\App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+    $stepDelivered  = in_array($status, [\App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+    $stepCompleted  = ($status === \App\Models\Order::STATUS_COMPLETED);
+  @endphp
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-center">
+        <div class="col-12 col-md-6">
+          <div class="fw-semibold mb-1">Processing Timeline</div>
+          <ul class="list-unstyled small mb-0">
+            <li class="d-flex align-items-center gap-2 mb-1">
+              <i class="bi bi-check-circle {{ $stepPlaced ? 'text-success' : 'text-muted' }}"></i>
+              <span>Order placed {{ $placedAt? $placedAt->format('M j, Y') : '' }}</span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-1">
+              <i class="bi bi-gear-fill {{ $stepProcessing ? 'text-success' : 'text-muted' }}"></i>
+              <span>
+                @if($shipStart && $shipEnd)
+                  Ships within {{ (int)$minDays }}&ndash;{{ (int)$maxDays }} days ({{ $shipStartLabel }} &ndash; {{ $shipEndLabel }})
+                @elseif(!is_null($minDays))
+                  Ships within {{ (int)$minDays }} days (by {{ $shipStartLabel }})
+                @elseif(!is_null($maxDays))
+                  Ships by {{ (int)$maxDays }} days (by {{ $shipEndLabel }})
+                @else
+                  Processing
+                @endif
+              </span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-1">
+              <i class="bi bi-truck {{ $stepShipped ? 'text-success' : 'text-muted' }}"></i>
+              <span>Shipped</span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-1">
+              <i class="bi bi-box-seam {{ $stepDelivered ? 'text-success' : 'text-muted' }}"></i>
+              <span>Delivered</span>
+            </li>
+            <li class="d-flex align-items-center gap-2">
+              <i class="bi bi-flag {{ $stepCompleted ? 'text-success' : 'text-muted' }}"></i>
+              <span>Completed</span>
+            </li>
+          </ul>
+        </div>
+        <div class="col-12 col-md-6">
+          <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            @if($shipStart && $shipEnd)
+              Ship-by window: <strong>{{ $shipStartLabel }} &ndash; {{ $shipEndLabel }}</strong>
+            @elseif($shipStart)
+              Ship by: <strong>{{ $shipStartLabel }}</strong>
+            @elseif($shipEnd)
+              Ship by: <strong>{{ $shipEndLabel }}</strong>
+            @else
+              Seller will ship your order soon.
+            @endif
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
       {{-- Summary chips: status, placed, items, total --}}
       <div class="mt-3 d-flex flex-wrap gap-2">
         <span class="chip">

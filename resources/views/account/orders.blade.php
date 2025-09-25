@@ -37,7 +37,7 @@
           </thead>
           <tbody>
             @foreach($orders as $order)
-              <tr>
+              <tr class="js-order-row" data-href="{{ route('buyer.orders.show', $order->id) }}" style="cursor:pointer;" tabindex="0">
                 <td>#{{ $order->id }}</td>
                 <td><a target="_blank" href="{{ route('shop.show', $order->shop) }}"> {{ optional($order->shop)->name ?? 'N/A' }}</a></td>
                 <td>{{ $order->created_at->format('d M Y') }}</td>
@@ -48,63 +48,60 @@
                   @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
                     <br><small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
                   @endif
-                </td>
-                <td>{{ money() }}</td>
-                <td>
-                  <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-sm btn-outline-secondary me-1">View</a>
-                  @if($order->status === \App\Models\Order::STATUS_PENDING)
-                    <a href="{{ route('pay_now', $order->id) }}" class="btn btn-sm btn-primary">Pay Now</a>
+                  @php
+                    $minDays = null; $maxDays = null;
+                    foreach (($order->items ?? []) as $it) {
+                      $sp = $it->shippingProfile;
+                      $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
+                      $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
+                      if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
+                      if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
+                    }
+                    $placedAt = optional($order->created_at);
+                    $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
+                    $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
+                    $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
+                    $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
+                  @endphp
+                  @if(!is_null($minDays) || !is_null($maxDays))
+                    <div class="small text-muted mt-1">
+                      @if($shipStart && $shipEnd)
+                        Ships within {{ (int)$minDays }}–{{ (int)$maxDays }} days ({{ $shipStartLabel }} – {{ $shipEndLabel }})
+                      @elseif(!is_null($minDays))
+                        Ships within {{ (int)$minDays }} days (by {{ $shipStartLabel }})
+                      @elseif(!is_null($maxDays))
+                        Ships by {{ (int)$maxDays }} days (by {{ $shipEndLabel }})
+                      @endif
+                    </div>
                   @endif
-
-                   <a href="{{ route('orders.chat.show', $order->id) }}"
-           class="btn btn-sm btn-outline-info me-1">
-          Messages
-        </a>
-
-        {{-- Dispute Section --}}
-        @php
-            $dispute = $order->disputes()->latest()->first();
-        @endphp
-        
-        @if($dispute)
-            {{-- Show existing dispute status --}}
-            <div class="mt-2">
-                <span class="badge bg-warning text-dark">
-                    <i class="bi bi-exclamation-triangle"></i> Dispute: {{ ucfirst($dispute->status) }}
-                </span>
-                <a href="{{ route('disputes.show', $dispute->id) }}" 
-                   class="btn btn-sm btn-warning ms-1">
-                    <i class="bi bi-chat-dots"></i> Continue Dispute
-                </a>
-            </div>
-        @else
-            {{-- Show create dispute button for eligible orders --}}
-            @if(in_array($order->status, [
-                \App\Models\Order::STATUS_PROCESSING, 
-                \App\Models\Order::STATUS_SHIPPED, 
-                \App\Models\Order::STATUS_DELIVERED
-            ]))
-                <a href="{{ route('disputes.create', ['order_id' => $order->id]) }}" 
-                   class="btn btn-sm btn-outline-warning ms-1">
-                    <i class="bi bi-exclamation-triangle"></i> Create Dispute
-                </a>
-            @endif
-        @endif
-
-          @if ($order->status === \App\Models\Order::STATUS_SHIPPED)
-                <button class="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#deliverModal-{{ $order->id }}">
-                    <i class="bi bi-check2-circle"></i> Mark Delivered
-                </button>
-                @include('seller.orders.modals.delivered')
-            @endif
+                </td>
+                <td>{{ money((float) ($order->total_amount ?? 0)) }}</td>
+                <td>
+                  <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-sm btn-outline-secondary">View</a>
                 </td>
               </tr>
             @endforeach
           </tbody>
         </table>
       </div>
+      <script>
+        document.addEventListener('DOMContentLoaded', function(){
+          document.querySelectorAll('.js-order-row').forEach(function(row){
+            row.addEventListener('click', function(e){
+              const t = e.target;
+              if (t.closest('a,button')) return; // let inner links/buttons work normally
+              const href = row.getAttribute('data-href');
+              if (href) window.location = href;
+            });
+            row.addEventListener('keydown', function(e){
+              if (e.key === 'Enter' || e.key === ' ') {
+                const href = row.getAttribute('data-href');
+                if (href) window.location = href;
+              }
+            });
+          });
+        });
+      </script>
 
       {{-- Pagination --}}
       <div class="d-flex justify-content-center">
