@@ -25,9 +25,8 @@ class ReviewController extends Controller
         $perPage = $perPage > 0 ? min($perPage, 100) : 15;
 
         $baseQuery = Review::with([
-                'order' => function ($query) {
-                    $query->select('id', 'order_number', 'status', 'total', 'created_at', 'delivered_at', 'completed_at', 'user_id');
-                },
+                // Load the related order without forcing non-existent columns
+                'order',
                 'orderItem.product' => function ($query) {
                     $query->select('id', 'name', 'type', 'slug');
                 },
@@ -48,8 +47,8 @@ class ReviewController extends Controller
                         $sub->where('name', 'like', "%{$search}%");
                     })
                     ->orWhereHas('order', function ($sub) use ($search) {
-                        $sub->where('order_number', 'like', "%{$search}%")
-                            ->orWhere('id', 'like', "%{$search}%");
+                        // Search by order id (no order_number column in schema)
+                        $sub->where('id', 'like', "%{$search}%");
                     });
             });
         }
