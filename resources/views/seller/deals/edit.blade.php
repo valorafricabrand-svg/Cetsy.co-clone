@@ -2,9 +2,10 @@
 
 @section('content')
 <div class="content">
-  <h1 class="mb-4">Create Deal</h1>
-  <form action="{{ route('seller.deals.store') }}" method="POST">
+  <h1 class="mb-4">Edit Deal</h1>
+  <form action="{{ route('seller.deals.update', $deal) }}" method="POST">
     @csrf
+    @method('PUT')
 
     {{-- Deal Name --}}
     <div class="mb-3">
@@ -13,7 +14,7 @@
         type="text"
         name="name"
         class="form-control @error('name') is-invalid @enderror"
-        value="{{ old('name') }}"
+        value="{{ old('name', $deal->name) }}"
         required
       >
       @error('name')
@@ -30,7 +31,7 @@
         min="1"
         max="100"
         class="form-control @error('discount_percent') is-invalid @enderror"
-        value="{{ old('discount_percent') }}"
+        value="{{ old('discount_percent', $deal->discount_percent) }}"
         required
       >
       @error('discount_percent')
@@ -45,7 +46,7 @@
         name="applies_to_all"
         id="applies_to_all"
         class="form-check-input"
-        {{ old('applies_to_all') ? 'checked' : '' }}
+        {{ old('applies_to_all', $deal->applies_to_all) ? 'checked' : '' }}
       >
       <label for="applies_to_all" class="form-check-label fw-semibold">
         <i class="fas fa-globe me-1"></i>Apply to all products
@@ -93,7 +94,7 @@
                       name="product_ids[]"
                       value="{{ $product->id }}"
                       id="product_{{ $product->id }}"
-                      {{ in_array($product->id, old('product_ids', [])) ? 'checked' : '' }}
+                      {{ in_array($product->id, old('product_ids', $deal->products->pluck('id')->toArray())) ? 'checked' : '' }}
                     >
                     <label class="form-check-label w-100" for="product_{{ $product->id }}">
                       <div class="d-flex align-items-start">
@@ -164,7 +165,7 @@
         type="datetime-local"
         name="starts_at"
         class="form-control @error('starts_at') is-invalid @enderror"
-        value="{{ old('starts_at') }}"
+        value="{{ old('starts_at', $deal->starts_at->format('Y-m-d\TH:i')) }}"
         required
       >
       @error('starts_at')
@@ -179,7 +180,7 @@
         type="datetime-local"
         name="ends_at"
         class="form-control @error('ends_at') is-invalid @enderror"
-        value="{{ old('ends_at') }}"
+        value="{{ old('ends_at', $deal->ends_at->format('Y-m-d\TH:i')) }}"
         required
       >
       @error('ends_at')
@@ -187,7 +188,22 @@
       @enderror
     </div>
 
-    <button class="btn btn-success">Save Deal</button>
+    {{-- Deal Status Info --}}
+    <div class="alert alert-info">
+      <strong>Deal Status:</strong> 
+      @if($deal->isActive())
+        <span class="text-success">Currently Active</span>
+      @elseif($deal->starts_at->isFuture())
+        <span class="text-warning">Scheduled (starts {{ $deal->starts_at->diffForHumans() }})</span>
+      @else
+        <span class="text-danger">Expired (ended {{ $deal->ends_at->diffForHumans() }})</span>
+      @endif
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-success">Update Deal</button>
+      <a href="{{ route('seller.deals.index') }}" class="btn btn-secondary">Cancel</a>
+    </div>
   </form>
 </div>
 @endsection
@@ -308,6 +324,14 @@ document.addEventListener('DOMContentLoaded', function() {
         card.classList.remove('border-primary', 'bg-light');
       }
     });
+  });
+
+  // Initialize visual state for pre-selected products
+  productCheckboxes.forEach(checkbox => {
+    const card = checkbox.closest('.product-card');
+    if (checkbox.checked) {
+      card.classList.add('border-primary', 'bg-light');
+    }
   });
 });
 </script>

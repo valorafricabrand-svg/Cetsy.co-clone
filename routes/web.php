@@ -503,7 +503,10 @@ Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('selle
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::resource('deals', DealController::class)
-        ->only(['index', 'create', 'store']);
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+    
+    // Additional deal routes
+    Route::post('deals/{deal}/stop', [DealController::class, 'stop'])->name('deals.stop');
 
     Route::get('/products/pricing/bulk', [BulkPriceController::class, 'create'])
         ->name('products.pricing.bulk');
