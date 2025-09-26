@@ -80,60 +80,24 @@
       </div>
 
       {{-- Product Selection Area --}}
-      <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+      <div class="border rounded p-3" style="max-height: 500px; overflow-y: auto;">
         <div class="row g-2" id="product-list">
-          @foreach($products as $product)
-            <div class="col-md-6 col-lg-4 product-item" data-product-name="{{ strtolower($product->name) }}">
-              <div class="card h-100 product-card">
-                <div class="card-body p-3">
-                  <div class="form-check">
-                    <input
-                      class="form-check-input product-checkbox"
-                      type="checkbox"
-                      name="product_ids[]"
-                      value="{{ $product->id }}"
-                      id="product_{{ $product->id }}"
-                      {{ in_array($product->id, old('product_ids', [])) ? 'checked' : '' }}
-                    >
-                    <label class="form-check-label w-100" for="product_{{ $product->id }}">
-                      <div class="d-flex align-items-start">
-                        @if($product->image)
-                          <img src="{{ asset('storage/' . $product->image) }}" 
-                               class="rounded me-3" 
-                               style="width: 50px; height: 50px; object-fit: cover;"
-                               alt="{{ $product->name }}">
-                        @else
-                          <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
-                               style="width: 50px; height: 50px;">
-                            <i class="fas fa-image text-muted"></i>
-                          </div>
-                        @endif
-                        <div class="flex-grow-1">
-                          <h6 class="mb-1 text-truncate" title="{{ $product->name }}">{{ $product->name }}</h6>
-                          <div class="text-muted small">
-                            <div class="d-flex justify-content-between">
-                              <span>Price: <strong>{{ get_currency() }} {{ number_format($product->price, 2) }}</strong></span>
-                              @if($product->discount_percent > 0)
-                                <span class="text-success">Already {{ $product->discount_percent }}% off</span>
-                              @endif
-                            </div>
-                            <div class="mt-1">
-                              <span class="badge bg-light text-dark">{{ $product->product_type ?? 'Product' }}</span>
-                              @if($product->stock > 0)
-                                <span class="badge bg-success">In Stock ({{ $product->stock }})</span>
-                              @else
-                                <span class="badge bg-danger">Out of Stock</span>
-                              @endif
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          @endforeach
+          @include('seller.deals.partials.product-cards', ['products' => $products->items(), 'selectedIds' => old('product_ids', [])])
+        </div>
+        
+        {{-- Loading indicator --}}
+        <div id="loading-indicator" class="text-center py-3" style="display: none;">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2 text-muted">Loading products...</p>
+        </div>
+
+        {{-- Load more button --}}
+        <div id="load-more-container" class="text-center mt-3" style="display: none;">
+          <button type="button" class="btn btn-outline-primary" id="load-more-products">
+            <i class="fas fa-plus me-1"></i>Load More Products
+          </button>
         </div>
         
         @if($products->isEmpty())
@@ -241,7 +205,15 @@ document.addEventListener('DOMContentLoaded', function() {
   const selectAllBtn = document.getElementById('select-all-products');
   const deselectAllBtn = document.getElementById('deselect-all-products');
   const selectedCount = document.getElementById('selected-count');
-  const productCheckboxes = document.querySelectorAll('.product-checkbox');
+  const productList = document.getElementById('product-list');
+  const loadingIndicator = document.getElementById('loading-indicator');
+  const loadMoreContainer = document.getElementById('load-more-container');
+  const loadMoreBtn = document.getElementById('load-more-products');
+
+  let currentPage = 1;
+  let currentQuery = '';
+  let hasMore = true;
+  let searchTimeout;
 
   function toggleSelector() {
     selector.style.display = appliesCheckbox.checked ? 'none' : 'block';
@@ -252,63 +224,128 @@ document.addEventListener('DOMContentLoaded', function() {
     selectedCount.textContent = checked;
   }
 
-  function filterProducts() {
-    const searchTerm = productSearch.value.toLowerCase();
-    const productItems = document.querySelectorAll('.product-item');
+  function getSelectedIds() {
+    return Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.value);
+  }
+
+  function loadProducts(query = '', page = 1, append = false) {
+    if (!append) {
+      loadingIndicator.style.display = 'block';
+      loadMoreContainer.style.display = 'none';
+    }
+
+    const selectedIds = getSelectedIds();
     
-    productItems.forEach(item => {
-      const productName = item.getAttribute('data-product-name');
-      const matches = productName.includes(searchTerm);
-      item.style.display = matches ? 'block' : 'none';
+    fetch(`{{ route('seller.deals.products.search') }}?q=${encodeURIComponent(query)}&page=${page}&selected=${selectedIds.join(',')}`)
+      .then(response => response.json())
+      .then(data => {
+        if (append) {
+          productList.insertAdjacentHTML('beforeend', data.html);
+        } else {
+          productList.innerHTML = data.html;
+        }
+        
+        hasMore = data.hasMore;
+        currentPage = data.currentPage;
+        
+        if (hasMore) {
+          loadMoreContainer.style.display = 'block';
+        } else {
+          loadMoreContainer.style.display = 'none';
+        }
+        
+        loadingIndicator.style.display = 'none';
+        
+        // Re-initialize event listeners for new products
+        initializeProductCards();
+        updateSelectedCount();
+      })
+      .catch(error => {
+        console.error('Error loading products:', error);
+        loadingIndicator.style.display = 'none';
+        loadMoreContainer.style.display = 'none';
+      });
+  }
+
+  function initializeProductCards() {
+    const productCheckboxes = document.querySelectorAll('.product-checkbox');
+    
+    // Update count when checkboxes change
+    productCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', updateSelectedCount);
+      
+      // Add visual feedback for product cards
+      const card = checkbox.closest('.product-card');
+      checkbox.addEventListener('change', function() {
+        if (this.checked) {
+          card.classList.add('border-primary', 'bg-light');
+        } else {
+          card.classList.remove('border-primary', 'bg-light');
+        }
+      });
+      
+      // Initialize visual state for pre-selected products
+      if (checkbox.checked) {
+        card.classList.add('border-primary', 'bg-light');
+      }
     });
   }
 
+  function searchProducts() {
+    const query = productSearch.value.trim();
+    currentQuery = query;
+    currentPage = 1;
+    loadProducts(query, 1, false);
+  }
+
   function selectAllProducts() {
-    productCheckboxes.forEach(checkbox => {
-      if (checkbox.closest('.product-item').style.display !== 'none') {
-        checkbox.checked = true;
-      }
+    const visibleCheckboxes = Array.from(document.querySelectorAll('.product-checkbox'))
+      .filter(checkbox => checkbox.closest('.product-item').style.display !== 'none');
+    
+    visibleCheckboxes.forEach(checkbox => {
+      checkbox.checked = true;
+      const card = checkbox.closest('.product-card');
+      card.classList.add('border-primary', 'bg-light');
     });
     updateSelectedCount();
   }
 
   function deselectAllProducts() {
-    productCheckboxes.forEach(checkbox => {
+    const checkboxes = document.querySelectorAll('.product-checkbox');
+    checkboxes.forEach(checkbox => {
       checkbox.checked = false;
+      const card = checkbox.closest('.product-card');
+      card.classList.remove('border-primary', 'bg-light');
     });
     updateSelectedCount();
+  }
+
+  function loadMoreProducts() {
+    if (hasMore) {
+      loadProducts(currentQuery, currentPage + 1, true);
+    }
   }
 
   // Initialize on load
   toggleSelector();
   updateSelectedCount();
+  initializeProductCards();
 
   // Toggle on change
   appliesCheckbox.addEventListener('change', toggleSelector);
 
-  // Search functionality
-  productSearch.addEventListener('input', filterProducts);
+  // Search functionality with debouncing
+  productSearch.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(searchProducts, 300);
+  });
 
   // Select all/none functionality
   selectAllBtn.addEventListener('click', selectAllProducts);
   deselectAllBtn.addEventListener('click', deselectAllProducts);
 
-  // Update count when checkboxes change
-  productCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', updateSelectedCount);
-  });
-
-  // Add visual feedback for product cards
-  productCheckboxes.forEach(checkbox => {
-    const card = checkbox.closest('.product-card');
-    checkbox.addEventListener('change', function() {
-      if (this.checked) {
-        card.classList.add('border-primary', 'bg-light');
-      } else {
-        card.classList.remove('border-primary', 'bg-light');
-      }
-    });
-  });
+  // Load more functionality
+  loadMoreBtn.addEventListener('click', loadMoreProducts);
 });
 </script>
 @endpush

@@ -505,6 +505,7 @@ Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('selle
     
     // Additional deal routes
     Route::post('deals/{deal}/stop', [DealController::class, 'stop'])->name('deals.stop');
+    Route::get('deals/products/search', [DealController::class, 'searchProducts'])->name('deals.products.search');
 
     Route::get('/products/pricing/bulk', [BulkPriceController::class, 'create'])
         ->name('products.pricing.bulk');

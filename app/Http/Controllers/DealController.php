@@ -21,12 +21,45 @@ class DealController extends Controller
 
     public function create()
     {
-        // Only fetch products belonging to this shop
+        // Only fetch products belonging to this shop with pagination
         $products = Product::where('shop_id', shop_id())
                            ->orderBy('name')
-                           ->get();
+                           ->paginate(20); // Load only 20 products initially
 
         return view('seller.deals.create', compact('products'));
+    }
+
+    public function searchProducts(Request $request)
+    {
+        $query = $request->get('q', '');
+        $page = $request->get('page', 1);
+        $perPage = 20;
+        $category = $request->get('category', '');
+        $productType = $request->get('type', '');
+
+        $products = Product::where('shop_id', shop_id())
+                           ->when($query, function($q) use ($query) {
+                               $q->where('name', 'like', '%' . $query . '%');
+                           })
+                           ->when($category, function($q) use ($category) {
+                               $q->where('category_id', $category);
+                           })
+                           ->when($productType, function($q) use ($productType) {
+                               $q->where('product_type', $productType);
+                           })
+                           ->orderBy('name')
+                           ->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'products' => $products->items(),
+            'hasMore' => $products->hasMorePages(),
+            'currentPage' => $products->currentPage(),
+            'total' => $products->total(),
+            'html' => view('seller.deals.partials.product-cards', [
+                'products' => $products->items(),
+                'selectedIds' => $request->get('selected', [])
+            ])->render()
+        ]);
     }
 
     public function store(Request $request)
@@ -84,10 +117,10 @@ class DealController extends Controller
             abort(403, 'Unauthorized access to deal.');
         }
 
-        // Only fetch products belonging to this shop
+        // Only fetch products belonging to this shop with pagination
         $products = Product::where('shop_id', shop_id())
                            ->orderBy('name')
-                           ->get();
+                           ->paginate(20); // Load only 20 products initially
 
         return view('seller.deals.edit', compact('deal', 'products'));
     }

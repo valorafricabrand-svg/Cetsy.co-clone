@@ -164,8 +164,8 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">Offers ({{ $offers->total() }})</h6>
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="selectAll">
-                    <label class="form-check-label small" for="selectAll">Select All</label>
+                    <input class="form-check-input" type="checkbox" id="selectAllHeader">
+                    <label class="form-check-label small" for="selectAllHeader">Select All</label>
                 </div>
             </div>
         </div>
@@ -321,107 +321,121 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Select all functionality
+    // Select all functionality (supports header and table toggles)
+    const selectAllHeader = document.getElementById('selectAllHeader');
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    const offerCheckboxes = document.querySelectorAll('.offer-checkbox');
-    
-    selectAllCheckbox.addEventListener('change', function() {
-        offerCheckboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
+    const offerCheckboxes = Array.from(document.querySelectorAll('.offer-checkbox'));
+
+    function setAllChecked(checked) {
+        offerCheckboxes.forEach(cb => { cb.checked = checked; });
+        if (selectAllHeader) {
+            selectAllHeader.checked = checked;
+            selectAllHeader.indeterminate = false;
+        }
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = checked;
+            selectAllCheckbox.indeterminate = false;
+        }
         updateSelectedCount();
-    });
-    
+    }
+
+    if (selectAllHeader) {
+        selectAllHeader.addEventListener('change', function() {
+            setAllChecked(this.checked);
+        });
+    }
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            setAllChecked(this.checked);
+        });
+    }
+
     offerCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             updateSelectedCount();
             updateSelectAllState();
         });
     });
-    
+
     function updateSelectedCount() {
+        const form = document.getElementById('bulkActionForm');
         const selected = document.querySelectorAll('.offer-checkbox:checked');
         const count = selected.length;
         const info = document.getElementById('selectedOffersInfo');
         const countSpan = document.getElementById('selectedCount');
-        
-        if (count > 0) {
-            info.classList.remove('d-none');
-            countSpan.textContent = count;
-            // Clear existing hidden inputs
-            const existingInputs = document.querySelectorAll('input[name="offer_ids[]"]');
-            existingInputs.forEach(input => input.remove());
-            
+
+        if (info && countSpan) {
+            if (count > 0) {
+                info.classList.remove('d-none');
+                countSpan.textContent = count;
+            } else {
+                info.classList.add('d-none');
+            }
+        }
+
+        if (form) {
+            // Clear existing hidden inputs scoped to the bulk form
+            form.querySelectorAll('input[name="offer_ids[]"]').forEach(input => input.remove());
+
             // Create new hidden inputs for each selected offer
             selected.forEach(checkbox => {
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'offer_ids[]';
                 input.value = checkbox.value;
-                document.getElementById('bulkActionModal').querySelector('form').appendChild(input);
+                form.appendChild(input);
             });
-            
-            // Debug logging
-            console.log('Selected offers:', Array.from(selected).map(cb => cb.value));
-        } else {
-            info.classList.add('d-none');
-            // Clear existing hidden inputs
-            const existingInputs = document.querySelectorAll('input[name="offer_ids[]"]');
-            existingInputs.forEach(input => input.remove());
         }
+
+        // Debug logging
+        // console.log('Selected offers:', Array.from(selected).map(cb => cb.value));
     }
-    
+
     function updateSelectAllState() {
         const total = offerCheckboxes.length;
         const checked = document.querySelectorAll('.offer-checkbox:checked').length;
-        selectAllCheckbox.checked = checked === total && total > 0;
-        selectAllCheckbox.indeterminate = checked > 0 && checked < total;
+        const allChecked = checked === total && total > 0;
+        const someChecked = checked > 0 && checked < total;
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = allChecked;
+            selectAllCheckbox.indeterminate = someChecked;
+        }
+        if (selectAllHeader) {
+            selectAllHeader.checked = allChecked;
+            selectAllHeader.indeterminate = someChecked;
+        }
     }
-    
+
     // Modal handlers
     const bulkActionModal = document.getElementById('bulkActionModal');
-    // Per-offer decline/counter moved to offer show page.
-    
+
     // Bulk action form submission handler
-    bulkActionModal.addEventListener('show.bs.modal', function(event) {
-        const form = bulkActionModal.querySelector('form');
-        console.log('Bulk action form action:', form.action);
-        
-        // Remove any existing event listeners to prevent duplicates
-        form.removeEventListener('submit', handleBulkActionSubmit);
-        form.addEventListener('submit', handleBulkActionSubmit);
-    });
-    
+    if (bulkActionModal) {
+        bulkActionModal.addEventListener('show.bs.modal', function() {
+            const form = document.getElementById('bulkActionForm');
+            if (!form) return;
+            // Remove any existing event listeners to prevent duplicates
+            form.removeEventListener('submit', handleBulkActionSubmit);
+            form.addEventListener('submit', handleBulkActionSubmit);
+        });
+    }
+
     function handleBulkActionSubmit(e) {
-        console.log('Bulk action form submission started');
-        
-        const formData = new FormData(this);
-        console.log('Form data being submitted:');
-        for (let [key, value] of formData.entries()) {
-            console.log(key + ': ' + value);
-        }
-        
-        // Check if any offers are selected
-        const selectedOffers = document.querySelectorAll('input[name="offer_ids[]"]');
-        console.log('Selected offers count:', selectedOffers.length);
-        
+        const form = e.target;
+        const selectedOffers = form.querySelectorAll('input[name="offer_ids[]"]');
         if (selectedOffers.length === 0) {
             e.preventDefault();
             alert('Please select at least one offer to perform bulk action.');
             return false;
         }
-        
-        // Check if action is selected
-        const actionSelect = this.querySelector('select[name="action"]');
-        console.log('Selected action:', actionSelect.value);
-        
-        if (!actionSelect.value) {
+
+        const actionSelect = form.querySelector('select[name="action"]');
+        if (!actionSelect || !actionSelect.value) {
             e.preventDefault();
             alert('Please select an action to perform.');
             return false;
         }
-        
-        console.log('Form submission proceeding...');
     }
 });
 </script>
