@@ -188,17 +188,14 @@
                                                 $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
                                                 $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
                                             @endphp
-                                            @if(!is_null($minDays) || !is_null($maxDays))
-                                                <div class="small text-muted mt-1">
-                                                    @if($shipStart && $shipEnd)
-                                                        Ships within {{ (int)$minDays }}–{{ (int)$maxDays }} days ({{ $shipStartLabel }} – {{ $shipEndLabel }})
-                                                    @elseif(!is_null($minDays))
-                                                        Ships within {{ (int)$minDays }} days (by {{ $shipStartLabel }})
-                                                    @elseif(!is_null($maxDays))
-                                                        Ships by {{ (int)$maxDays }} days (by {{ $shipEndLabel }})
-                                                    @endif
-                                                </div>
-                                            @endif
+                                            @php $dispatchBy = $shipEndLabel ?? $shipStartLabel; @endphp
+                                            <div class="small text-muted mt-1">
+                                                @if($dispatchBy)
+                                                    Dispatch by {{ $dispatchBy }}
+                                                @else
+                                                    Dispatch soon
+                                                @endif
+                                            </div>
                                         </td>
                                             <td class="text-muted small">{{ optional($o->created_at)->format('d M Y') }}</td>
                                         </tr>

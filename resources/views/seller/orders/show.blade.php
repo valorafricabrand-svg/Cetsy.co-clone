@@ -19,6 +19,17 @@
     $activeDispute = $disputes->where('status', '!=', 'final')->first();
     $resolvedDispute = $disputes->where('status', 'resolved')->first();
   }
+
+  // Compute safe totals in case DB totals are null/missing
+  $computedSubtotal = ($order->items ?? collect())->sum(function($it){
+    return (float)($it->price ?? 0) * (int)($it->quantity ?? 1);
+  });
+  $computedShipping = ($order->items ?? collect())->sum(function($it){
+    return (float)($it->shipping_cost ?? 0);
+  });
+  $subtotalVal = isset($order->subtotal) ? (float)$order->subtotal : (float)$computedSubtotal;
+  $shippingVal = isset($order->shipping_cost) ? (float)$order->shipping_cost : (float)$computedShipping;
+  $totalVal    = isset($order->total_amount) ? (float)$order->total_amount : (float)($subtotalVal + $shippingVal);
 @endphp
 
 <div class="content">
@@ -52,6 +63,12 @@
         </button>
 
         {{-- Cancel moved into kebab menu --}}
+      @elseif($order->status === \App\Models\Order::STATUS_SHIPPED)
+        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                data-bs-toggle="modal"
+                data-bs-target="#editTrackingModal">
+          <i class="fa-solid fa-pen"></i> Edit Tracking
+        </button>
       @endif
 
       {{-- More (kebab) menu with dispute/appeal actions --}}
@@ -117,7 +134,7 @@
             'Tracking No' => $order->tracking_no ?? '-',
             'Courier'     => $order->courier ?? '-',
             'Items'       => $order->items->sum('quantity'),
-            'Subtotal'    => "{$symbol} ".number_format($order->subtotal,2),
+            'Subtotal'    => "{$symbol} ".number_format($subtotalVal,2),
           ] as $label => $value)
             <div class="d-flex justify-content-between mb-2">
               <span class="fw-semibold">{{ $label }}:</span>
@@ -125,18 +142,16 @@
             </div>
           @endforeach
 
-          @if($order->shipping_cost)
-            <div class="d-flex justify-content-between mb-2">
-              <span class="fw-semibold">Shipping Fee:</span>
-              <span>{{ $symbol }} {{ number_format($order->shipping_cost,2) }}</span>
-            </div>
-          @endif
+          <div class="d-flex justify-content-between mb-2">
+            <span class="fw-semibold">Shipping Fee:</span>
+            <span>{{ $symbol }} {{ number_format($shippingVal,2) }}</span>
+          </div>
 
           <hr>
 
           <div class="d-flex justify-content-between mb-2 fw-bold">
             <span>Total Amount:</span>
-            <span>{{ $symbol }} {{ number_format($order->total_amount,2) }}</span>
+            <span>{{ $symbol }} {{ number_format($totalVal,2) }}</span>
           </div>
 
           @php
@@ -465,6 +480,85 @@
   </div>
 @endif
 
+{{-- EDIT TRACKING MODAL (SHIPPED + Edit) --}}
+@if($order->status === \App\Models\Order::STATUS_SHIPPED)
+  <div class="modal fade" id="editTrackingModal" tabindex="-1" aria-labelledby="editTrackingLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <form action="{{ route('seller.orders.tracking', $order) }}"
+            method="POST"
+            class="modal-content needs-validation" novalidate>
+        @csrf
+        @method('PATCH')
+        <div class="modal-header bg-light">
+          <h5 class="modal-title" id="editTrackingLabel">
+            <i class="fa-solid fa-pen me-2"></i>
+            Edit Tracking — Order #{{ $order->id }}
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          @php
+            $couriers = (array) (couriers_list() ?? []);
+            $courierValue = old('courier', $order->courier ?? null);
+            $standardList = array_merge($couriers, ['Courier','Postal service','Express','Manual','Other']);
+            $isCustomCourier = $courierValue && !in_array($courierValue, $standardList, true);
+            $showOther = $isCustomCourier || in_array(strtolower((string)$courierValue), ['manual','other'], true);
+          @endphp
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="editCourierSelect" name="courier" required>
+                  <option value="" disabled {{ $courierValue ? '' : 'selected' }}>Select courier...</option>
+                  @foreach($couriers as $c)
+                    <option value="{{ $c }}" {{ (string)$courierValue === (string)$c ? 'selected' : '' }}>{{ $c }}</option>
+                  @endforeach
+                  <option value="manual" {{ strtolower((string)$courierValue)==='manual' ? 'selected' : '' }}>Manual</option>
+                  <option value="other"  {{ $showOther && strtolower((string)$courierValue)!=='manual' ? 'selected' : '' }}>Other</option>
+                </select>
+                <label for="editCourierSelect">Courier *</label>
+                <div class="invalid-feedback">Please select a courier.</div>
+              </div>
+              <div class="form-floating mt-2" id="editCourierOtherWrap" style="display: {{ $showOther ? 'block' : 'none' }};">
+                <input type="text" class="form-control" id="editCourierOtherInput" name="courier_other" placeholder="Courier name" value="{{ old('courier_other', $isCustomCourier ? (string)$courierValue : '') }}">
+                <label for="editCourierOtherInput">Courier name (if Manual/Other)</label>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="editTrackingInput" name="tracking_no" placeholder="ABC123" value="{{ old('tracking_no', $order->tracking_no) }}" required>
+                <label for="editTrackingInput">Tracking number *</label>
+                <div class="invalid-feedback">Tracking number required.</div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="editShipDateInput" name="shipped_at" value="{{ old('shipped_at', optional($order->shipped_at)->toDateString() ?? now()->toDateString()) }}">
+                <label for="editShipDateInput">Shipping date</label>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-floating">
+                <textarea class="form-control" id="editShipNotes" name="ship_notes" style="height: 100px;">{{ old('ship_notes', $order->ship_notes) }}</textarea>
+                <label for="editShipNotes">Notes (optional)</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+@endif
 {{-- NO DISPUTES SECTION --}}
 @if(!$order->disputes || $order->disputes->isEmpty())
   <div class="card mb-4 shadow-sm">
@@ -563,60 +657,7 @@
             </div>
           </div>
 
-          <h6 class="mb-3 fw-semibold">Items & Shipping Profiles</h6>
-          <div class="table-responsive">
-            <table class="table table-bordered align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Image</th>
-                  <th>Product</th>
-                  <th>Listing ID</th>
-                  <th class="text-center">Qty</th>
-                  <th>Shipping Profile</th>
-                </tr>
-              </thead>
-              <tbody>
-                @foreach($order->items as $item)
-                  @php
-                    $product  = optional($item->product);
-                    $isDigital = $product && $product->type === 'digital';
-                    $profiles = $product?->shippingProfiles ?? collect();
-                    $selected = $item->shipping_profile_id;
-                    $thumbUrl = product_thumb_url($product);
-                  @endphp
-                  <tr>
-                    <td>
-                      @if($thumbUrl)
-                        <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" style="width:48px;height:48px;object-fit:cover;border-radius:.375rem;">
-                      @endif
-                    </td>
-                    <td>{{ $product->name ?? 'N/A' }} @if($isDigital)<span class="badge bg-secondary ms-1">Digital</span>@endif</td>
-                    <td>{{ $product->id ?? $item->product_id ?? 'N/A' }}</td>
-                    <td class="text-center">{{ (int)($item->quantity ?? 1) }}</td>
-                    <td>
-                      <input type="hidden" name="order_items[{{ $item->id }}][id]" value="{{ $item->id }}">
-                      @if($isDigital)
-                        <div class="form-control-plaintext text-muted">No shipping (digital)</div>
-                      @else
-                        <select name="order_items[{{ $item->id }}][shipping_profile_id]" class="form-select">
-                          @foreach($profiles as $profile)
-                            @php
-                              $label = $profile->dest_location_type === 'everywhere_else'
-                                      ? 'Everywhere'
-                                      : ($profile->destCountry ? ('Ship to '.$profile->destCountry->name) : $profile->name);
-                            @endphp
-                            <option value="{{ $profile->id }}" @selected($selected == $profile->id)>
-                              {{ $label }} ({{ $symbol }} {{ number_format((float)$profile->base_rate,2) }})
-                            </option>
-                          @endforeach
-                        </select>
-                      @endif
-                    </td>
-                  </tr>
-                @endforeach
-              </tbody>
-            </table>
-          </div>
+          {{-- Items & Shipping Profiles section removed per request --}}
         </div>
 
         <div class="modal-footer bg-light">
@@ -662,8 +703,21 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   courierSelect && courierSelect.addEventListener('change', toggleCourier);
   toggleCourier();
+
+  // Edit tracking modal toggle for Manual/Other
+  const editSel = document.getElementById('editCourierSelect');
+  const editWrap= document.getElementById('editCourierOtherWrap');
+  function toggleEditCourier(){
+    if(!editSel || !editWrap) return;
+    const v = (editSel.value || '').toLowerCase();
+    editWrap.style.display = (v === 'other' || v === 'manual') ? 'block' : 'none';
+  }
+  editSel && editSel.addEventListener('change', toggleEditCourier);
+  toggleEditCourier();
 });
 </script>
 @endpush
+
+
 
 

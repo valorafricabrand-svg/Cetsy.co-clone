@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
@@ -52,12 +53,16 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   late final Uri _baseUri;
   int _currentIndex = 0;
   late final List<_NavItem> _tabs;
+  final GlobalKey _shareAnchorKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
 
-    _baseUri = Uri.parse(widget.initialUrl);
+    // Derive the origin (scheme + host + port) from the initial URL.
+    // All in-app navigation stays within this origin; outside links open externally.
+    final parsedInit = Uri.parse(widget.initialUrl);
+    _baseUri = parsedInit.replace(path: '/', query: null, fragment: null);
     _tabs = const [
       _NavItem('Home', Icons.home, '/'),
       _NavItem('Explore', Icons.search, '/search'),
@@ -118,7 +123,18 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
               launchUrl(uri, mode: LaunchMode.externalApplication);
               return NavigationDecision.prevent;
             }
-            return isHttp ? NavigationDecision.navigate : NavigationDecision.prevent;
+
+            // Keep navigation inside the app's origin; open other domains externally
+            if (isHttp) {
+              if (uri.host == _baseUri.host) {
+                return NavigationDecision.navigate;
+              } else {
+                launchUrl(uri, mode: LaunchMode.externalApplication);
+                return NavigationDecision.prevent;
+              }
+            }
+
+            return NavigationDecision.prevent;
           },
         ),
       )
@@ -187,6 +203,24 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     HapticFeedback.lightImpact();
     _setLoading(true);
     await _controller!.reload();
+  }
+
+  Future<void> _shareCurrentPage() async {
+    try {
+      String? url = widget.initialUrl;
+      if (_controller != null) {
+        url = await _controller!.currentUrl();
+      }
+      url ??= widget.initialUrl;
+
+      final box = _shareAnchorKey.currentContext?.findRenderObject() as RenderBox?;
+      final origin = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+      await Share.share(
+        url,
+        subject: 'Check this out on Cetsy',
+        sharePositionOrigin: origin,
+      );
+    } catch (_) {}
   }
 
   Future<void> _goBackOrExit() async {
@@ -424,6 +458,15 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
               BottomNavigationBarItem(icon: const Icon(Icons.person), label: _tabs[3].label),
             ],
           ),
+        ),
+
+        // Share current page
+        floatingActionButton: FloatingActionButton.small(
+          key: _shareAnchorKey,
+          onPressed: _shareCurrentPage,
+          tooltip: 'Share',
+          heroTag: 'share_fab',
+          child: const Icon(Icons.share),
         ),
       ),
     );

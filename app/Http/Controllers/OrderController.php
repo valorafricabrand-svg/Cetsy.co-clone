@@ -86,7 +86,7 @@ public function index(Request $request)
 
     // 4) Paginate with items, product, disputes, and appeals eager-load
     $orders = $baseQuery
-        ->with(['items.product', 'disputes.appeal'])
+        ->with(['items.product', 'items.shippingProfile.processingTime', 'disputes.appeal'])
         ->orderByDesc('id')
         ->paginate(15)
         ->withQueryString(); // preserves status & search
@@ -690,6 +690,109 @@ public function storeOrder(Request $request)
         }
 
         return back()->with('success', 'Order marked as shipped.');
+    }
+
+    /**
+     * Update tracking details for an order (seller only).
+     * Allows editing courier, tracking number, shipping date and notes without changing status.
+     */
+    public function updateTracking(Request $request, Order $order)
+    {
+        $this->authorizeSeller($order);
+
+        $data = $request->validate([
+            'courier'        => 'required|string|max:100',
+            'courier_other'  => 'nullable|string|max:100',
+            'tracking_no'    => 'required|string|max:120',
+            'shipped_at'     => 'nullable|date',
+            'ship_notes'     => 'nullable|string|max:1000',
+        ]);
+
+        $selected = strtolower((string)($data['courier'] ?? ''));
+        $typed    = trim((string)($request->input('courier_other', '')));
+        if (in_array($selected, ['other','manual'], true)) {
+            if ($typed === '') {
+                return back()->withErrors(['courier_other' => 'Please enter a courier name.'])->withInput();
+            }
+            $data['courier'] = mb_substr($typed, 0, 100);
+        }
+
+        // Compute change set before updating
+        $original = [
+            'courier'     => (string)($order->courier ?? ''),
+            'tracking_no' => (string)($order->tracking_no ?? ''),
+            'shipped_at'  => $order->shipped_at,
+            'ship_notes'  => (string)($order->ship_notes ?? ''),
+        ];
+
+        $newValues = [
+            'courier'     => (string)$data['courier'],
+            'tracking_no' => (string)$data['tracking_no'],
+            'shipped_at'  => $data['shipped_at'] ?? $order->shipped_at,
+            'ship_notes'  => $data['ship_notes'] ?? $order->ship_notes,
+        ];
+
+        $normalizeDate = function ($v) {
+            if ($v === null || $v === '') return null;
+            try {
+                return \Carbon\Carbon::parse($v)->format('Y-m-d H:i:s');
+            } catch (\Throwable $e) {
+                return (string)$v;
+            }
+        };
+
+        $changed = [];
+        foreach (['courier','tracking_no','ship_notes'] as $f) {
+            if ((string)($original[$f] ?? '') !== (string)($newValues[$f] ?? '')) {
+                $changed[$f] = [
+                    'old' => (string)($original[$f] ?? ''),
+                    'new' => (string)($newValues[$f] ?? ''),
+                ];
+            }
+        }
+        // Compare shipped_at separately with date normalization
+        if ($normalizeDate($original['shipped_at']) !== $normalizeDate($newValues['shipped_at'])) {
+            $changed['shipped_at'] = [
+                'old' => $normalizeDate($original['shipped_at']),
+                'new' => $normalizeDate($newValues['shipped_at']),
+            ];
+        }
+
+        DB::transaction(function () use ($order, $newValues) {
+            $order->update([
+                // keep existing status; just update fields
+                'courier'     => $newValues['courier'],
+                'tracking_no' => $newValues['tracking_no'],
+                'shipped_at'  => $newValues['shipped_at'],
+                'ship_notes'  => $newValues['ship_notes'],
+            ]);
+        });
+
+        // Send notification to buyer if tracking-related fields changed
+        if (!empty($changed)) {
+            try {
+                $order->refresh();
+                $buyer = $order->user; // buyer
+                $shop  = $order->shop;
+
+                $shippingData = [
+                    'courier'     => $order->courier,
+                    'tracking_no' => $order->tracking_no,
+                    'shipped_at'  => $order->shipped_at,
+                    'ship_notes'  => $order->ship_notes,
+                ];
+
+                \Mail::to($buyer->email)->send(
+                    new \App\Mail\TrackingUpdatedBuyerMail($order, $buyer, $shop, $shippingData, $changed)
+                );
+            } catch (\Throwable $e) {
+                Log::error('Failed to send tracking-updated email: '.$e->getMessage(), [
+                    'order_id' => $order->id,
+                ]);
+            }
+        }
+
+        return back()->with('success', 'Tracking details updated.');
     }
 
     /**
