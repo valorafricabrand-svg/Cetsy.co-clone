@@ -1,0 +1,51 @@
+ 221                   @if($isVideo($props['file']))
+ 222                     <video src="{{ $url }}" style="width:50px;height:50px;object-fit:cover;" controls></video>
+ 223                   @else
+ 224                     <img src="{{ $url }}" class="rounded me-3" style="width:50px;height:50px;object-fit:cover;" alt="media">
+ 225                   @endif
+ 226                   <div class="card-footer text-truncate small"><a href="{{ $url }}" target="_blank" class="text-decoration-none">Open</a></div>
+ 227                 </div>
+ 228               </div>
+ 229             </div>
+ 230           @endif
+ 231 
+ 232           {{-- Featured/Primary image change preview (non-media context) --}}
+ 233           @php($fiChange = data_get($props, 'changes.featured_image'))
+ 234           @if(is_array($fiChange) && (isset($fiChange['from']) || isset($fiChange['to'])))
+ 235             @php($__has = true)
+ 236             <h6 class="fw-semibold mt-2">Primary Image</h6>
+ 237             <div class="row g-3 mb-3">
+ 238               @if(!empty($fiChange['from']))
+ 239                 @php($fromUrl = \Illuminate\Support\Facades\Storage::url(ltrim($fiChange['from'],'/')))
+ 240                 <div class="col-6 col-sm-4 col-md-3">
+ 241                   <div class="card shadow-sm">
+ 242                     <img src="{{ $fromUrl }}" class="rounded me-3" style="width:50px;height:50px;object-fit:cover;" alt="From">
+ 243                     <div class="card-footer small text-muted">From</div>
+ 244                   </div>
+ 245                 </div>
+ 246               @endif
+ 247               @if(!empty($fiChange['to']))
+ 248                 @php($toImg = \Illuminate\Support\Facades\Storage::url(ltrim($fiChange['to'],'/')))
+ 249                 <div class="col-6 col-sm-4 col-md-3">
+ 250                   <div class="card shadow-sm">
+ 251                     <img src="{{ $toImg }}" class="rounded me-3" style="width:50px;height:50px;object-fit:cover;" alt="To">
+ 252                     <div class="card-footer small text-muted">To</div>
+ 253                   </div>
+ 254                 </div>
+ 255               @endif
+ 256             </div>
+ 257           @endif
+ 258 
+ 259           {{-- Fallback to JSON if nothing matched --}}
+ 260           @if(! $__has)
+ 261             <pre class="mb-0" style="white-space: pre-wrap; word-break: break-word;">{{ json_encode($activity->properties, JSON_PRETTY_PRINT) }}</pre>
+ 262           @endif
+ 263           {{-- end of unified rendering --}}
+ 264         </div>
+ 265       </div>
+ 266     </div>
+ 267   </div>
+ 268 </div>
+ 269 @endsection
+ 270 
+ 271 

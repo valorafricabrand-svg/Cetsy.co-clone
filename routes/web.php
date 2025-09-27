@@ -472,6 +472,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('product-reports', [AdminProductReportController::class, 'index'])->name('product-reports.index');
     Route::put('product-reports/{id}', [AdminProductReportController::class, 'update'])->name('product-reports.update');
 
+    // Product Activities (audits)
+    Route::get('product-activities', [\App\Http\Controllers\Admin\ProductActivityController::class, 'index'])->name('product-activities.index');
+    Route::get('product-activities/{activity}', [\App\Http\Controllers\Admin\ProductActivityController::class, 'show'])->name('product-activities.show');
+
     // Admin Disputes
     Route::prefix('admin-disputes')->name('admin-disputes.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'index'])->name('index');

@@ -1,0 +1,60 @@
+  61                 <div class="fw-semibold">{{ $props['profile_name'] }}</div>
+  62               </div>
+  63             @endif
+  64             @if(isset($props['set_default']))
+  65               <div class="col-md-3">
+  66                 <div class="small text-muted">Set Default</div>
+  67                 <div class="fw-semibold">{{ $props['set_default'] ? 'Yes' : 'No' }}</div>
+  68               </div>
+  69             @endif
+  70             @if(isset($props['quality']))
+  71               <div class="col-md-3">
+  72                 <div class="small text-muted">Quality</div>
+  73                 <div class="fw-semibold">{{ $props['quality'] }}</div>
+  74               </div>
+  75             @endif
+  76           </div>
+  77 
+  78           {{-- If this is a media entry, show thumbnails only (branch removed; rendering is unified below) --}}
+  79           {{-- media branch was here; keep content to render previews --}}
+  80             @php
+  81               $isVideo = function($p){ $ext = strtolower(pathinfo((string)$p, PATHINFO_EXTENSION)); return in_array($ext, ['mp4','mov','avi','wmv','webm']); };
+  82               $toUrl  = function($p){ $p=(string)$p; return \Illuminate\Support\Facades\Storage::url(ltrim($p,'/')); };
+  83               $files  = [];
+  84               if (!empty($props['files']) && is_array($props['files'])) { $files = $props['files']; }
+  85               elseif (!empty($props['file'])) { $files = [ $props['file'] ]; }
+  86             @endphp
+  87 
+  88             @if(!empty($files))
+  89               <div class="row g-3 mb-2">
+  90                 @foreach($files as $p)
+  91                   @php($url = $toUrl($p))
+  92                   <div class="col-6 col-sm-4 col-md-3">
+  93                     <div class="card shadow-sm">
+  94                       @if($isVideo($p))
+  95                         <video src="{{ $url }}" style="width:50px;height:50px;object-fit:cover;" controls></video>
+  96                       @else
+  97                         <img src="{{ $url }}" class="rounded me-3" style="width:50px;height:50px;object-fit:cover;" alt="media">
+  98                       @endif
+  99                       <div class="card-footer text-truncate small"><a href="{{ $url }}" target="_blank" class="text-decoration-none">Open</a></div>
+ 100                     </div>
+ 101                   </div>
+ 102                 @endforeach
+ 103               </div>
+ 104             @endif
+ 105 
+ 106             {{-- Primary image delta inside media section --}}
+ 107             @php($fiChange = data_get($props, 'changes.featured_image'))
+ 108             @endphp
+ 109             @if(is_array($fiChange) && (isset($fiChange['from']) || isset($fiChange['to'])))
+ 110               @php($toUrl  = function($p){ $p=(string)$p; return \Illuminate\Support\Facades\Storage::url(ltrim($p,'/')); })
+ 111               <h6 class="fw-semibold mt-2">Primary Image</h6>
+ 112               <div class="row g-3 mb-3">
+ 113                 @if(!empty($fiChange['from']))
+ 114                   @php($fromUrl = $toUrl($fiChange['from']))
+ 115                   <div class="col-6 col-sm-4 col-md-3">
+ 116                     <div class="card shadow-sm">
+ 117                       <img src="{{ $fromUrl }}" class="rounded me-3" style="width:50px;height:50px;object-fit:cover;" alt="From">
+ 118                       <div class="card-footer small text-muted">From</div>
+ 119                     </div>
+ 120                   </div>
