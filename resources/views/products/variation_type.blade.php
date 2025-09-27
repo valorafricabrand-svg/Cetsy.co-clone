@@ -34,7 +34,7 @@
         <h1 class="h4 mt-2 mb-0">Manage: <span class="text-primary">{{ $type->name ?? 'Variation Type' }}</span></h1>
       </div>
       <div class="d-flex gap-2">
-        <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">Back</a>
+        <a href="{{ route('products.variations', $product) }}" class="btn btn-outline-secondary">Back</a>
       </div>
     </div>
 
@@ -234,7 +234,7 @@
     {{-- Bottom actions --}}
     <div class="sticky-actions mt-4">
       <div class="container-fluid d-flex justify-content-end">
-        <a href="{{ url()->previous() }}" class="btn btn-secondary">Close</a>
+        <a href="{{ route('products.variations', $product) }}" class="btn btn-secondary">Close</a>
       </div>
     </div>
 

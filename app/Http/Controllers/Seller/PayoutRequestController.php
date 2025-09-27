@@ -41,6 +41,12 @@ class PayoutRequestController extends Controller
 
     public function store(Request $request)
     {
+        Log::info('payout.store.start', [
+            'user_id' => Auth::id(),
+            'ip'      => $request->ip(),
+            'amount'  => $request->input('amount'),
+            'method'  => $request->input('method'),
+        ]);
         // Balance and fee rate
         $balance = Wallet::where('user_id', Auth::id())
             ->where('status', 'completed')
@@ -61,6 +67,12 @@ class PayoutRequestController extends Controller
         $amount = (float) $request->amount;
         $fee    = round($amount * $feeRate, 2);
         if (($amount + $fee) > $balance + 0.00001) {
+            Log::warning('payout.store.insufficient_balance', [
+                'user_id' => Auth::id(),
+                'amount'  => $amount,
+                'fee'     => $fee,
+                'balance' => $balance,
+            ]);
             return back()->withErrors(['amount' => 'Amount plus fee exceeds your available balance.'])->withInput();
         }
 
@@ -68,9 +80,91 @@ class PayoutRequestController extends Controller
         $paymentMethod = PaymentMethod::where('shop_id', optional($shop)->id)
             ->where('id', $request->method)
             ->first();
-        abort_if(!$paymentMethod, 403, 'Invalid payout method');
+        if (!$paymentMethod) {
+            Log::warning('payout.store.invalid_method', [
+                'user_id'   => Auth::id(),
+                'method_id' => $request->method,
+            ]);
+            abort(403, 'Invalid payout method');
+        }
 
-        // Create payout request in OTP pending state; do NOT debit wallet yet
+        // If already passed pre‑gate OTP, finalize immediately (avoid second OTP)
+        $gate = session('payout_otp');
+        $verified = false;
+        if ($gate && !empty($gate['verified_until'])) {
+            try { $verified = now()->lessThan(\Carbon\Carbon::parse($gate['verified_until'])); } catch (\Throwable $e) { $verified = false; }
+        }
+
+        if ($verified) {
+            $meta = [
+                'method'    => $request->method,
+                'fee'       => $fee,
+                'fee_rate'  => $feeRate,
+                'otp_source'=> 'pre_gate',
+                'otp_verified_at' => now()->toISOString(),
+            ];
+
+            $methodId = (int) $request->method;
+            $payout = DB::transaction(function () use ($amount, $fee, $meta, $methodId) {
+                $userId = Auth::id();
+                $debitRow = Wallet::create([
+                    'user_id'     => $userId,
+                    'credit'      => 0,
+                    'debit'       => $amount,
+                    'balance'     => 0,
+                    'type'        => 'payout_request',
+                    'reference'   => Str::uuid(),
+                    'description' => 'Payout request (net) debit',
+                ]);
+
+                $feeRow = null;
+                if ($fee > 0) {
+                    $feeRow = Wallet::create([
+                        'user_id'     => $userId,
+                        'credit'      => 0,
+                        'debit'       => $fee,
+                        'balance'     => 0,
+                        'type'        => 'withdrawal_fee',
+                        'reference'   => Str::uuid(),
+                        'description' => 'Withdrawal fee',
+                        'meta'        => ['rate' => $meta['fee_rate']],
+                    ]);
+                }
+
+                $meta['fee_wallet_id'] = $feeRow?->id;
+
+                $payout = PayoutRequest::create([
+                    'wallet_id'         => $debitRow->id,
+                    'user_id'           => $userId,
+                    'amount'            => $amount,
+                    'payment_method_id' => $methodId,
+                    'status'            => 'pending',
+                    'meta'              => $meta,
+                ]);
+
+                Activity::create([
+                    'user_id'      => $userId,
+                    'is_read'      => false,
+                    'description'  => 'You submitted a new payout request of $' . number_format($amount, 2),
+                    'type'         => \App\Models\Activity::TYPE_PAYOUT,
+                    'related_id'   => $debitRow->id,
+                    'related_type' => 'wallet',
+                ]);
+
+                return $payout;
+            });
+
+            Log::info('payout.store.preverified_finalize', [
+                'user_id'   => Auth::id(),
+                'payout_id' => $payout->id,
+                'amount'    => $amount,
+                'fee'       => $fee,
+            ]);
+
+            return redirect()->route('seller.payouts.index')->with('success', 'Your payout request was submitted.');
+        }
+
+        // Otherwise, create otp_pending and send verification email
         $otp = random_int(100000, 999999);
         $otpHash = Hash::make((string) $otp);
         $otpExpires = now()->addMinutes(10)->toISOString();
@@ -92,22 +186,34 @@ class PayoutRequestController extends Controller
                 'otp_last_sent_at'=> now()->toISOString(),
             ],
         ]);
+        Log::info('payout.store.created', [
+            'user_id'   => Auth::id(),
+            'payout_id' => $payout->id,
+            'amount'    => $amount,
+            'fee'       => $fee,
+        ]);
 
-        // Send OTP email (best-effort)
         try {
             $user = Auth::user();
             if ($user && $user->email) {
                 \Mail::to($user->email)->send(new \App\Mail\PayoutOtpMail($payout, $user, $otp));
+                Log::info('payout.store.otp_mail_sent', [
+                    'user_id'   => $user->id,
+                    'payout_id' => $payout->id,
+                    'email'     => $user->email,
+                ]);
             }
-        } catch (\Throwable $e) {}
-
-        try {
-            $verifyUrl = route('seller.payouts.otp.verify', $payout);
         } catch (\Throwable $e) {
-            $verifyUrl = url('/seller/payouts/'.$payout->id.'/verify');
+            Log::error('payout.store.otp_mail_failed', [
+                'user_id'   => Auth::id(),
+                'payout_id' => $payout->id ?? null,
+                'error'     => $e->getMessage(),
+            ]);
         }
-        return redirect()->to($verifyUrl)
-            ->with('success', 'We sent a verification code to your email. Enter it to confirm the payout request.');
+
+        try { $verifyUrl = route('seller.payouts.otp.verify', $payout); } catch (\Throwable $e) { $verifyUrl = url('/seller/payouts/'.$payout->id.'/verify'); }
+        Log::info('payout.store.redirect_verify', ['user_id' => Auth::id(), 'payout_id' => $payout->id, 'verify_url' => $verifyUrl]);
+        return redirect()->to($verifyUrl)->with('success', 'We sent a verification code to your email. Enter it to confirm the payout request.');
     }
 
     /**

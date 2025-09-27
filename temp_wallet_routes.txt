@@ -1,0 +1,46 @@
+         ->name('orders.items.reviews.store');
+    Route::get('/shops/{shop}/reviews', [\App\Http\Controllers\ReviewController::class, 'shopReviews'])
+         ->name('shop.reviews');
+
+    // Wallet
+    Route::prefix('wallet')->name('wallet.')->group(function () {
+        Route::get('/', [WalletController::class, 'index'])->name('index');
+        Route::get('/deposit', [WalletController::class, 'depositForm'])->name('deposit.form');
+        Route::post('/deposit', [WalletController::class, 'storeDeposit'])->name('deposit.store');
+        Route::post('/deposit/paypal', [WalletController::class, 'handlePayPalDeposit'])->name('deposit.paypal');
+
+    
+    });
+
+    Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
+        ->name('wallet.deposit.mpesa.stk');
+
+        // Poll status (frontend “listens” by polling this)
+ Route::get ('/wallet/deposit/mpesa/status/{ref}', [WalletController::class, 'mpesaStatus'])->name('wallet.deposit.mpesa.status');
+
+    // Account
+    Route::prefix('account')->name('account.')->group(function () {
+        Route::get('/dashboard', [AccountController::class, 'dashboard'])->name('dashboard');
+        Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
+        Route::get('/payments', [AccountController::class, 'payments'])->name('payments');
+        Route::get('/details', [AccountController::class, 'details'])->name('details');
+        Route::post('/details/update', [AccountController::class, 'updateDetails'])->name('updateDetails');
+        Route::get('/addresses', [AccountController::class, 'addresses'])->name('addresses');
+        Route::get('/logout', [AccountController::class, 'logout'])->name('logout');
+    });
+
+    Route::get('buyer/favorites', [ProductController::class, 'favorites'])->name('buyer.favorites');
+    Route::get('buyer/offers', [ProductController::class, 'offers'])->name('buyer.offers');
+
+    // Notifications
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    
+    // Disputes - Keep only this to test
+    Route::prefix('disputes')->name('disputes.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\DisputeController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\DisputeController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\DisputeController::class, 'store'])->name('store');
+        Route::get('/{dispute}', [\App\Http\Controllers\DisputeController::class, 'show'])->name('show');
+        Route::post('/{dispute}/messages', [\App\Http\Controllers\DisputeController::class, 'addMessage'])->name('messages.store');
