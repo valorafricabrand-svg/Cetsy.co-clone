@@ -1,0 +1,17 @@
+  75             @endif
+  76           </div>
+  77 
+  78           {{-- If this is a media entry, show thumbnails only (branch removed; rendering is unified below) --}}
+  79           {{-- media branch was here; keep content to render previews --}}
+  80             @php
+  81               $isVideo = function($p){ $ext = strtolower(pathinfo((string)$p, PATHINFO_EXTENSION)); return in_array($ext, ['mp4','mov','avi','wmv','webm']); };
+  82               $toUrl  = function($p){ $p=(string)$p; return \Illuminate\Support\Facades\Storage::url(ltrim($p,'/')); };
+  83               $files  = [];
+  84               if (!empty($props['files']) && is_array($props['files'])) { $files = $props['files']; }
+  85               elseif (!empty($props['file'])) { $files = [ $props['file'] ]; }
+  86             @if(!empty($files))
+  87               <div class="row g-3 mb-2">
+  88                 @foreach($files as $p)
+  89                   @php($url = $toUrl($p))
+  90                   <div class="col-6 col-sm-4 col-md-3">
+  91                     <div class="card shadow-sm">
