@@ -2,9 +2,10 @@
 
 @section('content')
 <div class="content">
-  <h1 class="mb-4">Create Deal</h1>
-  <form action="{{ route('seller.deals.store') }}" method="POST">
+  <h1 class="mb-4">Edit Deal</h1>
+  <form action="{{ route('seller.deals.update', $deal) }}" method="POST">
     @csrf
+    @method('PUT')
 
     {{-- Deal Name --}}
     <div class="mb-3">
@@ -13,7 +14,7 @@
         type="text"
         name="name"
         class="form-control @error('name') is-invalid @enderror"
-        value="{{ old('name') }}"
+        value="{{ old('name', $deal->name) }}"
         required
       >
       @error('name')
@@ -30,7 +31,7 @@
         min="1"
         max="100"
         class="form-control @error('discount_percent') is-invalid @enderror"
-        value="{{ old('discount_percent') }}"
+        value="{{ old('discount_percent', $deal->discount_percent) }}"
         required
       >
       @error('discount_percent')
@@ -45,7 +46,7 @@
         name="applies_to_all"
         id="applies_to_all"
         class="form-check-input"
-        {{ old('applies_to_all') ? 'checked' : '' }}
+        {{ old('applies_to_all', $deal->applies_to_all) ? 'checked' : '' }}
       >
       <label for="applies_to_all" class="form-check-label fw-semibold">
         <i class="fas fa-globe me-1"></i>Apply to all products
@@ -82,7 +83,7 @@
       {{-- Product Selection Area --}}
       <div class="border rounded p-3" style="max-height: 500px; overflow-y: auto;">
         <div class="row g-2" id="product-list">
-          @include('seller.deals.partials.product-cards', ['products' => $products->items(), 'selectedIds' => old('product_ids', [])])
+          @include('seller.deals.partials.product-cards', ['products' => $products->items(), 'selectedIds' => old('product_ids', $deal->products->pluck('id')->toArray())])
         </div>
         
         {{-- Loading indicator --}}
@@ -128,7 +129,7 @@
         type="datetime-local"
         name="starts_at"
         class="form-control @error('starts_at') is-invalid @enderror"
-        value="{{ old('starts_at') }}"
+        value="{{ old('starts_at', $deal->starts_at->format('Y-m-d\TH:i')) }}"
         required
       >
       @error('starts_at')
@@ -143,7 +144,7 @@
         type="datetime-local"
         name="ends_at"
         class="form-control @error('ends_at') is-invalid @enderror"
-        value="{{ old('ends_at') }}"
+        value="{{ old('ends_at', $deal->ends_at->format('Y-m-d\TH:i')) }}"
         required
       >
       @error('ends_at')
@@ -151,7 +152,22 @@
       @enderror
     </div>
 
-    <button class="btn btn-success">Save Deal</button>
+    {{-- Deal Status Info --}}
+    <div class="alert alert-info">
+      <strong>Deal Status:</strong> 
+      @if($deal->isActive())
+        <span class="text-success">Currently Active</span>
+      @elseif($deal->starts_at->isFuture())
+        <span class="text-warning">Scheduled (starts {{ $deal->starts_at->diffForHumans() }})</span>
+      @else
+        <span class="text-danger">Expired (ended {{ $deal->ends_at->diffForHumans() }})</span>
+      @endif
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-success">Update Deal</button>
+      <a href="{{ route('seller.deals.index') }}" class="btn btn-secondary">Cancel</a>
+    </div>
   </form>
 </div>
 @endsection

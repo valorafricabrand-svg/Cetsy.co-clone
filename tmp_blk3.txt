@@ -1,0 +1,21 @@
+ 181               </table>
+ 182             </div>
+ 183           @endif
+ 184 
+ 185           {{-- Media thumbnails --}}
+ 186           @php
+ 187             $isVideo = function($p){ $ext = strtolower(pathinfo((string)$p, PATHINFO_EXTENSION)); return in_array($ext, ['mp4','mov','avi','wmv','webm']); };
+ 188             $toUrl  = function($p){ $p=(string)$p; return \Illuminate\Support\Facades\Storage::url(ltrim($p,'/')); };
+ 189             @if(!empty($props['files']) && is_array($props['files']))
+ 190             @php($__has = true)
+ 191             <h6 class="fw-semibold mt-2">Files</h6>
+ 192             <div class="row g-3 mb-3">
+ 193               @foreach($props['files'] as $p)
+ 194                 @php($url = $toUrl($p))
+ 195                 <div class="col-6 col-sm-4 col-md-3">
+ 196                   <div class="card shadow-sm">
+ 197                     @if($isVideo($p))
+ 198                       <video src="{{ $url }}" style="width:50px;height:50px;object-fit:cover;" controls></video>
+ 199                     @else
+ 200                       <img src="{{ $url }}" class="rounded me-3" style="width:50px;height:50px;object-fit:cover;" alt="media">
+ 201                     @endif

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use App\Models\Media;
 use App\Models\Product;
+use App\Models\Activity;
+use Illuminate\Support\Facades\Auth;
 
 
 
@@ -26,11 +28,32 @@ class MediaController extends Controller
             'media.*' => 'required|file|mimes:jpeg,jpg,png,gif,webp,mp4,mov,avi,wmv,webm|max:51200', // up to ~50MB
         ]);
 
+        $before = $product->media()->count();
+        $paths = [];
         foreach ($request->file('media', []) as $file) {
             $path = $file->store('product-media', 'public');
             $type = str_starts_with($file->getMimeType(), 'video') ? 'video' : 'image';
             $product->media()->create(['url' => $path, 'type' => $type]);
+            $paths[] = $path;
         }
+
+        try {
+            $after = $product->media()->count();
+            Activity::create([
+                'user_id'      => Auth::id(),
+                'is_read'      => false,
+                'type'         => Activity::TYPE_PRODUCT,
+                'description'  => 'Updated product media',
+                'related_id'   => $product->id,
+                'related_type' => 'product',
+                'properties'   => [
+                    'section' => 'media',
+                    'action'  => 'upload',
+                    'files'   => $paths,
+                    'counters'=> ['media' => ['from' => $before, 'to' => $after]],
+                ],
+            ]);
+        } catch (\Throwable $e) { Log::error('media.activity.upload_failed', ['product_id' => $product->id, 'error' => $e->getMessage()]); }
 
         return back()->with('success', 'Media uploaded successfully.');
     }
@@ -40,8 +63,29 @@ class MediaController extends Controller
      */
     public function destroy(Media $media)
     {
+        $product = $media->product;
+        $before  = $product ? $product->media()->count() : null;
         Storage::disk('public')->delete($media->url);
         $media->delete();
+        try {
+            if ($product) {
+                $after = $product->media()->count();
+                Activity::create([
+                    'user_id'      => Auth::id(),
+                    'is_read'      => false,
+                    'type'         => Activity::TYPE_PRODUCT,
+                    'description'  => 'Removed product media',
+                    'related_id'   => $product->id,
+                    'related_type' => 'product',
+                    'properties'   => [
+                        'section' => 'media',
+                        'action'  => 'delete',
+                        'file'    => $media->url,
+                        'counters'=> ['media' => ['from' => $before, 'to' => $after]],
+                    ],
+                ]);
+            }
+        } catch (\Throwable $e) { Log::error('media.activity.delete_failed', ['media_id' => $media->id, 'error' => $e->getMessage()]); }
 
         return back()->with('success', 'Media deleted successfully.');
     }
@@ -87,6 +131,26 @@ public function crop(Media $media, Request $request)
 
         // Save as JPEG with requested quality (v3)
         $image->toJpeg($quality)->save($diskPath);
+
+        try {
+            $product = $media->product;
+            if ($product) {
+                Activity::create([
+                    'user_id'      => Auth::id(),
+                    'is_read'      => false,
+                    'type'         => Activity::TYPE_PRODUCT,
+                    'description'  => 'Cropped product image',
+                    'related_id'   => $product->id,
+                    'related_type' => 'product',
+                    'properties'   => [
+                        'section' => 'media',
+                        'action'  => 'crop',
+                        'file'    => $media->url,
+                        'quality' => $quality,
+                    ],
+                ]);
+            }
+        } catch (\Throwable $e) { Log::error('media.activity.crop_failed', ['media_id' => $media->id, 'error' => $e->getMessage()]); }
 
         return back()->with('success', 'Image cropped successfully.');
     } catch (\Throwable $e) {

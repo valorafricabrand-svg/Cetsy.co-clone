@@ -34,6 +34,7 @@
           ['label' => 'Product Listings', 'icon' => 'fas fa-box',        'url' => route('admin.products.index'),       'match' => ['admin.products.*']],
           ['label' => 'Categories',       'icon' => 'fas fa-cogs',       'url' => route('admin.categories.index'),     'match' => ['admin.categories.*']],
           ['label' => 'Product Reports',  'icon' => 'fas fa-flag',       'url' => route('admin.product-reports.index'),'match' => ['admin.product-reports.*']],
+          ['label' => 'Product Activity', 'icon' => 'fas fa-list-alt',   'url' => route('admin.product-activities.index'),'match' => ['admin.product-activities.*']],
           ['label' => 'Reviews',          'icon' => 'fas fa-star',       'url' => route('admin.reviews.index'),        'match' => ['admin.reviews.*'],        'count' => $pendingReviews],
         ],
       ],
@@ -102,6 +103,5 @@
     </div>
   </div>
 @endif
-
 
 

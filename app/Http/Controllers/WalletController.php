@@ -16,6 +16,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class WalletController extends Controller
@@ -146,16 +148,289 @@ class WalletController extends Controller
             ->latest('id')
             ->first();
 
+        $payoutOtpVerified = $this->isPayoutOtpVerified();
+
         return view(
             'wallet.index',
-            compact('transactions', 'balance', 'onHold', 'paymentMethods', 'paymentTypes', 'feeRate', 'minAmount', 'maxPayout', 'otpPendingPayout')
+            compact('transactions', 'balance', 'onHold', 'paymentMethods', 'paymentTypes', 'feeRate', 'minAmount', 'maxPayout', 'otpPendingPayout', 'payoutOtpVerified')
         );
     }
 
     public function depositForm()
     {
+        // Gate deposit behind lightweight email OTP
+        if (!$this->isDepositOtpVerified()) {
+            // Seed an OTP if none or expired, then show verify screen
+            Log::info('wallet.deposit.otp_gate', [
+                'user_id' => Auth::id(),
+                'ip'      => request()->ip(),
+            ]);
+            $cooldown = $this->maybeSeedDepositOtp();
+            $verifyRoute = route('wallet.deposit.otp.verify');
+            $resendRoute = route('wallet.deposit.otp.resend');
+            $purpose     = 'with your deposit';
+            return view('wallet.deposit-otp', compact('cooldown','verifyRoute','resendRoute','purpose'));
+        }
+
         $balance = $this->currentBalance(auth()->id());
         return view('wallet.deposit', compact('balance'));
+    }
+
+    /**
+     * Verify the deposit OTP from the email.
+     */
+    public function verifyDepositOtp(Request $request)
+    {
+        $data = $request->validate([
+            'code' => 'required|string|min:4|max:8',
+        ]);
+
+        $session = session('deposit_otp', []);
+        $hash    = $session['hash'] ?? null;
+        $expires = !empty($session['expires_at']) ? \Carbon\Carbon::parse($session['expires_at']) : null;
+        $attempts= (int) ($session['attempts'] ?? 0);
+
+        if ($attempts >= 5) {
+            Log::warning('wallet.deposit.otp_attempts_limit', [
+                'user_id' => Auth::id(),
+                'ip'      => $request->ip(),
+            ]);
+            return back()->withErrors(['code' => 'Too many attempts. Please resend a new code.']);
+        }
+        if (!$hash || !$expires || now()->greaterThan($expires)) {
+            Log::warning('wallet.deposit.otp_expired_or_missing', [
+                'user_id' => Auth::id(),
+                'ip'      => $request->ip(),
+                'has_hash'=> (bool) $hash,
+                'expires' => $expires?->toISOString(),
+            ]);
+            return back()->withErrors(['code' => 'Code expired. Please resend a new code.']);
+        }
+        if (!Hash::check($data['code'], $hash)) {
+            $session['attempts'] = $attempts + 1;
+            session(['deposit_otp' => $session]);
+            Log::warning('wallet.deposit.otp_invalid', [
+                'user_id'   => Auth::id(),
+                'ip'        => $request->ip(),
+                'attempts'  => $session['attempts'] ?? null,
+            ]);
+            return back()->withErrors(['code' => 'Invalid code. Please try again.']);
+        }
+
+        // Mark verified for 15 minutes
+        $session['verified_until'] = now()->addMinutes(15)->toISOString();
+        session(['deposit_otp' => $session]);
+
+        Log::info('wallet.deposit.otp_verified', [
+            'user_id' => Auth::id(),
+            'ip'      => $request->ip(),
+        ]);
+        return redirect()->route('wallet.deposit.form')->with('success', 'Verification successful. You can proceed with your deposit.');
+    }
+
+    /**
+     * Resend a new OTP with short cooldown and limited retries.
+     */
+    public function resendDepositOtp(Request $request)
+    {
+        Log::info('wallet.deposit.otp_resend_request', [
+            'user_id' => Auth::id(),
+            'ip'      => $request->ip(),
+        ]);
+        $cooldown = $this->maybeSeedDepositOtp(true);
+        if ($cooldown > 0) {
+            Log::info('wallet.deposit.otp_resend_throttled', [
+                'user_id' => Auth::id(),
+                'ip'      => $request->ip(),
+                'wait'    => $cooldown,
+            ]);
+            return back()->withErrors(['code' => 'Please wait '.$cooldown.' seconds before requesting another code.']);
+        }
+        return back()->with('status', 'A new verification code has been sent to your email.');
+    }
+
+    private function isDepositOtpVerified(): bool
+    {
+        $session = session('deposit_otp');
+        if (!$session) return false;
+        $until = data_get($session, 'verified_until');
+        if (!$until) return false;
+        try { return now()->lessThan(\Carbon\Carbon::parse($until)); } catch (\Throwable $e) { return false; }
+    }
+
+    /**
+     * Generate and email an OTP if none present or on resend.
+     * Returns remaining cooldown seconds before a resend is allowed.
+     */
+    private function maybeSeedDepositOtp(bool $resend = false): int
+    {
+        $user = Auth::user();
+        $session = session('deposit_otp', []);
+
+        $cooldownSec = 120; // 2 minutes
+        $maxResends  = 3;
+
+        $lastSentIso = $session['last_sent_at'] ?? null;
+        $resends     = (int) ($session['resends'] ?? 0);
+
+        if ($resend) {
+            if ($resends >= $maxResends) {
+                Log::warning('wallet.deposit.otp_max_resends', [
+                    'user_id' => $user?->id,
+                    'resends' => $resends,
+                ]);
+                return $cooldownSec; // signal not allowed; treat as need to wait
+            }
+            if ($lastSentIso) {
+                try {
+                    $next = \Carbon\Carbon::parse($lastSentIso)->addSeconds($cooldownSec);
+                    if (now()->lt($next)) {
+                        $wait = $next->diffInSeconds(now());
+                        Log::info('wallet.deposit.otp_cooldown', [
+                            'user_id' => $user?->id,
+                            'wait'    => $wait,
+                        ]);
+                        return $wait;
+                    }
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        // If we already have an unexpired code and not explicitly resending, keep it
+        if (!$resend && !empty($session['expires_at'])) {
+            try {
+                if (now()->lessThan(\Carbon\Carbon::parse($session['expires_at']))) {
+                    Log::info('wallet.deposit.otp_reuse', [
+                        'user_id' => $user?->id,
+                    ]);
+                    return 0;
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        $code = (string) random_int(100000, 999999);
+        $session['hash']       = Hash::make($code);
+        $session['expires_at'] = now()->addMinutes(10)->toISOString();
+        $session['attempts']   = 0;
+        $session['last_sent_at'] = now()->toISOString();
+        $session['resends']    = $resends + ($resend ? 1 : 0);
+        // Do not change verified_until here
+        session(['deposit_otp' => $session]);
+
+        try {
+            if ($user && $user->email) {
+                Mail::to($user->email)->send(new \App\Mail\WalletDepositOtpMail($user, $code));
+            }
+            Log::info('wallet.deposit.otp_mail_sent', [
+                'user_id' => $user?->id,
+                'email'   => $user?->email,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('wallet.deposit.otp_mail_failed', ['user_id' => $user?->id, 'error' => $e->getMessage()]);
+        }
+
+        return 0;
+    }
+
+    /* -------------------------------------------------------------
+     | Payout OTP gate (pre-modal)
+     |-------------------------------------------------------------- */
+    public function payoutOtpForm()
+    {
+        if (!$this->isPayoutOtpVerified()) {
+            Log::info('wallet.payout.otp_gate', [
+                'user_id' => Auth::id(),
+                'ip'      => request()->ip(),
+            ]);
+            $cooldown   = $this->maybeSeedPayoutOtp();
+            $verifyRoute= route('wallet.payout.otp.verify');
+            $resendRoute= route('wallet.payout.otp.resend');
+            $purpose    = 'with your payout request';
+            return view('wallet.deposit-otp', compact('cooldown','verifyRoute','resendRoute','purpose'));
+        }
+        return redirect()->route('wallet.index')->with('success', 'Verification already completed. You can request a payout.');
+    }
+
+    public function verifyPayoutOtp(Request $request)
+    {
+        $data = $request->validate(['code' => 'required|string|min:4|max:8']);
+        $session = session('payout_otp', []);
+        $hash    = $session['hash'] ?? null;
+        $expires = !empty($session['expires_at']) ? \Carbon\Carbon::parse($session['expires_at']) : null;
+        $attempts= (int) ($session['attempts'] ?? 0);
+        if ($attempts >= 5) {
+            Log::warning('wallet.payout.otp_attempts_limit', ['user_id' => Auth::id(), 'ip' => $request->ip()]);
+            return back()->withErrors(['code' => 'Too many attempts. Please resend a new code.']);
+        }
+        if (!$hash || !$expires || now()->greaterThan($expires)) {
+            Log::warning('wallet.payout.otp_expired_or_missing', ['user_id' => Auth::id(), 'ip' => $request->ip(), 'has_hash' => (bool)$hash, 'expires' => $expires?->toISOString()]);
+            return back()->withErrors(['code' => 'Code expired. Please resend a new code.']);
+        }
+        if (!Hash::check($data['code'], $hash)) {
+            $session['attempts'] = $attempts + 1;
+            session(['payout_otp' => $session]);
+            Log::warning('wallet.payout.otp_invalid', ['user_id' => Auth::id(), 'ip' => $request->ip(), 'attempts' => $session['attempts'] ?? null]);
+            return back()->withErrors(['code' => 'Invalid code. Please try again.']);
+        }
+        $session['verified_until'] = now()->addMinutes(15)->toISOString();
+        session(['payout_otp' => $session]);
+        Log::info('wallet.payout.otp_verified', ['user_id' => Auth::id(), 'ip' => $request->ip()]);
+        return redirect()->route('wallet.index')->with('success', 'Verification successful. You can submit your payout request.');
+    }
+
+    public function resendPayoutOtp(Request $request)
+    {
+        Log::info('wallet.payout.otp_resend_request', ['user_id' => Auth::id(), 'ip' => $request->ip()]);
+        $cooldown = $this->maybeSeedPayoutOtp(true);
+        if ($cooldown > 0) {
+            Log::info('wallet.payout.otp_resend_throttled', ['user_id' => Auth::id(), 'ip' => $request->ip(), 'wait' => $cooldown]);
+            return back()->withErrors(['code' => 'Please wait '.$cooldown.' seconds before requesting another code.']);
+        }
+        return back()->with('status', 'A new verification code has been sent.');
+    }
+
+    private function isPayoutOtpVerified(): bool
+    {
+        $session = session('payout_otp');
+        if (!$session) return false;
+        $until = data_get($session, 'verified_until');
+        if (!$until) return false;
+        try { return now()->lessThan(\Carbon\Carbon::parse($until)); } catch (\Throwable $e) { return false; }
+    }
+
+    private function maybeSeedPayoutOtp(bool $resend = false): int
+    {
+        $user = Auth::user();
+        $session = session('payout_otp', []);
+        $cooldownSec = 120; $maxResends = 3;
+        $lastSentIso = $session['last_sent_at'] ?? null;
+        $resends = (int) ($session['resends'] ?? 0);
+        if ($resend) {
+            if ($resends >= $maxResends) {
+                Log::warning('wallet.payout.otp_max_resends', ['user_id' => $user?->id, 'resends' => $resends]);
+                return $cooldownSec;
+            }
+            if ($lastSentIso) {
+                try { $next = \Carbon\Carbon::parse($lastSentIso)->addSeconds($cooldownSec); if (now()->lt($next)) { $wait = $next->diffInSeconds(now()); Log::info('wallet.payout.otp_cooldown', ['user_id' => $user?->id, 'wait' => $wait]); return $wait; } } catch (\Throwable $e) {}
+            }
+        }
+        if (!$resend && !empty($session['expires_at'])) {
+            try { if (now()->lessThan(\Carbon\Carbon::parse($session['expires_at']))) { Log::info('wallet.payout.otp_reuse', ['user_id' => $user?->id]); return 0; } } catch (\Throwable $e) {}
+        }
+        $code = (string) random_int(100000, 999999);
+        $session['hash'] = Hash::make($code);
+        $session['expires_at'] = now()->addMinutes(10)->toISOString();
+        $session['attempts'] = 0;
+        $session['last_sent_at'] = now()->toISOString();
+        $session['resends'] = $resends + ($resend ? 1 : 0);
+        session(['payout_otp' => $session]);
+        try {
+            if ($user && $user->email) { Mail::to($user->email)->send(new \App\Mail\WalletPayoutOtpMail($user, $code)); }
+            Log::info('wallet.payout.otp_mail_sent', ['user_id' => $user?->id, 'email' => $user?->email]);
+        } catch (\Throwable $e) {
+            Log::error('wallet.payout.otp_mail_failed', ['user_id' => $user?->id, 'error' => $e->getMessage()]);
+        }
+        return 0;
     }
 
     /* -------------------------------------------------------------
@@ -164,6 +439,17 @@ class WalletController extends Controller
 
     public function storeDeposit(Request $request)
     {
+        if (!$this->isDepositOtpVerified()) {
+            Log::warning('wallet.deposit.action_blocked_missing_otp', [
+                'user_id' => Auth::id(),
+                'action'  => 'storeDeposit',
+                'ip'      => $request->ip(),
+            ]);
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'error' => 'Two-factor verification required.'], 403);
+            }
+            return redirect()->route('wallet.deposit.form')->withErrors('Please verify the code sent to your email to continue.');
+        }
         $request->validate([
             'amount' => 'required|numeric|min:1',
             'method' => 'required|in:mpesa,card,paypal',
@@ -195,6 +481,14 @@ class WalletController extends Controller
 
 public function handlePayPalDeposit(Request $request)
 {
+    if (!$this->isDepositOtpVerified()) {
+        \Log::warning('wallet.deposit.action_blocked_missing_otp', [
+            'user_id' => Auth::id(),
+            'action'  => 'handlePayPalDeposit',
+            'ip'      => $request->ip(),
+        ]);
+        return response()->json(['success' => false, 'error' => 'Two-factor verification required.'], 403);
+    }
     $request->validate([
         'amount' => 'required|numeric|min:1',
     ]);
@@ -261,6 +555,14 @@ public function handlePayPalDeposit(Request $request)
      */
     public function startMpesaStk(Request $request)
     {
+        if (!$this->isDepositOtpVerified()) {
+            Log::warning('wallet.deposit.action_blocked_missing_otp', [
+                'user_id' => Auth::id(),
+                'action'  => 'startMpesaStk',
+                'ip'      => $request->ip(),
+            ]);
+            return response()->json(['success' => false, 'message' => 'Two-factor verification required.'], 403);
+        }
         $request->validate([
             'usd_amount' => ['required', 'numeric', 'min:1'],
             'phone'      => ['required', 'string', 'max:20'],
