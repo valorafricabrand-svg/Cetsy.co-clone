@@ -225,7 +225,7 @@
         <span class="chip">
           <i class="bi bi-cash-coin"></i>
           <span class="label-muted">Total:</span>
-          <span class="fw-semibold">{{ money() }}</span>
+          <span class="fw-semibold">{{ money((float)($order->total_amount ?? 0)) }}</span>
         </span>
       </div>
 
@@ -284,15 +284,15 @@
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Subtotal:</span>
-                <span>{{ money() }}</span>
+                <span>{{ money((float)($order->subtotal ?? 0)) }}</span>
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Shipping Fee:</span>
-                <span>{{ money() }}</span>
+                <span>{{ money((float)($order->shipping_cost ?? 0)) }}</span>
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Total Amount:</span>
-                <span class="fw-bold">{{ money() }}</span>
+                <span class="fw-bold">{{ money((float)($order->total_amount ?? 0)) }}</span>
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
                 <span class="fw-semibold">Status:</span>
@@ -459,16 +459,16 @@
                     <td>{{ $qty }}</td>
 
                     {{-- Unit Price --}}
-                    <td>{{ money() }}</td>
+                    <td>{{ money((float)$unit) }}</td>
 
                     {{-- Shipping profile (or hidden for digital) --}}
                     <td>{{ $label }}</td>
 
                     {{-- Shipping cost --}}
-                    <td>{{ money() }}</td>
+                    <td>{{ money((float)$shipCost) }}</td>
 
-                    {{-- Line total --}}
-                    <td class="fw-semibold">{{ money() }}</td>
+                    {{-- Subtotal (unit * qty, excludes shipping) --}}
+                    <td class="fw-semibold">{{ money((float)$lineSubtotal) }}</td>
 
                     {{-- Review (only after delivery) --}}
                     <td class="text-center">
@@ -550,7 +550,7 @@
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $pay->local_transaction_id }}</td>
                     <td>{{ ucfirst($pay->payment_method) }}</td>
-                    <td>{{ money() }}</td>
+                    <td>{{ money((float)($pay->total_amount ?? 0)) }}</td>
                     <td>
                       <span class="badge {{ $isCompleted ? 'bg-success' : 'bg-secondary' }}">
                         {{ $statusLabel }}

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <style>
+      :root { --brand:#027333; --text:#1f2937; --muted:#6b7280; }
+      html,body{height:100%}
+      body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:var(--text); display:grid; place-items:center; background:#f8fafc}
+      .card{max-width:480px; background:#fff; border-radius:16px; padding:28px; box-shadow:0 10px 25px rgba(0,0,0,.08); text-align:center; margin:16px}
+      h1{font-size:1.375rem; margin:0 0 8px}
+      p{margin:0 0 12px; color:var(--muted)}
+      .btn{display:inline-block; margin-top:12px; padding:10px 16px; border-radius:10px; text-decoration:none; background:var(--brand); color:#fff}
+      .tips{font-size:.875rem; color:var(--muted); margin-top:12px}
+    </style>
+  </head>
+  <body>
+    <main class="card" role="main">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M3 13h2a4 4 0 014 4v0a4 4 0 004 4h0a4 4 0 004-4v0a4 4 0 014-4h0" stroke="var(--brand)" stroke-width="2" stroke-linecap="round"/>
+        <path d="M7 13a5 5 0 015-5v0a5 5 0 015 5" stroke="var(--brand)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <h1>You’re offline</h1>
+      <p>It looks like your device is not connected to the internet.</p>
+      <p class="tips">When you’re back online, reload to continue.</p>
+      <a class="btn" href="/" rel="nofollow">Try Again</a>
+    </main>
+  </body>
+  </html>
+

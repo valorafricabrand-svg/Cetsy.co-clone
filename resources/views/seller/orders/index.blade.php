@@ -6,6 +6,8 @@
 <style>
     .badge.text-capitalize { text-transform: capitalize; }
     .status-pill.active { text-decoration: none; }
+    /* Clickable rows */
+    tr.order-row { cursor: pointer; }
     
     /* Dispute and Appeal Status Pills */
     .status-pill[href*="disputes"] {
@@ -296,6 +298,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 1000);
         });
     });
+
+    // Make table rows clickable (navigate to order details)
+    const isInteractive = (el) => {
+        if (!el) return false;
+        const selector = 'a,button,input,select,textarea,.action-buttons *,[data-bs-toggle]';
+        return el.closest(selector) !== null;
+    };
+    document.querySelectorAll('tr.order-row').forEach(row => {
+        row.addEventListener('click', (e) => {
+            if (isInteractive(e.target)) return; // ignore clicks on controls/links
+            const href = row.getAttribute('data-href');
+            if (href) window.location.href = href;
+        });
+        row.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const href = row.getAttribute('data-href');
+                if (href) window.location.href = href;
+            }
+        });
+    });
 });
 </script>
 @endpush
@@ -466,7 +489,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     $symbol   = shop_currency($order->shop ?? null);
                                     $dispute  = $order->disputes()->latest()->first();
                                 @endphp
-                                <tr>
+                                <tr class="order-row" data-href="{{ route('seller.orders.show', $order) }}" tabindex="0" aria-label="View order #{{ $order->id }} details">
                                     <th scope="row">{{ $row }}</th>
                                     <td>{{ $order->full_name }}</td>
                                     <td>{{ $order->phone ?? '—' }}</td>
@@ -480,6 +503,29 @@ document.addEventListener('DOMContentLoaded', function() {
                                         @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
                                             <br><small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
                                         @endif
+                                        @php
+                                            $minDays = null; $maxDays = null;
+                                            foreach (($order->items ?? []) as $it) {
+                                                $sp = $it->shippingProfile;
+                                                $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
+                                                $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
+                                                if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
+                                                if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
+                                            }
+                                            $placedAt = optional($order->created_at);
+                                            $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
+                                            $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
+                                            $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
+                                            $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
+                                            $dispatchBy = $shipEndLabel ?? $shipStartLabel;
+                                        @endphp
+                                        <div class="small text-muted mt-1">
+                                            @if($dispatchBy)
+                                                Dispatch by {{ $dispatchBy }}
+                                            @else
+                                                Dispatch soon
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="dispute-appeal-cell">
                                         @if($dispute)

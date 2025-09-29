@@ -1,16 +1,57 @@
-# cetsy_starter
+# Cetsy Starter (Flutter WebView)
 
-A new Flutter project.
+Lightweight Flutter wrapper around the Cetsy website with:
+- Same‑origin in‑app browsing, external links open in native apps
+- Pull‑to‑refresh, top progress strip, tap‑loader overlay
+- Offline banner with quick retry
+- File upload support on Android (basic)
+- Web fallback (redirects the tab to the site when running on Flutter Web)
 
-## Getting Started
+## Configure the base URL
 
-This project is a starting point for a Flutter application.
+The app reads the base URL at build time. Default is `https://cetsy.co`.
 
-A few resources to get you started if this is your first Flutter project:
+Override with `--dart-define`:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```
+flutter run --dart-define=APP_BASE_URL=https://your-domain.com \
+           --dart-define=APP_INITIAL_PATH=/
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+or for release builds:
+
+```
+flutter build apk  --dart-define=APP_BASE_URL=https://your-domain.com --release
+flutter build ios  --dart-define=APP_BASE_URL=https://your-domain.com --release
+```
+
+Notes:
+- `APP_INITIAL_PATH` defaults to `/` (home). Set to another path if desired.
+- Android allows cleartext for `localhost`/`10.0.2.2` (dev). iOS includes ATS exceptions for the same.
+
+## Common Schemes and External Apps
+
+Links like `tel:`, `sms:`, `mailto:`, `whatsapp:`, and maps (`geo:`/`maps:`) open with native apps.
+Other domains (not matching your base URL host) also open externally.
+
+## iOS/Android project notes
+
+- AndroidManifest declares `<queries>` for the common schemes (Android 11+).
+- iOS `Info.plist` adds `LSApplicationQueriesSchemes` and dev ATS exceptions.
+- If you use only HTTPS in production, no further changes are needed.
+
+## Splash screen
+
+This project is set up to use `flutter_native_splash` with brand colors.
+
+Update or confirm the splash images in `assets/app_icons/` then run:
+
+```
+flutter pub get
+flutter pub run flutter_native_splash:create
+```
+
+Config lives in `pubspec.yaml` under `flutter_native_splash:` and uses:
+- Light: background `#2563EB` with `assets/app_icons/cetsy_icon_1024.png`
+- Dark: background `#0B1220` with same image
+- Android 12: uses the 512px variant for the foreground icon

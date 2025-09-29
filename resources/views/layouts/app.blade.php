@@ -5,6 +5,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="application-name" content="{{ config('app.name', 'Laravel') }}">
+    <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Laravel') }}">
 
     <!-- ===============================================-->
     <!--    Document Title-->
@@ -21,7 +26,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ setting('favicon_url') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ setting('favicon_url') }}">
     <link rel="shortcut icon" type="image/x-icon" href="{{ setting('favicon_url') }}">
-    <link rel="manifest" href="{{ setting('favicon_url') }}">
+    <link rel="manifest" href="{{ asset('assets/img/favicons/manifest.json') }}">
     <meta name="msapplication-TileImage" content="{{ setting('favicon_url') }}">
     <meta name="theme-color" content="#ffffff">
     <script src="{{ asset('vendors/simplebar/simplebar.min.js') }}"></script>
@@ -80,6 +85,14 @@
         {{ get_option('additional_css') }}
     </style>
     @endif
+
+    <style>
+        /* Responsive helpers */
+        .content img, .card img, .modal img { max-width: 100%; height: auto; }
+        .table-responsive { -webkit-overflow-scrolling: touch; }
+        .table-responsive > table { width: 100%; }
+        @media (max-width: 767.98px) { footer { display: none !important; } }
+    </style>
 
     <style>
         .modal {
@@ -338,5 +351,17 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- before </body> -->
 <script src="https://cdn.jsdelivr.net/npm/intro.js/minified/intro.min.js"></script>
+<script>
+  // Register Service Worker for PWA support
+  (function(){
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function(){
+        navigator.serviceWorker.register('/service-worker.js').catch(function(err){
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  })();
+</script>
 </body>
 </html>

@@ -20,6 +20,11 @@
   @media (min-width: 992px) {
     .sticky-summary { position: sticky; top: 100px; z-index: 10; }
   }
+  /* Mobile sticky bar for quick action */
+  .checkout-sticky-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1049; background: #ffffff; border-top: 1px solid rgba(0,0,0,.1); box-shadow: 0 -6px 18px rgba(0,0,0,.06); padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
+  .checkout-sticky-bar .price { font-weight: 700; }
+  @media (min-width: 768px) { .checkout-sticky-bar { display: none !important; } }
+  @media (max-width: 767.98px) { .checkout-page .container { padding-bottom: 100px; } }
 </style>
 
 @php
@@ -96,7 +101,7 @@
     @endif
 
     @if (!empty($cart))
-      <form action="{{ route('store_order') }}" method="POST" class="row gy-5 gy-lg-0" novalidate>
+      <form id="checkout-form" action="{{ route('store_order') }}" method="POST" class="row gy-5 gy-lg-0" novalidate>
         @csrf
 
         {{-- Billing & Shipping Details --}}
@@ -321,7 +326,7 @@
             </div>
 
             <div class="d-grid mt-4">
-              <button type="submit" class="btn btn-success btn-lg">Place Your Order</button>
+              <button type="submit" class="btn btn-success btn-lg w-100 w-md-auto">Place Your Order</button>
             </div>
           </div>
         </div>
@@ -341,5 +346,31 @@
     document.getElementById('billing_address_fields')
             .style.display = checked ? 'none' : 'block';
   }
+  // Submit protection and mobile sticky submit (bind after DOM is ready)
+  document.addEventListener('DOMContentLoaded', function(){
+    const form = document.getElementById('checkout-form');
+    if (!form) return;
+    form.addEventListener('submit', function(){
+      const btns = form.querySelectorAll('button[type="submit"], button[data-submit-checkout]');
+      btns.forEach(b => { b.disabled = true; b.classList.add('disabled'); });
+    });
+    const stickyBtn = document.getElementById('checkout-sticky-submit');
+    if (stickyBtn) {
+      stickyBtn.addEventListener('click', function(e){ e.preventDefault(); form.requestSubmit(); });
+    }
+  });
 </script>
+
+<!-- Sticky footer summary (mobile) -->
+<div class="checkout-sticky-bar d-md-none">
+  <div class="container d-flex align-items-center justify-content-between gap-3">
+    <div>
+      <div class="small text-muted">Total</div>
+      <div id="grand-total-sticky-checkout" class="price">{{ $currency }} {{ number_format($grandTotal,2) }}</div>
+    </div>
+    <button id="checkout-sticky-submit" type="submit" form="checkout-form" class="btn btn-success btn-lg flex-grow-1" data-submit-checkout>
+      Place Order
+    </button>
+  </div>
+</div>
 @endsection

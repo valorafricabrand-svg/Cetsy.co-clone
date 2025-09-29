@@ -563,6 +563,7 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
     Route::get('order/payments', [OrderController::class, 'orderPayments'])->name('orders.payments');
     Route::patch('orders/{order}/process', [OrderController::class, 'process'])->name('orders.process');
     Route::post('orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
+    Route::patch('orders/{order}/tracking', [OrderController::class, 'updateTracking'])->name('orders.tracking');
     Route::patch('orders/{order}/cancel', [OrderController::class, 'sellerCancel'])->name('orders.cancel');
 
     Route::resource('shipping_profiles', ShippingProfileController::class)

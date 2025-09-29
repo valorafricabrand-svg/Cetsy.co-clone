@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'config.dart';
 import 'webview/cetsy_webview_screen.dart';
 
 class CetsyApp extends StatelessWidget {
@@ -22,7 +23,8 @@ class CetsyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const CetsyWebViewScreen(initialUrl: 'https://cetsy.co/dashboard'),
+      // Initial URL is configurable via --dart-define=APP_BASE_URL
+      home: CetsyWebViewScreen(initialUrl: AppConfig.initialUrl),
     );
   }
 }
