@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Wallet Transactions')
 
@@ -23,18 +23,12 @@
         </a>
 
         @if(auth()->user()->isSeller())
-          @if(!($payoutOtpVerified ?? false))
-            <a href="{{ route('wallet.payout.otp.form') }}" class="btn btn-primary btn-lg mt-3 mt-md-0">
+          <button class="btn btn-primary btn-lg mt-3 mt-md-0"
+                  data-bs-toggle="modal"
+                  data-bs-target="#payoutModal"
+                  @disabled($balance < $minAmount || ($paymentMethods?->count() ?? 0) === 0)>
               Request&nbsp;Payout
-            </a>
-          @else
-            <button class="btn btn-primary btn-lg mt-3 mt-md-0"
-                    data-bs-toggle="modal"
-                    data-bs-target="#payoutModal"
-                    @disabled($balance < $minAmount || ($paymentMethods?->count() ?? 0) === 0)>
-                Request&nbsp;Payout
-            </button>
-          @endif
+          </button>
         @endif
 
         

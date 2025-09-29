@@ -25,18 +25,17 @@ class ReviewController extends Controller
         $perPage = $perPage > 0 ? min($perPage, 100) : 15;
 
         $baseQuery = Review::with([
-                'order' => function ($query) {
-                    $query->select('id', 'order_number', 'status', 'total', 'created_at', 'delivered_at', 'completed_at', 'user_id');
-                },
+                // Load related order and listing product
+                'order',
                 'orderItem.product' => function ($query) {
                     $query->select('id', 'name', 'type', 'slug');
                 },
-                'user:id,name',
+                // Qualify user columns to avoid ambiguous id
+                'user' => function ($query) {
+                    $query->select('users.id', 'users.name');
+                },
             ])
-            ->where('shop_id', $shop->id)
-            ->whereHas('order', function ($query) {
-                $query->whereIn('status', [Order::STATUS_DELIVERED, Order::STATUS_COMPLETED]);
-            });
+            ->where('shop_id', $shop->id);
 
         if ($search !== '') {
             $baseQuery->where(function ($query) use ($search) {
@@ -48,8 +47,7 @@ class ReviewController extends Controller
                         $sub->where('name', 'like', "%{$search}%");
                     })
                     ->orWhereHas('order', function ($sub) use ($search) {
-                        $sub->where('order_number', 'like', "%{$search}%")
-                            ->orWhere('id', 'like', "%{$search}%");
+                        $sub->where('id', 'like', "%{$search}%");
                     });
             });
         }

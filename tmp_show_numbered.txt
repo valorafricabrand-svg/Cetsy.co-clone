@@ -1,0 +1,209 @@
+   1 @extends('layouts.app')
+   2 
+   3 @section('title', 'Activity #'.$activity->id)
+   4 
+   5 @section('content')
+   6 <div class="content">
+   7   <div class="row g-3">
+   8     <div class="col-12">
+   9       <div class="d-flex align-items-center justify-content-between mb-2">
+  10         <h2 class="h5 fw-semibold mb-0">Product Activity #{{ $activity->id }}</h2>
+  11         <a class="btn btn-outline-secondary" href="{{ route('admin.product-activities.index') }}">Back</a>
+  12       </div>
+  13 
+  14       <div class="card shadow-sm border-0 mb-3">
+  15         <div class="card-body">
+  16           <div class="row g-3">
+  17             <div class="col-md-6">
+  18               <div class="small text-muted">When</div>
+  19               <div>{{ $activity->created_at->toDayDateTimeString() }}</div>
+  20             </div>
+  21             <div class="col-md-6">
+  22               <div class="small text-muted">User</div>
+  23               <div>{{ optional($activity->user)->name ?? ('User #'.$activity->user_id) }}</div>
+  24             </div>
+  25             <div class="col-md-6">
+  26               <div class="small text-muted">Product</div>
+  27               <div>
+  28                 @if($product)
+  29                   <a href="{{ route('admin.products.show', $product->id) }}">#{{ $product->id }} – {{ $product->name }}</a>
+  30                 @else
+  31                   #{{ $activity->related_id }} <small class="text-muted">{{ $activity->related_type }}</small>
+  32                 @endif
+  33               </div>
+  34             </div>
+  35             <div class="col-md-6">
+  36               <div class="small text-muted">Section</div>
+  37               <div>{{ data_get($activity->properties, 'section', '-') }}</div>
+  38             </div>
+  39           </div>
+  40         </div>
+  41       </div>
+  42 
+  43       <div class="card shadow-sm border-0">
+  44         <div class="card-header bg-white fw-semibold">Details</div>
+  45         <div class="card-body">
+  46           @php($props = (array) ($activity->properties ?? []))
+  47 
+  48           {{-- Primary meta --}}
+  49           <div class="row g-3 mb-2">
+  50             @if(isset($props['action']))
+  51               <div class="col-md-3">
+  52                 <div class="small text-muted">Action</div>
+  53                 <div class="fw-semibold text-capitalize">{{ $props['action'] }}</div>
+  54               </div>
+  55             @endif
+  56             @if(isset($props['profile_name']))
+  57               <div class="col-md-3">
+  58                 <div class="small text-muted">Profile</div>
+  59                 <div class="fw-semibold">{{ $props['profile_name'] }}</div>
+  60               </div>
+  61             @endif
+  62             @if(isset($props['set_default']))
+  63               <div class="col-md-3">
+  64                 <div class="small text-muted">Set Default</div>
+  65                 <div class="fw-semibold">{{ $props['set_default'] ? 'Yes' : 'No' }}</div>
+  66               </div>
+  67             @endif
+  68             @if(isset($props['quality']))
+  69               <div class="col-md-3">
+  70                 <div class="small text-muted">Quality</div>
+  71                 <div class="fw-semibold">{{ $props['quality'] }}</div>
+  72               </div>
+  73             @endif
+  74           </div>
+  75 
+  76           {{-- Changes diff --}}
+  77           @if(!empty($props['changes']) && is_array($props['changes']))
+  78             <h6 class="fw-semibold mt-2">Field Changes</h6>
+  79             <div class="table-responsive mb-3">
+  80               <table class="table table-sm align-middle">
+  81                 <thead class="table-light">
+  82                   <tr>
+  83                     <th style="width: 220px;">Field</th>
+  84                     <th>From</th>
+  85                     <th>To</th>
+  86                   </tr>
+  87                 </thead>
+  88                 <tbody>
+  89                   @foreach($props['changes'] as $field => $chg)
+  90                     <tr>
+  91                       <td class="text-nowrap"><code>{{ $field }}</code></td>
+  92                       <td>{{ is_array($chg['from'] ?? null) ? json_encode($chg['from']) : (string)($chg['from'] ?? '') }}</td>
+  93                       <td>{{ is_array($chg['to'] ?? null) ? json_encode($chg['to']) : (string)($chg['to'] ?? '') }}</td>
+  94                     </tr>
+  95                   @endforeach
+  96                 </tbody>
+  97               </table>
+  98             </div>
+  99           @endif
+ 100 
+ 101           {{-- Counters (before/after) --}}
+ 102           @if(!empty($props['counters']) && is_array($props['counters']))
+ 103             <h6 class="fw-semibold mt-2">Counters</h6>
+ 104             <div class="table-responsive mb-3">
+ 105               <table class="table table-sm align-middle">
+ 106                 <thead class="table-light">
+ 107                   <tr>
+ 108                     <th style="width: 220px;">Metric</th>
+ 109                     <th>From</th>
+ 110                     <th>To</th>
+ 111                   </tr>
+ 112                 </thead>
+ 113                 <tbody>
+ 114                   @foreach($props['counters'] as $metric => $counts)
+ 115                     <tr>
+ 116                       <td class="text-nowrap"><code>{{ $metric }}</code></td>
+ 117                       <td>{{ $counts['from'] ?? '' }}</td>
+ 118                       <td>{{ $counts['to'] ?? '' }}</td>
+ 119                     </tr>
+ 120                   @endforeach
+ 121                 </tbody>
+ 122               </table>
+ 123             </div>
+ 124           @endif
+ 125 
+ 126           {{-- Media thumbnails --}}
+ 127           @php
+ 128             $isVideo = function($p){
+ 129               $ext = strtolower(pathinfo((string)$p, PATHINFO_EXTENSION));
+ 130               return in_array($ext, ['mp4','mov','avi','wmv','webm']);
+ 131             };
+ 132             $toUrl = function($p){
+ 133               $p = (string) $p;
+ 134               return Str::startsWith($p, ['http://','https://','//']) ? $p : asset('storage/' . ltrim($p,'/'));
+ 135             };
+ 136           @endphp
+ 137 
+ 138           @if(!empty($props['files']) && is_array($props['files']))
+ 139             <h6 class="fw-semibold mt-2">Files</h6>
+ 140             <div class="row g-3 mb-3">
+ 141               @foreach($props['files'] as $p)
+ 142                 @php($url = $toUrl($p))
+ 143                 <div class="col-6 col-sm-4 col-md-3">
+ 144                   <div class="card shadow-sm">
+ 145                     @if($isVideo($p))
+ 146                       <video src="{{ $url }}" class="card-img-top" style="height:140px;object-fit:cover;" controls></video>
+ 147                     @else
+ 148                       <img src="{{ $url }}" class="card-img-top" style="height:140px;object-fit:cover;" alt="media">
+ 149                     @endif
+ 150                     <div class="card-footer text-truncate small"><a href="{{ $url }}" target="_blank" class="text-decoration-none">Open</a></div>
+ 151                   </div>
+ 152                 </div>
+ 153               @endforeach
+ 154             </div>
+ 155           @endif
+ 156 
+ 157           @if(!empty($props['file']))
+ 158             <h6 class="fw-semibold mt-2">File</h6>
+ 159             @php($url = $toUrl($props['file']))
+ 160             <div class="row g-3 mb-3">
+ 161               <div class="col-6 col-sm-4 col-md-3">
+ 162                 <div class="card shadow-sm">
+ 163                   @if($isVideo($props['file']))
+ 164                     <video src="{{ $url }}" class="card-img-top" style="height:140px;object-fit:cover;" controls></video>
+ 165                   @else
+ 166                     <img src="{{ $url }}" class="card-img-top" style="height:140px;object-fit:cover;" alt="media">
+ 167                   @endif
+ 168                   <div class="card-footer text-truncate small"><a href="{{ $url }}" target="_blank" class="text-decoration-none">Open</a></div>
+ 169                 </div>
+ 170               </div>
+ 171             </div>
+ 172           @endif
+ 173 
+ 174           {{-- Featured/Primary image change preview --}}
+ 175           @php($fiChange = data_get($props, 'changes.featured_image'))
+ 176           @if(is_array($fiChange) && (isset($fiChange['from']) || isset($fiChange['to'])))
+ 177             <h6 class="fw-semibold mt-2">Primary Image</h6>
+ 178             <div class="row g-3 mb-3">
+ 179               @if(!empty($fiChange['from']))
+ 180                 @php($fromUrl = $toUrl($fiChange['from']))
+ 181                 <div class="col-6 col-sm-4 col-md-3">
+ 182                   <div class="card shadow-sm">
+ 183                     <img src="{{ $fromUrl }}" class="card-img-top" style="height:140px;object-fit:cover;" alt="From">
+ 184                     <div class="card-footer small text-muted">From</div>
+ 185                   </div>
+ 186                 </div>
+ 187               @endif
+ 188               @if(!empty($fiChange['to']))
+ 189                 @php($toImg = $toUrl($fiChange['to']))
+ 190                 <div class="col-6 col-sm-4 col-md-3">
+ 191                   <div class="card shadow-sm">
+ 192                     <img src="{{ $toImg }}" class="card-img-top" style="height:140px;object-fit:cover;" alt="To">
+ 193                     <div class="card-footer small text-muted">To</div>
+ 194                   </div>
+ 195                 </div>
+ 196               @endif
+ 197             </div>
+ 198           @endif
+ 199 
+ 200           {{-- Fallback to JSON if nothing matched --}}
+ 201           @if(empty($props['changes']) && empty($props['counters']) && empty($props['files']) && empty($props['file']) && empty($props['action']))
+ 202             <pre class="mb-0" style="white-space: pre-wrap; word-break: break-word;">{{ json_encode($activity->properties, JSON_PRETTY_PRINT) }}</pre>
+ 203           @endif
+ 204         </div>
+ 205       </div>
+ 206     </div>
+ 207   </div>
+ 208 </div>
+ 209 @endsection

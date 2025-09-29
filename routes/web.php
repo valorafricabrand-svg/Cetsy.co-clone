@@ -325,8 +325,15 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::prefix('wallet')->name('wallet.')->group(function () {
         Route::get('/', [WalletController::class, 'index'])->name('index');
         Route::get('/deposit', [WalletController::class, 'depositForm'])->name('deposit.form');
+        Route::post('/deposit/otp-verify', [WalletController::class, 'verifyDepositOtp'])->name('deposit.otp.verify');
+        Route::post('/deposit/otp-resend', [WalletController::class, 'resendDepositOtp'])->name('deposit.otp.resend');
         Route::post('/deposit', [WalletController::class, 'storeDeposit'])->name('deposit.store');
         Route::post('/deposit/paypal', [WalletController::class, 'handlePayPalDeposit'])->name('deposit.paypal');
+
+        // Payout OTP gate (pre-modal)
+        Route::get('/payout/verify', [WalletController::class, 'payoutOtpForm'])->name('payout.otp.form');
+        Route::post('/payout/otp-verify', [WalletController::class, 'verifyPayoutOtp'])->name('payout.otp.verify');
+        Route::post('/payout/otp-resend', [WalletController::class, 'resendPayoutOtp'])->name('payout.otp.resend');
 
     
     });
@@ -467,6 +474,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('product-reports', [AdminProductReportController::class, 'index'])->name('product-reports.index');
     Route::put('product-reports/{id}', [AdminProductReportController::class, 'update'])->name('product-reports.update');
 
+    // Product Activities (audits)
+    Route::get('product-activities', [\App\Http\Controllers\Admin\ProductActivityController::class, 'index'])->name('product-activities.index');
+    Route::get('product-activities/{activity}', [\App\Http\Controllers\Admin\ProductActivityController::class, 'show'])->name('product-activities.show');
+
     // Admin Disputes
     Route::prefix('admin-disputes')->name('admin-disputes.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\DisputeController::class, 'index'])->name('index');
@@ -503,7 +514,11 @@ Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('selle
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::resource('deals', DealController::class)
-        ->only(['index', 'create', 'store']);
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+    
+    // Additional deal routes
+    Route::post('deals/{deal}/stop', [DealController::class, 'stop'])->name('deals.stop');
+    Route::get('deals/products/search', [DealController::class, 'searchProducts'])->name('deals.products.search');
 
     Route::get('/products/pricing/bulk', [BulkPriceController::class, 'create'])
         ->name('products.pricing.bulk');

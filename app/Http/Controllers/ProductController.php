@@ -42,6 +42,61 @@ class ProductController extends Controller
         $this->recommendations = $recommendations;
     }
 
+    /* -------------------------------------------------------------
+     | Activity helpers (product change logs)
+     |-------------------------------------------------------------- */
+    private function captureOnly(Product $product, array $fields): array
+    {
+        $out = [];
+        foreach ($fields as $f) {
+            $out[$f] = $product->getAttribute($f);
+        }
+        return $out;
+    }
+
+    private function computeChanges(array $before, array $after): array
+    {
+        $changes = [];
+        foreach (array_keys($before + $after) as $key) {
+            $old = $before[$key] ?? null;
+            $new = $after[$key] ?? null;
+            // Normalize numeric strings
+            if (is_numeric($old) && is_numeric($new)) {
+                $old = (float) $old; $new = (float) $new;
+            }
+            if ($old !== $new) {
+                $changes[$key] = ['from' => $old, 'to' => $new];
+            }
+        }
+        return $changes;
+    }
+
+    private function recordProductActivity(Product $product, string $section, array $changes, array $extra = []): void
+    {
+        try {
+            if (empty($changes) && empty($extra)) return; // nothing to log
+            Activity::create([
+                'user_id'      => auth()->id(),
+                'is_read'      => false,
+                'type'         => Activity::TYPE_PRODUCT,
+                'description'  => 'Updated product: ' . ($product->name ?? ('#'.$product->id)),
+                'related_id'   => $product->id,
+                'related_type' => 'product',
+                'properties'   => [
+                    'section' => $section,
+                    'product_id' => $product->id,
+                    'changes' => $changes,
+                ] + $extra,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('product.activity.log_failed', [
+                'product_id' => $product->id,
+                'section'    => $section,
+                'error'      => $e->getMessage(),
+            ]);
+        }
+    }
+
     public function index(Request $request)
     {
         // Resolve shop
@@ -316,6 +371,14 @@ public function edit(Product $product)
 
 public function update(Request $request, Product $product)
 {
+    // Capture "before" snapshot
+    $before = $this->captureOnly($product, [
+        'name','type','category_id','country_id','origin_postal_code',
+        'processing_time_id','description','price','discount_percent','stock'
+    ]);
+    $beforeMedia = $product->media()->count();
+    $beforeVars  = $product->variations()->count();
+
     $data = $request->validate([
         'name'                      => 'required|string|max:255',
         'type'                      => 'required|in:physical,digital,service',
@@ -428,6 +491,20 @@ public function update(Request $request, Product $product)
             ]);
         }
     }
+
+    // Log changes
+    $product->refresh();
+    $after  = $this->captureOnly($product, array_keys($before));
+    $changes = $this->computeChanges($before, $after);
+    $afterMedia = $product->media()->count();
+    $afterVars  = $product->variations()->count();
+    $extra = [
+        'counters' => [
+            'media'      => ['from' => $beforeMedia, 'to' => $afterMedia],
+            'variations' => ['from' => $beforeVars,  'to' => $afterVars],
+        ]
+    ];
+    $this->recordProductActivity($product, 'full_update', $changes, $extra);
 
     return redirect()
         ->route('products.edit', $product)
@@ -806,11 +883,33 @@ public function successDeposit(Request $request, $id)
         // 2. Build a full URL if what you receive is a relative path.
         //    (If your form already posts the full URL, remove asset().)
         $fullUrl = asset('storage/' . ltrim($validated['featured_image'], '/'));
+        $___oldFeatured = $product->featured_image;
 
         // 3. Persist to DB.
         $product->update([
             'featured_image' => $fullUrl,
         ]);
+
+        // Log activity
+        try {
+            if ($___oldFeatured !== $fullUrl) {
+                Activity::create([
+                    'user_id'      => auth()->id(),
+                    'is_read'      => false,
+                    'type'         => Activity::TYPE_PRODUCT,
+                    'description'  => 'Changed primary product image',
+                    'related_id'   => $product->id,
+                    'related_type' => 'product',
+                    'properties'   => [
+                        'section' => 'media',
+                        'action'  => 'set_primary',
+                        'changes' => [
+                            'featured_image' => ['from' => $___oldFeatured, 'to' => $fullUrl]
+                        ],
+                    ],
+                ]);
+            }
+        } catch (\Throwable $e) { \Log::error('product.media.primary.log_failed', ['product_id' => $product->id, 'error' => $e->getMessage()]); }
 
         // 4. Bounce back with feedback.
         return back()->with('success', 'Featured image updated.');
@@ -1015,6 +1114,7 @@ public function shipping(Product $product, Request $request)
     // ──────────────────────────── UPDATES ────────────────────────────
     public function updatePricing(Request $request, Product $product)
     {
+        $before = $this->captureOnly($product, ['price','discount_percent','stock','sku']);
         // Your form posts: price, discount_percent, stock, sku
         $validated = $request->validate([
             'price'            => ['required','numeric','min:0'],
@@ -1044,11 +1144,17 @@ public function shipping(Product $product, Request $request)
 
         $product->update($update);
 
+        $product->refresh();
+        $after   = $this->captureOnly($product, array_keys($before));
+        $changes = $this->computeChanges($before, $after);
+        $this->recordProductActivity($product, 'pricing', $changes);
+
         return back()->with('success', 'Price & inventory updated.');
     }
 
     public function updateVariations(Request $request, Product $product)
     {
+        $beforeCount = $product->variations()->count();
         $validated = $request->validate([
             'variations'                       => ['array'],
             'variations.*.id'                  => ['nullable','integer','exists:product_variations,id'],
@@ -1081,12 +1187,18 @@ public function shipping(Product $product, Request $request)
                 }
             }
         }
-
+        $afterCount = $product->variations()->count();
+        $this->recordProductActivity($product, 'variations', [], [
+            'counters' => [
+                'variations' => ['from' => $beforeCount, 'to' => $afterCount]
+            ]
+        ]);
         return back()->with('success', 'Variations updated.');
     }
 
     public function updateDetails(Request $request, Product $product)
     {
+        $before = $this->captureOnly($product, ['name','type','category_id','short_description','description']);
         $data = $request->validate([
             'name'              => ['required','string','max:190'],
             'type'              => ['required','string','in:physical,digital,service'],
@@ -1097,6 +1209,10 @@ public function shipping(Product $product, Request $request)
         ]);
 
         $product->update($data);
+        $product->refresh();
+        $after   = $this->captureOnly($product, array_keys($before));
+        $changes = $this->computeChanges($before, $after);
+        $this->recordProductActivity($product, 'details', $changes);
 
         // If you want to handle digital file upload here, uncomment and adapt:
     
@@ -1137,9 +1253,12 @@ public function shipping(Product $product, Request $request)
 
 
 
-public function updateShipping(Product $product, Request $request)
-{
-    $shopId = $product->shop_id ?? optional(auth()->user())->shop_id;
+    public function updateShipping(Product $product, Request $request)
+    {
+        $beforeProfiles = \DB::table('shipping_profiles')
+            ->where('product_id', $product->id)
+            ->count();
+        $shopId = $product->shop_id ?? optional(auth()->user())->shop_id;
     if (!$shopId) abort(403, 'Shop not resolved for this product.');
 
     // Validate top fields
@@ -1298,11 +1417,21 @@ public function updateShipping(Product $product, Request $request)
                 ->update(['is_default' => false, 'updated_at' => $now]);
         }
     });
+    $afterProfiles = \DB::table('shipping_profiles')
+        ->where('product_id', $product->id)
+        ->count();
 
+    $this->recordProductActivity($product, 'shipping', [], [
+        'counters' => [
+            'profiles' => ['from' => $beforeProfiles, 'to' => $afterProfiles]
+        ],
+        'profile_name' => $profileName,
+        'set_default'  => (bool)request()->boolean('set_default'),
+    ]);
     return redirect()
         ->route('products.shipping', ['product' => $product, 'profile_name' => $profileName])
         ->with('success', 'Shipping profile saved successfully.');
-}
+    }
 
 
 
@@ -1314,6 +1443,7 @@ public function updateShipping(Product $product, Request $request)
 
     public function updateSettings(Request $request, Product $product)
     {
+        $before = $this->captureOnly($product, ['is_active','renewal_type','visibility','slug','tags']);
         $data = $request->validate([
             'is_active'    => ['required','integer','in:0,1,2,3,4'],
             'renewal_type' => ['required', Rule::in(['automatic','manual'])],
@@ -1335,6 +1465,10 @@ public function updateShipping(Product $product, Request $request)
         }
 
         $product->update($data);
+        $product->refresh();
+        $after   = $this->captureOnly($product, array_keys($before));
+        $changes = $this->computeChanges($before, $after);
+        $this->recordProductActivity($product, 'settings', $changes);
 
         return back()->with('success', 'Settings updated.');
     }

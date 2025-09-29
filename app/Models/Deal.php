@@ -71,6 +71,49 @@ class Deal extends Model
     }
 
     /**
+     * Check if this deal is scheduled (not yet started).
+     */
+    public function isScheduled(): bool
+    {
+        return $this->starts_at->isFuture();
+    }
+
+    /**
+     * Check if this deal has expired.
+     */
+    public function isExpired(): bool
+    {
+        return $this->ends_at->isPast();
+    }
+
+    /**
+     * Get the deal status as a string.
+     */
+    public function getStatusAttribute(): string
+    {
+        if ($this->isActive()) {
+            return 'active';
+        } elseif ($this->isScheduled()) {
+            return 'scheduled';
+        } else {
+            return 'expired';
+        }
+    }
+
+    /**
+     * Get the deal status badge class for UI.
+     */
+    public function getStatusBadgeClass(): string
+    {
+        return match($this->getStatusAttribute()) {
+            'active' => 'bg-success',
+            'scheduled' => 'bg-warning',
+            'expired' => 'bg-secondary',
+            default => 'bg-secondary'
+        };
+    }
+
+    /**
      * Determine if this deal applies to the given product.
      *
      * @param  int|Product  $product
