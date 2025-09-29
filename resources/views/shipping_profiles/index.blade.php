@@ -17,7 +17,8 @@
     @endif
 
     @if($profiles->count())
-        <table class="table table-bordered table-hover">
+        <div class="table-responsive">
+        <table class="table table-bordered table-hover mb-0">
             <thead>
                 <tr>
                     <th>Name</th>
@@ -68,6 +69,7 @@
                 @endforeach
             </tbody>
         </table>
+        </div>
 
         {{ $profiles->links() }}
     @else

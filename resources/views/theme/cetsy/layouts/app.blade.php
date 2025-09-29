@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="application-name" content="{{ config('app.name', 'Cetsy') }}">
+  <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Cetsy') }}">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="robots" content="index, follow">
   <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -68,6 +73,14 @@
   <!-- Page-level Styles -->
   @yield('styles')
   @stack('styles')
+
+  <!-- Responsive helpers -->
+  <style>
+    .content img, .card img, .modal img { max-width: 100%; height: auto; }
+    .table-responsive { -webkit-overflow-scrolling: touch; }
+    .table-responsive > table { width: 100%; }
+    @media (max-width: 767.98px) { footer { display: none !important; } }
+  </style>
 
   <!-- Config -->
   <script src="{{ asset('assets/js/config.js') }}" defer></script>
@@ -813,6 +826,19 @@
   @yield('scripts')
   @stack('scripts')
 
+  <!-- PWA: Service Worker Registration -->
+  <script>
+    (function(){
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function(){
+          navigator.serviceWorker.register('/service-worker.js').catch(function(err){
+            console.warn('SW registration failed:', err);
+          });
+        });
+      }
+    })();
+  </script>
+
   <!-- Background currency switch (no URL params) -->
   <script>
     (function(){
@@ -866,7 +892,4 @@
   </script>
 </body>
 </html>
-
-
-
 

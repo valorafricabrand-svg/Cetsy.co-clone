@@ -44,14 +44,16 @@
             @endif
             <h3 class="mb-0">{{ $category->name }}</h3>
           </div>
-          <table class="table table-borderless mb-0">
+          <div class="table-responsive">
+            <table class="table table-borderless mb-0">
             <tbody>
               <tr><th>Slug</th><td>{{ $category->slug }}</td></tr>
               <tr><th>Parent</th><td>{{ $category->parent?->name ?? '—' }}</td></tr>
               <tr><th>Listing fee</th><td>{{ get_currency() }} {{ number_format($category->listing_fee,2) }}</td></tr>
               <tr><th>Created</th><td>{{ $category->created_at }}</td></tr>
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
 
