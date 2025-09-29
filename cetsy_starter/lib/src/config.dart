@@ -24,5 +24,8 @@ class AppConfig {
     final normalizedPath = path.startsWith('/') ? path : '/$path';
     return '$baseUrl$normalizedPath';
   }
-}
 
+  // Optional custom user agent. Provide via:
+  // flutter run --dart-define=APP_UA="Your UA string"
+  static const String userAgent = String.fromEnvironment('APP_UA', defaultValue: '');
+}

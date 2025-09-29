@@ -79,14 +79,41 @@
     .content img, .card img, .modal img { max-width: 100%; height: auto; }
     .table-responsive { -webkit-overflow-scrolling: touch; }
     .table-responsive > table { width: 100%; }
-    /* Mobile bottom nav */
-    .mobile-bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1030; display: flex; justify-content: space-around; align-items: center; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: #ffffff; border-top: 1px solid rgba(0,0,0,.08); box-shadow: 0 -8px 24px rgba(0,0,0,.06); }
-    .mobile-bottom-nav__item { position: relative; flex: 1 1 20%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #4a5568; text-decoration: none; padding: 6px 4px; font-size: 12px; }
-    .mobile-bottom-nav__item i { font-size: 18px; }
-    .mobile-bottom-nav__item.active, .mobile-bottom-nav__item:active, .mobile-bottom-nav__item:focus { color: #027333; }
+    /* Mobile bottom nav (modern, Bootstrap 5-friendly) */
+    .mobile-bottom-nav.navbar { 
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 1030;
+      padding: .5rem .5rem calc(.5rem + env(safe-area-inset-bottom));
+      background-color: rgba(255,255,255,.92); backdrop-filter: saturate(180%) blur(10px);
+      border-top: 1px solid rgba(0,0,0,.08); box-shadow: 0 -8px 24px rgba(0,0,0,.06);
+    }
+    .mobile-bottom-nav .nav { gap: .25rem; }
+    .mobile-bottom-nav__item.nav-link { 
+      position: relative; color: #475569; border-radius: .75rem; padding: .4rem .25rem; 
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .mobile-bottom-nav__item i { font-size: 1.15rem; line-height: 1; }
+    .mobile-bottom-nav__item .label { font-size: .72rem; line-height: 1; margin-top: .15rem; }
+    .mobile-bottom-nav__item.active, .mobile-bottom-nav__item:hover, .mobile-bottom-nav__item:focus {
+      color: #027333; background: rgba(2,115,51,.06);
+    }
     .mobile-bottom-nav__item.active i { color: #027333; }
-    .mobile-bottom-nav__badge { position: absolute; top: 0; right: 20%; transform: translate(50%, -30%); background: #dc3545; color: #fff; font-size: 10px; line-height: 1; border-radius: 999px; padding: 3px 6px; min-width: 18px; text-align: center; }
-    @media (max-width: 767.98px) { body.has-mobile-nav { padding-bottom: 64px; } }
+    .mobile-bottom-nav__item.active::after { 
+      content: ""; position: absolute; top: -6px; left: 25%; right: 25%; height: 3px; border-radius: 999px; background: #027333;
+    }
+    .mobile-bottom-nav__badge { 
+      position: absolute; top: .2rem; right: 25%; transform: translate(50%, -40%);
+      background: #dc3545; color: #fff; font-size: .6rem; line-height: 1; border-radius: 999px; padding: .2rem .4rem; min-width: 1.1rem; text-align: center;
+    }
+    /* Dark theme tweak */
+    [data-bs-theme='dark'] .mobile-bottom-nav.navbar {
+      background-color: rgba(17,17,17,.9);
+      border-top-color: rgba(255,255,255,.08);
+    }
+    [data-bs-theme='dark'] .mobile-bottom-nav__item.nav-link { color: #cbd5e1; }
+    [data-bs-theme='dark'] .mobile-bottom-nav__item.active,
+    [data-bs-theme='dark'] .mobile-bottom-nav__item:hover,
+    [data-bs-theme='dark'] .mobile-bottom-nav__item:focus { background: rgba(2,115,51,.12); color: #34d399; }
+    @media (max-width: 767.98px) { body.has-mobile-nav { padding-bottom: 72px; } }
     @media (max-width: 767.98px) { footer { display: none !important; } }
   </style>
 
@@ -391,38 +418,74 @@
           @endphp
           <div class="mb-3">
             @php $currencyGet = \Illuminate\Support\Facades\Route::has('currency.set.get') ? route('currency.set.get') : url('/set-currency'); @endphp
-            <label class="form-label mb-1"><i class="fas fa-coins me-1"></i>Currency</label>
+            <label for="currencySelect" class="form-label mb-1"><i class="fas fa-coins me-1"></i> Currency</label>
             @php $siteDefault = setting('default_currency', 'USD') ?: 'USD'; @endphp
-            <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency') }}">
-              @csrf
-              <div class="list-group list-group-flush" style="max-height: 260px; overflow:auto;">
-                @foreach($navCurrencies as $c)
-                  @php $code = strtoupper($c->code); @endphp
-                  <label class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
-                    <input type="radio" name="code" value="{{ $code }}" @checked(strtoupper($currentCurrency)=== $code) />
-                  </label>
-                @endforeach
-              </div>
-              <div class="d-grid gap-2 mt-2">
-                <button class="btn btn-sm btn-success" type="submit">Update</button>
-              </div>
-            </form>
-            <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency') }}" class="mt-2">
-              @csrf
-              <input type="hidden" name="reset" value="1" />
-              <button class="btn btn-sm btn-outline-secondary w-100" type="submit">Use Site Default ({{ strtoupper($siteDefault) }})</button>
-            </form>
+            <select id="currencySelect" class="form-select form-select-sm" aria-label="Select currency">
+              <option value="" disabled>Select currency…</option>
+              <option value="__default__">System Default ({{ strtoupper($siteDefault) }})</option>
+              @foreach($navCurrencies as $c)
+                @php $code = strtoupper($c->code); @endphp
+                <option value="{{ $code }}" @selected(strtoupper($currentCurrency)=== $code)>
+                  {{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}
+                </option>
+              @endforeach
+            </select>
+            <small class="text-muted">Changes apply instantly.</small>
           </div>
           @auth
+            @php
+              $u = auth()->user();
+              $isSeller = method_exists($u,'isSeller') && $u->isSeller();
+              $isBuyer  = method_exists($u,'isBuyer')  && $u->isBuyer();
+              // Counts (best-effort)
+              try {
+                $notifCount = \App\Models\Activity::where('user_id',$u->id)->where('is_read',false)->count();
+              } catch (\Throwable $e) { $notifCount = 0; }
+              try {
+                $msgCount = class_exists('App\\Models\\Message')
+                  ? \App\Models\Message::where('receiver_id',$u->id)->where('is_read',false)->count()
+                  : 0;
+              } catch (\Throwable $e) { $msgCount = 0; }
+            @endphp
             <div class="mb-3">
-              <div class="fw-semibold mb-1">Hi, {{ auth()->user()->name }}</div>
-              <div class="d-flex flex-wrap gap-2">
-                <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary btn-sm">Dashboard</a>
-                <a href="{{ route('profile.edit') }}" class="btn btn-outline-secondary btn-sm">Profile</a>
-                <form method="POST" action="{{ route('logout') }}">
+              <div class="fw-semibold mb-2">Hi, {{ $u->name }}</div>
+              <div class="list-group list-group-flush">
+                <a href="{{ route('dashboard') }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                  <i class="fas fa-gauge"></i>
+                  <span>{{ $isSeller ? 'Seller Dashboard' : 'Dashboard' }}</span>
+                </a>
+                <a href="{{ $isSeller ? route('seller.orders.index') : (\Illuminate\Support\Facades\Route::has('account.orders') ? route('account.orders') : route('orders.index')) }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                  <i class="fas fa-box"></i>
+                  <span>Orders</span>
+                </a>
+                <a href="{{ $isSeller ? route('seller.messages.index') : route('buyer.messages.index') }}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+                  <span class="d-inline-flex align-items-center gap-2"><i class="fas fa-comments"></i> Messages</span>
+                  @if($msgCount>0)<span class="badge bg-danger rounded-pill">{{ $msgCount }}</span>@endif
+                </a>
+                <a href="{{ route('notifications.index') }}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+                  <span class="d-inline-flex align-items-center gap-2"><i class="fas fa-bell"></i> Notifications</span>
+                  @if($notifCount>0)<span class="badge bg-primary rounded-pill">{{ $notifCount }}</span>@endif
+                </a>
+                <a href="{{ route('wallet.index') }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                  <i class="fas fa-wallet"></i>
+                  <span>Wallet</span>
+                </a>
+                @if($isBuyer)
+                  <a href="{{ route('wishlist') }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                    <i class="fas fa-heart"></i>
+                    <span>Wishlist</span>
+                  </a>
+                @endif
+                <a href="{{ route('profile.edit') }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                  <i class="fas fa-user"></i>
+                  <span>Profile</span>
+                </a>
+                <form method="POST" action="{{ route('logout') }}" class="list-group-item p-0 border-0">
                   @csrf
-                  <button class="btn btn-outline-danger btn-sm" type="submit">Log Out</button>
+                  <button class="list-group-item list-group-item-action d-flex align-items-center gap-2 text-danger" type="submit">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Log Out</span>
+                  </button>
                 </form>
               </div>
             </div>
@@ -441,15 +504,16 @@
           {{-- Quick Category Chips --}}
           @php
             $mainCategories = \App\Models\Category::with('childrenRecursive')
-                ->whereNull('parent_id')->orderBy('id')->get();
+                ->whereNull('parent_id')->orderBy('name')->get();
           @endphp
 
           @if($mainCategories->isNotEmpty())
-            <div class="mb-3">
+            <div class="mb-3 d-flex align-items-center justify-content-between">
               <div class="cat-scroll" aria-label="Top categories (scrollable)">
                 @foreach($mainCategories as $main)
-                  <a href="{{ $main->childrenRecursive->isNotEmpty() ? '#' : route('category.show',$main->slug) }}"
-                     class="cat-chip text-decoration-none text-dark">
+                  <a href="{{ route('category.show',$main->slug) }}"
+                     class="cat-chip text-decoration-none text-dark"
+                     data-bs-dismiss="offcanvas">
                     {{ $main->name }}
                     @if($main->childrenRecursive->isNotEmpty())
                       <i class="fas fa-chevron-right ms-1"></i>
@@ -457,19 +521,32 @@
                   </a>
                 @endforeach
               </div>
+              <a href="{{ route('categories.index') }}" class="btn btn-sm btn-outline-secondary ms-2" data-bs-dismiss="offcanvas">All</a>
             </div>
 
             {{-- Full tree (mobile) --}}
-            <div class="border rounded-3 p-2" style="max-height: 55vh; overflow:auto;">
+            <div class="mb-2">
+              <label for="categoryFilter" class="form-label small text-muted">Filter categories</label>
+              <input type="text" id="categoryFilter" class="form-control form-control-sm" placeholder="Type to filter…" autocomplete="off">
+            </div>
+            <div class="border rounded-3 p-2" id="categoryTree" style="flex:1 1 auto; min-height:0; overflow:auto; -webkit-overflow-scrolling: touch;">
               @php
                 $renderCats = function ($nodes) use (&$renderCats) {
                   echo '<ul class="list-group list-group-flush">';
                   foreach($nodes as $cat){
                     $kids = $cat->childrenRecursive;
                     $has  = $kids->isNotEmpty();
-                    echo '<li class="list-group-item">';
-                    echo  '<div class="d-flex align-items-center justify-content-between">';
-                    echo    '<a class="text-decoration-none" href="'.($has?'#':route('category.show',$cat->slug)).'">'.e($cat->name).'</a>';
+                    $dataName = strtolower($cat->name);
+                    echo '<li class="list-group-item" data-category-name="'.e($dataName).'">';
+                    echo  '<div class="d-flex align-items-center justify-content-between gap-2">';
+                    // Left: title + optional view link for parents
+                    echo    '<div class="me-2 text-truncate">';
+                    echo      '<a class="text-decoration-none text-dark text-truncate" href="'.route('category.show',$cat->slug).'" data-bs-dismiss="offcanvas">'.e($cat->name).'</a>';
+                    if($has) {
+                      echo    '<a class="badge rounded-pill bg-light text-dark ms-2" href="'.route('category.show',$cat->slug).'" data-bs-dismiss="offcanvas" title="View all">View</a>';
+                    }
+                    echo    '</div>';
+                    // Right: toggle for children
                     if($has) echo '<button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#mcat-'.$cat->id.'" aria-expanded="false" aria-controls="mcat-'.$cat->id.'"><i class="fas fa-chevron-down"></i></button>';
                     echo  '</div>';
                     if($has){
@@ -484,6 +561,42 @@
               @endphp
               {!! $renderCats($mainCategories) !!}
             </div>
+            <script>
+              // Client-side filter for category tree
+              (function(){
+                function onReady(fn){ if(document.readyState!=='loading'){fn();} else {document.addEventListener('DOMContentLoaded',fn);} }
+                onReady(function(){
+                  var input = document.getElementById('categoryFilter');
+                  var tree  = document.getElementById('categoryTree');
+                  if(!input || !tree) return;
+                  var items = tree.querySelectorAll('[data-category-name]');
+                  function normalize(s){ return (s||'').toLowerCase().trim(); }
+                  input.addEventListener('input', function(){
+                    var q = normalize(input.value);
+                    if(!q){
+                      // Reset: show all and collapse nodes
+                      items.forEach(function(li){ li.style.display=''; });
+                      tree.querySelectorAll('.collapse.show').forEach(function(c){ try{ bootstrap.Collapse.getOrCreateInstance(c).hide(); }catch(e){} });
+                      return;
+                    }
+                    items.forEach(function(li){ li.style.display='none'; });
+                    // Show matches and their ancestor containers
+                    items.forEach(function(li){
+                      var name = li.getAttribute('data-category-name');
+                      if(name && name.indexOf(q) !== -1){
+                        li.style.display='';
+                        // Expand parent collapses
+                        var parentCollapse = li.closest('.collapse');
+                        while(parentCollapse){
+                          try{ bootstrap.Collapse.getOrCreateInstance(parentCollapse).show(); }catch(e){}
+                          parentCollapse = parentCollapse.parentElement ? parentCollapse.parentElement.closest('.collapse') : null;
+                        }
+                      }
+                    });
+                  });
+                });
+              })();
+            </script>
           @endif
 
           <div class="mt-auto pt-3 border-top small text-muted">

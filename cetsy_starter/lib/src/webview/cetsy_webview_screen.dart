@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +12,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
+import '../config.dart';
 
 class CetsyWebViewScreen extends StatefulWidget {
   const CetsyWebViewScreen({super.key, required this.initialUrl});
@@ -71,8 +73,16 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     // ✅ On Flutter Web: DO NOT instantiate a WebView. Redirect the tab instead.
     if (kIsWeb) return;
 
-    // Generic creation params (portable across plugin versions)
-    const params = PlatformWebViewControllerCreationParams();
+    // Creation params with iOS inline-media enabled
+    PlatformWebViewControllerCreationParams params;
+    if (WebViewPlatform.instance is WebKitWebViewPlatform) {
+      params = WebKitWebViewControllerCreationParams(
+        allowsInlineMediaPlayback: true,
+        mediaTypesRequiringUserAction: const <PlaybackMediaTypes>{},
+      );
+    } else {
+      params = const PlatformWebViewControllerCreationParams();
+    }
 
     final controller = WebViewController.fromPlatformCreationParams(params)
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -91,8 +101,9 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
             _lastError.value = null;
             _setLoading(true);
           },
-          onPageFinished: (url) {
+          onPageFinished: (url) async {
             _setLoading(false);
+            await _injectPagePatches();
           },
           onWebResourceError: (err) {
             _lastError.value = '${err.errorCode}: ${err.description}';
@@ -103,6 +114,7 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
             final isHttp = uri.scheme == 'http' || uri.scheme == 'https';
             final isAppScheme = <String>{
               'tel', 'mailto', 'sms', 'whatsapp', 'intent', 'maps', 'geo',
+              'tg', 'instagram', 'twitter', 'facebook', 'fb', 'viber', 'skype',
             }.contains(uri.scheme);
 
             if (isAppScheme) {
@@ -112,6 +124,18 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
 
             // Keep navigation inside the app's origin; open other domains externally
             if (isHttp) {
+              // Common downloadable types -> hand off to OS/browser for a native feel
+              final p = (uri.path).toLowerCase();
+              const dlExts = [
+                '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+                '.zip', '.rar', '.7z', '.csv', '.apk', '.aac', '.mp3', '.m4a',
+                '.mp4', '.mov', '.avi', '.webm', '.jpg', '.jpeg', '.png', '.gif', '.webp'
+              ];
+              final isDownload = dlExts.any((ext) => p.endsWith(ext));
+              if (isDownload) {
+                launchUrl(uri, mode: LaunchMode.externalApplication);
+                return NavigationDecision.prevent;
+              }
               if (uri.host == _baseUri.host) {
                 return NavigationDecision.navigate;
               } else {
@@ -126,18 +150,24 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
       )
       ..loadRequest(Uri.parse(widget.initialUrl));
 
-    // Android extras: debugging, basic file uploads (no allowMultiple for older APIs)
+    // Android extras: debugging, smoother media playback
     if (controller.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(true);
       final android = controller.platform as AndroidWebViewController;
-
-      android.setOnShowFileSelector((params) async {
-        final result = await FilePicker.platform.pickFiles(type: FileType.any);
-        if (result == null) return <String>[];
-        return result.paths.whereType<String>().toList();
-      });
-
+      try { await android.setMediaPlaybackRequiresUserGesture(false); } catch (_) {}
+      // Rely on platform file chooser for best compatibility (camera/gallery)
       // NOTE: Some versions don't support setDownloadListener; omitted intentionally.
+    }
+
+    // iOS: enable back/forward swipe gestures
+    if (controller.platform is WebKitWebViewController) {
+      final ios = controller.platform as WebKitWebViewController;
+      try { await ios.setAllowsBackForwardNavigationGestures(true); } catch (_) {}
+    }
+
+    // Optional UA override via --dart-define=APP_UA
+    if (AppConfig.userAgent.isNotEmpty) {
+      try { await controller.setUserAgent(AppConfig.userAgent); } catch (_) {}
     }
 
     _controller = controller;
@@ -153,6 +183,45 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   }
 
   // ---- Utilities
+
+  // Inject small JS patches to improve in-app feel:
+  // - Make window.open() and target=_blank open in the same view.
+  // - Normalize forms with target=_blank to _self.
+  Future<void> _injectPagePatches() async {
+    if (_controller == null) return;
+    try {
+      const script = r"""
+        (function(){
+          try {
+            // Open new windows in the same view
+            window.open = function(u){ if(!u) return null; location.href = u; return null; };
+
+            // Normalize anchors that try to break out
+            document.addEventListener('click', function(e){
+              var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+              if(!a) return;
+              var href = a.getAttribute('href');
+              if(!href) return;
+              var url = a.href;
+              var target = (a.getAttribute('target')||'').toLowerCase();
+              var rel = (a.getAttribute('rel')||'').toLowerCase();
+              if(target === '_blank' || rel.indexOf('noopener') >= 0 || rel.indexOf('noreferrer') >= 0){
+                e.preventDefault();
+                location.href = url;
+              }
+            }, true);
+
+            // Normalize forms that try to open in a new window
+            try {
+              var forms = document.querySelectorAll('form[target="_blank"]');
+              for (var i=0;i<forms.length;i++){ forms[i].setAttribute('target','_self'); }
+            } catch(_){ }
+          } catch(_){ }
+        })();
+      """;
+      await _controller!.runJavaScript(script);
+    } catch (_) {}
+  }
 
   void _setLoading(bool v) {
     if (_loadingOverlay == v) return;
