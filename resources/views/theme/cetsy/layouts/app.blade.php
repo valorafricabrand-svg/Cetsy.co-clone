@@ -79,6 +79,14 @@
     .content img, .card img, .modal img { max-width: 100%; height: auto; }
     .table-responsive { -webkit-overflow-scrolling: touch; }
     .table-responsive > table { width: 100%; }
+    /* Mobile bottom nav */
+    .mobile-bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1030; display: flex; justify-content: space-around; align-items: center; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: #ffffff; border-top: 1px solid rgba(0,0,0,.08); box-shadow: 0 -8px 24px rgba(0,0,0,.06); }
+    .mobile-bottom-nav__item { position: relative; flex: 1 1 20%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #4a5568; text-decoration: none; padding: 6px 4px; font-size: 12px; }
+    .mobile-bottom-nav__item i { font-size: 18px; }
+    .mobile-bottom-nav__item.active, .mobile-bottom-nav__item:active, .mobile-bottom-nav__item:focus { color: #027333; }
+    .mobile-bottom-nav__item.active i { color: #027333; }
+    .mobile-bottom-nav__badge { position: absolute; top: 0; right: 20%; transform: translate(50%, -30%); background: #dc3545; color: #fff; font-size: 10px; line-height: 1; border-radius: 999px; padding: 3px 6px; min-width: 18px; text-align: center; }
+    @media (max-width: 767.98px) { body.has-mobile-nav { padding-bottom: 64px; } }
     @media (max-width: 767.98px) { footer { display: none !important; } }
   </style>
 
@@ -839,6 +847,9 @@
     })();
   </script>
 
+  {{-- Mobile bottom navigation (front theme) --}}
+  @include('theme.'.theme().'.partials._mobile_nav')
+
   <!-- Background currency switch (no URL params) -->
   <script>
     (function(){
@@ -892,4 +903,3 @@
   </script>
 </body>
 </html>
-

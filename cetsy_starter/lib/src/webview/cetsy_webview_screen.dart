@@ -22,12 +22,7 @@ class CetsyWebViewScreen extends StatefulWidget {
   State<CetsyWebViewScreen> createState() => _CetsyWebViewScreenState();
 }
 
-class _NavItem {
-  final String label;
-  final IconData icon;
-  final String url; // can be absolute or relative to base
-  const _NavItem(this.label, this.icon, this.url);
-}
+// Bottom navigation removed: rely on website's own navigation.
 
 class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   WebViewController? _controller; // null on web (we redirect instead)
@@ -49,10 +44,8 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   double _pullProgress = 0.0; // 0..1 visual bar
   static const double _pullTrigger = 100; // px to trigger reload
 
-  // ---- Bottom navigation
+  // ---- Base URL scope and share anchor
   late final Uri _baseUri;
-  int _currentIndex = 0;
-  late final List<_NavItem> _tabs;
   final GlobalKey _shareAnchorKey = GlobalKey();
 
   @override
@@ -63,12 +56,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     // All in-app navigation stays within this origin; outside links open externally.
     final parsedInit = Uri.parse(widget.initialUrl);
     _baseUri = parsedInit.replace(path: '/', query: null, fragment: null);
-    _tabs = const [
-      _NavItem('Home', Icons.home, '/'),
-      _NavItem('Explore', Icons.search, '/search'),
-      _NavItem('Cart', Icons.shopping_cart, '/cart'),
-      _NavItem('Account', Icons.person, '/buyer/dashboard'),
-    ];
 
     // Connectivity banner (compatible with old/new connectivity_plus)
     _connSub = Connectivity().onConnectivityChanged.listen((event) {
@@ -106,7 +93,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
           },
           onPageFinished: (url) {
             _setLoading(false);
-            _syncIndexWithUrl(url);
           },
           onWebResourceError: (err) {
             _lastError.value = '${err.errorCode}: ${err.description}';
@@ -168,31 +154,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
 
   // ---- Utilities
 
-  Uri _absolute(String pathOrFull) {
-    final p = pathOrFull.trim();
-    if (p.startsWith('http://') || p.startsWith('https://')) {
-      return Uri.parse(p);
-    }
-    // Treat as relative to base
-    return _baseUri.resolve(p.startsWith('/') ? p : '/$p');
-  }
-
-  void _syncIndexWithUrl(String? url) {
-    if (url == null) return;
-    try {
-      final u = Uri.parse(url);
-      // Pick the tab whose target is a prefix of current page
-      for (int i = 0; i < _tabs.length; i++) {
-        final target = _absolute(_tabs[i].url).toString();
-        if (u.toString().startsWith(target)) {
-          if (_currentIndex != i) setState(() => _currentIndex = i);
-          return;
-        }
-      }
-      // If no match, leave current as is.
-    } catch (_) {}
-  }
-
   void _setLoading(bool v) {
     if (_loadingOverlay == v) return;
     setState(() => _loadingOverlay = v);
@@ -231,19 +192,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
         await SystemNavigator.pop();
       } catch (_) {}
     }
-  }
-
-  Future<void> _loadTab(int index) async {
-    if (_controller == null) return;
-    if (_currentIndex == index) {
-      // Reselect -> reload current tab
-      await _reload();
-      return;
-    }
-    setState(() => _currentIndex = index);
-    final target = _absolute(_tabs[index].url);
-    _setLoading(true);
-    await _controller!.loadRequest(target);
   }
 
   // ---- Pull-to-refresh handle at the very top of the web content
@@ -375,10 +323,23 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   Widget build(BuildContext context) {
     // ✅ Web fallback: redirect this tab to cetsy.co (no iframe/webview)
     if (kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        launchUrl(Uri.parse(widget.initialUrl), webOnlyWindowName: '_self');
-      });
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      final uri = Uri.parse(widget.initialUrl);
+      if (kReleaseMode) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          launchUrl(uri, webOnlyWindowName: '_self');
+        });
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      } else {
+        // In debug/profile, don't replace the inspected tab to avoid DWDS detaching.
+        return Scaffold(
+          body: Center(
+            child: FilledButton(
+              onPressed: () => launchUrl(uri, webOnlyWindowName: '_blank'),
+              child: const Text('Open Cetsy'),
+            ),
+          ),
+        );
+      }
     }
 
     return PopScope(
@@ -439,23 +400,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-
-        // ===== Bottom Navigation (4 tabs) =====
-        bottomNavigationBar: SafeArea(
-          top: false,
-          child: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            currentIndex: _currentIndex,
-            onTap: _loadTab,
-            showUnselectedLabels: true,
-            items: [
-              BottomNavigationBarItem(icon: const Icon(Icons.home), label: _tabs[0].label),
-              BottomNavigationBarItem(icon: const Icon(Icons.search), label: _tabs[1].label),
-              BottomNavigationBarItem(icon: const Icon(Icons.shopping_cart), label: _tabs[2].label),
-              BottomNavigationBarItem(icon: const Icon(Icons.person), label: _tabs[3].label),
             ],
           ),
         ),
