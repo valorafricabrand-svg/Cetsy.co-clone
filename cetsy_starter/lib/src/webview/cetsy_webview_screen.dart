@@ -154,7 +154,8 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     if (controller.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(true);
       final android = controller.platform as AndroidWebViewController;
-      try { await android.setMediaPlaybackRequiresUserGesture(false); } catch (_) {}
+      // Best-effort: allow inline media playback without user gesture
+      android.setMediaPlaybackRequiresUserGesture(false).catchError((_) {});
       // Rely on platform file chooser for best compatibility (camera/gallery)
       // NOTE: Some versions don't support setDownloadListener; omitted intentionally.
     }
@@ -162,12 +163,13 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     // iOS: enable back/forward swipe gestures
     if (controller.platform is WebKitWebViewController) {
       final ios = controller.platform as WebKitWebViewController;
-      try { await ios.setAllowsBackForwardNavigationGestures(true); } catch (_) {}
+      // Best-effort: enable swipe back/forward gestures
+      ios.setAllowsBackForwardNavigationGestures(true).catchError((_) {});
     }
 
     // Optional UA override via --dart-define=APP_UA
     if (AppConfig.userAgent.isNotEmpty) {
-      try { await controller.setUserAgent(AppConfig.userAgent); } catch (_) {}
+      controller.setUserAgent(AppConfig.userAgent).catchError((_) {});
     }
 
     _controller = controller;
