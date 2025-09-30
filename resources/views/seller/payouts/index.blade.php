@@ -4,6 +4,9 @@
 @section('content')
 <div class="content py-4">
   <div class="container-xxl">
+      @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+      @endif
 
       <div class="d-flex align-items-center justify-content-between mb-4">
         <h3 class="mb-0">Payout Requests</h3>
@@ -43,29 +46,29 @@
             @if(session('success'))
               <div class="alert alert-success">{{ session('success') }}</div>
             @endif
-            @if($errors->any())
-              <div class="alert alert-danger">{{ $errors->first() }}</div>
-            @endif
 
-            <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.submit') ? route('seller.payouts.otp.submit', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/verify')) }}" class="row g-3 align-items-end">
+            <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.submit') ? route('seller.payouts.otp.submit', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/verify')) }}" class="row g-3">
               @csrf
-              <div class="col-md-6">
+              <div class="col-12 col-md-6">
                 <label class="form-label">Verification Code</label>
                 <input type="text" name="code" class="form-control @error('code') is-invalid @enderror" placeholder="6-digit code" required>
                 @error('code') <div class="invalid-feedback">{{ $message }}</div> @enderror
               </div>
-              <div class="col-md-6 d-flex gap-2">
-                <button class="btn btn-primary">Verify &amp; Submit</button>
-                <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.resend') ? route('seller.payouts.otp.resend', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/resend-otp')) }}" class="d-inline">
-                  @csrf
-                  <button type="submit" class="btn btn-link">Resend code</button>
-                </form>
-                <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.cancel') ? route('seller.payouts.otp.cancel', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/cancel')) }}" class="d-inline" onsubmit="return confirm('Cancel this payout request?');">
-                  @csrf
-                  <button class="btn btn-link text-danger">Cancel</button>
-                </form>
+              <div class="col-12 col-md-6 d-flex align-items-end gap-2">
+                <button class="btn btn-primary" type="submit">Verify &amp; Submit</button>
+                <a href="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.verify') ? route('seller.payouts.otp.verify', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/verify')) }}" class="btn btn-outline-secondary">Open full verify page</a>
               </div>
             </form>
+            <div class="mt-2 d-flex gap-3">
+              <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.resend') ? route('seller.payouts.otp.resend', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/resend-otp')) }}" class="d-inline">
+                @csrf
+                <button type="submit" class="btn btn-link p-0">Resend code</button>
+              </form>
+              <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.cancel') ? route('seller.payouts.otp.cancel', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/cancel')) }}" class="d-inline" onsubmit="return confirm('Cancel this payout request?');">
+                @csrf
+                <button class="btn btn-link text-danger p-0">Cancel</button>
+              </form>
+            </div>
           </div>
         </div>
       @endif
@@ -87,7 +90,22 @@
                           <tr>
                               <td>{{ $req->id }}</td>
                               <td>{{ get_currency() }} {{ number_format($req->amount,2) }}</td>
-                              <td class="text-capitalize">{{ $req->status }}</td>
+                              <td>
+                                @php
+                                  $st = strtolower((string) $req->status);
+                                  $map = [
+                                    'otp_pending' => ['warning','Awaiting verification'],
+                                    'pending'     => ['secondary','Pending'],
+                                    'approved'    => ['primary','Approved'],
+                                    'sent'        => ['info','Sent'],
+                                    'paid'        => ['success','Paid'],
+                                    'rejected'    => ['danger','Rejected'],
+                                    'cancelled'   => ['secondary','Cancelled'],
+                                  ];
+                                  [$cls, $label] = $map[$st] ?? ['dark', ucfirst($st)];
+                                @endphp
+                                <span class="badge bg-{{ $cls }}">{{ $label }}</span>
+                              </td>
                               <td>{{ $req->created_at->format('d M Y') }}</td>
                               <td class="text-nowrap">
                                 @if($req->status === 'otp_pending')
@@ -118,4 +136,9 @@
 
   </div>
 </div>
+
 @endsection
+
+ 
+
+ 
