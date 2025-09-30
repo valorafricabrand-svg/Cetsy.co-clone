@@ -243,7 +243,68 @@
       <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
         <i class="fa-solid fa-boxes-stacked"></i> Order Items
       </div>
-      <div class="card-body table-responsive p-0">
+      {{-- Mobile: stacked cards --}}
+      <div class="card-body d-block d-md-none p-2">
+        <div class="list-group list-group-flush">
+          @foreach($order->items as $item)
+            @php
+              $product   = optional($item->product);
+              $isDigital = $product && $product->type === 'digital';
+
+              $qty       = (int) ($item->quantity ?? 1);
+              $unit      = (float) ($item->price ?? 0);
+
+              if ($isDigital) {
+                $shipLabel = 'No shipping (digital)';
+                $shipCost  = 0.0;
+              } else {
+                $sp        = optional($item->shippingProfile);
+                $shipLabel = $sp && $sp->dest_location_type === 'everywhere_else'
+                              ? 'Everywhere'
+                              : ($sp && $sp->destCountry ? ('Ship to '.$sp->destCountry->name) : ($sp->name ?? 'N/A'));
+                $shipCost  = (float) ($item->shipping_cost ?? 0);
+              }
+
+              $lineSub  = $unit * $qty;
+              $thumbUrl = product_thumb_url($product);
+            @endphp
+            <div class="list-group-item">
+              <div class="d-flex gap-2">
+                @if($thumbUrl)
+                  <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" class="rounded" style="width:64px;height:64px;object-fit:cover;">
+                @endif
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="fw-semibold text-truncate">
+                      @if($product?->slug)
+                        <a href="{{ route('listing.show', $product->slug) }}" class="text-decoration-none" target="_blank">{{ $product->name ?? 'N/A' }}</a>
+                      @else
+                        {{ $product->name ?? 'N/A' }}
+                      @endif
+                      @if($isDigital)
+                        <span class="badge bg-secondary ms-1">Digital</span>
+                      @endif
+                    </div>
+                    <div class="ms-2 text-nowrap">{{ $symbol }} {{ number_format($unit,2) }}</div>
+                  </div>
+                  <div class="small text-muted text-truncate">Listing: {{ $product->id ?? $item->product_id ?? 'N/A' }}</div>
+                  @if($item->variation_summary)
+                    <div class="small text-muted">{{ $item->variation_summary }}</div>
+                  @endif
+                  <div class="d-flex justify-content-between align-items-center mt-1">
+                    <div class="small"><span class="text-muted">Qty:</span> {{ $qty }}</div>
+                    <div class="small text-muted">Shipping: {{ $isDigital ? '-' : ($shipLabel ?: '-') }}</div>
+                    <div class="fw-semibold">{{ $symbol }} {{ number_format($lineSub,2) }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+
+      {{-- Desktop/Tablet: table --}}
+      <div class="card-body table-responsive p-0 d-none d-md-block">
         <table class="table table-hover table-striped align-middle mb-0">
           <thead class="table-light text-nowrap">
             <tr>
@@ -268,7 +329,6 @@
                 $qty       = (int) ($item->quantity ?? 1);
                 $unit      = (float) ($item->price ?? 0);
 
-                // For digital items, hide shipping and force cost = 0
                 if ($isDigital) {
                   $shipLabel = 'No shipping (digital)';
                   $shipCost  = 0.0;
@@ -280,28 +340,21 @@
                   $shipCost  = (float) ($item->shipping_cost ?? 0);
                 }
 
-                $lineSub  = $unit * $qty; // product subtotal (no shipping)
+                $lineSub  = $unit * $qty;
                 $thumbUrl = product_thumb_url($product);
               @endphp
               <tr>
                 <td>{{ $loop->iteration }}</td>
-
                 <td>
                   @if($thumbUrl)
                     <a href="{{ $product?->slug ? route('listing.show', $product->slug) : 'javascript:void(0)' }}" target="_blank">
-                      <img src="{{ $thumbUrl }}"
-                           alt="{{ $product->name ?? 'Product' }}"
-                           class="img-fluid rounded"
-                           style="max-width: 80px; height:auto; object-fit: cover;">
+                      <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" class="img-fluid rounded" style="max-width: 80px; height:auto; object-fit: cover;">
                     </a>
                   @endif
                 </td>
-
                 <td>
                   @if($product?->slug)
-                    <a href="{{ route('listing.show', $product->slug) }}" class="text-decoration-none" target="_blank">
-                      {{ $product->name ?? 'N/A' }}
-                    </a>
+                    <a href="{{ route('listing.show', $product->slug) }}" class="text-decoration-none" target="_blank">{{ $product->name ?? 'N/A' }}</a>
                   @else
                     {{ $product->name ?? 'N/A' }}
                   @endif
@@ -310,18 +363,11 @@
                   @endif
                 </td>
                 <td>{{ $product->id ?? $item->product_id ?? 'N/A' }}</td>
-
-                {{-- Saved textual summary; no variations table required --}}
                 <td>{{ $item->variation_summary ?? '-' }}</td>
-
                 <td class="text-center">{{ $qty }}</td>
                 <td class="text-end">{{ $symbol }} {{ number_format($unit,2) }}</td>
-
-                {{-- Shipping profile / cost hidden (shown as dash) for digital --}}
                 <td>{{ $isDigital ? '-' : $shipLabel }}</td>
                 <td class="text-end">{{ $symbol }} {{ number_format($isDigital ? 0 : $shipCost,2) }}</td>
-
-                {{-- Product subtotal (without shipping) --}}
                 <td class="text-end">{{ $symbol }} {{ number_format($lineSub,2) }}</td>
               </tr>
             @endforeach
@@ -337,7 +383,37 @@
       <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
         <i class="fa-solid fa-wallet"></i> Payments
       </div>
-      <div class="card-body table-responsive p-0">
+      {{-- Mobile: stacked cards --}}
+      <div class="card-body d-block d-md-none p-2">
+        <div class="list-group list-group-flush">
+          @foreach($order->payments as $payment)
+            @php
+              $raw = strtolower((string)$payment->status);
+              $isCompleted = ($raw === 'success' || $raw === 'completed' || $raw === 'paid' || (string)$payment->status === '3');
+              $statusText  = $isCompleted ? 'Completed' : (is_numeric($payment->status) ? $payment->status : ucfirst((string)$payment->status));
+              $statusColor = $isCompleted ? 'success' : match($raw){
+                'pending' => 'secondary',
+                'failed'  => 'danger',
+                default   => 'dark',
+              };
+            @endphp
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <div class="fw-semibold">{{ $payment->local_transaction_id ?? 'N/A' }}</div>
+                <div class="small text-muted">{{ $payment->created_at->format('d M Y, h:i A') }}</div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="small text-muted">{{ ucfirst($payment->payment_method) }}</div>
+                <div><span class="badge bg-{{ $statusColor }} text-capitalize">{{ $statusText }}</span></div>
+                <div class="fw-semibold">{{ $symbol }} {{ number_format($payment->total_amount,2) }}</div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+
+      {{-- Desktop/Tablet: table --}}
+      <div class="card-body table-responsive p-0 d-none d-md-block">
         <table class="table table-hover table-striped align-middle mb-0">
           <thead class="table-light text-nowrap">
             <tr>
