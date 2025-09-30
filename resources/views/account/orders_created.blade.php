@@ -15,7 +15,7 @@
     <h3 class="mb-4">Your Orders by Shop</h3>
     <p class="text-muted">We created separate orders for each shop in your cart. You can review and pay each order individually.</p>
 
-    <div class="table-responsive">
+    <div class="table-responsive d-none d-md-block">
       <table class="table table-bordered align-middle">
         <thead class="table-light">
           <tr>
@@ -56,10 +56,57 @@
       </table>
     </div>
 
+    {{-- Mobile list (cards) --}}
+    <div class="d-block d-md-none mb-3">
+      <div class="list-group">
+        @foreach($orders as $order)
+          @php
+            $currency = get_currency();
+          @endphp
+          <div class="list-group-item p-3">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <div class="fw-semibold">#{{ $order->id }}</div>
+              <div class="small">
+                <span class="badge {{ method_exists($order,'getStatusBadgeClass') ? $order->getStatusBadgeClass() : 'bg-secondary' }} text-capitalize">
+                  {{ ucfirst($order->status) }}
+                </span>
+              </div>
+            </div>
+            <div class="mb-2 text-truncate">
+              <span class="text-muted small">Shop:</span>
+              @if($order->shop)
+                <a href="{{ route('shop.show', $order->shop->id) }}" class="text-decoration-none">{{ $order->shop->name }}</a>
+              @else
+                <span class="text-muted">Unknown shop</span>
+              @endif
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <div class="small text-muted">Subtotal</div>
+              <div>{{ $currency }} {{ number_format((float)$order->subtotal,2) }}</div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <div class="small text-muted">Shipping</div>
+              <div>{{ $currency }} {{ number_format((float)$order->shipping_cost,2) }}</div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="fw-semibold">Total</div>
+              <div class="fw-semibold">{{ $currency }} {{ number_format((float)$order->total_amount,2) }}</div>
+            </div>
+            <div class="mt-2">
+              @if(method_exists($order,'isPaid') && $order->isPaid())
+                <a class="btn btn-outline-secondary btn-sm w-100" href="{{ route('buyer.orders.show', $order->id) }}">View</a>
+              @else
+                <a class="btn btn-primary btn-sm w-100" href="{{ route('pay_now', $order->id) }}">Pay Now</a>
+              @endif
+            </div>
+          </div>
+        @endforeach
+      </div>
+    </div>
+
     <div class="mt-3">
       <a class="btn btn-outline-secondary" href="{{ route('account.orders') }}">Go to My Orders</a>
     </div>
   </div>
   </section>
 @endsection
-
