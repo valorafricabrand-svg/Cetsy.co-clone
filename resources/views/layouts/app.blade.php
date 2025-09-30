@@ -5,6 +5,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="application-name" content="{{ config('app.name', 'Laravel') }}">
+    <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Laravel') }}">
 
     <!-- ===============================================-->
     <!--    Document Title-->
@@ -21,7 +26,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ setting('favicon_url') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ setting('favicon_url') }}">
     <link rel="shortcut icon" type="image/x-icon" href="{{ setting('favicon_url') }}">
-    <link rel="manifest" href="{{ setting('favicon_url') }}">
+    <link rel="manifest" href="{{ asset('assets/img/favicons/manifest.json') }}">
     <meta name="msapplication-TileImage" content="{{ setting('favicon_url') }}">
     <meta name="theme-color" content="#ffffff">
     <script src="{{ asset('vendors/simplebar/simplebar.min.js') }}"></script>
@@ -80,6 +85,40 @@
         {{ get_option('additional_css') }}
     </style>
     @endif
+
+    <style>
+        /* Responsive helpers */
+        .content img, .card img, .modal img { max-width: 100%; height: auto; }
+        .table-responsive { -webkit-overflow-scrolling: touch; }
+        .table-responsive > table { width: 100%; }
+        /* Mobile bottom nav (modern, Bootstrap 5-friendly) */
+        .mobile-bottom-nav.navbar { 
+          position: fixed; left: 0; right: 0; bottom: 0; z-index: 1030;
+          padding: .5rem .5rem calc(.5rem + env(safe-area-inset-bottom));
+          background-color: rgba(255,255,255,.92); backdrop-filter: saturate(180%) blur(10px);
+          border-top: 1px solid rgba(0,0,0,.08); box-shadow: 0 -8px 24px rgba(0,0,0,.06);
+        }
+        .mobile-bottom-nav .nav { gap: .25rem; }
+        .mobile-bottom-nav__item.nav-link { 
+          position: relative; color: #475569; border-radius: .75rem; padding: .4rem .25rem; 
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .mobile-bottom-nav__item i { font-size: 1.15rem; line-height: 1; }
+        .mobile-bottom-nav__item .label { font-size: .72rem; line-height: 1; margin-top: .15rem; }
+        .mobile-bottom-nav__item.active, .mobile-bottom-nav__item:hover, .mobile-bottom-nav__item:focus {
+          color: #027333; background: rgba(2,115,51,.06);
+        }
+        .mobile-bottom-nav__item.active i { color: #027333; }
+        .mobile-bottom-nav__item.active::after { 
+          content: ""; position: absolute; top: -6px; left: 25%; right: 25%; height: 3px; border-radius: 999px; background: #027333;
+        }
+        .mobile-bottom-nav__badge { 
+          position: absolute; top: .2rem; right: 25%; transform: translate(50%, -40%);
+          background: #dc3545; color: #fff; font-size: .6rem; line-height: 1; border-radius: 999px; padding: .2rem .4rem; min-width: 1.1rem; text-align: center;
+        }
+        @media (max-width: 767.98px) { body.has-mobile-nav { padding-bottom: 72px; } }
+        @media (max-width: 767.98px) { footer { display: none !important; } }
+    </style>
 
     <style>
         .modal {
@@ -338,5 +377,19 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- before </body> -->
 <script src="https://cdn.jsdelivr.net/npm/intro.js/minified/intro.min.js"></script>
+<script>
+  // Register Service Worker for PWA support
+  (function(){
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function(){
+        navigator.serviceWorker.register('/service-worker.js').catch(function(err){
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  })();
+</script>
+{{-- Mobile bottom navigation (front theme) --}}
+@include('theme.'.theme().'.partials._mobile_nav')
 </body>
 </html>

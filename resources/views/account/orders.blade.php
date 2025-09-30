@@ -63,17 +63,17 @@
                     $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
                     $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
                   @endphp
-                  @if(!is_null($minDays) || !is_null($maxDays))
-                    <div class="small text-muted mt-1">
-                      @if($shipStart && $shipEnd)
-                        Ships within {{ (int)$minDays }}–{{ (int)$maxDays }} days ({{ $shipStartLabel }} – {{ $shipEndLabel }})
-                      @elseif(!is_null($minDays))
-                        Ships within {{ (int)$minDays }} days (by {{ $shipStartLabel }})
-                      @elseif(!is_null($maxDays))
-                        Ships by {{ (int)$maxDays }} days (by {{ $shipEndLabel }})
-                      @endif
-                    </div>
-                  @endif
+                  @php
+                    // Choose a single dispatch-by date: prefer end if present, else start
+                    $dispatchBy = $shipEndLabel ?? $shipStartLabel;
+                  @endphp
+                  <div class="small text-muted mt-1">
+                    @if($dispatchBy)
+                      Dispatch by {{ $dispatchBy }}
+                    @else
+                      Dispatch soon
+                    @endif
+                  </div>
                 </td>
                 <td>{{ money((float) ($order->total_amount ?? 0)) }}</td>
                 <td>

@@ -30,6 +30,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.2
 
 flutter:
   uses-material-design: true
@@ -47,3 +48,26 @@ flutter_launcher_icons:
   # Nice-to-haves
   min_sdk_android: 21
   remove_alpha_ios: true
+
+# Native splash configuration
+flutter_native_splash:
+  # Light theme background and image
+  color: "#2563EB"            # brand blue background
+  image: assets/app_icons/cetsy_icon_1024.png
+
+  # Dark theme background and image
+  color_dark: "#0B1220"       # dark background
+  image_dark: assets/app_icons/cetsy_icon_1024.png
+
+  # Android 12 requires separate section
+  android_12:
+    color: "#2563EB"
+    color_dark: "#0B1220"
+    image: assets/app_icons/cetsy_icon_512.png
+    image_dark: assets/app_icons/cetsy_icon_512.png
+
+  android_gravity: center
+  ios_content_mode: center
+  android: true
+  ios: true
+  web: false
