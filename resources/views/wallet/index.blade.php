@@ -23,18 +23,12 @@
         </a>
 
         @if(auth()->user()->isSeller())
-          @if(!($payoutOtpVerified ?? false))
-            <a href="{{ route('wallet.payout.otp.form') }}" class="btn btn-primary btn-lg mt-3 mt-md-0">
+          <button class="btn btn-primary btn-lg mt-3 mt-md-0"
+                  data-bs-toggle="modal"
+                  data-bs-target="#payoutModal"
+                  @disabled($balance < $minAmount || ($paymentMethods?->count() ?? 0) === 0)>
               Request&nbsp;Payout
-            </a>
-          @else
-            <button class="btn btn-primary btn-lg mt-3 mt-md-0"
-                    data-bs-toggle="modal"
-                    data-bs-target="#payoutModal"
-                    @disabled($balance < $minAmount || ($paymentMethods?->count() ?? 0) === 0)>
-                Request&nbsp;Payout
-            </button>
-          @endif
+          </button>
         @endif
 
         
@@ -98,6 +92,7 @@
       class="modal-content needs-validation"
       novalidate>
     @csrf
+    <input type="hidden" name="require_otp" value="1">
 
 
     <div class="modal-header">
@@ -197,17 +192,20 @@
           @error('code') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
         <div class="col-md-6 d-flex gap-2">
-          <button class="btn btn-primary">Verify &amp; Submit</button>
-          <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.resend') ? route('seller.payouts.otp.resend', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/resend-otp')) }}" class="d-inline">
-            @csrf
-            <button type="submit" class="btn btn-link">Resend code</button>
-          </form>
-          <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.cancel') ? route('seller.payouts.otp.cancel', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/cancel')) }}" class="d-inline" onsubmit="return confirm('Cancel this payout request?');">
-            @csrf
-            <button class="btn btn-link text-danger">Cancel</button>
-          </form>
+          <button class="btn btn-primary" type="submit">Verify &amp; Submit</button>
+          <a href="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.verify') ? route('seller.payouts.otp.verify', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/verify')) }}" class="btn btn-outline-secondary">Open full verify page</a>
         </div>
       </form>
+      <div class="mt-2 d-flex gap-3">
+        <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.resend') ? route('seller.payouts.otp.resend', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/resend-otp')) }}" class="d-inline">
+          @csrf
+          <button type="submit" class="btn btn-link p-0">Resend code</button>
+        </form>
+        <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.cancel') ? route('seller.payouts.otp.cancel', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/cancel')) }}" class="d-inline" onsubmit="return confirm('Cancel this payout request?');">
+          @csrf
+          <button class="btn btn-link text-danger p-0">Cancel</button>
+        </form>
+      </div>
     </div>
   </div>
 @endif
