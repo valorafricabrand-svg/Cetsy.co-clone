@@ -4,15 +4,29 @@
 @section('content')
 <div class="content py-4">
   <div class="container-xxl" style="max-width: 720px">
+    {{-- Stepper: 1) Request  2) Verify  3) Submitted --}}
+    <div class="d-flex align-items-center justify-content-center gap-3 mb-3">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-success">1</span>
+        <span class="small">Requested</span>
+      </div>
+      <div class="text-muted">&rarr;</div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary">2</span>
+        <span class="small">Verify</span>
+      </div>
+      <div class="text-muted">&rarr;</div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-secondary">3</span>
+        <span class="small">Submitted</span>
+      </div>
+    </div>
     <h3 class="mb-3">Verify Payout Request</h3>
     <div class="alert alert-info">
       We sent a verification code to your email. Enter it below to confirm your payout of {{ get_currency() }} {{ number_format($payout->amount,2) }}.
     </div>
     @if(session('success'))
       <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-    @if($errors->any())
-      <div class="alert alert-danger">{{ $errors->first() }}</div>
     @endif
     <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.submit') ? route('seller.payouts.otp.submit', $payout) : url('/seller/payouts/'.$payout->id.'/verify')) }}" class="card shadow-sm border-0 p-3 mb-3">
       @csrf
@@ -22,7 +36,7 @@
         @error('code') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
       <div class="d-flex align-items-center gap-2">
-        <button class="btn btn-primary">Verify &amp; Submit</button>
+        <button class="btn btn-primary" type="submit">Verify &amp; Submit</button>
         <a href="{{ route('seller.payouts.index') }}" class="btn btn-outline-secondary">Back</a>
       </div>
     </form>

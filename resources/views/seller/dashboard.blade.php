@@ -144,7 +144,7 @@
 
     </div>
 
-    {{-- Two-column: Recent Orders + Quick Links --}}
+    {{-- Two-column: Recent Orders + Reviews/Quick Links --}}
     <div class="row g-4 mb-5">
         <div class="col-lg-7">
             <div class="card border-0 shadow-sm rounded-4 h-100">
@@ -171,7 +171,32 @@
                                             <td>#{{ $o->id }}</td>
                                             <td>{{ optional($o->customer)->name ?? '—' }}</td>
                                             <td>{{ get_currency() }} {{ number_format($o->total ?? ($o->total_amount ?? 0), 2) }}</td>
-                                            <td><span class="badge {{ $o->getStatusBadgeClass() }}">{{ ucfirst($o->status) }}</span></td>
+                                        <td>
+                                            <span class="badge {{ $o->getStatusBadgeClass() }}">{{ ucfirst($o->status) }}</span>
+                                            @php
+                                                $minDays = null; $maxDays = null;
+                                                foreach (($o->items ?? []) as $it) {
+                                                    $sp = $it->shippingProfile;
+                                                    $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
+                                                    $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
+                                                    if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
+                                                    if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
+                                                }
+                                                $placedAt = optional($o->created_at);
+                                                $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
+                                                $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
+                                                $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
+                                                $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
+                                            @endphp
+                                            @php $dispatchBy = $shipEndLabel ?? $shipStartLabel; @endphp
+                                            <div class="small text-muted mt-1">
+                                                @if($dispatchBy)
+                                                    Dispatch by {{ $dispatchBy }}
+                                                @else
+                                                    Dispatch soon
+                                                @endif
+                                            </div>
+                                        </td>
                                             <td class="text-muted small">{{ optional($o->created_at)->format('d M Y') }}</td>
                                         </tr>
                                     @endforeach
@@ -185,6 +210,38 @@
             </div>
         </div>
         <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100 mb-4">
+                <div class="card-header bg-white rounded-top-4 fw-semibold d-flex align-items-center gap-2">
+                    <i class="fas fa-star text-warning"></i> Recent Reviews
+                    <a href="{{ route('seller.reviews.index') }}" class="small ms-auto text-decoration-none">View all</a>
+                </div>
+                <div class="card-body">
+                    @if(isset($recentReviews) && $recentReviews->count())
+                        <ul class="list-group list-group-flush">
+                            @foreach($recentReviews as $r)
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="fw-semibold">{{ optional($r->orderItem?->product)->name ?? 'Product' }}</div>
+                                            <div class="small text-muted">Order #{{ $r->order_id }} 
+                                                • Rated: {{ $r->rating }} / 5
+                                            </div>
+                                            @if($r->comment)
+                                                <div class="small mt-1">{{ \Illuminate\Support\Str::limit($r->comment, 120) }}</div>
+                                            @endif
+                                        </div>
+                                        <div class="ms-3">
+                                            <a href="{{ route('orders.chat.show', $r->order_id) }}" class="btn btn-sm btn-outline-primary">Respond</a>
+                                        </div>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <div class="text-muted small">No reviews yet.</div>
+                    @endif
+                </div>
+            </div>
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-white rounded-top-4 fw-semibold">
                     <i class="fas fa-bolt me-2 text-warning"></i>Quick Links

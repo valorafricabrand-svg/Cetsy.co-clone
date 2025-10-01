@@ -165,6 +165,35 @@
 
         </div>
 
+        {{-- ========== YOUR RECENT REVIEWS ==========' --}}
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-star-fill text-warning"></i> Your Recent Reviews
+            </div>
+            <div class="card-body">
+                @if(isset($myRecentReviews) && $myRecentReviews->count())
+                    <ul class="list-group list-group-flush">
+                        @foreach($myRecentReviews as $r)
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-semibold">{{ optional($r->orderItem?->product)->name ?? 'Product' }}</div>
+                                    <div class="small text-muted">Order #{{ $r->order_id }} • Rated: {{ $r->rating }} / 5</div>
+                                    @if($r->comment)
+                                        <div class="small mt-1">{{ \Illuminate\Support\Str::limit($r->comment, 140) }}</div>
+                                    @endif
+                                </div>
+                                @if($r->orderItem?->product?->slug)
+                                    <a href="{{ route('listing.show', $r->orderItem->product->slug) }}" class="btn btn-sm btn-outline-secondary">View Item</a>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <div class="text-muted small">You haven't left any reviews yet.</div>
+                @endif
+            </div>
+        </div>
+
         
 
     </div>

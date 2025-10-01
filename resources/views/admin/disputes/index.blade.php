@@ -163,17 +163,21 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <a href="{{ route('orders.show', $dispute->order->id) }}" class="text-decoration-none">
-                                                    #{{ $dispute->order->order_number }}
-                                                </a>
+                                                @if($dispute->order)
+                                                    <a href="{{ route('orders.show', $dispute->order->id) }}" class="text-decoration-none">
+                                                        #{{ $dispute->order->order_number }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-muted">No Order</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <span class="badge bg-light text-dark">
                                                     {{ $dispute->getTypeLabel() }}
                                                 </span>
                                             </td>
-                                            <td>{{ $dispute->buyer->name }}</td>
-                                            <td>{{ $dispute->seller->name }}</td>
+                                            <td>{{ $dispute->buyer->name ?? 'N/A' }}</td>
+                                            <td>{{ $dispute->seller->name ?? 'N/A' }}</td>
                                             <td>
                                                 <span class="badge {{ $dispute->getStatusBadgeClass() }}">
                                                     {{ ucfirst(str_replace('_', ' ', $dispute->status)) }}

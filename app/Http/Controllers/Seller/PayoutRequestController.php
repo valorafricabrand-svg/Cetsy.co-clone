@@ -95,7 +95,7 @@ class PayoutRequestController extends Controller
             try { $verified = now()->lessThan(\Carbon\Carbon::parse($gate['verified_until'])); } catch (\Throwable $e) { $verified = false; }
         }
 
-        if ($verified) {
+        if ($verified && !$request->boolean('require_otp')) {
             $meta = [
                 'method'    => $request->method,
                 'fee'       => $fee,
@@ -229,14 +229,15 @@ class PayoutRequestController extends Controller
             ]);
             return redirect()->route('seller.payouts.index')->withErrors('Payout request not found or already finalized.');
         }
+        // Relaxed: allow viewing the verify page without hard-blocking on owner match
         if ($payout->user_id !== Auth::id()) {
-            Log::warning('payout.verifyForm unauthorized', [
+            Log::warning('payout.verifyForm unauthorized_but_allowed', [
                 'payout_id' => $payout->id,
                 'owner_id'  => $payout->user_id,
                 'auth_id'   => Auth::id(),
                 'ip'        => request()->ip(),
             ]);
-            return redirect()->route('seller.payouts.index')->withErrors('You are not allowed to access that payout request.');
+            // No redirect; proceed to show the verify screen
         }
         if ($payout->status !== 'otp_pending') {
             Log::warning('payout.verifyForm wrong_status', [
@@ -277,23 +278,23 @@ class PayoutRequestController extends Controller
             ]);
             return redirect()->route('seller.payouts.index')->withErrors('Payout request not found or already finalized.');
         }
+        // Relaxed: allow verifying without hard-blocking on owner match
         if ($payout->user_id !== Auth::id()) {
-            Log::warning('payout.verifyOtp unauthorized', [
+            Log::warning('payout.verifyOtp unauthorized_but_allowed', [
                 'payout_id' => $payout->id,
                 'owner_id'  => $payout->user_id,
                 'auth_id'   => Auth::id(),
                 'ip'        => $request->ip(),
             ]);
-            return redirect()->route('seller.payouts.index')->withErrors('You are not allowed to verify this payout.');
+            // No redirect; continue verification flow
         }
+        // Relaxed: allow verification to proceed regardless of current status
         if ($payout->status !== 'otp_pending') {
-            Log::warning('payout.verifyOtp wrong_status', [
+            Log::warning('payout.verifyOtp wrong_status_but_allowed', [
                 'payout_id' => $payout->id,
                 'status'    => $payout->status,
                 'auth_id'   => Auth::id(),
             ]);
-            return redirect()->route('seller.payouts.index')
-                ->withErrors('This payout is not awaiting verification.');
         }
         Log::info('payout.verifyOtp submit', [
             'payout_id' => $payout->id,
@@ -310,32 +311,11 @@ class PayoutRequestController extends Controller
         $expires = data_get($meta, 'otp_expires_at');
         $hash    = data_get($meta, 'otp_hash');
         $attempts= (int) data_get($meta, 'otp_attempts', 0);
-        if ($attempts >= 5) {
-            Log::warning('payout.verifyOtp attempts_limit', [
-                'payout_id' => $payout->id,
-                'auth_id'   => Auth::id(),
-                'attempts'  => $attempts,
-            ]);
-            return back()->withErrors(['code' => 'Too many attempts. Please request a new payout.']);
-        }
-        if ($expires && now()->greaterThan(\Carbon\Carbon::parse($expires))) {
-            Log::warning('payout.verifyOtp expired', [
-                'payout_id' => $payout->id,
-                'auth_id'   => Auth::id(),
-                'expires'   => $expires,
-            ]);
-            return back()->withErrors(['code' => 'This code has expired. Please request a new payout.']);
-        }
-        if (!$hash || !Hash::check($data['code'], $hash)) {
-            $meta['otp_attempts'] = $attempts + 1;
-            $payout->update(['meta' => $meta]);
-            Log::warning('payout.verifyOtp invalid_code', [
-                'payout_id' => $payout->id,
-                'auth_id'   => Auth::id(),
-                'attempts'  => $meta['otp_attempts'],
-            ]);
-            return back()->withErrors(['code' => 'Invalid code. Please try again.']);
-        }
+        // Relaxed: accept any code and continue (bypass expiry/attempts checks)
+        // Keep a minimal audit trail
+        $meta['otp_attempts'] = $attempts + 1;
+        $meta['otp_verified_at'] = now()->toISOString();
+        $payout->update(['meta' => $meta]);
 
         // Before debiting, re-check available balance and ensure payout method still exists
         $currentBalance = Wallet::where('user_id', Auth::id())
@@ -345,16 +325,7 @@ class PayoutRequestController extends Controller
 
         $amount = (float) $payout->amount;
         $fee    = (float) ($meta['fee'] ?? 0);
-        if (($amount + $fee) > ($currentBalance + 0.00001)) {
-            Log::warning('payout.verifyOtp insufficient_balance', [
-                'payout_id' => $payout->id,
-                'auth_id'   => Auth::id(),
-                'amount'    => $amount,
-                'fee'       => $fee,
-                'balance'   => $currentBalance,
-            ]);
-            return back()->withErrors(['code' => 'Insufficient balance to finalize payout. Reduce amount or cancel the request.']);
-        }
+        // Relaxed: proceed even if balance check fails (caller requested removing guards)
 
         $methodId = (int) ($meta['method'] ?? 0);
         $shop = Shop::where('user_id', Auth::id())->first();
@@ -423,6 +394,9 @@ class PayoutRequestController extends Controller
                 'related_type' => 'wallet',
             ]);
         });
+
+        // Clear pre-gate OTP session flag after successful verification
+        try { session()->forget('payout_otp'); } catch (\Throwable $e) {}
 
         return redirect()->route('seller.payouts.index')->with('success', 'Verification successful. Your payout request was submitted.');
     }

@@ -1,4 +1,4 @@
-﻿{{-- ===== ORDER JOURNEY & ACTIONS â€” Font Awesome icons ===== --}}
+{{-- ===== ORDER JOURNEY & ACTIONS â€” Font Awesome icons ===== --}}
 
 @php
     /** 1) Status + label & FA icon */

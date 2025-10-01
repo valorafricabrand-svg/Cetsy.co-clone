@@ -1,4 +1,3 @@
-{{-- resources/views/products/variations.blade.php --}}
 @extends('layouts.app')
 
 @section('title', $product->name . ' | Variations')
@@ -130,7 +129,7 @@
   {{-- QUICK OVERVIEW OF TYPES --}}
   <div class="mb-4">
     @forelse($variationTypes as $type)
-      <div class="card mb-2 shadow-sm border-0 rounded-4">
+      <div class="card mb-2 shadow-sm border-0 rounded-4 variation-card" data-type-id="{{ $type->id }}">
         <div class="card-body d-flex justify-content-between align-items-center">
           <div class="me-3">
             <h6 class="mb-1">{{ $type->name }}</h6>
@@ -148,19 +147,17 @@
           </div>
 
           <div class="text-end">
-      
-<a
-  href="{{ route('products.variations.manage', ['product' => $product, 'type' => $type]) }}"
-  class="btn btn-sm btn-outline-secondary">
-  Manage
-</a>
-
-
+            <a
+              href="{{ route('products.variations.manage', ['product' => $product, 'type' => $type]) }}"
+              class="btn btn-sm btn-outline-secondary">
+              Manage
+            </a>
             <form
               action="{{ route('variationTypes.destroy', $type) }}"
               method="POST"
-              class="d-inline ms-2"
-              onsubmit="return confirm('Delete variation type “{{ $type->name }}”? This will also remove its options.')">
+              class="d-inline ms-2 variation-delete-form"
+              data-type-id="{{ $type->id }}"
+              onsubmit="return false;">
               @csrf
               @method('DELETE')
               <button class="btn btn-sm btn-outline-danger">Delete</button>
@@ -186,7 +183,7 @@
 
         <div class="modal-body">
           @forelse($variationTypes as $type)
-            <div class="mb-4 p-3 border rounded d-flex justify-content-between align-items-start">
+            <div class="mb-4 p-3 border rounded d-flex justify-content-between align-items-start variation-card" data-type-id="{{ $type->id }}">
               <div class="me-3">
                 <strong>{{ $type->name }}</strong>
                 <div class="mt-2">
@@ -196,7 +193,9 @@
                 </div>
               </div>
               <form action="{{ route('variationTypes.destroy', $type) }}" method="POST"
-                    onsubmit="return confirm('Delete this variation type and its options?')">
+                    class="variation-delete-form"
+                    data-type-id="{{ $type->id }}"
+                    onsubmit="return false;">
                 @csrf
                 @method('DELETE')
                 <button class="btn btn-sm btn-outline-danger">
@@ -247,12 +246,6 @@
       // Other types (besides the current type) for building combinations in the add-variant form
       $otherTypes = $variationTypes->where('id', '!=', $type->id);
     @endphp
-
-
-
-   
-
-
   @endforeach
 </div>
 @endsection
@@ -286,6 +279,31 @@
           input.value = value;
           return input;
         }
+      });
+    });
+
+    // FIX: Make variation types disappear instantly after delete
+    document.querySelectorAll('.variation-delete-form').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (!confirm('Delete this variation type?')) return;
+        fetch(form.action, {
+          method: 'POST',
+          headers: {
+            'X-CSRF-TOKEN': form.querySelector('[name="_token"]').value,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: new URLSearchParams(new FormData(form))
+        })
+        .then(res => {
+          if (res.ok) {
+            // Remove all cards with this variation type id
+            document.querySelectorAll('.variation-card[data-type-id="' + form.getAttribute('data-type-id') + '"]').forEach(card => card.remove());
+          } else {
+            alert('Failed to delete. Please refresh and try again.');
+          }
+        });
       });
     });
   });

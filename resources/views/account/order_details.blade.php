@@ -10,6 +10,14 @@
   .chip i { opacity:.85; }
   .chip .label-muted { color:#6c757d; }
 
+  /* Order item mobile cards */
+  .order-item-card .label { color:#6c757d; font-size:.8125rem; }
+  .order-item__thumb { width:72px; height:72px; object-fit:cover; border-radius:.5rem; flex:0 0 72px; }
+  .order-item__thumb.placeholder { background:#f1f3f5; color:#adb5bd; display:flex; align-items:center; justify-content:center; }
+  .order-item__row { display:flex; justify-content:space-between; align-items:center; margin-top:.5rem; }
+  .order-item__total { font-weight:700; }
+  .text-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient: vertical; overflow:hidden; }
+
   /* Print stylesheet: clean invoice look */
   @media print {
     @page { margin: 12mm; }
@@ -73,10 +81,10 @@
                align-items-start align-items-md-center gap-3">
 
         {{-- Title --}}
-        <h2 class="mb-0 text-success fw-semibold d-flex align-items-center gap-1">
-          <i class="bi bi-receipt-cutoff"></i>
-          Order&nbsp;#{{ $order->id }}&nbsp;&mdash;&nbsp;Details
-        </h2>
+  <h2 class="mb-0 text-success fw-semibold d-flex align-items-center gap-1">
+    <i class="bi bi-receipt-cutoff"></i>
+    Order&nbsp;#{{ $order->id }}&nbsp;&mdash;&nbsp;Details
+  </h2>
 
         {{-- Action buttons --}}
         <div class="btn-toolbar flex-wrap gap-2">
@@ -124,8 +132,87 @@
           @endif
 
         </div>
-      </div>
+  </div>
 
+  {{-- Processing timeline & ship-by notice --}}
+  @php
+    $minDays = null; $maxDays = null;
+    foreach (($order->items ?? []) as $it) {
+      $sp = $it->shippingProfile; // may be null (digital)
+      $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
+      $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
+      if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
+      if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
+    }
+    $placedAt = optional($order->created_at);
+    $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
+    $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
+    $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
+    $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
+
+    $status = (string) $order->status;
+    $stepPlaced     = true;
+    $stepProcessing = in_array($status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+    $stepShipped    = in_array($status, [\App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+    $stepDelivered  = in_array($status, [\App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+    $stepCompleted  = ($status === \App\Models\Order::STATUS_COMPLETED);
+  @endphp
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-center">
+        <div class="col-12 col-md-6">
+          <div class="fw-semibold mb-1">Processing Timeline</div>
+          <ul class="list-unstyled small mb-0">
+            <li class="d-flex align-items-center gap-2 mb-1">
+              <i class="bi bi-check-circle {{ $stepPlaced ? 'text-success' : 'text-muted' }}"></i>
+              <span>Order placed {{ $placedAt? $placedAt->format('M j, Y') : '' }}</span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-1">
+              <i class="bi bi-gear-fill {{ $stepProcessing ? 'text-success' : 'text-muted' }}"></i>
+              <span>
+                @if($shipStart && $shipEnd)
+                  Ships within {{ (int)$minDays }}&ndash;{{ (int)$maxDays }} days ({{ $shipStartLabel }} &ndash; {{ $shipEndLabel }})
+                @elseif(!is_null($minDays))
+                  Ships within {{ (int)$minDays }} days (by {{ $shipStartLabel }})
+                @elseif(!is_null($maxDays))
+                  Ships by {{ (int)$maxDays }} days (by {{ $shipEndLabel }})
+                @else
+                  Processing
+                @endif
+              </span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-1">
+              <i class="bi bi-truck {{ $stepShipped ? 'text-success' : 'text-muted' }}"></i>
+              <span>Shipped</span>
+            </li>
+            <li class="d-flex align-items-center gap-2 mb-1">
+              <i class="bi bi-box-seam {{ $stepDelivered ? 'text-success' : 'text-muted' }}"></i>
+              <span>Delivered</span>
+            </li>
+            <li class="d-flex align-items-center gap-2">
+              <i class="bi bi-flag {{ $stepCompleted ? 'text-success' : 'text-muted' }}"></i>
+              <span>Completed</span>
+            </li>
+          </ul>
+        </div>
+        <div class="col-12 col-md-6">
+          <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            @if($shipStart && $shipEnd)
+              Ship-by window: <strong>{{ $shipStartLabel }} &ndash; {{ $shipEndLabel }}</strong>
+            @elseif($shipStart)
+              Ship by: <strong>{{ $shipStartLabel }}</strong>
+            @elseif($shipEnd)
+              Ship by: <strong>{{ $shipEndLabel }}</strong>
+            @else
+              Seller will ship your order soon.
+            @endif
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
       {{-- Summary chips: status, placed, items, total --}}
       <div class="mt-3 d-flex flex-wrap gap-2">
         <span class="chip">
@@ -146,7 +233,7 @@
         <span class="chip">
           <i class="bi bi-cash-coin"></i>
           <span class="label-muted">Total:</span>
-          <span class="fw-semibold">{{ money() }}</span>
+          <span class="fw-semibold">{{ money((float)($order->total_amount ?? 0)) }}</span>
         </span>
       </div>
 
@@ -205,15 +292,15 @@
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Subtotal:</span>
-                <span>{{ money() }}</span>
+                <span>{{ money((float)($order->subtotal ?? 0)) }}</span>
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Shipping Fee:</span>
-                <span>{{ money() }}</span>
+                <span>{{ money((float)($order->shipping_cost ?? 0)) }}</span>
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Total Amount:</span>
-                <span class="fw-bold">{{ money() }}</span>
+                <span class="fw-bold">{{ money((float)($order->total_amount ?? 0)) }}</span>
               </li>
               <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
                 <span class="fw-semibold">Status:</span>
@@ -290,7 +377,7 @@
         </div>
 
         <div class="card-body p-0">
-          <div class="table-responsive">
+          <div class="table-responsive d-none d-md-block">
             <table class="table table-striped table-hover mb-0 align-middle">
               <thead class="table-light text-nowrap">
                 <tr>
@@ -380,16 +467,16 @@
                     <td>{{ $qty }}</td>
 
                     {{-- Unit Price --}}
-                    <td>{{ money() }}</td>
+                    <td>{{ money((float)$unit) }}</td>
 
                     {{-- Shipping profile (or hidden for digital) --}}
                     <td>{{ $label }}</td>
 
                     {{-- Shipping cost --}}
-                    <td>{{ money() }}</td>
+                    <td>{{ money((float)$shipCost) }}</td>
 
-                    {{-- Line total --}}
-                    <td class="fw-semibold">{{ money() }}</td>
+                    {{-- Subtotal (unit * qty, excludes shipping) --}}
+                    <td class="fw-semibold">{{ money((float)$lineSubtotal) }}</td>
 
                     {{-- Review (only after delivery) --}}
                     <td class="text-center">
@@ -437,6 +524,141 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Mobile/card layout -->
+          <div class="d-block d-md-none p-3">
+            @foreach($order->items as $item)
+              @php
+                $product    = optional($item->product);
+                $reviewed   = $item->review !== null;
+                $modalId    = 'reviewModal_'.$item->id;
+                $isDigital  = $product && $product->type === 'digital';
+
+                // Shipping label + cost (hidden/zero for digital)
+                if ($isDigital) {
+                    $label    = 'No shipping (digital)';
+                    $shipCost = 0.0;
+                } else {
+                    $sp    = optional($item->shippingProfile);
+                    $label = $sp && $sp->dest_location_type === 'everywhere_else'
+                             ? 'Everywhere'
+                             : ($sp && $sp->destCountry ? 'Ship to '.$sp->destCountry->name : ($sp->name ?? 'N/A'));
+                    $shipCost = (float) ($item->shipping_cost ?? 0);
+                }
+
+                $qty          = (int)   ($item->quantity ?? 1);
+                $unit         = (float) ($item->price ?? 0);
+                $lineSubtotal = $unit * $qty;
+                $lineTotal    = $lineSubtotal + $shipCost;
+                $thumbUrl     = product_thumb_url($product);
+                $canDownload  = in_array(
+                                  $order->status,
+                                  [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED]
+                                ) && $product && $product->type === 'digital';
+              @endphp
+
+              <div class="card order-item-card shadow-sm mb-3">
+                <div class="card-body">
+                  <div class="d-flex align-items-start gap-3">
+                    @if($thumbUrl)
+                      <a href="{{ $product ? route('listing.show', $product->slug) : '#' }}" target="_blank">
+                        <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product image' }}" class="order-item__thumb">
+                      </a>
+                    @else
+                      <div class="order-item__thumb placeholder rounded">
+                        <i class="bi bi-image"></i>
+                      </div>
+                    @endif
+                    <div class="flex-grow-1">
+                      <div class="d-flex justify-content-between align-items-start">
+                        <div style="min-width:0;">
+                          <div class="fw-semibold text-clamp-2">
+                            @if($product)
+                              <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="text-decoration-none">{{ $product->name }}</a>
+                            @else
+                              <span class="text-muted">&mdash;</span>
+                            @endif
+                            @if($isDigital)
+                              <span class="badge bg-secondary ms-1">Digital</span>
+                            @endif
+                          </div>
+                          @if($item->variation_summary)
+                            <div class="text-muted small">{{ $item->variation_summary }}</div>
+                          @endif
+                        </div>
+                        <div class="text-end ms-2">
+                          <div class="label">Unit</div>
+                          <div>{{ money((float)$unit) }}</div>
+                        </div>
+                      </div>
+
+                      <div class="order-item__row">
+                        <div class="label">Quantity</div>
+                        <div><strong>{{ $qty }}</strong></div>
+                      </div>
+
+                      @if(!$isDigital)
+                        <div class="order-item__row">
+                          <div class="label">Shipping</div>
+                          <div>{{ $label }} <span class="text-muted">({{ money((float)$shipCost) }})</span></div>
+                        </div>
+                      @else
+                        <div class="order-item__row">
+                          <div class="label">Shipping</div>
+                          <div class="text-muted">No shipping (digital)</div>
+                        </div>
+                      @endif
+
+                      <hr class="my-2">
+
+                      <div class="order-item__row">
+                        <div class="label">Subtotal</div>
+                        <div>{{ money((float)$lineSubtotal) }}</div>
+                      </div>
+                      <div class="order-item__row">
+                        <div class="label">Total</div>
+                        <div class="order-item__total">{{ money((float)$lineTotal) }}</div>
+                      </div>
+
+                      <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                          @if($reviewed)
+                            <span class="badge bg-success d-inline-flex align-items-center gap-1">
+                              <i class="bi bi-check-circle"></i> Reviewed
+                            </span>
+                          @elseif(($order->status === \App\Models\Order::STATUS_DELIVERED) || ($isDigital && (($order->status === \App\Models\Order::STATUS_COMPLETED) || ($order->status === \App\Models\Order::STATUS_DELIVERED)) && !empty($item->downloaded_at)))
+                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
+                              <i class="bi bi-star"></i> Review
+                            </button>
+                          @else
+                            <span class="text-muted small">Review after delivery</span>
+                          @endif
+                        </div>
+                      </div>
+
+                      @if($canDownload && $product && $product->digitalFiles->count())
+                        <div class="mt-3">
+                          <div class="label mb-1">Downloads</div>
+                          <div class="card mb-0 shadow-sm">
+                            <ul class="list-group list-group-flush">
+                              @foreach($product->digitalFiles as $file)
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                  <a href="{{ route('digital-files.download', $file) }}" target="_blank" class="d-inline-flex align-items-center">
+                                    <i class="fas fa-file-download me-2"></i> {{ $file->filename }}
+                                  </a>
+                                </li>
+                              @endforeach
+                            </ul>
+                          </div>
+                        </div>
+                      @endif
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+            @endforeach
+          </div>
         </div>
       </div>
     @endif
@@ -471,7 +693,7 @@
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $pay->local_transaction_id }}</td>
                     <td>{{ ucfirst($pay->payment_method) }}</td>
-                    <td>{{ money() }}</td>
+                    <td>{{ money((float)($pay->total_amount ?? 0)) }}</td>
                     <td>
                       <span class="badge {{ $isCompleted ? 'bg-success' : 'bg-secondary' }}">
                         {{ $statusLabel }}

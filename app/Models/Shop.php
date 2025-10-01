@@ -130,19 +130,12 @@ class Shop extends Model
 
     /**
      * Model booted callback to attach event listeners.
+     *
+     * Intentionally left blank: do not auto-create shipping profiles on shop creation.
      */
     protected static function booted(): void
     {
-        static::created(function (Shop $shop): void {
-            // Create a default shipping profile with base_rate = 0
-            $shop->shippingProfiles()->create([
-                'name'             => 'Domestic Shipping',
-                'country_id'          => "",
-                'base_rate'        => 0,
-                'delivery_days'    => 0,
-                'pickup_available' => false,
-            ]);
-        });
+        // No automatic inserts on creation
     }
 
     /**

@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('styles')
@@ -164,27 +165,6 @@
         background-color: #dee2e6;
     }
     
-    /* New styles for action buttons */
-    .notification-actions {
-        margin-top: 0.75rem;
-        padding-top: 0.75rem;
-        border-top: 1px dashed var(--border-color);
-    }
-    
-    .btn-action {
-        font-size: 0.85rem;
-        padding: 0.25rem 0.75rem;
-        margin-right: 0.5rem;
-        border-radius: 0.25rem;
-    }
-    
-    .notification-type-badge {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-        margin-left: 0.5rem;
-        border-radius: 0.25rem;
-    }
-    
     @media (max-width: 767.98px) {
         .notification-header {
             padding: 0.75rem 1rem;
@@ -201,17 +181,6 @@
         
         .notification-title {
             font-size: 1.25rem;
-        }
-        
-        .notification-actions {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .btn-action {
-            width: 100%;
-            margin-right: 0;
-            margin-bottom: 0.25rem;
         }
     }
     
@@ -240,26 +209,26 @@
 <div class="content">
 <div class="page-notifications">
     <!-- Sticky Header -->
-   <div class="page-header mb-4">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <h1 class="notification-title">Notifications</h1>
-                <p class="notification-timestamp mb-0 d-flex align-items-center">
-                    <!-- Timestamp or other info can go here -->
-                </p>
-            </div>
-            <div class="col-md-4 text-md-end mt-3 mt-md-0">
-               <form method="POST" action="{{ route('admin.notifications.mark-all-read') }}">
-    @csrf
-    <button type="submit" class="btn btn-mark-all">
-        <i class="fas fa-check-double me-1"></i> Mark all as read
-    </button>
-</form>
+    <div class="page-header mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="notification-title">Notifications Dashboard</h1>
+                    <p class="notification-timestamp mb-0 d-flex align-items-center">
+                    </button>
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <form action="{{ route('admin.notifications.mark-all-read') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-mark-all">
+                            <i class="fas fa-check-double me-1"></i> Mark All as Read
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
     <div class="container">
         <!-- Success Messages -->
@@ -336,22 +305,14 @@
                 @if($notifications->count() > 0)
                     <div class="list-group list-group-flush">
                         @foreach($notifications as $notification)
-                            @php
-                                $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, $user);
-                                $linkText = \App\Services\NotificationRouteService::getLinkText($notification, $user);
-                                $hasAction = !empty($route) && !empty($linkText);
-                            @endphp
-                            
-                            <div class="list-group-item notification-item {{ !$notification->is_read ? 'unread' : '' }} p-3">
+                            <a href="{{ $notification->link ?? '#' }}" class="list-group-item list-group-item-action notification-item {{ !$notification->is_read ? 'unread' : '' }} p-3">
                                 <div class="d-flex justify-content-between align-items-start mb-1">
                                     <h5 class="mb-1 fw-bold d-flex align-items-center">
                                         <span class="status-indicator {{ !$notification->is_read ? 'unread' : 'read' }}"></span>
                                         @if(!$notification->is_read)
                                             <span class="badge notification-badge rounded-pill me-2">New</span>
                                         @endif
-                                        @if($notification->type)
-                                            <span class="badge bg-light text-dark notification-type-badge">{{ class_basename($notification->type) }}</span>
-                                        @endif
+                                       
                                     </h5>
                                     <small class="notification-time">
                                         <i class="far fa-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
@@ -367,7 +328,7 @@
                                     </small>
                                     
                                     @if(!$notification->is_read)
-                                        <form action="{{ route('admin.notifications.mark-read', $notification->id) }}" method="POST" class="d-inline">
+                                        <form action="{{ route('admin.notifications.mark-read', $notification->id) }}" method="POST">
                                             @csrf
                                             <button type="submit" class="btn btn-mark-read">
                                                 <i class="fas fa-check me-1"></i> Mark as Read
@@ -375,29 +336,7 @@
                                         </form>
                                     @endif
                                 </div>
-                                
-                                <!-- Notification Actions -->
-                                @if($hasAction)
-                                    <div class="notification-actions d-flex justify-content-between align-items-center">
-                                        <small class="text-muted">
-                                            <i class="fas fa-bolt me-1"></i> Action required
-                                        </small>
-                                        <div>
-                                            <a href="{{ $route }}" class="btn btn-sm btn-primary btn-action">
-                                                <i class="fas fa-external-link-alt me-1"></i> {{ $linkText }}
-                                            </a>
-                                            @if(!$notification->is_read)
-                                                <form action="{{ route('admin.notifications.mark-read', $notification->id) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-secondary btn-action">
-                                                        <i class="fas fa-check me-1"></i> Dismiss
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
+                            </a>
                         @endforeach
                     </div>
                     

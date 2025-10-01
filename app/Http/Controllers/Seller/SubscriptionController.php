@@ -15,6 +15,15 @@ use App\Models\Activity;
 
 class SubscriptionController extends Controller
 {
+    /**
+     * Default index method (needed for resource routes).
+     * Reuses show() logic so no error is thrown.
+     */
+    public function index()
+    {
+        return $this->show();
+    }
+
     public function show()
     {
         $user = Auth::user();
@@ -201,6 +210,7 @@ class SubscriptionController extends Controller
         $subscription = $user->subscription;
 
         if ($subscription) {
+            $plan = $subscription->notes ?? 'current';
             $subscription->update([
                 'status' => 'cancelled',
                 'notes' => 'Cancelled by user on ' . now()->toDateString()
@@ -210,7 +220,7 @@ class SubscriptionController extends Controller
             Activity::create([
                 'user_id' => $user->id,
                 'is_read' => false,
-                'description' => 'You cancelled your ' . ucfirst($plan) . ' subscription',
+                'description' => 'You cancelled your ' . $plan . ' subscription',
                 'type' => \App\Models\Activity::TYPE_SUBSCRIPTION,
                 'related_id' => $subscription->id,
                 'related_type' => 'subscription'
@@ -220,4 +230,4 @@ class SubscriptionController extends Controller
         return redirect()->route('seller.subscription')
             ->with('success', 'Subscription cancelled successfully.');
     }
-} 
+}

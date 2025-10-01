@@ -44,6 +44,7 @@
       @else
         <div class="card shadow-sm">
           <div class="card-body p-0">
+            <div class="table-responsive">
             <table class="table table-bordered table-striped mb-0">
               <thead class="table-light">
                 <tr>
@@ -61,6 +62,7 @@
                 @endforeach
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       @endif

@@ -1,9 +1,9 @@
 // android/app/build.gradle — FIXED for AGP 8.6.1 / Kotlin 1.9.24 / Gradle 8.7
 
 plugins {
-    id "com.android.application"
+    id "com.android.application" version "8.6.1"
     // Use the modern Kotlin plugin ID (matches settings.gradle pluginManagement)
-    id "org.jetbrains.kotlin.android"
+    id "org.jetbrains.kotlin.android" version "1.9.24"
     // Apply the official Flutter Gradle plugin (declarative)
     id "dev.flutter.flutter-gradle-plugin"
 }

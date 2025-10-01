@@ -5,13 +5,16 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
+import '../config.dart';
 
 class CetsyWebViewScreen extends StatefulWidget {
   const CetsyWebViewScreen({super.key, required this.initialUrl});
@@ -21,12 +24,7 @@ class CetsyWebViewScreen extends StatefulWidget {
   State<CetsyWebViewScreen> createState() => _CetsyWebViewScreenState();
 }
 
-class _NavItem {
-  final String label;
-  final IconData icon;
-  final String url; // can be absolute or relative to base
-  const _NavItem(this.label, this.icon, this.url);
-}
+// Bottom navigation removed: rely on website's own navigation.
 
 class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   WebViewController? _controller; // null on web (we redirect instead)
@@ -48,22 +46,18 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   double _pullProgress = 0.0; // 0..1 visual bar
   static const double _pullTrigger = 100; // px to trigger reload
 
-  // ---- Bottom navigation
+  // ---- Base URL scope and share anchor
   late final Uri _baseUri;
-  int _currentIndex = 0;
-  late final List<_NavItem> _tabs;
+  final GlobalKey _shareAnchorKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
 
-    _baseUri = Uri.parse(widget.initialUrl);
-    _tabs = const [
-      _NavItem('Home', Icons.home, '/'),
-      _NavItem('Explore', Icons.search, '/search'),
-      _NavItem('Cart', Icons.shopping_cart, '/cart'),
-      _NavItem('Account', Icons.person, '/buyer/dashboard'),
-    ];
+    // Derive the origin (scheme + host + port) from the initial URL.
+    // All in-app navigation stays within this origin; outside links open externally.
+    final parsedInit = Uri.parse(widget.initialUrl);
+    _baseUri = parsedInit.replace(path: '/', query: null, fragment: null);
 
     // Connectivity banner (compatible with old/new connectivity_plus)
     _connSub = Connectivity().onConnectivityChanged.listen((event) {
@@ -79,8 +73,16 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     // ✅ On Flutter Web: DO NOT instantiate a WebView. Redirect the tab instead.
     if (kIsWeb) return;
 
-    // Generic creation params (portable across plugin versions)
-    const params = PlatformWebViewControllerCreationParams();
+    // Creation params with iOS inline-media enabled
+    PlatformWebViewControllerCreationParams params;
+    if (WebViewPlatform.instance is WebKitWebViewPlatform) {
+      params = WebKitWebViewControllerCreationParams(
+        allowsInlineMediaPlayback: true,
+        mediaTypesRequiringUserAction: const <PlaybackMediaTypes>{},
+      );
+    } else {
+      params = const PlatformWebViewControllerCreationParams();
+    }
 
     final controller = WebViewController.fromPlatformCreationParams(params)
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -99,9 +101,9 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
             _lastError.value = null;
             _setLoading(true);
           },
-          onPageFinished: (url) {
+          onPageFinished: (url) async {
             _setLoading(false);
-            _syncIndexWithUrl(url);
+            await _injectPagePatches();
           },
           onWebResourceError: (err) {
             _lastError.value = '${err.errorCode}: ${err.description}';
@@ -112,30 +114,62 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
             final isHttp = uri.scheme == 'http' || uri.scheme == 'https';
             final isAppScheme = <String>{
               'tel', 'mailto', 'sms', 'whatsapp', 'intent', 'maps', 'geo',
+              'tg', 'instagram', 'twitter', 'facebook', 'fb', 'viber', 'skype',
             }.contains(uri.scheme);
 
             if (isAppScheme) {
               launchUrl(uri, mode: LaunchMode.externalApplication);
               return NavigationDecision.prevent;
             }
-            return isHttp ? NavigationDecision.navigate : NavigationDecision.prevent;
+
+            // Keep navigation inside the app's origin; open other domains externally
+            if (isHttp) {
+              // Common downloadable types -> hand off to OS/browser for a native feel
+              final p = (uri.path).toLowerCase();
+              const dlExts = [
+                '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+                '.zip', '.rar', '.7z', '.csv', '.apk', '.aac', '.mp3', '.m4a',
+                '.mp4', '.mov', '.avi', '.webm', '.jpg', '.jpeg', '.png', '.gif', '.webp'
+              ];
+              final isDownload = dlExts.any((ext) => p.endsWith(ext));
+              if (isDownload) {
+                launchUrl(uri, mode: LaunchMode.externalApplication);
+                return NavigationDecision.prevent;
+              }
+              if (uri.host == _baseUri.host) {
+                return NavigationDecision.navigate;
+              } else {
+                launchUrl(uri, mode: LaunchMode.externalApplication);
+                return NavigationDecision.prevent;
+              }
+            }
+
+            return NavigationDecision.prevent;
           },
         ),
       )
       ..loadRequest(Uri.parse(widget.initialUrl));
 
-    // Android extras: debugging, basic file uploads (no allowMultiple for older APIs)
+    // Android extras: debugging, smoother media playback
     if (controller.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(true);
       final android = controller.platform as AndroidWebViewController;
-
-      android.setOnShowFileSelector((params) async {
-        final result = await FilePicker.platform.pickFiles(type: FileType.any);
-        if (result == null) return <String>[];
-        return result.paths.whereType<String>().toList();
-      });
-
+      // Best-effort: allow inline media playback without user gesture
+      android.setMediaPlaybackRequiresUserGesture(false).catchError((_) {});
+      // Rely on platform file chooser for best compatibility (camera/gallery)
       // NOTE: Some versions don't support setDownloadListener; omitted intentionally.
+    }
+
+    // iOS: enable back/forward swipe gestures
+    if (controller.platform is WebKitWebViewController) {
+      final ios = controller.platform as WebKitWebViewController;
+      // Best-effort: enable swipe back/forward gestures
+      ios.setAllowsBackForwardNavigationGestures(true).catchError((_) {});
+    }
+
+    // Optional UA override via --dart-define=APP_UA
+    if (AppConfig.userAgent.isNotEmpty) {
+      controller.setUserAgent(AppConfig.userAgent).catchError((_) {});
     }
 
     _controller = controller;
@@ -152,28 +186,42 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
 
   // ---- Utilities
 
-  Uri _absolute(String pathOrFull) {
-    final p = pathOrFull.trim();
-    if (p.startsWith('http://') || p.startsWith('https://')) {
-      return Uri.parse(p);
-    }
-    // Treat as relative to base
-    return _baseUri.resolve(p.startsWith('/') ? p : '/$p');
-  }
-
-  void _syncIndexWithUrl(String? url) {
-    if (url == null) return;
+  // Inject small JS patches to improve in-app feel:
+  // - Make window.open() and target=_blank open in the same view.
+  // - Normalize forms with target=_blank to _self.
+  Future<void> _injectPagePatches() async {
+    if (_controller == null) return;
     try {
-      final u = Uri.parse(url);
-      // Pick the tab whose target is a prefix of current page
-      for (int i = 0; i < _tabs.length; i++) {
-        final target = _absolute(_tabs[i].url).toString();
-        if (u.toString().startsWith(target)) {
-          if (_currentIndex != i) setState(() => _currentIndex = i);
-          return;
-        }
-      }
-      // If no match, leave current as is.
+      const script = r"""
+        (function(){
+          try {
+            // Open new windows in the same view
+            window.open = function(u){ if(!u) return null; location.href = u; return null; };
+
+            // Normalize anchors that try to break out
+            document.addEventListener('click', function(e){
+              var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+              if(!a) return;
+              var href = a.getAttribute('href');
+              if(!href) return;
+              var url = a.href;
+              var target = (a.getAttribute('target')||'').toLowerCase();
+              var rel = (a.getAttribute('rel')||'').toLowerCase();
+              if(target === '_blank' || rel.indexOf('noopener') >= 0 || rel.indexOf('noreferrer') >= 0){
+                e.preventDefault();
+                location.href = url;
+              }
+            }, true);
+
+            // Normalize forms that try to open in a new window
+            try {
+              var forms = document.querySelectorAll('form[target="_blank"]');
+              for (var i=0;i<forms.length;i++){ forms[i].setAttribute('target','_self'); }
+            } catch(_){ }
+          } catch(_){ }
+        })();
+      """;
+      await _controller!.runJavaScript(script);
     } catch (_) {}
   }
 
@@ -189,6 +237,24 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     await _controller!.reload();
   }
 
+  Future<void> _shareCurrentPage() async {
+    try {
+      String? url = widget.initialUrl;
+      if (_controller != null) {
+        url = await _controller!.currentUrl();
+      }
+      url ??= widget.initialUrl;
+
+      final box = _shareAnchorKey.currentContext?.findRenderObject() as RenderBox?;
+      final origin = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+      await Share.share(
+        url,
+        subject: 'Check this out on Cetsy',
+        sharePositionOrigin: origin,
+      );
+    } catch (_) {}
+  }
+
   Future<void> _goBackOrExit() async {
     if (_controller != null && await _controller!.canGoBack()) {
       await _controller!.goBack();
@@ -197,19 +263,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
         await SystemNavigator.pop();
       } catch (_) {}
     }
-  }
-
-  Future<void> _loadTab(int index) async {
-    if (_controller == null) return;
-    if (_currentIndex == index) {
-      // Reselect -> reload current tab
-      await _reload();
-      return;
-    }
-    setState(() => _currentIndex = index);
-    final target = _absolute(_tabs[index].url);
-    _setLoading(true);
-    await _controller!.loadRequest(target);
   }
 
   // ---- Pull-to-refresh handle at the very top of the web content
@@ -341,10 +394,23 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   Widget build(BuildContext context) {
     // ✅ Web fallback: redirect this tab to cetsy.co (no iframe/webview)
     if (kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        launchUrl(Uri.parse(widget.initialUrl), webOnlyWindowName: '_self');
-      });
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      final uri = Uri.parse(widget.initialUrl);
+      if (kReleaseMode) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          launchUrl(uri, webOnlyWindowName: '_self');
+        });
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      } else {
+        // In debug/profile, don't replace the inspected tab to avoid DWDS detaching.
+        return Scaffold(
+          body: Center(
+            child: FilledButton(
+              onPressed: () => launchUrl(uri, webOnlyWindowName: '_blank'),
+              child: const Text('Open Cetsy'),
+            ),
+          ),
+        );
+      }
     }
 
     return PopScope(
@@ -409,21 +475,13 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
           ),
         ),
 
-        // ===== Bottom Navigation (4 tabs) =====
-        bottomNavigationBar: SafeArea(
-          top: false,
-          child: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            currentIndex: _currentIndex,
-            onTap: _loadTab,
-            showUnselectedLabels: true,
-            items: [
-              BottomNavigationBarItem(icon: const Icon(Icons.home), label: _tabs[0].label),
-              BottomNavigationBarItem(icon: const Icon(Icons.search), label: _tabs[1].label),
-              BottomNavigationBarItem(icon: const Icon(Icons.shopping_cart), label: _tabs[2].label),
-              BottomNavigationBarItem(icon: const Icon(Icons.person), label: _tabs[3].label),
-            ],
-          ),
+        // Share current page
+        floatingActionButton: FloatingActionButton.small(
+          key: _shareAnchorKey,
+          onPressed: _shareCurrentPage,
+          tooltip: 'Share',
+          heroTag: 'share_fab',
+          child: const Icon(Icons.share),
         ),
       ),
     );

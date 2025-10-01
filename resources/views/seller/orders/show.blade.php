@@ -19,6 +19,17 @@
     $activeDispute = $disputes->where('status', '!=', 'final')->first();
     $resolvedDispute = $disputes->where('status', 'resolved')->first();
   }
+
+  // Compute safe totals in case DB totals are null/missing
+  $computedSubtotal = ($order->items ?? collect())->sum(function($it){
+    return (float)($it->price ?? 0) * (int)($it->quantity ?? 1);
+  });
+  $computedShipping = ($order->items ?? collect())->sum(function($it){
+    return (float)($it->shipping_cost ?? 0);
+  });
+  $subtotalVal = isset($order->subtotal) ? (float)$order->subtotal : (float)$computedSubtotal;
+  $shippingVal = isset($order->shipping_cost) ? (float)$order->shipping_cost : (float)$computedShipping;
+  $totalVal    = isset($order->total_amount) ? (float)$order->total_amount : (float)($subtotalVal + $shippingVal);
 @endphp
 
 <div class="content">
@@ -52,6 +63,12 @@
         </button>
 
         {{-- Cancel moved into kebab menu --}}
+      @elseif($order->status === \App\Models\Order::STATUS_SHIPPED)
+        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                data-bs-toggle="modal"
+                data-bs-target="#editTrackingModal">
+          <i class="fa-solid fa-pen"></i> Edit Tracking
+        </button>
       @endif
 
       {{-- More (kebab) menu with dispute/appeal actions --}}
@@ -117,7 +134,7 @@
             'Tracking No' => $order->tracking_no ?? '-',
             'Courier'     => $order->courier ?? '-',
             'Items'       => $order->items->sum('quantity'),
-            'Subtotal'    => "{$symbol} ".number_format($order->subtotal,2),
+            'Subtotal'    => "{$symbol} ".number_format($subtotalVal,2),
           ] as $label => $value)
             <div class="d-flex justify-content-between mb-2">
               <span class="fw-semibold">{{ $label }}:</span>
@@ -125,19 +142,50 @@
             </div>
           @endforeach
 
-          @if($order->shipping_cost)
-            <div class="d-flex justify-content-between mb-2">
-              <span class="fw-semibold">Shipping Fee:</span>
-              <span>{{ $symbol }} {{ number_format($order->shipping_cost,2) }}</span>
-            </div>
-          @endif
+          <div class="d-flex justify-content-between mb-2">
+            <span class="fw-semibold">Shipping Fee:</span>
+            <span>{{ $symbol }} {{ number_format($shippingVal,2) }}</span>
+          </div>
 
           <hr>
 
           <div class="d-flex justify-content-between mb-2 fw-bold">
             <span>Total Amount:</span>
-            <span>{{ $symbol }} {{ number_format($order->total_amount,2) }}</span>
+            <span>{{ $symbol }} {{ number_format($totalVal,2) }}</span>
           </div>
+
+          @php
+            $minDays = null; $maxDays = null;
+            foreach (($order->items ?? []) as $it) {
+              $sp = $it->shippingProfile; // may be null for digital
+              $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
+              $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
+              if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
+              if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
+            }
+            $placedAt = optional($order->created_at);
+            $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
+            $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
+            $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
+            $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
+          @endphp
+          @if(!is_null($minDays) || !is_null($maxDays))
+            <div class="d-flex justify-content-between mb-2">
+              <span class="fw-semibold">Ship by:</span>
+              <span>
+                @if($shipStart && $shipEnd)
+                  Ships within {{ (int)$minDays }}&ndash;{{ (int)$maxDays }} days
+                  ({{ $shipStartLabel }} &ndash; {{ $shipEndLabel }})
+                @elseif(!is_null($minDays))
+                  Ships within {{ (int)$minDays }} days
+                  (by {{ $shipStartLabel }})
+                @elseif(!is_null($maxDays))
+                  Ships by {{ (int)$maxDays }} days
+                  (by {{ $shipEndLabel }})
+                @endif
+              </span>
+            </div>
+          @endif
 
           <div class="d-flex justify-content-between mb-2">
             <span class="fw-semibold">Status:</span>
@@ -195,7 +243,68 @@
       <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
         <i class="fa-solid fa-boxes-stacked"></i> Order Items
       </div>
-      <div class="card-body table-responsive p-0">
+      {{-- Mobile: stacked cards --}}
+      <div class="card-body d-block d-md-none p-2">
+        <div class="list-group list-group-flush">
+          @foreach($order->items as $item)
+            @php
+              $product   = optional($item->product);
+              $isDigital = $product && $product->type === 'digital';
+
+              $qty       = (int) ($item->quantity ?? 1);
+              $unit      = (float) ($item->price ?? 0);
+
+              if ($isDigital) {
+                $shipLabel = 'No shipping (digital)';
+                $shipCost  = 0.0;
+              } else {
+                $sp        = optional($item->shippingProfile);
+                $shipLabel = $sp && $sp->dest_location_type === 'everywhere_else'
+                              ? 'Everywhere'
+                              : ($sp && $sp->destCountry ? ('Ship to '.$sp->destCountry->name) : ($sp->name ?? 'N/A'));
+                $shipCost  = (float) ($item->shipping_cost ?? 0);
+              }
+
+              $lineSub  = $unit * $qty;
+              $thumbUrl = product_thumb_url($product);
+            @endphp
+            <div class="list-group-item">
+              <div class="d-flex gap-2">
+                @if($thumbUrl)
+                  <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" class="rounded" style="width:64px;height:64px;object-fit:cover;">
+                @endif
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="fw-semibold text-truncate">
+                      @if($product?->slug)
+                        <a href="{{ route('listing.show', $product->slug) }}" class="text-decoration-none" target="_blank">{{ $product->name ?? 'N/A' }}</a>
+                      @else
+                        {{ $product->name ?? 'N/A' }}
+                      @endif
+                      @if($isDigital)
+                        <span class="badge bg-secondary ms-1">Digital</span>
+                      @endif
+                    </div>
+                    <div class="ms-2 text-nowrap">{{ $symbol }} {{ number_format($unit,2) }}</div>
+                  </div>
+                  <div class="small text-muted text-truncate">Listing: {{ $product->id ?? $item->product_id ?? 'N/A' }}</div>
+                  @if($item->variation_summary)
+                    <div class="small text-muted">{{ $item->variation_summary }}</div>
+                  @endif
+                  <div class="d-flex justify-content-between align-items-center mt-1">
+                    <div class="small"><span class="text-muted">Qty:</span> {{ $qty }}</div>
+                    <div class="small text-muted">Shipping: {{ $isDigital ? '-' : ($shipLabel ?: '-') }}</div>
+                    <div class="fw-semibold">{{ $symbol }} {{ number_format($lineSub,2) }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+
+      {{-- Desktop/Tablet: table --}}
+      <div class="card-body table-responsive p-0 d-none d-md-block">
         <table class="table table-hover table-striped align-middle mb-0">
           <thead class="table-light text-nowrap">
             <tr>
@@ -220,7 +329,6 @@
                 $qty       = (int) ($item->quantity ?? 1);
                 $unit      = (float) ($item->price ?? 0);
 
-                // For digital items, hide shipping and force cost = 0
                 if ($isDigital) {
                   $shipLabel = 'No shipping (digital)';
                   $shipCost  = 0.0;
@@ -232,28 +340,21 @@
                   $shipCost  = (float) ($item->shipping_cost ?? 0);
                 }
 
-                $lineSub  = $unit * $qty; // product subtotal (no shipping)
+                $lineSub  = $unit * $qty;
                 $thumbUrl = product_thumb_url($product);
               @endphp
               <tr>
                 <td>{{ $loop->iteration }}</td>
-
                 <td>
                   @if($thumbUrl)
                     <a href="{{ $product?->slug ? route('listing.show', $product->slug) : 'javascript:void(0)' }}" target="_blank">
-                      <img src="{{ $thumbUrl }}"
-                           alt="{{ $product->name ?? 'Product' }}"
-                           class="img-fluid rounded"
-                           style="max-width: 80px; height:auto; object-fit: cover;">
+                      <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" class="img-fluid rounded" style="max-width: 80px; height:auto; object-fit: cover;">
                     </a>
                   @endif
                 </td>
-
                 <td>
                   @if($product?->slug)
-                    <a href="{{ route('listing.show', $product->slug) }}" class="text-decoration-none" target="_blank">
-                      {{ $product->name ?? 'N/A' }}
-                    </a>
+                    <a href="{{ route('listing.show', $product->slug) }}" class="text-decoration-none" target="_blank">{{ $product->name ?? 'N/A' }}</a>
                   @else
                     {{ $product->name ?? 'N/A' }}
                   @endif
@@ -262,18 +363,11 @@
                   @endif
                 </td>
                 <td>{{ $product->id ?? $item->product_id ?? 'N/A' }}</td>
-
-                {{-- Saved textual summary; no variations table required --}}
                 <td>{{ $item->variation_summary ?? '-' }}</td>
-
                 <td class="text-center">{{ $qty }}</td>
                 <td class="text-end">{{ $symbol }} {{ number_format($unit,2) }}</td>
-
-                {{-- Shipping profile / cost hidden (shown as dash) for digital --}}
                 <td>{{ $isDigital ? '-' : $shipLabel }}</td>
                 <td class="text-end">{{ $symbol }} {{ number_format($isDigital ? 0 : $shipCost,2) }}</td>
-
-                {{-- Product subtotal (without shipping) --}}
                 <td class="text-end">{{ $symbol }} {{ number_format($lineSub,2) }}</td>
               </tr>
             @endforeach
@@ -289,7 +383,37 @@
       <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
         <i class="fa-solid fa-wallet"></i> Payments
       </div>
-      <div class="card-body table-responsive p-0">
+      {{-- Mobile: stacked cards --}}
+      <div class="card-body d-block d-md-none p-2">
+        <div class="list-group list-group-flush">
+          @foreach($order->payments as $payment)
+            @php
+              $raw = strtolower((string)$payment->status);
+              $isCompleted = ($raw === 'success' || $raw === 'completed' || $raw === 'paid' || (string)$payment->status === '3');
+              $statusText  = $isCompleted ? 'Completed' : (is_numeric($payment->status) ? $payment->status : ucfirst((string)$payment->status));
+              $statusColor = $isCompleted ? 'success' : match($raw){
+                'pending' => 'secondary',
+                'failed'  => 'danger',
+                default   => 'dark',
+              };
+            @endphp
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <div class="fw-semibold">{{ $payment->local_transaction_id ?? 'N/A' }}</div>
+                <div class="small text-muted">{{ $payment->created_at->format('d M Y, h:i A') }}</div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="small text-muted">{{ ucfirst($payment->payment_method) }}</div>
+                <div><span class="badge bg-{{ $statusColor }} text-capitalize">{{ $statusText }}</span></div>
+                <div class="fw-semibold">{{ $symbol }} {{ number_format($payment->total_amount,2) }}</div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+
+      {{-- Desktop/Tablet: table --}}
+      <div class="card-body table-responsive p-0 d-none d-md-block">
         <table class="table table-hover table-striped align-middle mb-0">
           <thead class="table-light text-nowrap">
             <tr>
@@ -324,6 +448,46 @@
             @endforeach
           </tbody>
         </table>
+      </div>
+    </div>
+  @endif
+
+  {{-- REVIEWS ON THIS ORDER (visible on Delivered/Completed) --}}
+  @php
+    $isFinished = in_array($order->status, [\App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+    $reviewsOnOrder = $order->items->map(fn($it)=>$it->review)->filter();
+  @endphp
+  @if($isFinished)
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+        <i class="fa-solid fa-star text-warning"></i> Reviews on this Order
+      </div>
+      <div class="card-body">
+        @if($reviewsOnOrder->isEmpty())
+          <div class="text-muted small">No reviews left yet for this order.</div>
+        @else
+          <ul class="list-group list-group-flush">
+            @foreach($order->items as $item)
+              @php $rev = $item->review; @endphp
+              @if($rev)
+                <li class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="fw-semibold">{{ optional($item->product)->name ?? 'Product' }}</div>
+                      <div class="small text-muted">Rating: {{ $rev->rating }} / 5</div>
+                      @if($rev->comment)
+                        <div class="small mt-1">{{ $rev->comment }}</div>
+                      @endif
+                    </div>
+                    <div class="ms-3">
+                      <a href="{{ route('orders.chat.show', $order->id) }}" class="btn btn-sm btn-outline-primary">Respond</a>
+                    </div>
+                  </div>
+                </li>
+              @endif
+            @endforeach
+          </ul>
+        @endif
       </div>
     </div>
   @endif
@@ -392,6 +556,85 @@
   </div>
 @endif
 
+{{-- EDIT TRACKING MODAL (SHIPPED + Edit) --}}
+@if($order->status === \App\Models\Order::STATUS_SHIPPED)
+  <div class="modal fade" id="editTrackingModal" tabindex="-1" aria-labelledby="editTrackingLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <form action="{{ route('seller.orders.tracking', $order) }}"
+            method="POST"
+            class="modal-content needs-validation" novalidate>
+        @csrf
+        @method('PATCH')
+        <div class="modal-header bg-light">
+          <h5 class="modal-title" id="editTrackingLabel">
+            <i class="fa-solid fa-pen me-2"></i>
+            Edit Tracking — Order #{{ $order->id }}
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          @php
+            $couriers = (array) (couriers_list() ?? []);
+            $courierValue = old('courier', $order->courier ?? null);
+            $standardList = array_merge($couriers, ['Courier','Postal service','Express','Manual','Other']);
+            $isCustomCourier = $courierValue && !in_array($courierValue, $standardList, true);
+            $showOther = $isCustomCourier || in_array(strtolower((string)$courierValue), ['manual','other'], true);
+          @endphp
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="editCourierSelect" name="courier" required>
+                  <option value="" disabled {{ $courierValue ? '' : 'selected' }}>Select courier...</option>
+                  @foreach($couriers as $c)
+                    <option value="{{ $c }}" {{ (string)$courierValue === (string)$c ? 'selected' : '' }}>{{ $c }}</option>
+                  @endforeach
+                  <option value="manual" {{ strtolower((string)$courierValue)==='manual' ? 'selected' : '' }}>Manual</option>
+                  <option value="other"  {{ $showOther && strtolower((string)$courierValue)!=='manual' ? 'selected' : '' }}>Other</option>
+                </select>
+                <label for="editCourierSelect">Courier *</label>
+                <div class="invalid-feedback">Please select a courier.</div>
+              </div>
+              <div class="form-floating mt-2" id="editCourierOtherWrap" style="display: {{ $showOther ? 'block' : 'none' }};">
+                <input type="text" class="form-control" id="editCourierOtherInput" name="courier_other" placeholder="Courier name" value="{{ old('courier_other', $isCustomCourier ? (string)$courierValue : '') }}">
+                <label for="editCourierOtherInput">Courier name (if Manual/Other)</label>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="editTrackingInput" name="tracking_no" placeholder="ABC123" value="{{ old('tracking_no', $order->tracking_no) }}" required>
+                <label for="editTrackingInput">Tracking number *</label>
+                <div class="invalid-feedback">Tracking number required.</div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="editShipDateInput" name="shipped_at" value="{{ old('shipped_at', optional($order->shipped_at)->toDateString() ?? now()->toDateString()) }}">
+                <label for="editShipDateInput">Shipping date</label>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-floating">
+                <textarea class="form-control" id="editShipNotes" name="ship_notes" style="height: 100px;">{{ old('ship_notes', $order->ship_notes) }}</textarea>
+                <label for="editShipNotes">Notes (optional)</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+@endif
 {{-- NO DISPUTES SECTION --}}
 @if(!$order->disputes || $order->disputes->isEmpty())
   <div class="card mb-4 shadow-sm">
@@ -490,60 +733,7 @@
             </div>
           </div>
 
-          <h6 class="mb-3 fw-semibold">Items & Shipping Profiles</h6>
-          <div class="table-responsive">
-            <table class="table table-bordered align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Image</th>
-                  <th>Product</th>
-                  <th>Listing ID</th>
-                  <th class="text-center">Qty</th>
-                  <th>Shipping Profile</th>
-                </tr>
-              </thead>
-              <tbody>
-                @foreach($order->items as $item)
-                  @php
-                    $product  = optional($item->product);
-                    $isDigital = $product && $product->type === 'digital';
-                    $profiles = $product?->shippingProfiles ?? collect();
-                    $selected = $item->shipping_profile_id;
-                    $thumbUrl = product_thumb_url($product);
-                  @endphp
-                  <tr>
-                    <td>
-                      @if($thumbUrl)
-                        <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" style="width:48px;height:48px;object-fit:cover;border-radius:.375rem;">
-                      @endif
-                    </td>
-                    <td>{{ $product->name ?? 'N/A' }} @if($isDigital)<span class="badge bg-secondary ms-1">Digital</span>@endif</td>
-                    <td>{{ $product->id ?? $item->product_id ?? 'N/A' }}</td>
-                    <td class="text-center">{{ (int)($item->quantity ?? 1) }}</td>
-                    <td>
-                      <input type="hidden" name="order_items[{{ $item->id }}][id]" value="{{ $item->id }}">
-                      @if($isDigital)
-                        <div class="form-control-plaintext text-muted">No shipping (digital)</div>
-                      @else
-                        <select name="order_items[{{ $item->id }}][shipping_profile_id]" class="form-select">
-                          @foreach($profiles as $profile)
-                            @php
-                              $label = $profile->dest_location_type === 'everywhere_else'
-                                      ? 'Everywhere'
-                                      : ($profile->destCountry ? ('Ship to '.$profile->destCountry->name) : $profile->name);
-                            @endphp
-                            <option value="{{ $profile->id }}" @selected($selected == $profile->id)>
-                              {{ $label }} ({{ $symbol }} {{ number_format((float)$profile->base_rate,2) }})
-                            </option>
-                          @endforeach
-                        </select>
-                      @endif
-                    </td>
-                  </tr>
-                @endforeach
-              </tbody>
-            </table>
-          </div>
+          {{-- Items & Shipping Profiles section removed per request --}}
         </div>
 
         <div class="modal-footer bg-light">
@@ -589,8 +779,21 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   courierSelect && courierSelect.addEventListener('change', toggleCourier);
   toggleCourier();
+
+  // Edit tracking modal toggle for Manual/Other
+  const editSel = document.getElementById('editCourierSelect');
+  const editWrap= document.getElementById('editCourierOtherWrap');
+  function toggleEditCourier(){
+    if(!editSel || !editWrap) return;
+    const v = (editSel.value || '').toLowerCase();
+    editWrap.style.display = (v === 'other' || v === 'manual') ? 'block' : 'none';
+  }
+  editSel && editSel.addEventListener('change', toggleEditCourier);
+  toggleEditCourier();
 });
 </script>
 @endpush
+
+
 
 

@@ -5,85 +5,142 @@
 @section('styles')
 <style>
     :root {
-        --primary-color: #4361ee;
-        --success-color: #28a745;
-        --info-color: #17a2b8;
-        --warning-color: #ffc107;
-        --danger-color: #dc3545;
+        --primary-green: #25B003;
+        --secondary-green: #198754;
+        --success-light: rgba(37, 176, 3, 0.1);
         --light-gray: #f8f9fa;
         --border-color: #e9ecef;
+        --text-dark: #212529;
         --text-muted: #6c757d;
-        --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        --border-radius: 10px;
-        --transition: all 0.3s ease;
+        --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+        --border-radius: 0.75rem;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+        box-sizing: border-box;
     }
 
     .notifications-container {
-        max-width: 900px;
+        max-width: 1900px;
         margin: 0 auto;
         padding: 2rem 1rem;
     }
 
+    /* Modern Header */
     .page-header {
-        background: linear-gradient(135deg, var(--primary-color), #5a67d8);
+        background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
         color: white;
-        padding: 2rem;
+        padding: 2.5rem 2rem;
         border-radius: var(--border-radius);
         margin-bottom: 2rem;
-        box-shadow: var(--shadow);
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(5deg); }
+    }
+
+    .header-content {
+        position: relative;
+        z-index: 1;
     }
 
     .page-title {
-        font-size: 1.75rem;
-        font-weight: 600;
-        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 1rem;
     }
 
     .page-title i {
-        font-size: 1.5rem;
-        opacity: 0.9;
+        font-size: 2rem;
+        animation: ring 2s ease-in-out infinite;
     }
 
-    .notifications-card {
-        background: white;
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow);
-        overflow: hidden;
-        border: none;
+    @keyframes ring {
+        0%, 100% { transform: rotate(0deg); }
+        10%, 30% { transform: rotate(-15deg); }
+        20%, 40% { transform: rotate(15deg); }
+        50% { transform: rotate(0deg); }
     }
 
-    .card-header {
-        background: white;
-        border-bottom: 2px solid var(--border-color);
-        padding: 1.5rem;
+    .header-stats {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-top: 1rem;
+        font-size: 0.95rem;
+        opacity: 0.95;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        backdrop-filter: blur(10px);
     }
 
     .mark-all-btn {
-        background: linear-gradient(135deg, var(--info-color), #20c997);
-        border: none;
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
         color: white;
-        padding: 0.5rem 1.25rem;
-        border-radius: 25px;
-        font-weight: 500;
+        padding: 0.75rem 1.5rem;
+        border-radius: 2rem;
+        font-weight: 600;
         transition: var(--transition);
-        box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+        backdrop-filter: blur(10px);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .mark-all-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         color: white;
     }
 
+    /* Modern Card */
+    .notifications-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+
+    /* Notification Items */
     .notification-item {
-        border: none;
-        padding: 1.5rem;
-        transition: var(--transition);
+        padding: 1.75rem;
         border-bottom: 1px solid var(--border-color);
+        transition: var(--transition);
         position: relative;
+        background: white;
     }
 
     .notification-item:last-child {
@@ -91,24 +148,66 @@
     }
 
     .notification-item.unread {
-        background: linear-gradient(135deg, #f8f9ff, #fff5f5);
-        border-left: 4px solid var(--primary-color);
+        background: linear-gradient(90deg, var(--success-light) 0%, white 100%);
+        border-left: 4px solid var(--primary-green);
+    }
+
+    .notification-item.unread::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 4px;
+        background: linear-gradient(180deg, var(--primary-green), var(--secondary-green));
     }
 
     .notification-item:hover {
         background: var(--light-gray);
-        transform: translateX(5px);
+        transform: translateX(8px);
+        box-shadow: var(--shadow-sm);
     }
 
     .notification-content {
-        flex-grow: 1;
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
+
+    .notification-icon {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        box-shadow: 0 4px 12px rgba(37, 176, 3, 0.3);
+    }
+
+    .notification-icon.unread {
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 4px 12px rgba(37, 176, 3, 0.3); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(37, 176, 3, 0.5); }
+    }
+
+    .notification-details {
+        flex: 1;
+        min-width: 0;
     }
 
     .notification-text {
         font-size: 1rem;
-        line-height: 1.5;
-        margin-bottom: 0.75rem;
-        color: #2d3748;
+        line-height: 1.6;
+        color: var(--text-dark);
+        margin: 0 0 0.75rem 0;
+        word-wrap: break-word;
     }
 
     .notification-text.unread {
@@ -119,42 +218,52 @@
     .notification-meta {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 1rem;
         font-size: 0.875rem;
         color: var(--text-muted);
-        margin-bottom: 0.75rem;
+        margin-bottom: 1rem;
     }
 
-    .notification-date {
+    .meta-item {
         display: flex;
         align-items: center;
-        gap: 0.25rem;
+        gap: 0.375rem;
+    }
+
+    .meta-divider {
+        width: 4px;
+        height: 4px;
+        background: var(--text-muted);
+        border-radius: 50%;
+        opacity: 0.5;
     }
 
     .notification-actions {
         display: flex;
         gap: 0.75rem;
-        margin-top: 1rem;
+        flex-wrap: wrap;
     }
 
     .btn-view {
-        background: linear-gradient(135deg, var(--primary-color), #5a67d8);
+        background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
         border: none;
         color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
+        padding: 0.625rem 1.25rem;
+        border-radius: 2rem;
         font-size: 0.875rem;
-        font-weight: 500;
+        font-weight: 600;
         transition: var(--transition);
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
+        box-shadow: 0 2px 8px rgba(37, 176, 3, 0.3);
     }
 
     .btn-view:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(37, 176, 3, 0.4);
         color: white;
         text-decoration: none;
     }
@@ -163,74 +272,183 @@
         background: white;
         border: 2px solid var(--border-color);
         color: var(--text-muted);
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
+        padding: 0.625rem 1.25rem;
+        border-radius: 2rem;
         font-size: 0.875rem;
-        font-weight: 500;
+        font-weight: 600;
         transition: var(--transition);
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .btn-mark-read:hover {
-        border-color: var(--success-color);
-        color: var(--success-color);
-        transform: translateY(-1px);
+        border-color: var(--primary-green);
+        color: var(--primary-green);
+        background: var(--success-light);
+        transform: translateY(-2px);
     }
 
     .new-badge {
-        background: linear-gradient(135deg, var(--primary-color), #667eea);
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 15px;
-        font-size: 0.75rem;
-        font-weight: 600;
         position: absolute;
         top: 1rem;
         right: 1rem;
-        box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+        background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+        color: white;
+        padding: 0.375rem 0.875rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 12px rgba(37, 176, 3, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
     }
 
+    .new-badge i {
+        font-size: 0.625rem;
+        animation: sparkle 1.5s ease-in-out infinite;
+    }
+
+    @keyframes sparkle {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* Empty State */
     .empty-state {
         text-align: center;
-        padding: 4rem 2rem;
+        padding: 5rem 2rem;
         color: var(--text-muted);
     }
 
     .empty-icon {
-        font-size: 4rem;
+        font-size: 5rem;
         color: var(--border-color);
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
+        opacity: 0.5;
     }
 
+    .empty-state h5 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 0.75rem;
+    }
+
+    .empty-state p {
+        font-size: 1rem;
+        color: var(--text-muted);
+    }
+
+    /* Pagination */
     .pagination-wrapper {
-        background: white;
+        background: var(--light-gray);
         padding: 1.5rem;
         border-top: 1px solid var(--border-color);
-        border-radius: 0 0 var(--border-radius) var(--border-radius);
     }
 
     .pagination-info {
         font-size: 0.875rem;
         color: var(--text-muted);
+        font-weight: 500;
     }
 
-    /* Success Toast Styling */
+    /* Modal */
+    .modal-content {
+        border-radius: var(--border-radius);
+        border: none;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+        color: white;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+        border: none;
+        padding: 1.5rem;
+    }
+
+    .modal-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+    }
+
+    .btn-close {
+        filter: brightness(0) invert(1);
+        opacity: 0.8;
+    }
+
+    .btn-close:hover {
+        opacity: 1;
+    }
+
+    .modal-body {
+        padding: 2rem;
+    }
+
+    .alert-info {
+        background: var(--success-light);
+        border: 2px solid rgba(37, 176, 3, 0.2);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .modal-footer {
+        border-top: 1px solid var(--border-color);
+        padding: 1.5rem;
+    }
+
+    .modal-footer .btn-primary {
+        background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+        border: none;
+        padding: 0.75rem 1.75rem;
+        border-radius: 2rem;
+        font-weight: 600;
+    }
+
+    .modal-footer .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(37, 176, 3, 0.4);
+    }
+
+    .modal-footer .btn-secondary {
+        background: white;
+        border: 2px solid var(--border-color);
+        color: var(--text-muted);
+        padding: 0.75rem 1.75rem;
+        border-radius: 2rem;
+        font-weight: 600;
+    }
+
+    .modal-footer .btn-secondary:hover {
+        background: var(--light-gray);
+        border-color: var(--text-muted);
+    }
+
+    /* Success Toast */
     .success-toast {
         position: fixed;
         top: 2rem;
         right: 2rem;
-        background: linear-gradient(135deg, var(--success-color), #20c997);
+        background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
         color: white;
-        padding: 1rem 1.5rem;
+        padding: 1.25rem 1.75rem;
         border-radius: var(--border-radius);
-        box-shadow: 0 4px 20px rgba(40, 167, 69, 0.3);
+        box-shadow: var(--shadow-lg);
         z-index: 1050;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        font-weight: 500;
+        gap: 1rem;
+        font-weight: 600;
         transform: translateX(400px);
-        transition: transform 0.3s ease;
+        transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
 
     .success-toast.show {
@@ -238,65 +456,70 @@
     }
 
     .success-toast i {
-        font-size: 1.25rem;
+        font-size: 1.5rem;
     }
 
-    /* Modal Styling */
-    .modal-content {
-        border-radius: var(--border-radius);
-        border: none;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    /* Responsive Design */
+    @media (max-width: 992px) {
+        .notification-content {
+            gap: 1rem;
+        }
+        
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            font-size: 1rem;
+        }
     }
 
-    .modal-header {
-        background: linear-gradient(135deg, var(--primary-color), #5a67d8);
-        color: white;
-        border-radius: var(--border-radius) var(--border-radius) 0 0;
-    }
-
-    .btn-close {
-        filter: invert(1);
-    }
-
-    .alert-info {
-        background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
-        border: none;
-        border-left: 4px solid var(--info-color);
-        border-radius: 8px;
-    }
-
-    .modal-footer .btn-primary {
-        background: linear-gradient(135deg, var(--primary-color), #5a67d8);
-        border: none;
-        padding: 0.5rem 1.5rem;
-        border-radius: 20px;
-    }
-
-    .modal-footer .btn-secondary {
-        background: white;
-        border: 2px solid var(--border-color);
-        color: var(--text-muted);
-        padding: 0.5rem 1.5rem;
-        border-radius: 20px;
-    }
-
-    /* Responsive */
     @media (max-width: 768px) {
         .notifications-container {
             padding: 1rem 0.5rem;
         }
 
+        .page-header {
+            padding: 2rem 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .header-stats {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
         .notification-item {
-            padding: 1rem;
+            padding: 1.25rem;
+        }
+
+        .notification-content {
+            flex-direction: column;
         }
 
         .notification-actions {
             flex-direction: column;
+            width: 100%;
+        }
+
+        .btn-view,
+        .btn-mark-read {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .new-badge {
+            position: static;
+            display: inline-flex;
+            margin-bottom: 0.75rem;
         }
 
         .success-toast {
-            right: 1rem;
             left: 1rem;
+            right: 1rem;
             transform: translateY(-100px);
         }
 
@@ -304,8 +527,53 @@
             transform: translateY(0);
         }
     }
+
+    @media (max-width: 576px) {
+        .page-header {
+            padding: 1.5rem 1rem;
+            margin-left: -0.5rem;
+            margin-right: -0.5rem;
+            border-radius: 0;
+        }
+
+        .mark-all-btn {
+            width: 100%;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+    }
+
+    /* Loading State */
+    .btn-loading {
+        position: relative;
+        pointer-events: none;
+        opacity: 0.7;
+    }
+
+    .btn-loading::after {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        top: 50%;
+        left: 50%;
+        margin-left: -8px;
+        margin-top: -8px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
 </style>
-@endSection
+@endsection
 
 @section('content')
 <div class="content">
@@ -398,7 +666,7 @@
                                     of {{ $notifications->total() }} notifications
                                 </div>
                                 <div>
-                                    {{ $notifications->links() }}
+                                    {{ $notifications->links("pagination::bootstrap-5") }}
                                 </div>
                             </div>
                         </div>
@@ -455,7 +723,6 @@
 </div>
 
 
-
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -471,17 +738,11 @@ document.addEventListener('DOMContentLoaded', function() {
         messageElement.textContent = message;
         toast.style.display = 'flex';
         
-        // Trigger animation
-        setTimeout(() => {
-            toast.classList.add('show');
-        }, 100);
+        setTimeout(() => toast.classList.add('show'), 100);
         
-        // Auto hide after 4 seconds
         setTimeout(() => {
             toast.classList.remove('show');
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, 300);
+            setTimeout(() => toast.style.display = 'none', 400);
         }, 4000);
     }
     
@@ -490,22 +751,13 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function(e) {
             e.preventDefault();
             
-            const notificationId = this.dataset.notificationId;
-            const notificationDescription = this.dataset.notificationDescription;
-            
-            // Store current elements for later use
-            currentNotificationId = notificationId;
+            currentNotificationId = this.dataset.notificationId;
             currentButton = this;
-            currentListItem = document.getElementById(`notification-${notificationId}`);
+            currentListItem = document.getElementById(`notification-${currentNotificationId}`);
             
-            // Update modal content
-            document.getElementById('notificationDescription').textContent = notificationDescription;
+            document.getElementById('notificationDescription').textContent = this.dataset.notificationDescription;
+            document.getElementById('markReadForm').action = `/notifications/${currentNotificationId}/mark-read`;
             
-            // Update form action
-            const form = document.getElementById('markReadForm');
-            form.action = `/notifications/${notificationId}/mark-read`;
-            
-            // Show modal
             const modal = new bootstrap.Modal(document.getElementById('markReadModal'));
             modal.show();
         });
@@ -515,18 +767,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('markReadForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
-        if (!currentNotificationId) {
-            console.error('No notification ID found');
-            return;
-        }
-        
-        // Show loading state
         const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
+        const originalHTML = submitBtn.innerHTML;
+        submitBtn.classList.add('btn-loading');
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
         submitBtn.disabled = true;
         
-        // Submit the form
         fetch(this.action, {
             method: 'POST',
             headers: {
@@ -535,86 +781,62 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Accept': 'application/json'
             }
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Remove the "New" badge
+                // Animate and remove elements
                 const badge = currentListItem.querySelector('.new-badge');
                 if (badge) {
                     badge.style.transform = 'scale(0)';
-                    setTimeout(() => badge.remove(), 200);
+                    badge.style.opacity = '0';
+                    setTimeout(() => badge.remove(), 300);
                 }
                 
-                // Remove the mark as read button
                 currentButton.style.transform = 'scale(0)';
-                setTimeout(() => currentButton.remove(), 200);
+                currentButton.style.opacity = '0';
+                setTimeout(() => currentButton.remove(), 300);
                 
-                // Remove the bold styling
-                const description = currentListItem.querySelector('.notification-text');
-                if (description) {
-                    description.classList.remove('unread');
-                }
-                
-                // Remove the unread styling
+                currentListItem.querySelector('.notification-text')?.classList.remove('unread');
+                currentListItem.querySelector('.notification-icon')?.classList.remove('unread');
                 currentListItem.classList.remove('unread');
                 
-                // Close the modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('markReadModal'));
-                if (modal) {
-                    modal.hide();
-                }
+                modal?.hide();
                 
-                // Show success toast
                 showSuccessToast();
                 
-                // Update page title if needed (optional)
+                // Update stats
                 const unreadCount = document.querySelectorAll('.notification-item.unread').length;
                 if (unreadCount === 0) {
-                    const markAllBtn = document.querySelector('.mark-all-btn');
+                    const markAllBtn = document.querySelector('.mark-all-form');
                     if (markAllBtn) {
                         markAllBtn.style.transform = 'scale(0)';
-                        setTimeout(() => markAllBtn.remove(), 200);
+                        markAllBtn.style.opacity = '0';
+                        setTimeout(() => markAllBtn.remove(), 300);
                     }
                 }
             }
         })
         .catch(error => {
-            console.error('Error marking notification as read:', error);
+            console.error('Error:', error);
             showSuccessToast('Error marking notification as read. Please try again.');
-            
-            // Reset button
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
         })
         .finally(() => {
-            // Reset button state if still visible
-            if (submitBtn && submitBtn.parentNode) {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }
+            submitBtn.classList.remove('btn-loading');
+            submitBtn.innerHTML = originalHTML;
+            submitBtn.disabled = false;
         });
     });
     
-    // Reset variables when modal is hidden
-    document.getElementById('markReadModal').addEventListener('hidden.bs.modal', function() {
-        currentNotificationId = null;
-        currentButton = null;
-        currentListItem = null;
-    });
-    
-    // Handle mark all as read form
-    const markAllForm = document.querySelector('form[action*="mark-all-read"]');
+    // Handle mark all as read
+    const markAllForm = document.querySelector('.mark-all-form');
     if (markAllForm) {
         markAllForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.classList.add('btn-loading');
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
             submitBtn.disabled = true;
             
@@ -626,26 +848,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Accept': 'application/json'
                 }
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Refresh page to show updated notifications
-                    location.reload();
+                    showSuccessToast('All notifications marked as read!');
+                    setTimeout(() => location.reload(), 1000);
                 }
             })
             .catch(error => {
-                console.error('Error marking all notifications as read:', error);
-                submitBtn.innerHTML = originalText;
+                console.error('Error:', error);
+                submitBtn.classList.remove('btn-loading');
+                submitBtn.innerHTML = originalHTML;
                 submitBtn.disabled = false;
                 showSuccessToast('Error marking all notifications as read. Please try again.');
             });
         });
     }
+    
+    // Reset modal state
+    document.getElementById('markReadModal').addEventListener('hidden.bs.modal', function() {
+        currentNotificationId = null;
+        currentButton = null;
+        currentListItem = null;
+    });
 });
 </script>
 @endpush
