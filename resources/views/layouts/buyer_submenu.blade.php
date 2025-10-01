@@ -77,6 +77,14 @@
                     <span class="badge bg-danger ms-auto badge-pill">{{ $unreadMessages }}</span>
                 @endif
             </a>
+            <a href="{{ route('buyer.notifications.index') }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $active('buyer.notifications.*') ? 'active' : '' }}">
+                <i class="fas fa-bell me-2" style="width:18px;"></i>
+                <span>Notifications</span>
+                @php($buyerUnreadNotifs = \App\Models\Activity::where('user_id', Auth::id())->where('is_read', false)->count())
+                @if($buyerUnreadNotifs>0)
+                    <span class="badge bg-warning text-dark ms-auto badge-pill">{{ $buyerUnreadNotifs }}</span>
+                @endif
+            </a>
         </div>
 
         <!-- Group: Favorites & Offers -->

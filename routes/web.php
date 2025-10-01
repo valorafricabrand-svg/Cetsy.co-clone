@@ -315,8 +315,13 @@ Route::middleware(['auth','verified'])->group(function () {
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
-
-   // Chat
+    
+    //notification routes
+    Route::get('/admin/notifications', [AdminNotificationController::class, 'index'])->name('admin.notifications.index');
+    Route::post('/admin/notifications/mark-all-read', [AdminNotificationController::class, 'markAllAsRead'])->name('admin.notifications.mark-all-read');
+    Route::post('/admin/notifications/{id}/mark-read', [AdminNotificationController::class, 'markAsRead'])->name('admin.notifications.mark-read');
+    
+    // Chat
     Route::get('/orders/{order}/chat', [OrderMessageController::class, 'show'])->name('orders.chat.show');
     Route::get('/orders/{order}/chat/messages', [OrderMessageController::class, 'fetch'])->name('orders.chat.fetch');
     Route::post('/orders/{order}/chat', [OrderMessageController::class, 'send'])->name('orders.chat.send');
@@ -557,6 +562,11 @@ Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('selle
     Route::get('/shops/{shop:slug}', [ShopController::class, 'show'])->name('shops.show');
     Route::get('/shops/{shop}/edit', [ShopController::class, 'edit'])->name('shops.edit');
     Route::patch('/shops/{shop}', [ShopController::class, 'update'])->name('shops.update');
+
+    // Seller notifications (view + mark as read)
+    Route::get('notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
 });
 
 /*
@@ -639,8 +649,11 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
 */
 Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(function () {
     Route::get('dashboard', [BuyerDashboard::class, 'index'])->name('dashboard');
-    // IMPORTANT: static routes must come before dynamic {order} to avoid 404
-    Route::get('orders/created', [OrderController::class, 'createdSummary'])->name('orders.created');
+
+    // Buyer notifications (view + mark as read)
+    Route::get('notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::get('orders/{order}', [AccountController::class, 'orderDetails'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('messages', [MessageController::class, 'buyerIndex'])->name('messages.index');
