@@ -10,14 +10,14 @@
     if ($role === 'admin') {
         // Admin sees all unread activities, not just their own
         $notificationsCount = Activity::where('is_read', false)->count();
-        $recentNotifications = Activity::orderBy('created_at', 'desc')->limit(5)->get();
+        $recentNotifications = Activity::orderBy('created_at', 'desc')->limit(2)->get();
     } else {
         $notificationsCount = Activity::where('user_id', $user->id)
             ->where('is_read', false)
             ->count();
         $recentNotifications = Activity::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->limit(5)
+            ->limit(2)
             ->get();
     }
 
@@ -37,7 +37,7 @@
                 });
             })
             ->orderBy('created_at', 'desc')
-            ->limit(5)
+            ->limit(1)
             ->get();
     } catch (\Throwable $e) {
         $recentDisputeMessages = collect();
@@ -153,11 +153,11 @@
                                 <div class="card-header bg-transparent border-bottom border-translucent">
                                     <h6 class="mb-0">Recent Notifications</h6>
                                 </div>
-                                <div class="card-body p-0">
+                                <div class="card-body p-0" style="max-height: 360px; overflow-y: auto;">
                                     {{-- Recent Activity notifications --}}
                                     @if($recentNotifications->count() > 0)
                                         @foreach($recentNotifications as $notification)
-                                            <div class="dropdown-item p-3 border-bottom border-translucent">
+                                            <div class="dropdown-item p-2 border-bottom border-translucent">
                                                 <div class="d-flex align-items-center">
                                                     <div class="flex-1">
                                                         <p class="mb-1 text-body-secondary small">{{ $notification->description }}</p>
@@ -192,7 +192,7 @@
                                     @if($recentDisputeMessages->count() > 0)
                                         <div class="dropdown-item p-2 bg-light fw-semibold small text-muted">Recent Dispute Messages</div>
                                         @foreach($recentDisputeMessages as $msg)
-                                            <div class="dropdown-item p-3 border-bottom border-translucent">
+                                            <div class="dropdown-item p-2 border-bottom border-translucent">
                                                 <div class="d-flex align-items-start">
                                                     <div class="flex-1">
                                                         <p class="mb-1 text-body-secondary small">
@@ -214,11 +214,12 @@
                                         @endforeach
                                     @endif
                                 </div>
-                                @if($recentNotifications->count() > 0)
-                                    <div class="card-footer p-2 border-top border-translucent">
-                                        <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-phoenix-secondary w-100">View All Notifications</a>
-                                    </div>
-                                @endif
+                                <div class="card-footer p-2 border-top border-translucent">
+                                    @php
+                                        $allRoute = $role === 'admin' ? route('admin.notifications.index') : route('notifications.index');
+                                    @endphp
+                                    <a href="{{ $allRoute }}" class="btn btn-sm btn-phoenix-secondary w-100">View All Notifications</a>
+                                </div>
                             </div>
                         </div>
                     </li>

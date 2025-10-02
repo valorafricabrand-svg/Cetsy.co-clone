@@ -51,7 +51,7 @@ class OfferController extends Controller
                     'related_id' => $offer->id,
                     'related_type' => 'offer'
                 ]);
-            }
+            } 
         } catch (\Exception $e) {
             // Log the error but don't break the user experience
             \Log::error('Failed to send offer notification email: ' . $e->getMessage());

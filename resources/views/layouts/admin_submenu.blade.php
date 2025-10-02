@@ -20,12 +20,18 @@
       $draftPosts = \App\Models\BlogPost::where('status', \App\Models\BlogPost::STATUS_DRAFT)->count();
     } catch (\Throwable $e) { $draftPosts = 0; }
 
+    // Notifications counter
+    try {
+      $unreadNotifications = \App\Models\Activity::where('is_read', false)->count();
+    } catch (\Throwable $e) { $unreadNotifications = 0; }
+
     $groups = [
       [
         'title' => 'Overview',
         'items' => [
           ['label' => 'Dashboard', 'icon' => 'fas fa-tachometer-alt', 'url' => route('admin.dashboard'), 'match' => ['admin.dashboard']],
           ['label' => 'Reports',   'icon' => 'fas fa-chart-bar',      'url' => route('admin.reports'),   'match' => ['admin.reports']],
+          ['label' => 'Notifications', 'icon' => 'fas fa-bell', 'url' => route('admin.notifications.index'), 'match' => ['admin.notifications.*'], 'count' => $unreadNotifications],
         ],
       ],
       [
@@ -72,6 +78,7 @@
         'title' => 'System',
         'items' => [
           ['label' => 'Settings', 'icon' => 'fas fa-gear', 'url' => route('admin.settings'), 'match' => ['admin.settings','admin.settings.*']],
+          ['label' => 'Notifications', 'icon' => 'fas fa-bell', 'url' => route('notifications.index'), 'match' => ['notifications.index','notifications.index*']],
         ],
       ],
     ];
@@ -102,5 +109,3 @@
     </div>
   </div>
 @endif
-
-

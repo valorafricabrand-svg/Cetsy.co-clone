@@ -4,14 +4,36 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CurrencySelectionController;
 use App\Http\Controllers\{
-    HomeController, ProfileController, ShopController, ProductController,
-    CategoryController, CartController, CheckoutController, OrderController,
-    DashboardController, WalletController, OrderMessageController,
-    AccountController, ProductInfoController, MpesaController, MediaController, DigitalFileController, ShippingProfileController, WishlistController, OfferController, MessageController, VariationController, DealController, BulkPriceController,
-    ProductReportController,ProductShippingController, ProductVariationController
+    HomeController,
+    ProfileController,
+    ShopController,
+    ProductController,
+    CategoryController,
+    CartController,
+    CheckoutController,
+    OrderController,
+    DashboardController,
+    WalletController,
+    OrderMessageController,
+    AccountController,
+    ProductInfoController,
+    MpesaController,
+    MediaController,
+    DigitalFileController,
+    ShippingProfileController,
+    WishlistController,
+    OfferController,
+    MessageController,
+    VariationController,
+    DealController,
+    BulkPriceController,
+    ProductReportController,
+    ProductShippingController,
+    ProductVariationController
 };
 
 use App\Http\Controllers\Admin\{
+    AdminMessageController,
     DashboardController as AdminDashboard,
     SubscriptionController as AdminSubscriptionController,
     UserController,
@@ -117,9 +139,9 @@ Route::get('/shop/{id}', [ShopController::class, 'showPublic'])->name('shop.show
 
 // Cart
 Route::prefix('cart')->name('cart.')->group(function () {
-    Route::get('/',        [CartController::class, 'viewCart'])->name('view');
-    Route::post('/add',    [CartController::class, 'addToCart'])->name('add');
-    Route::post('/buy',    [CartController::class, 'addToBuy'])->name('buy');
+    Route::get('/', [CartController::class, 'viewCart'])->name('view');
+    Route::post('/add', [CartController::class, 'addToCart'])->name('add');
+    Route::post('/buy', [CartController::class, 'addToBuy'])->name('buy');
     Route::post('/remove', [CartController::class, 'removeFromCart'])->name('remove');
     Route::post('/update', [CartController::class, 'updateCart'])->name('update');
 
@@ -149,12 +171,8 @@ Route::get('/wishlist', [ProductController::class, 'wishlist'])->name('wishlist'
 Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_now');
 
 
-
 Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
     ->name('products.pay-fee');
-
-
-
 // Product Reports
 Route::post('/product-reports', [ProductReportController::class, 'store'])->name('product-reports.store');
 
@@ -174,30 +192,23 @@ Route::prefix('products/{product}')->name('products.')->group(function () {
     Route::patch('/details',     [ProductController::class, 'updateDetails'])->name('details.update');
     Route::patch('/shipping',    [ProductController::class, 'updateShipping'])->name('shipping.update');
     Route::patch('/settings',    [ProductController::class, 'updateSettings'])->name('settings.update');
-
-
-
-
-
-
 });
 
-    Route::get('/products/{product}/variation-types/{type}/manage', [ProductVariationController::class, 'manage'])
+Route::get('/products/{product}/variation-types/{type}/manage', [ProductVariationController::class, 'manage'])
     ->name('products.variations.manage');
 
 
 
 
 
-
 // web.php
-Route::post   ('/products/{product}/shipping/rows',           [ProductShippingController::class, 'storeShippingRow'])
-     ->name('products.shipping.rows.store');
-Route::delete ('/products/{product}/shipping/rows/{row}',     [ProductShippingController::class, 'destroyShippingRow'])
-     ->name('products.shipping.rows.destroy');
+Route::post('/products/{product}/shipping/rows',           [ProductShippingController::class, 'storeShippingRow'])
+    ->name('products.shipping.rows.store');
+Route::delete('/products/{product}/shipping/rows/{row}',     [ProductShippingController::class, 'destroyShippingRow'])
+    ->name('products.shipping.rows.destroy');
 
-Route::patch  ('/products/{product}/shipping/rows/{row}', [ProductShippingController::class, 'updateShippingRow'])
-     ->name('products.shipping.rows.update');
+Route::patch('/products/{product}/shipping/rows/{row}', [ProductShippingController::class, 'updateShippingRow'])
+    ->name('products.shipping.rows.update');
 
 Route::get('/pay-now-invoice/{total}', [OrderController::class, 'payNowInvoice'])->name('pay_now_invoice');
 Route::get('/success-deposit/{id}', [OrderController::class, 'successDeposit'])->name('success_deposit');
@@ -218,56 +229,57 @@ Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('r
 Route::middleware(['auth','verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
-    
+
     Route::patch('products/{product}/renewal', [ProductController::class, 'updateRenewal'])
-         ->name('products.updateRenewal');
+        ->name('products.updateRenewal');
 
-    Route::post('/listing/{order}/wallet', [WalletController::class,'payListing'])
-         ->name('listing.wallet.pay');
+    Route::post('/listing/{order}/wallet', [WalletController::class, 'payListing'])
+        ->name('listing.wallet.pay');
 
-    Route::post('/order/{order}/wallet', [WalletController::class,'payOrder'])
-         ->name('order.wallet.pay');
+    Route::post('/order/{order}/wallet', [WalletController::class, 'payOrder'])
+        ->name('order.wallet.pay');
 
     Route::post('/products/{product}/status', [ProductController::class, 'changeStatus'])
-         ->name('products.changeStatus');
+        ->name('products.changeStatus');
 
+    // Variation routes
     Route::prefix('products/{product}')->group(function () {
         Route::post('variation‑types', [VariationController::class, 'storeType'])
-             ->name('variationTypes.store');
+            ->name('variationTypes.store');
         Route::post('variations', [VariationController::class, 'store'])
-             ->name('variations.store');
+            ->name('variations.store');
         Route::post('variations/bulk', [VariationController::class, 'bulkStore'])
             ->name('variations.bulkStore');
     });
 
     Route::patch('variations/{variation}', [VariationController::class, 'update'])
-         ->name('variations.update');
+        ->name('variations.update');
     Route::delete('variations/{variation}', [VariationController::class, 'destroy'])
-         ->name('variations.destroy');
+        ->name('variations.destroy');
     Route::delete('variation‑types/{variationType}', [VariationController::class, 'destroyType'])
         ->name('variationTypes.destroy');
 
     Route::post('variation-types/{variationType}/options', [VariationController::class, 'storeOption'])
-         ->name('variationOptions.store');
+        ->name('variationOptions.store');
     Route::patch('variation-options/{option}', [VariationController::class, 'updateOption'])
-         ->name('variationOptions.update');
+        ->name('variationOptions.update');
     Route::delete('variation-options/{option}', [VariationController::class, 'destroyOption'])
-         ->name('variationOptions.destroy');
+        ->name('variationOptions.destroy');
 
     Route::post('/favorites/toggle', [WishlistController::class, 'toggle'])
-         ->name('favorites.toggle');
+        ->name('favorites.toggle');
     Route::delete('/favorites/{wishlist}', [WishlistController::class, 'remove'])
-         ->name('wishlist.remove'); 
+        ->name('wishlist.remove');
     Route::post('/offers', [OfferController::class, 'store'])
-         ->name('offers.store');
+        ->name('offers.store');
     Route::post('/messages', [MessageController::class, 'store'])
-         ->name('messages.store');
+        ->name('messages.store');
     Route::post('/products/{product}/media', [MediaController::class, 'upload'])
-         ->name('media.upload');
+        ->name('media.upload');
     Route::delete('/media/{media}', [MediaController::class, 'destroy'])
-         ->name('media.destroy');
+        ->name('media.destroy');
     Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'destroy'])
-         ->name('digital-files.destroy');
+        ->name('digital-files.destroy');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -288,9 +300,9 @@ Route::middleware(['auth','verified'])->group(function () {
         ->name('products.duplicate');
 
     Route::post('media/{media}/crop', [MediaController::class, 'crop'])
-         ->name('media.crop')
-         ->middleware('auth');
-   
+        ->name('media.crop')
+        ->middleware('auth');
+
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
@@ -298,7 +310,7 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::post('/checkout/order', [OrderController::class, 'storeOrder'])->name('store_order');
 
     Route::get('/downloads/{file}', [DigitalFileController::class, 'download'])
-         ->name('digital-files.download');
+        ->name('digital-files.download');
 
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
@@ -306,20 +318,22 @@ Route::middleware(['auth','verified'])->group(function () {
     
     //notification routes
     Route::get('/admin/notifications', [AdminNotificationController::class, 'index'])->name('admin.notifications.index');
+    Route::post('/admin/notifications/mark-all-read', [AdminNotificationController::class, 'markAllAsRead'])->name('admin.notifications.mark-all-read');
+    Route::post('/admin/notifications/{id}/mark-read', [AdminNotificationController::class, 'markAsRead'])->name('admin.notifications.mark-read');
     
     // Chat
     Route::get('/orders/{order}/chat', [OrderMessageController::class, 'show'])->name('orders.chat.show');
     Route::get('/orders/{order}/chat/messages', [OrderMessageController::class, 'fetch'])->name('orders.chat.fetch');
     Route::post('/orders/{order}/chat', [OrderMessageController::class, 'send'])->name('orders.chat.send');
-    
+
     Route::patch('/products/{product}/set-featured-image', [ProductController::class, 'setFeaturedImage'])
-         ->name('products.setFeaturedImage');
-    
+        ->name('products.setFeaturedImage');
+
     // Reviews
     Route::post('/orders/{order}/items/{item}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])
-         ->name('orders.items.reviews.store');
+        ->name('orders.items.reviews.store');
     Route::get('/shops/{shop}/reviews', [\App\Http\Controllers\ReviewController::class, 'shopReviews'])
-         ->name('shop.reviews');
+        ->name('shop.reviews');
 
     // Wallet
     Route::prefix('wallet')->name('wallet.')->group(function () {
@@ -341,8 +355,8 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
         ->name('wallet.deposit.mpesa.stk');
 
-        // Poll status (frontend “listens” by polling this)
- Route::get ('/wallet/deposit/mpesa/status/{ref}', [WalletController::class, 'mpesaStatus'])->name('wallet.deposit.mpesa.status');
+    // Poll status (frontend “listens” by polling this)
+    Route::get('/wallet/deposit/mpesa/status/{ref}', [WalletController::class, 'mpesaStatus'])->name('wallet.deposit.mpesa.status');
 
     // Account
     Route::prefix('account')->name('account.')->group(function () {
@@ -355,6 +369,7 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/logout', [AccountController::class, 'logout'])->name('logout');
     });
 
+    // Buyer favorites and offers
     Route::get('buyer/favorites', [ProductController::class, 'favorites'])->name('buyer.favorites');
     Route::get('buyer/offers', [ProductController::class, 'offers'])->name('buyer.offers');
 
@@ -362,7 +377,7 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    
+
     // Disputes - Keep only this to test
     Route::prefix('disputes')->name('disputes.')->group(function () {
         Route::get('/', [\App\Http\Controllers\DisputeController::class, 'index'])->name('index');
@@ -376,17 +391,17 @@ Route::middleware(['auth','verified'])->group(function () {
         }
         Route::post('/{dispute}/mutual-resolution', [\App\Http\Controllers\DisputeController::class, 'initiateMutualResolution'])->name('mutual-resolution.initiate');
         Route::post('/{dispute}/mutual-resolution/agree', [\App\Http\Controllers\DisputeController::class, 'agreeToMutualResolution'])->name('mutual-resolution.agree');
-        
+
         // Mark Dispute as Closed
         Route::post('/{dispute}/close', [\App\Http\Controllers\DisputeController::class, 'markAsClosed'])->name('close');
-        
+
         // Evidence Request Responses
         if (config('disputes.enable_appeals')) {
             Route::post('/evidence-requests/{evidenceRequest}/respond', [\App\Http\Controllers\EvidenceRequestController::class, 'respond'])->name('evidence-requests.respond');
         }
     });
-    
 });
+
 
 /*
 |--------------------------------------------------------------------------
@@ -398,8 +413,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::resource('wallets', AdminWalletController::class)->except(['create', 'store']);
     Route::delete('wallets/bulk', [AdminWalletController::class, 'bulk'])->name('wallets.bulk');
-
     Route::patch('kyc/bulk', [KycController::class, 'bulk'])->name('kyc.bulk');
+
+    // Users
     Route::resource('users', UserController::class);
     Route::post('users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
@@ -423,11 +439,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     )->name('category-attributes.destroy');
     Route::resource('categories', CategoryController::class);
 
+    // KYC
     Route::get('kyc', [KycController::class, 'index'])->name('kyc.index');
     Route::get('kyc/{kyc}', [KycController::class, 'show'])->name('kyc.show');
     Route::patch('kyc/{kyc}', [KycController::class, 'update'])->name('kyc.update');
     Route::get('kyc/{kyc}', [KycController::class, 'showDetails'])->name('kyc.showDetails');
 
+    // Settings, Reports
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
     Route::put('settings/{setting}', [AdminSetting::class, 'update'])->name('settings.update');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
@@ -437,7 +455,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     Route::post('reviews/bulk-approve', [ReviewController::class, 'bulkApprove'])->name('reviews.bulk-approve');
     Route::post('reviews/bulk-delete', [ReviewController::class, 'bulkDelete'])->name('reviews.bulk-delete');
-    
+
     // Messages
     Route::get('messages', [\App\Http\Controllers\Admin\AdminMessageController::class, 'index'])->name('messages.index');
     Route::get('messages/{conversation}', [\App\Http\Controllers\Admin\AdminMessageController::class, 'show'])->name('messages.show');
@@ -449,9 +467,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Categories
     Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::get('categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
-
+    // Make sure you have this route defined
     Route::post('subscriptions/deactivate-expired', [AdminSubscriptionController::class, 'deactivateExpired'])->name('subscriptions.deactivate-expired');
 
+    // Payout Requests
     Route::prefix('payout-requests')->name('payouts.')->controller(AdminPayoutRequestController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{payout}', 'show')->name('show');
@@ -462,11 +481,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{payout}/fail', 'fail')->name('fail');
     });
 
+    // Payments
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
     // Seller payment methods (admin view)
     Route::get('payment-methods', [AdminPaymentMethodController::class, 'index'])->name('payment-methods.index');
-    
+
     //Payment Types
     Route::resource('payment-types', PaymentTypeController::class);
 
@@ -503,9 +523,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     }
 
 });
-
+Route::post('/admin/categories/{category}/attributes', [CategoryAttributeController::class, 'store'])
+    ->name('admin.categories.attributes.store');
 /*
 |--------------------------------------------------------------------------
+
 | Seller Routes - Subscription Management (No Active Subscription Required)
 |--------------------------------------------------------------------------
 */
@@ -540,6 +562,11 @@ Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('selle
     Route::get('/shops/{shop:slug}', [ShopController::class, 'show'])->name('shops.show');
     Route::get('/shops/{shop}/edit', [ShopController::class, 'edit'])->name('shops.edit');
     Route::patch('/shops/{shop}', [ShopController::class, 'update'])->name('shops.update');
+
+    // Seller notifications (view + mark as read)
+    Route::get('notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
 });
 
 /*
@@ -622,8 +649,11 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
 */
 Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(function () {
     Route::get('dashboard', [BuyerDashboard::class, 'index'])->name('dashboard');
-    // IMPORTANT: static routes must come before dynamic {order} to avoid 404
-    Route::get('orders/created', [OrderController::class, 'createdSummary'])->name('orders.created');
+
+    // Buyer notifications (view + mark as read)
+    Route::get('notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::get('orders/{order}', [AccountController::class, 'orderDetails'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('messages', [MessageController::class, 'buyerIndex'])->name('messages.index');

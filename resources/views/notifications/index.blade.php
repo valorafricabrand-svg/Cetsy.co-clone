@@ -578,39 +578,30 @@
 @section('content')
 <div class="content">
     <div class="notifications-container">
-        <!-- Modern Page Header -->
+        <!-- Page Header -->
         <div class="page-header">
-            <div class="header-content">
-                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-                    <div>
-                        <h1 class="page-title">
-                            <i class="fas fa-bell"></i>
-                            Notifications
-                        </h1>
-                        <div class="header-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-inbox"></i>
-                                <span>{{ $notifications->total() }} Total</span>
-                            </div>
-                            @if($notifications->where('is_read', false)->count() > 0)
-                                <div class="stat-item">
-                                    <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
-                                    <span>{{ $notifications->where('is_read', false)->count() }} Unread</span>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                    @if($notifications->where('is_read', false)->count() > 0)
-                        <form method="POST" action="{{ route('notifications.mark-all-read') }}" class="mark-all-form">
-                            @csrf
-                            <button type="submit" class="btn mark-all-btn">
-                                <i class="fas fa-check-double"></i>
-                                Mark All as Read
-                            </button>
-                        </form>
-                    @endif
-                </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="page-title">
+                    <i class="fas fa-bell"></i>
+                    Notifications
+                </h1>
+                @if($notifications->where('is_read', false)->count() > 0)
+                    <form method="POST" action="{{ route('notifications.mark-all-read') }}" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn mark-all-btn">
+                            <i class="fas fa-check-double me-1"></i>
+                            Mark All as Read
+                        </button>
+                    </form>
+                @endif
             </div>
+            @if($notifications->where('is_read', false)->count() > 0)
+                <div class="mt-2">
+                    <small class="opacity-75">
+                        You have {{ $notifications->where('is_read', false)->count() }} unread notifications
+                    </small>
+                </div>
+            @endif
         </div>
 
         <!-- Notifications Card -->
@@ -619,63 +610,47 @@
                 @if($notifications->count() > 0)
                     <div class="notification-list">
                         @foreach($notifications as $notification)
-                            <div class="notification-item {{ !$notification->is_read ? 'unread' : '' }}" 
-                                 id="notification-{{ $notification->id }}">
+                            <div class="notification-item {{ !$notification->is_read ? 'unread' : '' }}" id="notification-{{ $notification->id }}">
                                 @if(!$notification->is_read)
                                     <div class="new-badge">
-                                        <i class="fas fa-star"></i>
-                                        New
+                                        <i class="fas fa-star me-1"></i>New
                                     </div>
                                 @endif
                                 
                                 <div class="notification-content">
-                                    <div class="notification-icon {{ !$notification->is_read ? 'unread' : '' }}">
-                                        <i class="fas fa-bell"></i>
-                                    </div>
+                                    <p class="notification-text {{ !$notification->is_read ? 'unread' : '' }}">
+                                        {{ $notification->description }}
+                                    </p>
                                     
-                                    <div class="notification-details">
-                                        <p class="notification-text {{ !$notification->is_read ? 'unread' : '' }}">
-                                            {{ $notification->description }}
-                                        </p>
-                                        
-                                        <div class="notification-meta">
-                                            <div class="meta-item">
-                                                <i class="far fa-calendar-alt"></i>
-                                                {{ $notification->created_at->format('M d, Y') }}
-                                            </div>
-                                            <div class="meta-divider"></div>
-                                            <div class="meta-item">
-                                                <i class="far fa-clock"></i>
-                                                {{ $notification->created_at->format('g:i A') }}
-                                            </div>
-                                            <div class="meta-divider"></div>
-                                            <div class="meta-item">
-                                                {{ $notification->created_at->diffForHumans() }}
-                                            </div>
+                                    <div class="notification-meta">
+                                        <div class="notification-date">
+                                            <i class="far fa-clock"></i>
+                                            {{ $notification->created_at->format('M d, Y \a\t g:i A') }}
                                         </div>
+                                        <span class="text-muted">•</span>
+                                        <span>{{ $notification->created_at->diffForHumans() }}</span>
+                                    </div>
 
-                                        <div class="notification-actions">
-                                            @php
-                                                $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, auth()->user());
-                                                $linkText = \App\Services\NotificationRouteService::getLinkText($notification, auth()->user());
-                                            @endphp
-                                            @if($route && $route !== route('notifications.index'))
-                                                <a href="{{ $route }}" class="btn-view">
-                                                    <i class="fas fa-arrow-right"></i>
-                                                    {{ $linkText }}
-                                                </a>
-                                            @endif
-                                            
-                                            @if(!$notification->is_read)
-                                                <button type="button" 
-                                                        class="btn-mark-read" 
-                                                        data-notification-id="{{ $notification->id }}"
-                                                        data-notification-description="{{ $notification->description }}">
-                                                    <i class="fas fa-check"></i>
-                                                    Mark as Read
-                                                </button>
-                                            @endif
-                                        </div>
+                                    <div class="notification-actions">
+                                        @php
+                                            $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, auth()->user());
+                                            $linkText = \App\Services\NotificationRouteService::getLinkText($notification, auth()->user());
+                                        @endphp
+                                        @if($route && $route !== route('notifications.index'))
+                                            <a href="{{ $route }}" class="btn-view">
+                                                <i class="fas fa-eye"></i>
+                                                {{ $linkText }}
+                                            </a>
+                                        @endif
+                                        
+                                        @if(!$notification->is_read)
+                                            <button type="button" 
+                                                    class="btn-mark-read" 
+                                                    data-notification-id="{{ $notification->id }}"
+                                                    data-notification-description="{{ $notification->description }}">
+                                                <i class="fas fa-check me-1"></i>Mark as Read
+                                            </button>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -685,13 +660,13 @@
                     <!-- Pagination -->
                     @if($notifications->hasPages())
                         <div class="pagination-wrapper">
-                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div class="d-flex justify-content-between align-items-center">
                                 <div class="pagination-info">
                                     Showing {{ $notifications->firstItem() }} to {{ $notifications->lastItem() }} 
                                     of {{ $notifications->total() }} notifications
                                 </div>
                                 <div>
-                                    {{ $notifications->links() }}
+                                    {{ $notifications->links("pagination::bootstrap-5") }}
                                 </div>
                             </div>
                         </div>
@@ -699,53 +674,54 @@
                 @else
                     <div class="empty-state">
                         <i class="far fa-bell-slash empty-icon"></i>
-                        <h5>No notifications yet</h5>
-                        <p>You're all caught up! New notifications will appear here.</p>
+                        <h5 class="mb-3">No notifications yet</h5>
+                        <p class="text-muted">You're all caught up! New notifications will appear here.</p>
                     </div>
                 @endif
             </div>
         </div>
     </div>
-</div>
 
-<!-- Mark as Read Modal -->
-<div class="modal fade" id="markReadModal" tabindex="-1" aria-labelledby="markReadModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form id="markReadForm" method="POST">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title" id="markReadModalLabel">
-                        <i class="fas fa-check-circle"></i>
-                        Mark as Read
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-2">Are you sure you want to mark this notification as read?</p>
-                    <div class="alert alert-info mb-0">
-                        <strong><i class="fas fa-info-circle me-2"></i>Notification:</strong>
-                        <p class="mb-0 mt-2" id="notificationDescription"></p>
+    <!-- Mark as Read Confirmation Modal -->
+    <div class="modal fade" id="markReadModal" tabindex="-1" aria-labelledby="markReadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="markReadForm" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="markReadModalLabel">
+                            <i class="fas fa-check-circle me-2"></i>Mark as Read
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check me-1"></i>Mark as Read
-                    </button>
-                </div>
-            </form>
+                    <div class="modal-body">
+                        <p class="mb-3">Are you sure you want to mark this notification as read?</p>
+                        <div class="alert alert-info">
+                            <strong><i class="fas fa-info-circle me-1"></i>Notification:</strong>
+                            <p class="mb-0 mt-2" id="notificationDescription"></p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check me-1"></i>Mark as Read
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
+
+    <!-- Success Toast Template -->
+    <div id="successToast" class="success-toast" style="display: none;">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Notification marked as read successfully!</span>
+    </div>
+
 </div>
 
-<!-- Success Toast -->
-<div id="successToast" class="success-toast" style="display: none;">
-    <i class="fas fa-check-circle"></i>
-    <span id="toastMessage">Success!</span>
-</div>
 
 @push('scripts')
 <script>

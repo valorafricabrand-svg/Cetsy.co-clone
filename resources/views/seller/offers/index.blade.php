@@ -194,16 +194,6 @@
                             </td>
                             <td style="min-width:200px;">
                                 <div class="d-flex align-items-center gap-2">
-                                    <!-- @if($offer->product && $offer->product->media->first())
-                                        <img src="{{ asset('storage/' . $offer->product->media->first()->file_path) }}" 
-                                             alt="Product" class="rounded" style="width:40px;height:40px;object-fit:cover;">
-                                    @else
-                                        <div class="bg-light border rounded d-flex align-items-center justify-content-center" 
-                                             style="width:40px;height:40px;">
-                                            <i class="bi bi-box text-secondary"></i>
-                                        </div>
-                                    @endif -->
-
                                     @php
                                         $thumb = product_thumb_url($offer->product);
                                     @endphp
@@ -278,7 +268,6 @@
     </div>
 </div>
 
-
 {{-- Bulk Action Modal --}}
 <div class="modal fade" id="bulkActionModal" tabindex="-1">
     <div class="modal-dialog">
@@ -312,7 +301,6 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Apply Action</button>
                 </div>
-
             </form>
         </div>
     </div>

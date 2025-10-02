@@ -12,16 +12,16 @@ class AdminNotificationController extends Controller
     public function index()
     {
         $currentDate = now()->format('Y-m-d H:i:s');
-        $currentUser = Auth::user();
-        
+        $user = Auth::user();
+
         // Get all activities without filtering by type
-        // Modify this query to match your needs based on existing columns
         $notifications = Activity::latest()->paginate(15);
-            
+
+        // Pass $user for NotificationRouteService usage in view
         return view('admin.notifications.index', compact(
-            'notifications', 
+            'notifications',
             'currentDate',
-            'currentUser'
+            'user'
         ));
     }
     

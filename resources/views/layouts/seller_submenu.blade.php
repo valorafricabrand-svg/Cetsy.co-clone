@@ -43,6 +43,7 @@
             ['route'=>'seller.messages.index','icon'=>'fas fa-comments','label'=>'Messages','badge'=>$unreadMessages],
             ['route'=>'seller.offers.index','icon'=>'fas fa-hand-holding-usd','label'=>'Offers','badge'=>$pendingOffers],
             ['route'=>'seller.favorites.index','icon'=>'fas fa-heart','label'=>'Favorites','badge'=>$favoritesCount],
+            ['route'=>'seller.notifications.index','icon'=>'fas fa-bell','label'=>'Notifications','badge'=>(\App\Models\Activity::where('user_id', Auth::id())->where('is_read', false)->count())],
         ],
          'Dispute' => [
             ['route'=>'disputes.index','icon'=>'fas fa-exclamation-triangle','label'=>'Dispute','badge'=>$disputesCount],
