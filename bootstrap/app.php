@@ -40,7 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Console\Commands\DeactivateExpiredSubscriptions::class,
         \App\Console\Commands\NotifyShipBy::class,
         \App\Console\Commands\SendSubscriptionExpiryReminders::class,
-        \\App\\Console\\Commands\\BackfillSubscriptionShop::class,
+        \App\Console\Commands\BackfillSubscriptionShop::class,
     ])
     ->withSchedule(function (Schedule $schedule) {
         // Define your scheduled tasks here
@@ -53,6 +53,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
+
+
 
 
 
