@@ -125,6 +125,13 @@
                     'class' => 'text-primary',
                     'href'  => route('seller.offers.index')
                 ],
+                [
+                    'value' => $favorites_messages_total . "<small class='text-muted ms-1'>(7d: ".$favorites_messages_week.")</small>",
+                    'label' => 'Messages from Favorites',
+                    'icon'  => 'fas fa-comments',
+                    'class' => 'text-secondary',
+                    'href'  => route('seller.favorites.index')
+                ],
             ];
         @endphp
 
