@@ -70,6 +70,8 @@ public function update(Request $request, Setting $setting)
         'fee_rate'          => 'nullable|numeric|min:0|max:100',
         'min_amount'        => 'nullable|numeric|min:0',
         'auto_release_days' => 'nullable|integer|min:1|max:365',
+        // Subscription grace period (days)
+        'subscription_grace_days' => 'nullable|integer|min:0|max:60',
 
         // Shipping defaults
         'couriers'          => 'nullable|string',

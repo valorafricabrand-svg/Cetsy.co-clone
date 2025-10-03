@@ -8,6 +8,7 @@ class Subscription extends Model
 {
     protected $fillable = [
         'user_id',
+        'shop_id',
         'status',
         'start_date',
         'end_date',
@@ -26,6 +27,11 @@ class Subscription extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function shop()
+    {
+        return $this->belongsTo(Shop::class);
     }
 
     public function isActive(): bool

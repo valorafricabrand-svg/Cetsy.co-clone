@@ -108,6 +108,7 @@ class SubscriptionController extends Controller
         // Create new subscription
         $subscription = new Subscription([
             'user_id' => $user->id,
+            'shop_id' => $shop?->id,
             'status' => 'active',
             'start_date' => now(),
             'end_date' => now()->addDays($duration),
@@ -118,6 +119,7 @@ class SubscriptionController extends Controller
         ]);
 
         $subscription->save();
+        if ($shop) { $shop->is_active = true; $shop->save(); }
 
         // Clear the session
         session()->forget('selected_subscription_plan');
@@ -148,6 +150,7 @@ class SubscriptionController extends Controller
         // Create new subscription
         $subscription = new Subscription([
             'user_id' => $user->id,
+            'shop_id' => $shop?->id,
             'status' => 'active',
             'start_date' => now(),
             'end_date' => now()->addDays($duration),
@@ -158,6 +161,7 @@ class SubscriptionController extends Controller
         ]);
 
         $subscription->save();
+        if ($shop) { $shop->is_active = true; $shop->save(); }
 
         // Determine payment method: default to 'paypal'
         $method = $request->get('method', 'paypal');
@@ -215,6 +219,10 @@ class SubscriptionController extends Controller
                 'status' => 'cancelled',
                 'notes' => 'Cancelled by user on ' . now()->toDateString()
             ]);
+
+            // Mark shop as inactive when cancelled
+            $shop = $user->shop;
+            if ($shop) { $shop->is_active = false; $shop->save(); }
 
             // Create activity record for the seller
             Activity::create([
