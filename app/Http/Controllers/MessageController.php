@@ -52,6 +52,25 @@ class MessageController extends Controller
                 'related_type' => 'message'
             ]);
 
+            // Log sender activity (keep in log) with optional source context
+            $senderDesc = 'You messaged ' . ($receiver->name ?? 'a buyer');
+            if ($product) {
+                $senderDesc .= ' about "' . $product->name . '"';
+            }
+            $props = [];
+            if ($request->filled('source')) {
+                $props['source'] = $request->input('source');
+            }
+            Activity::create([
+                'user_id' => $request->user()->id,
+                'is_read' => true,
+                'description' => $senderDesc,
+                'type' => \App\Models\Activity::TYPE_MESSAGE,
+                'related_id' => $message->id,
+                'related_type' => 'message',
+                'properties' => $props,
+            ]);
+
             // Send email to receiver (shop owner)
             try {
                 Mail::to($receiver->email)
