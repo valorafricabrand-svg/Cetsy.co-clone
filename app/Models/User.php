@@ -114,7 +114,20 @@ class User extends Authenticatable
      */
     public function hasActiveSubscription(): bool
     {
-        return $this->subscription && $this->subscription->isActive();
+        // Backward compatibility: if shop-specific check fails, fallback to user subscription
+        return $this->hasActiveShopSubscription() || ($this->subscription && $this->subscription->isActive());
+    }
+
+    public function hasActiveShopSubscription(): bool
+    {
+        $shop = $this->shop;
+        if (!$shop) return false;
+        $grace = function_exists('subscription_grace_days') ? (int) subscription_grace_days() : (int) setting('subscription_grace_days', 5);
+        // Active if end_date + grace > now() => end_date > now()->subDays(grace)
+        return Subscription::where('shop_id', $shop->id)
+            ->where('status', 'active')
+            ->where('end_date', '>', now()->subDays($grace))
+            ->exists();
     }
 
     /**

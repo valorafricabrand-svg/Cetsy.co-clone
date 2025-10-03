@@ -50,6 +50,19 @@ function shop(){
     return 'Cetsy';
 }
 
+/**
+ * Subscription grace period in days (from settings with a default of 5).
+ */
+function subscription_grace_days(): int
+{
+    try {
+        $v = (int) setting('subscription_grace_days', 5);
+        return $v > 0 ? $v : 5;
+    } catch (\Throwable $e) {
+        return 5;
+    }
+}
+
     function avatar_img_url( $source, $img = null){
       $url_path = '';
       if ($img){

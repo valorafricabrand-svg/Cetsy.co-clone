@@ -223,7 +223,7 @@
 
       {{-- Auto-release Days --}}
       <div class="col-md-4">
-        <label class="form-label">Auto‑release&nbsp;Days</label>
+        <label class="form-label">Auto-release&nbsp;Days</label>
         <input type="number"
                name="auto_release_days"
                class="form-control @error('auto_release_days') is-invalid @enderror"
@@ -231,6 +231,18 @@
                step="1" min="1" max="365" placeholder="3">
         <div class="form-text">Days after shipment before on-hold funds auto-release to seller.</div>
         @error('auto_release_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
+      {{-- Subscription Grace Period (days) --}}
+      <div class="col-md-4">
+        <label class="form-label">Subscription Grace Period (days)</label>
+        <input type="number"
+               name="subscription_grace_days"
+               class="form-control @error('subscription_grace_days') is-invalid @enderror"
+               value="{{ old('subscription_grace_days', $settings->subscription_grace_days ?? 5) }}"
+               step="1" min="0" max="60" placeholder="5">
+        <div class="form-text">Number of days after end date that a shop remains active.</div>
+        @error('subscription_grace_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
 
     </div>
@@ -285,3 +297,4 @@
 </script>
 @endpush
 @endsection
+
