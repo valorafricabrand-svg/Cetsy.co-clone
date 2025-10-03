@@ -296,6 +296,11 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::resource('products', ProductController::class)
         ->except(['create', 'store'])
         ->middleware('kyc.after.two.sales');
+    // Product Shipping (page + save)
+    Route::get('products/{product}/shipping', [ProductController::class, 'shipping'])
+        ->name('products.shipping');
+    Route::patch('products/{product}/shipping', [ProductController::class, 'updateShipping'])
+        ->name('products.shipping.update');
     Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate'])
         ->name('products.duplicate');
 

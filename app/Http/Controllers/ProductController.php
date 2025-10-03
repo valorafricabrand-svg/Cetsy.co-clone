@@ -1349,8 +1349,36 @@ public function shipping(Product $product, Request $request)
         return back()->withErrors(['shipping_rules_json' => 'Fix delivery time ranges where max < min.'])->withInput();
     }
 
-    // Fallback: at least one row
+    // If no rules were provided, treat this as an "info-only" update and
+    // do NOT reset existing shipping rows to free. Instead, update the
+    // common origin/processing fields across the current profile rows.
     if ($rows->isEmpty()) {
+        $existingRowsCount = \DB::table('shipping_profiles')
+            ->where('shop_id', $shopId)
+            ->where('product_id', $product->id)
+            ->where('profile_name', $profileName)
+            ->count();
+
+        if ($existingRowsCount > 0) {
+            \DB::table('shipping_profiles')
+                ->where('shop_id', $shopId)
+                ->where('product_id', $product->id)
+                ->where('profile_name', $profileName)
+                ->update([
+                    'country_id'            => (int)$validated['country_id'],
+                    'origin_postal_code'    => $validated['origin_postal_code'],
+                    'processing_time_id'    => $processingTimeId ? (int)$processingTimeId : null,
+                    'processing_custom_min' => $procMin,
+                    'processing_custom_max' => $procMax,
+                    'updated_at'            => now(),
+                ]);
+
+            return redirect()
+                ->route('products.shipping', ['product' => $product, 'profile_name' => $profileName])
+                ->with('success', 'Shipping profile info updated.');
+        }
+
+        // No existing rows yet: create one sane default rule
         $rows = collect([[
             'dest_location_type' => 'everywhere_else',
             'dest_country_id'    => null,
