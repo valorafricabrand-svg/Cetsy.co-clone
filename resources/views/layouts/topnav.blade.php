@@ -7,14 +7,31 @@
     $role = $user->isAdmin() ? 'admin' : ($user->isSeller() ? 'seller' : 'buyer');
 
     // Notifications
-    // Per-user notifications for all roles (admins included)
-    $notificationsCount = Activity::where('user_id', $user->id)
-        ->where('is_read', false)
-        ->count();
-    $recentNotifications = Activity::where('user_id', $user->id)
-        ->orderBy('created_at', 'desc')
-        ->limit(2)
-        ->get();
+    if ($user->isAdmin()) {
+        // Include legacy global entries for admins
+        $notificationsCount = Activity::where(function($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereNull('user_id');
+            })
+            ->where('is_read', false)
+            ->count();
+        $recentNotifications = Activity::where(function($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereNull('user_id');
+            })
+            ->orderBy('created_at', 'desc')
+            ->limit(2)
+            ->get();
+    } else {
+        // Per-user for non-admins
+        $notificationsCount = Activity::where('user_id', $user->id)
+            ->where('is_read', false)
+            ->count();
+        $recentNotifications = Activity::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(2)
+            ->get();
+    }
 
     // Recent Dispute Messages (public)
     try {
