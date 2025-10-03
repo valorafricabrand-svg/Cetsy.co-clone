@@ -29,7 +29,7 @@
           @if($kyc && $kyc->status !== 'rejected')
             <div class="d-flex align-items-center mb-3">
               <span class="me-2">Status:</span>
-              <span class="badge @switch($kyc->status) @case('pending') bg-warning text-dark @break @case('approved') bg-success @break @default bg-secondary @break @endswitch">
+              <span class="badge @switch($kyc->status) @case('pending') bg-warning text-dark @break @case('approved') bg-success @break @case('needs_correction') bg-warning text-dark @break @default bg-secondary @break @endswitch">
                 {{ ucfirst($kyc->status) }}
               </span>
             </div>
@@ -41,6 +41,15 @@
             @elseif($kyc->status === 'approved')
               <div class="alert alert-success py-2 mb-3">
                 Your KYC is approved. You can now access all seller features.
+              </div>
+            @elseif($kyc->status === 'needs_correction')
+              <div class="alert alert-warning py-2 mb-3">
+                Action required: Your KYC needs corrections. Please review the notes below and resubmit.
+              </div>
+              <div class="mb-3">
+                <a href="{{ route('seller.kyc.info') }}" class="btn btn-warning text-dark">
+                  <i class="fas fa-edit me-1"></i> Fix and Resubmit
+                </a>
               </div>
             @endif
 

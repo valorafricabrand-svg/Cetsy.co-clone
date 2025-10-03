@@ -12,6 +12,16 @@
           <span class="text-muted">Step 1 of 2</span>
         </div>
         <div class="card-body">
+          @if ($errors->any())
+            <div class="alert alert-danger" role="alert">
+              <strong>There were problems with your details:</strong>
+              <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                  <li>{{ $error }}</li>
+                @endforeach
+              </ul>
+            </div>
+          @endif
           @if(session('error'))
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
               {{ session('error') }}

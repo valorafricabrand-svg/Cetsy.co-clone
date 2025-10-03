@@ -18,15 +18,32 @@
               <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
           @endif
+          @if ($errors->any())
+            <div class="alert alert-danger" role="alert">
+              <strong>There were problems with your submission:</strong>
+              <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                  <li>{{ $error }}</li>
+                @endforeach
+              </ul>
+            </div>
+          @endif
 
           <div class="mb-3">
-            <div class="alert alert-light border">
-              <strong>Heads up:</strong> Accepted formats: PDF/JPG/PNG for ID, JPG/PNG for selfie. Max 2MB each.
+            <div class="alert alert-info text-dark border" role="alert">
+              <strong class="text-dark">Heads up:</strong> Accepted formats: PDF/JPG/PNG for ID, JPG/PNG for selfie. Max 2MB each.
             </div>
           </div>
 
           <form action="{{ route('seller.kyc.documents.submit') }}" method="POST" enctype="multipart/form-data">
             @csrf
+            {{-- Hidden Step 1 fields (fallback if session is lost) --}}
+            <input type="hidden" name="first_name" value="{{ $step1['first_name'] ?? ($kyc->first_name ?? '') }}">
+            <input type="hidden" name="last_name" value="{{ $step1['last_name'] ?? ($kyc->last_name ?? '') }}">
+            <input type="hidden" name="email" value="{{ $step1['email'] ?? ($kyc->email ?? (auth()->user()->email ?? '')) }}">
+            <input type="hidden" name="phone" value="{{ $step1['phone'] ?? ($kyc->phone ?? '') }}">
+            <input type="hidden" name="id_type" value="{{ $step1['id_type'] ?? ($kyc->id_type ?? '') }}">
+            <input type="hidden" name="id_number" value="{{ $step1['id_number'] ?? ($kyc->id_number ?? '') }}">
 
             <div class="mb-3">
               <label for="id_front" class="form-label">ID Front (PDF/JPG/PNG)</label>
@@ -96,4 +113,3 @@
 @endpush
 
 @endsection
-
