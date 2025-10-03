@@ -16,7 +16,7 @@
           <input type="text" name="q" value="{{ $search ?? request('q') }}" placeholder="Search name/email/ID…" class="form-control form-control-sm" style="width:210px">
           <select name="status" class="form-select form-select-sm" style="width:170px" onchange="this.form.submit()">
             <option value="">All ({{ isset($counts) ? array_sum($counts->toArray()) : ($total ?? '') }})</option>
-            @foreach(['pending','approved','rejected'] as $s)
+            @foreach(['pending','approved','rejected','needs_correction'] as $s)
               <option value="{{ $s }}" @selected(($status ?? request('status')) === $s)>
                 {{ ucfirst($s) }} ({{ $counts[$s] ?? 0 }})
               </option>
@@ -39,7 +39,7 @@
             All <span class="badge bg-secondary">{{ isset($counts) ? array_sum($counts->toArray()) : ($total ?? '') }}</span>
           </a>
         </li>
-        @foreach(['pending','approved','rejected'] as $s)
+        @foreach(['pending','approved','rejected','needs_correction'] as $s)
           <li class="nav-item">
             <a class="nav-link {{ $current===$s ? 'active' : '' }}" href="{{ request()->fullUrlWithQuery(['status'=>$s,'page'=>1]) }}">
               {{ ucfirst($s) }} <span class="badge bg-secondary">{{ $counts[$s] ?? 0 }}</span>
@@ -135,6 +135,16 @@
                       >
                         <i class="fas fa-times me-1"></i> Reject
                       </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-warning text-dark single-action"
+                        data-bs-toggle="modal"
+                        data-bs-target="#kycModal"
+                        data-kyc-id="{{ $kyc->id }}"
+                        data-action="needs_correction"
+                      >
+                        <i class="fas fa-edit me-1"></i> Request Correction
+                      </button>
                     @endcan
                   </td>
                 </tr>
@@ -160,6 +170,9 @@
                 </button>
                 <button type="button" class="btn btn-outline-danger btn-sm bulk-btn" data-action="rejected" data-bs-toggle="modal" data-bs-target="#kycModal">
                   Bulk Reject
+                </button>
+                <button type="button" class="btn btn-outline-warning btn-sm bulk-btn" data-action="needs_correction" data-bs-toggle="modal" data-bs-target="#kycModal">
+                  Bulk Request Correction
                 </button>
               </div>
             @endif
@@ -190,8 +203,18 @@
         <input type="hidden" name="status" id="kycStatus" value="approved">
         <input type="hidden" name="ids_json" id="ids_json" value="">
         <div class="mb-3 d-none" id="kycNotesGroup">
-          <label for="admin_notes" class="form-label">Rejection Reason</label>
-          <textarea name="admin_notes" id="admin_notes" class="form-control" rows="3" placeholder="Enter reason for rejection..."></textarea>
+          <label for="admin_notes" class="form-label">Notes</label>
+          <div class="d-flex gap-2 mb-2">
+            <select id="notes_template" class="form-select form-select-sm" style="max-width:260px">
+              <option value="">Select template...</option>
+              <option>Document images are blurry. Please re-upload clearer scans.</option>
+              <option>Name on ID does not match your account. Please update details or provide matching ID.</option>
+              <option>ID appears expired. Please submit a valid, unexpired ID.</option>
+              <option>Missing required document pages. Please include both front and back.</option>
+            </select>
+            <button class="btn btn-sm btn-outline-secondary" type="button" id="apply_template">Apply</button>
+          </div>
+          <textarea name="admin_notes" id="admin_notes" class="form-control" rows="3" placeholder="Enter details for rejection/corrections..."></textarea>
         </div>
       </div>
 
@@ -253,11 +276,18 @@
       statusIn.value        = 'approved';
       notesGrp.classList.add('d-none');
       notesIn.required      = false;
-    } else {
+    } else if (action === 'rejected') {
       title.textContent     = 'Reject KYC Verification';
       submitBtn.textContent = 'Reject';
       submitBtn.className   = 'btn btn-danger';
       statusIn.value        = 'rejected';
+      notesGrp.classList.remove('d-none');
+      notesIn.required      = true;
+    } else if (action === 'needs_correction') {
+      title.textContent     = 'Request KYC Correction';
+      submitBtn.textContent = 'Send Request';
+      submitBtn.className   = 'btn btn-warning text-dark';
+      statusIn.value        = 'needs_correction';
       notesGrp.classList.remove('d-none');
       notesIn.required      = true;
     }

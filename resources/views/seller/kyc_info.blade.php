@@ -23,28 +23,28 @@
             @csrf
             <div class="mb-3">
               <label class="form-label" for="first_name">First Name</label>
-              <input class="form-control" id="first_name" name="first_name" value="{{ old('first_name', $step1['first_name'] ?? '') }}" required>
+              <input class="form-control" id="first_name" name="first_name" value="{{ old('first_name', $step1['first_name'] ?? ($kyc->first_name ?? '')) }}" required>
               @error('first_name')<div class="text-danger small">{{ $message }}</div>@enderror
             </div>
             <div class="mb-3">
               <label class="form-label" for="last_name">Last Name</label>
-              <input class="form-control" id="last_name" name="last_name" value="{{ old('last_name', $step1['last_name'] ?? '') }}" required>
+              <input class="form-control" id="last_name" name="last_name" value="{{ old('last_name', $step1['last_name'] ?? ($kyc->last_name ?? '')) }}" required>
               @error('last_name')<div class="text-danger small">{{ $message }}</div>@enderror
             </div>
             <div class="mb-3">
               <label class="form-label" for="email">Email</label>
-              <input class="form-control" id="email" name="email" type="email" value="{{ old('email', $step1['email'] ?? auth()->user()->email) }}" required readonly>
+              <input class="form-control" id="email" name="email" type="email" value="{{ old('email', $step1['email'] ?? ($kyc->email ?? auth()->user()->email)) }}" required readonly>
               <div class="form-text">Uses your account email. Contact support to change.</div>
               @error('email')<div class="text-danger small">{{ $message }}</div>@enderror
             </div>
             <div class="mb-3">
               <label class="form-label" for="phone">Phone</label>
-              <input class="form-control" id="phone" name="phone" value="{{ old('phone', $step1['phone'] ?? '') }}" placeholder="e.g., +2547XXXXXXXX" required>
+              <input class="form-control" id="phone" name="phone" value="{{ old('phone', $step1['phone'] ?? ($kyc->phone ?? '')) }}" placeholder="e.g., +2547XXXXXXXX" required>
               @error('phone')<div class="text-danger small">{{ $message }}</div>@enderror
             </div>
             <div class="mb-3">
               <label class="form-label" for="id_type">ID Type</label>
-              @php $selectedIdType = old('id_type', $step1['id_type'] ?? '') @endphp
+              @php $selectedIdType = old('id_type', $step1['id_type'] ?? ($kyc->id_type ?? '')) @endphp
               <select id="id_type" name="id_type" class="form-select" required>
                 <option value="" disabled {{ $selectedIdType ? '' : 'selected' }}>Select ID Type</option>
                 <option value="national_id" {{ $selectedIdType === 'national_id' ? 'selected' : '' }}>National ID</option>
@@ -55,7 +55,7 @@
             </div>
             <div class="mb-4">
               <label class="form-label" for="id_number">ID Number</label>
-              <input class="form-control" id="id_number" name="id_number" value="{{ old('id_number', $step1['id_number'] ?? '') }}" placeholder="e.g., 12345678" required>
+              <input class="form-control" id="id_number" name="id_number" value="{{ old('id_number', $step1['id_number'] ?? ($kyc->id_number ?? '')) }}" placeholder="e.g., 12345678" required>
               @error('id_number')<div class="text-danger small">{{ $message }}</div>@enderror
             </div>
 
@@ -69,4 +69,3 @@
   </div>
 </div>
 @endsection
-
