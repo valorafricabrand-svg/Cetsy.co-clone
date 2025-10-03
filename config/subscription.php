@@ -49,4 +49,15 @@ return [
     |
     */
     'grace_period_days' => 7,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reminder Day Offsets
+    |--------------------------------------------------------------------------
+    |
+    | Days before end_date to send expiry reminders. Console command will read
+    | these offsets; you can override via --days option.
+    |
+    */
+    'reminder_days' => [30, 7, 1],
 ]; 
