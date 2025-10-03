@@ -18,7 +18,154 @@ class KycController extends Controller
     public function show()
     {
         $kyc = auth()->user()->kyc;
+        if (!$kyc || $kyc->status === 'rejected') {
+            return redirect()->route('seller.kyc.info');
+        }
         return view('seller.kyc', compact('kyc'));
+    }
+
+    // Step 1: Info - GET
+    public function info()
+    {
+        $kyc = auth()->user()->kyc;
+        if ($kyc && $kyc->status !== 'rejected') {
+            return redirect()->route('seller.kyc');
+        }
+        $step1 = session('kyc.step1', []);
+        return view('seller.kyc_info', compact('kyc', 'step1'));
+    }
+
+    // Step 1: Info - POST
+    public function postInfo(Request $request)
+    {
+        $kyc = auth()->user()->kyc;
+        if ($kyc && $kyc->status !== 'rejected') {
+            return redirect()->route('seller.kyc');
+        }
+
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'email'      => 'required|email|max:255',
+            'phone'      => 'required|string|max:50',
+            'id_number'  => 'required|string|max:50',
+            'id_type'    => 'required|string|max:50',
+        ]);
+
+        session(['kyc.step1' => $validated]);
+        return redirect()->route('seller.kyc.documents');
+    }
+
+    // Step 2: Documents - GET
+    public function documents()
+    {
+        $kyc = auth()->user()->kyc;
+        if ($kyc && $kyc->status !== 'rejected') {
+            return redirect()->route('seller.kyc');
+        }
+        if (!session()->has('kyc.step1')) {
+            return redirect()->route('seller.kyc.info')->with('error', 'Please complete your details first.');
+        }
+        return view('seller.kyc_documents');
+    }
+
+    // Step 2: Documents - POST (final submit)
+    public function postDocuments(Request $request)
+    {
+        // Check subscription first
+        if (!auth()->user()->hasActiveSubscription()) {
+            return redirect()->route('seller.subscription')
+                ->with('error', 'Please subscribe first to access KYC verification.');
+        }
+
+        $step1 = session('kyc.step1');
+        if (!$step1) {
+            return redirect()->route('seller.kyc.info')->with('error', 'Please complete your details first.');
+        }
+
+        $request->validate([
+            'id_front' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'id_back'  => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'selfie'   => 'required|image|max:2048',
+        ]);
+
+        \DB::beginTransaction();
+        try {
+            $user = auth()->user();
+            $kyc = new Kyc(['user_id' => $user->id]);
+            $kyc->fill($step1);
+
+            if ($request->hasFile('id_front')) {
+                $kyc->id_front = $request->file('id_front')->store('kyc/id_fronts', 'public');
+            }
+            if ($request->hasFile('id_back')) {
+                $kyc->id_back = $request->file('id_back')->store('kyc/id_backs', 'public');
+            }
+            if ($request->hasFile('selfie')) {
+                $kyc->selfie = $request->file('selfie')->store('kyc/selfies', 'public');
+            }
+
+            $kyc->status = 'pending';
+            $kyc->admin_notes = null;
+            $kyc->save();
+
+            // Seller activity
+            Activity::create([
+                'user_id' => $user->id,
+                'is_read' => false,
+                'description' => 'You submitted a new KYC application',
+                'type' => Activity::TYPE_KYC,
+                'related_id' => $kyc->id,
+                'related_type' => 'kyc'
+            ]);
+
+            // Admin activities (per-admin)
+            $adminLink = null;
+            try {
+                $adminLink = route('admin.kyc.show', $kyc->id);
+            } catch (\Throwable $e) {
+                try { $adminLink = route('admin.kyc.index'); } catch (\Throwable $e2) { $adminLink = null; }
+            }
+            $admins = User::where('user_type', User::TYPE_ADMIN)->get(['id']);
+            foreach ($admins as $admin) {
+                Activity::create([
+                    'user_id' => $admin->id,
+                    'is_read' => false,
+                    'description' => 'Seller ' . ($user->name ?? ('#'.$user->id)) . ' submitted a KYC, awaiting admin approval.',
+                    'type' => Activity::TYPE_KYC,
+                    'related_id' => $kyc->id,
+                    'related_type' => 'kyc',
+                    'link' => $adminLink,
+                    'causer_type' => get_class($user),
+                    'causer_id' => $user->id,
+                    'subject_type' => get_class($kyc),
+                    'subject_id' => $kyc->id,
+                ]);
+            }
+
+            // Support email
+            try {
+                Mail::to('hello@cetsy.co')->send(new SupportKycSubmittedMail($kyc));
+            } catch (\Throwable $mailEx) {
+                \Log::warning('Failed to send support KYC submitted email', [
+                    'kyc_id' => $kyc->id,
+                    'user_id' => $user->id,
+                    'error' => $mailEx->getMessage(),
+                ]);
+            }
+
+            \DB::commit();
+            session()->forget('kyc.step1');
+            return redirect()->route('seller.kyc')->with('success', 'KYC submitted. We will review your documents soon.');
+        } catch (\Throwable $e) {
+            \DB::rollBack();
+            \Log::error('KYC submission failed (step2)', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id(),
+            ]);
+            return redirect()->back()->with('error', 'An error occurred while submitting KYC. Please try again.');
+        }
     }
 
     public function submit(Request $request)
@@ -29,22 +176,26 @@ class KycController extends Controller
                 ->with('error', 'Please subscribe first to access KYC verification.');
         }
 
+        // Build validation rules (allow keeping existing files)
+        $existingKyc = auth()->user()->kyc;
+        $rules = [
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'email'      => 'required|email|max:255',
+            'phone'      => 'required|string|max:50',
+            'id_number'  => 'required|string|max:50',
+            'id_type'    => 'required|string|max:50',
+            'id_front'   => ($existingKyc && $existingKyc->id_front ? 'nullable' : 'required') . '|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'id_back'    => ($existingKyc && $existingKyc->id_back ? 'nullable' : 'required') . '|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'selfie'     => ($existingKyc && $existingKyc->selfie ? 'nullable' : 'required') . '|image|max:2048',
+        ];
+
+        $request->validate($rules);
+
         \DB::beginTransaction();
         try {
-            $request->validate([
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'email' => 'required|email|max:255',
-                'phone' => 'required|string|max:50',
-                'id_number' => 'required|string|max:50',
-                'id_type' => 'required|string|max:50',
-                'id_front' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-                'id_back' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-                'selfie' => 'required|image|max:2048',
-            ]);
-
             $user = auth()->user();
-            $kyc = $user->kyc ?: new \App\Models\Kyc(['user_id' => $user->id]);
+            $kyc = $existingKyc ?: new \App\Models\Kyc(['user_id' => $user->id]);
             $kyc->fill($request->only([
                 'first_name',
                 'last_name',
@@ -77,6 +228,12 @@ class KycController extends Controller
             ]);
 
             // Create admin-facing activity log (per-admin targeting)
+            $adminLink = null;
+            try {
+                $adminLink = route('admin.kyc.show', $kyc->id);
+            } catch (\Throwable $e) {
+                try { $adminLink = route('admin.kyc.index'); } catch (\Throwable $e2) { $adminLink = null; }
+            }
             $admins = User::where('user_type', User::TYPE_ADMIN)->get(['id']);
             foreach ($admins as $admin) {
                 Activity::create([
@@ -86,7 +243,7 @@ class KycController extends Controller
                     'type' => \App\Models\Activity::TYPE_KYC,
                     'related_id' => $kyc->id,
                     'related_type' => 'kyc',
-                    'link' => route('admin.kyc.show', $kyc->id),
+                    'link' => $adminLink,
                     'causer_type' => get_class($user),
                     'causer_id' => $user->id,
                     'subject_type' => get_class($kyc),

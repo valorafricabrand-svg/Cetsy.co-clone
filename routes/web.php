@@ -597,6 +597,12 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
         ->except(['show']);
     // KYC Management
     Route::get('kyc', [KycController::class, 'show'])->name('kyc');
+    // 2-step KYC
+    Route::get('kyc/info', [KycController::class, 'info'])->name('kyc.info');
+    Route::post('kyc/info', [KycController::class, 'postInfo'])->name('kyc.info.submit');
+    Route::get('kyc/documents', [KycController::class, 'documents'])->name('kyc.documents');
+    Route::post('kyc/documents', [KycController::class, 'postDocuments'])->name('kyc.documents.submit');
+    // Legacy single-submit (kept for compatibility)
     Route::post('kyc', [KycController::class, 'submit'])->name('kyc.submit');
 
     // Payout Management
