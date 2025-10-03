@@ -59,13 +59,18 @@ class SupportKycSubmittedMail extends Mailable
     {
         $name = $this->kyc->user->name ?? trim(($this->kyc->first_name ?? '') . ' ' . ($this->kyc->last_name ?? ''));
 
+        // Compute admin URLs safely (route names may vary)
+        $adminShowUrl = null;
+        try { $adminShowUrl = route('admin.kyc.show', $this->kyc->id); } catch (\Throwable $e) { $adminShowUrl = null; }
+        $adminIndexUrl = null;
+        try { $adminIndexUrl = route('admin.kyc.index'); } catch (\Throwable $e) { $adminIndexUrl = url('/admin/kyc'); }
+
         return $this->subject('Seller ' . $name . ' submitted a KYC (awaiting approval)')
             ->view('emails.kyc_submitted_support')
             ->with([
                 'kyc' => $this->kyc,
-                'adminShowUrl' => route('admin.kyc.show', $this->kyc->id),
-                'adminIndexUrl' => route('admin.kyc.index'),
+                'adminShowUrl' => $adminShowUrl ?: $adminIndexUrl,
+                'adminIndexUrl' => $adminIndexUrl,
             ]);
     }
 }
-

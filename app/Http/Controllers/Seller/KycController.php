@@ -18,7 +18,8 @@ class KycController extends Controller
     public function show()
     {
         $kyc = auth()->user()->kyc;
-        if (!$kyc || in_array($kyc->status, ['rejected','needs_correction'], true)) {
+        // Show status page for needs_correction so seller sees guidance + CTA
+        if (!$kyc || $kyc->status === 'rejected') {
             return redirect()->route('seller.kyc.info');
         }
         return view('seller.kyc', compact('kyc'));
@@ -28,7 +29,8 @@ class KycController extends Controller
     public function info()
     {
         $kyc = auth()->user()->kyc;
-        if ($kyc && $kyc->status !== 'rejected') {
+        // If KYC exists and is not in a state that needs editing, send to status page
+        if ($kyc && !in_array($kyc->status, ['rejected','needs_correction'], true)) {
             return redirect()->route('seller.kyc');
         }
         $step1 = session('kyc.step1', []);
@@ -39,7 +41,7 @@ class KycController extends Controller
     public function postInfo(Request $request)
     {
         $kyc = auth()->user()->kyc;
-        if ($kyc && $kyc->status !== 'rejected') {
+        if ($kyc && !in_array($kyc->status, ['rejected','needs_correction'], true)) {
             return redirect()->route('seller.kyc');
         }
 
@@ -52,21 +54,24 @@ class KycController extends Controller
             'id_type'    => 'required|string|max:50',
         ]);
 
+        // Persist to session for normal flow
         session(['kyc.step1' => $validated]);
-        return redirect()->route('seller.kyc.documents');
+
+        // Render documents step directly to avoid any redirect/session issues
+        $step1 = $validated;
+        return view('seller.kyc_documents', compact('step1','kyc'));
     }
 
     // Step 2: Documents - GET
     public function documents()
     {
         $kyc = auth()->user()->kyc;
-        if ($kyc && $kyc->status !== 'rejected') {
+        // Only allow document step if creating new or fixing rejected/needs_correction
+        if ($kyc && !in_array($kyc->status, ['rejected','needs_correction'], true)) {
             return redirect()->route('seller.kyc');
         }
-        if (!session()->has('kyc.step1')) {
-            return redirect()->route('seller.kyc.info')->with('error', 'Please complete your details first.');
-        }
-        return view('seller.kyc_documents');
+        $step1 = session('kyc.step1', []);
+        return view('seller.kyc_documents', compact('step1', 'kyc'));
     }
 
     // Step 2: Documents - POST (final submit)
@@ -80,7 +85,15 @@ class KycController extends Controller
 
         $step1 = session('kyc.step1');
         if (!$step1) {
-            return redirect()->route('seller.kyc.info')->with('error', 'Please complete your details first.');
+            // Fallback: accept step1 fields posted as hidden inputs if session lost
+            $step1 = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name'  => 'required|string|max:255',
+                'email'      => 'required|email|max:255',
+                'phone'      => 'required|string|max:50',
+                'id_number'  => 'required|string|max:50',
+                'id_type'    => 'required|string|max:50',
+            ]);
         }
 
         $request->validate([
