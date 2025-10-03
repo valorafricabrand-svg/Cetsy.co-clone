@@ -18,7 +18,7 @@ class KycController extends Controller
     public function show()
     {
         $kyc = auth()->user()->kyc;
-        if (!$kyc || $kyc->status === 'rejected') {
+        if (!$kyc || in_array($kyc->status, ['rejected','needs_correction'], true)) {
             return redirect()->route('seller.kyc.info');
         }
         return view('seller.kyc', compact('kyc'));
@@ -308,7 +308,7 @@ class KycController extends Controller
     public function update(Request $request, Kyc $kyc)
     {
         $validated = $request->validate([
-            'status' => 'required|in:approved,rejected',
+            'status' => 'required|in:approved,rejected,needs_correction',
             'admin_notes' => 'nullable|string'
         ], [
             'status.required' => 'Please select a status.',
@@ -324,10 +324,17 @@ class KycController extends Controller
                 Mail::to($kyc->user->email)->send(new KycStatusMail($validated['status'], $validated['admin_notes'] ?? null));
 
                 // Create activity record for the seller
+                $desc = match ($validated['status']) {
+                    'approved' => 'Your KYC application has been approved',
+                    'rejected' => 'Your KYC application has been rejected',
+                    'needs_correction' => 'Your KYC requires corrections. Please review the notes and resubmit.',
+                    default => 'Your KYC status was updated',
+                };
+
                 Activity::create([
                     'user_id' => $kyc->user->id,
                     'is_read' => false,
-                    'description' => 'Your KYC application has been ' . $validated['status'],
+                    'description' => $desc,
                     'type' => \App\Models\Activity::TYPE_KYC,
                     'related_id' => $kyc->id,
                     'related_type' => 'kyc'
@@ -365,7 +372,7 @@ class KycController extends Controller
     {
         $request->validate([
             'ids_json'    => 'required|string',
-            'status'      => 'required|in:approved,rejected,pending',
+            'status'      => 'required|in:approved,rejected,pending,needs_correction',
             'admin_notes' => 'nullable|string',
         ]);
 
@@ -379,14 +386,72 @@ class KycController extends Controller
             abort(403);
         }
 
-        DB::transaction(function () use ($ids, $request) {
-            Kyc::whereIn('id', $ids)->update([
-                'status'      => $request->status,
-                'admin_notes' => $request->admin_notes,
-                'updated_at'  => now(),
-            ]);
-        });
+        $status = $request->status;
+        $notes  = $request->admin_notes;
 
-        return back()->with('success', 'KYC records updated: '.count($ids));
+        $kycs = Kyc::with('user')->whereIn('id', $ids)->get();
+        if ($kycs->isEmpty()) {
+            return back()->with('error', 'No matching KYC records found.');
+        }
+
+        DB::beginTransaction();
+        try {
+            foreach ($kycs as $kyc) {
+                $kyc->status = $status;
+                $kyc->admin_notes = $notes;
+                $kyc->save();
+            }
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Bulk KYC update failed', [
+                'ids' => $ids,
+                'status' => $status,
+                'error' => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Failed to update selected KYC records.');
+        }
+
+        // Post-commit: send emails and create activities per seller
+        $emailableStatuses = ['approved','rejected','needs_correction'];
+        $sent = 0; $failed = 0; $notified = 0;
+        foreach ($kycs as $kyc) {
+            try {
+                if (in_array($status, $emailableStatuses, true)) {
+                    Mail::to($kyc->user->email)->send(new KycStatusMail($status, $notes));
+                    $sent++;
+                }
+
+                $desc = match ($status) {
+                    'approved' => 'Your KYC application has been approved',
+                    'rejected' => 'Your KYC application has been rejected',
+                    'needs_correction' => 'Your KYC requires corrections. Please review the notes and resubmit.',
+                    'pending' => 'Your KYC status was set to pending',
+                    default => 'Your KYC status was updated',
+                };
+                Activity::create([
+                    'user_id' => $kyc->user->id,
+                    'is_read' => false,
+                    'description' => $desc,
+                    'type' => Activity::TYPE_KYC,
+                    'related_id' => $kyc->id,
+                    'related_type' => 'kyc'
+                ]);
+                $notified++;
+            } catch (\Throwable $ex) {
+                $failed++;
+                Log::warning('Bulk KYC notify/email failed', [
+                    'kyc_id' => $kyc->id,
+                    'user_id' => $kyc->user->id,
+                    'error' => $ex->getMessage(),
+                ]);
+            }
+        }
+
+        $msg = sprintf(
+            'KYC records updated: %d. Emails sent: %d. Notifications: %d. Failures: %d',
+            $kycs->count(), $sent, $notified, $failed
+        );
+        return back()->with('success', $msg);
     }
 }
