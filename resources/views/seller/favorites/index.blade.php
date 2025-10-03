@@ -35,7 +35,7 @@
     @else
         {{-- Summary Cards --}}
         <div class="row g-3 mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card shadow border-0 bg-primary text-white">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -50,7 +50,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card shadow border-0 bg-success text-white">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -65,7 +65,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card shadow border-0 bg-info text-white">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -75,6 +75,21 @@
                             <div class="flex-grow-1 ms-3">
                                 <h5 class="mb-1">{{ $favorites->where('created_at', '>=', now()->subDays(7))->count() }}</h5>
                                 <p class="mb-0 opacity-75">This Week</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow border-0 bg-warning text-dark">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-chat-dots fs-1"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5 class="mb-1">{{ $favoritesMessagesTotal }}</h5>
+                                <p class="mb-0">Messages from Favorites <span class="text-muted">(7d: {{ $favoritesMessagesWeek }})</span></p>
                             </div>
                         </div>
                     </div>
@@ -155,6 +170,43 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                @if(!empty($favorite->user))
+                                                <div class="mt-2">
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-sm btn-outline-primary"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#msg-{{ $product->id }}-{{ $favorite->user->id }}"
+                                                        aria-expanded="false"
+                                                        aria-controls="msg-{{ $product->id }}-{{ $favorite->user->id }}"
+                                                    >
+                                                        <i class="bi bi-chat-dots me-1"></i> Message buyer
+                                                    </button>
+                                                    <div class="collapse mt-2" id="msg-{{ $product->id }}-{{ $favorite->user->id }}">
+                                                        <form action="{{ route('messages.store') }}" method="POST">
+                                                            @csrf
+                                                            <input type="hidden" name="receiver_id" value="{{ $favorite->user->id }}">
+                                                            <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                                            <input type="hidden" name="source" value="favorites">
+                                                            <div class="d-flex gap-2 mb-2">
+                                                                <select id="msg-template-{{ $product->id }}-{{ $favorite->user->id }}" class="form-select form-select-sm" style="max-width:280px">
+                                                                    <option value="">Select template…</option>
+                                                                    <option>Hi {{ $favorite->user->name ?? 'there' }}, I saw you favorited "{{ $product->name }}" — we're open for offers. Would you like to make one?</option>
+                                                                    <option>Hi {{ $favorite->user->name ?? 'there' }}, we can offer a special price on "{{ $product->name }}" for you. Interested?</option>
+                                                                    <option>Hi {{ $favorite->user->name ?? 'there' }}, let me know if you have any questions about "{{ $product->name }}" or want to negotiate.</option>
+                                                                </select>
+                                                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="(function(){var s=document.getElementById('msg-template-{{ $product->id }}-{{ $favorite->user->id }}');var t=document.getElementById('msg-body-{{ $product->id }}-{{ $favorite->user->id }}'); if(s&&t&&s.value){ t.value=s.value; } })()">Apply</button>
+                                                            </div>
+                                                            <textarea id="msg-body-{{ $product->id }}-{{ $favorite->user->id }}" name="message" class="form-control" rows="2">Hi {{ $favorite->user->name ?? 'there' }}, I saw you favorited "{{ $product->name }}" — we're open for offers. Would you like to make one?</textarea>
+                                                            <div class="d-flex justify-content-end mt-2">
+                                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                                    Send
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                                @endif
                                             </div>
                                         </div>
                                     @endforeach
