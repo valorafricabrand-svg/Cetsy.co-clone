@@ -14,8 +14,11 @@ class AdminNotificationController extends Controller
         $currentDate = now()->format('Y-m-d H:i:s');
         $user = Auth::user();
 
-        // Per-admin notifications
-        $notifications = Activity::where('user_id', $user->id)
+        // Per-admin notifications including legacy (user_id is null)
+        $notifications = Activity::where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereNull('user_id');
+            })
             ->latest()
             ->paginate(15);
 
@@ -30,7 +33,12 @@ class AdminNotificationController extends Controller
     public function markAsRead($id)
     {
         $user = Auth::user();
-        $notification = Activity::where('user_id', $user->id)->findOrFail($id);
+        $notification = Activity::where('id', $id)
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereNull('user_id');
+            })
+            ->firstOrFail();
         $notification->update(['is_read' => true]);
         
         return redirect()->back()->with('success', 'Notification marked as read');
@@ -39,7 +47,10 @@ class AdminNotificationController extends Controller
     public function markAllAsRead()
     {
         $user = Auth::user();
-        Activity::where('user_id', $user->id)
+        Activity::where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereNull('user_id');
+            })
             ->where('is_read', false)
             ->update(['is_read' => true]);
         
