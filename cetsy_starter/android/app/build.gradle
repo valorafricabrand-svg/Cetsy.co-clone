@@ -1,10 +1,9 @@
-// android/app/build.gradle — FIXED for AGP 8.6.1 / Kotlin 1.9.24 / Gradle 8.7
+// Updated for Flutter 3.35 / AGP 8.9.x / Kotlin 2.1.x
 
 plugins {
-    id "com.android.application" version "8.6.1"
-    // Use the modern Kotlin plugin ID (matches settings.gradle pluginManagement)
-    id "org.jetbrains.kotlin.android" version "1.9.24"
-    // Apply the official Flutter Gradle plugin (declarative)
+    id "com.android.application"
+    id "org.jetbrains.kotlin.android"
+    // Official Flutter Gradle plugin
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -22,15 +21,14 @@ def flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "
 def flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
 
 android {
-    namespace "com.example.cetsy_starter"          // TODO: replace with your real package (e.g., com.isaiah.kikuyu_bible)
+    namespace "com.example.cetsy_starter" // TODO: replace with your real package
 
-    // You can keep using Flutter’s exported values, but ensure they resolve to SDK 34.
-    // If your Flutter export is older, uncomment the explicit lines below.
+    // Prefer values exported by Flutter; fall back to explicit SDK 34
     compileSdk = (flutter.hasProperty('compileSdkVersion') ? flutter.compileSdkVersion : 34)
     ndkVersion = flutter.ndkVersion
 
     defaultConfig {
-        applicationId "com.example.cetsy_starter"  // TODO: keep in sync with `namespace`
+        applicationId "com.example.cetsy_starter" // Keep in sync with `namespace`
         minSdk = (flutter.hasProperty('minSdkVersion') ? flutter.minSdkVersion : 21)
         targetSdk = (flutter.hasProperty('targetSdkVersion') ? flutter.targetSdkVersion : 34)
         versionCode flutterVersionCode.toInteger()
@@ -44,7 +42,7 @@ android {
 
     buildTypes {
         release {
-            // TODO: set up your real signing config for release builds
+            // TODO: configure your real signing config for release builds
             minifyEnabled false
             shrinkResources false
             signingConfig signingConfigs.debug
@@ -61,7 +59,7 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    // Kotlin toolchain 17 to match AGP/Gradle/JDK
+    // Use Kotlin toolchain 17 to match AGP/Gradle/JDK
     kotlin {
         jvmToolchain(17)
     }
@@ -78,8 +76,6 @@ flutter {
 }
 
 dependencies {
-    // Rely on the Kotlin Gradle plugin to add the correct stdlib
-
     // Common AndroidX libs (optional but useful)
     implementation "androidx.core:core-ktx:1.13.1"
     implementation "androidx.appcompat:appcompat:1.7.0"
@@ -89,3 +85,4 @@ dependencies {
     // Multidex support if needed
     implementation "androidx.multidex:multidex:2.0.1"
 }
+

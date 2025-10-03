@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Kyc;
 use App\Models\Activity;
+use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\KycStatusMail;
+use App\Mail\SupportKycSubmittedMail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -73,6 +75,35 @@ class KycController extends Controller
                 'related_id' => $kyc->id,
                 'related_type' => 'kyc'
             ]);
+
+            // Create admin-facing activity log (per-admin targeting)
+            $admins = User::where('user_type', User::TYPE_ADMIN)->get(['id']);
+            foreach ($admins as $admin) {
+                Activity::create([
+                    'user_id' => $admin->id,
+                    'is_read' => false,
+                    'description' => 'Seller ' . ($user->name ?? ('#'.$user->id)) . ' submitted a KYC, awaiting admin approval.',
+                    'type' => \App\Models\Activity::TYPE_KYC,
+                    'related_id' => $kyc->id,
+                    'related_type' => 'kyc',
+                    'link' => route('admin.kyc.show', $kyc->id),
+                    'causer_type' => get_class($user),
+                    'causer_id' => $user->id,
+                    'subject_type' => get_class($kyc),
+                    'subject_id' => $kyc->id,
+                ]);
+            }
+
+            // Notify support via email
+            try {
+                Mail::to('hello@cetsy.co')->send(new SupportKycSubmittedMail($kyc));
+            } catch (\Throwable $mailEx) {
+                \Log::warning('Failed to send support KYC submitted email', [
+                    'kyc_id' => $kyc->id,
+                    'user_id' => $user->id,
+                    'error' => $mailEx->getMessage(),
+                ]);
+            }
 
             \DB::commit();
             return redirect()->route('seller.kyc')->with('success', 'KYC submitted. We will review your documents soon.');

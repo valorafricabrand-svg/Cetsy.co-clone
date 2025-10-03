@@ -14,8 +14,10 @@ class AdminNotificationController extends Controller
         $currentDate = now()->format('Y-m-d H:i:s');
         $user = Auth::user();
 
-        // Get all activities without filtering by type
-        $notifications = Activity::latest()->paginate(15);
+        // Per-admin notifications
+        $notifications = Activity::where('user_id', $user->id)
+            ->latest()
+            ->paginate(15);
 
         // Pass $user for NotificationRouteService usage in view
         return view('admin.notifications.index', compact(
@@ -27,7 +29,8 @@ class AdminNotificationController extends Controller
     
     public function markAsRead($id)
     {
-        $notification = Activity::findOrFail($id);
+        $user = Auth::user();
+        $notification = Activity::where('user_id', $user->id)->findOrFail($id);
         $notification->update(['is_read' => true]);
         
         return redirect()->back()->with('success', 'Notification marked as read');
@@ -35,7 +38,10 @@ class AdminNotificationController extends Controller
     
     public function markAllAsRead()
     {
-        Activity::where('is_read', false)->update(['is_read' => true]);
+        $user = Auth::user();
+        Activity::where('user_id', $user->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
         
         return redirect()->back()->with('success', 'All notifications marked as read');
     }

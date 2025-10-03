@@ -312,7 +312,11 @@
                                         @if(!$notification->is_read)
                                             <span class="badge notification-badge rounded-pill me-2">New</span>
                                         @endif
-                                       
+                                        @if(!empty($notification->type))
+                                            <span class="badge rounded-pill ms-1 {{ $notification->type === \App\Models\Activity::TYPE_KYC ? 'bg-info text-dark' : 'bg-light text-dark' }}">
+                                                {{ strtoupper($notification->type) }}
+                                            </span>
+                                        @endif
                                     </h5>
                                     <small class="notification-time">
                                         <i class="far fa-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}

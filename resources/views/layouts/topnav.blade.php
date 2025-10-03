@@ -7,19 +7,14 @@
     $role = $user->isAdmin() ? 'admin' : ($user->isSeller() ? 'seller' : 'buyer');
 
     // Notifications
-    if ($role === 'admin') {
-        // Admin sees all unread activities, not just their own
-        $notificationsCount = Activity::where('is_read', false)->count();
-        $recentNotifications = Activity::orderBy('created_at', 'desc')->limit(2)->get();
-    } else {
-        $notificationsCount = Activity::where('user_id', $user->id)
-            ->where('is_read', false)
-            ->count();
-        $recentNotifications = Activity::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->limit(2)
-            ->get();
-    }
+    // Per-user notifications for all roles (admins included)
+    $notificationsCount = Activity::where('user_id', $user->id)
+        ->where('is_read', false)
+        ->count();
+    $recentNotifications = Activity::where('user_id', $user->id)
+        ->orderBy('created_at', 'desc')
+        ->limit(2)
+        ->get();
 
     // Recent Dispute Messages (public)
     try {
