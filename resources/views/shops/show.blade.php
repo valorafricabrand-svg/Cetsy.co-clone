@@ -360,12 +360,16 @@
               </div>
 
               @if($subscription->end_date && $subscription->end_date->isFuture())
+                @php $daysLeft = $subscription->end_date->diffInDays(now()); @endphp
                 <div class="col-12">
                   <div class="alert alert-info mb-0">
                     <i class="fas fa-info-circle me-2"></i>
                     Your subscription will expire on {{ $subscription->end_date->format('M d, Y') }}
-                    @if($subscription->end_date->diffInDays(now()) <= 7)
-                      <span class="text-warning fw-bold">(Expires soon&hellip;))</span>
+                    @if($daysLeft <= 30)
+                      @php $cls = $daysLeft <= 7 ? 'text-danger' : 'text-warning'; @endphp
+                      <span class="fw-bold {{ $cls }}">
+                        (Expires in {{ $daysLeft }} {{ Str::plural('day', $daysLeft) }})
+                      </span>
                     @endif
                   </div>
                 </div>

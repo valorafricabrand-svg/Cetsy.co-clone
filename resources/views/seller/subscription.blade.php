@@ -25,10 +25,17 @@
           @endif
 
           @if($subscription && $subscription->isActive())
+            @php $daysLeft = $subscription->end_date?->isFuture() ? $subscription->end_date->diffInDays(now()) : null; @endphp
             <div class="alert alert-success mb-4">
               <h3 class="h5">Active Subscription</h3>
               <p class="mb-0">
                 Your subscription is active until <strong>{{ $subscription->end_date->format('F j, Y') }}</strong>
+                @if(!is_null($daysLeft) && $daysLeft <= 30)
+                  @php $cls = $daysLeft <= 7 ? 'text-danger' : 'text-warning'; @endphp
+                  <span class="fw-bold {{ $cls }} ms-1">
+                    (Expires in {{ $daysLeft }} {{ Str::plural('day', $daysLeft) }})
+                  </span>
+                @endif
                 @if($subscription->notes)
                   <br><small class="text-muted">Plan: {{ $subscription->notes }}</small>
                 @endif

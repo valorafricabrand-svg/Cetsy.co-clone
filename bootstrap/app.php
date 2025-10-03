@@ -39,13 +39,20 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         \App\Console\Commands\DeactivateExpiredSubscriptions::class,
         \App\Console\Commands\NotifyShipBy::class,
+        \App\Console\Commands\SendSubscriptionExpiryReminders::class,
     ])
     ->withSchedule(function (Schedule $schedule) {
         // Define your scheduled tasks here
         $schedule->command('products:pause-expired')->everyMinute();
         // Ship-by reminders daily
         $schedule->command('orders:notify-shipby')->dailyAt('08:00');
+        // Subscription expiry reminders daily
+        $schedule->command('subscriptions:remind-expiring')->dailyAt('09:00');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
+
+
+
+
