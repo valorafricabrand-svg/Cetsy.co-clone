@@ -132,6 +132,21 @@
           @endif
 
         </div>
+
+        @if($order->status === \App\Models\Order::STATUS_PENDING)
+          <div class="alert alert-warning mt-3 d-flex align-items-center justify-content-between" role="alert">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-exclamation-triangle"></i>
+              <span>Awaiting payment to start processing.</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <a href="{{ route('pay_now', $order->id) }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-credit-card"></i> Pay Now
+              </a>
+              <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          </div>
+        @endif
   </div>
 
   {{-- Processing timeline & ship-by notice --}}
@@ -151,8 +166,10 @@
     $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
 
     $status = (string) $order->status;
+    $paid = in_array($status, [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
     $stepPlaced     = true;
-    $stepProcessing = in_array($status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+    // mark processing step active only after payment
+    $stepProcessing = in_array($status, [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
     $stepShipped    = in_array($status, [\App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
     $stepDelivered  = in_array($status, [\App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
     $stepCompleted  = ($status === \App\Models\Order::STATUS_COMPLETED);
@@ -169,16 +186,20 @@
               <span>Order placed {{ $placedAt? $placedAt->format('M j, Y') : '' }}</span>
             </li>
             <li class="d-flex align-items-center gap-2 mb-1">
-              <i class="bi bi-gear-fill {{ $stepProcessing ? 'text-success' : 'text-muted' }}"></i>
+              <i class="bi bi-gear-fill {{ $paid ? 'text-success' : 'text-warning' }}"></i>
               <span>
-                @if($shipStart && $shipEnd)
-                  Ships within {{ (int)$minDays }}&ndash;{{ (int)$maxDays }} days ({{ $shipStartLabel }} &ndash; {{ $shipEndLabel }})
-                @elseif(!is_null($minDays))
-                  Ships within {{ (int)$minDays }} days (by {{ $shipStartLabel }})
-                @elseif(!is_null($maxDays))
-                  Ships by {{ (int)$maxDays }} days (by {{ $shipEndLabel }})
+                @if($paid)
+                  @if($shipStart && $shipEnd)
+                    Ships within {{ (int)$minDays }}&ndash;{{ (int)$maxDays }} days ({{ $shipStartLabel }} &ndash; {{ $shipEndLabel }})
+                  @elseif(!is_null($minDays))
+                    Ships within {{ (int)$minDays }} days (by {{ $shipStartLabel }})
+                  @elseif(!is_null($maxDays))
+                    Ships by {{ (int)$maxDays }} days (by {{ $shipEndLabel }})
+                  @else
+                    Processing
+                  @endif
                 @else
-                  Processing
+                  Processing will begin after your payment is completed.
                 @endif
               </span>
             </li>
@@ -196,20 +217,22 @@
             </li>
           </ul>
         </div>
-        <div class="col-12 col-md-6">
-          <div class="alert alert-info mb-0">
-            <i class="bi bi-info-circle me-2"></i>
-            @if($shipStart && $shipEnd)
-              Ship-by window: <strong>{{ $shipStartLabel }} &ndash; {{ $shipEndLabel }}</strong>
-            @elseif($shipStart)
-              Ship by: <strong>{{ $shipStartLabel }}</strong>
-            @elseif($shipEnd)
-              Ship by: <strong>{{ $shipEndLabel }}</strong>
-            @else
-              Seller will ship your order soon.
-            @endif
+        @if($paid)
+          <div class="col-12 col-md-6">
+            <div class="alert alert-info mb-0">
+              <i class="bi bi-info-circle me-2"></i>
+              @if($shipStart && $shipEnd)
+                Ship-by window: <strong>{{ $shipStartLabel }} &ndash; {{ $shipEndLabel }}</strong>
+              @elseif($shipStart)
+                Ship by: <strong>{{ $shipStartLabel }}</strong>
+              @elseif($shipEnd)
+                Ship by: <strong>{{ $shipEndLabel }}</strong>
+              @else
+                Seller will ship your order soon.
+              @endif
+            </div>
           </div>
-        </div>
+        @endif
       </div>
     </div>
   </div>

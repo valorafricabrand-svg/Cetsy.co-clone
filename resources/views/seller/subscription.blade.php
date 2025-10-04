@@ -45,14 +45,7 @@
                 @endif
               </p>
             </div>
-
-            <form action="{{ route('seller.subscription.cancel') }}" method="POST">
-              @csrf
-              <button type="submit" class="btn btn-danger">
-                Cancel Subscription
-              </button>
-            </form>
-
+            {{-- Cancel Subscription button removed as requested --}}
           @else
             @php
               $expiredInfo = null;
