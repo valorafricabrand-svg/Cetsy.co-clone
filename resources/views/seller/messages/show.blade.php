@@ -153,7 +153,7 @@
                                     placeholder="Type your professional reply here..." 
                                     required
                                     maxlength="2000"
-                                >{{ old('message') }}</textarea>
+                                >{{ old('message', request('prefill')) }}</textarea>
                                 <div class="form-text d-flex justify-content-between">
                                     <span>Be professional and helpful in your response</span>
                                     <span id="charCount">0/2000</span>

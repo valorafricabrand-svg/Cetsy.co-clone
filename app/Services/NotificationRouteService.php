@@ -17,6 +17,8 @@ class NotificationRouteService
         switch ($type) {
             case Activity::TYPE_MESSAGE:
                 return self::getMessageRoute($user);
+            case Activity::TYPE_WISHLIST:
+                return self::getWishlistRoute($notification, $user);
                 
             case Activity::TYPE_OFFER:
                 return self::getOfferRoute($user);
@@ -50,12 +52,50 @@ class NotificationRouteService
     private static function getMessageRoute(User $user): string
     {
         if ($user->isSeller()) {
-            return route('admin.messages.index');
+            return route('seller.messages.index');
         } elseif ($user->isAdmin()) {
             return route('admin.messages.index'); 
         } else {
-            return route('admin.messages.index');
+            return route('buyer.messages.index');
         }
+    }
+
+    private static function getWishlistRoute(Activity $notification, User $user): string
+    {
+        // For sellers: deep link to conversation with prefilled message
+        if ($user->isSeller()) {
+            $productId = (int) ($notification->related_id ?? 0);
+            $buyerId = (int) ($notification->causer_id ?? 0);
+            if ($productId > 0 && $buyerId > 0) {
+                $conversationId = $productId.'-'.$buyerId;
+                $prefill = '';
+                try {
+                    $product = \App\Models\Product::find($productId);
+                    $buyer = \App\Models\User::find($buyerId);
+                    if ($product && $buyer) {
+                        $prefill = 'Hi '.$buyer->name.', thanks for favoriting “'.$product->name.'”. Can I answer any questions or offer help?';
+                    }
+                } catch (\Throwable $e) {}
+                $url = route('seller.messages.show', $conversationId);
+                if ($prefill) {
+                    $url .= '?prefill='.urlencode($prefill);
+                }
+                return $url;
+            }
+            return route('seller.messages.index');
+        }
+        // Buyers -> product page; Admin -> notifications
+        if ($user->isBuyer()) {
+            $productId = (int) ($notification->related_id ?? 0);
+            if ($productId > 0) {
+                try {
+                    $p = \App\Models\Product::find($productId);
+                    if ($p) return route('products.show', $p->slug ?? $p->id);
+                } catch (\Throwable $e) {}
+            }
+            return route('products.index');
+        }
+        return route('admin.notifications.index');
     }
 
     /**
@@ -164,6 +204,8 @@ class NotificationRouteService
         switch ($type) {
             case Activity::TYPE_MESSAGE:
                 return 'View Messages';
+            case Activity::TYPE_WISHLIST:
+                return $user->isSeller() ? 'Message Buyer' : 'View Product';
             case Activity::TYPE_OFFER:
                 return 'View Offers';
             case Activity::TYPE_ORDER:
