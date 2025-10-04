@@ -359,17 +359,37 @@
                 <span class="fw-medium">{{ $subscription->end_date ? $subscription->end_date->format('M d, Y') : 'N/A' }}</span>
               </div>
 
-              @if($subscription->end_date && $subscription->end_date->isFuture())
-                @php $daysLeft = $subscription->end_date->diffInDays(now()); @endphp
+              @if($subscription->end_date)
+                @php
+                  $signedDays = (int) now()->diffInDays($subscription->end_date, false);
+                @endphp
                 <div class="col-12">
-                  <div class="alert alert-info mb-0">
+                  <div class="alert mb-0 {{ $signedDays > 0 ? 'alert-info' : 'alert-warning' }}">
                     <i class="fas fa-info-circle me-2"></i>
-                    Your subscription will expire on {{ $subscription->end_date->format('M d, Y') }}
-                    @if($daysLeft <= 30)
-                      @php $cls = $daysLeft <= 7 ? 'text-danger' : 'text-warning'; @endphp
-                      <span class="fw-bold {{ $cls }}">
-                        (Expires in {{ $daysLeft }} {{ Str::plural('day', $daysLeft) }})
-                      </span>
+                    @if($signedDays > 0)
+                      @php $daysLeft = $signedDays; @endphp
+                      Your subscription will expire on {{ $subscription->end_date->format('M d, Y') }}
+                      @if($daysLeft <= 30)
+                        @php $cls = $daysLeft <= 7 ? 'text-danger' : 'text-warning'; @endphp
+                        <span class="fw-bold {{ $cls }}">
+                          (Expires in {{ number_format($daysLeft, 0) }} {{ Str::plural('day', $daysLeft) }})
+                        </span>
+                      @endif
+                    @else
+                      @php $daysAgo = abs($signedDays); @endphp
+                      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                        <div>
+                          Your subscription expired on {{ $subscription->end_date->format('M d, Y') }}
+                          <span class="fw-bold text-danger">
+                            (Expired {{ number_format($daysAgo, 0) }} {{ Str::plural('day', $daysAgo) }} ago)
+                          </span>
+                        </div>
+                        @if(Auth::id() === $shop->user_id)
+                          <a href="{{ route('seller.subscription') }}" class="btn btn-sm btn-warning mt-2 mt-md-0">
+                            <i class="fas fa-undo me-1"></i> Renew Now
+                          </a>
+                        @endif
+                      </div>
                     @endif
                   </div>
                 </div>
