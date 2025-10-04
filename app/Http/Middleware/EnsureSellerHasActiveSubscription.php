@@ -24,7 +24,7 @@ class EnsureSellerHasActiveSubscription
 
             if (!$active) {
                 return redirect()->route('seller.subscription')
-                    ->with('error', 'Your subscription has expired. Please renew to continue using seller features.');
+                    ->with('error', 'Your shop has been deactivated due to an expired subscription. Please renew to continue using seller features.');
             }
         }
 

@@ -46,9 +46,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Define your scheduled tasks here
         $schedule->command('products:pause-expired')->everyMinute();
         // Ship-by reminders daily
-        $schedule->command('orders:notify-shipby')->dailyAt('08:00');
+        $schedule->command('orders:notify-shipby')->everyMinute();
         // Subscription expiry reminders daily
-        $schedule->command('subscriptions:remind-expiring')->dailyAt('09:00');
+        $schedule->command('subscriptions:remind-expiring')->everyMinute();
+        // Deactivate expired subscriptions and shops daily
+        $schedule->command('subscriptions:deactivate-expired')->everyMinute();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

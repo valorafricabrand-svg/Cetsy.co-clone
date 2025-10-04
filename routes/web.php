@@ -63,7 +63,8 @@ use App\Http\Controllers\Seller\{
     BuyerController,
     FavoriteController,
     PaymentMethodController,
-    ReviewController as SellerReviewController
+    ReviewController as SellerReviewController,
+    ShopPostController
 };
 
 /*
@@ -537,41 +538,31 @@ Route::post('/admin/categories/{category}/attributes', [CategoryAttributeControl
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('seller.')->group(function () {
-
-    Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
-    Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
-    Route::resource('deals', DealController::class)
-        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
-    
-    // Additional deal routes
-    Route::post('deals/{deal}/stop', [DealController::class, 'stop'])->name('deals.stop');
-    Route::get('deals/products/search', [DealController::class, 'searchProducts'])->name('deals.products.search');
-
-    Route::get('/products/pricing/bulk', [BulkPriceController::class, 'create'])
-        ->name('products.pricing.bulk');
-    Route::post('/products/pricing/bulk', [BulkPriceController::class, 'store'])
-        ->name('products.pricing.bulk.store');
-
-    // Subscription management - accessible without active subscription
+    // Subscription management - accessible without active subscription only
     Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription');
     Route::post('subscription', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
     Route::post('subscription/wallet', [SubscriptionController::class, 'walletPay'])->name('subscription.wallet.pay');
     Route::get('subscription/success/{id}', [SubscriptionController::class, 'successDeposit'])->name('subscription.success');
     Route::post('subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 
-
-    // Shop Management
-    Route::get('/shop/index', [ShopController::class, 'index'])->name('shops.index');
-    Route::get('/shop/create', [ShopController::class, 'create'])->name('shop.create');
-    Route::post('/shop', [ShopController::class, 'store'])->name('shops.store');
-    Route::get('/shops/{shop:slug}', [ShopController::class, 'show'])->name('shops.show');
-    Route::get('/shops/{shop}/edit', [ShopController::class, 'edit'])->name('shops.edit');
-    Route::patch('/shops/{shop}', [ShopController::class, 'update'])->name('shops.update');
-
-    // Seller notifications (view + mark as read)
+    // Seller notifications (accessible without active subscription)
     Route::get('notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+
+    // Seller KYC (accessible without active subscription)
+    Route::get('kyc', [KycController::class, 'show'])->name('kyc');
+    // 2-step KYC
+    Route::get('kyc/info', [KycController::class, 'info'])->name('kyc.info');
+    Route::post('kyc/info', [KycController::class, 'postInfo'])->name('kyc.info.submit');
+    Route::get('kyc/documents', [KycController::class, 'documents'])->name('kyc.documents');
+    Route::post('kyc/documents', [KycController::class, 'postDocuments'])->name('kyc.documents.submit');
+    // Legacy single-submit (kept for compatibility)
+    Route::post('kyc', [KycController::class, 'submit'])->name('kyc.submit');
+
+    // Seller order history (read-only; accessible without active subscription)
+    Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 });
 
 /*
@@ -584,14 +575,30 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
     Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
+    // Deals (require active subscription)
+    Route::resource('deals', DealController::class)
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+    Route::post('deals/{deal}/stop', [DealController::class, 'stop'])->name('deals.stop');
+    Route::get('deals/products/search', [DealController::class, 'searchProducts'])->name('deals.products.search');
+
+    // Bulk pricing (require active subscription)
+    Route::get('/products/pricing/bulk', [BulkPriceController::class, 'create'])->name('products.pricing.bulk');
+    Route::post('/products/pricing/bulk', [BulkPriceController::class, 'store'])->name('products.pricing.bulk.store');
+
     // Holiday Mode
     Route::post('holiday-mode/enable', [SellerDashboard::class, 'enableHolidayMode'])->name('holiday-mode.enable');
     Route::post('holiday-mode/disable', [SellerDashboard::class, 'disableHolidayMode'])->name('holiday-mode.disable');
 
+    // Shop Management (require active subscription)
+    Route::get('/shop/index', [ShopController::class, 'index'])->name('shops.index');
+    Route::get('/shop/create', [ShopController::class, 'create'])->name('shop.create');
+    Route::post('/shop', [ShopController::class, 'store'])->name('shops.store');
+    Route::get('/shops/{shop:slug}', [ShopController::class, 'show'])->name('shops.show');
+    Route::get('/shops/{shop}/edit', [ShopController::class, 'edit'])->name('shops.edit');
+    Route::patch('/shops/{shop}', [ShopController::class, 'update'])->name('shops.update');
 
-    // Order Management
-    Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
-    Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    
+    // Order Management (actions require active subscription)
     Route::get('order/payments', [OrderController::class, 'orderPayments'])->name('orders.payments');
     Route::patch('orders/{order}/process', [OrderController::class, 'process'])->name('orders.process');
     Route::post('orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
@@ -600,23 +607,10 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
 
     Route::resource('shipping_profiles', ShippingProfileController::class)
         ->except(['show']);
-    // KYC Management
-    Route::get('kyc', [KycController::class, 'show'])->name('kyc');
-    // 2-step KYC
-    Route::get('kyc/info', [KycController::class, 'info'])->name('kyc.info');
-    Route::post('kyc/info', [KycController::class, 'postInfo'])->name('kyc.info.submit');
-    Route::get('kyc/documents', [KycController::class, 'documents'])->name('kyc.documents');
-    Route::post('kyc/documents', [KycController::class, 'postDocuments'])->name('kyc.documents.submit');
-    // Legacy single-submit (kept for compatibility)
-    Route::post('kyc', [KycController::class, 'submit'])->name('kyc.submit');
-
     // Payout Management
     Route::get('payouts', [PayoutRequestController::class, 'index'])->name('payouts.index');
     Route::post('payouts', [PayoutRequestController::class, 'store'])->name('payouts.store');
-    Route::get('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyForm'])->name('payouts.otp.verify')->withoutMiddleware(['ensure.seller.subscription','seller']);
-    Route::post('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyOtp'])->name('payouts.otp.submit')->withoutMiddleware(['ensure.seller.subscription','seller']);
-    Route::post('payouts/{payout}/resend-otp', [PayoutRequestController::class, 'resendOtp'])->name('payouts.otp.resend')->withoutMiddleware(['ensure.seller.subscription','seller']);
-    Route::post('payouts/{payout}/cancel', [PayoutRequestController::class, 'cancel'])->name('payouts.otp.cancel')->withoutMiddleware(['ensure.seller.subscription','seller']);
+    // OTP routes defined in unguarded auth group below to ensure access without subscription
 
     // Services
     Route::resource('services', ServiceController::class);
