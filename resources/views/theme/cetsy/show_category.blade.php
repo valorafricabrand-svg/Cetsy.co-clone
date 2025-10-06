@@ -222,8 +222,10 @@
                                 : (($item->shop && $item->shop->logo)
                                       ? asset('storage/' . ltrim($item->shop->logo,'/'))
                                       : (setting('favicon_url') ?: asset('storage/placeholder.jpg'))));
-                $avg  = round($item->reviews_avg_rating ?? 0);
-                $cnt  = (int) ($item->reviews_count ?? 0);
+                // Use shop-wide rating in listings
+                $shop = $item->shop ?? null;
+                $avg  = round((float) ($shop?->reviews_avg_rating ?? ($shop ? $shop->reviews()->avg('rating') : 0)));
+                $cnt  = (int) ($shop?->reviews_count ?? ($shop ? $shop->reviews()->count() : 0));
                 $basePrice  = $item->price;
                 $finalPrice = $item->discounted_price;
               @endphp

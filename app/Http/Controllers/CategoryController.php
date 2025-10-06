@@ -186,7 +186,12 @@ public function categoryShow($slug)
         // Paginate products 12 per page, newest first
         $products = $category
             ->products()
-            ->with(['media','shop'])
+            ->with([
+                'media',
+                'shop' => function ($q) {
+                    $q->withCount('reviews')->withAvg('reviews', 'rating');
+                },
+            ])
             ->latest()
             ->paginate(12)
             ->withQueryString();
