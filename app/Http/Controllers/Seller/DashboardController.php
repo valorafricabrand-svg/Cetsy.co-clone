@@ -11,6 +11,7 @@ use App\Models\WalletTransaction;
 use App\Models\Product;
 use App\Models\Offer;
 use App\Models\Review;
+use App\Models\Activity;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -60,6 +61,17 @@ public function index()
     $accepted_offers = Offer::whereIn('product_id', $productIds)->where('status', 'accepted')->count();
     $declined_offers = Offer::whereIn('product_id', $productIds)->where('status', 'declined')->count();
 
+    // Messages sent from Favorites (analytics)
+    $favorites_messages_total = Activity::where('user_id', $user->id)
+        ->where('type', Activity::TYPE_MESSAGE)
+        ->where('properties->source', 'favorites')
+        ->count();
+    $favorites_messages_week = Activity::where('user_id', $user->id)
+        ->where('type', Activity::TYPE_MESSAGE)
+        ->where('properties->source', 'favorites')
+        ->where('created_at', '>=', now()->subDays(7))
+        ->count();
+
     // Check holiday mode status
     $activeProducts = Product::where('shop_id', $shopId)->where('is_active', 1)->count();
     $pausedProducts = Product::where('shop_id', $shopId)->where('is_active', 2)->count();
@@ -79,7 +91,8 @@ public function index()
         'orders', 'products', 'total_orders', 'total_products',
         'total_offers', 'accepted_offers', 'declined_offers',
         'isHolidayMode', 'activeProducts', 'pausedProducts',
-        'recentReviews'
+        'recentReviews',
+        'favorites_messages_total', 'favorites_messages_week'
     ));
 }
 

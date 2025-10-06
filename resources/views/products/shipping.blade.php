@@ -73,7 +73,7 @@
   </div>
 
   {{-- PROFILE INFO FORM --}}
-  <form method="POST" action="{{ route('products.shipping.update',$product) }}" class="row g-3 mb-4" novalidate>
+  <form id="shipping-info-form" method="POST" action="{{ route('products.shipping.update',$product) }}" class="row g-3 mb-4" novalidate>
     @csrf
     @method('PATCH')
 
@@ -108,6 +108,11 @@
         <option value="custom" @selected($showCustomProcessing)>Custom</option>
       </select>
       @error('processing_time_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+      <div id="processing-custom-indicator" class="form-text text-success" style="display: {{ $showCustomProcessing && ($currentProfile->processing_custom_min || $currentProfile->processing_custom_max) ? 'block' : 'none' }};">
+        @if($showCustomProcessing && ($currentProfile->processing_custom_min || $currentProfile->processing_custom_max))
+          Custom set: {{ (int)$currentProfile->processing_custom_min }}–{{ (int)$currentProfile->processing_custom_max }} days ✓
+        @endif
+      </div>
     </div>
 
     {{-- Custom processing window (auto toggled) --}}
@@ -125,6 +130,12 @@
              value="{{ old('processing_custom_max', $currentProfile->processing_custom_max) }}">
       @error('processing_custom_max')<div class="invalid-feedback">{{ $message }}</div>@enderror
       <div class="form-hint">Shown if “Custom” is selected.</div>
+    </div>
+
+    <div id="processing-warning" class="col-12 d-none">
+      <div class="alert alert-warning mb-0" role="alert">
+        For custom processing time, please enter both Min and Max days.
+      </div>
     </div>
 
     <div class="col-12 text-end">
@@ -513,9 +524,55 @@ $$('.charge-type-select').forEach(bindChargeToggle);
   if(!sel) return;
   const wraps = $$('.processing-custom-wrap');
   const setVisible = (show) => wraps.forEach(w => { if(w) w.style.display = show ? 'block' : 'none'; });
-  const onChange = () => setVisible(sel.value === 'custom');
+  const onChange = () => {
+    const isCustom = sel.value === 'custom';
+    setVisible(isCustom);
+    updateProcessingIndicator();
+  };
   sel.addEventListener('change', onChange);
   onChange(); // init
+})();
+
+/** Show a green indicator when custom min/max are set */
+function updateProcessingIndicator(){
+  const sel = $('#processing-time-select');
+  const ind = $('#processing-custom-indicator');
+  const minEl = $('input[name="processing_custom_min"]');
+  const maxEl = $('input[name="processing_custom_max"]');
+  if(!sel || !ind || !minEl || !maxEl) return;
+  const isCustom = sel.value === 'custom';
+  const min = parseInt(minEl.value, 10);
+  const max = parseInt(maxEl.value, 10);
+  const valid = isCustom && Number.isInteger(min) && Number.isInteger(max) && min > 0 && max > 0;
+  ind.style.display = valid ? 'block' : 'none';
+  if (valid) ind.textContent = `Custom set: ${min}–${max} days ✓`;
+}
+['input','change'].forEach(ev => {
+  const minEl = $('input[name="processing_custom_min"]');
+  const maxEl = $('input[name="processing_custom_max"]');
+  minEl && minEl.addEventListener(ev, updateProcessingIndicator);
+  maxEl && maxEl.addEventListener(ev, updateProcessingIndicator);
+});
+
+/** Client-side guard: require min/max when custom selected */
+(function bindInfoFormValidate(){
+  const form = $('#shipping-info-form');
+  if(!form) return;
+  form.addEventListener('submit', function(e){
+    const sel = $('#processing-time-select');
+    const warnWrap = $('#processing-warning');
+    const minEl = $('input[name="processing_custom_min"]');
+    const maxEl = $('input[name="processing_custom_max"]');
+    if (sel && sel.value === 'custom') {
+      const min = parseInt(minEl?.value || '', 10);
+      const max = parseInt(maxEl?.value || '', 10);
+      if (!Number.isInteger(min) || !Number.isInteger(max)) {
+        e.preventDefault();
+        if (warnWrap) warnWrap.classList.remove('d-none');
+        warnWrap?.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+    }
+  });
 })();
 </script>
 @endpush

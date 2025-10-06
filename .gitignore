@@ -5,6 +5,7 @@
 /storage/*.key
 /storage/pail
 /vendor
+/cetsy_starter
 .env
 .env.backup
 .env.production

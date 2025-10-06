@@ -25,10 +25,21 @@
           @endif
 
           @if($subscription && $subscription->isActive())
+            @php
+              // Compute whole number of days left (signed then clamped to >= 0)
+              $daysLeftSigned = $subscription->end_date? now()->diffInDays($subscription->end_date, false) : null;
+              $daysLeft = !is_null($daysLeftSigned) ? max(0, (int) $daysLeftSigned) : null;
+            @endphp
             <div class="alert alert-success mb-4">
               <h3 class="h5">Active Subscription</h3>
               <p class="mb-0">
                 Your subscription is active until <strong>{{ $subscription->end_date->format('F j, Y') }}</strong>
+                @if(!is_null($daysLeft) && $daysLeft <= 30)
+                  @php $cls = $daysLeft <= 7 ? 'text-danger' : 'text-warning'; @endphp
+                  <span class="fw-bold {{ $cls }} ms-1">
+                    (Expires in {{ number_format($daysLeft, 0) }} {{ Str::plural('day', $daysLeft) }})
+                  </span>
+                @endif
                 @if($subscription->notes)
                   <br><small class="text-muted">Plan: {{ $subscription->notes }}</small>
                 @endif
@@ -43,6 +54,32 @@
             </form>
 
           @else
+            @php
+              $expiredInfo = null;
+              if ($subscription && $subscription->end_date) {
+                $signed = (int) now()->diffInDays($subscription->end_date, false);
+                if ($signed <= 0) {
+                  $expiredDays = abs($signed);
+                  $expiredInfo = [
+                    'date' => $subscription->end_date->format('F j, Y'),
+                    'days' => $expiredDays,
+                  ];
+                }
+              }
+            @endphp
+            @if($expiredInfo)
+              <div class="alert alert-danger mb-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                <strong>Subscription Expired</strong>
+                <div class="mt-1">
+                  Expired on <strong>{{ $expiredInfo['date'] }}</strong>
+                  <span class="fw-bold">(Expired {{ number_format($expiredInfo['days'], 0) }} {{ Str::plural('day', $expiredInfo['days']) }} ago)</span>
+                </div>
+                <a href="{{ route('seller.subscription') }}" class="btn btn-sm btn-light mt-2 mt-md-0">
+                  <i class="fas fa-undo me-1"></i> Renew Now
+                </a>
+              </div>
+            @endif
+
             <div class="alert alert-warning mb-4">
               <h3 class="h5">Subscription Required</h3>
               <p class="mb-0">
