@@ -59,9 +59,9 @@
           <div class="col-6 col-md-2">
             <select class="form-select" name="type" aria-label="Filter by type">
               <option value="">All types</option>
-              <option value="product" {{ $type==='product'?'selected':'' }}>Products</option>
-              <option value="service" {{ $type==='service'?'selected':'' }}>Services</option>
-              <option value="digital" {{ $type==='digital'?'selected':'' }}>Digital</option>
+              <option value="physical" {{ ($type==='physical' || $type==='product' || $type==='products')?'selected':'' }}>Products</option>
+              <option value="service"  {{ ($type==='service'  || $type==='services')?'selected':'' }}>Services</option>
+              <option value="digital"  {{ $type==='digital'?'selected':'' }}>Digital</option>
             </select>
           </div>
 
@@ -315,5 +315,4 @@
   </script>
   @endpush
 @endsection
-
 
