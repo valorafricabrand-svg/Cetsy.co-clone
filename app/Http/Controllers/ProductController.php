@@ -573,7 +573,7 @@ public function listing(string $slug)
             'media',
             'category:id,name,slug',
             'country:id,name',
-            'shippingProfiles:id,name,base_rate',
+            'shippingProfiles:id,name,base_rate,pickup_available',
             // Shop with rating aggregates and policies
             'shop' => function ($q) {
                 $q->select('id','name','user_id','slug')
