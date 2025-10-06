@@ -31,8 +31,8 @@ class SettingsController extends Controller
     /**
      * Validate and update the specified setting.
      */
-public function update(Request $request, Setting $setting)
-{
+    public function update(Request $request, Setting $setting)
+    {
     /* ----------------------------------------------------------
      | 1. Validate input                                         |
      ---------------------------------------------------------- */
@@ -75,6 +75,11 @@ public function update(Request $request, Setting $setting)
 
         // Shipping defaults
         'couriers'          => 'nullable|string',
+
+        // Product duplication controls (optional)
+        'duplicate_sku_strategy'    => 'nullable|in:append,clear,keep',
+        'duplicate_sku_suffix'      => 'nullable|string|max:16',
+        'duplicate_sku_random_len'  => 'nullable|integer|min:1|max:12',
     ]);
 
     /* ----------------------------------------------------------
@@ -104,11 +109,33 @@ public function update(Request $request, Setting $setting)
 
     $setting->update($validated);
 
+    // Persist duplication settings either as columns (if present) or key-value rows
+    try {
+        $dupKeys = ['duplicate_sku_strategy','duplicate_sku_suffix','duplicate_sku_random_len'];
+        foreach ($dupKeys as $k) {
+            $val = $request->input($k, null);
+            if ($val === null) continue;
+            if (\Illuminate\Support\Facades\Schema::hasColumn('settings', $k)) {
+                // Store on the single settings row
+                $setting->setAttribute($k, $val);
+            } elseif (\Illuminate\Support\Facades\Schema::hasColumn('settings', 'option_key')) {
+                // Key-value storage
+                Setting::updateOrCreate(['option_key' => $k], ['option_value' => (string) $val]);
+            }
+        }
+        // Save if any attributes were set
+        if ($setting->isDirty()) {
+            $setting->save();
+        }
+    } catch (\Throwable $e) {
+        // swallow — settings table shape varies by install
+    }
+
     /* ----------------------------------------------------------
      | 4. Redirect with flash                                    |
      ---------------------------------------------------------- */
     return back()->with('success', 'Settings updated successfully.');
-}
+    }
 
 
 

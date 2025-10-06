@@ -533,29 +533,139 @@ public function update(Request $request, Product $product)
     {
         abort_if($product->shop_id !== Auth::user()->shop->id, 403);
 
+        // Eager-load modern variation graph so we can clone it
+        $product->loadMissing(['media', 'digitalFiles', 'variants', 'variationTypes.options', 'variations.options']);
+
         $newProduct = null;
         DB::transaction(function () use ($product, &$newProduct) {
+            // SKU duplication strategy (settings-driven with env fallback)
+            $skuStrategy = function_exists('setting')
+                ? (setting('duplicate_sku_strategy', env('DUPLICATE_SKU_STRATEGY', 'append')))
+                : env('DUPLICATE_SKU_STRATEGY', 'append');   // append | clear | keep
+            $skuSuffix   = function_exists('setting')
+                ? (setting('duplicate_sku_suffix', env('DUPLICATE_SKU_SUFFIX', 'DUP')))
+                : env('DUPLICATE_SKU_SUFFIX', 'DUP');        // used when append
+            $skuRandLen  = (int) (function_exists('setting')
+                ? (setting('duplicate_sku_random_len', env('DUPLICATE_SKU_RANDOM_LEN', 4)))
+                : env('DUPLICATE_SKU_RANDOM_LEN', 4));
+            $skuRandLen  = max(1, $skuRandLen);
+
+            $makeSku = function (?string $sku, string $table) use ($skuStrategy, $skuSuffix, $skuRandLen) {
+                if (empty($sku)) return null;
+                if ($skuStrategy === 'clear') return null;
+                if ($skuStrategy === 'keep') return $sku; // no guarantees of uniqueness
+
+                // append
+                $base = $sku;
+                $candidate = $base . '-' . $skuSuffix . '-' . Str::upper(Str::random($skuRandLen));
+                try {
+                    while (DB::table($table)->where('sku', $candidate)->exists()) {
+                        $candidate = $base . '-' . $skuSuffix . '-' . Str::upper(Str::random($skuRandLen));
+                    }
+                } catch (\Throwable $e) {
+                    // ignore DB check failures; still return a suffixed SKU
+                }
+                return $candidate;
+            };
+            // 1) Clone the base product
             $newProduct = $product->replicate();
             $newProduct->name = $product->name . ' (Copy)';
             $newProduct->slug = Str::slug($newProduct->name) . '-' . Str::random(6);
             $newProduct->is_active = 0;
             $newProduct->save();
 
+            // 2) Media
             foreach ($product->media as $media) {
                 $newProduct->media()->create($media->replicate()->toArray());
             }
 
-            foreach ($product->variants as $variant) {
-                $newProduct->variants()->create($variant->replicate()->toArray());
+            // 3) Legacy simple variants (ProductVariant model)
+            foreach ($product->variants as $legacyVariant) {
+                $clone = $legacyVariant->replicate();
+                $clone->product_id = $newProduct->id;
+                $clone->sku = $makeSku($clone->sku ?? null, $legacyVariant->getTable());
+                $newProduct->variants()->create($clone->toArray());
             }
 
+            // 4) Digital files
             foreach ($product->digitalFiles as $file) {
                 $newProduct->digitalFiles()->create($file->replicate()->toArray());
+            }
+
+            // 5) Modern variations: clone VariationTypes + Options, then Variants + pivot options
+            $typeIdMap = [];
+            $optionIdMap = [];
+
+            // 5a) Types and options
+            foreach ($product->variationTypes as $oldType) {
+                $newType = $oldType->replicate();
+                $newType->product_id = $newProduct->id;
+                $newType->save();
+                $typeIdMap[$oldType->id] = $newType->id;
+
+                foreach ($oldType->options as $oldOpt) {
+                    $newOpt = $oldOpt->replicate();
+                    $newOpt->variation_type_id = $newType->id;
+                    $newOpt->save();
+                    $optionIdMap[$oldOpt->id] = $newOpt->id;
+                }
+            }
+
+            // 5b) Variants with option pivots
+            foreach ($product->variations as $oldVariant) {
+                $newVariant = $oldVariant->replicate();
+                $newVariant->product_id = $newProduct->id;
+                $newVariant->sku = $makeSku($newVariant->sku ?? null, $oldVariant->getTable());
+                $newVariant->save();
+
+                // Map old option ids to the new ones via $optionIdMap
+                $oldOptionIds = optional($oldVariant->options)->pluck('id') ?? collect();
+                $newOptionIds = $oldOptionIds->map(fn ($id) => $optionIdMap[$id] ?? null)
+                                             ->filter()
+                                             ->values()
+                                             ->all();
+                if (!empty($newOptionIds)) {
+                    $newVariant->options()->attach($newOptionIds);
+                }
+            }
+
+            // 6) Shipping profiles (per-product rows)
+            try {
+                $shippingRows = \App\Models\ShippingProfile::where('product_id', $product->id)->get();
+                foreach ($shippingRows as $row) {
+                    $newRow = $row->replicate();
+                    $newRow->product_id = $newProduct->id;
+                    $newRow->save();
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal: some installs may not use per-product rows
+            }
+
+            // 7) If your install uses product_shipping pivot (shop-level profiles), clone pivot rows too
+            try {
+                $pivotRows = DB::table('product_shipping')
+                    ->where('product_id', $product->id)
+                    ->get(['shipping_profile_id', 'is_default']);
+                foreach ($pivotRows as $pv) {
+                    DB::table('product_shipping')->updateOrInsert(
+                        [
+                            'product_id'         => $newProduct->id,
+                            'shipping_profile_id'=> $pv->shipping_profile_id,
+                        ],
+                        [
+                            'is_default' => (bool)$pv->is_default,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]
+                    );
+                }
+            } catch (\Throwable $e) {
+                // ignore silently if table not present or schema differs
             }
         });
 
         return redirect()->route('products.edit', $newProduct)
-            ->with('success', 'Product duplicated successfully!');
+            ->with('success', 'Product duplicated successfully! Variations, options, and variant combinations were copied.');
     }
 
     public function show(Product $product)
