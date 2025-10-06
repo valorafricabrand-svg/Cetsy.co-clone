@@ -610,9 +610,13 @@ public function listing(string $slug)
     /* ------------------------------------------------------------
      | 4.  Extra data blocks for the Etsy-style page
      |------------------------------------------------------------ */
-    // Show shop-wide reviews on the product page for consistency
+    // Show shop-wide reviews (qualify user columns to avoid ambiguous select)
     $reviews = $product->shop
-        ? $product->shop->reviews()->with('user:id,name')->latest()->take(20)->get()
+        ? $product->shop->reviews()
+            ->with(['user' => function ($q) { $q->select('users.id', 'users.name'); }])
+            ->latest()
+            ->take(20)
+            ->get()
         : collect();
 
     $faqs = $product->faqs()->latest()->get();
