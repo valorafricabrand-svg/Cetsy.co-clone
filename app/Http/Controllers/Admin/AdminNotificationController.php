@@ -14,8 +14,10 @@ class AdminNotificationController extends Controller
         $currentDate = now()->format('Y-m-d H:i:s');
         $user = Auth::user();
 
-        // Get all activities without filtering by type
-        $notifications = Activity::latest()->paginate(15);
+        // Get all activities; eager-load causer for display (seller's shop name, etc.)
+        $notifications = Activity::with('causer')
+            ->latest()
+            ->paginate(15);
 
         // Pass $user for NotificationRouteService usage in view
         return view('admin.notifications.index', compact(

@@ -241,53 +241,61 @@
 
     .notification-actions {
         display: flex;
-        gap: 0.75rem;
+        gap: 0.5rem;
         flex-wrap: wrap;
+        align-items: center;
     }
 
     .btn-view {
         background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
         border: none;
         color: white;
-        padding: 0.625rem 1.25rem;
-        border-radius: 2rem;
-        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
         font-weight: 600;
         transition: var(--transition);
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        box-shadow: 0 2px 8px rgba(37, 176, 3, 0.3);
+        gap: 0.4rem;
+        box-shadow: 0 1px 4px rgba(37, 176, 3, 0.25);
+        line-height: 1.2;
     }
 
     .btn-view:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(37, 176, 3, 0.4);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(37, 176, 3, 0.28);
         color: white;
         text-decoration: none;
     }
 
     .btn-mark-read {
         background: white;
-        border: 2px solid var(--border-color);
+        border: 1px solid var(--border-color);
         color: var(--text-muted);
-        padding: 0.625rem 1.25rem;
-        border-radius: 2rem;
-        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
         font-weight: 600;
         transition: var(--transition);
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.4rem;
+        line-height: 1.2;
     }
 
-    .btn-mark-read:hover {
+.btn-mark-read:hover {
         border-color: var(--primary-green);
         color: var(--primary-green);
         background: var(--success-light);
-        transform: translateY(-2px);
+        transform: translateY(-1px);
+    }
+
+    /* On wider screens, align actions to the right for compact layout */
+    @media (min-width: 768px) {
+        .notification-actions { justify-content: flex-end; }
     }
 
     .new-badge {
