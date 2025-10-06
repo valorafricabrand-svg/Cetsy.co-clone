@@ -180,21 +180,39 @@ public function update(Request $request, Category $category)
 
 public function categoryShow($slug)
 {
-       // Find the category or 404
-        $category = Category::where('slug', $slug)->firstOrFail();
+    // Find the category (with descendants) or 404
+    $category = Category::with('childrenRecursive')
+        ->where('slug', $slug)
+        ->firstOrFail();
 
-        // Paginate products 12 per page, newest first
-        $products = $category
-            ->products()
-            ->with([
-                'media',
-                'shop' => function ($q) {
-                    $q->withCount('reviews')->withAvg('reviews', 'rating');
-                },
-            ])
-            ->latest()
-            ->paginate(12)
-            ->withQueryString();
+    // Build a flat list of this category + all descendant IDs
+    $ids = collect([$category->id]);
+    $stack = $category->childrenRecursive ?? collect();
+    $stack = $stack instanceof \Illuminate\Support\Collection ? $stack : collect($stack);
+    while ($stack->isNotEmpty()) {
+        $node = $stack->shift();
+        $ids->push($node->id);
+        if (!empty($node->childrenRecursive)) {
+            $stack = $stack->concat(
+                $node->childrenRecursive instanceof \Illuminate\Support\Collection
+                    ? $node->childrenRecursive
+                    : collect($node->childrenRecursive)
+            );
+        }
+    }
+
+    // Paginate products under this category or any of its descendants
+    $products = \App\Models\Product::whereIn('category_id', $ids->unique()->values())
+        ->with([
+            'media',
+            'shop' => function ($q) {
+                $q->withCount('reviews')->withAvg('reviews', 'rating');
+            },
+        ])
+        ->latest()
+        ->paginate(12)
+        ->withQueryString();
+
     return themed_view('show_category', compact('category', 'products'));
 }
 
@@ -228,11 +246,29 @@ public function byType(string $type)
         return response()->json([], 400);
     }
 
-    // Fetch parents and their children
-    $categories = Category::where('listing_type', $listingType)
-                       ->whereNotNull('parent_id')
-                       ->orderBy('name')
-                       ->get(['id','name']);
+    // Include both parents and children relevant to the selected type:
+    // - Any parent whose own listing_type matches, OR has at least one child matching
+    // - Any child whose listing_type matches
+    $parents = Category::query()
+        ->whereNull('parent_id')
+        ->where(function ($q) use ($listingType) {
+            $q->where('listing_type', $listingType)
+              ->orWhereHas('children', function ($qq) use ($listingType) {
+                  $qq->where('listing_type', $listingType);
+              });
+        })
+        ->orderBy('name')
+        ->get(['id','name']);
+
+    $children = Category::query()
+        ->whereNotNull('parent_id')
+        ->where('listing_type', $listingType)
+        ->orderBy('name')
+        ->get(['id','name']);
+
+    $categories = $parents->concat($children)
+        ->unique('id')
+        ->values();
 
     return response()->json($categories);
 }
