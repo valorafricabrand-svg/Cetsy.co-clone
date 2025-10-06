@@ -109,7 +109,7 @@
                 @endif
             </div>
 
-            <div class="mt-auto d-flex gap-2">
+            <div class="mt-auto d-flex flex-wrap gap-2">
                 <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary btn-sm">
                     <i class="fas fa-eye me-1"></i> View
                 </a>
@@ -120,6 +120,16 @@
                         <i class="fas fa-copy me-1"></i> Duplicate
                     </button>
                 </form>
+
+                @if ($hasVariants)
+                    <a href="{{ route('products.variations', $product) }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-layer-group me-1"></i> Manage Variations
+                    </a>
+                @else
+                    <a href="{{ route('products.variations', $product) }}" class="btn btn-success btn-sm">
+                        <i class="fa-solid fa-plus me-1"></i> Add Variations
+                    </a>
+                @endif
             </div>
         </div>
     </div>
