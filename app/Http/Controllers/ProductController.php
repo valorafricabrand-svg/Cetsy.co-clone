@@ -574,8 +574,13 @@ public function listing(string $slug)
             'category:id,name,slug',
             'country:id,name',
             'shippingProfiles:id,name,base_rate',
-            'shop:id,name,user_id,slug',
-            'shop.policies:shop_id,shipping,returns',
+            // Shop with rating aggregates and policies
+            'shop' => function ($q) {
+                $q->select('id','name','user_id','slug')
+                  ->with('policies:shop_id,shipping,returns')
+                  ->withCount('reviews')
+                  ->withAvg('reviews', 'rating');
+            },
             // + variation types & variants for picker:
             'variationTypes.options',
             'variations.options.variationType',

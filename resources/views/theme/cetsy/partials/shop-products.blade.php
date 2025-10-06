@@ -1,6 +1,6 @@
 <div id="gridItems">
 @foreach($products as $product)
-  <div class="col product-item" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ $product->average_rating }}">
+  <div class="col product-item" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ optional($product->shop)->reviews_avg_rating ?? 0 }}">
     @include('theme.'.theme().'.partials.product-card', ['item'=>$product])
   </div>
 @endforeach
@@ -8,7 +8,7 @@
 
 <div id="listItems">
 @foreach($products as $product)
-  <div class="list-group-item product-item d-flex align-items-center" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ $product->average_rating }}">
+  <div class="list-group-item product-item d-flex align-items-center" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ optional($product->shop)->reviews_avg_rating ?? 0 }}">
     <img src="{{ $product->featured_image }}" alt="{{ $product->name }}" class="rounded" style="width:80px; height:80px; object-fit:cover;">
     <div class="ms-3 flex-grow-1">
       <h6 class="mb-1">{{ $product->name }}</h6>
