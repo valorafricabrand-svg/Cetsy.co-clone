@@ -610,11 +610,10 @@ public function listing(string $slug)
     /* ------------------------------------------------------------
      | 4.  Extra data blocks for the Etsy-style page
      |------------------------------------------------------------ */
-    $reviews = $product->reviews()
-                       ->with('user:id,name')
-                       ->latest()
-                       ->take(20)
-                       ->get();
+    // Show shop-wide reviews on the product page for consistency
+    $reviews = $product->shop
+        ? $product->shop->reviews()->with('user:id,name')->latest()->take(20)->get()
+        : collect();
 
     $faqs = $product->faqs()->latest()->get();
 
@@ -765,7 +764,14 @@ public function listings(Request $request)
     ]);
 
     if ($request->filled('type')) {
-        $query->where('type', $request->type);
+        // Accept common aliases from UI/links: product(s) -> physical
+        $map = [
+            'product'  => 'physical',
+            'products' => 'physical',
+            'services' => 'service',
+        ];
+        $type = $map[$request->type] ?? $request->type;
+        $query->where('type', $type);
     }
 
     $products = $query->latest()->paginate(16);

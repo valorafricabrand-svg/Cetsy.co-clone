@@ -186,9 +186,9 @@
               <small class="form-label fw-semibold">Type</small>
               <select id="typeFilter" class="form-select form-select-sm">
                 <option value="">All Types</option>
-                <option value="physical">Physical</option>
+                <option value="physical">Products</option>
                 <option value="digital">Digital</option>
-                <option value="service">Service</option>
+                <option value="service">Services</option>
               </select>
             </div>
             <div>
