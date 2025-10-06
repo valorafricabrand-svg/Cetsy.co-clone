@@ -50,10 +50,15 @@ class WishlistController extends Controller
                 Activity::create([
                     'user_id' => $product->shop->user->id,
                     'is_read' => false,
-                    'description' => 'You received a new wishlist for ' . $product->name . ' from ' . $request->user()->name,
+                    'description' => ($request->user()->name).' favorited your item “'.$product->name.'”.',
                     'type' => \App\Models\Activity::TYPE_WISHLIST,
                     'related_id' => $product->id,
-                    'related_type' => 'product'
+                    'related_type' => 'product',
+                    'causer_id' => $request->user()->id,
+                    'causer_type' => \App\Models\User::class,
+                    'properties' => [
+                        'prefill' => 'Hi '.($request->user()->name).', thanks for favoriting “'.$product->name.'”. Can I answer any questions or offer help?',
+                    ],
                 ]);
             }
         } catch (\Exception $e) {

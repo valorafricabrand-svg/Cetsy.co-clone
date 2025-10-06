@@ -35,7 +35,7 @@ class ProductWishlistedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your Product "' . $this->product->name . '" was Added to a Wishlist!',
+            subject: $this->wishlister->name . ' favorited your item',
         );
     }
 
@@ -61,7 +61,7 @@ class ProductWishlistedMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Your Product "' . $this->product->name . '" was Added to a Wishlist!')
+        return $this->subject($this->wishlister->name . ' favorited your item')
             ->view('emails.product_wishlisted')
             ->with([
                 'product' => $this->product,

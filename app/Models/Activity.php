@@ -59,4 +59,5 @@ class Activity extends Model
     const TYPE_PRODUCT = 'product';
     const TYPE_GENERAL = 'general';
     const TYPE_DISPUTE = 'dispute';
+    const TYPE_WISHLIST = 'wishlist';
 }
