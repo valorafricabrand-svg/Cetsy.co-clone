@@ -106,8 +106,8 @@ class ProductController extends Controller
         }
         $shopId = $shop->id;
 
-        // Base query
-        $query = Product::with(['media','shop'])
+        // Base query (include variations to show "From" price and variation badges on dashboard)
+        $query = Product::with(['media','shop','variations.options'])
             ->where('shop_id', $shopId);
 
         $filters = [

@@ -64,25 +64,50 @@
 
         <div class="card-body d-flex flex-column">
             <h5 class="card-title mb-1">{{ Str::limit($product->name, 40) }}</h5>
-            <p class="mb-2 text-muted small">
-                {{ ucfirst($product->type ?? 'Listing') }}
+            @php
+                // Variation awareness for seller: show if variants exist and compute a lowest priced variant
+                $hasVariants = false;
+                $lowestVariantPrice = null;
+                if ($product->relationLoaded('variations')) {
+                    $hasVariants = $product->variations && $product->variations->count() > 0;
+                    if ($hasVariants) {
+                        $lowestVariantPrice = optional($product->variations)->whereNotNull('price')->min('price');
+                    }
+                } else {
+                    // Fallback safe lazy check
+                    $hasVariants = $product->variations()->exists();
+                    if ($hasVariants) {
+                        $lowestVariantPrice = $product->variations()->whereNotNull('price')->min('price');
+                    }
+                }
+                $formatMoney = fn($n) => money((float) $n, null);
+            @endphp
+
+            <p class="mb-2 text-muted small d-flex align-items-center flex-wrap gap-2">
+                <span>{{ ucfirst($product->type ?? 'Listing') }}</span>
                 @if (! is_null($product->stock))
-                    | Stock: {{ $product->stock }}
+                    <span>| Stock: {{ $product->stock }}</span>
+                @endif
+                @if ($hasVariants)
+                    <span class="badge bg-info bg-opacity-10 text-info">Has variations</span>
+                @else
+                    <span class="badge bg-light text-muted">No variations</span>
                 @endif
             </p>
 
-            <p class="fw-bold mb-3">
-                @if ($product->discount_price)
-                    <span class="text-danger me-2">
-                        {{ get_currency() }} {{ number_format($product->discount_price) }}
-                    </span>
-                    <span class="text-muted text-decoration-line-through">
-                        {{ get_currency() }} {{ number_format($product->price) }}
-                    </span>
+            <div class="fw-bold mb-3">
+                @if (!is_null($lowestVariantPrice))
+                    <div class="small text-muted lh-1">From</div>
+                    <div class="text-success">{{ $formatMoney($lowestVariantPrice) }}</div>
                 @else
-                    <span>{{ get_currency() }} {{ number_format($product->price) }}</span>
+                    @if (!empty($product->discount_price) && $product->discount_price < ($product->price ?? 0))
+                        <span class="text-success me-2">{{ $formatMoney($product->discount_price) }}</span>
+                        <span class="text-muted text-decoration-line-through">{{ $formatMoney($product->price) }}</span>
+                    @else
+                        <span class="text-success">{{ $formatMoney($product->price) }}</span>
+                    @endif
                 @endif
-            </p>
+            </div>
 
             <div class="mt-auto d-flex gap-2">
                 <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary btn-sm">
