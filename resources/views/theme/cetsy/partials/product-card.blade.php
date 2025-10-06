@@ -69,14 +69,21 @@
     {{-- Title --}}
     <h3 class="h6 mb-1 text-truncate fw-semibold text-dark">{{ $item->name }}</h3>
 
-    {{-- Rating (if any) --}}
-    @php $avg = round($item->reviews_avg_rating ?? 0); @endphp
+    {{-- Rating (shop-wide) --}}
+    @php
+      // Prefer shop's overall rating/count; fallback to product values if needed
+      $shop        = $item->shop;
+      $shopAvg     = $shop ? ($shop->reviews_avg_rating ?? $shop->reviews()->avg('rating')) : null;
+      $shopCount   = $shop ? ($shop->reviews_count ?? $shop->reviews()->count()) : null;
+      $avg         = round((float) ($shopAvg ?? ($item->reviews_avg_rating ?? 0)));
+      $reviewsCnt  = (int) ($shopCount ?? ($item->reviews_count ?? 0));
+    @endphp
     <div class="mb-1 small text-warning">
       @for($i = 1; $i <= 5; $i++)
         <i class="fa-star{{ $i <= $avg ? ' fa-solid' : ' fa-regular text-muted' }}"></i>
       @endfor
-      @if($item->reviews_count)
-        <span class="text-muted">({{ $item->reviews_count }})</span>
+      @if($reviewsCnt)
+        <span class="text-muted">({{ $reviewsCnt }})</span>
       @endif
     </div>
 

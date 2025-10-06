@@ -169,7 +169,12 @@ class ProductRecommendationService
 
         if (!empty($additionalIds)) {
             $additional = Product::query()
-                ->with('media')
+                ->with([
+                    'media',
+                    'shop' => function ($q) {
+                        $q->withCount('reviews')->withAvg('reviews', 'rating');
+                    },
+                ])
                 ->whereIn('id', $additionalIds)
                 ->where('is_active', 1)
                 ->get();
@@ -254,7 +259,12 @@ class ProductRecommendationService
             ->groupBy('product_id');
 
         return Product::query()
-            ->with('media')
+            ->with([
+                'media',
+                'shop' => function ($q) {
+                    $q->withCount('reviews')->withAvg('reviews', 'rating');
+                },
+            ])
             ->select([
                 'products.*',
                 DB::raw('COALESCE(sales.units_sold, 0) as units_sold'),
@@ -363,7 +373,12 @@ class ProductRecommendationService
     protected function fallbackProducts(int $limit, array $excludeProductIds = [], ?int $excludeShopId = null): Collection
     {
         return Product::query()
-            ->with('media')
+            ->with([
+                'media',
+                'shop' => function ($q) {
+                    $q->withCount('reviews')->withAvg('reviews', 'rating');
+                },
+            ])
             ->where('is_active', 1)
             ->when(!empty($excludeProductIds), fn ($q) => $q->whereNotIn('id', $excludeProductIds))
             ->when($excludeShopId, function ($q) use ($excludeShopId) {

@@ -34,7 +34,12 @@ class HomeController extends Controller
         $featuredDigitals = Product::where('is_active', 1)
             ->where('type', 'digital')
             ->latest()
-            ->with('media')
+            ->with([
+                'media',
+                'shop' => function ($q) {
+                    $q->withCount('reviews')->withAvg('reviews', 'rating');
+                },
+            ])
             ->take(8)
             ->get();
 
@@ -42,7 +47,12 @@ class HomeController extends Controller
         $services = Product::where('is_active', 1)
             ->where('type', 'service')
             ->latest()
-            ->with('media')
+            ->with([
+                'media',
+                'shop' => function ($q) {
+                    $q->withCount('reviews')->withAvg('reviews', 'rating');
+                },
+            ])
             ->take(8)
             ->get();
 

@@ -752,7 +752,12 @@ public function listing(string $slug)
 
 public function listings(Request $request)
 {
-    $query = Product::where('is_active', 1)->with(['media','shop']);
+    $query = Product::where('is_active', 1)->with([
+        'media',
+        'shop' => function ($q) {
+            $q->withCount('reviews')->withAvg('reviews', 'rating');
+        },
+    ]);
 
     if ($request->filled('type')) {
         $query->where('type', $request->type);
@@ -776,6 +781,12 @@ public function search(Request $request)
             $query->where('name', 'like', "%{$q}%")
                   ->orWhere('description', 'like', "%{$q}%");
         })
+        ->with([
+            'media',
+            'shop' => function ($q2) {
+                $q2->withCount('reviews')->withAvg('reviews', 'rating');
+            },
+        ])
         ->paginate(12);
 
     $recommendedProducts = $this->recommendations->trendingForUser(Auth::user(), 6);
