@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const selectedIds = getSelectedIds();
     
-    fetch(`{{ route('seller.deals.products.search') }}?q=${encodeURIComponent(query)}&page=${page}&selected=${selectedIds.join(',')}`)
+    fetch(`{{ route('seller.deals.products.search') }}?q=${encodeURIComponent(query)}&page=${page}&per_page=100&selected=${selectedIds.join(',')}`)
       .then(response => response.json())
       .then(data => {
         if (append) {
