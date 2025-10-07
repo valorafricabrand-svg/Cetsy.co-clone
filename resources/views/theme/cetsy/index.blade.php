@@ -235,15 +235,15 @@
             <div class="card-flat h-100">
               <div class="ratio ratio-1x1 overflow-hidden rounded-top ratio-cover">
                 @if($cat->image)
-                  <img src="{{ asset('storage/'.$cat->image) }}" alt="{{ $cat->name }}" class="w-100 h-100">
+                  <img src="{{ asset('storage/'.$cat->image) }}" alt="{{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}" class="w-100 h-100">
                 @else
                   <div class="d-flex align-items-center justify-content-center h-100 bg-secondary text-white fw-semibold">
-                    {{ $cat->name }}
+                    {{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
                   </div>
                 @endif
               </div>
               <div class="card-body p-2">
-                <p class="text-center text-dark small fw-semibold mb-0">{{ $cat->name }}</p>
+                <p class="text-center text-dark small fw-semibold mb-0">{{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}</p>
               </div>
             </div>
           </a>

@@ -541,7 +541,7 @@
                     echo  '<div class="d-flex align-items-center justify-content-between gap-2">';
                     // Left: title + optional view link for parents
                     echo    '<div class="me-2 text-truncate">';
-                    echo      '<a class="text-decoration-none text-dark text-truncate" href="'.route('category.show',$cat->slug).'" data-bs-dismiss="offcanvas">'.e($cat->name).'</a>';
+                    echo      '<a class="text-decoration-none text-dark text-truncate" href="'.route('category.show',$cat->slug).'" data-bs-dismiss="offcanvas">'.e(html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8')).'</a>';
                     if($has) {
                       echo    '<a class="badge rounded-pill bg-light text-dark ms-2" href="'.route('category.show',$cat->slug).'" data-bs-dismiss="offcanvas" title="View all">View</a>';
                     }
@@ -614,7 +614,7 @@
               $has  = $kids->isNotEmpty();
               echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
               echo   '<a class="dropdown-item d-flex justify-content-between align-items-center" href="'.($has?'#':route('category.show',$cat->slug)).'" role="menuitem" tabindex="-1">';
-              echo     e($cat->name);
+              echo     e(html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
               if($has) echo '<i class="fas fa-chevron-right ms-2 rotate" aria-hidden="true"></i>';
               echo   '</a>';
               if($has){
@@ -639,7 +639,7 @@
                      data-bs-auto-close="outside"
                      aria-expanded="false"
                      role="button">
-                    {{ $main->name }}
+                    {{ html_entity_decode($main->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
                     @if($main->childrenRecursive->isNotEmpty())
                       <i class="fas fa-chevron-down ms-1 rotate" aria-hidden="true"></i>
                     @endif
