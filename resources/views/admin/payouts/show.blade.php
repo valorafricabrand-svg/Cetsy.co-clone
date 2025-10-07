@@ -1,11 +1,7 @@
 @extends('layouts.app')
 @section('title','Payout #'.$payout->id)
 
-@push('styles')
-  <!-- Bootstrap 5 (latest stable) & Icons for this page only -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-@endpush
+
 
 @section('content')
 <div class="content">
