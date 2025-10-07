@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers\Admin;
 
@@ -362,3 +362,5 @@ class PayoutRequestController extends Controller
         return back()->with('success', 'Payout marked as failed and refunded.');
     }
 }
+
+
