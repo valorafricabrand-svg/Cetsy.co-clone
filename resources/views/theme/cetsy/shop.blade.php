@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function filterProducts() {
         const priceRange = priceFilter.value;
         const productType = typeFilter.value;
-        const products = document.querySelectorAll('.product-item');
+        const products = document.querySelectorAll('#gridView .product-item');
         
         products.forEach(product => {
             const price = parseFloat(product.dataset.price);
@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function sortProducts() {
         const sortBy = sortFilter.value;
         const container = document.getElementById('gridView');
-        const products = Array.from(document.querySelectorAll('.product-item'));
+        const products = Array.from(document.querySelectorAll('#gridView .product-item'));
         
         products.sort((a, b) => {
             const priceA = parseFloat(a.dataset.price);
@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const listView = document.getElementById('listView');
 
     function items() {
-      return Array.from(document.querySelectorAll('.product-item'));
+      return Array.from(document.querySelectorAll('#gridView .product-item'));
     }
 
     function applyFilters() {
@@ -724,4 +724,5 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 </script>
 @endpush
+
 
