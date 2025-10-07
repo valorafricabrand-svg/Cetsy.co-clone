@@ -333,7 +333,7 @@
           echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
           echo   '<a class="dropdown-item d-flex justify-content-between align-items-center"'.
                  ' href="'.($has?'#':route('category.show',$cat->slug)).'">';
-          echo     e($cat->name);
+          echo     e(html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
           if($has) echo '<i class="fas fa-chevron-right ms-2 rotate"></i>';
           echo   '</a>';
           if($has){
@@ -353,7 +353,7 @@
       @foreach($mainCategories as $main)
         <li class="nav-item dropdown">
           <a class="nav-link text-white" href="#" id="catDD{{ $main->id }}" data-bs-toggle="dropdown">
-            {{ $main->name }}
+            {{ html_entity_decode($main->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
             @if($main->childrenRecursive->isNotEmpty()) <i class="fas fa-chevron-down ms-1 rotate"></i>@endif
           </a>
 

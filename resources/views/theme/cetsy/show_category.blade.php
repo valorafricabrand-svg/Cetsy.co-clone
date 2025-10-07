@@ -38,9 +38,12 @@
       ? asset('storage/' . $category->image)
       : asset('assets/img/default-category.jpg');
 
+    // Decode once to avoid showing "&amp;" literally when names are stored HTML-encoded
+    $catName = html_entity_decode($category->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     $desc = $category->description
-      ?: ('Explore a wide range of ' . e($category->name) . ($category->listing_type ? ' ' . e($category->listing_type) : ' listings') );
+      ?: ('Explore a wide range of ' . $catName . ($category->listing_type ? ' ' . $category->listing_type : ' listings'));
   @endphp
+  @section('title', ($category->seo_title ?? $catName) . ' – Marketplace Category')
 
   <section class="position-relative" style="height: 320px;">
     <div class="position-absolute top-0 start-0 w-100 h-100 bg-cover bg-center" style="background-image:url('{{ $banner }}');"></div>
@@ -49,7 +52,7 @@
         <div class="mb-2">
           <span class="eyebrow"><i class="fas fa-folder-open"></i> Category</span>
         </div>
-        <h1 class="display-6 fw-bold text-white mb-2">{{ $category->name }}</h1>
+        <h1 class="display-6 fw-bold text-white mb-2">{{ $catName }}</h1>
         <p class="lead mb-0 text-white-50">{{ $desc }}</p>
 
         {{-- Breadcrumbs (optional) --}}
@@ -57,7 +60,7 @@
           <ol class="breadcrumb justify-content-center">
             <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ url('/') }}">Home</a></li>
             <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ route('listings') }}">Listings</a></li>
-            <li class="breadcrumb-item active text-white-50" aria-current="page">{{ $category->name }}</li>
+            <li class="breadcrumb-item active text-white-50" aria-current="page">{{ $catName }}</li>
           </ol>
         </nav>
       </div>
@@ -130,7 +133,7 @@
 
       {{-- Active chips --}}
       <div class="mt-2">
-        <span class="chip me-1"><i class="fas fa-folder"></i> {{ $category->name }}</span>
+        <span class="chip me-1"><i class="fas fa-folder"></i> {{ $catName }}</span>
 
         @if($q)
           <span class="chip me-1">
@@ -179,7 +182,7 @@
   <section class="py-4 bg-light">
     <div class="container">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h4 fw-bold mb-0">Listings in {{ $category->name }}</h2>
+        <h2 class="h4 fw-bold mb-0">Listings in {{ $catName }}</h2>
         <span class="text-muted small">
           Showing <strong>{{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }}</strong>
           of <strong>{{ $products->total() }}</strong>
