@@ -189,11 +189,12 @@
                                                     if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
                                                     if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
                                                 }
-                                                $placedAt = optional($o->created_at);
+                                                // Use Carbon instance directly (avoid Optional wrapper in comparisons)
+                                                $placedAt = $o->created_at instanceof \Carbon\Carbon ? $o->created_at : ($o->created_at ? \Carbon\Carbon::parse($o->created_at) : null);
                                                 $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
                                                 $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
-                                                $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
-                                                $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
+                                                $shipStartLabel = ($shipStart && $placedAt && $shipStart->isSameDay($placedAt)) ? 'today' : ($shipStart ? $shipStart->format('M j') : null);
+                                                $shipEndLabel   = ($shipEnd && $placedAt && $shipEnd->isSameDay($placedAt)) ? 'today' : ($shipEnd ? $shipEnd->format('M j') : null);
                                             @endphp
                                             @php $dispatchBy = $shipEndLabel ?? $shipStartLabel; @endphp
                                             <div class="small text-muted mt-1">
