@@ -86,11 +86,41 @@
       </div>
     </form>
 
-    <div class="card shadow-sm border-0">
+        <div class=\"d-flex justify-content-between align-items-center mb-2\">
+      <div class=\"d-flex gap-2\">
+        <button type=\"button\" id=\"bulkApproveBtn\" class=\"btn btn-success btn-sm\"><i class=\"fas fa-check\"></i> Approve Selected</button>
+        <button type=\"button\" id=\"openBulkReject\" class=\"btn btn-outline-danger btn-sm\"><i class=\"fas fa-times-circle\"></i> Reject Selected</button>
+      </div>
+      <div>
+        <a class=\"btn btn-outline-secondary btn-sm\" href=\"{{ route('admin.payouts.export', request()->all()) }}\"><i class=\"fas fa-download\"></i> Export CSV</a>
+      </div>
+    </div>
+
+    <form id=\"bulkApproveForm\" method=\"POST\" action=\"{{ route('admin.payouts.bulk-approve') }}\" class=\"d-none\">@csrf <div id=\"approveIdsContainer\"></div></form>
+
+    <!-- Bulk Reject Modal -->
+    <div class=\"modal fade\" id=\"bulkRejectModal\" tabindex=\"-1\" aria-hidden=\"true\">
+      <div class=\"modal-dialog\">
+        <form class=\"modal-content\" method=\"POST\" action=\"{{ route('admin.payouts.bulk-reject') }}\">@csrf
+          <div class=\"modal-header\"><h5 class=\"modal-title\">Reject Selected Payouts</h5></div>
+          <div class=\"modal-body\">
+            <div id=\"rejectIdsContainer\"></div>
+            <div class=\"mb-3\">
+              <label class=\"form-label\">Reason (shown to sellers)</label>
+              <textarea class=\"form-control\" name=\"reason\" required></textarea>
+            </div>
+          </div>
+          <div class=\"modal-footer\">
+            <button class=\"btn btn-danger\">Reject & Refund</button>
+          </div>
+        </form>
+      </div>
+    </div><div class="card shadow-sm border-0">
       <div class="table-responsive">
-        <table class="table table-striped table-hover mb-0 align-middle">
+        <table class="table table-sm table-striped table-hover mb-0 align-middle table-sticky">
           <thead class="table-light">
             <tr>
+              <th class="select-col"><input type="checkbox" id="select-all"></th>
               <th>#</th>
               <th>Seller</th>
               <th>Amount</th>
@@ -103,6 +133,7 @@
           <tbody>
             @forelse($payouts as $p)
               <tr>
+                <td><input type="checkbox" class="row-check" value="{{ $p->id }}"></td>
                 <td>{{ $p->id }}</td>
                 <td>{{ optional($p->user)->name ?? ('User #'.$p->user_id) }}</td>
                 <td>{{ get_currency() }} {{ number_format($p->amount,2) }}</td>
@@ -136,4 +167,46 @@
 
   </div>
 </div>
+@push('styles')
+<style>
+  .table-sticky thead th { position: sticky; top: 0; z-index: 2; background: var(--bs-body-bg, #fff); }
+  .select-col { width: 28px; }
+</style>
+@endpush
+
+@push('scripts')
+<script data-admin-payouts-ui>
+  document.addEventListener('DOMContentLoaded', () => {
+    const selAll = document.getElementById('select-all');
+    const checks = () => Array.from(document.querySelectorAll('.row-check'));
+    selAll?.addEventListener('change', e => { checks().forEach(c => c.checked = selAll.checked);});
+
+    function selectedIds() { return checks().filter(c=>c.checked).map(c=>c.value); }
+
+    function fillIds(containerId, ids) {
+      const c = document.getElementById(containerId);
+      if (!c) return; c.innerHTML='';
+      ids.forEach(id => { const i=document.createElement('input'); i.type='hidden'; i.name='ids[]'; i.value=id; c.appendChild(i); });
+    }
+
+    document.getElementById('bulkApproveBtn')?.addEventListener('click', () => {
+      const ids = selectedIds();
+      if (ids.length === 0) { alert('Select at least one payout'); return; }
+      if (!confirm('Approve selected payouts?')) return;
+      fillIds('approveIdsContainer', ids);
+      document.getElementById('bulkApproveForm').submit();
+    });
+
+    document.getElementById('openBulkReject')?.addEventListener('click', () => {
+      const ids = selectedIds();
+      if (ids.length === 0) { alert('Select at least one payout'); return; }
+      fillIds('rejectIdsContainer', ids);
+      const m = new bootstrap.Modal(document.getElementById('bulkRejectModal'));
+      m.show();
+    });
+  });
+</script>
+@endpush
 @endsection
+
+
