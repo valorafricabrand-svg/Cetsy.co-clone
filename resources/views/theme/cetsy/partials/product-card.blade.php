@@ -1,6 +1,21 @@
-{{-- resources/views/theme/cetsy/partials/product-card.blade.php --}}
+﻿{{-- resources/views/theme/cetsy/partials/product-card.blade.php --}}
 @props(['item'])   {{-- expects a \App\Models\Product in $item --}}
 
+
+@once
+  @push('styles')
+    <style>
+      /* Ratio utility (Bootstrap 5 polyfill) to ensure uniform thumbs */
+      .ratio { position: relative; width: 100%; }
+      .ratio::before { display: block; content: ""; padding-top: var(--bs-aspect-ratio); }
+      .ratio > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .ratio-1x1 { --bs-aspect-ratio: 100%; }
+      /* Thumb container background + media fit */
+      .product-thumb { background: #f1f3f5; }
+      .product-thumb img, .product-thumb video { object-fit: contain; }
+    </style>
+  @endpush
+@endonce
 @php
   $currency   = get_currency();
   $basePrice  = (float) ($item->price ?? 0);
@@ -29,8 +44,9 @@
    class="card text-decoration-none border-0 shadow-sm h-100">
 
   {{-- Thumbnail --}}
-  <div class="ratio ratio-1x1 rounded-top overflow-hidden bg-light d-flex align-items-center justify-content-center">
-    @php
+  <div class="ratio ratio-1x1 rounded-top overflow-hidden product-thumb">
+    
+@php
       // If featured_image is a full URL use it; otherwise assume it's a storage path
       $thumb = null;
       $mediaType = 'image';
@@ -54,13 +70,13 @@
     @endphp
 
     @if($mediaType === 'video')
-      <video src="{{ $thumb }}" class="w-100 h-100" style="object-fit: contain;" controls preload="none"></video>
+      <video src="{{ $thumb }}" class="w-100 h-100" controls preload="none"></video>
     @else
       <img src="{{ $thumb }}"
            alt="{{ $item->name }}"
            class="img-fluid w-100 h-100"
            loading="lazy" decoding="async"
-           style="object-fit: contain;">
+          >
     @endif
   </div>
 
@@ -70,7 +86,8 @@
     <h3 class="h6 mb-1 text-truncate fw-semibold text-dark">{{ $item->name }}</h3>
 
     {{-- Rating (shop-wide) --}}
-    @php
+    
+@php
       // Prefer shop's overall rating/count; fallback to product values if needed
       $shop        = $item->shop;
       $shopAvg     = $shop ? ($shop->reviews_avg_rating ?? $shop->reviews()->avg('rating')) : null;
@@ -108,3 +125,6 @@
 
   </div>
 </a>
+
+
+
