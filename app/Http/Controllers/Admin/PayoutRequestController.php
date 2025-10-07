@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Http\Controllers\Admin;
 
@@ -516,4 +516,4 @@ class PayoutRequestController extends Controller
         }
         return back()->with('success', "$count payout(s) rejected & refunded.");
     }
-}\r\n
+}
