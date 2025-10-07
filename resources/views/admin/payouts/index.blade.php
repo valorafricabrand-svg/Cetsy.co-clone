@@ -2,14 +2,10 @@
 @extends('layouts.app')
 @section('title','Payout Requests')
 
-@push('styles')
-  <!-- Bootstrap 5 (latest stable) & Icons for this page only -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-@endpush
+
 
 @section('content')
-<div class="content py-4">
+<div class="content">
   <div class="container-xxl">
 
     <h2 class="mb-3">Payout Requests</h2>
