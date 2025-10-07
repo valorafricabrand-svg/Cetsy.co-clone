@@ -13,6 +13,9 @@
       /* Thumb container background + media fit */
       .product-thumb { background: #f1f3f5; }
       .product-thumb img, .product-thumb video { object-fit: contain; }
+          .product-card { display:flex; }
+      .product-card .card-body { display:flex; flex-direction:column; }
+      .product-card .title-clamp { display:-webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow:hidden; }
     </style>
   @endpush
 @endonce
@@ -41,7 +44,7 @@
 @endphp
 
 <a href="{{ route('listing.show', $item->slug) }}"
-   class="card text-decoration-none border-0 shadow-sm h-100">
+   class="card text-decoration-none border-0 shadow-sm h-100 product-card">
 
   {{-- Thumbnail --}}
   <div class="ratio ratio-1x1 rounded-top overflow-hidden product-thumb">
@@ -83,7 +86,7 @@
   <div class="card-body p-2 d-flex flex-column">
 
     {{-- Title --}}
-    <h3 class="h6 mb-1 text-truncate fw-semibold text-dark">{{ $item->name }}</h3>
+    <h3 class="h6 mb-1 fw-semibold text-dark title-clamp">{{ $item->name }}</h3>
 
     {{-- Rating (shop-wide) --}}
     
@@ -125,6 +128,8 @@
 
   </div>
 </a>
+
+
 
 
 
