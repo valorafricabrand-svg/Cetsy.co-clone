@@ -1,4 +1,4 @@
-@foreach($products as $product)
+in seller @foreach($products as $product)
   @php
     $ptype = strtolower((string)($product->product_type ?? $product->type ?? ''));
     $isDigital = in_array($ptype, ['digital','download','digital_download','digital-download']);
