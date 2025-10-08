@@ -231,6 +231,10 @@ Route::middleware(['auth','verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
+    // Navbar unread counters (AJAX)
+    Route::get('/nav/counts', [\App\Http\Controllers\NotificationController::class, 'counts'])
+        ->name('notifications.counts');
+
     Route::patch('products/{product}/renewal', [ProductController::class, 'updateRenewal'])
         ->name('products.updateRenewal');
 
