@@ -17,8 +17,13 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="h5 mb-0">Seller Information</h3>
-        <div>
-            <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-primary me-2">
+        <div class="d-flex align-items-center gap-2">
+            @if(method_exists($user,'isSeller') && $user->isSeller())
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#topupWalletModal">
+                    <i class="fas fa-wallet me-1"></i> Top Up Wallet
+                </button>
+            @endif
+            <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-primary">
                 <i class="fas fa-pencil-alt me-1"></i> Edit User
             </a>
             <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">
@@ -257,5 +262,43 @@
             </div>
         </div>
     </div>
+    @if(method_exists($user,'isSeller') && $user->isSeller())
+    <!-- Top Up Wallet Modal -->
+    <div class="modal fade" id="topupWalletModal" tabindex="-1" aria-labelledby="topupWalletModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="topupWalletModalLabel">Top Up Seller Wallet</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form method="POST" action="{{ route('admin.wallets.store') }}">
+            @csrf
+            <input type="hidden" name="seller" value="{{ $user->id }}">
+            <div class="modal-body">
+              <div class="mb-2 small text-muted">
+                Seller: <strong>{{ $user->name }}</strong> (ID: {{ $user->id }}, {{ $user->email }})
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Current Wallet Balance</label>
+                <input type="text" class="form-control" value="{{ get_currency() }} {{ number_format(wallet('completed', $user->id), 2) }}" disabled>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Amount (USD)</label>
+                <input type="number" name="amount" class="form-control" step="0.01" min="0.01" placeholder="e.g. 50.00" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Description (optional)</label>
+                <input type="text" name="description" class="form-control" value="Admin top-up" maxlength="1000">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-success">Top Up</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    @endif
 </div>
 @endsection
