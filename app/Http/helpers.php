@@ -350,23 +350,51 @@ if (! function_exists('product_thumb_url')) {
             return setting('favicon_url') ?: asset('storage/placeholder.jpg');
         }
 
+        $normalize = function (?string $path): ?string {
+            if (!$path) return null;
+            $p = ltrim($path, '/');
+            // If DB stored 'public/...' or 'storage/...', strip the prefix for Storage::disk('public')->url()
+            if (str_starts_with($p, 'public/'))   { $p = substr($p, 7); }
+            if (str_starts_with($p, 'storage/'))  { $p = substr($p, 8); }
+            return $p;
+        };
+
+        // 1) Featured image
         $fi = $product->featured_image ?? null;
         if (!empty($fi)) {
-            return str_starts_with($fi, 'http') ? $fi : asset('storage/' . ltrim($fi, '/'));
+            if (str_starts_with($fi, 'http')) {
+                return $fi;
+            }
+            $rel = $normalize($fi);
+            try {
+                return \Storage::disk('public')->url($rel);
+            } catch (\Throwable $e) {
+                return asset('storage/' . ltrim($rel ?: $fi, '/'));
+            }
         }
 
+        // 2) First media
         $firstMedia = method_exists($product, 'media') ? $product->media->first() : null;
         if ($firstMedia && !empty($firstMedia->url)) {
-            return asset('storage/' . ltrim($firstMedia->url, '/'));
+            $rel = $normalize($firstMedia->url);
+            try {
+                return \Storage::disk('public')->url($rel);
+            } catch (\Throwable $e) {
+                return asset('storage/' . ltrim($rel ?: $firstMedia->url, '/'));
+            }
         }
 
-        $shopLogo = ($product->shop && $product->shop->logo)
-            ? asset('storage/' . ltrim($product->shop->logo, '/'))
-            : null;
-        if ($shopLogo) {
-            return $shopLogo;
+        // 3) Shop logo
+        if ($product->shop && !empty($product->shop->logo)) {
+            $rel = $normalize($product->shop->logo);
+            try {
+                return \Storage::disk('public')->url($rel);
+            } catch (\Throwable $e) {
+                return asset('storage/' . ltrim($rel ?: $product->shop->logo, '/'));
+            }
         }
 
+        // 4) Fallbacks
         return setting('favicon_url') ?: asset('storage/placeholder.jpg');
     }
 }

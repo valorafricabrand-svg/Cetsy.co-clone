@@ -49,9 +49,7 @@
   <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
     <div class="d-flex align-items-center gap-3">
     
-        <img src="{{ $shop->logo 
-      ? asset('storage/' . $shop->logo) 
-      : setting('favicon_url') }}" alt="{{ $shop->name }} logo" class="shop-avatar">
+        <img src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : setting('favicon_url') }}" alt="{{ $shop->name }} logo" class="shop-avatar">
     
 
       <div>
