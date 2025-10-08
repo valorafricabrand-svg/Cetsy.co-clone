@@ -3,6 +3,9 @@
 
 @section('content')
 <div class="content">
+    <style>
+      .js-product-card { cursor: pointer; }
+    </style>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">My Listings</h2>
         <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
@@ -174,4 +177,27 @@
         </div>
     @endif
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    function isInteractive(el) {
+      if (!el) return false;
+      var selector = 'a,button,input,select,textarea,label,.btn,[data-bs-toggle]';
+      return el.closest(selector) !== null;
+    }
+    document.querySelectorAll('.js-product-card').forEach(function(card){
+      card.addEventListener('click', function(e){
+        if (isInteractive(e.target)) return;
+        var href = card.getAttribute('data-href');
+        if (href) window.location.href = href;
+      });
+      card.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          var href = card.getAttribute('data-href');
+          if (href) window.location.href = href;
+        }
+      });
+    });
+  });
+</script>
 @endsection

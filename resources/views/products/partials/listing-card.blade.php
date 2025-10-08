@@ -47,7 +47,10 @@
 @endphp
 
 <div class="col-md-6 col-lg-4">
-    <div class="card position-relative h-100 shadow-sm border-0 rounded-4">
+    <div class="card position-relative h-100 shadow-sm border-0 rounded-4 js-product-card"
+         data-href="{{ route('products.show', $product) }}"
+         tabindex="0"
+         aria-label="Open {{ $product->name }} details">
         <span class="badge bg-{{ $statusClass }} text-white position-absolute top-0 start-0 m-2">{{ $statusLabel }}</span>
 
         @if ($thumb)
