@@ -341,17 +341,26 @@ function listingForm(){
         return;
       }
       try {
-        const res = await fetch(`/api/categories/by-type/${encodeURIComponent(this.type)}`);
-        if(!res.ok) throw new Error();
-        const cats = await res.json();
+        const url = `/api/categories/by-type/${encodeURIComponent(this.type)}?_=${Date.now()}`;
+        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        let cats;
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          cats = await res.json();
+        } else {
+          const txt = await res.text();
+          try { cats = JSON.parse(txt); } catch { console.warn('Categories API non-JSON:', txt.slice(0,200)); cats = []; }
+        }
         sel.innerHTML = '<option value="">Choose category</option>';
-        cats.forEach(c=> {
+        (Array.isArray(cats) ? cats : []).forEach(c=> {
           const o = document.createElement('option');
           o.value = c.id; o.text = c.name;
           if(String(c.id)===String(this.categoryId)) o.selected=true;
           sel.append(o);
         });
-      } catch {
+      } catch (e) {
+        console.error('Categories load error:', e);
         sel.innerHTML = '<option>Error loading categories</option>';
       }
     },
@@ -371,6 +380,7 @@ document.getElementById('imageModal')?.addEventListener('show.bs.modal', functio
 <!-- Include TinyMCE from the local directory -->
 <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
 <script>
+if (document.compatMode === 'CSS1Compat') {
 tinymce.init({
   selector: '#description',
   height: 400,
@@ -410,5 +420,8 @@ tinymce.init({
     editor.on('change', () => editor.save());
   }
 });
+} else {
+  console.warn('TinyMCE disabled (document not in standards mode)');
+}
 </script>
 @endpush
