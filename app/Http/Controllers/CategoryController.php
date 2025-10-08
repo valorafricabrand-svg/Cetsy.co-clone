@@ -233,18 +233,19 @@ $category = Category::find($id);
 
 // app/Http/Controllers/CategoryController.php
 
-public function byType(string $type)
-{
-    // Map your form types to listing_type values in the database
-    $map = [
-      'physical' => 'products',
-      'service'  => 'services',
-      'digital'  => 'digital',
-    ];
-    $listingType = $map[$type] ?? null;
-    if (! $listingType) {
-        return response()->json([], 400);
-    }
+    public function byType(string $type)
+    {
+        // Map your form types to listing_type values in the database
+        $map = [
+          'physical' => 'products',
+          'service'  => 'services',
+          'digital'  => 'digital',
+        ];
+        $listingType = $map[$type] ?? null;
+        if (! $listingType) {
+            // Be forgiving: unknown type -> return all categories (id, name) so UI degrades gracefully
+            return response()->json(Category::query()->orderBy('name')->get(['id','name']));
+        }
 
     // Include both parents and children relevant to the selected type:
     // - Any parent whose own listing_type matches, OR has at least one child matching
@@ -266,12 +267,17 @@ public function byType(string $type)
         ->orderBy('name')
         ->get(['id','name']);
 
-    $categories = $parents->concat($children)
-        ->unique('id')
-        ->values();
+        $categories = $parents->concat($children)
+            ->unique('id')
+            ->values();
 
-    return response()->json($categories);
-}
+        // Fallback: if none matched (e.g., data not tagged yet), return all so seller can proceed
+        if ($categories->isEmpty()) {
+            $categories = Category::query()->orderBy('name')->get(['id','name']);
+        }
+
+        return response()->json($categories);
+    }
 
 
 
