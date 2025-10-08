@@ -35,10 +35,15 @@
       @foreach($product->media as $i => $media)
         <div class="carousel-item @if($i === 0) active @endif">
           @if($media->type === 'video')
-            <video controls class="d-block w-100 ratio-box"
-                   style="aspect-ratio: 4/3; object-fit: contain; background:#f7f7f7">
-              <source src="{{ asset('storage/'.$media->url) }}" />
-            </video>
+            <div class="position-relative">
+              <span class="badge bg-dark bg-opacity-75 position-absolute top-0 start-0 m-2" style="font-size:.75rem;">
+                <i class="fas fa-play me-1"></i>Video
+              </span>
+              <video controls class="d-block w-100 ratio-box"
+                     style="aspect-ratio: 4/3; object-fit: contain; background:#f7f7f7">
+                <source src="{{ asset('storage/'.$media->url) }}" />
+              </video>
+            </div>
           @else
             {{-- Image wrapper enables hover lens zoom (desktop) + click to open lightbox --}}
             <div class="zoom-wrap"
