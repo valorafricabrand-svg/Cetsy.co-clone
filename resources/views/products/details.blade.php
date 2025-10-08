@@ -156,20 +156,29 @@ function detailsForm(){
       sel.innerHTML = '<option>Loading…</option>';
       if(!this.type){ sel.innerHTML = '<option value="">Choose category</option>'; return; }
       try{
-        const res = await fetch(`/api/categories/by-type/${encodeURIComponent(this.type)}`);
-        if(!res.ok) throw new Error();
-        const cats = await res.json();
+        const url = `/api/categories/by-type/${encodeURIComponent(this.type)}?_=${Date.now()}`;
+        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        let cats;
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          cats = await res.json();
+        } else {
+          const txt = await res.text();
+          try { cats = JSON.parse(txt); } catch { console.warn('Categories API non-JSON:', txt.slice(0,200)); cats = []; }
+        }
         sel.innerHTML = '<option value="">Choose category</option>';
-        cats.forEach(c=>{
+        (Array.isArray(cats) ? cats : []).forEach(c=>{
           const o = document.createElement('option');
           o.value = c.id; o.text = c.name;
           if(String(c.id)===String(this.categoryId)) o.selected=true;
           sel.append(o);
         });
-      }catch{ sel.innerHTML = '<option>Error loading categories</option>'; }
+      }catch(e){ console.error('Categories load error:', e); sel.innerHTML = '<option>Error loading categories</option>'; }
     }
   }
 }
+if (document.compatMode === 'CSS1Compat') {
 tinymce.init({
   selector:'#description', height: 400, menubar:true,
   plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
@@ -179,5 +188,8 @@ tinymce.init({
   gecko_spellcheck: true,
   elementpath: false
 });
+} else {
+  console.warn('TinyMCE disabled (document not in standards mode)');
+}
 </script>
 @endpush
