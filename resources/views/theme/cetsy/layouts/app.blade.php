@@ -127,6 +127,28 @@
       }
     });
   </script>
+  <script>
+    // Live-refresh navbar badges (notif/messages)
+    document.addEventListener('DOMContentLoaded', function(){
+      function setBadge(id, count){
+        var el = document.getElementById(id); if(!el) return;
+        if(count>0){ el.textContent = count>99 ? '99+' : String(count); el.style.display='inline-block'; }
+        else { el.textContent=''; el.style.display='none'; }
+      }
+      function refreshCounts(){
+        fetch('{{ route('notifications.counts') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+          .then(function(r){ return r.ok ? r.json() : {notif:0,msg:0}; })
+          .then(function(data){
+            setBadge('navNotifCount', (data && data.notif) ? data.notif : 0);
+            setBadge('navMsgCount', (data && data.msg) ? data.msg : 0);
+            setBadge('topNotifCount', (data && data.notif) ? data.notif : 0);
+          })
+          .catch(function(){});
+      }
+      refreshCounts();
+      setInterval(refreshCounts, 30000);
+    });
+  </script>
 
   <!-- Inline Theme Tweaks -->
   <style>
@@ -466,11 +488,11 @@
                 @endif
                 <a href="{{ $isSeller ? route('seller.messages.index') : route('buyer.messages.index') }}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
                   <span class="d-inline-flex align-items-center gap-2"><i class="fas fa-comments"></i> Messages</span>
-                  @if($msgCount>0)<span class="badge bg-danger rounded-pill">{{ $msgCount }}</span>@endif
+                  <span id="navMsgCount" class="badge bg-danger rounded-pill" style="display: {{ $msgCount>0 ? 'inline-block' : 'none' }};">{{ $msgCount>99 ? '99+' : $msgCount }}</span>
                 </a>
                 <a href="{{ route('notifications.index') }}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
                   <span class="d-inline-flex align-items-center gap-2"><i class="fas fa-bell"></i> Notifications</span>
-                  @if($notifCount>0)<span class="badge bg-primary rounded-pill">{{ $notifCount }}</span>@endif
+                  <span id="navNotifCount" class="badge bg-primary rounded-pill" style="display: {{ $notifCount>0 ? 'inline-block' : 'none' }};">{{ $notifCount>99 ? '99+' : $notifCount }}</span>
                 </a>
                 <a href="{{ route('wallet.index') }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
                   <i class="fas fa-wallet"></i>
