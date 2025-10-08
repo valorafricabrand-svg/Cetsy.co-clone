@@ -77,6 +77,9 @@
           </template>
         </select>
         <div x-show="loading" class="form-text text-muted">Loading categories…</div>
+        <div x-show="fallback && !loading" class="form-text text-warning">
+          Showing all categories. Ask admin to tag categories by listing type for better filtering.
+        </div>
         @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
       </div>
 
@@ -176,6 +179,8 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <script>
+  // Local cache of categories (id, name, listing_type) as a robust fallback
+  window.__ALL_CATEGORIES__ = @json(\App\Models\Category::select('id','name','listing_type')->orderBy('name')->get());
 
 
   function listingForm() {
@@ -184,9 +189,17 @@
       categoryId: '{{ old('category_id','') }}',
       categories: [],
       loading: false,
+      fallback: false,
       variations: [], variationType:'', variationOption:'',
       previews: [], idCounter:0, sortable:null,
 
+      filterLocalByType(tp){
+        const map = { physical: 'products', service: 'services', digital: 'digital' };
+        const want = map[String(tp) || ''] || null;
+        if (!want) return [];
+        const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : [];
+        return all.filter(c => (c.listing_type || '').toLowerCase() === want);
+      },
       async loadCategories() {
         this.categories = [];
         this.categoryId = '';
@@ -198,6 +211,7 @@
           if (!res.ok) throw new Error(`Fetch failed (${res.status})`);
           let data;
           const ct = res.headers.get('content-type') || '';
+          this.fallback = (res.headers.get('x-categories-fallback') === '1');
           if (ct.includes('application/json')) {
             data = await res.json();
           } else {
@@ -205,9 +219,13 @@
             try { data = JSON.parse(text); } catch { console.warn('Non-JSON response from categories API:', text.slice(0, 200)); data = []; }
           }
           this.categories = Array.isArray(data) ? data : [];
+          if (this.fallback || this.categories.length === 0) {
+            this.categories = this.filterLocalByType(this.type);
+          }
         } catch (e) {
           console.error('Categories load error:', e);
-          this.categories = [];
+          this.categories = this.filterLocalByType(this.type);
+          this.fallback = false;
         } finally {
           this.loading = false;
           if ('{{ old('type') }}' === this.type && '{{ old('category_id') }}') {

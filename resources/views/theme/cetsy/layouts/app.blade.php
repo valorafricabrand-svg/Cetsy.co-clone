@@ -136,7 +136,9 @@
         else { el.textContent=''; el.style.display='none'; }
       }
       function refreshCounts(){
-        fetch('{{ route('notifications.counts') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+        var url = @json(\Illuminate\Support\Facades\Route::has('notifications.counts') ? route('notifications.counts') : null);
+        if(!url) return; // route not registered; skip silently
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
           .then(function(r){ return r.ok ? r.json() : {notif:0,msg:0}; })
           .then(function(data){
             setBadge('navNotifCount', (data && data.notif) ? data.notif : 0);

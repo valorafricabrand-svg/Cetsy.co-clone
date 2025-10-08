@@ -242,9 +242,13 @@ $category = Category::find($id);
           'digital'  => 'digital',
         ];
         $listingType = $map[$type] ?? null;
+        $fallbackUsed = false;
         if (! $listingType) {
             // Be forgiving: unknown type -> return all categories (id, name) so UI degrades gracefully
-            return response()->json(Category::query()->orderBy('name')->get(['id','name']));
+            $fallbackUsed = true;
+            return response()->json(
+                Category::query()->orderBy('name')->get(['id','name'])
+            )->header('X-Categories-Fallback', '1');
         }
 
     // Include both parents and children relevant to the selected type:
@@ -273,10 +277,13 @@ $category = Category::find($id);
 
         // Fallback: if none matched (e.g., data not tagged yet), return all so seller can proceed
         if ($categories->isEmpty()) {
+            $fallbackUsed = true;
             $categories = Category::query()->orderBy('name')->get(['id','name']);
         }
 
-        return response()->json($categories);
+        return response()
+            ->json($categories)
+            ->header('X-Categories-Fallback', $fallbackUsed ? '1' : '0');
     }
 
 
