@@ -105,6 +105,17 @@ class OfferController extends Controller
             abort(403, 'Unauthorized access to this offer.');
         }
 
+        // Mark related offer notifications as read for this seller
+        try {
+            Activity::where('user_id', $user->id)
+                ->where('type', Activity::TYPE_OFFER)
+                ->where(function($q) use ($offer) {
+                    $q->where('related_id', $offer->id)->orWhereNull('related_id');
+                })
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) { /* non-fatal */ }
+
         // Get offer history
         $offerHistory = $offer->getOfferHistory();
 

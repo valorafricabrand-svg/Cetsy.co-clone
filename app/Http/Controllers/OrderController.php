@@ -129,6 +129,14 @@ public function index(Request $request)
             'user',
             'disputes'
         );
+        // Mark order notifications as read for the seller
+        try {
+            \App\Models\Activity::where('user_id', auth()->id())
+                ->where('type', \App\Models\Activity::TYPE_ORDER)
+                ->where(function($q) use ($order) { $q->where('related_id', $order->id)->orWhereNull('related_id'); })
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) { /* non-fatal */ }
         return view('seller.orders.show', compact('order'));
     }
 

@@ -15,7 +15,11 @@
                          ->where('receiver_id', Auth::id())
                          ->where('is_read', false)
                          ->count();
-    $favoritesCount = \App\Models\Wishlist::whereIn('product_id', $productIds)->count();
+    // Unread favorites: based on Activity entries (wishlist type)
+    $favoritesCount = \App\Models\Activity::where('user_id', Auth::id())
+                        ->where('type', \App\Models\Activity::TYPE_WISHLIST)
+                        ->where('is_read', false)
+                        ->count();
     $pendingOffers  = \App\Models\Offer::whereIn('product_id', $productIds)
                          ->where('status', 'pending')->count();
     // Pending disputes count for this seller (sidebar badge)
