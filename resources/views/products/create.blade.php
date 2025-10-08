@@ -52,7 +52,7 @@
         <select name="type" id="type"
                 class="form-select @error('type') is-invalid @enderror"
                 x-model="type"
-                @change="loadCategories"
+                @change="loadCategories()"
                 required>
           <option value="">Select type</option>
           <option value="physical" @selected(old('type')=='physical')>Physical</option>
