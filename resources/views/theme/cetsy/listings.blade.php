@@ -151,9 +151,17 @@
         }, {once:true});
       }catch(e){}
     }
-    document.addEventListener('DOMContentLoaded', function(){
-      document.querySelectorAll('img[data-video-src]').forEach(toFirstFrame);
-    });
+    function init(){
+      var imgs = document.querySelectorAll('img[data-video-src]');
+      if (!('IntersectionObserver' in window)) { imgs.forEach(toFirstFrame); return; }
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){ toFirstFrame(entry.target); io.unobserve(entry.target); }
+        });
+      }, { rootMargin:'200px' });
+      imgs.forEach(function(img){ io.observe(img); });
+    }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
   })();
   </script>
   @endpush

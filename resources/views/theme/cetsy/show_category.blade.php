@@ -181,7 +181,7 @@
   @push('scripts')
   <script>
   (function(){
-    if (window.__videoThumbInit) return; window.__videoThumbInit = true;
+    if (window.__videoThumbInitCat) return; window.__videoThumbInitCat = true;
     function toFirstFrame(img){
       var src = img.getAttribute('data-video-src');
       if(!src) return;
@@ -200,9 +200,17 @@
         }, {once:true});
       }catch(e){}
     }
-    document.addEventListener('DOMContentLoaded', function(){
-      document.querySelectorAll('img[data-video-src]').forEach(toFirstFrame);
-    });
+    function init(){
+      var imgs = document.querySelectorAll('img[data-video-src]');
+      if (!('IntersectionObserver' in window)) { imgs.forEach(toFirstFrame); return; }
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){ toFirstFrame(entry.target); io.unobserve(entry.target); }
+        });
+      }, { rootMargin:'200px' });
+      imgs.forEach(function(img){ io.observe(img); });
+    }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
   })();
   </script>
   @endpush

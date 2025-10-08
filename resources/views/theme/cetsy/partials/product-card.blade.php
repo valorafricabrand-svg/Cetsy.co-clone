@@ -81,7 +81,11 @@
       <span class="badge-video"><i class="fas fa-play"></i> Video</span>
     @endif
 
-    @php($dataVideoSrc = (isset($firstVideo) && $firstVideo && empty($firstImage) && empty($item->featured_image)) ? asset('storage/' . ltrim($firstVideo->url,'/')) : null)
+    @php
+      $dataVideoSrc = (isset($firstVideo) && $firstVideo && empty($firstImage) && empty($item->featured_image))
+        ? asset('storage/' . ltrim($firstVideo->url,'/'))
+        : null;
+    @endphp
     <img src="{{ $thumb }}"
          alt="{{ $item->name }}"
          class="img-fluid w-100 h-100"
@@ -134,12 +138,6 @@
 
   </div>
 </a>
-
-
-
-
-
-</script>
   @once
     @push('scripts')
       <script>
@@ -165,9 +163,25 @@
             }, { once: true });
           }catch(e){}
         }
-        document.addEventListener('DOMContentLoaded', function(){
-          document.querySelectorAll('img[data-video-src]').forEach(toFirstFrame);
-        });
+        function init(){
+          var imgs = document.querySelectorAll('img[data-video-src]');
+          if (!('IntersectionObserver' in window)) {
+            imgs.forEach(toFirstFrame); // fallback
+            return;
+          }
+          var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(entry){
+              if(entry.isIntersecting){
+                toFirstFrame(entry.target);
+                io.unobserve(entry.target);
+              }
+            });
+          }, { rootMargin: '200px' });
+          imgs.forEach(function(img){ io.observe(img); });
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else { init(); }
       })();
       </script>
     @endpush
