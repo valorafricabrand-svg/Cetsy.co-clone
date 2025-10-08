@@ -25,8 +25,9 @@ class OrderController extends Controller
      */
 public function index(Request $request)
 {
-    $user   = auth()->user();
-    $shopId = Shop::where('user_id', $user->id)->value('id');
+    $user = auth()->user();
+    $shop = Shop::where('user_id', $user->id)->first();
+    $shopId = $shop?->id;
 
     // Base query scoped to this shop
     $baseQuery = Order::where('shop_id', $shopId);
@@ -93,6 +94,7 @@ public function index(Request $request)
 
     return view('seller.orders.index', compact(
         'user',
+        'shop',
         'orders',
         'statusCounts',
         'currentStatus',
