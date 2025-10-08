@@ -313,9 +313,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectAllHeader = document.getElementById('selectAllHeader');
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     const offerCheckboxes = Array.from(document.querySelectorAll('.offer-checkbox'));
+    // If no selectable offers on this page, disable master toggles for clarity
+    if (offerCheckboxes.length === 0) {
+        if (selectAllHeader) selectAllHeader.disabled = true;
+        if (selectAllCheckbox) selectAllCheckbox.disabled = true;
+    }
 
     function setAllChecked(checked) {
-        offerCheckboxes.forEach(cb => { cb.checked = checked; });
+        // Only touch checkboxes that are enabled/visible
+        offerCheckboxes.forEach(cb => { if (!cb.disabled) cb.checked = checked; });
         if (selectAllHeader) {
             selectAllHeader.checked = checked;
             selectAllHeader.indeterminate = false;
@@ -403,7 +409,10 @@ document.addEventListener('DOMContentLoaded', function() {
         bulkActionModal.addEventListener('show.bs.modal', function() {
             const form = document.getElementById('bulkActionForm');
             if (!form) return;
-            // Remove any existing event listeners to prevent duplicates
+            // Always refresh the selection snapshot and visible count when opening
+            updateSelectedCount();
+            updateSelectAllState();
+            // Rebind submit once (avoid duplicates)
             form.removeEventListener('submit', handleBulkActionSubmit);
             form.addEventListener('submit', handleBulkActionSubmit);
         });
