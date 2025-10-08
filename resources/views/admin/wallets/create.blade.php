@@ -34,9 +34,9 @@
         @csrf
 
         <div class="col-12 col-md-6">
-          <label class="form-label">Seller (ID or Email)</label>
-          <input type="text" name="seller" value="{{ old('seller', $prefill['user_id'] ?? $prefill['email'] ?? $prefill['user'] ?? '') }}" class="form-control" placeholder="e.g. 123 or seller@example.com" required>
-          <div class="form-text">Only seller accounts are allowed.</div>
+          <label class="form-label">User (ID or Email)</label>
+          <input type="text" name="seller" value="{{ old('seller', $prefill['user_id'] ?? $prefill['email'] ?? $prefill['user'] ?? '') }}" class="form-control" placeholder="e.g. 123 or user@example.com" required>
+          <div class="form-text">Seller or buyer accounts are allowed.</div>
         </div>
 
         <div class="col-12 col-md-3">
@@ -62,4 +62,3 @@
   </div>
 </div>
 @endsection
-

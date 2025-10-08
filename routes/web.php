@@ -428,6 +428,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Users
     Route::resource('users', UserController::class);
+    // Buyers index alias, reusing the same controller (filters buyers by default)
+    Route::get('buyers', [UserController::class, 'index'])->name('buyers.index');
     Route::post('users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::get('sellers/{userId}/login-as', [UserController::class, 'loginAs'])->name('sellers.login-as');

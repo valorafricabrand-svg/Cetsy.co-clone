@@ -16,9 +16,9 @@
     @endif
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="h5 mb-0">Seller Information</h3>
+        <h3 class="h5 mb-0">User Information</h3>
         <div class="d-flex align-items-center gap-2">
-            @if(method_exists($user,'isSeller') && $user->isSeller())
+            @if((method_exists($user,'isSeller') && $user->isSeller()) || (method_exists($user,'isBuyer') && $user->isBuyer()))
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#topupWalletModal">
                     <i class="fas fa-wallet me-1"></i> Top Up Wallet
                 </button>
@@ -109,20 +109,22 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    @if(!$user->is_active)
-                        <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="mb-3">
-                            @csrf
-                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve this Seller Account?')">
-                                <i class="fas fa-check me-2"></i>Approve Account
-                            </button>
-                        </form>
-                    @else
-                        <form action="{{ route('admin.users.deactivate', $user) }}" method="POST" class="mb-3">
-                            @csrf
-                            <button type="submit" class="btn btn-warning w-100" onclick="return confirm('Deactivate this Seller Account?')">
-                                <i class="fas fa-ban me-2"></i>Deactivate Account
-                            </button>
-                        </form>
+                    @if(method_exists($user,'isSeller') && $user->isSeller())
+                        @if(!$user->is_active)
+                            <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="mb-3">
+                                @csrf
+                                <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve this seller account?')">
+                                    <i class="fas fa-check me-2"></i>Approve Account
+                                </button>
+                            </form>
+                        @else
+                            <form action="{{ route('admin.users.deactivate', $user) }}" method="POST" class="mb-3">
+                                @csrf
+                                <button type="submit" class="btn btn-warning w-100" onclick="return confirm('Deactivate this seller account?')">
+                                    <i class="fas fa-ban me-2"></i>Deactivate Account
+                                </button>
+                            </form>
+                        @endif
                     @endif
 
                     <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.');">
@@ -262,13 +264,13 @@
             </div>
         </div>
     </div>
-    @if(method_exists($user,'isSeller') && $user->isSeller())
+    @if((method_exists($user,'isSeller') && $user->isSeller()) || (method_exists($user,'isBuyer') && $user->isBuyer()))
     <!-- Top Up Wallet Modal -->
     <div class="modal fade" id="topupWalletModal" tabindex="-1" aria-labelledby="topupWalletModalLabel" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="topupWalletModalLabel">Top Up Seller Wallet</h5>
+            <h5 class="modal-title" id="topupWalletModalLabel">Top Up Wallet</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <form method="POST" action="{{ route('admin.wallets.store') }}">
@@ -276,7 +278,7 @@
             <input type="hidden" name="seller" value="{{ $user->id }}">
             <div class="modal-body">
               <div class="mb-2 small text-muted">
-                Seller: <strong>{{ $user->name }}</strong> (ID: {{ $user->id }}, {{ $user->email }})
+                Account: <strong>{{ $user->name }}</strong> (ID: {{ $user->id }}, {{ $user->email }})
               </div>
               <div class="mb-3">
                 <label class="form-label">Current Wallet Balance</label>
