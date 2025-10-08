@@ -145,6 +145,7 @@
             var c=document.createElement('canvas'); c.width=w; c.height=h;
             c.getContext('2d').drawImage(v,0,0,w,h);
             img.src=c.toDataURL('image/jpeg',0.8);
+            img.style.opacity='1'; img.style.filter='none';
             img.removeAttribute('data-video-src');
           }catch(e){}
         }, {once:true});
@@ -227,7 +228,7 @@
                       @if($hasVideo)
                         <span class="position-absolute top-0 start-0 m-2 px-2 py-1 rounded text-white" style="background:rgba(0,0,0,.7); font-size:.72rem;"><i class="fas fa-play me-1"></i>Video</span>
                       @endif
-                      <img src="{{ $thumb }}" alt="{{ $item->name }}" class="img-fluid w-100 h-100" loading="lazy" decoding="async" style="object-fit:cover;" @if(!isset($firstImage) || !$firstImage) @php($vid = isset($firstVideo)&&$firstVideo?asset('storage/'.ltrim($firstVideo->url,'/')):null) @endif @if(isset($vid) && $vid) data-video-src="{{ $vid }}" @endif>
+                      <img src="{{ $thumb }}" alt="{{ $item->name }}" class="img-fluid w-100 h-100" loading="lazy" decoding="async" style="object-fit:cover; @if(isset($firstVideo) && $firstVideo && (!isset($firstImage) || !$firstImage)) opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease; @endif" @if(!isset($firstImage) || !$firstImage) @php($vid = isset($firstVideo)&&$firstVideo?asset('storage/'.ltrim($firstVideo->url,'/')):null) @endif @if(isset($vid) && $vid) data-video-src="{{ $vid }}" @endif>
                     </div>
                   </a>
                 </div>

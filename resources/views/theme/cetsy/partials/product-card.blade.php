@@ -85,7 +85,7 @@
     <img src="{{ $thumb }}"
          alt="{{ $item->name }}"
          class="img-fluid w-100 h-100"
-         @if($dataVideoSrc) data-video-src="{{ $dataVideoSrc }}" @endif
+         @if($dataVideoSrc) data-video-src="{{ $dataVideoSrc }}" style="opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease;" @endif
          loading="lazy" decoding="async">
   </div>
 
@@ -158,6 +158,8 @@
                 var c = document.createElement('canvas'); c.width = w; c.height = h;
                 var ctx = c.getContext('2d'); ctx.drawImage(v,0,0,w,h);
                 img.src = c.toDataURL('image/jpeg', 0.8);
+                img.style.opacity = '1';
+                img.style.filter = 'none';
                 img.removeAttribute('data-video-src');
               }catch(e){}
             }, { once: true });
