@@ -8,9 +8,7 @@
       <div class="col-lg-9 d-flex align-items-center gap-4">
         {{-- Shop Logo --}}
 <img 
-  src="{{ $shop->logo 
-      ? asset('storage/' . $shop->logo) 
-      : setting('favicon_url') }}" 
+  src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : setting('favicon_url') }}" 
   alt="{{ $shop->name }} logo" 
   class="rounded-circle shadow-sm border" 
   style="width:80px; height:80px; object-fit:cover;" 
@@ -154,7 +152,7 @@
 @if($shop->featured_image)
   <section class="py-4 bg-white">
     <div class="container">
-      <img src="{{ asset('storage/' . $shop->featured_image) }}"
+      <img src="{{ $shop->featured_image_url ?? asset('storage/' . $shop->featured_image) }}"
            alt="Featured image for {{ $shop->name }}"
            class="w-100 rounded shadow-sm"
            style="height:300px; object-fit:cover;">
