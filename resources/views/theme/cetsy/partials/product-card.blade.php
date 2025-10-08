@@ -60,6 +60,7 @@
                 : asset('storage/' . ltrim($item->featured_image, '/'));
       } else {
         $firstImage = $item->relationLoaded('media') ? $item->media->firstWhere('type','image') : optional($item->media)->firstWhere('type','image');
+        $firstVideo = $item->relationLoaded('media') ? $item->media->firstWhere('type','video') : optional($item->media)->firstWhere('type','video');
         if ($firstImage && !empty($firstImage->url)) {
           $thumb = asset('storage/' . ltrim($firstImage->url, '/'));
           $mediaType = 'image';
@@ -67,7 +68,7 @@
           // No image in media; avoid using video files as <img> sources in listings
           $shopLogo = ($item->shop && $item->shop->logo)
                       ? asset('storage/' . ltrim($item->shop->logo, '/'))
-                      : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
+                      : (setting('favicon_url') ?: asset('assets/img/placeholder.svg'));
           $thumb = $shopLogo;
           $mediaType = 'image';
         }
@@ -80,9 +81,11 @@
       <span class="badge-video"><i class="fas fa-play"></i> Video</span>
     @endif
 
+    @php($dataVideoSrc = (isset($firstVideo) && $firstVideo && empty($firstImage) && empty($item->featured_image)) ? asset('storage/' . ltrim($firstVideo->url,'/')) : null)
     <img src="{{ $thumb }}"
          alt="{{ $item->name }}"
          class="img-fluid w-100 h-100"
+         @if($dataVideoSrc) data-video-src="{{ $dataVideoSrc }}" @endif
          loading="lazy" decoding="async">
   </div>
 
@@ -136,3 +139,34 @@
 
 
 
+</script>
+  @once
+    @push('scripts')
+      <script>
+      (function(){
+        if (window.__videoThumbInit) return; window.__videoThumbInit = true;
+        function toFirstFrame(img){
+          var src = img.getAttribute('data-video-src');
+          if(!src) return;
+          try{
+            var v = document.createElement('video');
+            v.preload = 'metadata';
+            v.muted = true; v.playsInline = true; v.src = src + '#t=0.1';
+            v.addEventListener('loadeddata', function(){
+              try{
+                var w = v.videoWidth || 480, h = v.videoHeight || 270;
+                var c = document.createElement('canvas'); c.width = w; c.height = h;
+                var ctx = c.getContext('2d'); ctx.drawImage(v,0,0,w,h);
+                img.src = c.toDataURL('image/jpeg', 0.8);
+                img.removeAttribute('data-video-src');
+              }catch(e){}
+            }, { once: true });
+          }catch(e){}
+        }
+        document.addEventListener('DOMContentLoaded', function(){
+          document.querySelectorAll('img[data-video-src]').forEach(toFirstFrame);
+        });
+      })();
+      </script>
+    @endpush
+  @endonce

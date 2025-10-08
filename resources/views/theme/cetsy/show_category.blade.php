@@ -178,6 +178,34 @@
     </div>
   </section>
 
+  @push('scripts')
+  <script>
+  (function(){
+    if (window.__videoThumbInit) return; window.__videoThumbInit = true;
+    function toFirstFrame(img){
+      var src = img.getAttribute('data-video-src');
+      if(!src) return;
+      try{
+        var v = document.createElement('video');
+        v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.src = src + '#t=0.1';
+        v.addEventListener('loadeddata', function(){
+          try{
+            var w=v.videoWidth||480, h=v.videoHeight||270;
+            var c=document.createElement('canvas'); c.width=w; c.height=h;
+            c.getContext('2d').drawImage(v,0,0,w,h);
+            img.src=c.toDataURL('image/jpeg',0.8);
+            img.removeAttribute('data-video-src');
+          }catch(e){}
+        }, {once:true});
+      }catch(e){}
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      document.querySelectorAll('img[data-video-src]').forEach(toFirstFrame);
+    });
+  })();
+  </script>
+  @endpush
+
   {{-- =========== Listings =========== --}}
   <section class="py-4 bg-light">
     <div class="container">
@@ -231,9 +259,10 @@
                   if ($firstImage && !empty($firstImage->url)) {
                     $thumb = asset('storage/'.ltrim($firstImage->url,'/'));
                   } else {
+                    $firstVideo = (isset($item->media) && method_exists($item->media,'firstWhere')) ? $item->media->firstWhere('type','video') : null;
                     $thumb = ($item->shop && $item->shop->logo)
                              ? asset('storage/'.ltrim($item->shop->logo,'/'))
-                             : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
+                             : (setting('favicon_url') ?: asset('assets/img/placeholder.svg'));
                   }
                 }
                 // Use shop-wide rating in listings
@@ -253,7 +282,7 @@
                         @if($hasVideo)
                           <span class="position-absolute top-0 start-0 m-2 px-2 py-1 rounded text-white" style="background:rgba(0,0,0,.7); font-size:.72rem;"><i class="fas fa-play me-1"></i>Video</span>
                         @endif
-                        <img src="{{ $thumb }}" alt="{{ $item->name }}" class="w-100 h-100" style="object-fit:cover;">
+                        <img src="{{ $thumb }}" alt="{{ $item->name }}" class="w-100 h-100" style="object-fit:cover;" @if(!isset($firstImage) || !$firstImage) @php($vid = isset($firstVideo)&&$firstVideo?asset('storage/'.ltrim($firstVideo->url,'/')):null) @endif @if(isset($vid) && $vid) data-video-src="{{ $vid }}" @endif>
                       </div>
                     </a>
                   </div>
