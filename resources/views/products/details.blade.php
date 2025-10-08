@@ -146,12 +146,21 @@
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
 <script>
+// Local cache of categories for robust fallback when API fails/redirects
+window.__ALL_CATEGORIES__ = @json(\App\Models\Category::select('id','name','listing_type','name')->orderBy('name')->get(['id','name','listing_type']));
 function detailsForm(){
   return {
     type: '{{ old('type',$product->type) }}',
     categoryId: '{{ old('category_id',$product->category_id) }}',
     fallback: false,
     init(){ this.loadCategories(); },
+    filterLocalByType(tp){
+      const map = { physical: 'products', service: 'services', digital: 'digital' };
+      const want = map[String(tp) || ''] || null;
+      if (!want) return [];
+      const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : [];
+      return all.filter(c => (String(c.listing_type || '').toLowerCase() === want));
+    },
     async loadCategories(){
       const sel = document.getElementById('category_id');
       if(!sel) return;
@@ -170,6 +179,9 @@ function detailsForm(){
           const txt = await res.text();
           try { cats = JSON.parse(txt); } catch { console.warn('Categories API non-JSON:', txt.slice(0,200)); cats = []; }
         }
+        if (this.fallback || !Array.isArray(cats) || cats.length === 0) {
+          cats = this.filterLocalByType(this.type);
+        }
         sel.innerHTML = '<option value="">Choose category</option>';
         (Array.isArray(cats) ? cats : []).forEach(c=>{
           const o = document.createElement('option');
@@ -177,7 +189,18 @@ function detailsForm(){
           if(String(c.id)===String(this.categoryId)) o.selected=true;
           sel.append(o);
         });
-      }catch(e){ console.warn('Categories load warning:', e); this.fallback=false; sel.innerHTML = '<option>Error loading categories</option>'; }
+      }catch(e){
+        console.warn('Categories load warning:', e);
+        this.fallback=false;
+        // Try local fallback by type
+        const cats = this.filterLocalByType(this.type);
+        if (cats.length) {
+          sel.innerHTML = '<option value="">Choose category</option>';
+          cats.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.text=c.name; if(String(c.id)===String(this.categoryId)) o.selected=true; sel.append(o); });
+        } else {
+          sel.innerHTML = '<option>Error loading categories</option>';
+        }
+      }
     }
   }
 }
