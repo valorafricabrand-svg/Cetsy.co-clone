@@ -19,7 +19,7 @@ class ShippingProfileController extends Controller
         }
 
         $profiles = ShippingProfile::where('shop_id', $shop->id)
-                                   ->with(['country', 'processingTime'])
+                                   ->with(['country', 'destCountry', 'processingTime'])
                                    ->paginate(10);
 
         return view('shipping_profiles.index', compact('profiles'));
