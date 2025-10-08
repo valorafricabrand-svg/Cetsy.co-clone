@@ -214,8 +214,11 @@ public function index(Request $request)
         if (!$seller) {
             return back()->withInput()->with('error', 'Seller not found. Enter a valid seller ID or email.');
         }
-        if (!method_exists($seller, 'isSeller') || !$seller->isSeller()) {
-            return back()->withInput()->with('error', 'Selected user is not a seller.');
+        // Allow topping up sellers or buyers
+        $isEligible = (method_exists($seller, 'isSeller') && $seller->isSeller())
+                   || (method_exists($seller, 'isBuyer')  && $seller->isBuyer());
+        if (!$isEligible) {
+            return back()->withInput()->with('error', 'Selected account must be a seller or buyer.');
         }
 
         // Create credit row with running balance
@@ -248,6 +251,6 @@ public function index(Request $request)
         }
 
         return redirect()->route('admin.wallets.index')
-            ->with('success', 'Wallet topped up successfully for seller #' . $seller->id . '.');
+            ->with('success', 'Wallet topped up successfully for account #' . $seller->id . '.');
     }
 }

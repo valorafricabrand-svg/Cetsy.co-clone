@@ -14,7 +14,7 @@
         @if(auth()->user()->isAdmin())
           <div class="ms-md-auto">
             <a href="{{ route('admin.wallets.create') }}" class="btn btn-sm btn-primary">
-              + Top Up Seller Wallet
+              + Top Up Wallet
             </a>
           </div>
         @endif
