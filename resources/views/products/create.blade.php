@@ -193,11 +193,20 @@
         if (! this.type) return;
         this.loading = true;
         try {
-          const res = await fetch(`/api/categories/by-type/${encodeURIComponent(this.type)}`);
-          if (! res.ok) throw new Error('Fetch failed');
-          this.categories = await res.json();
+          const url = `/api/categories/by-type/${encodeURIComponent(this.type)}?_=${Date.now()}`;
+          const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+          if (!res.ok) throw new Error(`Fetch failed (${res.status})`);
+          let data;
+          const ct = res.headers.get('content-type') || '';
+          if (ct.includes('application/json')) {
+            data = await res.json();
+          } else {
+            const text = await res.text();
+            try { data = JSON.parse(text); } catch { console.warn('Non-JSON response from categories API:', text.slice(0, 200)); data = []; }
+          }
+          this.categories = Array.isArray(data) ? data : [];
         } catch (e) {
-          console.error(e);
+          console.error('Categories load error:', e);
           this.categories = [];
         } finally {
           this.loading = false;
@@ -244,6 +253,9 @@
     <!-- Include TinyMCE from the local directory -->
     <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
 <script>
+if (document.compatMode !== 'CSS1Compat') {
+  console.warn('TinyMCE disabled: document not in standards mode');
+} else {
 tinymce.init({
   selector: '#description',
   height: 400,
@@ -298,5 +310,6 @@ tinymce.init({
     editor.on('change', () => editor.save());
   }
 });
+}
 </script>
 @endpush
