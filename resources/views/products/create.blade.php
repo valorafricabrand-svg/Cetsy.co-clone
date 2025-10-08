@@ -223,7 +223,7 @@
             this.categories = this.filterLocalByType(this.type);
           }
         } catch (e) {
-          console.error('Categories load error:', e);
+          console.warn('Categories load warning:', e);
           this.categories = this.filterLocalByType(this.type);
           this.fallback = false;
         } finally {

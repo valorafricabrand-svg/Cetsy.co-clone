@@ -370,10 +370,14 @@
 {!! get_option('additional_js') !!}}
 @endif
 <script>
-    $(document).on('click', '.ghuranti', function(){
-        $('.themeqx-demo-chooser-wrap').toggleClass('open');
-    });
-</script>
+  // Remove jQuery dependency for this small toggle
+  document.addEventListener('click', function(e){
+    if (e.target.closest('.ghuranti')) {
+      var el = document.querySelector('.themeqx-demo-chooser-wrap');
+      if (el) el.classList.toggle('open');
+    }
+  });
+  </script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- before </body> -->
 <script src="https://cdn.jsdelivr.net/npm/intro.js/minified/intro.min.js"></script>
