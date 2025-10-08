@@ -77,8 +77,8 @@
 </head>
 <body>
     <div class="header">
-        <h2>💬 New Message Received!</h2>
-        <p>A customer has sent you a message</p>
+        <h2>New Message Received!</h2>
+        <p>You have a new message</p>
     </div>
 
     <div class="content">
@@ -117,7 +117,7 @@
         </ul>
 
         <div style="text-align: center; margin: 20px 0;">
-            <a href="{{ route('seller.messages.show', $messageModel->id) }}" class="btn">
+             <a href="{{ $messageUrl ?? route('notifications.index') }}" class="btn">
                 View Message Details
             </a>
             @if($product)
@@ -136,3 +136,6 @@
     </div>
 </body>
 </html> 
+
+
+

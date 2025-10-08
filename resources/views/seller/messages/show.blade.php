@@ -60,7 +60,8 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             @if($product->media && $product->media->count() > 0)
-                                <img src="{{ $product->media->first()->getUrl() }}" alt="{{ $product->name }}" 
+                                @php($thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null))
+                                <img src="{{ $thumb }}" alt="{{ $product->name }}" 
                                      class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
                             @else
                                 <div class="bg-light rounded d-flex align-items-center justify-content-center me-3" 

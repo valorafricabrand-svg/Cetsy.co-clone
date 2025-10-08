@@ -13,6 +13,8 @@
       /* Thumb container background + media fit */
       .product-thumb { background: #f1f3f5; }
       .product-thumb img, .product-thumb video { object-fit: contain; }
+      .badge-video { position:absolute; top:.4rem; left:.4rem; background:rgba(0,0,0,.7); color:#fff; font-size:.72rem; border-radius:.5rem; padding:.15rem .4rem; display:inline-flex; align-items:center; gap:.25rem; }
+      .badge-video i{ font-size:.7rem; }
           .product-card { display:flex; }
       .product-card .card-body { display:flex; flex-direction:column; }
       .product-card .title-clamp { display:-webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow:hidden; }
@@ -50,37 +52,38 @@
   <div class="ratio ratio-1x1 rounded-top overflow-hidden product-thumb">
     
 @php
-      // If featured_image is a full URL use it; otherwise assume it's a storage path
-      $thumb = null;
-      $mediaType = 'image';
+      // Build a safe thumbnail: prefer featured image, else first image media, else shop logo/placeholder.
+      $thumb = null; $mediaType = 'image';
       if (!empty($item->featured_image)) {
-          $thumb = str_starts_with($item->featured_image, 'http')
-                  ? $item->featured_image
-                  : asset('storage/' . ltrim($item->featured_image, '/'));
+        $thumb = str_starts_with($item->featured_image, 'http')
+                ? $item->featured_image
+                : asset('storage/' . ltrim($item->featured_image, '/'));
       } else {
-          $firstMedia = $item->media->first();
-          if ($firstMedia) {
-              $thumb = asset('storage/' . ltrim($firstMedia->url, '/'));
-              $mediaType = $firstMedia->type ?? 'image';
-          } else {
-              $shopLogo = ($item->shop && $item->shop->logo)
-                          ? asset('storage/' . ltrim($item->shop->logo, '/'))
-                          : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
-              $thumb = $shopLogo;
-              $mediaType = 'image';
-          }
+        $firstImage = $item->relationLoaded('media') ? $item->media->firstWhere('type','image') : optional($item->media)->firstWhere('type','image');
+        if ($firstImage && !empty($firstImage->url)) {
+          $thumb = asset('storage/' . ltrim($firstImage->url, '/'));
+          $mediaType = 'image';
+        } else {
+          // No image in media; avoid using video files as <img> sources in listings
+          $shopLogo = ($item->shop && $item->shop->logo)
+                      ? asset('storage/' . ltrim($item->shop->logo, '/'))
+                      : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
+          $thumb = $shopLogo;
+          $mediaType = 'image';
+        }
       }
+      // Mark if product has any video media (to show a badge)
+      $hasVideo = $item->relationLoaded('media') ? (bool) optional($item->media)->firstWhere('type','video') : (bool) optional($item->media)->firstWhere('type','video');
     @endphp
 
-    @if($mediaType === 'video')
-      <video src="{{ $thumb }}" class="w-100 h-100" controls preload="none"></video>
-    @else
-      <img src="{{ $thumb }}"
-           alt="{{ $item->name }}"
-           class="img-fluid w-100 h-100"
-           loading="lazy" decoding="async"
-          >
+    @if($hasVideo)
+      <span class="badge-video"><i class="fas fa-play"></i> Video</span>
     @endif
+
+    <img src="{{ $thumb }}"
+         alt="{{ $item->name }}"
+         class="img-fluid w-100 h-100"
+         loading="lazy" decoding="async">
   </div>
 
   <div class="card-body p-2 d-flex flex-column">

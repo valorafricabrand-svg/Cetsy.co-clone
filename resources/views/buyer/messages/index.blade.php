@@ -40,7 +40,7 @@
                     </div>
                 </div>
 
-                @if($conversations->isEmpty())
+                    @if($conversations->isEmpty())
                     <div class="alert alert-info text-center py-5">
                         <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png" alt="No messages" style="width:80px;opacity:0.5;">
                         <div class="mt-3">You have no conversations yet.</div>
@@ -74,7 +74,19 @@
                                         </div>
                                         
                                         @if($conversation['product'])
-                                            <div class="mb-2">
+                                            @php
+                                                $thumb = function_exists('product_thumb_url')
+                                                    ? product_thumb_url($conversation['product'])
+                                                    : (optional(optional($conversation['product'])->media->first())->url ? asset('storage/' . $conversation['product']->media->first()->url) : null);
+                                            @endphp
+                                            <div class="mb-2 d-flex align-items-center">
+                                                @if($thumb)
+                                                    <img src="{{ $thumb }}" alt="{{ $conversation['product']->name }}" class="rounded me-2" style="width:36px;height:36px;object-fit:cover;">
+                                                @else
+                                                    <div class="bg-light border rounded me-2 d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
+                                                        <i class="bi bi-box text-secondary"></i>
+                                                    </div>
+                                                @endif
                                                 <span class="badge rounded-pill bg-primary text-white px-3 py-2 product-badge" style="font-size:0.85rem;max-width: 100%;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;cursor: pointer;" title="{{ $conversation['product']->name }}">
                                                     {{ \Illuminate\Support\Str::limit($conversation['product']->name, 30) }}
                                                 </span>

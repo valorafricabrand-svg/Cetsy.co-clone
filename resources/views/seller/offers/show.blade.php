@@ -96,9 +96,10 @@
                                     <dt class="col-sm-4">Product</dt>
                                     <dd class="col-sm-8">
                                         <div class="d-flex align-items-center gap-2">
-                                            @if($offer->product && $offer->product->media->first())
-                                                <img src="{{ asset('storage/' . $offer->product->media->first()->file_path) }}" 
-                                                     alt="Product" class="rounded" style="width:40px;height:40px;object-fit:cover;">
+                                            @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($offer->product) : (optional($offer->product->media->first())->url ? asset('storage/' . $offer->product->media->first()->url) : null); @endphp
+                                            @if($thumb)
+                                                <img src="{{ $thumb }}" 
+                                                     alt="{{ $offer->product->name }}" class="rounded" style="width:40px;height:40px;object-fit:cover;">
                                             @else
                                                 <div class="bg-light border rounded d-flex align-items-center justify-content-center" 
                                                      style="width:40px;height:40px;">
@@ -230,9 +231,10 @@
                     <div class="card-body">
                         @if($offer->product)
                             <div class="d-flex align-items-center gap-3 mb-3">
-                                @if($offer->product->media->first())
-                                    <img src="{{ asset('storage/' . $offer->product->media->first()->file_path) }}" 
-                                         alt="Product" class="rounded" style="width:60px;height:60px;object-fit:cover;">
+                                @php $thumb2 = function_exists('product_thumb_url') ? product_thumb_url($offer->product) : (optional($offer->product->media->first())->url ? asset('storage/' . $offer->product->media->first()->url) : null); @endphp
+                                @if($thumb2)
+                                    <img src="{{ $thumb2 }}" 
+                                         alt="{{ $offer->product->name }}" class="rounded" style="width:60px;height:60px;object-fit:cover;">
                                 @else
                                     <div class="bg-light border rounded d-flex align-items-center justify-content-center" 
                                          style="width:60px;height:60px;">

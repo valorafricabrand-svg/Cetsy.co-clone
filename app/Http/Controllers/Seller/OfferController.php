@@ -179,7 +179,7 @@ class OfferController extends Controller
 
             $message = 'Offer accepted successfully. Order #' . $order->id . ' has been created. ';
             // Provide a quick Pay Now link you can share with the buyer
-            $payUrl = route('pay_now', $order->total_amount);
+            $payUrl = route('pay_now', $order->id);
             $message .= 'Share this Pay Now link with the buyer: ' . $payUrl . '.';
             if ($emailSent) {
                 $message .= ' The buyer has been notified via email.';
