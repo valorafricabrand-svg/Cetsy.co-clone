@@ -112,27 +112,32 @@
                 @endif
             </div>
 
-            <div class="mt-auto d-flex flex-wrap gap-2">
+            <div class="mt-auto d-flex flex-wrap align-items-center gap-2">
                 <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary btn-sm">
                     <i class="fas fa-eye me-1"></i> View
                 </a>
 
-                <form action="{{ route('products.duplicate', $product) }}" method="POST" class="d-inline">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-success btn-sm">
-                        <i class="fas fa-copy me-1"></i> Duplicate
+                <div class="dropdown ms-auto">
+                    <button class="btn btn-light btn-sm border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More actions">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
-                </form>
-
-                @if ($hasVariants)
-                    <a href="{{ route('products.variations', $product) }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fa-solid fa-layer-group me-1"></i> Manage Variations
-                    </a>
-                @else
-                    <a href="{{ route('products.variations', $product) }}" class="btn btn-success btn-sm">
-                        <i class="fa-solid fa-plus me-1"></i> Add Variations
-                    </a>
-                @endif
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <form action="{{ route('products.duplicate', $product) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="dropdown-item">
+                                    <i class="fas fa-copy me-2"></i> Duplicate
+                                </button>
+                            </form>
+                        </li>
+                        <li>
+                            <a href="{{ route('products.variations', $product) }}" class="dropdown-item">
+                                <i class="fa-solid fa-layer-group me-2"></i>
+                                {{ $hasVariants ? 'Manage Variations' : 'Add Variations' }}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
