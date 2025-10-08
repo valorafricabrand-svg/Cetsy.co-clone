@@ -31,7 +31,7 @@
         'Listings' => [
             ['route'=>'products.index','icon'=>'fas fa-box-open','label'=>'My Listings'],
             ['route'=>'seller.deals.index','icon'=>'fas fa-percent','label'=>'Deals'],
-            ['route'=>'seller.shipping_profiles.index','icon'=>'fas fa-truck','label'=>'Shipping'],
+            // Shipping profiles removed from side menu per request
         ],
         'Sales' => [
             ['route'=>'seller.orders.index','icon'=>'fas fa-shopping-cart','label'=>'Shop Orders'],
