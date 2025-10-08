@@ -517,6 +517,9 @@ public function storeOrder(Request $request)
                 ->with('error', 'No new orders to display.');
         }
 
+        // Clear the flag so UI "New Orders" prompts disappear after viewing
+        $request->session()->forget('created_order_ids');
+
         return view('account.orders_created', compact('orders'));
     }
 
