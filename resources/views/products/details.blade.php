@@ -145,9 +145,10 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
+@php($__ALL_CATS = \App\Models\Category::select('id','name','listing_type')->orderBy('name')->get(['id','name','listing_type']))
 <script>
 // Local cache of categories for robust fallback when API fails/redirects
-window.__ALL_CATEGORIES__ = @json(\App\Models\Category::select('id','name','listing_type','name')->orderBy('name')->get(['id','name','listing_type']));
+window.__ALL_CATEGORIES__ = @json($__ALL_CATS);
 function detailsForm(){
   return {
     type: '{{ old('type',$product->type) }}',
