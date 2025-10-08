@@ -73,7 +73,29 @@ class MessageReceivedMail extends Mailable
         if ($this->product) {
             $subject .= ' about "' . $this->product->name . '"';
         }
-        
+        // Compute deep link to the conversation for the receiver
+yes         try {
+            $productId = (int) ($this->messageModel->product_id ?? 0);
+            $otherId   = (int) $this->sender->id; // other participant is the sender
+            if ($productId > 0) {
+                $convId    = $productId . '-' . $otherId;
+                if (method_exists($this->receiver, 'isBuyer') && $this->receiver->isBuyer()) {
+                    $messageUrl = route('buyer.messages.show', $convId);
+                } else {
+                    $messageUrl = route('seller.messages.show', $convId);
+                }
+            } else {
+                // Fallback to the role's messages index when no product thread exists
+                if (method_exists($this->receiver, 'isBuyer') && $this->receiver->isBuyer()) {
+                    $messageUrl = route('buyer.messages.index');
+                } else {
+                    $messageUrl = route('seller.messages.index');
+                }
+            }
+        } catch (\Throwable $e) {
+            $messageUrl = route('notifications.index');
+        }
+
         return $this->subject($subject)
             ->view('emails.message_received')
             ->with([
@@ -81,6 +103,7 @@ class MessageReceivedMail extends Mailable
                 'product' => $this->product,
                 'sender' => $this->sender,
                 'receiver' => $this->receiver,
+                'messageUrl' => $messageUrl,
             ]);
     }
-} 
+}

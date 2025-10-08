@@ -98,8 +98,16 @@
                             <td class="text-center text-muted">{{ $conversation['latest_message']->id }}</td>
                             <td style="min-width:180px;max-width:220px;">
                                 <div class="d-flex align-items-center gap-2">
-                                    @if($conversation['product'] && $conversation['product']->media && $conversation['product']->media->count() > 0)
-                                        <img src="{{ $conversation['product']->media->first()->getUrl() }}" alt="Product" class="rounded me-2" style="width:38px;height:38px;object-fit:cover;">
+                                    @php
+                                        $thumb = null;
+                                        if (!empty($conversation['product'])) {
+                                            $thumb = function_exists('product_thumb_url')
+                                                ? product_thumb_url($conversation['product'])
+                                                : (optional(optional($conversation['product'])->media->first())->url ? asset('storage/' . $conversation['product']->media->first()->url) : null);
+                                        }
+                                    @endphp
+                                    @if($thumb)
+                                        <img src="{{ $thumb }}" alt="{{ $conversation['product']->name ?? 'Product' }}" class="rounded me-2" style="width:38px;height:38px;object-fit:cover;">
                                     @else
                                         <div class="bg-light border rounded me-2 d-flex align-items-center justify-content-center" style="width:38px;height:38px;">
                                             <i class="bi bi-box text-secondary"></i>

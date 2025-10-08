@@ -164,12 +164,23 @@
           @forelse ($products as $item)
             @php
               // --- Concept parity with product-card ---
-              $thumb = $item->featured_image
-                        ?? (isset($item->media) && $item->media->first()
-                              ? asset('storage/'.$item->media->first()->url)
-                              : (($item->shop && $item->shop->logo)
-                                    ? asset('storage/' . ltrim($item->shop->logo,'/'))
-                                    : (setting('favicon_url') ?: asset('storage/placeholder.jpg'))));
+              // Prefer a real image for thumbnails; skip video files
+              if (!empty($item->featured_image)) {
+                $thumb = str_starts_with($item->featured_image, 'http')
+                         ? $item->featured_image
+                         : asset('storage/'.ltrim($item->featured_image,'/'));
+              } else {
+                $firstImage = (isset($item->media) && method_exists($item->media, 'firstWhere'))
+                              ? $item->media->firstWhere('type','image')
+                              : null;
+                if ($firstImage && !empty($firstImage->url)) {
+                  $thumb = asset('storage/'.ltrim($firstImage->url,'/'));
+                } else {
+                  $thumb = ($item->shop && $item->shop->logo)
+                           ? asset('storage/'.ltrim($item->shop->logo,'/'))
+                           : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
+                }
+              }
               // Use the shop's overall rating on listings
               $shop = $item->shop ?? null;
               $avg  = round((float) ($shop?->reviews_avg_rating ?? ($shop ? $shop->reviews()->avg('rating') : 0)));
@@ -182,7 +193,11 @@
               <div class="row g-3 align-items-center">
                 <div class="col-4 col-md-3 col-lg-2">
                   <a href="{{ route('listing.show', $item->slug) }}" class="d-block rounded overflow-hidden">
-                    <div class="ratio ratio-1x1 bg-white">
+                    <div class="ratio ratio-1x1 bg-white position-relative">
+                      @php $hasVideo = (isset($item->media) && method_exists($item->media,'firstWhere') && $item->media->firstWhere('type','video')); @endphp
+                      @if($hasVideo)
+                        <span class="position-absolute top-0 start-0 m-2 px-2 py-1 rounded text-white" style="background:rgba(0,0,0,.7); font-size:.72rem;"><i class="fas fa-play me-1"></i>Video</span>
+                      @endif
                       <img src="{{ $thumb }}" alt="{{ $item->name }}" class="img-fluid w-100 h-100" loading="lazy" decoding="async" style="object-fit:cover;">
                     </div>
                   </a>
@@ -315,4 +330,3 @@
   </script>
   @endpush
 @endsection
-
