@@ -104,7 +104,7 @@ class MessageController extends Controller
             ->groupBy(function($message) use ($user) {
                 // Group by product and the other participant
                 $otherUserId = $message->sender_id == $user->id ? $message->receiver_id : $message->sender_id;
-                return $message->product_id . '-' . $otherUserId;
+                return (($message->product_id ?? 0)) . '-' . $otherUserId;
             })
             ->map(function($messages) use ($user) {
                 // Get the latest message and other participant info
@@ -120,7 +120,7 @@ class MessageController extends Controller
                     'product' => $latestMessage->product,
                     'unread_count' => $messages->where('receiver_id', $user->id)->where('is_read', false)->count(),
                     'total_messages' => $messages->count(),
-                    'conversation_id' => $latestMessage->product_id . '-' . $otherUserId
+                    'conversation_id' => (($latestMessage->product_id ?? 0)) . '-' . $otherUserId
                 ];
             })
             ->sortByDesc('latest_message.created_at');
@@ -163,7 +163,10 @@ class MessageController extends Controller
         $otherUserId = $parts[1];
         
         // Validate that the user is part of this conversation
-        $conversationExists = Message::where('product_id', $productId)
+        $conversationExists = Message::where(function($q) use ($productId){
+                if ((int)$productId === 0) { $q->whereNull('product_id'); }
+                else { $q->where('product_id', $productId); }
+            })
             ->where(function($query) use ($user, $otherUserId) {
                 $query->where(function($q) use ($user, $otherUserId) {
                     $q->where('sender_id', $user->id)->where('receiver_id', $otherUserId);
@@ -178,7 +181,10 @@ class MessageController extends Controller
         }
 
         // Get all messages for this conversation
-        $messages = Message::where('product_id', $productId)
+        $messages = Message::where(function($q) use ($productId){
+                if ((int)$productId === 0) { $q->whereNull('product_id'); }
+                else { $q->where('product_id', $productId); }
+            })
             ->where(function($query) use ($user, $otherUserId) {
                 $query->where(function($q) use ($user, $otherUserId) {
                     $q->where('sender_id', $user->id)->where('receiver_id', $otherUserId);
@@ -198,7 +204,7 @@ class MessageController extends Controller
         });
 
         $otherUser = User::find($otherUserId);
-        $product = Product::find($productId);
+        $product = (int)$productId === 0 ? null : Product::find($productId);
         $shop = $product && $product->shop ? $product->shop : ($otherUser ? $otherUser->shop : null);
 
         return view('buyer.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'shop'));

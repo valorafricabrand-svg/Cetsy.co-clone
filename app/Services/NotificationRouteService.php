@@ -55,15 +55,9 @@ class NotificationRouteService
             if ($notification && $notification->related_id) {
                 $msg = \App\Models\Message::find((int) $notification->related_id);
                 if ($msg) {
-                    // If the message isn't tied to a product, just go to the index for the role
-                    if (empty($msg->product_id)) {
-                        if ($user->isSeller()) { return route('seller.messages.index'); }
-                        if ($user->isAdmin()) { return route('admin.messages.index'); }
-                        return route('buyer.messages.index');
-                    }
-
                     $otherId = $user->id === $msg->sender_id ? $msg->receiver_id : $msg->sender_id;
-                    $convId  = (int) $msg->product_id . '-' . (int) $otherId;
+                    $pid = (int) ($msg->product_id ?? 0);
+                    $convId  = $pid . '-' . (int) $otherId;
                     if ($user->isSeller()) { return route('seller.messages.show', $convId); }
                     if ($user->isAdmin()) { return route('admin.messages.index'); }
                     return route('buyer.messages.show', $convId);

@@ -91,6 +91,13 @@
                                                     {{ \Illuminate\Support\Str::limit($conversation['product']->name, 30) }}
                                                 </span>
                                             </div>
+                                        @else
+                                            <div class="mb-2 d-flex align-items-center">
+                                                <div class="bg-light border rounded me-2 d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
+                                                    <i class="bi bi-chat-dots text-secondary"></i>
+                                                </div>
+                                                <span class="badge rounded-pill bg-secondary-subtle text-dark border px-3 py-2">Direct Message</span>
+                                            </div>
                                         @endif
                                         
                                         <div class="flex-grow-1 mb-2">

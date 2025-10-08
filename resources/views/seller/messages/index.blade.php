@@ -109,16 +109,27 @@
                                     @if($thumb)
                                         <img src="{{ $thumb }}" alt="{{ $conversation['product']->name ?? 'Product' }}" class="rounded me-2" style="width:38px;height:38px;object-fit:cover;">
                                     @else
-                                        <div class="bg-light border rounded me-2 d-flex align-items-center justify-content-center" style="width:38px;height:38px;">
-                                            <i class="bi bi-box text-secondary"></i>
-                                        </div>
+                                        @if($conversation['product'])
+                                            <div class="bg-light border rounded me-2 d-flex align-items-center justify-content-center" style="width:38px;height:38px;">
+                                                <i class="bi bi-box text-secondary"></i>
+                                            </div>
+                                        @else
+                                            <div class="bg-light border rounded me-2 d-flex align-items-center justify-content-center" style="width:38px;height:38px;">
+                                                <i class="bi bi-chat-dots text-secondary"></i>
+                                            </div>
+                                        @endif
                                     @endif
                                     <div class="flex-grow-1">
-                                        <span class="fw-semibold text-dark text-truncate d-block product-name" style="max-width:120px;" title="{{ $conversation['product']->name ?? '-' }}">
-                                            {!! \Illuminate\Support\Str::limit($conversation['product']->name ?? '-', 22) !!}
-                                        </span>
-                                        <span class="badge bg-light text-muted border small">#{{ $conversation['product']->id ?? '-' }}</span>
-                                        <a href="?product={{ $conversation['product']->id ?? '' }}" class="btn btn-link btn-xs p-0 ms-1 small">All for this product</a>
+                                        @if($conversation['product'])
+                                            <span class="fw-semibold text-dark text-truncate d-block product-name" style="max-width:120px;" title="{{ $conversation['product']->name ?? '-' }}">
+                                                {!! \Illuminate\Support\Str::limit($conversation['product']->name ?? '-', 22) !!}
+                                            </span>
+                                            <span class="badge bg-light text-muted border small">#{{ $conversation['product']->id ?? '-' }}</span>
+                                            <a href="?product={{ $conversation['product']->id ?? '' }}" class="btn btn-link btn-xs p-0 ms-1 small">All for this product</a>
+                                        @else
+                                            <span class="badge bg-secondary-subtle text-dark border small">Direct Message</span>
+                                            <div class="small text-muted">No specific product</div>
+                                        @endif
                                     </div>
                                 </div>
                             </td>

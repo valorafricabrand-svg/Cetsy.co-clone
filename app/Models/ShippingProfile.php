@@ -181,10 +181,10 @@ class ShippingProfile extends Model
     /** Human label for destination */
     public function getDestinationLabelAttribute(): string
     {
-        if ($this->dest_location_type === self::DEST_EVERYWHERE_ELSE) {
-            return 'Everywhere else';
+        if (($this->dest_location_type ?? null) === self::DEST_EVERYWHERE_ELSE) {
+            return 'Everywhere';
         }
-        return optional($this->destCountry)->name ?? 'Country';
+        return optional($this->destCountry)->name ?? '—';
     }
 
 
