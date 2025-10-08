@@ -177,7 +177,7 @@ function detailsForm(){
           if(String(c.id)===String(this.categoryId)) o.selected=true;
           sel.append(o);
         });
-      }catch(e){ console.error('Categories load error:', e); this.fallback=false; sel.innerHTML = '<option>Error loading categories</option>'; }
+      }catch(e){ console.warn('Categories load warning:', e); this.fallback=false; sel.innerHTML = '<option>Error loading categories</option>'; }
     }
   }
 }
