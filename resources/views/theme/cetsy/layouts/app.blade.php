@@ -458,6 +458,12 @@
                   <i class="fas fa-box"></i>
                   <span>Orders</span>
                 </a>
+                @if(!$isSeller && session()->has('created_order_ids'))
+                <a href="{{ route('buyer.orders.created') }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                  <i class="fas fa-star"></i>
+                  <span>New Orders</span>
+                </a>
+                @endif
                 <a href="{{ $isSeller ? route('seller.messages.index') : route('buyer.messages.index') }}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
                   <span class="d-inline-flex align-items-center gap-2"><i class="fas fa-comments"></i> Messages</span>
                   @if($msgCount>0)<span class="badge bg-danger rounded-pill">{{ $msgCount }}</span>@endif
