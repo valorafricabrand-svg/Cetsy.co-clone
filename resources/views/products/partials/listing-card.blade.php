@@ -52,6 +52,9 @@
          tabindex="0"
          aria-label="Open {{ $product->name }} details">
         <span class="badge bg-{{ $statusClass }} text-white position-absolute top-0 start-0 m-2">{{ $statusLabel }}</span>
+        @if(((int)($product->is_active ?? 0) === 1) && empty($product->featured_image))
+            <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2" title="This published listing has no featured image">No Featured Image</span>
+        @endif
 
         @if ($thumb)
             @if ($mediaType === 'video')

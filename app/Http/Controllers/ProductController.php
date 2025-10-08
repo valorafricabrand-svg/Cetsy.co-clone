@@ -134,6 +134,13 @@ class ProductController extends Controller
             }
         }
 
+        // Optional filter: show listings missing featured image (cleanup helper)
+        if ($request->boolean('no_featured')) {
+            $query->where(function($q){
+                $q->whereNull('featured_image')->orWhere('featured_image','');
+            });
+        }
+
         $minPrice = $request->filled('price_min') ? (float) $request->input('price_min') : null;
         $maxPrice = $request->filled('price_max') ? (float) $request->input('price_max') : null;
 
@@ -177,7 +184,7 @@ class ProductController extends Controller
         $products = $query
             ->latest()
             ->paginate(12)
-            ->appends($request->only(['q','status','price_min','price_max','type','country_id']));
+            ->appends($request->only(['q','status','price_min','price_max','type','country_id','no_featured']));
 
         $groupedProducts = $products->getCollection()
             ->groupBy(function ($product) {
@@ -204,6 +211,12 @@ class ProductController extends Controller
             'closed' => $closedCount,
         ];
 
+        // Count of active listings missing featured image (for banner reminder)
+        $missingFeaturedActive = Product::where('shop_id', $shopId)
+            ->where('is_active', 1)
+            ->where(function($q){ $q->whereNull('featured_image')->orWhere('featured_image',''); })
+            ->count();
+
         $countryIds = Product::where('shop_id', $shopId)
             ->whereNotNull('country_id')
             ->distinct()
@@ -224,7 +237,8 @@ class ProductController extends Controller
             'groupedProducts',
             'availableCountries',
             'filters',
-            'resetParams'
+            'resetParams',
+            'missingFeaturedActive'
         ));
     }
 
@@ -1058,10 +1072,16 @@ public function changeStatus(Request $request, Product $product)
         'status' => ['required','in:1,2'],
     ]);
 
+    // Require featured image before publishing new/paused listings
+    if ($data['status'] == 1 && empty($product->featured_image)) {
+        return back()
+            ->with('warning', 'Add a featured image before publishing this listing.');
+    }
+
     // If trying to publish (1) but next_due_date is past, block:
     if ($data['status']==1 && Carbon::now()->gt($product->next_due_date)) {
         return back()
-             ->with('warning', 'Your listing has expired — please renew before publishing.');
+             ->with('warning', 'Your listing has expired – please renew before publishing.');
     }
 
     $product->update(['is_active' => $data['status']]);
