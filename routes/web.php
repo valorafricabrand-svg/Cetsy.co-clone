@@ -421,7 +421,8 @@ Route::middleware(['auth','verified'])->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
-    Route::resource('wallets', AdminWalletController::class)->except(['create', 'store']);
+    // Admin Wallets: enable create/store so admins can top up sellers
+    Route::resource('wallets', AdminWalletController::class);
     Route::delete('wallets/bulk', [AdminWalletController::class, 'bulk'])->name('wallets.bulk');
     Route::patch('kyc/bulk', [KycController::class, 'bulk'])->name('kyc.bulk');
 

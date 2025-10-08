@@ -3,12 +3,56 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\WalletDepositSuccessMail;
+use App\Models\Activity;
+use App\Models\User;
 use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class AdminWalletController extends Controller
 {
+    /**
+     * Compute current running balance for a user from the latest row,
+     * falling back to a SUM if needed.
+     */
+    private function currentBalance(int $userId): float
+    {
+        $last = Wallet::where('user_id', $userId)->latest('id')->value('balance');
+        if ($last !== null) return (float) $last;
+        return (float) (Wallet::where('user_id', $userId)
+            ->selectRaw('COALESCE(SUM(credit - debit),0) as bal')
+            ->value('bal') ?? 0);
+    }
+
+    /**
+     * Append a wallet row for the given user with running balance update.
+     */
+    private function appendWalletRow(int $userId, float $credit, float $debit, array $overrides = []): Wallet
+    {
+        return DB::transaction(function () use ($userId, $credit, $debit, $overrides) {
+            $prev = $this->currentBalance($userId);
+            $newBalance = $prev + $credit - $debit;
+
+            $data = array_merge([
+                'user_id'     => $userId,
+                'credit'      => $credit,
+                'debit'       => $debit,
+                'balance'     => $newBalance,
+                'reference'   => strtoupper(uniqid('TXN-')),
+                'method'      => $overrides['method'] ?? 'wallet',
+                'description' => $overrides['description'] ?? null,
+                'status'      => $overrides['status'] ?? 'completed',
+                'external_id' => $overrides['external_id'] ?? null,
+                'meta'        => $overrides['meta'] ?? null,
+            ], $overrides);
+
+            return Wallet::create($data);
+        });
+    }
    
 
     /**
@@ -130,5 +174,80 @@ public function index(Request $request)
         });
 
         return back()->with('success', 'Selected wallet rows deleted: '.count($ids));
+    }
+
+    /**
+     * Show admin top-up form.
+     */
+    public function create(Request $request)
+    {
+        $prefill = [
+            'user'        => $request->query('user'),
+            'user_id'     => $request->query('user_id'),
+            'email'       => $request->query('email'),
+            'amount'      => $request->query('amount'),
+            'description' => $request->query('description'),
+        ];
+        return view('admin.wallets.create', compact('prefill'));
+    }
+
+    /**
+     * Persist an admin wallet top-up to a seller's wallet.
+     */
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'seller'       => 'required|string|max:191', // ID or email
+            'amount'       => 'required|numeric|min:0.01',
+            'description'  => 'nullable|string|max:1000',
+        ]);
+
+        // Resolve seller by ID or email
+        $seller = null;
+        $raw = trim($data['seller']);
+        if (ctype_digit($raw)) {
+            $seller = User::find((int) $raw);
+        }
+        if (!$seller && filter_var($raw, FILTER_VALIDATE_EMAIL)) {
+            $seller = User::where('email', $raw)->first();
+        }
+        if (!$seller) {
+            return back()->withInput()->with('error', 'Seller not found. Enter a valid seller ID or email.');
+        }
+        if (!method_exists($seller, 'isSeller') || !$seller->isSeller()) {
+            return back()->withInput()->with('error', 'Selected user is not a seller.');
+        }
+
+        // Create credit row with running balance
+        $amount = (float) $data['amount'];
+        $desc = $data['description'] ?: 'Admin top-up';
+
+        $row = $this->appendWalletRow($seller->id, $amount, 0.0, [
+            'method'      => 'admin_topup',
+            'description' => $desc,
+            'status'      => 'completed',
+        ]);
+
+        // Activity + email (best-effort)
+        try {
+            Activity::create([
+                'user_id'     => $seller->id,
+                'is_read'     => false,
+                'description' => 'Your wallet was topped up by admin: $' . number_format($amount, 2),
+                'type'        => Activity::TYPE_WALLET,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('admin.wallet.topup.activity_failed', ['seller_id' => $seller->id, 'error' => $e->getMessage()]);
+        }
+        try {
+            if ($seller->email) {
+                Mail::to($seller->email)->send(new WalletDepositSuccessMail($seller, $row, $amount, $row->reference));
+            }
+        } catch (\Throwable $e) {
+            Log::warning('admin.wallet.topup.mail_failed', ['seller_id' => $seller->id, 'error' => $e->getMessage()]);
+        }
+
+        return redirect()->route('admin.wallets.index')
+            ->with('success', 'Wallet topped up successfully for seller #' . $seller->id . '.');
     }
 }
