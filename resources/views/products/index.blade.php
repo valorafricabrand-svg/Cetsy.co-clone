@@ -21,6 +21,20 @@
         </div>
     @endif
 
+    {{-- Reminder: active listings without featured image --}}
+    @if(!empty($missingFeaturedActive) && (int)$missingFeaturedActive > 0)
+        <div class="alert alert-warning alert-dismissible fade show rounded-3" role="alert">
+            <div class="d-flex align-items-start gap-2">
+                <i class="fas fa-image mt-1"></i>
+                <div>
+                    <strong>Action recommended:</strong> You have {{ (int)$missingFeaturedActive }} published listing(s) without a featured image.
+                    <a class="alert-link" href="{{ route('products.index', array_merge(request()->except('page'), ['status'=>1,'no_featured'=>1])) }}">Review them here</a> and add a featured image.
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     {{-- Status‐counts bar --}}
     <div class="mb-4">
         @php
@@ -66,6 +80,7 @@
       <div class="card-body row g-3 align-items-end">
         <input type="hidden" name="q" value="{{ request('q') }}">
         <input type="hidden" name="status" value="{{ request('status') }}">
+        <input type="hidden" name="no_featured" value="{{ request('no_featured') }}">
 
         <div class="col-12 col-md-6 col-xl-4">
           <label class="form-label">Min Price</label>
