@@ -80,6 +80,7 @@
               <option value="">Choose category</option>
               {{-- filled by Alpine --}}
             </select>
+            <div x-show="fallback" class="form-text text-warning">Showing all categories (fallback). Ask admin to tag categories by type.</div>
             @error('category_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
@@ -149,6 +150,7 @@ function detailsForm(){
   return {
     type: '{{ old('type',$product->type) }}',
     categoryId: '{{ old('category_id',$product->category_id) }}',
+    fallback: false,
     init(){ this.loadCategories(); },
     async loadCategories(){
       const sel = document.getElementById('category_id');
@@ -161,6 +163,7 @@ function detailsForm(){
         if(!res.ok) throw new Error(`HTTP ${res.status}`);
         let cats;
         const ct = res.headers.get('content-type') || '';
+        this.fallback = (res.headers.get('x-categories-fallback') === '1');
         if (ct.includes('application/json')) {
           cats = await res.json();
         } else {
@@ -174,7 +177,7 @@ function detailsForm(){
           if(String(c.id)===String(this.categoryId)) o.selected=true;
           sel.append(o);
         });
-      }catch(e){ console.error('Categories load error:', e); sel.innerHTML = '<option>Error loading categories</option>'; }
+      }catch(e){ console.error('Categories load error:', e); this.fallback=false; sel.innerHTML = '<option>Error loading categories</option>'; }
     }
   }
 }
