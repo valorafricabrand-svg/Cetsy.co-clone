@@ -71,10 +71,9 @@
         </table>
         </div>
 
-        {{ $profiles->links() }}
+        {{ $profiles->onEachSide(1)->links('pagination::bootstrap-5') }}
     @else
         <p>No shipping profiles found. <a href="{{ route('seller.shipping_profiles.create') }}">Create one now.</a></p>
     @endif
 </div>
 @endsection
-
