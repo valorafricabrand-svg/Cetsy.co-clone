@@ -74,7 +74,9 @@
           </a>
         @else
           @php
-            $buyerOrdersUrl = Rt::has('account.orders') ? route('account.orders') : (Rt::has('orders.index') ? route('orders.index') : url('/buyer/orders'));
+            $buyerOrdersUrl = session()->has('created_order_ids') && Rt::has('buyer.orders.created')
+              ? route('buyer.orders.created')
+              : (Rt::has('account.orders') ? route('account.orders') : (Rt::has('orders.index') ? route('orders.index') : url('/buyer/orders')));
           @endphp
           <a href="{{ $buyerOrdersUrl }}" class="nav-link mobile-bottom-nav__item {{ $isOrders ? 'active' : '' }}" aria-current="{{ $isOrders ? 'page' : 'false' }}">
             <i class="fa-solid fa-box"></i>

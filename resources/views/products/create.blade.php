@@ -52,7 +52,7 @@
         <select name="type" id="type"
                 class="form-select @error('type') is-invalid @enderror"
                 x-model="type"
-                @change="loadCategories"
+                @change="loadCategories()"
                 required>
           <option value="">Select type</option>
           <option value="physical" @selected(old('type')=='physical')>Physical</option>
@@ -77,6 +77,9 @@
           </template>
         </select>
         <div x-show="loading" class="form-text text-muted">Loading categories…</div>
+        <div x-show="fallback && !loading" class="form-text text-warning">
+          Showing all categories. Ask admin to tag categories by listing type for better filtering.
+        </div>
         @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
       </div>
 
@@ -176,6 +179,8 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <script>
+  // Local cache of categories (id, name, listing_type) as a robust fallback
+  window.__ALL_CATEGORIES__ = @json(\App\Models\Category::select('id','name','listing_type')->orderBy('name')->get());
 
 
   function listingForm() {
@@ -184,21 +189,43 @@
       categoryId: '{{ old('category_id','') }}',
       categories: [],
       loading: false,
+      fallback: false,
       variations: [], variationType:'', variationOption:'',
       previews: [], idCounter:0, sortable:null,
 
+      filterLocalByType(tp){
+        const map = { physical: 'products', service: 'services', digital: 'digital' };
+        const want = map[String(tp) || ''] || null;
+        if (!want) return [];
+        const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : [];
+        return all.filter(c => (c.listing_type || '').toLowerCase() === want);
+      },
       async loadCategories() {
         this.categories = [];
         this.categoryId = '';
         if (! this.type) return;
         this.loading = true;
         try {
-          const res = await fetch(`/api/categories/by-type/${encodeURIComponent(this.type)}`);
-          if (! res.ok) throw new Error('Fetch failed');
-          this.categories = await res.json();
+          const url = `/api/categories/by-type/${encodeURIComponent(this.type)}?_=${Date.now()}`;
+          const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+          if (!res.ok) throw new Error(`Fetch failed (${res.status})`);
+          let data;
+          const ct = res.headers.get('content-type') || '';
+          this.fallback = (res.headers.get('x-categories-fallback') === '1');
+          if (ct.includes('application/json')) {
+            data = await res.json();
+          } else {
+            const text = await res.text();
+            try { data = JSON.parse(text); } catch { console.warn('Non-JSON response from categories API:', text.slice(0, 200)); data = []; }
+          }
+          this.categories = Array.isArray(data) ? data : [];
+          if (this.fallback || this.categories.length === 0) {
+            this.categories = this.filterLocalByType(this.type);
+          }
         } catch (e) {
-          console.error(e);
-          this.categories = [];
+          console.warn('Categories load warning:', e);
+          this.categories = this.filterLocalByType(this.type);
+          this.fallback = false;
         } finally {
           this.loading = false;
           if ('{{ old('type') }}' === this.type && '{{ old('category_id') }}') {
@@ -244,6 +271,9 @@
     <!-- Include TinyMCE from the local directory -->
     <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
 <script>
+if (document.compatMode !== 'CSS1Compat') {
+  console.warn('TinyMCE disabled: document not in standards mode');
+} else {
 tinymce.init({
   selector: '#description',
   height: 400,
@@ -298,5 +328,6 @@ tinymce.init({
     editor.on('change', () => editor.save());
   }
 });
+}
 </script>
 @endpush

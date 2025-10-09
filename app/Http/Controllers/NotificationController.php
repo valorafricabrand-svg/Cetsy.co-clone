@@ -49,4 +49,36 @@ class NotificationController extends Controller
 
         return redirect()->back()->with('success', 'All notifications marked as read.');
     }
+
+    /**
+     * Lightweight unread counters for navbar badges (AJAX JSON).
+     */
+    public function counts()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['notif' => 0, 'msg' => 0]);
+        }
+
+        // Notifications (Activity) — admins also see global (user_id null) entries
+        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+            $notif = Activity::where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)->orWhereNull('user_id');
+            })->where('is_read', false)->count();
+        } else {
+            $notif = Activity::where('user_id', $user->id)->where('is_read', false)->count();
+        }
+
+        // Messages (unread as receiver)
+        try {
+            $msg = \App\Models\Message::where('receiver_id', $user->id)->where('is_read', false)->count();
+        } catch (\Throwable $e) {
+            $msg = 0;
+        }
+
+        return response()->json([
+            'notif' => (int) $notif,
+            'msg'   => (int) $msg,
+        ]);
+    }
 }

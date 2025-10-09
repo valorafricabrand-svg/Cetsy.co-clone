@@ -12,7 +12,13 @@
   </li>
   <li class="nav-item" role="presentation">
     <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-pane" type="button">
-      Reviews ({{ $product->reviews_count ?? 0 }})
+      @php
+        $shopReviewsCount = (int) optional($product->shop)->reviews_count ?? 0;
+        if (!$shopReviewsCount && $product->relationLoaded('shop') && $product->shop) {
+            try { $shopReviewsCount = $product->shop->reviews()->count(); } catch (\Throwable $e) { $shopReviewsCount = 0; }
+        }
+      @endphp
+      Reviews ({{ $shopReviewsCount }})
     </button>
   </li>
   <li class="nav-item" role="presentation">

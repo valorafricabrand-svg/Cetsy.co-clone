@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
         <h2 class="mb-0 text-success">
             <i class="fa-solid fa-cart-shopping me-2"></i>
-            Orders for {{ $user->name }}
+            Orders for {{ $shop->name ?? $user->name }}
         </h2>
         
         @if($disputeCount > 0 || $appealCount > 0)
@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
                             if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
                         }
-                        $placedAt = optional($order->created_at);
+                        $placedAt = $order->created_at instanceof \Carbon\Carbon ? $order->created_at : ($order->created_at ? \Carbon\Carbon::parse($order->created_at) : null);
                         $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
                         $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
                         $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
@@ -493,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="text-muted small">{{ optional($order->created_at)->format('d M Y') }}</div>
                         </div>
                         <div class="mb-2">
-                            <div class="small text-muted">Customer</div>
+                            <div class="small text-muted">Buyer</div>
                             <div class="text-truncate">{{ $order->full_name }}</div>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -554,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <thead class="table-light text-nowrap">
                             <tr>
                                 <th>#</th>
-                                <th>Customer</th>
+                                <th>Buyer</th>
                                 <th>Phone</th>
                                 <th class="text-center">Qty</th>
                                 <th class="text-end">Amount</th>
@@ -596,7 +596,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
                                                 if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
                                             }
-                                            $placedAt = optional($order->created_at);
+                                            $placedAt = $order->created_at instanceof \Carbon\Carbon ? $order->created_at : ($order->created_at ? \Carbon\Carbon::parse($order->created_at) : null);
                                             $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
                                             $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
                                             $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);

@@ -16,7 +16,7 @@ class NotificationRouteService
         
         switch ($type) {
             case Activity::TYPE_MESSAGE:
-                return self::getMessageRoute($user);
+                return self::getMessageRoute($user, $notification);
             case Activity::TYPE_WISHLIST:
                 return self::getWishlistRoute($notification, $user);
                 
@@ -49,15 +49,24 @@ class NotificationRouteService
     /**
      * Get message route based on user role
      */
-    private static function getMessageRoute(User $user): string
+    private static function getMessageRoute(User $user, ?Activity $notification = null): string
     {
-        if ($user->isSeller()) {
-            return route('seller.messages.index');
-        } elseif ($user->isAdmin()) {
-            return route('admin.messages.index'); 
-        } else {
-            return route('buyer.messages.index');
-        }
+        try {
+            if ($notification && $notification->related_id) {
+                $msg = \App\Models\Message::find((int) $notification->related_id);
+                if ($msg) {
+                    $otherId = $user->id === $msg->sender_id ? $msg->receiver_id : $msg->sender_id;
+                    $pid = (int) ($msg->product_id ?? 0);
+                    $convId  = $pid . '-' . (int) $otherId;
+                    if ($user->isSeller()) { return route('seller.messages.show', $convId); }
+                    if ($user->isAdmin()) { return route('admin.messages.index'); }
+                    return route('buyer.messages.show', $convId);
+                }
+            }
+        } catch (\Throwable $e) {}
+        if ($user->isSeller()) { return route('seller.messages.index'); }
+        if ($user->isAdmin()) { return route('admin.messages.index'); }
+        return route('buyer.messages.index');
     }
 
     private static function getWishlistRoute(Activity $notification, User $user): string

@@ -47,6 +47,15 @@ class OfferController extends Controller
             ->where('buyer_id', Auth::id())
             ->findOrFail($offerId);
 
+        // Mark related offer notifications as read for this buyer
+        try {
+            \App\Models\Activity::where('user_id', Auth::id())
+                ->where('type', \App\Models\Activity::TYPE_OFFER)
+                ->where(function($q) use ($offerId) { $q->where('related_id', $offerId)->orWhereNull('related_id'); })
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) { /* non-fatal */ }
+
         return view('buyer.offers.details', compact('offer'));
     }
 

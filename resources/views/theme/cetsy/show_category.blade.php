@@ -38,9 +38,12 @@
       ? asset('storage/' . $category->image)
       : asset('assets/img/default-category.jpg');
 
+    // Decode once to avoid showing "&amp;" literally when names are stored HTML-encoded
+    $catName = html_entity_decode($category->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     $desc = $category->description
-      ?: ('Explore a wide range of ' . e($category->name) . ($category->listing_type ? ' ' . e($category->listing_type) : ' listings') );
+      ?: ('Explore a wide range of ' . $catName . ($category->listing_type ? ' ' . $category->listing_type : ' listings'));
   @endphp
+  @section('title', ($category->seo_title ?? $catName) . ' – Marketplace Category')
 
   <section class="position-relative" style="height: 320px;">
     <div class="position-absolute top-0 start-0 w-100 h-100 bg-cover bg-center" style="background-image:url('{{ $banner }}');"></div>
@@ -49,7 +52,7 @@
         <div class="mb-2">
           <span class="eyebrow"><i class="fas fa-folder-open"></i> Category</span>
         </div>
-        <h1 class="display-6 fw-bold text-white mb-2">{{ $category->name }}</h1>
+        <h1 class="display-6 fw-bold text-white mb-2">{{ $catName }}</h1>
         <p class="lead mb-0 text-white-50">{{ $desc }}</p>
 
         {{-- Breadcrumbs (optional) --}}
@@ -57,7 +60,7 @@
           <ol class="breadcrumb justify-content-center">
             <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ url('/') }}">Home</a></li>
             <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ route('listings') }}">Listings</a></li>
-            <li class="breadcrumb-item active text-white-50" aria-current="page">{{ $category->name }}</li>
+            <li class="breadcrumb-item active text-white-50" aria-current="page">{{ $catName }}</li>
           </ol>
         </nav>
       </div>
@@ -130,7 +133,7 @@
 
       {{-- Active chips --}}
       <div class="mt-2">
-        <span class="chip me-1"><i class="fas fa-folder"></i> {{ $category->name }}</span>
+        <span class="chip me-1"><i class="fas fa-folder"></i> {{ $catName }}</span>
 
         @if($q)
           <span class="chip me-1">
@@ -175,11 +178,48 @@
     </div>
   </section>
 
+  @push('scripts')
+  <script>
+  (function(){
+    if (window.__videoThumbInitCat) return; window.__videoThumbInitCat = true;
+    function toFirstFrame(img){
+      var src = img.getAttribute('data-video-src');
+      if(!src) return;
+      try{
+        var v = document.createElement('video');
+        v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.src = src + '#t=0.1';
+        v.addEventListener('loadeddata', function(){
+          try{
+            var w=v.videoWidth||480, h=v.videoHeight||270;
+            var c=document.createElement('canvas'); c.width=w; c.height=h;
+            c.getContext('2d').drawImage(v,0,0,w,h);
+            img.src=c.toDataURL('image/jpeg',0.8);
+            img.style.opacity='1'; img.style.filter='none';
+            img.removeAttribute('data-video-src');
+          }catch(e){}
+        }, {once:true});
+      }catch(e){}
+    }
+    function init(){
+      var imgs = document.querySelectorAll('img[data-video-src]');
+      if (!('IntersectionObserver' in window)) { imgs.forEach(toFirstFrame); return; }
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){ toFirstFrame(entry.target); io.unobserve(entry.target); }
+        });
+      }, { rootMargin:'200px' });
+      imgs.forEach(function(img){ io.observe(img); });
+    }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
+  })();
+  </script>
+  @endpush
+
   {{-- =========== Listings =========== --}}
   <section class="py-4 bg-light">
     <div class="container">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h4 fw-bold mb-0">Listings in {{ $category->name }}</h2>
+        <h2 class="h4 fw-bold mb-0">Listings in {{ $catName }}</h2>
         <span class="text-muted small">
           Showing <strong>{{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }}</strong>
           of <strong>{{ $products->total() }}</strong>
@@ -216,14 +256,28 @@
           <div class="vstack gap-3">
             @foreach ($products as $item)
               @php
-                $thumb = $item->featured_image
-                          ?? (isset($item->media) && $item->media->first()
-                                ? asset('storage/'.$item->media->first()->url)
-                                : (($item->shop && $item->shop->logo)
-                                      ? asset('storage/' . ltrim($item->shop->logo,'/'))
-                                      : (setting('favicon_url') ?: asset('storage/placeholder.jpg'))));
-                $avg  = round($item->reviews_avg_rating ?? 0);
-                $cnt  = (int) ($item->reviews_count ?? 0);
+                // Prefer a real image for thumbnails; skip video files
+                if (!empty($item->featured_image)) {
+                  $thumb = str_starts_with($item->featured_image, 'http')
+                           ? $item->featured_image
+                           : asset('storage/'.ltrim($item->featured_image,'/'));
+                } else {
+                  $firstImage = (isset($item->media) && method_exists($item->media, 'firstWhere'))
+                                ? $item->media->firstWhere('type','image')
+                                : null;
+                  if ($firstImage && !empty($firstImage->url)) {
+                    $thumb = asset('storage/'.ltrim($firstImage->url,'/'));
+                  } else {
+                    $firstVideo = (isset($item->media) && method_exists($item->media,'firstWhere')) ? $item->media->firstWhere('type','video') : null;
+                    $thumb = ($item->shop && $item->shop->logo)
+                             ? asset('storage/'.ltrim($item->shop->logo,'/'))
+                             : (setting('favicon_url') ?: asset('assets/img/placeholder.svg'));
+                  }
+                }
+                // Use shop-wide rating in listings
+                $shop = $item->shop ?? null;
+                $avg  = round((float) ($shop?->reviews_avg_rating ?? ($shop ? $shop->reviews()->avg('rating') : 0)));
+                $cnt  = (int) ($shop?->reviews_count ?? ($shop ? $shop->reviews()->count() : 0));
                 $basePrice  = $item->price;
                 $finalPrice = $item->discounted_price;
               @endphp
@@ -232,8 +286,12 @@
                 <div class="row g-3 align-items-center">
                   <div class="col-4 col-md-3 col-lg-2">
                     <a href="{{ route('listing.show', $item->slug) }}" class="d-block rounded overflow-hidden">
-                      <div class="ratio ratio-1x1 bg-white">
-                        <img src="{{ $thumb }}" alt="{{ $item->name }}" class="w-100 h-100" style="object-fit:cover;">
+                      <div class="ratio ratio-1x1 bg-white position-relative">
+                        @php $hasVideo = (isset($item->media) && method_exists($item->media,'firstWhere') && $item->media->firstWhere('type','video')); @endphp
+                        @if($hasVideo)
+                          <span class="position-absolute top-0 start-0 m-2 px-2 py-1 rounded text-white" style="background:rgba(0,0,0,.7); font-size:.72rem;"><i class="fas fa-play me-1"></i>Video</span>
+                        @endif
+                        <img src="{{ $thumb }}" alt="{{ $item->name }}" class="w-100 h-100" style="object-fit:cover; @if(isset($firstVideo) && $firstVideo && (!isset($firstImage) || !$firstImage)) opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease; @endif" @if(!isset($firstImage) || !$firstImage) @php($vid = isset($firstVideo)&&$firstVideo?asset('storage/'.ltrim($firstVideo->url,'/')):null) @endif @if(isset($vid) && $vid) data-video-src="{{ $vid }}" @endif>
                       </div>
                     </a>
                   </div>

@@ -400,6 +400,14 @@ class DisputeController extends Controller
         }
 
         $dispute->load(['order.shop', 'buyer', 'seller', 'messages.user', 'appeal']);
+        // Mark dispute notifications as read for this user
+        try {
+            Activity::where('user_id', $user->id)
+                ->where('type', Activity::TYPE_DISPUTE)
+                ->where(function($q) use ($dispute) { $q->where('related_id', $dispute->id)->orWhereNull('related_id'); })
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) { /* non-fatal */ }
 
         // Get dispute messages
         $disputeMessages = $dispute->messages()
@@ -1442,4 +1450,3 @@ class DisputeController extends Controller
         }
     }
 }
-

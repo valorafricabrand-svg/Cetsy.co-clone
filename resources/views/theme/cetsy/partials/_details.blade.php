@@ -10,13 +10,17 @@
 <div class="position-lg-sticky" style="top: 1rem;">
   <h1 class="h2 fw-bold">{{ $product->name }}</h1>
 
-  {{-- Ratings --}}
+  {{-- Ratings (shop-wide) --}}
   <div class="mb-2">
-    @php $avg = round($product->reviews_avg_rating ?? 0); @endphp
+    @php
+      $shop = $product->shop;
+      $avg  = round((float) ($shop->reviews_avg_rating ?? $shop->reviews()->avg('rating') ?? 0));
+      $cnt  = (int) ($shop->reviews_count ?? $shop->reviews()->count() ?? 0);
+    @endphp
     @for($i = 1; $i <= 5; $i++)
       <i class="fa-star{{ $i <= $avg ? ' fa-solid text-warning' : ' fa-regular text-muted' }}"></i>
     @endfor
-    <small class="ms-1 text-muted">({{ $product->reviews_count ?? 0 }} reviews)</small>
+    <small class="ms-1 text-muted">({{ $cnt }} reviews)</small>
   </div>
 
   {{-- Price --}}

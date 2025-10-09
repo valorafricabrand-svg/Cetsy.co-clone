@@ -62,12 +62,14 @@
         'title' => 'Sellers',
         'items' => [
           ['label' => 'Sellers',        'icon' => 'fas fa-users',     'url' => route('admin.users.index'),     'match' => ['admin.users.*']],
+          ['label' => 'Buyers',         'icon' => 'fas fa-user-friends','url' => route('admin.buyers.index'),  'match' => ['admin.buyers.*']],
           ['label' => 'KYC Management', 'icon' => 'fas fa-id-card',   'url' => route('admin.kyc.index'),       'match' => ['admin.kyc.*'],              'count' => $pendingKyc],
         ],
       ],
       [
         'title' => 'Payments',
         'items' => [
+          ['label' => 'Wallets',               'icon' => 'fas fa-wallet',         'url' => route('admin.wallets.index'),        'match' => ['admin.wallets.*']],
           ['label' => 'Payout Requests',        'icon' => 'fas fa-money-check-alt', 'url' => route('admin.payouts.index'),           'match' => ['admin.payouts.*'],         'count' => $pendingPayouts],
           ['label' => 'Seller Payment Methods', 'icon' => 'fas fa-university',      'url' => route('admin.payment-methods.index'),   'match' => ['admin.payment-methods.*']],
           ['label' => 'Payment Types',          'icon' => 'fas fa-credit-card',     'url' => route('admin.payment-types.index'),     'match' => ['admin.payment-types.*']],

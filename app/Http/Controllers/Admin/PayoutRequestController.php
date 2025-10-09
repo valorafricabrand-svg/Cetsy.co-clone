@@ -361,4 +361,159 @@ class PayoutRequestController extends Controller
 
         return back()->with('success', 'Payout marked as failed and refunded.');
     }
+
+    /**
+     * Export filtered payout requests to CSV (applies same filters as index).
+     */
+    public function export(\Illuminate\Http\Request $request)
+    {
+        // Build (similar to index)
+        $status       = $request->query('status');
+        $q            = (string) $request->query('q', '');
+        $paymentType  = $request->query('payment_type');
+        $dateFrom     = $request->query('from');
+        $dateTo       = $request->query('to');
+        $minAmount    = $request->filled('min') ? (float) $request->input('min') : null;
+        $maxAmount    = $request->filled('max') ? (float) $request->input('max') : null;
+
+        $query = \App\Models\PayoutRequest::query()
+            ->with(['user','paymentMethod.paymentType'])
+            ->when($status, fn ($q2) => $q2->where('status', $status))
+            ->when(strlen($q) > 0, function ($q2) use ($q) {
+                $q2->where(function ($qq) use ($q) {
+                    $qq->where('id', (int) $q)
+                       ->orWhere('user_id', (int) $q)
+                       ->orWhereHas('user', function ($u) use ($q) {
+                           $u->where('name', 'like', "%{$q}%")
+                             ->orWhere('email', 'like', "%{$q}%");
+                       });
+                });
+            })
+            ->when($paymentType, function ($q2) use ($paymentType) {
+                $q2->whereHas('paymentMethod', function ($pm) use ($paymentType) {
+                    $pm->where('payment_type_id', $paymentType);
+                });
+            })
+            ->when($dateFrom, fn ($q2) => $q2->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($q2) => $q2->whereDate('created_at', '<=', $dateTo))
+            ->when($minAmount, fn ($q2) => $q2->where('amount', '>=', $minAmount))
+            ->when($maxAmount, fn ($q2) => $q2->where('amount', '<=', $maxAmount))
+            ->latest();
+
+        $filename = 'payouts_'.now()->format('Ymd_His').'.csv';
+
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['ID','User ID','User Name','User Email','Amount','Status','Method','Requested At','Approved At','Paid At']);
+            $query->chunk(200, function ($rows) use ($out) {
+                foreach ($rows as $p) {
+                    $user = $p->user;
+                    $method = optional(optional($p->paymentMethod)->paymentType)->name;
+                    fputcsv($out, [
+                        $p->id,
+                        $p->user_id,
+                        $user->name ?? null,
+                        $user->email ?? null,
+                        number_format((float)$p->amount, 2, '.', ''),
+                        $p->status,
+                        $method,
+                        optional($p->created_at)->toDateTimeString(),
+                        optional($p->approved_at)->toDateTimeString(),
+                        optional($p->paid_at)->toDateTimeString(),
+                    ]);
+                }
+            });
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    /**
+     * Bulk approve pending payouts.
+     */
+    public function bulkApprove(\Illuminate\Http\Request $request)
+    {
+        $data = $request->validate([
+            'ids'   => ['required'],
+        ]);
+        // Accept CSV string or array
+        $ids = is_array($request->ids) ? $request->ids : array_filter(array_map('intval', explode(',', (string)$request->ids)));
+        if (empty($ids)) { return back()->withErrors('No selections.'); }
+
+        $count = 0;
+        $payouts = \App\Models\PayoutRequest::whereIn('id', $ids)->where('status','pending')->get();
+        foreach ($payouts as $payout) {
+            $payout->update([
+                'status'      => 'approved',
+                'approved_at' => now(),
+                'approved_by' => auth()->id(),
+            ]);
+            $count++;
+            // best-effort email
+            try {
+                $payout->loadMissing('user');
+                if ($payout->user && $payout->user->email) {
+                    \Mail::to($payout->user->email)->send(new \App\Mail\PayoutApprovedMail($payout, $payout->user));
+                }
+            } catch (\Throwable $e) {}
+        }
+        return back()->with('success', "$count payout(s) approved.");
+    }
+
+    /**
+     * Bulk reject pending payouts and refund.
+     */
+    public function bulkReject(\Illuminate\Http\Request $request)
+    {
+        $data = $request->validate([
+            'ids'    => ['required'],
+            'reason' => ['required','string','max:500'],
+        ]);
+        $ids = is_array($request->ids) ? $request->ids : array_filter(array_map('intval', explode(',', (string)$request->ids)));
+        if (empty($ids)) { return back()->withErrors('No selections.'); }
+
+        $count = 0;
+        $payouts = \App\Models\PayoutRequest::whereIn('id', $ids)->where('status','pending')->get();
+        foreach ($payouts as $payout) {
+            \DB::transaction(function () use ($payout, $request, &$count) {
+                $fee = (float) (data_get($payout->meta, 'fee', 0));
+                \App\Models\Wallet::create([
+                    'user_id'     => $payout->user_id,
+                    'credit'      => $payout->amount,
+                    'debit'       => 0,
+                    'balance'     => 0,
+                    'type'        => 'payout_reversal',
+                    'reference'   => \Illuminate\Support\Str::uuid(),
+                    'description' => 'Refund for rejected payout #' . $payout->id,
+                ]);
+                if ($fee > 0) {
+                    \App\Models\Wallet::create([
+                        'user_id'     => $payout->user_id,
+                        'credit'      => $fee,
+                        'debit'       => 0,
+                        'balance'     => 0,
+                        'type'        => 'withdrawal_fee_refund',
+                        'reference'   => \Illuminate\Support\Str::uuid(),
+                        'description' => 'Withdrawal fee refund for payout #' . $payout->id,
+                    ]);
+                }
+                $payout->update([
+                    'status'       => 'rejected',
+                    'admin_reason' => (string) $request->reason,
+                    'rejected_by'  => auth()->id(),
+                    'rejected_at'  => now(),
+                ]);
+                $count++;
+            });
+            // Notify
+            try {
+                $payout->loadMissing('user');
+                if ($payout->user && $payout->user->email) {
+                    \Mail::to($payout->user->email)->send(new \App\Mail\PayoutRejectedMail($payout, $payout->user, (string) $request->reason));
+                }
+            } catch (\Throwable $e) {}
+        }
+        return back()->with('success', "$count payout(s) rejected & refunded.");
+    }
 }

@@ -127,6 +127,30 @@
       }
     });
   </script>
+  <script>
+    // Live-refresh navbar badges (notif/messages)
+    document.addEventListener('DOMContentLoaded', function(){
+      function setBadge(id, count){
+        var el = document.getElementById(id); if(!el) return;
+        if(count>0){ el.textContent = count>99 ? '99+' : String(count); el.style.display='inline-block'; }
+        else { el.textContent=''; el.style.display='none'; }
+      }
+      function refreshCounts(){
+        var url = @json(\Illuminate\Support\Facades\Route::has('notifications.counts') ? route('notifications.counts') : null);
+        if(!url) return; // route not registered; skip silently
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+          .then(function(r){ return r.ok ? r.json() : {notif:0,msg:0}; })
+          .then(function(data){
+            setBadge('navNotifCount', (data && data.notif) ? data.notif : 0);
+            setBadge('navMsgCount', (data && data.msg) ? data.msg : 0);
+            setBadge('topNotifCount', (data && data.notif) ? data.notif : 0);
+          })
+          .catch(function(){});
+      }
+      refreshCounts();
+      setInterval(refreshCounts, 30000);
+    });
+  </script>
 
   <!-- Inline Theme Tweaks -->
   <style>
@@ -458,13 +482,19 @@
                   <i class="fas fa-box"></i>
                   <span>Orders</span>
                 </a>
+                @if(!$isSeller && session()->has('created_order_ids'))
+                <a href="{{ route('buyer.orders.created') }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                  <i class="fas fa-star"></i>
+                  <span>New Orders</span>
+                </a>
+                @endif
                 <a href="{{ $isSeller ? route('seller.messages.index') : route('buyer.messages.index') }}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
                   <span class="d-inline-flex align-items-center gap-2"><i class="fas fa-comments"></i> Messages</span>
-                  @if($msgCount>0)<span class="badge bg-danger rounded-pill">{{ $msgCount }}</span>@endif
+                  <span id="navMsgCount" class="badge bg-danger rounded-pill" style="display: {{ $msgCount>0 ? 'inline-block' : 'none' }};">{{ $msgCount>99 ? '99+' : $msgCount }}</span>
                 </a>
                 <a href="{{ route('notifications.index') }}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
                   <span class="d-inline-flex align-items-center gap-2"><i class="fas fa-bell"></i> Notifications</span>
-                  @if($notifCount>0)<span class="badge bg-primary rounded-pill">{{ $notifCount }}</span>@endif
+                  <span id="navNotifCount" class="badge bg-primary rounded-pill" style="display: {{ $notifCount>0 ? 'inline-block' : 'none' }};">{{ $notifCount>99 ? '99+' : $notifCount }}</span>
                 </a>
                 <a href="{{ route('wallet.index') }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
                   <i class="fas fa-wallet"></i>
@@ -541,7 +571,7 @@
                     echo  '<div class="d-flex align-items-center justify-content-between gap-2">';
                     // Left: title + optional view link for parents
                     echo    '<div class="me-2 text-truncate">';
-                    echo      '<a class="text-decoration-none text-dark text-truncate" href="'.route('category.show',$cat->slug).'" data-bs-dismiss="offcanvas">'.e($cat->name).'</a>';
+                    echo      '<a class="text-decoration-none text-dark text-truncate" href="'.route('category.show',$cat->slug).'" data-bs-dismiss="offcanvas">'.e(html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8')).'</a>';
                     if($has) {
                       echo    '<a class="badge rounded-pill bg-light text-dark ms-2" href="'.route('category.show',$cat->slug).'" data-bs-dismiss="offcanvas" title="View all">View</a>';
                     }
@@ -614,7 +644,7 @@
               $has  = $kids->isNotEmpty();
               echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
               echo   '<a class="dropdown-item d-flex justify-content-between align-items-center" href="'.($has?'#':route('category.show',$cat->slug)).'" role="menuitem" tabindex="-1">';
-              echo     e($cat->name);
+              echo     e(html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
               if($has) echo '<i class="fas fa-chevron-right ms-2 rotate" aria-hidden="true"></i>';
               echo   '</a>';
               if($has){
@@ -639,7 +669,7 @@
                      data-bs-auto-close="outside"
                      aria-expanded="false"
                      role="button">
-                    {{ $main->name }}
+                    {{ html_entity_decode($main->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
                     @if($main->childrenRecursive->isNotEmpty())
                       <i class="fas fa-chevron-down ms-1 rotate" aria-hidden="true"></i>
                     @endif

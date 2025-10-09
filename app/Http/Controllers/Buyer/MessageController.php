@@ -119,6 +119,16 @@ class MessageController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
+        // Also clear related notification entries (Activity -> TYPE_MESSAGE)
+        try {
+            \App\Models\Activity::where('user_id', $user->id)
+                ->where('type', \App\Models\Activity::TYPE_MESSAGE)
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) {
+            // non-fatal
+        }
+
         return view('buyer.messages.show', compact('messages', 'product', 'otherUser', 'conversationId'));
     }
 

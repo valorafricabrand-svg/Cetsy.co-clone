@@ -47,6 +47,14 @@ class FavoriteController extends Controller
             ->where('created_at', '>=', now()->subDays(7))
             ->count();
 
+        // Mark wishlist-related notifications as read for this seller
+        try {
+            Activity::where('user_id', $user->id)
+                ->where('type', Activity::TYPE_WISHLIST)
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) { /* noop */ }
+
         return view('seller.favorites.index', compact(
             'favorites',
             'favoritesByProduct',

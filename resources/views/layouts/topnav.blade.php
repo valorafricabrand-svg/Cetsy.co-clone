@@ -155,7 +155,7 @@
                         <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="{{ $item['label'] }}">
                             <i class="{{ $item['icon'] }} fa-lg"></i>
                             @if($item['badge'] > 0)
-                                <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+                                <span id="topNotifCount" class="badge bg-danger position-absolute top-0 start-100 translate-middle" style="display: {{ $notificationsCount>0 ? 'inline-block' : 'none' }};">
                                     {{ $item['badge'] > 99 ? '99+' : $item['badge'] }}
                                 </span>
                             @endif

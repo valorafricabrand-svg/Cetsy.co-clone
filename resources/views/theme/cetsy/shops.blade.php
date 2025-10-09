@@ -38,7 +38,7 @@
           <a href="{{ route('shop.show', $shop->slug) }}" class="text-decoration-none">
             <div class="card h-100 text-center shadow-sm border-0">
               <div class="card-body d-flex flex-column align-items-center">
-                <img src="{{ $shop->logo ? asset('storage/' . $shop->logo) : setting('favicon_url') }}"
+                <img src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : setting('favicon_url') }}"
                      alt="{{ $shop->name }} logo"
                      class="rounded-circle mb-3"
                      style="width:80px;height:80px;object-fit:cover;">

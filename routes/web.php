@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BlogController;
@@ -231,6 +231,10 @@ Route::middleware(['auth','verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
+    // Navbar unread counters (AJAX)
+    Route::get('/nav/counts', [\App\Http\Controllers\NotificationController::class, 'counts'])
+        ->name('notifications.counts');
+
     Route::patch('products/{product}/renewal', [ProductController::class, 'updateRenewal'])
         ->name('products.updateRenewal');
 
@@ -245,7 +249,7 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Variation routes
     Route::prefix('products/{product}')->group(function () {
-        Route::post('variation‑types', [VariationController::class, 'storeType'])
+        Route::post('variationâ€‘types', [VariationController::class, 'storeType'])
             ->name('variationTypes.store');
         Route::post('variations', [VariationController::class, 'store'])
             ->name('variations.store');
@@ -257,7 +261,7 @@ Route::middleware(['auth','verified'])->group(function () {
         ->name('variations.update');
     Route::delete('variations/{variation}', [VariationController::class, 'destroy'])
         ->name('variations.destroy');
-    Route::delete('variation‑types/{variationType}', [VariationController::class, 'destroyType'])
+    Route::delete('variationâ€‘types/{variationType}', [VariationController::class, 'destroyType'])
         ->name('variationTypes.destroy');
 
     Route::post('variation-types/{variationType}/options', [VariationController::class, 'storeOption'])
@@ -361,7 +365,7 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
         ->name('wallet.deposit.mpesa.stk');
 
-    // Poll status (frontend “listens” by polling this)
+    // Poll status (frontend â€œlistensâ€ by polling this)
     Route::get('/wallet/deposit/mpesa/status/{ref}', [WalletController::class, 'mpesaStatus'])->name('wallet.deposit.mpesa.status');
 
     // Account
@@ -417,12 +421,15 @@ Route::middleware(['auth','verified'])->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
-    Route::resource('wallets', AdminWalletController::class)->except(['create', 'store']);
+    // Admin Wallets: enable create/store so admins can top up sellers
+    Route::resource('wallets', AdminWalletController::class);
     Route::delete('wallets/bulk', [AdminWalletController::class, 'bulk'])->name('wallets.bulk');
     Route::patch('kyc/bulk', [KycController::class, 'bulk'])->name('kyc.bulk');
 
     // Users
     Route::resource('users', UserController::class);
+    // Buyers index alias, reusing the same controller (filters buyers by default)
+    Route::get('buyers', [UserController::class, 'index'])->name('buyers.index');
     Route::post('users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::get('sellers/{userId}/login-as', [UserController::class, 'loginAs'])->name('sellers.login-as');
@@ -433,7 +440,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     // Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
 
-    /* update + destroy — shallow, no category prefix */
+    /* update + destroy â€” shallow, no category prefix */
     Route::put(
         '/category-attributes/{attribute}',
         [CategoryAttributeController::class, 'update']
@@ -486,6 +493,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{payout}/resend', 'resendAuto')->name('resend');
         Route::post('/{payout}/fail', 'fail')->name('fail');
     });
+        Route::get('payout-requests/export', [AdminPayoutRequestController::class, 'export'])->name('payouts.export');
+        Route::post('payout-requests/bulk-approve', [AdminPayoutRequestController::class, 'bulkApprove'])->name('payouts.bulk-approve');
+        Route::post('payout-requests/bulk-reject', [AdminPayoutRequestController::class, 'bulkReject'])->name('payouts.bulk-reject');
 
     // Payments
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
@@ -659,6 +669,7 @@ Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(f
     Route::get('notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::get('orders/created', [OrderController::class, 'createdSummary'])->name('orders.created');
     Route::get('orders/{order}', [AccountController::class, 'orderDetails'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('messages', [MessageController::class, 'buyerIndex'])->name('messages.index');
@@ -720,3 +731,5 @@ if (app()->environment('local')) {
 require __DIR__ . '/auth.php';
 
    
+
+

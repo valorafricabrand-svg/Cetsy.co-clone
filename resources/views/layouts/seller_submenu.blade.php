@@ -15,7 +15,11 @@
                          ->where('receiver_id', Auth::id())
                          ->where('is_read', false)
                          ->count();
-    $favoritesCount = \App\Models\Wishlist::whereIn('product_id', $productIds)->count();
+    // Unread favorites: based on Activity entries (wishlist type)
+    $favoritesCount = \App\Models\Activity::where('user_id', Auth::id())
+                        ->where('type', \App\Models\Activity::TYPE_WISHLIST)
+                        ->where('is_read', false)
+                        ->count();
     $pendingOffers  = \App\Models\Offer::whereIn('product_id', $productIds)
                          ->where('status', 'pending')->count();
     // Pending disputes count for this seller (sidebar badge)
@@ -31,7 +35,7 @@
         'Listings' => [
             ['route'=>'products.index','icon'=>'fas fa-box-open','label'=>'My Listings'],
             ['route'=>'seller.deals.index','icon'=>'fas fa-percent','label'=>'Deals'],
-            ['route'=>'seller.shipping_profiles.index','icon'=>'fas fa-truck','label'=>'Shipping'],
+            // Shipping profiles removed from side menu per request
         ],
         'Sales' => [
             ['route'=>'seller.orders.index','icon'=>'fas fa-shopping-cart','label'=>'Shop Orders'],

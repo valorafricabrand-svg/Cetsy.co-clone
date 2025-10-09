@@ -841,12 +841,15 @@ public function payListing(Request $request, $id)
             $nextDue = now()->addMonths(4);
         }
 
-        // 4) Activate product & set due date
-        $product->update([
-            'is_active'       => true,
+        // 4) Set due date; publish only if featured image present
+        $updates = [
             'listing_paid_at' => now(),
             'next_due_date'   => $nextDue,
-        ]);
+        ];
+        if (!empty($product->featured_image)) {
+            $updates['is_active'] = true;
+        }
+        $product->update($updates);
 
         // 5) Build a unique local transaction ID
         $localTxId = $request->input('transaction_id');
@@ -929,11 +932,14 @@ public function payListing(Request $request, $id)
         }
 
         DB::transaction(function () use ($product, $nextDue) {
-            $product->update([
-                'is_active'       => true,
+            $updates = [
                 'listing_paid_at' => now(),
                 'next_due_date'   => $nextDue,
-            ]);
+            ];
+            if (!empty($product->featured_image)) {
+                $updates['is_active'] = true;
+            }
+            $product->update($updates);
         });
 
         // Build unique local tx id

@@ -80,6 +80,7 @@
               <option value="">Choose category</option>
               {{-- filled by Alpine --}}
             </select>
+            <div x-show="fallback" class="form-text text-warning">Showing all categories (fallback). Ask admin to tag categories by type.</div>
             @error('category_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
@@ -144,32 +145,67 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
+@php($__ALL_CATS = \App\Models\Category::select('id','name','listing_type')->orderBy('name')->get(['id','name','listing_type']))
 <script>
+// Local cache of categories for robust fallback when API fails/redirects
+window.__ALL_CATEGORIES__ = @json($__ALL_CATS);
 function detailsForm(){
   return {
     type: '{{ old('type',$product->type) }}',
     categoryId: '{{ old('category_id',$product->category_id) }}',
+    fallback: false,
     init(){ this.loadCategories(); },
+    filterLocalByType(tp){
+      const map = { physical: 'products', service: 'services', digital: 'digital' };
+      const want = map[String(tp) || ''] || null;
+      if (!want) return [];
+      const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : [];
+      return all.filter(c => (String(c.listing_type || '').toLowerCase() === want));
+    },
     async loadCategories(){
       const sel = document.getElementById('category_id');
       if(!sel) return;
       sel.innerHTML = '<option>Loading…</option>';
       if(!this.type){ sel.innerHTML = '<option value="">Choose category</option>'; return; }
       try{
-        const res = await fetch(`/api/categories/by-type/${encodeURIComponent(this.type)}`);
-        if(!res.ok) throw new Error();
-        const cats = await res.json();
+        const url = `/api/categories/by-type/${encodeURIComponent(this.type)}?_=${Date.now()}`;
+        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        let cats;
+        const ct = res.headers.get('content-type') || '';
+        this.fallback = (res.headers.get('x-categories-fallback') === '1');
+        if (ct.includes('application/json')) {
+          cats = await res.json();
+        } else {
+          const txt = await res.text();
+          try { cats = JSON.parse(txt); } catch { console.warn('Categories API non-JSON:', txt.slice(0,200)); cats = []; }
+        }
+        if (this.fallback || !Array.isArray(cats) || cats.length === 0) {
+          cats = this.filterLocalByType(this.type);
+        }
         sel.innerHTML = '<option value="">Choose category</option>';
-        cats.forEach(c=>{
+        (Array.isArray(cats) ? cats : []).forEach(c=>{
           const o = document.createElement('option');
           o.value = c.id; o.text = c.name;
           if(String(c.id)===String(this.categoryId)) o.selected=true;
           sel.append(o);
         });
-      }catch{ sel.innerHTML = '<option>Error loading categories</option>'; }
+      }catch(e){
+        console.warn('Categories load warning:', e);
+        this.fallback=false;
+        // Try local fallback by type
+        const cats = this.filterLocalByType(this.type);
+        if (cats.length) {
+          sel.innerHTML = '<option value="">Choose category</option>';
+          cats.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.text=c.name; if(String(c.id)===String(this.categoryId)) o.selected=true; sel.append(o); });
+        } else {
+          sel.innerHTML = '<option>Error loading categories</option>';
+        }
+      }
     }
   }
 }
+if (document.compatMode === 'CSS1Compat') {
 tinymce.init({
   selector:'#description', height: 400, menubar:true,
   plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
@@ -179,5 +215,8 @@ tinymce.init({
   gecko_spellcheck: true,
   elementpath: false
 });
+} else {
+  console.warn('TinyMCE disabled (document not in standards mode)');
+}
 </script>
 @endpush

@@ -22,7 +22,7 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Shipping to {{ setting('region') }}</th>
+                    <th>Shipping to Country</th>
                     <th>Base Rate ({{ get_currency() }})</th>
                     <th>Delivery Days</th>
                     <th>Processing Time</th>
@@ -34,7 +34,7 @@
                 @foreach($profiles as $profile)
                     <tr>
                         <td>{{ $profile->name }}</td>
-                        <td>{{ optional($profile->country)->name ?? '—' }}</td>
+                        <td>{{ $profile->destination_label }}</td>
                         <td>{{ number_format($profile->base_rate, 2) }}</td>
                         <td>{{ $profile->delivery_days }}</td>
                         <td>
@@ -42,7 +42,7 @@
                                 {{ $profile->processingTime->label }}
                                 ({{ $profile->processingTime->days }} day{{ $profile->processingTime->days > 1 ? 's' : '' }})
                             @else
-                                —
+                                &mdash;
                             @endif
                         </td>
                         <td>
@@ -71,7 +71,7 @@
         </table>
         </div>
 
-        {{ $profiles->links() }}
+        {{ $profiles->onEachSide(1)->links('pagination::bootstrap-5') }}
     @else
         <p>No shipping profiles found. <a href="{{ route('seller.shipping_profiles.create') }}">Create one now.</a></p>
     @endif

@@ -152,7 +152,12 @@ class ShopController extends Controller
 
         $products = $shop->products()
             ->where('is_active', 1)
-            ->with('media')
+            ->with([
+                'media',
+                'shop' => function ($q) {
+                    $q->withCount('reviews')->withAvg('reviews', 'rating');
+                },
+            ])
             ->latest()
             ->paginate(12);
 

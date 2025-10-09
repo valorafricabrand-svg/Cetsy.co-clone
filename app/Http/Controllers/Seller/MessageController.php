@@ -28,7 +28,10 @@ class MessageController extends Controller
         $productIds = $shop->products()->pluck('id');
 
         // Get conversations where the seller is either sender or receiver
-        $conversations = Message::whereIn('product_id', $productIds)
+        $conversations = Message::where(function($q) use ($productIds){
+                $q->whereIn('product_id', $productIds)
+                  ->orWhere(function($qq){ $qq->whereNull('product_id'); });
+            })
             ->where(function($query) use ($user) {
                 $query->where('sender_id', $user->id)
                       ->orWhere('receiver_id', $user->id);
@@ -39,7 +42,7 @@ class MessageController extends Controller
             ->groupBy(function($message) use ($user) {
                 // Group by product and the other participant
                 $otherUserId = $message->sender_id == $user->id ? $message->receiver_id : $message->sender_id;
-                return $message->product_id . '-' . $otherUserId;
+                return (($message->product_id ?? 0)) . '-' . $otherUserId;
             })
             ->map(function($messages) use ($user) {
                 // Get the latest message and other participant info
@@ -53,7 +56,7 @@ class MessageController extends Controller
                     'product' => $latestMessage->product,
                     'unread_count' => $messages->where('receiver_id', $user->id)->where('is_read', false)->count(),
                     'total_messages' => $messages->count(),
-                    'conversation_id' => $latestMessage->product_id . '-' . $otherUserId
+                    'conversation_id' => (($latestMessage->product_id ?? 0)) . '-' . $otherUserId
                 ];
             })
             ->sortByDesc('latest_message.created_at');
@@ -108,14 +111,21 @@ class MessageController extends Controller
         $productId = $parts[0];
         $otherUserId = $parts[1];
         
-        // Validate that the product belongs to the seller's shop
-        $product = Product::find($productId);
-        if (!$product || $product->shop_id !== $shop->id) {
-            abort(403, 'You are not authorized to view this conversation.');
+        // If productId is 0, this is a direct (non-product) conversation
+        $product = null;
+        if ((int)$productId !== 0) {
+            // Validate that the product belongs to the seller's shop
+            $product = Product::find($productId);
+            if (!$product || $product->shop_id !== $shop->id) {
+                abort(403, 'You are not authorized to view this conversation.');
+            }
         }
         
         // Validate that the user is part of this conversation
-        $conversationExists = Message::where('product_id', $productId)
+        $conversationExists = Message::where(function($q) use ($productId){
+                if ((int)$productId === 0) { $q->whereNull('product_id'); }
+                else { $q->where('product_id', $productId); }
+            })
             ->where(function($query) use ($user, $otherUserId) {
                 $query->where(function($q) use ($user, $otherUserId) {
                     $q->where('sender_id', $user->id)->where('receiver_id', $otherUserId);
@@ -130,7 +140,10 @@ class MessageController extends Controller
         }
 
         // Get all messages for this conversation
-        $messages = Message::where('product_id', $productId)
+        $messages = Message::where(function($q) use ($productId){
+                if ((int)$productId === 0) { $q->whereNull('product_id'); }
+                else { $q->where('product_id', $productId); }
+            })
             ->where(function($query) use ($user, $otherUserId) {
                 $query->where(function($q) use ($user, $otherUserId) {
                     $q->where('sender_id', $user->id)->where('receiver_id', $otherUserId);

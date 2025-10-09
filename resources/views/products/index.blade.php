@@ -3,6 +3,9 @@
 
 @section('content')
 <div class="content">
+    <style>
+      .js-product-card { cursor: pointer; }
+    </style>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">My Listings</h2>
         <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
@@ -14,6 +17,20 @@
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
             {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    {{-- Reminder: active listings without featured image --}}
+    @if(!empty($missingFeaturedActive) && (int)$missingFeaturedActive > 0)
+        <div class="alert alert-warning alert-dismissible fade show rounded-3" role="alert">
+            <div class="d-flex align-items-start gap-2">
+                <i class="fas fa-image mt-1"></i>
+                <div>
+                    <strong>Action recommended:</strong> You have {{ (int)$missingFeaturedActive }} published listing(s) without a featured image.
+                    <a class="alert-link" href="{{ route('products.index', array_merge(request()->except('page'), ['status'=>1,'no_featured'=>1])) }}">Review them here</a> and add a featured image.
+                </div>
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -63,6 +80,7 @@
       <div class="card-body row g-3 align-items-end">
         <input type="hidden" name="q" value="{{ request('q') }}">
         <input type="hidden" name="status" value="{{ request('status') }}">
+        <input type="hidden" name="no_featured" value="{{ request('no_featured') }}">
 
         <div class="col-12 col-md-6 col-xl-4">
           <label class="form-label">Min Price</label>
@@ -174,4 +192,27 @@
         </div>
     @endif
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    function isInteractive(el) {
+      if (!el) return false;
+      var selector = 'a,button,input,select,textarea,label,.btn,[data-bs-toggle]';
+      return el.closest(selector) !== null;
+    }
+    document.querySelectorAll('.js-product-card').forEach(function(card){
+      card.addEventListener('click', function(e){
+        if (isInteractive(e.target)) return;
+        var href = card.getAttribute('data-href');
+        if (href) window.location.href = href;
+      });
+      card.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          var href = card.getAttribute('data-href');
+          if (href) window.location.href = href;
+        }
+      });
+    });
+  });
+</script>
 @endsection

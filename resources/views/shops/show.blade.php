@@ -49,9 +49,7 @@
   <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
     <div class="d-flex align-items-center gap-3">
     
-        <img src="{{ $shop->logo 
-      ? asset('storage/' . $shop->logo) 
-      : setting('favicon_url') }}" alt="{{ $shop->name }} logo" class="shop-avatar">
+        <img src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : setting('favicon_url') }}" alt="{{ $shop->name }} logo" class="shop-avatar">
     
 
       <div>
@@ -271,7 +269,7 @@
             </div>
             <div class="col-12 d-flex justify-content-between">
               <span class="text-muted">Country</span>
-              <span class="fw-medium">{{ $shop->country }}</span>
+              <span class="fw-medium">{{ country_name($shop->country) }}</span>
             </div>
             <div class="col-12 d-flex justify-content-between">
               <span class="text-muted">Currency</span>
@@ -298,18 +296,18 @@
           </a>
         </div>
         <div class="card-body">
-          @if($paymentMethods->count() > 0)
+            @if($paymentMethods->count() > 0)
             <div class="row gy-3">
               @foreach($paymentMethods as $paymentMethod)
                 <div class="col-12">
-                  <div class="d-flex align-items-start justify-content-between">
-                    <div>
+                  <div class="row g-2 align-items-start">
+                    <div class="col-12 col-sm-7">
                       <div class="fw-semibold">{{ $paymentMethod->paymentType->name }}</div>
-                      <div class="text-muted small">{{ $paymentMethod->account_number }}</div>
+                      <div class="text-muted small text-break">{{ $paymentMethod->account_number }}</div>
                     </div>
-                    <div class="text-end">
+                    <div class="col-12 col-sm-5 text-sm-end">
                       <div class="text-muted small">Account Name</div>
-                      <div class="fw-medium">{{ $paymentMethod->account_name }}</div>
+                      <div class="fw-medium text-break">{{ $paymentMethod->account_name }}</div>
                     </div>
                   </div>
                 </div>
