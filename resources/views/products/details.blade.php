@@ -200,8 +200,10 @@ function detailsForm(){
   }
 }
 document.addEventListener('DOMContentLoaded', function(){
-  if (window.tinymce && document.getElementById('description')) {
-    try { if (tinymce.get('description')) tinymce.get('description').remove(); } catch(_) {}
+  const el = document.getElementById('description');
+  if (!el) { console.warn('Missing #description'); return; }
+  const start = function(){
+    try { const inst = tinymce.get('description'); if (inst) inst.remove(); } catch(_) {}
     tinymce.init({
       selector:'#description', height: 400, menubar:true,
       plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
@@ -211,8 +213,15 @@ document.addEventListener('DOMContentLoaded', function(){
       gecko_spellcheck: true,
       elementpath: false
     });
-  } else {
-    console.warn('TinyMCE not loaded or #description missing');
+  };
+  if (window.tinymce) { start(); }
+  else {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
+    s.referrerPolicy = 'origin';
+    s.onload = start;
+    s.onerror = function(){ console.warn('TinyMCE CDN failed to load'); };
+    document.head.appendChild(s);
   }
 });
 </script>

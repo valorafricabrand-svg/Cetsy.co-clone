@@ -247,16 +247,32 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
 <script>
-  // TinyMCE
-  tinymce.init({
-    selector: '#bio,#announcement,#policies',
-    plugins: 'image link media code fullscreen',
-    toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
-    // Hide TinyMCE branding and element path
-    menubar: false,
-    height: 300,
-    branding: false, // Hide "Powered by TinyMCE"
-    elementpath: false // Hide the element path/tag path bar
+  // TinyMCE with CDN fallback and DOM-ready init
+  document.addEventListener('DOMContentLoaded', function(){
+    const selector = '#bio,#announcement,#policies';
+    const start = function(){
+      try {
+        ['bio','announcement','policies'].forEach(function(id){ const inst = tinymce.get(id); if (inst) inst.remove(); });
+      } catch(_) {}
+      tinymce.init({
+        selector: selector,
+        plugins: 'image link media code fullscreen',
+        toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
+        menubar: false,
+        height: 300,
+        branding: false,
+        elementpath: false
+      });
+    };
+    if (window.tinymce) { start(); }
+    else {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
+      s.referrerPolicy = 'origin';
+      s.onload = start;
+      s.onerror = function(){ console.warn('TinyMCE CDN failed to load'); };
+      document.head.appendChild(s);
+    }
   });
 
   // Password visibility toggle
