@@ -33,7 +33,14 @@
 
       <!-- Illustration (optional) -->
       <div class="col-lg-4 text-center">
-        <img src="{{ asset('images/become-seller.svg') }}" alt="Become a Seller" class="img-fluid" style="max-height: 300px;">
+        @php
+          $imgCandidate = public_path('images/become-seller.svg');
+          $imgUrl = file_exists($imgCandidate)
+            ? asset('images/become-seller.svg')
+            : asset('assets/img/blog/blog-1.png');
+        @endphp
+        <img src="{{ $imgUrl }}" alt="Become a Seller" class="img-fluid" style="max-height: 300px;"
+             onerror="this.onerror=null;this.src='{{ asset('assets/images/default-og-image-cetsy.jpg') }}';">
       </div>
 
     </div>

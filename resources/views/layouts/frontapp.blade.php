@@ -107,7 +107,8 @@
   <div class="container">
     {{-- Brand --}}
     <a class="navbar-brand" href="{{ url('/') }}">
-      <img src="{{ setting('logo_url') }}" style="height: 60px;">
+      @php($__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
+      <img src="{{ $__logo }}" style="height: 60px;" onerror="this.onerror=null;this.src='{{ asset('assets/images/default-og-image-cetsy.jpg') }}';">
     </a>
 
     {{-- Mobile toggle --}}
