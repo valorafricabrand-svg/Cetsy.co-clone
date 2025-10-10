@@ -246,7 +246,9 @@
             </button>
 
             <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url('/') }}">
-              <img src="{{ setting('logo_url') }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="48" width="auto" loading="lazy">
+              @php($__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
+              <img src="{{ $__logo }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="48" width="auto" loading="lazy"
+                   onerror="this.onerror=null;this.src='{{ asset('assets/images/default-og-image-cetsy.jpg') }}';">
             </a>
           </div>
 

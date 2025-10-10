@@ -184,7 +184,8 @@
         <img
           src="{{ asset('assets/images/illustrator.webp') }}"
           alt="World map with shopping icons"
-          class="img-fluid hero-img rounded shadow">
+          class="img-fluid hero-img rounded shadow"
+          onerror="this.onerror=null;this.src='{{ asset('assets/images/default-og-image-cetsy.jpg') }}';">
       </div>
     </div>
   </div>

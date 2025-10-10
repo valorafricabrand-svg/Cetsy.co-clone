@@ -97,7 +97,8 @@
             </button>
             <a class="navbar-brand me-1 me-sm-3" href="{{ url('/') }}">
                 <div class="d-flex align-items-center">
-                    <img src="{{ setting('logo_url') }}" style="height: 50px;">
+                    @php($__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
+                    <img src="{{ $__logo }}" style="height: 50px;" onerror="this.onerror=null;this.src='{{ asset('assets/images/default-og-image-cetsy.jpg') }}';">
                 </div>
             </a>
         </div>
