@@ -151,11 +151,11 @@
       <!-- Hero Text -->
       <div class="col-lg-6 text-center text-lg-start reveal">
         <h1 class="display-4 fw-bold text-success mb-2">
-          Cetsy â€” Your Global Marketplace
+          Cetsy &mdash; Your Global Marketplace
         </h1>
 
         <p class="lead text-muted" style="max-width: 520px;">
-          Your global marketplace where youâ€™ll find almost anythingâ€”from anyone, anywhere.
+          Your global marketplace where you&rsquo;ll find almost anything&mdash;from anyone, anywhere.
         </p>
 
         <div class="cta-group d-flex justify-content-center justify-content-lg-start gap-3">
@@ -458,4 +458,5 @@
 </section>
 
 @endsection
+
 
