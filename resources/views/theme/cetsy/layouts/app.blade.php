@@ -904,18 +904,9 @@
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Support</h4>
             <ul class="list-unstyled mb-4">
               <li class="mb-2"><a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">Reach Us</a></li>
-              @if($settings)
-                @if(!empty($settings->email))
-                  <li class="text-white-50 mb-1 footer-text">
-                    <strong>Email:</strong> <a href="mailto:{{ $settings->email }}" class="text-white">{{ $settings->email }}</a>
-                  </li>
-                @endif
-                @if(!empty($settings->phone))
-                  <!-- <li class="text-white-50 footer-text">
-                    <strong>Phone:</strong> <a href="tel:{{ $settings->phone }}" class="text-white">{{ $settings->phone }}</a>
-                  </li> -->
-                @endif
-              @endif
+              <li class="text-white-50 mb-1 footer-text">
+                <strong>Email:</strong> <a href="mailto:hello@cetsy.co" class="text-white">hello@cetsy.co</a>
+              </li>
             </ul>
 
             <!-- Social Icons -->
