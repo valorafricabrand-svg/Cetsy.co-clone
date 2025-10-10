@@ -1,4 +1,4 @@
-@php
+﻿@php
     switch ($product->is_active) {
         case 0:
             $statusLabel = 'Pending';
@@ -61,7 +61,7 @@
                 <video src="{{ $thumb }}" class="card-img-top rounded-top-4" style="height:220px;object-fit:cover;" controls></video>
             @else
                 <img src="{{ $thumb }}" class="card-img-top rounded-top-4" style="height:220px;object-fit:cover;" alt="{{ $product->name }}"
-                     onerror="this.onerror=null;this.src='{{ asset('assets/images/default-og-image-cetsy.jpg') }}';">
+                     onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
             @endif
         @else
             <div class="bg-light d-flex align-items-center justify-content-center" style="height:220px;">
@@ -146,3 +146,4 @@
         </div>
     </div>
 </div>
+
