@@ -342,15 +342,15 @@
       <div class="mx-auto" style="max-width: 900px;">
         <span class="stat-chip mb-3">
           <i class="fas fa-star"></i>
-          Since 2021 â€¢ Global Marketplace
+          Since 2021 &bull; Global Marketplace
         </span>
 
         <h2 class="display-6 fw-bold text-dark mb-2">Who is Cetsy?</h2>
         <p class="lead mb-3 text-secondary">
-          <span class="fw-semibold text-success">â€œCetsyâ€</span> is a Malagasy word that means <em>â€œthatâ€™s itâ€</em>.
+          <span class="fw-semibold text-success">&ldquo;Cetsy&rdquo;</span> is a Malagasy word that means <em>&ldquo;that&rsquo;s it&rdquo;</em>.
         </p>
         <p class="fs-5 text-muted mb-4">
-          Your global marketplace where anyone can find almost everythingâ€”from everyone, everywhere.
+          Your global marketplace where anyone can find almost everything&mdash;from everyone, everywhere.
         </p>
 
         <!-- Quick stats -->
