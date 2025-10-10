@@ -199,30 +199,36 @@ function detailsForm(){
     }
   }
 }
-document.addEventListener('DOMContentLoaded', function(){
-  const el = document.getElementById('description');
-  if (!el) { console.warn('Missing #description'); return; }
-  const start = function(){
-    try { const inst = tinymce.get('description'); if (inst) inst.remove(); } catch(_) {}
-    tinymce.init({
-      selector:'#description', height: 400, menubar:true,
-      plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
-      toolbar:'undo redo | styles | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code',
-      branding:false,
-      browser_spellcheck: true,
-      gecko_spellcheck: true,
-      elementpath: false
-    });
-  };
-  if (window.tinymce) { start(); }
-  else {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
-    s.referrerPolicy = 'origin';
-    s.onload = start;
-    s.onerror = function(){ console.warn('TinyMCE CDN failed to load'); };
-    document.head.appendChild(s);
-  }
-});
+;(function(){
+  function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
+  onReady(function(){
+    const el = document.getElementById('description');
+    if (!el) { console.warn('Missing #description'); return; }
+    const start = function(){
+      try { const inst = tinymce.get('description'); if (inst) inst.remove(); } catch(_) {}
+      tinymce.init({
+        selector:'#description',
+        height: 400,
+        menubar:true,
+        plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+        toolbar:'undo redo | styles | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code',
+        branding:false,
+        browser_spellcheck: true,
+        gecko_spellcheck: true,
+        elementpath: false,
+        base_url: '{{ asset('assets/js/tinymce') }}'
+      });
+    };
+    if (window.tinymce) { start(); }
+    else {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
+      s.referrerPolicy = 'origin';
+      s.onload = start;
+      s.onerror = function(){ console.warn('TinyMCE CDN failed to load'); };
+      document.head.appendChild(s);
+    }
+  });
+})();
 </script>
 @endpush
