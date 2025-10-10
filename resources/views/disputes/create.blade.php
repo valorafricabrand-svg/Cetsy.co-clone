@@ -164,4 +164,42 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
+
+@push('scripts')
+<script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
+<script>
+(function(){
+  function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
+  onReady(function(){
+    const el = document.getElementById('description');
+    if(!el) return;
+    const start = function(){
+      try{ const i=tinymce.get('description'); if(i) i.remove(); }catch(_){}
+      tinymce.init({
+        selector:'#description',
+        height:300,
+        menubar:false,
+        plugins: 'advlist autolink lists link charmap preview anchor searchreplace visualblocks code fullscreen help wordcount quickbars autoresize',
+        toolbar: 'undo redo | bold italic underline | bullist numlist | link | code',
+        branding:false,
+        browser_spellcheck:true,
+        gecko_spellcheck:true,
+        elementpath:false,
+        base_url: '{{ asset('assets/js/tinymce') }}',
+        setup(editor){ editor.on('change', () => editor.save()); }
+      });
+    };
+    if(window.tinymce){ start(); }
+    else {
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
+      s.referrerPolicy='origin';
+      s.onload=start;
+      s.onerror=function(){ console.warn('TinyMCE CDN failed to load'); };
+      document.head.appendChild(s);
+    }
+  });
+})();
+</script>
+@endpush
 @endsection
