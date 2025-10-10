@@ -246,8 +246,9 @@
                 name="variations[]"
                 id="var-{{ $type->id }}"
                 class="form-select js-variant-select"
-                required
+                @if($type->affects_price) required @endif
                 data-variation-type-id="{{ $type->id }}"
+                data-price-affecting="{{ $type->affects_price ? 1 : 0 }}"
                 data-option-min='@json(collect($type->options)->mapWithKeys(fn($o)=>[$o->id => $optionMinPrice[$o->id] ?? null]))'
               >
                 <option value="" disabled selected>Select {{ strtolower($type->name) }}</option>
@@ -332,8 +333,9 @@
       return set;
     })();
 
-    // Determine which selects are actually relevant to priced variants
+    // Determine which selects are actually relevant to priced variants (price-affecting only)
     function isSelectRelevant(selectEl) {
+      if (String(selectEl.getAttribute('data-price-affecting')) !== '1') return false;
       const opts = Array.from(selectEl.options).filter(o => o.value);
       return opts.some(o => viableOptionIdSet.has(parseInt(o.value, 10)));
     }
@@ -456,41 +458,66 @@
         return;
       }
 
-      // If relevantSelects exist, require them only
-      const key = selectedKey();
+      // Collect chosen option IDs for price-affecting selects
+      const priceChosen = relevantSelects.map(s => parseInt(s.value || '0', 10)).filter(Boolean);
+      // Require price-affecting selects only
+      if (relevantSelects.length && priceChosen.length !== relevantSelects.length) {
+        // Not enough info to resolve price; preview
+        const p = firstTypePrice();
+        if (priceNode) priceNode.textContent = fmt((p != null && !Number.isNaN(p)) ? p : defaultAmt);
+        if (fromLabel) fromLabel.style.display = '';
+        clearVariantHidden();
+        setButtonsEnabled(false);
+        return;
+      }
 
-      if (key && Object.prototype.hasOwnProperty.call(variantIndex, key)) {
-        // Valid exact combo
+      // Find best matching variant that includes all priceChosen IDs (irrespective of non-price selections)
+      let best = null;
+      for (const key in variantIndex) {
         const entry = variantIndex[key];
-        const price = parseFloat(entry.price);
+        const opts = Array.isArray(entry?.options) ? entry.options : [];
+        const containsAll = priceChosen.every(id => opts.indexOf(Number(id)) !== -1);
+        if (!containsAll) continue;
+        if (!best || parseFloat(entry.price) < parseFloat(best.price)) best = entry;
+      }
 
+      if (best) {
+        // Auto-pick non-price selections according to the best variant
+        selects.forEach(s => {
+          if (relevantSelects.indexOf(s) !== -1) return; // skip price-affecting
+          if (s.value) return; // already chosen
+          const match = Array.from(s.options).find(o => o.value && best.options.indexOf(Number(o.value)) !== -1);
+          if (match) {
+            s.value = match.value;
+          }
+        });
+
+        const price = parseFloat(best.price);
         if (!Number.isNaN(price) && priceNode) priceNode.textContent = fmt(price);
         if (fromLabel) fromLabel.style.display = 'none';
-
-        if (variantIdNode) variantIdNode.value = entry.id;
+        if (variantIdNode) variantIdNode.value = best.id;
         if (variantPriceNode) variantPriceNode.value = price.toFixed(2);
-
         setButtonsEnabled(true);
         return;
       }
 
-      // Not fully selected / invalid combo -> preview & disable
+      // Fallback: preview min price from first type
       const p = firstTypePrice();
       if (priceNode) priceNode.textContent = fmt((p != null && !Number.isNaN(p)) ? p : defaultAmt);
-      if (fromLabel) fromLabel.style.display = ''; // show "From"
+      if (fromLabel) fromLabel.style.display = '';
       clearVariantHidden();
       setButtonsEnabled(false);
     }
 
     function onChange() {
-      updateOptionLabels();
+      if (typeof updateOptionLabelsPA === 'function') { updateOptionLabelsPA(); } else { updateOptionLabels(); }
       updateMainPriceAndState();
     }
 
     selects.forEach(s => s.addEventListener('change', onChange));
 
     // INITIALIZATION: label options, auto-pick singletons, then compute price/state
-    updateOptionLabels();
+    if (typeof updateOptionLabelsPA === 'function') { updateOptionLabelsPA(); } else { updateOptionLabels(); }
     autoPickSingletons();
     updateMainPriceAndState();
 
@@ -499,14 +526,54 @@
       form.addEventListener('submit', function(e) {
         const hasVariants = Object.keys(variantIndex).length > 0;
         if (!hasVariants) return;
-
-        const key = selectedKey();
-        const valid = key && Object.prototype.hasOwnProperty.call(variantIndex, key);
-        if (!valid) {
-          e.preventDefault();
-        }
+        const valid = !!(variantIdNode && variantIdNode.value);
+        if (!valid) e.preventDefault();
       });
     }
   })();
+  // Override: show price suffix only for price-affecting selects
+  function updateOptionLabelsPA(){
+    try{
+      const selects = Array.from(document.querySelectorAll('.js-variant-select'));
+      const isPriceSelect = (el) => String(el.getAttribute('data-price-affecting')) === '1';
+      const priceBlock = document.getElementById('js-price-block');
+      const variantIndex = JSON.parse(priceBlock?.getAttribute('data-variant-index') || '{}');
+      const viableOptionIdSet = (function(){
+        const set = new Set();
+        for (const key in variantIndex) {
+          const entry = variantIndex[key];
+          if (entry && Array.isArray(entry.options)) entry.options.forEach(id => set.add(Number(id)));
+        }
+        return set;
+      })();
+      function minPriceForOption(optionId){
+        let min = null;
+        for (const key in variantIndex) {
+          const entry = variantIndex[key];
+          const opts = Array.isArray(entry?.options) ? entry.options : [];
+          if (opts.indexOf(Number(optionId)) !== -1) {
+            const p = parseFloat(entry.price);
+            if (!Number.isNaN(p)) min = (min===null||p<min)?p:min;
+          }
+        }
+        return min;
+      }
+      for (const s of selects) {
+        const priceAffecting = isPriceSelect(s);
+        const perOptionMin = JSON.parse(s.getAttribute('data-option-min') || '{}');
+        for (const opt of Array.from(s.options)) {
+          if (!opt.value) continue;
+          const baseLabel = opt.getAttribute('data-label') || opt.textContent;
+          const optId = parseInt(opt.value,10);
+          if (priceAffecting && viableOptionIdSet.has(optId)){
+            const min = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : minPriceForOption(optId);
+            opt.textContent = (min != null && !Number.isNaN(min)) ? `${baseLabel} – ${min}` : baseLabel;
+          } else {
+            opt.textContent = baseLabel;
+          }
+        }
+      }
+    }catch(_){ /* no-op */ }
+  }
 </script>
 @endpush
