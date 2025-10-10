@@ -33,7 +33,16 @@
         </nav>
         <h1 class="h4 mt-2 mb-0">Manage: <span class="text-primary">{{ $type->name ?? 'Variation Type' }}</span></h1>
       </div>
-      <div class="d-flex gap-2">
+      <div class="d-flex gap-2 align-items-center">
+        <form method="POST" action="{{ route('variationTypes.affects_price', $type) }}" class="d-flex align-items-center gap-2">
+          @csrf
+          @method('PATCH')
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="ap_header" name="affects_price" value="1" {{ $type->affects_price ? 'checked' : '' }}>
+            <label class="form-check-label" for="ap_header">Affects price</label>
+          </div>
+          <button class="btn btn-sm btn-primary">Save</button>
+        </form>
         <a href="{{ route('products.variations', $product) }}" class="btn btn-outline-secondary">Back</a>
       </div>
     </div>
