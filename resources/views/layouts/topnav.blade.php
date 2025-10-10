@@ -1,4 +1,4 @@
-@php
+﻿@php
     // Ensure Activity model is correctly imported in the controller or view
     use App\Models\Activity;
     use Illuminate\Support\Str;
@@ -98,7 +98,7 @@
             <a class="navbar-brand me-1 me-sm-3" href="{{ url('/') }}">
                 <div class="d-flex align-items-center">
                     @php($__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
-                    <img src="{{ $__logo }}" style="height: 50px;" onerror="this.onerror=null;this.src='{{ asset('assets/images/default-og-image-cetsy.jpg') }}';">
+                    <img src="{{ $__logo }}" style="height: 50px;" onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
                 </div>
             </a>
         </div>
@@ -113,8 +113,8 @@
                     $currentCurrency = get_currency();
                     $navCurrencies = collect([
                         (object)['code' => 'USD','symbol' => '$'],
-                        (object)['code' => 'EUR','symbol' => '€'],
-                        (object)['code' => 'GBP','symbol' => '£'],
+                        (object)['code' => 'EUR','symbol' => 'â‚¬'],
+                        (object)['code' => 'GBP','symbol' => 'Â£'],
                         (object)['code' => 'KES','symbol' => 'KES'],
                     ]);
                 }
@@ -215,7 +215,7 @@
                                                             @endphp
                                                             <strong>{{ $from }}:</strong> {{ $snippet }}
                                                         </p>
-                                                        <small class="text-body-quaternary">{{ $msg->created_at->diffForHumans() }} • Dispute #{{ $msg->dispute_id }}</small>
+                                                        <small class="text-body-quaternary">{{ $msg->created_at->diffForHumans() }} â€¢ Dispute #{{ $msg->dispute_id }}</small>
                                                         <div class="mt-2">
                                                             <a href="{{ route('disputes.show', $msg->dispute_id) }}" class="btn btn-sm btn-outline-warning">
                                                                 View Dispute
@@ -314,3 +314,4 @@
         </ul>
     </div>
 </nav>
+
