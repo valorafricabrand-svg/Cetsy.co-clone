@@ -23,7 +23,10 @@
 @push('scripts')
     <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
     <script>
-    tinymce.init({
+    document.addEventListener('DOMContentLoaded', function(){
+      const start = function(){
+        try { const inst = tinymce.get('description'); if (inst) inst.remove(); } catch(_) {}
+        tinymce.init({
       selector: '#description',
       height: 400,
       min_height: 400,
@@ -60,7 +63,17 @@
       setup(editor) {
         editor.on('change', () => editor.save());
       }
+        });
+      };
+      if (window.tinymce) { start(); }
+      else {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
+        s.referrerPolicy = 'origin';
+        s.onload = start;
+        s.onerror = function(){ console.warn('TinyMCE CDN failed to load'); };
+        document.head.appendChild(s);
+      }
     });
     </script>
 @endpush
-
