@@ -91,6 +91,7 @@
     <div id="js-price-block"
          class="d-flex align-items-baseline gap-3 mb-3"
          data-currency="{{ $currency }}"
+         data-currency-symbol="{{ currency_symbol($currency) }}"
          data-default-amount="{{ $defaultDisplayPrice }}"
          data-fx-rate="{{ max(0, (float) fx_rate($currency)) }}"
          data-decimals="{{ $__dec }}"
@@ -106,13 +107,14 @@
   @else
     {{-- No priced variants: show product pricing (with discount style if applicable) --}}
     @if ($salePrice < $basePrice)
-      <div id="js-price-block"
-           class="d-flex align-items-baseline gap-3 mb-3"
-           data-currency="{{ $currency }}"
-           data-default-amount="{{ $salePrice }}"
-           data-fx-rate="{{ max(0, (float) fx_rate($currency)) }}"
-           data-decimals="{{ $__dec }}"
-           data-variant-index='{}'>
+    <div id="js-price-block"
+         class="d-flex align-items-baseline gap-3 mb-3"
+         data-currency="{{ $currency }}"
+         data-currency-symbol="{{ currency_symbol($currency) }}"
+         data-default-amount="{{ $salePrice }}"
+         data-fx-rate="{{ max(0, (float) fx_rate($currency)) }}"
+         data-decimals="{{ $__dec }}"
+         data-variant-index='{}'>
         <span class="fw-bold text-success">
           <span id="js-price-amount">{{ $currency }} {{ $format($salePrice) }}</span>
         </span>
@@ -311,6 +313,7 @@
     const outOfStock        = !!document.getElementById('js-out-of-stock-flag');
 
     const currency   = priceBlock.getAttribute('data-currency') || '';
+    const currencySym= priceBlock.getAttribute('data-currency-symbol') || '';
     const defaultAmt = parseFloat(priceBlock.getAttribute('data-default-amount') || '0') || 0;
     const fxRate     = Math.max(0, parseFloat(priceBlock.getAttribute('data-fx-rate') || '0') || 0);
     const decimals   = Math.max(0, parseInt(priceBlock.getAttribute('data-decimals') || '2', 10) || 2);
@@ -359,7 +362,8 @@
 
     function fmt(amount) {
       const r = fxRate > 0 ? fxRate : 1;
-      return currency + ' ' + (Number(amount) * r).toFixed(decimals);
+      const val = (Number(amount) * r).toFixed(decimals);
+      return (currencySym || currency) + ' ' + val;
     }
 
     function allChosen() {
@@ -458,9 +462,14 @@
         return;
       }
 
-      // Collect chosen option IDs for price-affecting selects
+      // Collect chosen option IDs
       const priceChosen = relevantSelects.map(s => parseInt(s.value || '0', 10)).filter(Boolean);
-      // Require price-affecting selects only
+      const nonPriceSelects = selects.filter(s => relevantSelects.indexOf(s) === -1);
+      const nonPriceChosen = nonPriceSelects
+        .map(s => parseInt(s.value || '0', 10))
+        .filter(Boolean);
+
+      // Require price-affecting selects only for price resolution
       if (relevantSelects.length && priceChosen.length !== relevantSelects.length) {
         // Not enough info to resolve price; preview
         const p = firstTypePrice();
@@ -471,12 +480,13 @@
         return;
       }
 
-      // Find best matching variant that includes all priceChosen IDs (irrespective of non-price selections)
+      // Find best matching variant that includes all chosen ids (both price and any selected non-price)
       let best = null;
       for (const key in variantIndex) {
         const entry = variantIndex[key];
         const opts = Array.isArray(entry?.options) ? entry.options : [];
-        const containsAll = priceChosen.every(id => opts.indexOf(Number(id)) !== -1);
+        const containsAll = priceChosen.every(id => opts.indexOf(Number(id)) !== -1)
+          && nonPriceChosen.every(id => opts.indexOf(Number(id)) !== -1);
         if (!containsAll) continue;
         if (!best || parseFloat(entry.price) < parseFloat(best.price)) best = entry;
       }
@@ -567,7 +577,7 @@
           const optId = parseInt(opt.value,10);
           if (priceAffecting && viableOptionIdSet.has(optId)){
             const min = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : minPriceForOption(optId);
-            opt.textContent = (min != null && !Number.isNaN(min)) ? `${baseLabel} – ${min}` : baseLabel;
+            opt.textContent = (min != null && !Number.isNaN(min)) ? `${baseLabel} – ${fmt(min)}` : baseLabel;
           } else {
             opt.textContent = baseLabel;
           }
