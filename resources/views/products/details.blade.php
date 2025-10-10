@@ -84,13 +84,7 @@
             @error('category_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">Short Description</label>
-            <input type="text" name="short_description" spellcheck="true" autocapitalize="sentences"
-                   class="form-control @error('short_description') is-invalid @enderror"
-                   value="{{ old('short_description', $product->short_description ?? '') }}" placeholder="Brief summary">
-            @error('short_description') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
+          
 
           <div class="col-12">
             <label class="form-label fw-semibold">Description</label>
