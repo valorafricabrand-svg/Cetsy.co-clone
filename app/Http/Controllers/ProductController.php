@@ -911,27 +911,43 @@ public function listings(Request $request)
 
 
 
-public function search(Request $request)
-{
-    $q = $request->input('q');
+    public function search(Request $request)
+    {
+        // Normalize query
+        $q = trim((string) $request->input('q', ''));
 
-    $products = Product::where('is_active', 1)
-        ->where(function ($query) use ($q) {
-            $query->where('name', 'like', "%{$q}%")
-                  ->orWhere('description', 'like', "%{$q}%");
-        })
-        ->with([
-            'media',
-            'shop' => function ($q2) {
-                $q2->withCount('reviews')->withAvg('reviews', 'rating');
-            },
-        ])
-        ->paginate(12);
+        // Build searchable terms (split on whitespace)
+        $terms = collect(preg_split('/\s+/', $q, -1, PREG_SPLIT_NO_EMPTY))
+            ->map(fn($t) => trim($t))
+            ->filter()
+            ->values();
 
-    $recommendedProducts = $this->recommendations->trendingForUser(Auth::user(), 6);
+        $products = Product::where('is_active', 1)
+            ->when($terms->isNotEmpty(), function ($query) use ($terms) {
+                $query->where(function ($q2) use ($terms) {
+                    // Match ANY term in name/description/tags
+                    foreach ($terms as $t) {
+                        $like = "%{$t}%";
+                        $q2->orWhere('name', 'like', $like)
+                           ->orWhere('description', 'like', $like)
+                           ->orWhere('tags', 'like', $like);
+                    }
+                });
+            })
+            ->with([
+                'media',
+                'shop' => function ($q2) {
+                    $q2->withCount('reviews')->withAvg('reviews', 'rating');
+                },
+            ])
+            ->paginate(12)
+            ->appends(['q' => $q]);
 
-    return themed_view('listings', compact('products', 'recommendedProducts'))->with('q', $q);
-}
+        $recommendedProducts = $this->recommendations->trendingForUser(Auth::user(), 6);
+
+        return themed_view('listings', compact('products', 'recommendedProducts'))
+            ->with('q', $q);
+    }
 
 
  // in App\Http\Controllers\ProductController.php
