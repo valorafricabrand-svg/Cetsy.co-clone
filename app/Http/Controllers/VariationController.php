@@ -138,9 +138,13 @@ class VariationController extends Controller
                     ->where(fn ($q) => $q->where('product_id', $product->id)),
             ],
             'options' => ['nullable', 'string'],
+            'affects_price' => ['nullable','boolean'],
         ]);
 
-        $type = $product->variationTypes()->create(['name' => $data['name']]);
+        $type = $product->variationTypes()->create([
+            'name' => $data['name'],
+            'affects_price' => (bool) ($data['affects_price'] ?? false),
+        ]);
 
         if (!empty($data['options'])) {
             collect(explode(',', $data['options']))
@@ -163,9 +167,13 @@ class VariationController extends Controller
                     ->where(fn ($q) => $q->where('product_id', $variationType->product_id))
                     ->ignore($variationType->id),
             ],
+            'affects_price' => ['nullable','boolean'],
         ]);
 
-        $variationType->update(['name' => $data['name']]);
+        $variationType->update([
+            'name' => $data['name'],
+            'affects_price' => (bool) ($data['affects_price'] ?? false),
+        ]);
 
         return back()->with('success', 'Variation type updated.');
     }
@@ -335,5 +343,13 @@ class VariationController extends Controller
             return back()->with('error', 'Failed to delete the option. Please try again.');
         }
     }
-}
 
+    /** Quickly toggle whether a variation type affects price. */
+    public function toggleAffectsPrice(Request $request, VariationType $variationType): RedirectResponse
+    {
+        $variationType->update([
+            'affects_price' => $request->boolean('affects_price'),
+        ]);
+        return back()->with('success', 'Variation type updated.');
+    }
+}
