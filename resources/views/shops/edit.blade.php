@@ -134,7 +134,7 @@
         <div class="card-body">
           <div class="mb-3">
             <label for="announcement" class="form-label">Shop Announcement</label>
-            <textarea id="bio" name="announcement" class="form-control" rows="2">{{ old('announcement', $shop->announcement) }}</textarea>
+            <textarea id="announcement" name="announcement" class="form-control" rows="2">{{ old('announcement', $shop->announcement) }}</textarea>
             <div class="form-text">This announcement will appear at the top of your shop page.</div>
           </div>
         </div>
@@ -146,7 +146,7 @@
         <div class="card-body">
           <div class="mb-3">
             <label for="policies" class="form-label">Shop Policies</label>
-            <textarea id="bio" name="policies" class="form-control" rows="3">{{ old('policies', $shop->policies) }}</textarea>
+            <textarea id="policies" name="policies" class="form-control" rows="3">{{ old('policies', $shop->policies) }}</textarea>
             <div class="form-text">Describe your shop's return, shipping, and other important policies.</div>
           </div>
         </div>
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
   // TinyMCE
   tinymce.init({
-    selector: '#bio',
+    selector: '#bio,#announcement,#policies',
     plugins: 'image link media code fullscreen',
     toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
     // Hide TinyMCE branding and element path

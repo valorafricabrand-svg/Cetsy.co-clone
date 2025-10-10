@@ -199,18 +199,21 @@ function detailsForm(){
     }
   }
 }
-if (document.compatMode === 'CSS1Compat') {
-tinymce.init({
-  selector:'#description', height: 400, menubar:true,
-  plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
-  toolbar:'undo redo | styles | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code',
-  branding:false,
-  browser_spellcheck: true,
-  gecko_spellcheck: true,
-  elementpath: false
+document.addEventListener('DOMContentLoaded', function(){
+  if (window.tinymce && document.getElementById('description')) {
+    try { if (tinymce.get('description')) tinymce.get('description').remove(); } catch(_) {}
+    tinymce.init({
+      selector:'#description', height: 400, menubar:true,
+      plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+      toolbar:'undo redo | styles | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code',
+      branding:false,
+      browser_spellcheck: true,
+      gecko_spellcheck: true,
+      elementpath: false
+    });
+  } else {
+    console.warn('TinyMCE not loaded or #description missing');
+  }
 });
-} else {
-  console.warn('TinyMCE disabled (document not in standards mode)');
-}
 </script>
 @endpush
