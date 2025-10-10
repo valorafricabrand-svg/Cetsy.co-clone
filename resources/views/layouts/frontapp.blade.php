@@ -107,7 +107,9 @@
   <div class="container">
     {{-- Brand --}}
     <a class="navbar-brand" href="{{ url('/') }}">
-      @php($__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
+      @php
+        $__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg');
+      @endphp
       <img src="{{ $__logo }}" style="height: 60px;" onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
     </a>
 
@@ -671,4 +673,5 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 </body>
 </html>
+
 

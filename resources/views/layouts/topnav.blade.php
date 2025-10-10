@@ -97,7 +97,9 @@
             </button>
             <a class="navbar-brand me-1 me-sm-3" href="{{ url('/') }}">
                 <div class="d-flex align-items-center">
-                    @php($__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
+                    @php
+                      $__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg');
+                    @endphp
                     <img src="{{ $__logo }}" style="height: 50px;" onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
                 </div>
             </a>
@@ -314,4 +316,5 @@
         </ul>
     </div>
 </nav>
+
 
