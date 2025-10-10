@@ -569,13 +569,14 @@
         return min;
       }
       for (const s of selects) {
-        const priceAffecting = isPriceSelect(s);
+        const priceAffecting = isPriceSelect(s); // not used to filter; show prices on all options
         const perOptionMin = JSON.parse(s.getAttribute('data-option-min') || '{}');
         for (const opt of Array.from(s.options)) {
           if (!opt.value) continue;
           const baseLabel = opt.getAttribute('data-label') || opt.textContent;
           const optId = parseInt(opt.value,10);
-          if (priceAffecting && viableOptionIdSet.has(optId)){
+          // Show a price suffix for any option that appears in a priced variant
+          if (viableOptionIdSet.has(optId)){
             const min = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : minPriceForOption(optId);
             opt.textContent = (min != null && !Number.isNaN(min)) ? `${baseLabel} – ${fmt(min)}` : baseLabel;
           } else {
