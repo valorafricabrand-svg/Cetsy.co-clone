@@ -185,11 +185,11 @@
                                                         @if($route && $route !== route('notifications.index'))
                                                             <div class="mt-2">
                                                                 @if($hasOpen)
-                                                                    <a href="{{ route('notifications.open', $notification->id) }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}">
+                                                                    <a href="{{ route('notifications.open', $notification->id) }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
                                                                         {{ $linkText }}
                                                                     </a>
                                                                 @else
-                                                                    <a href="{{ $route }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}">
+                                                                    <a href="{{ $route }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
                                                                         {{ $linkText }}
                                                                     </a>
                                                                 @endif
