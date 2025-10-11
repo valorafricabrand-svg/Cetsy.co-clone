@@ -74,7 +74,7 @@ class MessageReceivedMail extends Mailable
             $subject .= ' about "' . $this->product->name . '"';
         }
         // Compute deep link to the conversation for the receiver
-         try {
+        try {
             $productId = (int) ($this->messageModel->product_id ?? 0);
             $otherId   = (int) $this->sender->id; // other participant is the sender
             $convId    = $productId . '-' . $otherId; // use 0 for direct messages

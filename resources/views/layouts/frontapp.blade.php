@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded',()=>{
           </li>
           <li class="text-white-50 mb-1 footer-text">
             <strong>Email:</strong>
-            <a href="mailto:{{ $settings->email }}" class="text-white">{{ $settings->email }}</a>
+            <a href="mailto:hello@cetsy.co" class="text-white">hello@cetsy.co</a>
           </li>
           <li class="text-white-50 footer-text">
             <strong>Phone:</strong>

@@ -384,48 +384,61 @@ document.getElementById('imageModal')?.addEventListener('show.bs.modal', functio
 <!-- Include TinyMCE from the local directory -->
 <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
 <script>
-if (document.compatMode === 'CSS1Compat') {
-tinymce.init({
-  selector: '#description',
-  height: 400,
-  min_height: 400,
-  menubar: true,
-  plugins: [
-    'advlist autolink lists link image charmap print preview anchor',
-    'searchreplace visualblocks code fullscreen',
-    'insertdatetime media table paste code help wordcount',
-    'formatpainter', 'lineheight', 'textcolor'
-  ],
-  toolbar: [
-    'undo redo | formatpainter | fontselect fontsizeselect |',
-    'lineheightselect | bold italic underline strikethrough forecolor backcolor |',
-    'alignleft aligncenter alignright alignjustify |',
-    'bullist numlist outdent indent | removeformat | link image media | code'
-  ].join(' '),
-  font_formats: [
-    'Arial=arial,helvetica,sans-serif;',
-    'Courier New=courier new,courier,monospace;',
-    'Georgia=georgia,palatino,serif;',
-    'Tahoma=tahoma,arial,helvetica,sans-serif;',
-    'Times New Roman=times new roman,times,serif;',
-    'Verdana=verdana,geneva,sans-serif'
-  ].join(' '),
-  fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt',
-  lineheight_formats: '1 1.2 1.5 1.8 2 3',
-  browser_contextmenu: true,
-  browser_spellcheck: true,
-  gecko_spellcheck: true,
-  elementpath: false,
-  contextmenu: 'link image inserttable | cell row column',
-  branding: false,
-  content_css: '{{ asset("css/tinymce-content.css") }}',
-  content_style: 'body { min-height:400px !important; }',
-  setup(editor) {
-    editor.on('change', () => editor.save());
-  }
-});
-} else {
-  console.warn('TinyMCE disabled (document not in standards mode)');
-}
+;(function(){
+  function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
+  onReady(function(){
+    const el = document.getElementById('description');
+    if (!el) return;
+    const start = function(){
+      try { const inst = tinymce.get('description'); if (inst) inst.remove(); } catch(_) {}
+      tinymce.init({
+        selector: '#description',
+        height: 400,
+        min_height: 400,
+        menubar: true,
+        plugins: [
+          'advlist autolink lists link image charmap preview anchor',
+          'searchreplace visualblocks code fullscreen',
+          'insertdatetime media table paste code help wordcount',
+          'quickbars emoticons autoresize'
+        ],
+        toolbar: [
+          'undo redo | fontselect fontsizeselect |',
+          'bold italic underline strikethrough forecolor backcolor |',
+          'alignleft aligncenter alignright alignjustify |',
+          'bullist numlist outdent indent | removeformat | link image media | code'
+        ].join(' '),
+        font_formats: [
+          'Arial=arial,helvetica,sans-serif;',
+          'Courier New=courier new,courier,monospace;',
+          'Georgia=georgia,palatino,serif;',
+          'Tahoma=tahoma,arial,helvetica,sans-serif;',
+          'Times New Roman=times new roman,times,serif;',
+          'Verdana=verdana,geneva,sans-serif'
+        ].join(' '),
+        fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt',
+        browser_contextmenu: true,
+        browser_spellcheck: true,
+        gecko_spellcheck: true,
+        elementpath: false,
+        branding: false,
+        content_style: 'body { min-height:400px !important; }',
+        base_url: '{{ asset('assets/js/tinymce') }}',
+        setup(editor) {
+          editor.on('change', () => editor.save());
+        }
+      });
+    };
+    if (window.tinymce) { start(); }
+    else {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
+      s.referrerPolicy = 'origin';
+      s.onload = start;
+      s.onerror = function(){ console.warn('TinyMCE CDN failed to load'); };
+      document.head.appendChild(s);
+    }
+  });
+})();
 </script>
 @endpush

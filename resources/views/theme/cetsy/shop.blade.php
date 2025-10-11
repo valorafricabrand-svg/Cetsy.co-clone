@@ -411,8 +411,16 @@
 
 @push('scripts')
 <script>
-// Filter and sort functionality
+// Fix modal title encoding and filter/sort wiring
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensure clean UTF-8 dash in modal title regardless of source encoding
+    try {
+        var lbl = document.getElementById('messageModalLabel');
+        if (lbl) {
+            lbl.textContent = 'Message Seller \u2013 {{ addslashes($shop->name) }}';
+        }
+    } catch (e) {}
+
     const priceFilter = document.getElementById('priceFilter');
     const sortFilter = document.getElementById('sortFilter');
     const typeFilter = document.getElementById('typeFilter');

@@ -33,7 +33,12 @@
 @push('scripts')
     <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
     <script>
-    tinymce.init({
+    (function(){
+      function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
+      onReady(function(){
+        const start = function(){
+          try { const inst = tinymce.get('description'); if (inst) inst.remove(); } catch(_) {}
+          tinymce.init({
       selector: '#description',
       height: 400,
       min_height: 400,
@@ -46,12 +51,12 @@
         'lineheight',
         'textcolor'
       ],
-      toolbar: [
-        'undo redo | formatpainter | fontselect fontsizeselect |',
-        'lineheightselect | bold italic underline strikethrough forecolor backcolor |',
-        'alignleft aligncenter alignright alignjustify |',
-        'bullist numlist outdent indent | removeformat | link image media | code'
-      ].join(' '),
+       toolbar: [
+         'undo redo | fontselect fontsizeselect |',
+         'bold italic underline strikethrough forecolor backcolor |',
+         'alignleft aligncenter alignright alignjustify |',
+         'bullist numlist outdent indent | removeformat | link image media | code'
+       ].join(' '),
       font_formats: [
         'Arial=arial,helvetica,sans-serif;',
         'Courier New=courier new,courier,monospace;',
@@ -61,17 +66,26 @@
         'Verdana=verdana,geneva,sans-serif'
       ].join(' '),
       fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt',
-      lineheight_formats: '1 1.2 1.5 1.8 2 3',
-      browser_contextmenu: true,
-      contextmenu: 'link image inserttable | cell row column',
-      branding: false,
-      content_css: '{{ asset("css/tinymce-content.css") }}',
-      content_style: 'body { min-height:400px !important; }',
-      setup(editor) {
-        editor.on('change', () => editor.save());
-      }
-    });
+       browser_contextmenu: true,
+       contextmenu: 'link image inserttable | cell row column',
+       branding: false,
+       content_style: 'body { min-height:400px !important; }',
+       base_url: '{{ asset('assets/js/tinymce') }}',
+       setup(editor) {
+         editor.on('change', () => editor.save());
+       }
+        });
+        };
+        if (window.tinymce) { start(); }
+        else {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
+          s.referrerPolicy = 'origin';
+          s.onload = start;
+          s.onerror = function(){ console.warn('TinyMCE CDN failed to load'); };
+          document.head.appendChild(s);
+        }
+      });
+    })();
     </script>
 @endpush
-
-

@@ -134,7 +134,7 @@
         <div class="card-body">
           <div class="mb-3">
             <label for="announcement" class="form-label">Shop Announcement</label>
-            <textarea id="bio" name="announcement" class="form-control" rows="2">{{ old('announcement', $shop->announcement) }}</textarea>
+            <textarea id="announcement" name="announcement" class="form-control" rows="2">{{ old('announcement', $shop->announcement) }}</textarea>
             <div class="form-text">This announcement will appear at the top of your shop page.</div>
           </div>
         </div>
@@ -146,7 +146,7 @@
         <div class="card-body">
           <div class="mb-3">
             <label for="policies" class="form-label">Shop Policies</label>
-            <textarea id="bio" name="policies" class="form-control" rows="3">{{ old('policies', $shop->policies) }}</textarea>
+            <textarea id="policies" name="policies" class="form-control" rows="3">{{ old('policies', $shop->policies) }}</textarea>
             <div class="form-text">Describe your shop's return, shipping, and other important policies.</div>
           </div>
         </div>
@@ -247,17 +247,37 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
 <script>
-  // TinyMCE
-  tinymce.init({
-    selector: '#bio',
-    plugins: 'image link media code fullscreen',
-    toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
-    // Hide TinyMCE branding and element path
-    menubar: false,
-    height: 300,
-    branding: false, // Hide "Powered by TinyMCE"
-    elementpath: false // Hide the element path/tag path bar
-  });
+  // TinyMCE with CDN fallback and DOM-ready init
+  (function(){
+    function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
+    onReady(function(){
+      const selector = '#bio,#announcement,#policies';
+      const start = function(){
+        try {
+          ['bio','announcement','policies'].forEach(function(id){ const inst = tinymce.get(id); if (inst) inst.remove(); });
+        } catch(_) {}
+        tinymce.init({
+          selector: selector,
+          plugins: 'image link media code fullscreen',
+          toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | image link media | code fullscreen',
+          menubar: false,
+          height: 300,
+          branding: false,
+        elementpath: false,
+        base_url: '{{ asset('assets/js/tinymce') }}'
+        });
+      };
+      if (window.tinymce) { start(); }
+      else {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
+        s.referrerPolicy = 'origin';
+        s.onload = start;
+        s.onerror = function(){ console.warn('TinyMCE CDN failed to load'); };
+        document.head.appendChild(s);
+      }
+    });
+  })();
 
   // Password visibility toggle
   document.getElementById('togglePassword').addEventListener('click', function() {

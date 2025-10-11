@@ -84,13 +84,7 @@
             @error('category_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">Short Description</label>
-            <input type="text" name="short_description" spellcheck="true" autocapitalize="sentences"
-                   class="form-control @error('short_description') is-invalid @enderror"
-                   value="{{ old('short_description', $product->short_description ?? '') }}" placeholder="Brief summary">
-            @error('short_description') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
+          
 
           <div class="col-12">
             <label class="form-label fw-semibold">Description</label>
@@ -205,18 +199,36 @@ function detailsForm(){
     }
   }
 }
-if (document.compatMode === 'CSS1Compat') {
-tinymce.init({
-  selector:'#description', height: 400, menubar:true,
-  plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
-  toolbar:'undo redo | styles | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code',
-  branding:false,
-  browser_spellcheck: true,
-  gecko_spellcheck: true,
-  elementpath: false
-});
-} else {
-  console.warn('TinyMCE disabled (document not in standards mode)');
-}
+;(function(){
+  function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
+  onReady(function(){
+    const el = document.getElementById('description');
+    if (!el) { console.warn('Missing #description'); return; }
+    const start = function(){
+      try { const inst = tinymce.get('description'); if (inst) inst.remove(); } catch(_) {}
+      tinymce.init({
+        selector:'#description',
+        height: 400,
+        menubar:true,
+        plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+        toolbar:'undo redo | styles | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code',
+        branding:false,
+        browser_spellcheck: true,
+        gecko_spellcheck: true,
+        elementpath: false,
+        base_url: '{{ asset('assets/js/tinymce') }}'
+      });
+    };
+    if (window.tinymce) { start(); }
+    else {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
+      s.referrerPolicy = 'origin';
+      s.onload = start;
+      s.onerror = function(){ console.warn('TinyMCE CDN failed to load'); };
+      document.head.appendChild(s);
+    }
+  });
+})();
 </script>
 @endpush
