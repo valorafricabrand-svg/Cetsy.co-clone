@@ -51,6 +51,40 @@ class NotificationController extends Controller
     }
 
     /**
+     * Mark a notification as read and redirect to its target page.
+     */
+    public function open($id)
+    {
+        $user = Auth::user();
+        $activity = Activity::findOrFail($id);
+
+        // Allow if this belongs to the user or is a global admin notification
+        $isOwner = (int) $activity->user_id === (int) $user->id;
+        $isAdminGlobal = is_null($activity->user_id) && method_exists($user, 'isAdmin') && $user->isAdmin();
+        if (!($isOwner || $isAdminGlobal)) {
+            abort(403);
+        }
+
+        // Mark as read (idempotent)
+        if (!$activity->is_read) {
+            $activity->is_read = true;
+            $activity->save();
+        }
+
+        // Resolve destination
+        try {
+            $route = \App\Services\NotificationRouteService::getRouteForNotification($activity, $user);
+        } catch (\Throwable $e) {
+            $route = null;
+        }
+
+        if (!$route) {
+            $route = route('notifications.index');
+        }
+
+        return redirect()->to($route);
+    }
+    /**
      * Lightweight unread counters for navbar badges (AJAX JSON).
      */
     public function counts()
