@@ -180,12 +180,19 @@
                                                         @php
                                                             $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, $user);
                                                             $linkText = \App\Services\NotificationRouteService::getLinkText($notification, $user);
+                                                            $hasOpen = \Illuminate\Support\Facades\Route::has('notifications.open');
                                                         @endphp
                                                         @if($route && $route !== route('notifications.index'))
                                                             <div class="mt-2">
-                                                                <a href="{{ route('notifications.open', $notification->id) }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}">
-                                                                    {{ $linkText }}
-                                                                </a>
+                                                                @if($hasOpen)
+                                                                    <a href="{{ route('notifications.open', $notification->id) }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}">
+                                                                        {{ $linkText }}
+                                                                    </a>
+                                                                @else
+                                                                    <a href="{{ $route }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}">
+                                                                        {{ $linkText }}
+                                                                    </a>
+                                                                @endif
                                                             </div>
                                                         @endif
                                                     </div>

@@ -635,12 +635,20 @@
                                         @php
                                             $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, auth()->user());
                                             $linkText = \App\Services\NotificationRouteService::getLinkText($notification, auth()->user());
+                                            $hasOpen = \Illuminate\Support\Facades\Route::has('notifications.open');
                                         @endphp
                                         @if($route && $route !== route('notifications.index'))
-                                            <a href="{{ route('notifications.open', $notification->id) }}" class="btn-view" data-notif-id="{{ $notification->id }}">
-                                                <i class="fas fa-eye"></i>
-                                                {{ $linkText }}
-                                            </a>
+                                            @if($hasOpen)
+                                                <a href="{{ route('notifications.open', $notification->id) }}" class="btn-view" data-notif-id="{{ $notification->id }}">
+                                                    <i class="fas fa-eye"></i>
+                                                    {{ $linkText }}
+                                                </a>
+                                            @else
+                                                <a href="{{ $route }}" class="btn-view" data-notif-id="{{ $notification->id }}">
+                                                    <i class="fas fa-eye"></i>
+                                                    {{ $linkText }}
+                                                </a>
+                                            @endif
                                         @endif
                                         
                                         @if(!$notification->is_read)

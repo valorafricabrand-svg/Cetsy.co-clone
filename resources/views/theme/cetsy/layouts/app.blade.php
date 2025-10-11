@@ -136,8 +136,8 @@
         else { el.textContent=''; el.style.display='none'; }
       }
       function refreshCounts(){
-        var url = @json(\Illuminate\Support\Facades\Route::has('notifications.counts') ? route('notifications.counts') : null);
-        if(!url) return; // route not registered; skip silently
+        // Avoid triggering RouteNotFoundException at render time; use static path
+        var url = @json(url('/nav/counts'));
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
           .then(function(r){ return r.ok ? r.json() : {notif:0,msg:0}; })
           .then(function(data){
