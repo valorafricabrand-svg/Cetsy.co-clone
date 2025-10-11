@@ -128,6 +128,38 @@
     });
   </script>
   <script>
+    // Instant decrement for notification badges on click
+    (function(){
+      function parseCount(el){
+        if(!el) return 0; var t=(el.textContent||'').trim();
+        if(t==='') return 0; if(t==='99+') return 99; var n=parseInt(t,10); return isNaN(n)?0:n;
+      }
+      function setBadge(id, n){
+        var el=document.getElementById(id); if(!el) return; n=Math.max(0, n|0);
+        if(n>0){ el.textContent = n>99 ? '99+' : String(n); el.style.display='inline-block'; }
+        else { el.textContent=''; el.style.display='none'; }
+      }
+      function decNotif(){
+        ['topNotifCount','navNotifCount'].forEach(function(id){ var el=document.getElementById(id); if(!el) return; setBadge(id, parseCount(el)-1); });
+      }
+      document.addEventListener('click', function(e){
+        var a = e.target && e.target.closest && e.target.closest('a[data-notif-id]');
+        if(!a) return;
+        var unread = a.getAttribute('data-unread');
+        if(unread && unread !== '0'){
+          decNotif();
+          a.setAttribute('data-unread','0');
+          var item = a.closest('.dropdown-item, .notification-item');
+          if(item){
+            var nb = item.querySelector('.badge.bg-primary.rounded-pill, .new-badge');
+            if(nb && nb.parentNode){ try{ nb.parentNode.removeChild(nb); }catch(_){} }
+            item.classList.remove('unread');
+          }
+        }
+      }, true);
+    })();
+  </script>
+  <script>
     // Live-refresh navbar badges (notif/messages)
     document.addEventListener('DOMContentLoaded', function(){
       function setBadge(id, count){

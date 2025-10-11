@@ -639,12 +639,12 @@
                                         @endphp
                                         @if($route && $route !== route('notifications.index'))
                                             @if($hasOpen)
-                                                <a href="{{ route('notifications.open', $notification->id) }}" class="btn-view" data-notif-id="{{ $notification->id }}">
+                                                <a href="{{ route('notifications.open', $notification->id) }}" class="btn-view" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
                                                     <i class="fas fa-eye"></i>
                                                     {{ $linkText }}
                                                 </a>
                                             @else
-                                                <a href="{{ $route }}" class="btn-view" data-notif-id="{{ $notification->id }}">
+                                                <a href="{{ $route }}" class="btn-view" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
                                                     <i class="fas fa-eye"></i>
                                                     {{ $linkText }}
                                                 </a>
