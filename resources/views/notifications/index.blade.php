@@ -637,7 +637,7 @@
                                             $linkText = \App\Services\NotificationRouteService::getLinkText($notification, auth()->user());
                                         @endphp
                                         @if($route && $route !== route('notifications.index'))
-                                            <a href="{{ $route }}" class="btn-view">
+                                            <a href="{{ route('notifications.open', $notification->id) }}" class="btn-view" data-notif-id="{{ $notification->id }}">
                                                 <i class="fas fa-eye"></i>
                                                 {{ $linkText }}
                                             </a>
