@@ -1,4 +1,4 @@
-@php
+﻿@php
     // Ensure Activity model is correctly imported in the controller or view
     use App\Models\Activity;
     use Illuminate\Support\Str;
@@ -97,7 +97,10 @@
             </button>
             <a class="navbar-brand me-1 me-sm-3" href="{{ url('/') }}">
                 <div class="d-flex align-items-center">
-                    <img src="{{ setting('logo_url') }}" style="height: 50px;">
+                    @php
+                      $__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg');
+                    @endphp
+                    <img src="{{ $__logo }}" style="height: 50px;" onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
                 </div>
             </a>
         </div>
@@ -112,8 +115,8 @@
                     $currentCurrency = get_currency();
                     $navCurrencies = collect([
                         (object)['code' => 'USD','symbol' => '$'],
-                        (object)['code' => 'EUR','symbol' => '€'],
-                        (object)['code' => 'GBP','symbol' => '£'],
+                        (object)['code' => 'EUR','symbol' => 'â‚¬'],
+                        (object)['code' => 'GBP','symbol' => 'Â£'],
                         (object)['code' => 'KES','symbol' => 'KES'],
                     ]);
                 }
@@ -177,12 +180,19 @@
                                                         @php
                                                             $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, $user);
                                                             $linkText = \App\Services\NotificationRouteService::getLinkText($notification, $user);
+                                                            $hasOpen = \Illuminate\Support\Facades\Route::has('notifications.open');
                                                         @endphp
                                                         @if($route && $route !== route('notifications.index'))
                                                             <div class="mt-2">
-                                                                <a href="{{ $route }}" class="btn btn-sm btn-outline-primary">
-                                                                    {{ $linkText }}
-                                                                </a>
+                                                                @if($hasOpen)
+                                                                    <a href="{{ route('notifications.open', $notification->id) }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
+                                                                        {{ $linkText }}
+                                                                    </a>
+                                                                @else
+                                                                    <a href="{{ $route }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
+                                                                        {{ $linkText }}
+                                                                    </a>
+                                                                @endif
                                                             </div>
                                                         @endif
                                                     </div>
@@ -214,7 +224,7 @@
                                                             @endphp
                                                             <strong>{{ $from }}:</strong> {{ $snippet }}
                                                         </p>
-                                                        <small class="text-body-quaternary">{{ $msg->created_at->diffForHumans() }} • Dispute #{{ $msg->dispute_id }}</small>
+                                                        <small class="text-body-quaternary">{{ $msg->created_at->diffForHumans() }} â€¢ Dispute #{{ $msg->dispute_id }}</small>
                                                         <div class="mt-2">
                                                             <a href="{{ route('disputes.show', $msg->dispute_id) }}" class="btn btn-sm btn-outline-warning">
                                                                 View Dispute
@@ -313,3 +323,5 @@
         </ul>
     </div>
 </nav>
+
+

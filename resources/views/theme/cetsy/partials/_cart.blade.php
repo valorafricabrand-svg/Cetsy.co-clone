@@ -1,4 +1,4 @@
-{{-- resources/views/theme/{{ theme() }}/partials/_details.blade.php --}}
+﻿{{-- resources/views/theme/{{ theme() }}/partials/_details.blade.php --}}
 @php
   $currency        = get_currency();
   $basePrice       = (float) ($product->price ?? 0);
@@ -53,8 +53,8 @@
       : null;
 
   // Default display price:
-  // - If there are *priced* variants -> show the lowest variant price ("From …")
-  // - Else -> show product’s sale/base price
+  // - If there are *priced* variants -> show the lowest variant price ("From â€¦")
+  // - Else -> show productâ€™s sale/base price
   $defaultDisplayPrice = $lowestVariantPrice ?? $salePrice;
 
   $format = fn($amount) => number_format((float)$amount, 2);
@@ -255,10 +255,10 @@
               >
                 <option value="" disabled selected>Select {{ strtolower($type->name) }}</option>
                 @foreach($type->options as $opt)
-                  <option
-                    value="{{ $opt->id }}"
-                    data-label="{{ $opt->value }}"
-                  >{{ $opt->value }}</option>
+                  @php $__min = $optionMinPrice[$opt->id] ?? null; @endphp
+                  <option value="{{ $opt->id }}" data-label="{{ $opt->value }}">
+                    {{ $opt->value }}@if($__min !== null) - {{ money((float) $__min) }}@endif
+                  </option>
                 @endforeach
               </select>
             </div>
@@ -429,7 +429,7 @@
       return minPriceForOption(optId);
     }
 
-    // Keep helpful per-option labels ("— From KES X.XX")
+    // Keep helpful per-option labels ("â€” From KES X.XX")
     function updateOptionLabels() {
       for (const s of selects) {
         const perOptionMin = JSON.parse(s.getAttribute('data-option-min') || '{}');
@@ -442,7 +442,7 @@
           if (viableOptionIdSet.has(optId)) {
             const min = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : minPriceForOption(optId);
             opt.textContent = (min != null && !Number.isNaN(min))
-              ? `${baseLabel} — ${fmt(min)}`
+              ? `${baseLabel} â€” ${fmt(min)}`
               : baseLabel;
           } else {
             opt.textContent = baseLabel; // no priced mapping -> leave plain
@@ -569,15 +569,16 @@
         return min;
       }
       for (const s of selects) {
-        const priceAffecting = isPriceSelect(s);
+        const priceAffecting = isPriceSelect(s); // not used to filter; show prices on all options
         const perOptionMin = JSON.parse(s.getAttribute('data-option-min') || '{}');
         for (const opt of Array.from(s.options)) {
           if (!opt.value) continue;
           const baseLabel = opt.getAttribute('data-label') || opt.textContent;
           const optId = parseInt(opt.value,10);
-          if (priceAffecting && viableOptionIdSet.has(optId)){
+          // Show a price suffix for any option that appears in a priced variant
+          if (viableOptionIdSet.has(optId)){
             const min = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : minPriceForOption(optId);
-            opt.textContent = (min != null && !Number.isNaN(min)) ? `${baseLabel} – ${fmt(min)}` : baseLabel;
+            opt.textContent = (min != null && !Number.isNaN(min)) ? `${baseLabel} â€“ ${fmt(min)}` : baseLabel;
           } else {
             opt.textContent = baseLabel;
           }
@@ -587,3 +588,7 @@
   }
 </script>
 @endpush
+
+
+
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" dir="ltr" data-bs-theme="light">
 <head>
   <meta charset="UTF-8">
@@ -30,7 +30,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="@yield('canonical_url', url()->current())">
     <meta property="og:image" content="@yield('meta_image', asset('assets/images/default-og-image-cetsy.jpg'))">
-    <meta property="og:image:alt" content="Cetsy — Handmade Products Marketplace">
+    <meta property="og:image:alt" content="Cetsy â€” Handmade Products Marketplace">
     <meta property="og:locale" content="en_US">
     <meta property="og:site_name" content="{{ config('app.name', 'Cetsy') }}">
 
@@ -38,7 +38,7 @@
     <meta name="twitter:title" content="@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')">
     <meta name="twitter:description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
     <meta name="twitter:image" content="@yield('meta_image', asset('assets/images/default-twitter-image-cetsy.jpg'))">
-    <meta name="twitter:image:alt" content="Cetsy — Handmade Products Marketplace">
+    <meta name="twitter:image:alt" content="Cetsy â€” Handmade Products Marketplace">
   @show
 
   <!-- Favicons -->
@@ -128,6 +128,38 @@
     });
   </script>
   <script>
+    // Instant decrement for notification badges on click
+    (function(){
+      function parseCount(el){
+        if(!el) return 0; var t=(el.textContent||'').trim();
+        if(t==='') return 0; if(t==='99+') return 99; var n=parseInt(t,10); return isNaN(n)?0:n;
+      }
+      function setBadge(id, n){
+        var el=document.getElementById(id); if(!el) return; n=Math.max(0, n|0);
+        if(n>0){ el.textContent = n>99 ? '99+' : String(n); el.style.display='inline-block'; }
+        else { el.textContent=''; el.style.display='none'; }
+      }
+      function decNotif(){
+        ['topNotifCount','navNotifCount'].forEach(function(id){ var el=document.getElementById(id); if(!el) return; setBadge(id, parseCount(el)-1); });
+      }
+      document.addEventListener('click', function(e){
+        var a = e.target && e.target.closest && e.target.closest('a[data-notif-id]');
+        if(!a) return;
+        var unread = a.getAttribute('data-unread');
+        if(unread && unread !== '0'){
+          decNotif();
+          a.setAttribute('data-unread','0');
+          var item = a.closest('.dropdown-item, .notification-item');
+          if(item){
+            var nb = item.querySelector('.badge.bg-primary.rounded-pill, .new-badge');
+            if(nb && nb.parentNode){ try{ nb.parentNode.removeChild(nb); }catch(_){} }
+            item.classList.remove('unread');
+          }
+        }
+      }, true);
+    })();
+  </script>
+  <script>
     // Live-refresh navbar badges (notif/messages)
     document.addEventListener('DOMContentLoaded', function(){
       function setBadge(id, count){
@@ -136,8 +168,8 @@
         else { el.textContent=''; el.style.display='none'; }
       }
       function refreshCounts(){
-        var url = @json(\Illuminate\Support\Facades\Route::has('notifications.counts') ? route('notifications.counts') : null);
-        if(!url) return; // route not registered; skip silently
+        // Avoid triggering RouteNotFoundException at render time; use static path
+        var url = @json(url('/nav/counts'));
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
           .then(function(r){ return r.ok ? r.json() : {notif:0,msg:0}; })
           .then(function(data){
@@ -246,7 +278,11 @@
             </button>
 
             <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url('/') }}">
-              <img src="{{ setting('logo_url') }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="48" width="auto" loading="lazy">
+              @php
+                $__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg');
+              @endphp
+              <img src="{{ $__logo }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="48" width="auto" loading="lazy"
+                   onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
             </a>
           </div>
 
@@ -255,7 +291,7 @@
             {{-- Search (desktop) --}}
             <form class="d-none d-lg-flex ms-3 me-3 flex-grow-1" method="GET" action="{{ route('search') }}" role="search">
               <label for="navbarSearch" class="visually-hidden">Search</label>
-              <input id="navbarSearch" class="form-control" type="search" name="q" placeholder="Search products, services, shops…" aria-label="Search" value="{{ request('q') }}" autocomplete="on">
+              <input id="navbarSearch" class="form-control" type="search" name="q" placeholder="Search products, services, shopsâ€¦" aria-label="Search" value="{{ request('q') }}" autocomplete="on">
               <button class="btn btn-outline-secondary ms-2" type="submit" aria-label="Submit search">
                 <i class="fas fa-search"></i>
               </button>
@@ -277,8 +313,8 @@
                   $currentCurrency = get_currency();
                   $navCurrencies = collect([
                     (object)['code' => 'USD','symbol' => '$','usd_rate'=>1.0,'decimal_places'=>2],
-                    (object)['code' => 'EUR','symbol' => '€','usd_rate'=>0.92,'decimal_places'=>2],
-                    (object)['code' => 'GBP','symbol' => '£','usd_rate'=>0.78,'decimal_places'=>2],
+                    (object)['code' => 'EUR','symbol' => 'â‚¬','usd_rate'=>0.92,'decimal_places'=>2],
+                    (object)['code' => 'GBP','symbol' => 'Â£','usd_rate'=>0.78,'decimal_places'=>2],
                     (object)['code' => 'KES','symbol' => 'KES','usd_rate'=>(float) env('USD_TO_KES',130),'decimal_places'=>2],
                   ]);
                 }
@@ -409,7 +445,7 @@
             <form class="d-flex" method="GET" action="{{ route('search') }}" role="search">
               <label for="navbarSearchMobile" class="visually-hidden">Search</label>
               <input id="navbarSearchMobile" class="form-control" type="search" name="q"
-                     placeholder="Search products, services, shops…" aria-label="Search" value="{{ request('q') }}">
+                     placeholder="Search products, services, shopsâ€¦" aria-label="Search" value="{{ request('q') }}">
               <button class="btn btn-outline-secondary ms-2" type="submit" aria-label="Submit search">
                 <i class="fas fa-search"></i>
               </button>
@@ -434,8 +470,8 @@
               $currentCurrency = get_currency();
               $navCurrencies = collect([
                 (object)['code' => 'USD','symbol' => '$'],
-                (object)['code' => 'EUR','symbol' => '€'],
-                (object)['code' => 'GBP','symbol' => '£'],
+                (object)['code' => 'EUR','symbol' => 'â‚¬'],
+                (object)['code' => 'GBP','symbol' => 'Â£'],
                 (object)['code' => 'KES','symbol' => 'KES'],
               ]);
             }
@@ -445,7 +481,7 @@
             <label for="currencySelect" class="form-label mb-1"><i class="fas fa-coins me-1"></i> Currency</label>
             @php $siteDefault = setting('default_currency', 'USD') ?: 'USD'; @endphp
             <select id="currencySelect" class="form-select form-select-sm" aria-label="Select currency">
-              <option value="" disabled>Select currency…</option>
+              <option value="" disabled>Select currencyâ€¦</option>
               <option value="__default__">System Default ({{ strtoupper($siteDefault) }})</option>
               @foreach($navCurrencies as $c)
                 @php $code = strtoupper($c->code); @endphp
@@ -557,7 +593,7 @@
             {{-- Full tree (mobile) --}}
             <div class="mb-2">
               <label for="categoryFilter" class="form-label small text-muted">Filter categories</label>
-              <input type="text" id="categoryFilter" class="form-control form-control-sm" placeholder="Type to filter…" autocomplete="off">
+              <input type="text" id="categoryFilter" class="form-control form-control-sm" placeholder="Type to filterâ€¦" autocomplete="off">
             </div>
             <div class="border rounded-3 p-2" id="categoryTree" style="flex:1 1 auto; min-height:0; overflow:auto; -webkit-overflow-scrolling: touch;">
               @php
@@ -630,7 +666,7 @@
           @endif
 
           <div class="mt-auto pt-3 border-top small text-muted">
-            &copy; {{ date('Y') }} {{ config('app.name','Cetsy') }} — All rights reserved.
+            &copy; {{ date('Y') }} {{ config('app.name','Cetsy') }} â€” All rights reserved.
           </div>
         </div>
       </div>
@@ -932,7 +968,7 @@
 
         <div class="mt-5 pt-4 border-top border-secondary-subtle text-center">
           <p class="mb-0 text-white-50 footer-text">
-            &copy; {{ date('Y') }} {{ config('app.name', 'Cetsy') }} — All rights reserved.
+            &copy; {{ date('Y') }} {{ config('app.name', 'Cetsy') }} â€” All rights reserved.
           </p>
         </div>
       </div>
@@ -1037,3 +1073,5 @@
   </script>
 </body>
 </html>
+
+
