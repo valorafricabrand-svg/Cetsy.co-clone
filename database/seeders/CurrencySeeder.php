@@ -12,7 +12,7 @@ class CurrencySeeder extends Seeder
         $rows = [
             // code, name, symbol, decimals, usd_rate (approx defaults)
             ['USD', 'US Dollar', '$', 2, 1.00],
-            ['EUR', 'Euro', '€', 2, 0.92],
+            ['EUR', 'Euro', '', 2, 0.92],
             ['GBP', 'British Pound', '£', 2, 0.78],
             ['JPY', 'Japanese Yen', '¥', 0, 150.00],
             ['KES', 'Kenyan Shilling', 'KSh', 2, (float) env('USD_TO_KES', 130)],

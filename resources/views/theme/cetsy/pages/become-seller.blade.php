@@ -10,17 +10,17 @@
       <div class="col-lg-8">
         <h1 class="display-5 fw-bold">How to Become a Seller at Cetsy.co</h1>
         <p class="h5 text-secondary mb-4">
-          Thank you for your interest in becoming a <strong>Seller</strong> on Cetsy â€“ a global marketplace where you can offer nearly anything, to anyone, anywhere.
+          Thank you for your interest in becoming a <strong>Seller</strong> on Cetsy â“ a global marketplace where you can offer nearly anything, to anyone, anywhere.
         </p>
 
         <p class="lead">
-          If you can legally sell the item in your country, you can probably list it on Cetsy. Tangible goods include (but arenâ€™t limited to): household items, collectibles, jewelry, artwork, vehicles, pharmaceuticals, handmade crafts, real estate, outdoor equipment, and more. Each listing can include photos, videos, and audio.
+          If you can legally sell the item in your country, you can probably list it on Cetsy. Tangible goods include (but arenâ™t limited to): household items, collectibles, jewelry, artwork, vehicles, pharmaceuticals, handmade crafts, real estate, outdoor equipment, and more. Each listing can include photos, videos, and audio.
         </p>
         <p class="lead">
-          Digital products (â€œintangible itemsâ€) are also welcome: original music, e-books, recipes, and other downloads.
+          Digital products (âœintangible itemsâ) are also welcome: original music, e-books, recipes, and other downloads.
         </p>
         <p class="lead">
-          Not sure if your item qualifies? <a href="{{ url('/contact') }}" class="text-decoration-underline">Contact us via live chat</a> and weâ€™ll help.
+          Not sure if your item qualifies? <a href="{{ url('/contact') }}" class="text-decoration-underline">Contact us via live chat</a> and weâ™ll help.
         </p>
         <p class="lead">
           Ready to get started? <a href="{{ url('/login') }}" class="fw-bold text-danger text-decoration-none">Review our Seller Agreement</a> to see both our expectations and your benefits as a Seller.

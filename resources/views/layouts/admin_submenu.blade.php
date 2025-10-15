@@ -80,7 +80,6 @@
         'title' => 'System',
         'items' => [
           ['label' => 'Settings', 'icon' => 'fas fa-gear', 'url' => route('admin.settings'), 'match' => ['admin.settings','admin.settings.*']],
-          ['label' => 'Notifications', 'icon' => 'fas fa-bell', 'url' => route('notifications.index'), 'match' => ['notifications.index','notifications.index*']],
         ],
       ],
     ];

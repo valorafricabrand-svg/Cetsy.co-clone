@@ -180,7 +180,7 @@ public function variations() {
         return $this->belongsToMany(Deal::class);
     }
 
-    /** Returns the active deal (siteâ€‘wide or for this product) */
+    /** Returns the active deal (siteâ‘wide or for this product) */
     public function activeDeal()
     {
         $now = Carbon::now();

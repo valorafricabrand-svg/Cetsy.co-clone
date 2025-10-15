@@ -174,9 +174,9 @@
               <select id="priceFilter" class="form-select form-select-sm">
                 <option value="">All</option>
                 <option value="0-10">Under $10</option>
-                <option value="10-25">$10â€“25</option>
-                <option value="25-50">$25â€“50</option>
-                <option value="50-100">$50â€“100</option>
+                <option value="10-25">$10â“25</option>
+                <option value="25-50">$25â“50</option>
+                <option value="50-100">$50â“100</option>
                 <option value="100+">Over $100</option>
               </select>
             </div>
@@ -201,7 +201,7 @@
           </div>
           <div class="d-flex align-items-center gap-3">
             <span class="small text-muted">
-              {{ $products->firstItem() ?? 0 }}â€“{{ $products->lastItem() ?? 0 }} of {{ $products->total() }}
+              {{ $products->firstItem() ?? 0 }}â“{{ $products->lastItem() ?? 0 }} of {{ $products->total() }}
             </span>
             <div class="btn-group btn-group-sm" role="group">
               <input type="radio" class="btn-check" name="viewMode" id="viewGrid" value="grid" autocomplete="off" checked>
@@ -393,7 +393,7 @@
       <input type="hidden" name="receiver_id" value="{{ $shop->user_id }}">
       <input type="hidden" name="product_id" value="">
       <div class="modal-header">
-        <h5 class="modal-title" id="messageModalLabel">Message Seller â€“ {{ $shop->name }}</h5>
+        <h5 class="modal-title" id="messageModalLabel">Message Seller â“ {{ $shop->name }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">

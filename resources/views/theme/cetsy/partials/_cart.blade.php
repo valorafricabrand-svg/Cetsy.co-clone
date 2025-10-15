@@ -53,8 +53,8 @@
       : null;
 
   // Default display price:
-  // - If there are *priced* variants -> show the lowest variant price ("From â€¦")
-  // - Else -> show productâ€™s sale/base price
+  // - If there are *priced* variants -> show the lowest variant price ("From â¦")
+  // - Else -> show productâ™s sale/base price
   $defaultDisplayPrice = $lowestVariantPrice ?? $salePrice;
 
   $format = fn($amount) => number_format((float)$amount, 2);
@@ -429,7 +429,7 @@
       return minPriceForOption(optId);
     }
 
-    // Keep helpful per-option labels ("â€” From KES X.XX")
+    // Keep helpful per-option labels (" From KES X.XX")
     function updateOptionLabels() {
       for (const s of selects) {
         const perOptionMin = JSON.parse(s.getAttribute('data-option-min') || '{}');
@@ -442,7 +442,7 @@
           if (viableOptionIdSet.has(optId)) {
             const min = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : minPriceForOption(optId);
             opt.textContent = (min != null && !Number.isNaN(min))
-              ? `${baseLabel} â€” ${fmt(min)}`
+              ? `${baseLabel}  ${fmt(min)}`
               : baseLabel;
           } else {
             opt.textContent = baseLabel; // no priced mapping -> leave plain
@@ -578,7 +578,7 @@
           // Show a price suffix for any option that appears in a priced variant
           if (viableOptionIdSet.has(optId)){
             const min = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : minPriceForOption(optId);
-            opt.textContent = (min != null && !Number.isNaN(min)) ? `${baseLabel} â€“ ${fmt(min)}` : baseLabel;
+            opt.textContent = (min != null && !Number.isNaN(min)) ? `${baseLabel} â“ ${fmt(min)}` : baseLabel;
           } else {
             opt.textContent = baseLabel;
           }

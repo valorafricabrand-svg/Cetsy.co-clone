@@ -224,7 +224,7 @@
                                                             @endphp
                                                             <strong>{{ $from }}:</strong> {{ $snippet }}
                                                         </p>
-                                                        <small class="text-body-quaternary">{{ $msg->created_at->diffForHumans() }} â€¢ Dispute #{{ $msg->dispute_id }}</small>
+                                                        <small class="text-body-quaternary">{{ $msg->created_at->diffForHumans() }} â¢ Dispute #{{ $msg->dispute_id }}</small>
                                                         <div class="mt-2">
                                                             <a href="{{ route('disputes.show', $msg->dispute_id) }}" class="btn btn-sm btn-outline-warning">
                                                                 View Dispute

@@ -25,7 +25,7 @@
         <meta property="og:type" content="website">
         <meta property="og:url" content="@yield('canonical_url', 'https://cetsy.com')">
         <meta property="og:image" content="@yield('meta_image', asset('assets/images/default-og-image-cetsy.jpg'))">
-        <meta property="og:image:alt" content="Cetsy â€” Handmade Products Marketplace">
+        <meta property="og:image:alt" content="Cetsy  Handmade Products Marketplace">
         <meta property="og:locale" content="en_US">
         <meta property="og:site_name" content="Cetsy">
 
@@ -34,7 +34,7 @@
         <meta name="twitter:title" content="@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')">
         <meta name="twitter:description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
         <meta name="twitter:image" content="@yield('meta_image', asset('assets/images/default-twitter-image-cetsy.jpg'))">
-        <meta name="twitter:image:alt" content="Cetsy â€” Handmade Products Marketplace">
+        <meta name="twitter:image:alt" content="Cetsy  Handmade Products Marketplace">
     @show
 
     <!-- Favicons -->
@@ -374,23 +374,23 @@
 
 @push('styles')
 <style>
-/* â€”â€”â€” Layout â€”â€”â€” */
+/*  Layout  */
 .dropdown-menu                { min-width:230px; border-radius:.5rem; box-shadow:0 .5rem 1rem rgba(0,0,0,.08); }
 .dropdown-submenu>.dropdown-menu{
-  top:-0.25rem;               /* 1 â€” tiny offset so corners don't overlap */
+  top:-0.25rem;               /* 1  tiny offset so corners don't overlap */
   left:100%;
   margin-left:.15rem;
 }
 .dropdown-submenu.no-children > a .rotate{display:none}
 
-/* â€”â€”â€” Hover/active styles â€”â€”â€” */
+/*  Hover/active styles  */
 .dropdown-item:hover,
 .dropdown-item:focus         { background:#eaf7ef; color:#198754; }
 .rotate                       { transition:.25s transform; }
 .dropdown-submenu.show   > a .rotate,
 .nav-item.dropdown.show  > a .rotate{ transform:rotate(90deg); }
 
-/* â€”â€”â€” Ensure stacking & scrolling â€”â€”â€” */
+/*  Ensure stacking & scrolling  */
 .dropdown-menu               { max-height:72vh; overflow:auto; z-index:1055; }
 
 /* Desktop hover open */
@@ -415,7 +415,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         const already = parentLi.classList.toggle('show');
         sub.classList.toggle('show', already);
 
-        // 2 â€” Flip left if overflowing viewport
+        // 2  Flip left if overflowing viewport
         if(already){
           const rect = sub.getBoundingClientRect();
           if(rect.right > window.innerWidth){
@@ -565,7 +565,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <div class="mt-5 pt-4 border-top border-secondary text-center">
       <p class="mb-0 text-white-50 footer-text">
-        &copy; {{ date('Y') }} {{ config('app.name') }} â€” All rights reserved.
+        &copy; {{ date('Y') }} {{ config('app.name') }}  All rights reserved.
       </p>
     </div>
   </div>
