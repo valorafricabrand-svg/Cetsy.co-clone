@@ -351,8 +351,6 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::prefix('wallet')->name('wallet.')->group(function () {
         Route::get('/', [WalletController::class, 'index'])->name('index');
         Route::get('/deposit', [WalletController::class, 'depositForm'])->name('deposit.form');
-        Route::post('/deposit/otp-verify', [WalletController::class, 'verifyDepositOtp'])->name('deposit.otp.verify');
-        Route::post('/deposit/otp-resend', [WalletController::class, 'resendDepositOtp'])->name('deposit.otp.resend');
         Route::post('/deposit', [WalletController::class, 'storeDeposit'])->name('deposit.store');
         Route::post('/deposit/paypal', [WalletController::class, 'handlePayPalDeposit'])->name('deposit.paypal');
 
