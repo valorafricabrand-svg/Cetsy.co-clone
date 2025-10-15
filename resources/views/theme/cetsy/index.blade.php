@@ -376,7 +376,7 @@
           <p class="text-muted mb-3">
             Cetsy is a global e-commerce marketplace founded in 2021 to better connect world markets.
             Privately held and based in Ohio, USA, it enables sellers to list nearly any item they can legally sell
-            in their regionâ€”safely and simply.
+            in their region safely and simply.
           </p>
           <a class="link-arrow" href="{{ url('/about') }}">
             Learn our story <i class="fas fa-arrow-right"></i>
@@ -416,7 +416,7 @@
             <h3 class="h4 mb-0">Start now</h3>
           </div>
           <p class="text-muted mb-3">
-            Become a Cetsy Seller in a few steps. Review the Seller Agreement to see what we expectâ€”and what
+            Become a Cetsy Seller in a few steps. Review the Seller Agreement to see what we expect and what
             you can expect from us. Questions? Email us or use LIVE CHAT anytime.
           </p>
           <div class="d-flex flex-wrap gap-2">

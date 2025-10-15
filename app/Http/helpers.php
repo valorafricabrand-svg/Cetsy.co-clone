@@ -246,7 +246,7 @@ if (! function_exists('currency_symbol')) {
         } catch (\Throwable $e) {}
         return match ($code) {
             'USD' => '$',
-            'EUR' => '€',
+            'EUR' => '',
             'GBP' => '£',
             'JPY' => '¥',
             'INR' => '₹',
