@@ -72,7 +72,7 @@
             In the event of a service outage or assistance request, the Transaction Processor will acknowledge receipt immediately and strive to resolve the issue as quickly as possible in consultation with stakeholders.
           </p>
 
-          <h1 class="text-uppercase mt-5">Behavioral Policy / Indemnity General</h1>
+          <h1 id="behavioral-policy" class="text-uppercase mt-5">Behavioral Policy / Indemnity General</h1>
           <p>
             All parties agree not to violate U.S. laws (including Ohio law) and to defend, indemnify, and hold Cetsy.co harmless against all claims arising from legal violations. Cetsy.co likewise indemnifies members.
           </p>
