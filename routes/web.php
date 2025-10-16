@@ -125,6 +125,19 @@ Route::get('/house-policy', function () {
     return themed_view('pages.house-policy');
 })->name('house-policy');
 
+// Additional policy pages (linked from House Rules)
+Route::get('/cetsyip_policy', function () {
+    return themed_view('pages.cetsyip_policy');
+})->name('cetsyip_policy');
+Route::get('/payment_policy', function () {
+    return themed_view('pages.payment_policy');
+})->name('payment_policy');
+
+// Restricted / Prohibited items
+Route::get('/restricted_for_sale', function () {
+    return themed_view('pages.restricted_for_sale');
+})->name('restricted_for_sale');
+
 // Product listings & categories
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('/search', [ProductController::class, 'search'])->name('search');
