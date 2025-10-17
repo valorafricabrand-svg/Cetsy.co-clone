@@ -53,6 +53,23 @@
 
 <div class="content">
 
+    @if (session('status') === 'verification-link-sent')
+        <div class="alert alert-success d-flex justify-content-between align-items-center" role="alert">
+            <div>A new verification link was sent to your email.</div>
+        </div>
+    @endif
+    @if (! auth()->user()->hasVerifiedEmail())
+        <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+            <div>
+                Your email is not verified. Please check your inbox for a verification link.
+            </div>
+            <form method="POST" action="{{ route('verification.send') }}" class="ms-3">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-warning">Resend verification email</button>
+            </form>
+        </div>
+    @endif
+
     {{-- Header: shop info + quick actions --}}
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
