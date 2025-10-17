@@ -831,7 +831,7 @@ public function payOrder(Request $request, $id)
 
         if ($order->isPaid()) {
             return redirect()
-                ->route('buyer.orders.show', $order->id)
+                ->route('orders.show', $order->id)
                 ->with('error', 'This order has already been paid.');
         }
 
@@ -960,7 +960,7 @@ public function payOrder(Request $request, $id)
         }
 
      
-      return redirect()->route('buyer.orders.show', $order->id)
+      return redirect()->route('orders.show', $order->id)
             ->with('success', 'Your payment has been received. Your order is being processed; you will receive a call from our sales team shortly.');
     }
 

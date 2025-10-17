@@ -97,7 +97,7 @@
           <h1 class="text-uppercase mt-5">Cetsy IP Infringement Policy</h1>
           <p>This process ensures IP concerns are addressed promptly and fairly.</p>
 
-          <a href="/cetsyip_policy" class="btn btn-warning mt-3">
+          <a href="/house-policy#behavioral-policy" class="btn btn-warning mt-3">
             Read More
           </a>
 

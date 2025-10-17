@@ -292,10 +292,10 @@
                                     <a class="dropdown-item" href="{{ route('profile.edit') }}">
                                         <i class="fa fa-user"></i> <span>Profile</span>
                                     </a>
-                                    <a class="dropdown-item" href="{{ url('billings') }}">
+                                    <a class="dropdown-item" href="{{ route('seller.billing.index') }}">
                                         <i class="fa fa-users"></i> <span>Manage your billings</span>
                                     </a>
-                                    <a class="dropdown-item" href="{{ url('subscribe') }}">
+                                    <a class="dropdown-item" href="{{ route('seller.subscription') }}">
                                         <i class="fa fa-users"></i> <span>Manage your subscriptions</span>
                                     </a>
                                 @else
@@ -323,5 +323,3 @@
         </ul>
     </div>
 </nav>
-
-

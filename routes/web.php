@@ -106,6 +106,17 @@ Route::get('/privacy', function () {
 Route::get('/terms', function () {
     return themed_view('pages.terms');
 })->name('terms');
+// Aliases for legacy links
+Route::get('/privacy-policy', function () {
+    return themed_view('pages.privacy');
+})->name('privacy.policy');
+Route::get('/terms-of-service', function () {
+    return themed_view('pages.terms');
+})->name('terms.of.service');
+Route::get('/intro', function () {
+    // Direct to About as an intro/overview
+    return themed_view('pages.about');
+})->name('intro');
 Route::get('/seller-forum', function () {
     return themed_view('pages.seller-forum');
 })->name('seller-forum');
@@ -240,9 +251,11 @@ Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('r
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth','verified'])->group(function () {
 
-    Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+// Allow all authenticated users to access dashboard (show alert if unverified)
+Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+
+Route::middleware(['auth','verified'])->group(function () {
 
     // Navbar unread counters (AJAX)
     Route::get('/nav/counts', [\App\Http\Controllers\NotificationController::class, 'counts'])
@@ -563,6 +576,9 @@ Route::post('/admin/categories/{category}/attributes', [CategoryAttributeControl
 */
 Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('seller.')->group(function () {
     // Subscription management - accessible without active subscription only
+    Route::get('billing', function () {
+        return view('seller.billing');
+    })->name('billing.index');
     Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription');
     Route::post('subscription', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
     Route::post('subscription/wallet', [SubscriptionController::class, 'walletPay'])->name('subscription.wallet.pay');
@@ -594,9 +610,14 @@ Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('selle
 | Seller Routes - Active Subscription Required
 |--------------------------------------------------------------------------
 */
+// Seller dashboard accessible to authenticated sellers (email may be unverified)
+Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
+    Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
+});
+
 Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
     // Dashboard & Analytics
-    Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
+    // (dashboard route defined above without 'verified' to allow access with alert)
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
     // Deals (require active subscription)
@@ -676,8 +697,12 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
 | Buyer Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(function () {
+// Buyer dashboard accessible to authenticated users (email may be unverified)
+Route::middleware(['auth'])->prefix('buyer')->name('buyer.')->group(function () {
     Route::get('dashboard', [BuyerDashboard::class, 'index'])->name('dashboard');
+});
+
+Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(function () {
 
     // Buyer notifications (view + mark as read)
     Route::get('notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
