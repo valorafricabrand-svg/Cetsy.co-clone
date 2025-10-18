@@ -896,11 +896,7 @@
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Sellers</h4>
             <ul class="list-unstyled mb-0">
               @foreach([
-                'Become a Seller'    => url('/become-seller'),
-                'Privacy Policy'     => url('/privacy'),
-                'Terms & Conditions' => url('/terms'),
-                'Seller Forum'       => url('/seller-forum'),
-                'Seller Tips'        => url('/seller-tips'),
+                'User Agreement' => url('/user-agreement'),
               ] as $label => $link)
                 <li class="mb-2"><a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">{{ $label }}</a></li>
               @endforeach
@@ -912,9 +908,7 @@
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Buyers</h4>
             <ul class="list-unstyled mb-0">
               @foreach([
-                'Buyer Tips'         => url('/buyer-tips'),
-                'Privacy Policy'     => url('/privacy'),
-                'Terms & Conditions' => url('/buyer-terms'),
+                'User Agreement' => url('/user-agreement'),
               ] as $label => $link)
                 <li class="mb-2"><a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">{{ $label }}</a></li>
               @endforeach
@@ -1088,4 +1082,3 @@ s0.parentNode.insertBefore(s1,s0);
 <!--End of Tawk.to Script-->
 </body>
 </html>
-
