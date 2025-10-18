@@ -157,10 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
                   value="1"
                   {{ old('terms') ? 'checked' : '' }}>
                 <label class="form-check-label small" for="terms">
-                  I agree to the Cetsy User Agreement
-                  <!-- <a href="{{ url('/terms') }}" target="_blank" class="text-success">Terms of Service</a>
-                  and
-                  <a href="{{ url('/privacy') }}" target="_blank" class="text-success">Privacy Policy</a>. -->
+                  I agree to the
+                  <a href="{{ url('/user-agreement') }}" target="_blank" rel="noopener" class="text-success">Cetsy User Agreement</a>
                 </label>
                 <div id="terms-error" class="invalid-feedback d-block" style="display:none;"></div>
                 @error('terms') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
@@ -225,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
   form.addEventListener('submit', function(e) {
     if (!terms.checked) {
       e.preventDefault();
-      errorDiv.textContent = "You must agree to the Terms of Service and Privacy Policy.";
+      errorDiv.textContent = "You must agree to the Cetsy User Agreement.";
       errorDiv.style.display = "block";
       terms.classList.add('is-invalid');
       terms.focus();
