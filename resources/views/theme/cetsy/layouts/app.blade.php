@@ -891,39 +891,22 @@
     <footer class="bg-dark text-white pt-5 mt-5">
       <div class="container px-3 px-sm-5">
         <div class="row gx-4 gy-5">
-          <!-- Sellers -->
-          <div class="col-6 col-md-3">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Sellers</h4>
-            <ul class="list-unstyled mb-0">
-              @foreach([
-                'User Agreement' => url('/user-agreement'),
-              ] as $label => $link)
-                <li class="mb-2"><a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">{{ $label }}</a></li>
-              @endforeach
-            </ul>
-          </div>
-
-          <!-- Buyers -->
-          <div class="col-6 col-md-3">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Buyers</h4>
-            <ul class="list-unstyled mb-0">
-              @foreach([
-                'User Agreement' => url('/user-agreement'),
-              ] as $label => $link)
-                <li class="mb-2"><a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">{{ $label }}</a></li>
-              @endforeach
-            </ul>
-          </div>
-
-          <!-- About -->
-          <div class="col-6 col-md-3">
+          <!-- About (blurb) -->
+          <div class="col-12 col-md-4">
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">About</h4>
+            <p class="text-white-50 footer-text mb-0">
+              Cetsy is a global marketplace connecting buyers and sellers worldwide, empowering entrepreneurs to list legal products and services with payments, tools, and a community built on trust, discovery, and growth.
+            </p>
+          </div>
+
+          <!-- Quick Links -->
+          <div class="col-12 col-md-4">
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Quick Links</h4>
             <ul class="list-unstyled mb-0">
               @foreach([
                 'User Agreement'              => url('/user-agreement'),
-                'About ' . config('app.name') => url('/about'),
-                'Blog'                       => route('blog.index'),
-                'House Rules & Policy'        => url('/house-policy'),
+                'About Cetsy'                 => url('/about'),
+                'Blog'                        => route('blog.index'),
               ] as $label => $link)
                 <li class="mb-2"><a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">{{ $label }}</a></li>
               @endforeach
@@ -931,7 +914,7 @@
           </div>
 
           <!-- Support -->
-          <div class="col-6 col-md-3">
+          <div class="col-12 col-md-4">
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Support</h4>
             <ul class="list-unstyled mb-4">
               <li class="mb-2"><a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">Reach Us</a></li>
