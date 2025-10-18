@@ -1,4 +1,4 @@
-@extends('layouts.frontapp')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('main')
   <section class="py-5">
