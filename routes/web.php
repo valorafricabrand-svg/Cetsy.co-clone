@@ -136,6 +136,11 @@ Route::get('/house-policy', function () {
     return themed_view('pages.house-policy');
 })->name('house-policy');
 
+// User Agreement (footer link)
+Route::get('/user-agreement', function () {
+    return themed_view('pages.user-agreement');
+})->name('user-agreement');
+
 // Additional policy pages (linked from House Rules)
 Route::get('/cetsyip_policy', function () {
     return themed_view('pages.cetsyip_policy');

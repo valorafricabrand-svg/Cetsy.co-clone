@@ -926,6 +926,7 @@
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">About</h4>
             <ul class="list-unstyled mb-0">
               @foreach([
+                'User Agreement'              => url('/user-agreement'),
                 'About ' . config('app.name') => url('/about'),
                 'Blog'                       => route('blog.index'),
                 'House Rules & Policy'        => url('/house-policy'),
@@ -1073,5 +1074,4 @@
   </script>
 </body>
 </html>
-
 
