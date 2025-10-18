@@ -1,4 +1,4 @@
-@extends('layouts.frontapp')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('main')
   <!-- ====== Cetsy.co Buyer Tips ====== -->
