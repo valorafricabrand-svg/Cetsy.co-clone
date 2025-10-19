@@ -47,12 +47,20 @@
       </a>
 
       @if($order->status === \App\Models\Order::STATUS_PENDING)
-        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
-                data-bs-toggle="modal"
-                data-bs-target="#processModal-{{ $order->id }}">
-          <i class="fa-solid fa-gear"></i> Process
-        </button>
-        @include('seller.orders.modals.process')
+        @php $paid = method_exists($order,'isPaid') ? $order->isPaid() : false; @endphp
+        @if($paid)
+          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                  data-bs-toggle="modal"
+                  data-bs-target="#processModal-{{ $order->id }}">
+            <i class="fa-solid fa-gear"></i> Process
+          </button>
+          @include('seller.orders.modals.process')
+        @else
+          <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" disabled
+                  title="Awaiting buyer payment">
+            <i class="fa-solid fa-hourglass-half"></i> Pending Payment
+          </button>
+        @endif
 
         {{-- Cancel moved into kebab menu --}}
       @elseif($order->status === \App\Models\Order::STATUS_PROCESSING)
