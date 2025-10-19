@@ -1049,18 +1049,10 @@ public function storeOrder(Request $request)
             return back()->withErrors('Only pending orders can be processed.');
         }
 
-        // If you want to REQUIRE payment before processing, uncomment this block:
-        /*
-        $paid = (float) $order->payments()
-            ->where(function ($q) {
-                $q->whereIn('status', ['success', 'completed', 'paid', 3]);
-            })
-            ->sum('total_amount');
-
-        if ($paid <= 0) {
+        // Enforce payment before allowing seller processing
+        if (method_exists($order, 'isPaid') && !$order->isPaid()) {
             return back()->withErrors('This order has not been paid yet.');
         }
-        */
 
         DB::transaction(function () use ($order) {
             $order->update([
