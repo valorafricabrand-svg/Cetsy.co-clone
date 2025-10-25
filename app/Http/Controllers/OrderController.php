@@ -120,7 +120,13 @@ public function index(Request $request)
      */
     public function show(Order $order)
     {
-        $this->authorizeSeller($order);
+        $userId = Auth::id();
+        if (!$userId || (
+            optional($order->shop)->user_id !== $userId
+            && $order->user_id !== $userId
+        )) {
+            abort(403, 'You are not allowed to manage this order.');
+        }
 
         $order->load(
             'items.product',
