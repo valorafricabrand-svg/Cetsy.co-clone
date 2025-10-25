@@ -469,6 +469,7 @@ function mediaPage(config = {}){
       if(this.newIndex !== null){
         const it = this.items[this.newIndex];
         it.b64 = dataURL; // mark as cropped-override
+        it.file = null;   // drop original file so only the cropped version uploads
         // Update preview to reflect the crop
         if(it.previewUrl){ URL.revokeObjectURL(it.previewUrl); }
         it.previewUrl = dataURL;
@@ -526,11 +527,27 @@ function mediaPage(config = {}){
         }
       });
 
-      // Optional: If ALL items are cropped (we have b64 for every item),
-      // we can clear the native file input so only b64s are sent.
-      const allCropped = this.items.length > 0 && this.items.every(it=> !!it.b64);
-      if(allCropped && this.$refs.fileInput){
-        this.$refs.fileInput.value = '';
+      // Rebuild the native file input so it only carries uncropped files
+      if(this.$refs.fileInput){
+        try {
+          const dt = new DataTransfer();
+          this.items.forEach(it => {
+            if(it.file instanceof File){
+              dt.items.add(it.file);
+            }
+          });
+          if(dt.items.length){
+            this.$refs.fileInput.files = dt.files;
+          } else {
+            this.$refs.fileInput.value = '';
+          }
+        } catch (error) {
+          // Fallback: if DataTransfer is unavailable and we have cropped items, clear input
+          const hasCropped = this.items.some(it => it.b64);
+          if(hasCropped){
+            this.$refs.fileInput.value = '';
+          }
+        }
       }
 
       // Normal form submit proceeds.
