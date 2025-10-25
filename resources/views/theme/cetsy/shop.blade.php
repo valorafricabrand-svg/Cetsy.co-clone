@@ -30,11 +30,11 @@
           <div class="d-flex flex-wrap align-items-center gap-4 mb-3">
             <div class="d-flex align-items-center gap-2">
               <i class="fas fa-shopping-bag text-success"></i>
-              <small class="text-muted">{{ $totalSales }} sales</small>
+              <small class="text-muted">{{ $totalSales }} {{ Str::plural('sale', $totalSales) }}</small>
             </div>
             <div class="d-flex align-items-center gap-2">
               <i class="fas fa-box text-primary"></i>
-              <small class="text-muted">{{ $totalProducts }} items</small>
+              <small class="text-muted">{{ $totalProducts }} {{ Str::plural('item', $totalProducts) }}</small>
             </div>
             <div class="d-flex align-items-center gap-2">
               <i class="fas fa-calendar text-info"></i>
@@ -65,7 +65,7 @@
                     @endfor
                   </div>
                   <small class="fw-semibold text-dark">{{ number_format($averageRating,1) }}</small>
-                  <small class="text-muted">({{ $reviewCount }} reviews)</small>
+                  <small class="text-muted">({{ $reviewCount }} {{ Str::plural('review', $reviewCount) }})</small>
                 </div>
               </a>
             @else
@@ -310,7 +310,7 @@
                     <i class="fa{{ $i <= floor($averageRating) ? 's' : 'r' }} fa-star text-warning"></i>
                   @endfor
                 </div>
-                <small class="text-muted">{{ $reviewCount }} reviews</small>
+                <small class="text-muted">{{ $reviewCount }} {{ Str::plural('review', $reviewCount) }}</small>
               </div>
             </div>
           </div>
@@ -730,6 +730,5 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 </script>
 @endpush
-
 
 
