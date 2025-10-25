@@ -1,7 +1,31 @@
 in seller @foreach($products as $product)
   @php
-    $ptype = strtolower((string)($product->product_type ?? $product->type ?? ''));
-    $isDigital = in_array($ptype, ['digital','download','digital_download','digital-download']);
+    $ptype      = strtolower((string)($product->product_type ?? $product->type ?? ''));
+    $isDigital  = in_array($ptype, ['digital','download','digital_download','digital-download']);
+    $isInStock  = $isDigital ? true : product_has_available_stock($product);
+    $stockTotal = null;
+
+    if (! $isDigital) {
+        try {
+            if (method_exists($product, 'loadMissing')) {
+                $product->loadMissing('variations');
+            }
+            $variants = method_exists($product, 'variations') && $product->relationLoaded('variations')
+                ? ($product->variations ?? collect())
+                : collect();
+        } catch (\Throwable $e) {
+            $variants = collect();
+        }
+
+        if ($variants->isNotEmpty()) {
+            $numeric = $variants->pluck('stock')->filter(static fn($value) => ! is_null($value));
+            if ($numeric->isNotEmpty()) {
+                $stockTotal = $numeric->sum();
+            }
+        } elseif (! is_null($product->stock)) {
+            $stockTotal = (int) $product->stock;
+        }
+    }
   @endphp
   <div class="col-md-6 col-lg-4 product-item" data-product-name="{{ strtolower($product->name) }}">
     <div class="card h-100 product-card">
@@ -40,8 +64,13 @@ in seller @foreach($products as $product)
                   <div class="mt-1">
                     <span class="badge bg-light text-dark">{{ $isDigital ? 'Digital' : ($product->product_type ?? 'Product') }}</span>
                     @unless($isDigital)
-                      @if($product->stock > 0)
-                        <span class="badge bg-success">In Stock ({{ $product->stock }})</span>
+                      @if($isInStock)
+                        <span class="badge bg-success">
+                          In Stock
+                          @if(! is_null($stockTotal))
+                            ({{ $stockTotal }})
+                          @endif
+                        </span>
                       @else
                         <span class="badge bg-danger">Out of Stock</span>
                       @endif
