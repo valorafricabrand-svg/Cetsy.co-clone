@@ -263,68 +263,98 @@ class MediaController extends Controller
      */
 
 
-public function crop(Media $media, Request $request)
-{
-    $diskPath = storage_path('app/public/'.$media->url);
-    if (! file_exists($diskPath)) {
-        return back()->withErrors('Original file not found.');
-    }
-
-    $quality = (int) $request->input('quality', 90);
-
-    try {
-        $manager = new ImageManager(new Driver()); // v3 style
-
-        // 1) Prefer a regular uploaded file if present
-        if ($request->hasFile('cropped_image') && $request->file('cropped_image')->isValid()) {
-            $image = $manager->read($request->file('cropped_image')->getRealPath());
-        }
-        // 2) Otherwise accept base64 data URL (from the modal)
-        elseif ($request->filled('cropped_image_b64')) {
-            $b64 = $request->input('cropped_image_b64');
-            // Strip "data:image/*;base64," header if present
-            if (preg_match('/^data:image\/[a-zA-Z0-9.+-]+;base64,/', $b64)) {
-                $b64 = substr($b64, strpos($b64, ',') + 1);
-            }
-            $binary = base64_decode($b64, true);
-            if ($binary === false) {
-                return back()->withErrors('Invalid base64 image payload.');
-            }
-            $image = $manager->read($binary);
-        }
-        else {
-            // Neither file nor base64 was provided
-            return back()->withErrors('No valid image provided');
-        }
-
-        // Save as JPEG with requested quality (v3)
-        $image->toJpeg($quality)->save($diskPath);
-
+    public function crop(Media $media, Request $request)
+    {
         try {
+            $manager = new ImageManager(new Driver()); // v3 style
             $product = $media->product;
-            if ($product) {
-                Activity::create([
-                    'user_id'      => Auth::id(),
-                    'is_read'      => false,
-                    'type'         => Activity::TYPE_PRODUCT,
-                    'description'  => 'Cropped product image',
-                    'related_id'   => $product->id,
-                    'related_type' => 'product',
-                    'properties'   => [
-                        'section' => 'media',
-                        'action'  => 'crop',
-                        'file'    => $media->url,
-                        'quality' => $quality,
-                    ],
+            $quality = (int) $request->input('quality', 90);
+            $quality = max(10, min(100, $quality));
+
+            $image = null;
+
+            // 1) Prefer a regular uploaded file if present
+            if ($request->hasFile('cropped_image') && $request->file('cropped_image')->isValid()) {
+                $image = $manager->read($request->file('cropped_image')->getRealPath());
+            }
+            // 2) Otherwise accept base64 data URL (from the modal)
+            elseif ($request->filled('cropped_image_b64')) {
+                $b64 = $request->input('cropped_image_b64');
+                if (preg_match('/^data:image\/[a-zA-Z0-9.+-]+;base64,/', $b64)) {
+                    $b64 = substr($b64, strpos($b64, ',') + 1);
+                }
+                $binary = base64_decode($b64, true);
+                if ($binary === false) {
+                    return back()->withErrors('Invalid base64 image payload.');
+                }
+                if (@getimagesizefromstring($binary) === false) {
+                    return back()->withErrors('Cropped image appears to be invalid.');
+                }
+                $image = $manager->read($binary);
+            } else {
+                return back()->withErrors('No cropped image payload received.');
+            }
+
+            $disk = Storage::disk('public');
+            $oldPath = $media->url;
+
+            $extension = 'jpg';
+            $newFilename = 'product-media/crop-' . ($product?->id ?? 'media') . '-' . now()->timestamp . '-' . Str::lower(Str::random(8)) . '.' . $extension;
+
+            $tempPath = tempnam(sys_get_temp_dir(), 'crop_');
+            $image->toJpeg($quality)->save($tempPath);
+            $raw = file_get_contents($tempPath);
+            @unlink($tempPath);
+
+            if ($raw === false) {
+                return back()->withErrors('Failed to prepare cropped image.');
+            }
+
+            $disk->put($newFilename, $raw);
+
+            // Update media record
+            $media->url = $newFilename;
+            $media->save();
+
+            // Update product featured image if pointing to old path
+            if ($product && $product->featured_image === $oldPath) {
+                $product->update(['featured_image' => $newFilename]);
+            }
+
+            // Remove old file
+            if ($oldPath && $disk->exists($oldPath)) {
+                $disk->delete($oldPath);
+            }
+
+            try {
+                if ($product) {
+                    Activity::create([
+                        'user_id'      => Auth::id(),
+                        'is_read'      => false,
+                        'type'         => Activity::TYPE_PRODUCT,
+                        'description'  => 'Cropped product image',
+                        'related_id'   => $product->id,
+                        'related_type' => 'product',
+                        'properties'   => [
+                            'section' => 'media',
+                            'action'  => 'crop',
+                            'file'    => $newFilename,
+                            'quality' => $quality,
+                        ],
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::error('media.activity.crop_failed', [
+                    'media_id' => $media->id,
+                    'error'    => $e->getMessage(),
                 ]);
             }
-        } catch (\Throwable $e) { Log::error('media.activity.crop_failed', ['media_id' => $media->id, 'error' => $e->getMessage()]); }
 
-        return back()->with('success', 'Image cropped successfully.');
-    } catch (\Throwable $e) {
-        Log::error('Media crop failed: '.$e->getMessage());
-        return back()->withErrors('Server error during cropping.');
+            return back()->with('success', 'Image cropped successfully.');
+        } catch (\Throwable $e) {
+            Log::error('Media crop failed: '.$e->getMessage());
+            return back()->withErrors('Server error during cropping.');
+        }
     }
-}
 
 }
