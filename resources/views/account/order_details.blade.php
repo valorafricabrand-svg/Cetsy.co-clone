@@ -329,6 +329,44 @@
           Digital order: funds release and reviews unlock after your first download.
         </div>
       @endif
+
+      @php
+        $statusNow = $order->status;
+        $canReviewPhysicalNow = in_array($statusNow, [\App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+        $canReviewDigitalNow  = in_array($statusNow, [\App\Models\Order::STATUS_COMPLETED, \App\Models\Order::STATUS_DELIVERED]);
+
+        $pendingReviewItem = $order->items->first(function ($item) use ($canReviewPhysicalNow, $canReviewDigitalNow) {
+          if ($item->review) {
+            return false;
+          }
+
+          $product    = optional($item->product);
+          $isDigital  = $product && $product->type === 'digital';
+          $downloaded = !empty($item->downloaded_at);
+
+          if ($isDigital) {
+            return $canReviewDigitalNow && $downloaded;
+          }
+
+          return $canReviewPhysicalNow;
+        });
+      @endphp
+
+      @if($pendingReviewItem)
+        @php $pendingReviewModalId = 'reviewModal_'.$pendingReviewItem->id; @endphp
+        <div class="alert alert-success mt-3 d-flex align-items-center justify-content-between flex-wrap gap-3" role="alert">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-star-fill fs-4"></i>
+            <div>
+              <strong>Your order has been delivered.</strong>
+              <div class="small">Share feedback with the seller by leaving a quick review.</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{{ $pendingReviewModalId }}">
+            <i class="bi bi-pencil-square"></i> Leave a Review
+          </button>
+        </div>
+      @endif
     </div>
 
     {{-- ===== SHOP DETAILS ===== --}}
