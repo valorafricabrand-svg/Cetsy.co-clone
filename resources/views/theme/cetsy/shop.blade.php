@@ -21,7 +21,7 @@
 
           {{-- Shop Stats --}}
           @php
-            $totalSales     = $shop->orderItems()->whereRelation('order', 'status', 'completed')->count();
+            $totalSales     = $shop->orders()->where('status', 'completed')->count();
             $totalProducts  = $shop->products()->where('is_active', true)->count();
             $memberSince    = $shop->created_at->diffForHumans();
             $averageRating  = $shop->reviews()->avg('rating') ?? 0;
@@ -730,5 +730,4 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 </script>
 @endpush
-
 
