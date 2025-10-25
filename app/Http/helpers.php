@@ -284,6 +284,68 @@ if (! function_exists('apply_discount')) {
     }
 }
 
+if (! function_exists('product_has_available_stock')) {
+    /**
+     * Determine whether a product currently has sellable stock.
+     * For items with variations, at least one variant must have stock > 0 or be unlimited (null).
+     * For simple items, a null stock means "unlimited".
+     */
+    function product_has_available_stock($product): bool
+    {
+        if (! $product) {
+            return false;
+        }
+
+        $type = strtolower((string)($product->product_type ?? $product->type ?? ''));
+        $digitalTypes = ['digital', 'download', 'digital_download', 'digital-download', 'service'];
+        if (in_array($type, $digitalTypes, true)) {
+            return true;
+        }
+
+        // Attempt to reuse any loaded variants to avoid N+1 queries.
+        $variants = collect();
+        if (method_exists($product, 'variations')) {
+            try {
+                if (method_exists($product, 'loadMissing')) {
+                    $product->loadMissing('variations');
+                }
+                if ($product->relationLoaded('variations')) {
+                    $variants = $product->variations ?? collect();
+                } else {
+                    $variants = $product->variations()->get();
+                }
+            } catch (\Throwable $e) {
+                $variants = collect();
+            }
+        }
+
+        if ($variants->isNotEmpty()) {
+            foreach ($variants as $variant) {
+                $stock = $variant->stock;
+                if ($stock === null || (int) $stock > 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Fallback to legacy/simple stock column.
+        $stock = $product->stock;
+        if ($stock === null) {
+            return true;
+        }
+
+        return (int) $stock > 0;
+    }
+}
+
+if (! function_exists('product_is_out_of_stock')) {
+    function product_is_out_of_stock($product): bool
+    {
+        return ! product_has_available_stock($product);
+    }
+}
+
 
 if (! function_exists('setting')) {
     /**
@@ -628,4 +690,3 @@ if (! function_exists('couriers_list')) {
 
 
 ?>
-

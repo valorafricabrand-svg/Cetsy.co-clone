@@ -161,9 +161,13 @@
               @endforeach
 
               <div class="row g-3">
-                <div class="col-12">
+                <div class="col-md-6">
                   <label class="form-label">Price</label>
                   <input type="number" step="0.01" min="0" name="price" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Stock <span class="text-muted">(leave blank for unlimited)</span></label>
+                  <input type="number" step="1" min="0" name="stock" class="form-control" placeholder="Unlimited">
                 </div>
               </div>
 
@@ -188,6 +192,7 @@
                     <tr>
                       <th>Combination</th>
                       <th style="width:160px;">Price</th>
+                      <th style="width:140px;">Stock</th>
                       <th class="text-end" style="width:160px;">Actions</th>
                     </tr>
                   </thead>
@@ -218,6 +223,17 @@
                             value="{{ $v->price }}"
                             form="{{ $formId }}"
                             required>
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            step="1"
+                            min="0"
+                            class="form-control form-control-sm"
+                            name="stock"
+                            value="{{ $v->stock ?? '' }}"
+                            placeholder="Unlimited"
+                            form="{{ $formId }}">
                         </td>
                         <td class="text-end">
                           <button class="btn btn-sm btn-primary me-1" form="{{ $formId }}">Save</button>
