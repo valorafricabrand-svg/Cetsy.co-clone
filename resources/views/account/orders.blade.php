@@ -45,6 +45,9 @@
                   <span class="badge {{ $order->getStatusBadgeClass() }}">
                     {{ ucfirst($order->status) }}
                   </span>
+                  @if($order->status === \App\Models\Order::STATUS_PENDING)
+                    <div class="small text-warning fw-semibold mt-1">Pending payment</div>
+                  @endif
                   @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
                     <br><small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
                   @endif
@@ -113,6 +116,9 @@
               </div>
               <div class="d-flex align-items-center gap-2 mb-2">
                 <span class="badge {{ $order->getStatusBadgeClass() }}">{{ ucfirst($order->status) }}</span>
+                @if($order->status === \App\Models\Order::STATUS_PENDING)
+                  <span class="badge bg-warning text-dark">Pending payment</span>
+                @endif
                 @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
                   <small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
                 @endif
