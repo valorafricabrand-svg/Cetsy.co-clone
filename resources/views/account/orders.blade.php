@@ -70,13 +70,40 @@
                     // Choose a single dispatch-by date: prefer end if present, else start
                     $dispatchBy = $shipEndLabel ?? $shipStartLabel;
                   @endphp
-                  <div class="small text-muted mt-1">
-                    @if($dispatchBy)
-                      Dispatch by {{ $dispatchBy }}
-                    @else
-                      Dispatch soon
-                    @endif
-                  </div>
+                  @php
+                    $formatDateTime = static function ($value) {
+                      if (! $value) {
+                        return null;
+                      }
+                      if (! $value instanceof \Carbon\Carbon) {
+                        try {
+                          $value = \Carbon\Carbon::parse($value);
+                        } catch (\Throwable $e) {
+                          return null;
+                        }
+                      }
+                      return $value->format('M j, Y \a\t g:i A');
+                    };
+                    $progressMessage = null;
+                    if ($order->status === \App\Models\Order::STATUS_COMPLETED) {
+                      $progressMessage = $formatDateTime($order->completed_at ?: $order->delivered_at) 
+                        ? 'Completed on '.$formatDateTime($order->completed_at ?: $order->delivered_at)
+                        : 'Completed';
+                    } elseif ($order->status === \App\Models\Order::STATUS_DELIVERED) {
+                      $progressMessage = $formatDateTime($order->delivered_at)
+                        ? 'Delivered on '.$formatDateTime($order->delivered_at)
+                        : 'Delivered';
+                    } elseif ($order->status === \App\Models\Order::STATUS_SHIPPED) {
+                      $progressMessage = $formatDateTime($order->shipped_at)
+                        ? 'Shipped on '.$formatDateTime($order->shipped_at)
+                        : 'Shipped';
+                    } elseif ($dispatchBy) {
+                      $progressMessage = 'Dispatch by '.$dispatchBy;
+                    } else {
+                      $progressMessage = 'Dispatch soon';
+                    }
+                  @endphp
+                  <div class="small text-muted mt-1">{{ $progressMessage }}</div>
                 </td>
                 <td>{{ money((float) ($order->total_amount ?? 0)) }}</td>
                 <td>
@@ -107,6 +134,36 @@
               $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
               $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
               $dispatchBy = $shipEndLabel ?? $shipStartLabel;
+              $formatDateTime = static function ($value) {
+                if (! $value) {
+                  return null;
+                }
+                if (! $value instanceof \Carbon\Carbon) {
+                  try {
+                    $value = \Carbon\Carbon::parse($value);
+                  } catch (\Throwable $e) {
+                    return null;
+                  }
+                }
+                return $value->format('M j, Y \a\t g:i A');
+              };
+              if ($order->status === \App\Models\Order::STATUS_COMPLETED) {
+                $progressMessage = $formatDateTime($order->completed_at ?: $order->delivered_at)
+                  ? 'Completed on '.$formatDateTime($order->completed_at ?: $order->delivered_at)
+                  : 'Completed';
+              } elseif ($order->status === \App\Models\Order::STATUS_DELIVERED) {
+                $progressMessage = $formatDateTime($order->delivered_at)
+                  ? 'Delivered on '.$formatDateTime($order->delivered_at)
+                  : 'Delivered';
+              } elseif ($order->status === \App\Models\Order::STATUS_SHIPPED) {
+                $progressMessage = $formatDateTime($order->shipped_at)
+                  ? 'Shipped on '.$formatDateTime($order->shipped_at)
+                  : 'Shipped';
+              } elseif ($dispatchBy) {
+                $progressMessage = 'Dispatch by '.$dispatchBy;
+              } else {
+                $progressMessage = 'Dispatch soon';
+              }
             @endphp
 
             <a href="{{ route('buyer.orders.show', $order->id) }}" class="list-group-item list-group-item-action p-3">
@@ -123,13 +180,7 @@
                   <small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
                 @endif
               </div>
-              <div class="small text-muted mb-2">
-                @if($dispatchBy)
-                  Dispatch by {{ $dispatchBy }}
-                @else
-                  Dispatch soon
-                @endif
-              </div>
+              <div class="small text-muted mb-2">{{ $progressMessage }}</div>
               <div class="d-flex justify-content-between align-items-center">
                 <div class="text-truncate">
                   <span class="text-muted small">Shop:</span>
