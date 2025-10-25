@@ -91,6 +91,67 @@ class MediaController extends Controller
     }
 
     /**
+     * Bulk delete media belonging to a product.
+     */
+    public function bulkDestroy(Request $request, Product $product)
+    {
+        $ids = $request->input('media_ids', []);
+        if (is_string($ids)) {
+            $ids = array_filter(array_map('intval', explode(',', $ids)));
+        }
+        if (! is_array($ids)) {
+            $ids = [$ids];
+        }
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+
+        if (empty($ids)) {
+            return back()->withErrors('Select at least one media item to delete.');
+        }
+
+        $mediaItems = $product->media()->whereIn('id', $ids)->get();
+        if ($mediaItems->isEmpty()) {
+            return back()->withErrors('No matching media found for bulk delete.');
+        }
+
+        $before = $product->media()->count();
+        $deletedFiles = [];
+
+        foreach ($mediaItems as $media) {
+            Storage::disk('public')->delete($media->url);
+            $deletedFiles[] = $media->url;
+            $media->delete();
+        }
+
+        try {
+            $after = $product->media()->count();
+            Activity::create([
+                'user_id'      => Auth::id(),
+                'is_read'      => false,
+                'type'         => Activity::TYPE_PRODUCT,
+                'description'  => 'Bulk removed product media',
+                'related_id'   => $product->id,
+                'related_type' => 'product',
+                'properties'   => [
+                    'section' => 'media',
+                    'action'  => 'bulk_delete',
+                    'files'   => $deletedFiles,
+                    'counters'=> ['media' => ['from' => $before, 'to' => $after]],
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('media.activity.bulk_delete_failed', [
+                'product_id' => $product->id,
+                'error'      => $e->getMessage(),
+            ]);
+        }
+
+        $count = count($deletedFiles);
+        $message = $count === 1 ? '1 media item deleted.' : "{$count} media items deleted.";
+
+        return back()->with('success', $message);
+    }
+
+    /**
      * Crop & overwrite an existing media item.
      */
 

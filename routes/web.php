@@ -314,6 +314,8 @@ Route::middleware(['auth','verified'])->group(function () {
         ->name('messages.store');
     Route::post('/products/{product}/media', [MediaController::class, 'upload'])
         ->name('media.upload');
+    Route::delete('/products/{product}/media/bulk', [MediaController::class, 'bulkDestroy'])
+        ->name('media.bulk-destroy');
     Route::delete('/media/{media}', [MediaController::class, 'destroy'])
         ->name('media.destroy');
     Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'destroy'])
