@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Intervention\Image\ImageManager;
 use App\Models\Media;
 use App\Models\Product;
 use App\Models\Activity;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 
 
@@ -24,17 +27,54 @@ class MediaController extends Controller
      */
     public function upload(Request $request, Product $product)
     {
-        $request->validate([
-            'media.*' => 'required|file|mimes:jpeg,jpg,png,gif,webp,mp4,mov,avi,wmv,webm|max:51200', // up to ~50MB
+        $validator = Validator::make($request->all(), [
+            'media'            => ['array'],
+            'media.*'          => ['file', 'mimes:jpeg,jpg,png,gif,webp,mp4,mov,avi,wmv,webm', 'max:51200'], // up to ~50MB
+            'media_b64'        => ['array'],
+            'media_b64.*'      => ['string'],
+            'media_b64_names'  => ['array'],
+            'media_b64_names.*'=> ['string'],
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            $hasFiles = $request->hasFile('media');
+            $b64Items = collect($request->input('media_b64', []))
+                ->filter(fn ($value) => is_string($value) && trim($value) !== '');
+
+            if (! $hasFiles && $b64Items->isEmpty()) {
+                $validator->errors()->add('media', 'Please select at least one media file.');
+            }
+
+            $names = collect($request->input('media_b64_names', []))
+                ->filter(fn ($value) => is_string($value) && trim($value) !== '');
+
+            if ($b64Items->isNotEmpty() && $names->count() && $names->count() < $b64Items->count()) {
+                $validator->errors()->add('media_b64_names', 'Some cropped images are missing names.');
+            }
+        });
+
+        $validator->validate();
 
         $before = $product->media()->count();
         $paths = [];
+
+        // Handle uploaded files from <input type="file">
         foreach ($request->file('media', []) as $file) {
             $path = $file->store('product-media', 'public');
             $type = str_starts_with($file->getMimeType(), 'video') ? 'video' : 'image';
             $product->media()->create(['url' => $path, 'type' => $type]);
             $paths[] = $path;
+        }
+
+        // Handle cropped images provided as base64 payloads
+        $base64Items = collect($request->input('media_b64', []))
+            ->filter(fn ($value) => is_string($value) && trim($value) !== '');
+        $base64Names = $request->input('media_b64_names', []);
+        $maxImageBytes = 5 * 1024 * 1024; // 5MB limit for images
+
+        foreach ($base64Items as $index => $dataUrl) {
+            $originalName = $base64Names[$index] ?? null;
+            $paths[] = $this->storeBase64Image($product, $dataUrl, $originalName, $index, $maxImageBytes);
         }
 
         try {
@@ -149,6 +189,73 @@ class MediaController extends Controller
         $message = $count === 1 ? '1 media item deleted.' : "{$count} media items deleted.";
 
         return back()->with('success', $message);
+    }
+
+    private function storeBase64Image(Product $product, string $dataUrl, ?string $originalName, int $index, int $maxBytes): string
+    {
+        $data = trim($dataUrl);
+        $mime = null;
+        if (preg_match('/^data:image\/([a-zA-Z0-9.+-]+);base64,/', $data, $matches)) {
+            $mime = strtolower($matches[1]);
+            $data = substr($data, strpos($data, ',') + 1);
+        }
+
+        $binary = base64_decode($data, true);
+        if ($binary === false) {
+            throw ValidationException::withMessages([
+                'media_b64.' . $index => 'Invalid cropped image payload.',
+            ]);
+        }
+
+        if (strlen($binary) > $maxBytes) {
+            throw ValidationException::withMessages([
+                'media_b64.' . $index => 'Cropped images must be 5MB or smaller.',
+            ]);
+        }
+
+        if (@getimagesizefromstring($binary) === false) {
+            throw ValidationException::withMessages([
+                'media_b64.' . $index => 'The cropped image appears to be corrupt.',
+            ]);
+        }
+
+        $extension = $this->determineImageExtension($mime, $originalName);
+        $baseName = Str::slug((string) pathinfo((string) $originalName, PATHINFO_FILENAME));
+        if (! $baseName) {
+            $baseName = 'cropped-' . Str::lower(Str::random(6));
+        }
+
+        $filename = $baseName . '-' . Str::lower(Str::random(8)) . '.' . $extension;
+        $path = 'product-media/' . $filename;
+
+        Storage::disk('public')->put($path, $binary);
+        $product->media()->create(['url' => $path, 'type' => 'image']);
+
+        return $path;
+    }
+
+    private function determineImageExtension(?string $mime, ?string $originalName): string
+    {
+        $map = [
+            'jpeg' => 'jpg',
+            'pjpeg'=> 'jpg',
+            'jpg'  => 'jpg',
+            'png'  => 'png',
+            'gif'  => 'gif',
+            'bmp'  => 'bmp',
+            'webp' => 'webp',
+        ];
+
+        if ($mime && isset($map[$mime])) {
+            return $map[$mime];
+        }
+
+        $ext = strtolower((string) pathinfo((string) $originalName, PATHINFO_EXTENSION));
+        if ($ext && in_array($ext, $map, true)) {
+            return $ext;
+        }
+
+        return 'jpg';
     }
 
     /**
