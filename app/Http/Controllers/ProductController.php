@@ -714,6 +714,17 @@ public function listing(string $slug)
         ->whereSlug($slug)
         ->firstOrFail();
 
+    // Public visibility: only active listings are publicly viewable.
+    // Allow owner and admins to view paused/draft via direct link (preview).
+    $isActive = (int)($product->is_active ?? 0) === 1;
+    $viewerId = \Illuminate\Support\Facades\Auth::id();
+    $ownerId  = optional($product->shop)->user_id;
+    $isOwner  = $viewerId && ($viewerId === $ownerId);
+    $isAdmin  = auth()->check() && (bool) (auth()->user()->is_admin ?? false);
+    if (! $isActive && ! ($isOwner || $isAdmin)) {
+        abort(404);
+    }
+
     /* ------------------------------------------------------------
      | 2.  Record a view (logged-in users and guests)
      |------------------------------------------------------------ */
@@ -750,6 +761,7 @@ public function listing(string $slug)
 
     $moreFromShop = $product->shop->products()
         ->where('id','!=',$product->id)
+        ->where('is_active', 1)
         ->latest()
         ->take(8)
         ->get();
