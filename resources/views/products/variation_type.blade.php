@@ -167,7 +167,14 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Stock <span class="text-muted">(leave blank for unlimited)</span></label>
-                  <input type="number" step="1" min="0" name="stock" class="form-control" placeholder="Unlimited">
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    name="stock"
+                    class="form-control"
+                    value="{{ old('stock', 0) }}"
+                    placeholder="Unlimited">
                 </div>
               </div>
 
