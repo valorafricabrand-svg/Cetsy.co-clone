@@ -71,6 +71,7 @@
 
         <div class="card-body d-flex flex-column">
             <h5 class="card-title mb-1">{{ Str::limit($product->name, 40) }}</h5>
+            <div class="text-muted small mb-2">ID: #{{ $product->id }}</div>
             @php
                 // Variation awareness for seller: show if variants exist and compute a lowest priced variant
                 $hasVariants = false;
