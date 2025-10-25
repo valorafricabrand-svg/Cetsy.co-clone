@@ -247,11 +247,6 @@
         </div>
       </div>
 
-      {{-- Placeholder for listings --}}
-      <div class="text-center text-muted mt-4">
-        (Product listings will appear here soon&hellip;)
-      </div>
-
     </div>
 
     <div class="col-lg-4">
