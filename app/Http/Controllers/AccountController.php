@@ -67,7 +67,8 @@ public function orderDetails(Order $order)
     $order->loadMissing([
         'items.product',
         'items.shippingProfile.processingTime',
-        'shop'
+        'shop',
+        'payments' => fn($query) => $query->orderBy('created_at'),
     ]);
 
     // Mark order notifications as read for the buyer

@@ -13,6 +13,11 @@ class Order extends Model
 
     protected $guarded = ['id'];
     protected $table = 'orders';
+    protected $casts = [
+        'shipped_at'   => 'datetime',
+        'delivered_at' => 'datetime',
+        'completed_at' => 'datetime',
+    ];
 
 
         /**

@@ -173,6 +173,37 @@
     $stepShipped    = in_array($status, [\App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
     $stepDelivered  = in_array($status, [\App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
     $stepCompleted  = ($status === \App\Models\Order::STATUS_COMPLETED);
+
+    $paymentsCollection = $order->relationLoaded('payments')
+        ? $order->payments
+        : $order->payments()->orderBy('created_at')->get();
+
+    $firstPaidPayment = $paymentsCollection->firstWhere('status', '3')
+        ?? $paymentsCollection->firstWhere('status', 3);
+
+    $processingAt = optional($firstPaidPayment)->created_at;
+    if (!$processingAt && $paid) {
+        $processingAt = $order->created_at;
+    }
+    $shippedAt    = $order->shipped_at;
+    $deliveredAt  = $order->delivered_at;
+    $completedAt  = $order->completed_at ?: ($stepCompleted ? ($deliveredAt ?? $order->updated_at) : null);
+
+    $formatDateTime = static function ($value) {
+        if (! $value) {
+            return null;
+        }
+
+        if (! $value instanceof \Carbon\Carbon) {
+            try {
+                $value = \Carbon\Carbon::parse($value);
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }
+
+        return $value->format('M j, Y \\a\\t g:i A');
+    };
   @endphp
 
   <div class="card border-0 shadow-sm mb-4">
@@ -181,39 +212,61 @@
         <div class="col-12 col-md-6">
           <div class="fw-semibold mb-1">Processing Timeline</div>
           <ul class="list-unstyled small mb-0">
-            <li class="d-flex align-items-center gap-2 mb-1">
-              <i class="bi bi-check-circle {{ $stepPlaced ? 'text-success' : 'text-muted' }}"></i>
-              <span>Order placed {{ $placedAt? $placedAt->format('M j, Y') : '' }}</span>
+            <li class="mb-2">
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-check-circle {{ $stepPlaced ? 'text-success' : 'text-muted' }}"></i>
+                  <span>Order placed</span>
+                </div>
+                <span class="text-muted">{{ $formatDateTime($placedAt) ?? '—' }}</span>
+              </div>
             </li>
-            <li class="d-flex align-items-center gap-2 mb-1">
-              <i class="bi bi-gear-fill {{ $paid ? 'text-success' : 'text-warning' }}"></i>
-              <span>
-                @if($paid)
-                  @if($shipStart && $shipEnd)
-                    Ships within {{ (int)$minDays }}&ndash;{{ (int)$maxDays }} days ({{ $shipStartLabel }} &ndash; {{ $shipEndLabel }})
-                  @elseif(!is_null($minDays))
-                    Ships within {{ (int)$minDays }} days (by {{ $shipStartLabel }})
-                  @elseif(!is_null($maxDays))
-                    Ships by {{ (int)$maxDays }} days (by {{ $shipEndLabel }})
+            <li class="mb-2">
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-gear-fill {{ $paid ? 'text-success' : 'text-warning' }}"></i>
+                  <span>Processing</span>
+                </div>
+                <span class="text-muted">
+                  @if($processingAt)
+                    {{ $formatDateTime($processingAt) }}
+                  @elseif($paid)
+                    —
                   @else
-                    Processing
+                    Pending payment
                   @endif
-                @else
-                  Processing will begin after your payment is completed.
-                @endif
-              </span>
+                </span>
+              </div>
+              @unless($paid)
+                <div class="small text-muted ms-4 mt-1">Processing will begin after your payment is completed.</div>
+              @endunless
             </li>
-            <li class="d-flex align-items-center gap-2 mb-1">
-              <i class="bi bi-truck {{ $stepShipped ? 'text-success' : 'text-muted' }}"></i>
-              <span>Shipped</span>
+            <li class="mb-2">
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-truck {{ $stepShipped ? 'text-success' : 'text-muted' }}"></i>
+                  <span>Shipped</span>
+                </div>
+                <span class="text-muted">{{ $formatDateTime($shippedAt) ?? '—' }}</span>
+              </div>
             </li>
-            <li class="d-flex align-items-center gap-2 mb-1">
-              <i class="bi bi-box-seam {{ $stepDelivered ? 'text-success' : 'text-muted' }}"></i>
-              <span>Delivered</span>
+            <li class="mb-2">
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-box-seam {{ $stepDelivered ? 'text-success' : 'text-muted' }}"></i>
+                  <span>Delivered</span>
+                </div>
+                <span class="text-muted">{{ $formatDateTime($deliveredAt) ?? '—' }}</span>
+              </div>
             </li>
-            <li class="d-flex align-items-center gap-2">
-              <i class="bi bi-flag {{ $stepCompleted ? 'text-success' : 'text-muted' }}"></i>
-              <span>Completed</span>
+            <li>
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-flag {{ $stepCompleted ? 'text-success' : 'text-muted' }}"></i>
+                  <span>Completed</span>
+                </div>
+                <span class="text-muted">{{ $formatDateTime($completedAt) ?? '—' }}</span>
+              </div>
             </li>
           </ul>
         </div>
