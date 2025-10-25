@@ -274,7 +274,13 @@
           <div class="col-12 col-md-6">
             <div class="alert alert-info mb-0">
               <i class="bi bi-info-circle me-2"></i>
-              @if($shipStart && $shipEnd)
+              @if($stepCompleted && $completedAt)
+                Completed on <strong>{{ $formatDateTime($completedAt) }}</strong>
+              @elseif($stepDelivered && $deliveredAt)
+                Delivered on <strong>{{ $formatDateTime($deliveredAt) }}</strong>
+              @elseif($stepShipped && $shippedAt)
+                Shipped on <strong>{{ $formatDateTime($shippedAt) }}</strong>
+              @elseif($shipStart && $shipEnd)
                 Ship-by window: <strong>{{ $shipStartLabel }} &ndash; {{ $shipEndLabel }}</strong>
               @elseif($shipStart)
                 Ship by: <strong>{{ $shipStartLabel }}</strong>
