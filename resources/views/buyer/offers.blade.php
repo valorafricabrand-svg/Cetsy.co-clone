@@ -112,7 +112,8 @@
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center">
                                 @if($offerData['product']->media && $offerData['product']->media->count() > 0)
-                                    <img src="{{ $offerData['product']->media->first()->getUrl() }}" 
+                                    @php($thumb = function_exists('product_thumb_url') ? product_thumb_url($offerData['product']) : (optional($offerData['product']->media->first())->url ? asset('storage/'.$offerData['product']->media->first()->url) : null))
+                                    <img src="{{ $thumb }}" 
                                          alt="{{ $offerData['product']->name }}" 
                                          class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
                                 @else

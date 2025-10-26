@@ -25,8 +25,9 @@ class OrderController extends Controller
      */
 public function index(Request $request)
 {
-    $user   = auth()->user();
-    $shopId = Shop::where('user_id', $user->id)->value('id');
+    $user = auth()->user();
+    $shop = Shop::where('user_id', $user->id)->first();
+    $shopId = $shop?->id;
 
     // Base query scoped to this shop
     $baseQuery = Order::where('shop_id', $shopId);
@@ -93,6 +94,7 @@ public function index(Request $request)
 
     return view('seller.orders.index', compact(
         'user',
+        'shop',
         'orders',
         'statusCounts',
         'currentStatus',
@@ -118,7 +120,13 @@ public function index(Request $request)
      */
     public function show(Order $order)
     {
-        $this->authorizeSeller($order);
+        $userId = Auth::id();
+        if (!$userId || (
+            optional($order->shop)->user_id !== $userId
+            && $order->user_id !== $userId
+        )) {
+            abort(403, 'You are not allowed to manage this order.');
+        }
 
         $order->load(
             'items.product',
@@ -127,6 +135,14 @@ public function index(Request $request)
             'user',
             'disputes'
         );
+        // Mark order notifications as read for the seller
+        try {
+            \App\Models\Activity::where('user_id', auth()->id())
+                ->where('type', \App\Models\Activity::TYPE_ORDER)
+                ->where(function($q) use ($order) { $q->where('related_id', $order->id)->orWhereNull('related_id'); })
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) { /* non-fatal */ }
         return view('seller.orders.show', compact('order'));
     }
 
@@ -516,6 +532,9 @@ public function storeOrder(Request $request)
             return redirect()->route('account.orders')
                 ->with('error', 'No new orders to display.');
         }
+
+        // Clear the flag so UI "New Orders" prompts disappear after viewing
+        $request->session()->forget('created_order_ids');
 
         return view('account.orders_created', compact('orders'));
     }
@@ -1036,18 +1055,10 @@ public function storeOrder(Request $request)
             return back()->withErrors('Only pending orders can be processed.');
         }
 
-        // If you want to REQUIRE payment before processing, uncomment this block:
-        /*
-        $paid = (float) $order->payments()
-            ->where(function ($q) {
-                $q->whereIn('status', ['success', 'completed', 'paid', 3]);
-            })
-            ->sum('total_amount');
-
-        if ($paid <= 0) {
+        // Enforce payment before allowing seller processing
+        if (method_exists($order, 'isPaid') && !$order->isPaid()) {
             return back()->withErrors('This order has not been paid yet.');
         }
-        */
 
         DB::transaction(function () use ($order) {
             $order->update([

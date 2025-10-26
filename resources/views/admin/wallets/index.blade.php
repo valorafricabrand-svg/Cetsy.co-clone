@@ -11,6 +11,13 @@
       {{-- Header --}}
       <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
         <h2 class="h5 mb-0">Wallet Transactions</h2>
+        @if(auth()->user()->isAdmin())
+          <div class="ms-md-auto">
+            <a href="{{ route('admin.wallets.create') }}" class="btn btn-sm btn-primary">
+              + Top Up Wallet
+            </a>
+          </div>
+        @endif
 
         {{-- Filters --}}
         <form method="get" class="d-flex flex-wrap gap-2">

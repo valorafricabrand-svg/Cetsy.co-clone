@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" dir="ltr" data-bs-theme="light">
 <head>
   <meta charset="UTF-8">
@@ -30,7 +30,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="@yield('canonical_url', url()->current())">
     <meta property="og:image" content="@yield('meta_image', asset('assets/images/default-og-image-cetsy.jpg'))">
-    <meta property="og:image:alt" content="Cetsy — Handmade Products Marketplace">
+    <meta property="og:image:alt" content="Cetsy  Handmade Products Marketplace">
     <meta property="og:locale" content="en_US">
     <meta property="og:site_name" content="{{ config('app.name', 'Cetsy') }}">
 
@@ -38,7 +38,7 @@
     <meta name="twitter:title" content="@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')">
     <meta name="twitter:description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
     <meta name="twitter:image" content="@yield('meta_image', asset('assets/images/default-twitter-image-cetsy.jpg'))">
-    <meta name="twitter:image:alt" content="Cetsy — Handmade Products Marketplace">
+    <meta name="twitter:image:alt" content="Cetsy  Handmade Products Marketplace">
   @show
 
   <!-- Favicons -->
@@ -125,6 +125,62 @@
       if (window.config?.config?.phoenixIsRTL) {
         document.documentElement.setAttribute('dir', 'rtl');
       }
+    });
+  </script>
+  <script>
+    // Instant decrement for notification badges on click
+    (function(){
+      function parseCount(el){
+        if(!el) return 0; var t=(el.textContent||'').trim();
+        if(t==='') return 0; if(t==='99+') return 99; var n=parseInt(t,10); return isNaN(n)?0:n;
+      }
+      function setBadge(id, n){
+        var el=document.getElementById(id); if(!el) return; n=Math.max(0, n|0);
+        if(n>0){ el.textContent = n>99 ? '99+' : String(n); el.style.display='inline-block'; }
+        else { el.textContent=''; el.style.display='none'; }
+      }
+      function decNotif(){
+        ['topNotifCount','navNotifCount'].forEach(function(id){ var el=document.getElementById(id); if(!el) return; setBadge(id, parseCount(el)-1); });
+      }
+      document.addEventListener('click', function(e){
+        var a = e.target && e.target.closest && e.target.closest('a[data-notif-id]');
+        if(!a) return;
+        var unread = a.getAttribute('data-unread');
+        if(unread && unread !== '0'){
+          decNotif();
+          a.setAttribute('data-unread','0');
+          var item = a.closest('.dropdown-item, .notification-item');
+          if(item){
+            var nb = item.querySelector('.badge.bg-primary.rounded-pill, .new-badge');
+            if(nb && nb.parentNode){ try{ nb.parentNode.removeChild(nb); }catch(_){} }
+            item.classList.remove('unread');
+          }
+        }
+      }, true);
+    })();
+  </script>
+  <script>
+    // Live-refresh navbar badges (notif/messages)
+    document.addEventListener('DOMContentLoaded', function(){
+      function setBadge(id, count){
+        var el = document.getElementById(id); if(!el) return;
+        if(count>0){ el.textContent = count>99 ? '99+' : String(count); el.style.display='inline-block'; }
+        else { el.textContent=''; el.style.display='none'; }
+      }
+      function refreshCounts(){
+        // Avoid triggering RouteNotFoundException at render time; use static path
+        var url = @json(url('/nav/counts'));
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+          .then(function(r){ return r.ok ? r.json() : {notif:0,msg:0}; })
+          .then(function(data){
+            setBadge('navNotifCount', (data && data.notif) ? data.notif : 0);
+            setBadge('navMsgCount', (data && data.msg) ? data.msg : 0);
+            setBadge('topNotifCount', (data && data.notif) ? data.notif : 0);
+          })
+          .catch(function(){});
+      }
+      refreshCounts();
+      setInterval(refreshCounts, 30000);
     });
   </script>
 
@@ -222,7 +278,11 @@
             </button>
 
             <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url('/') }}">
-              <img src="{{ setting('logo_url') }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="48" width="auto" loading="lazy">
+              @php
+                $__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg');
+              @endphp
+              <img src="{{ $__logo }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="48" width="auto" loading="lazy"
+                   onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
             </a>
           </div>
 
@@ -231,7 +291,7 @@
             {{-- Search (desktop) --}}
             <form class="d-none d-lg-flex ms-3 me-3 flex-grow-1" method="GET" action="{{ route('search') }}" role="search">
               <label for="navbarSearch" class="visually-hidden">Search</label>
-              <input id="navbarSearch" class="form-control" type="search" name="q" placeholder="Search products, services, shops…" aria-label="Search" value="{{ request('q') }}" autocomplete="on">
+              <input id="navbarSearch" class="form-control" type="search" name="q" placeholder="Search products, services, shops" aria-label="Search" value="{{ request('q') }}" autocomplete="on">
               <button class="btn btn-outline-secondary ms-2" type="submit" aria-label="Submit search">
                 <i class="fas fa-search"></i>
               </button>
@@ -253,8 +313,8 @@
                   $currentCurrency = get_currency();
                   $navCurrencies = collect([
                     (object)['code' => 'USD','symbol' => '$','usd_rate'=>1.0,'decimal_places'=>2],
-                    (object)['code' => 'EUR','symbol' => '€','usd_rate'=>0.92,'decimal_places'=>2],
-                    (object)['code' => 'GBP','symbol' => '£','usd_rate'=>0.78,'decimal_places'=>2],
+                    (object)['code' => 'EUR','symbol' => 'â‚¬','usd_rate'=>0.92,'decimal_places'=>2],
+                    (object)['code' => 'GBP','symbol' => 'Â£','usd_rate'=>0.78,'decimal_places'=>2],
                     (object)['code' => 'KES','symbol' => 'KES','usd_rate'=>(float) env('USD_TO_KES',130),'decimal_places'=>2],
                   ]);
                 }
@@ -385,7 +445,7 @@
             <form class="d-flex" method="GET" action="{{ route('search') }}" role="search">
               <label for="navbarSearchMobile" class="visually-hidden">Search</label>
               <input id="navbarSearchMobile" class="form-control" type="search" name="q"
-                     placeholder="Search products, services, shops…" aria-label="Search" value="{{ request('q') }}">
+                     placeholder="Search products, services, shops" aria-label="Search" value="{{ request('q') }}">
               <button class="btn btn-outline-secondary ms-2" type="submit" aria-label="Submit search">
                 <i class="fas fa-search"></i>
               </button>
@@ -410,8 +470,8 @@
               $currentCurrency = get_currency();
               $navCurrencies = collect([
                 (object)['code' => 'USD','symbol' => '$'],
-                (object)['code' => 'EUR','symbol' => '€'],
-                (object)['code' => 'GBP','symbol' => '£'],
+                (object)['code' => 'EUR','symbol' => 'â‚¬'],
+                (object)['code' => 'GBP','symbol' => 'Â£'],
                 (object)['code' => 'KES','symbol' => 'KES'],
               ]);
             }
@@ -421,7 +481,7 @@
             <label for="currencySelect" class="form-label mb-1"><i class="fas fa-coins me-1"></i> Currency</label>
             @php $siteDefault = setting('default_currency', 'USD') ?: 'USD'; @endphp
             <select id="currencySelect" class="form-select form-select-sm" aria-label="Select currency">
-              <option value="" disabled>Select currency…</option>
+              <option value="" disabled>Select currency¦</option>
               <option value="__default__">System Default ({{ strtoupper($siteDefault) }})</option>
               @foreach($navCurrencies as $c)
                 @php $code = strtoupper($c->code); @endphp
@@ -458,13 +518,19 @@
                   <i class="fas fa-box"></i>
                   <span>Orders</span>
                 </a>
+                @if(!$isSeller && session()->has('created_order_ids'))
+                <a href="{{ route('buyer.orders.created') }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                  <i class="fas fa-star"></i>
+                  <span>New Orders</span>
+                </a>
+                @endif
                 <a href="{{ $isSeller ? route('seller.messages.index') : route('buyer.messages.index') }}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
                   <span class="d-inline-flex align-items-center gap-2"><i class="fas fa-comments"></i> Messages</span>
-                  @if($msgCount>0)<span class="badge bg-danger rounded-pill">{{ $msgCount }}</span>@endif
+                  <span id="navMsgCount" class="badge bg-danger rounded-pill" style="display: {{ $msgCount>0 ? 'inline-block' : 'none' }};">{{ $msgCount>99 ? '99+' : $msgCount }}</span>
                 </a>
                 <a href="{{ route('notifications.index') }}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
                   <span class="d-inline-flex align-items-center gap-2"><i class="fas fa-bell"></i> Notifications</span>
-                  @if($notifCount>0)<span class="badge bg-primary rounded-pill">{{ $notifCount }}</span>@endif
+                  <span id="navNotifCount" class="badge bg-primary rounded-pill" style="display: {{ $notifCount>0 ? 'inline-block' : 'none' }};">{{ $notifCount>99 ? '99+' : $notifCount }}</span>
                 </a>
                 <a href="{{ route('wallet.index') }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
                   <i class="fas fa-wallet"></i>
@@ -527,7 +593,7 @@
             {{-- Full tree (mobile) --}}
             <div class="mb-2">
               <label for="categoryFilter" class="form-label small text-muted">Filter categories</label>
-              <input type="text" id="categoryFilter" class="form-control form-control-sm" placeholder="Type to filter…" autocomplete="off">
+              <input type="text" id="categoryFilter" class="form-control form-control-sm" placeholder="Type to filterâ¦" autocomplete="off">
             </div>
             <div class="border rounded-3 p-2" id="categoryTree" style="flex:1 1 auto; min-height:0; overflow:auto; -webkit-overflow-scrolling: touch;">
               @php
@@ -541,7 +607,7 @@
                     echo  '<div class="d-flex align-items-center justify-content-between gap-2">';
                     // Left: title + optional view link for parents
                     echo    '<div class="me-2 text-truncate">';
-                    echo      '<a class="text-decoration-none text-dark text-truncate" href="'.route('category.show',$cat->slug).'" data-bs-dismiss="offcanvas">'.e($cat->name).'</a>';
+                    echo      '<a class="text-decoration-none text-dark text-truncate" href="'.route('category.show',$cat->slug).'" data-bs-dismiss="offcanvas">'.e(html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8')).'</a>';
                     if($has) {
                       echo    '<a class="badge rounded-pill bg-light text-dark ms-2" href="'.route('category.show',$cat->slug).'" data-bs-dismiss="offcanvas" title="View all">View</a>';
                     }
@@ -600,7 +666,7 @@
           @endif
 
           <div class="mt-auto pt-3 border-top small text-muted">
-            &copy; {{ date('Y') }} {{ config('app.name','Cetsy') }} — All rights reserved.
+            &copy; {{ date('Y') }} {{ config('app.name','Cetsy') }}  All rights reserved.
           </div>
         </div>
       </div>
@@ -614,7 +680,7 @@
               $has  = $kids->isNotEmpty();
               echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
               echo   '<a class="dropdown-item d-flex justify-content-between align-items-center" href="'.($has?'#':route('category.show',$cat->slug)).'" role="menuitem" tabindex="-1">';
-              echo     e($cat->name);
+              echo     e(html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
               if($has) echo '<i class="fas fa-chevron-right ms-2 rotate" aria-hidden="true"></i>';
               echo   '</a>';
               if($has){
@@ -639,7 +705,7 @@
                      data-bs-auto-close="outside"
                      aria-expanded="false"
                      role="button">
-                    {{ $main->name }}
+                    {{ html_entity_decode($main->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
                     @if($main->childrenRecursive->isNotEmpty())
                       <i class="fas fa-chevron-down ms-1 rotate" aria-hidden="true"></i>
                     @endif
@@ -825,44 +891,22 @@
     <footer class="bg-dark text-white pt-5 mt-5">
       <div class="container px-3 px-sm-5">
         <div class="row gx-4 gy-5">
-          <!-- Sellers -->
-          <div class="col-6 col-md-3">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Sellers</h4>
-            <ul class="list-unstyled mb-0">
-              @foreach([
-                'Become a Seller'    => url('/become-seller'),
-                'Privacy Policy'     => url('/privacy'),
-                'Terms & Conditions' => url('/terms'),
-                'Seller Forum'       => url('/seller-forum'),
-                'Seller Tips'        => url('/seller-tips'),
-              ] as $label => $link)
-                <li class="mb-2"><a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">{{ $label }}</a></li>
-              @endforeach
-            </ul>
-          </div>
-
-          <!-- Buyers -->
-          <div class="col-6 col-md-3">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Buyers</h4>
-            <ul class="list-unstyled mb-0">
-              @foreach([
-                'Buyer Tips'         => url('/buyer-tips'),
-                'Privacy Policy'     => url('/privacy'),
-                'Terms & Conditions' => url('/buyer-terms'),
-              ] as $label => $link)
-                <li class="mb-2"><a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">{{ $label }}</a></li>
-              @endforeach
-            </ul>
-          </div>
-
-          <!-- About -->
-          <div class="col-6 col-md-3">
+          <!-- About (blurb) -->
+          <div class="col-12 col-md-4">
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">About</h4>
+            <p class="text-white-50 footer-text mb-0">
+              Cetsy is a global marketplace connecting buyers and sellers worldwide, empowering entrepreneurs to list legal products and services with payments, tools, and a community built on trust, discovery, and growth.
+            </p>
+          </div>
+
+          <!-- Quick Links -->
+          <div class="col-12 col-md-4">
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Quick Links</h4>
             <ul class="list-unstyled mb-0">
               @foreach([
-                'About ' . config('app.name') => url('/about'),
-                'Blog'                       => route('blog.index'),
-                'House Rules & Policy'        => url('/house-policy'),
+                'User Agreement'              => url('/user-agreement'),
+                'About Cetsy'                 => url('/about'),
+                'Blog'                        => route('blog.index'),
               ] as $label => $link)
                 <li class="mb-2"><a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">{{ $label }}</a></li>
               @endforeach
@@ -870,22 +914,13 @@
           </div>
 
           <!-- Support -->
-          <div class="col-6 col-md-3">
+          <div class="col-12 col-md-4">
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Support</h4>
             <ul class="list-unstyled mb-4">
               <li class="mb-2"><a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">Reach Us</a></li>
-              @if($settings)
-                @if(!empty($settings->email))
-                  <li class="text-white-50 mb-1 footer-text">
-                    <strong>Email:</strong> <a href="mailto:{{ $settings->email }}" class="text-white">{{ $settings->email }}</a>
-                  </li>
-                @endif
-                @if(!empty($settings->phone))
-                  <!-- <li class="text-white-50 footer-text">
-                    <strong>Phone:</strong> <a href="tel:{{ $settings->phone }}" class="text-white">{{ $settings->phone }}</a>
-                  </li> -->
-                @endif
-              @endif
+              <li class="text-white-50 mb-1 footer-text">
+                <strong>Email:</strong> <a href="mailto:hello@cetsy.co" class="text-white">hello@cetsy.co</a>
+              </li>
             </ul>
 
             <!-- Social Icons -->
@@ -911,7 +946,7 @@
 
         <div class="mt-5 pt-4 border-top border-secondary-subtle text-center">
           <p class="mb-0 text-white-50 footer-text">
-            &copy; {{ date('Y') }} {{ config('app.name', 'Cetsy') }} — All rights reserved.
+            &copy; {{ date('Y') }} {{ config('app.name', 'Cetsy') }} All rights reserved.
           </p>
         </div>
       </div>
@@ -1014,5 +1049,19 @@
       });
     })();
   </script>
+
+  <!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/6760175aaf5bfec1dbdcc04c/1if7lmf47';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+</script>
+<!--End of Tawk.to Script-->
 </body>
 </html>

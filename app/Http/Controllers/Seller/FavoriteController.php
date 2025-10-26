@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Wishlist;
 use App\Models\Product;
+use App\Models\Activity;
 
 class FavoriteController extends Controller
 {
@@ -35,7 +36,31 @@ class FavoriteController extends Controller
         // Group favorites by product for better organization
         $favoritesByProduct = $favorites->groupBy('product_id');
 
-        return view('seller.favorites.index', compact('favorites', 'favoritesByProduct'));
+        // Analytics: messages sent from Favorites (total and last 7 days)
+        $favoritesMessagesTotal = Activity::where('user_id', $user->id)
+            ->where('type', Activity::TYPE_MESSAGE)
+            ->where('properties->source', 'favorites')
+            ->count();
+        $favoritesMessagesWeek = Activity::where('user_id', $user->id)
+            ->where('type', Activity::TYPE_MESSAGE)
+            ->where('properties->source', 'favorites')
+            ->where('created_at', '>=', now()->subDays(7))
+            ->count();
+
+        // Mark wishlist-related notifications as read for this seller
+        try {
+            Activity::where('user_id', $user->id)
+                ->where('type', Activity::TYPE_WISHLIST)
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) { /* noop */ }
+
+        return view('seller.favorites.index', compact(
+            'favorites',
+            'favoritesByProduct',
+            'favoritesMessagesTotal',
+            'favoritesMessagesWeek'
+        ));
     }
 
     /**

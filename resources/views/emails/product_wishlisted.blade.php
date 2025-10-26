@@ -58,10 +58,15 @@
     <div class="content">
         <p>Hello <strong>{{ $shopOwner->name }}</strong>,</p>
 
-            <p>We're excited to let you know that your product <strong>"{{ $product->name }}"</strong> has been added to a customer's Favorites!</p>
+            <p><strong>{{ $wishlister->name }}</strong> favorited your item <strong>“{{ $product->name }}”</strong>.</p>
 
         <div class="product-info">
             <h3>Product Details:</h3>
+            @if(method_exists($product, 'media') && $product->media && $product->media->count() > 0)
+                <div style="margin:8px 0 12px 0;">
+                    <img src="{{ $product->media->first()->getUrl() }}" alt="{{ $product->name }}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #e9ecef;">
+                </div>
+            @endif
             <p><strong>Product Name:</strong> {{ $product->name }}</p>
             <p><strong>Price:</strong> {{ get_currency() }} {{ number_format($product->price, 2) }}</p>
             <p><strong>Added by:</strong> {{ $wishlister->name }}</p>
@@ -76,7 +81,13 @@
             <li>Engage with potential customers</li>
         </ul>
 
-        <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="btn">View Product</a>
+        @php
+            $prefill = "Hi {$wishlister->name}, thanks for favoriting ‘{$product->name}’. Can I answer any questions or offer help?";
+            $conversationId = ($product->id ?? '0') . '-' . ($wishlister->id ?? '0');
+            $messageUrl = route('seller.messages.show', $conversationId) . '?prefill=' . urlencode($prefill);
+        @endphp
+        <a href="{{ $messageUrl }}" class="btn">Message {{ $wishlister->name }}</a>
+        <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="btn" style="background-color:#6c63ff;">View Product</a>
     </div>
 
     <div class="footer">

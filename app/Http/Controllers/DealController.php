@@ -22,9 +22,10 @@ class DealController extends Controller
     public function create()
     {
         // Only fetch products belonging to this shop with pagination
+        // Show more per page to allow selecting far more than 20 at once
         $products = Product::where('shop_id', shop_id())
                            ->orderBy('name')
-                           ->paginate(20); // Load only 20 products initially
+                           ->paginate(100);
 
         return view('seller.deals.create', compact('products'));
     }
@@ -32,8 +33,10 @@ class DealController extends Controller
     public function searchProducts(Request $request)
     {
         $query = $request->get('q', '');
-        $page = $request->get('page', 1);
-        $perPage = 20;
+        $page = (int) $request->get('page', 1);
+        // Allow larger page sizes so sellers can select more than 20
+        $perPage = (int) $request->get('per_page', 100);
+        $perPage = max(1, min($perPage, 500));
         $category = $request->get('category', '');
         $productType = $request->get('type', '');
 
@@ -50,6 +53,16 @@ class DealController extends Controller
                            ->orderBy('name')
                            ->paginate($perPage, ['*'], 'page', $page);
 
+        // Normalize selected IDs (comma-separated string or array)
+        $selectedParam = $request->input('selected', []);
+        if (is_string($selectedParam)) {
+            $selectedIds = array_values(array_filter(array_map('intval', explode(',', $selectedParam))));
+        } elseif (is_array($selectedParam)) {
+            $selectedIds = array_values(array_filter(array_map('intval', $selectedParam)));
+        } else {
+            $selectedIds = [];
+        }
+
         return response()->json([
             'products' => $products->items(),
             'hasMore' => $products->hasMorePages(),
@@ -57,7 +70,7 @@ class DealController extends Controller
             'total' => $products->total(),
             'html' => view('seller.deals.partials.product-cards', [
                 'products' => $products->items(),
-                'selectedIds' => $request->get('selected', [])
+                'selectedIds' => $selectedIds,
             ])->render()
         ]);
     }
@@ -120,7 +133,7 @@ class DealController extends Controller
         // Only fetch products belonging to this shop with pagination
         $products = Product::where('shop_id', shop_id())
                            ->orderBy('name')
-                           ->paginate(20); // Load only 20 products initially
+                           ->paginate(100);
 
         return view('seller.deals.edit', compact('deal', 'products'));
     }

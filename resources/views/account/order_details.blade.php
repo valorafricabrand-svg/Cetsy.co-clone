@@ -132,6 +132,21 @@
           @endif
 
         </div>
+
+        @if($order->status === \App\Models\Order::STATUS_PENDING)
+          <div class="alert alert-warning mt-3 d-flex align-items-center justify-content-between" role="alert">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-exclamation-triangle"></i>
+              <span>Awaiting payment to start processing.</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <a href="{{ route('pay_now', $order->id) }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-credit-card"></i> Pay Now
+              </a>
+              <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          </div>
+        @endif
   </div>
 
   {{-- Processing timeline & ship-by notice --}}
@@ -144,18 +159,51 @@
       if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
       if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
     }
-    $placedAt = optional($order->created_at);
+    $placedAt = $order->created_at instanceof \Carbon\Carbon ? $order->created_at : ($order->created_at ? \Carbon\Carbon::parse($order->created_at) : null);
     $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
     $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
     $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
     $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
 
     $status = (string) $order->status;
+    $paid = in_array($status, [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
     $stepPlaced     = true;
-    $stepProcessing = in_array($status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+    // mark processing step active only after payment
+    $stepProcessing = in_array($status, [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
     $stepShipped    = in_array($status, [\App\Models\Order::STATUS_SHIPPED, \App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
     $stepDelivered  = in_array($status, [\App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
     $stepCompleted  = ($status === \App\Models\Order::STATUS_COMPLETED);
+
+    $paymentsCollection = $order->relationLoaded('payments')
+        ? $order->payments
+        : $order->payments()->orderBy('created_at')->get();
+
+    $firstPaidPayment = $paymentsCollection->firstWhere('status', '3')
+        ?? $paymentsCollection->firstWhere('status', 3);
+
+    $processingAt = optional($firstPaidPayment)->created_at;
+    if (!$processingAt && $paid) {
+        $processingAt = $order->created_at;
+    }
+    $shippedAt    = $order->shipped_at;
+    $deliveredAt  = $order->delivered_at;
+    $completedAt  = $order->completed_at ?: ($stepCompleted ? ($deliveredAt ?? $order->updated_at) : null);
+
+    $formatDateTime = static function ($value) {
+        if (! $value) {
+            return null;
+        }
+
+        if (! $value instanceof \Carbon\Carbon) {
+            try {
+                $value = \Carbon\Carbon::parse($value);
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }
+
+        return $value->format('M j, Y \\a\\t g:i A');
+    };
   @endphp
 
   <div class="card border-0 shadow-sm mb-4">
@@ -164,52 +212,86 @@
         <div class="col-12 col-md-6">
           <div class="fw-semibold mb-1">Processing Timeline</div>
           <ul class="list-unstyled small mb-0">
-            <li class="d-flex align-items-center gap-2 mb-1">
-              <i class="bi bi-check-circle {{ $stepPlaced ? 'text-success' : 'text-muted' }}"></i>
-              <span>Order placed {{ $placedAt? $placedAt->format('M j, Y') : '' }}</span>
+            <li class="mb-2">
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-check-circle {{ $stepPlaced ? 'text-success' : 'text-muted' }}"></i>
+                  <span>Order placed</span>
+                </div>
+                <span class="text-muted">{{ $formatDateTime($placedAt) ?? '—' }}</span>
+              </div>
             </li>
-            <li class="d-flex align-items-center gap-2 mb-1">
-              <i class="bi bi-gear-fill {{ $stepProcessing ? 'text-success' : 'text-muted' }}"></i>
-              <span>
-                @if($shipStart && $shipEnd)
-                  Ships within {{ (int)$minDays }}&ndash;{{ (int)$maxDays }} days ({{ $shipStartLabel }} &ndash; {{ $shipEndLabel }})
-                @elseif(!is_null($minDays))
-                  Ships within {{ (int)$minDays }} days (by {{ $shipStartLabel }})
-                @elseif(!is_null($maxDays))
-                  Ships by {{ (int)$maxDays }} days (by {{ $shipEndLabel }})
-                @else
-                  Processing
-                @endif
-              </span>
+            <li class="mb-2">
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-gear-fill {{ $paid ? 'text-success' : 'text-warning' }}"></i>
+                  <span>Processing</span>
+                </div>
+                <span class="text-muted">
+                  @if($processingAt)
+                    {{ $formatDateTime($processingAt) }}
+                  @elseif($paid)
+                    —
+                  @else
+                    Pending payment
+                  @endif
+                </span>
+              </div>
+              @unless($paid)
+                <div class="small text-muted ms-4 mt-1">Processing will begin after your payment is completed.</div>
+              @endunless
             </li>
-            <li class="d-flex align-items-center gap-2 mb-1">
-              <i class="bi bi-truck {{ $stepShipped ? 'text-success' : 'text-muted' }}"></i>
-              <span>Shipped</span>
+            <li class="mb-2">
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-truck {{ $stepShipped ? 'text-success' : 'text-muted' }}"></i>
+                  <span>Shipped</span>
+                </div>
+                <span class="text-muted">{{ $formatDateTime($shippedAt) ?? '—' }}</span>
+              </div>
             </li>
-            <li class="d-flex align-items-center gap-2 mb-1">
-              <i class="bi bi-box-seam {{ $stepDelivered ? 'text-success' : 'text-muted' }}"></i>
-              <span>Delivered</span>
+            <li class="mb-2">
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-box-seam {{ $stepDelivered ? 'text-success' : 'text-muted' }}"></i>
+                  <span>Delivered</span>
+                </div>
+                <span class="text-muted">{{ $formatDateTime($deliveredAt) ?? '—' }}</span>
+              </div>
             </li>
-            <li class="d-flex align-items-center gap-2">
-              <i class="bi bi-flag {{ $stepCompleted ? 'text-success' : 'text-muted' }}"></i>
-              <span>Completed</span>
+            <li>
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-flag {{ $stepCompleted ? 'text-success' : 'text-muted' }}"></i>
+                  <span>Completed</span>
+                </div>
+                <span class="text-muted">{{ $formatDateTime($completedAt) ?? '—' }}</span>
+              </div>
             </li>
           </ul>
         </div>
-        <div class="col-12 col-md-6">
-          <div class="alert alert-info mb-0">
-            <i class="bi bi-info-circle me-2"></i>
-            @if($shipStart && $shipEnd)
-              Ship-by window: <strong>{{ $shipStartLabel }} &ndash; {{ $shipEndLabel }}</strong>
-            @elseif($shipStart)
-              Ship by: <strong>{{ $shipStartLabel }}</strong>
-            @elseif($shipEnd)
-              Ship by: <strong>{{ $shipEndLabel }}</strong>
-            @else
-              Seller will ship your order soon.
-            @endif
+        @if($paid)
+          <div class="col-12 col-md-6">
+            <div class="alert alert-info mb-0">
+              <i class="bi bi-info-circle me-2"></i>
+              @if($stepCompleted && $completedAt)
+                Completed on <strong>{{ $formatDateTime($completedAt) }}</strong>
+              @elseif($stepDelivered && $deliveredAt)
+                Delivered on <strong>{{ $formatDateTime($deliveredAt) }}</strong>
+              @elseif($stepShipped && $shippedAt)
+                Shipped on <strong>{{ $formatDateTime($shippedAt) }}</strong>
+              @elseif($shipStart && $shipEnd)
+                Ship-by window: <strong>{{ $shipStartLabel }} &ndash; {{ $shipEndLabel }}</strong>
+              @elseif($shipStart)
+                Ship by: <strong>{{ $shipStartLabel }}</strong>
+              @elseif($shipEnd)
+                Ship by: <strong>{{ $shipEndLabel }}</strong>
+              @else
+                Seller will ship your order soon.
+              @endif
+            </div>
           </div>
-        </div>
+        @endif
       </div>
     </div>
   </div>
@@ -245,6 +327,44 @@
         <div class="alert alert-info mt-3 mb-0" role="alert">
           <i class="bi bi-cloud-download me-2"></i>
           Digital order: funds release and reviews unlock after your first download.
+        </div>
+      @endif
+
+      @php
+        $statusNow = $order->status;
+        $canReviewPhysicalNow = in_array($statusNow, [\App\Models\Order::STATUS_DELIVERED, \App\Models\Order::STATUS_COMPLETED]);
+        $canReviewDigitalNow  = in_array($statusNow, [\App\Models\Order::STATUS_COMPLETED, \App\Models\Order::STATUS_DELIVERED]);
+
+        $pendingReviewItem = $order->items->first(function ($item) use ($canReviewPhysicalNow, $canReviewDigitalNow) {
+          if ($item->review) {
+            return false;
+          }
+
+          $product    = optional($item->product);
+          $isDigital  = $product && $product->type === 'digital';
+          $downloaded = !empty($item->downloaded_at);
+
+          if ($isDigital) {
+            return $canReviewDigitalNow && $downloaded;
+          }
+
+          return $canReviewPhysicalNow;
+        });
+      @endphp
+
+      @if($pendingReviewItem)
+        @php $pendingReviewModalId = 'reviewModal_'.$pendingReviewItem->id; @endphp
+        <div class="alert alert-success mt-3 d-flex align-items-center justify-content-between flex-wrap gap-3" role="alert">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-star-fill fs-4"></i>
+            <div>
+              <strong>Your order has been delivered.</strong>
+              <div class="small">Share feedback with the seller by leaving a quick review.</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{{ $pendingReviewModalId }}">
+            <i class="bi bi-pencil-square"></i> Leave a Review
+          </button>
         </div>
       @endif
     </div>

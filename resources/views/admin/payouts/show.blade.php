@@ -1,8 +1,10 @@
 @extends('layouts.app')
 @section('title','Payout #'.$payout->id)
 
+
+
 @section('content')
-<div class="content py-4">
+<div class="content">
     <div class="container-xxl" style="max-width: 700px">
 
         <h2 class="mb-2">Payout&nbsp;#{{ $payout->id }}</h2>
@@ -329,4 +331,3 @@
   <div id="payoutToasts"></div>
   </div>
 @endsection
-

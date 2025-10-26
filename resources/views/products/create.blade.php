@@ -52,7 +52,7 @@
         <select name="type" id="type"
                 class="form-select @error('type') is-invalid @enderror"
                 x-model="type"
-                @change="loadCategories"
+                @change="loadCategories()"
                 required>
           <option value="">Select type</option>
           <option value="physical" @selected(old('type')=='physical')>Physical</option>
@@ -77,6 +77,9 @@
           </template>
         </select>
         <div x-show="loading" class="form-text text-muted">Loading categories…</div>
+        <div x-show="fallback && !loading" class="form-text text-warning">
+          Showing all categories. Ask admin to tag categories by listing type for better filtering.
+        </div>
         @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
       </div>
 
@@ -176,6 +179,8 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <script>
+  // Local cache of categories (id, name, listing_type) as a robust fallback
+  window.__ALL_CATEGORIES__ = @json(\App\Models\Category::select('id','name','listing_type')->orderBy('name')->get());
 
 
   function listingForm() {
@@ -184,21 +189,43 @@
       categoryId: '{{ old('category_id','') }}',
       categories: [],
       loading: false,
+      fallback: false,
       variations: [], variationType:'', variationOption:'',
       previews: [], idCounter:0, sortable:null,
 
+      filterLocalByType(tp){
+        const map = { physical: 'products', service: 'services', digital: 'digital' };
+        const want = map[String(tp) || ''] || null;
+        if (!want) return [];
+        const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : [];
+        return all.filter(c => (c.listing_type || '').toLowerCase() === want);
+      },
       async loadCategories() {
         this.categories = [];
         this.categoryId = '';
         if (! this.type) return;
         this.loading = true;
         try {
-          const res = await fetch(`/api/categories/by-type/${encodeURIComponent(this.type)}`);
-          if (! res.ok) throw new Error('Fetch failed');
-          this.categories = await res.json();
+          const url = `/api/categories/by-type/${encodeURIComponent(this.type)}?_=${Date.now()}`;
+          const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+          if (!res.ok) throw new Error(`Fetch failed (${res.status})`);
+          let data;
+          const ct = res.headers.get('content-type') || '';
+          this.fallback = (res.headers.get('x-categories-fallback') === '1');
+          if (ct.includes('application/json')) {
+            data = await res.json();
+          } else {
+            const text = await res.text();
+            try { data = JSON.parse(text); } catch { console.warn('Non-JSON response from categories API:', text.slice(0, 200)); data = []; }
+          }
+          this.categories = Array.isArray(data) ? data : [];
+          if (this.fallback || this.categories.length === 0) {
+            this.categories = this.filterLocalByType(this.type);
+          }
         } catch (e) {
-          console.error(e);
-          this.categories = [];
+          console.warn('Categories load warning:', e);
+          this.categories = this.filterLocalByType(this.type);
+          this.fallback = false;
         } finally {
           this.loading = false;
           if ('{{ old('type') }}' === this.type && '{{ old('category_id') }}') {
@@ -244,7 +271,10 @@
     <!-- Include TinyMCE from the local directory -->
     <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
 <script>
-tinymce.init({
+if (document.compatMode !== 'CSS1Compat') {
+  console.warn('TinyMCE disabled: document not in standards mode');
+} else {
+if (window.tinymce) tinymce.init({
   selector: '#description',
   height: 400,
   min_height: 400,
@@ -252,18 +282,16 @@ tinymce.init({
 
   /* Enable extra plugins for styling */
   plugins: [
-    'advlist autolink lists link image charmap print preview anchor',
+    'advlist autolink lists link image charmap preview anchor',
     'searchreplace visualblocks code fullscreen',
     'insertdatetime media table paste code help wordcount',
-    'formatpainter',        /* copy/paste formatting */
-    'lineheight',           /* adjust line spacing */
-    'textcolor'             /* font color */
+    'quickbars emoticons autoresize'
   ],
 
   /* Add font‑size, font‑family, line‑height and Format Painter to toolbar */
   toolbar: [
-    'undo redo | formatpainter | fontselect fontsizeselect |', 
-    'lineheightselect | bold italic underline strikethrough forecolor backcolor |',
+    'undo redo | fontselect fontsizeselect |', 
+    'bold italic underline strikethrough forecolor backcolor |',
     'alignleft aligncenter alignright alignjustify |',
     'bullist numlist outdent indent | removeformat | link image media | code'
   ].join(' '),
@@ -280,23 +308,76 @@ tinymce.init({
 
   fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt',
 
-  /* Enable the lineheight dropdown (requires lineheight plugin) */
-  lineheight_formats: '1 1.2 1.5 1.8 2 3',
-
   /* Let browser context menu & keyboard shortcuts continue to work */
   browser_contextmenu: true,
   browser_spellcheck: true,
   gecko_spellcheck: true,
   elementpath: false,
-  contextmenu: 'link image inserttable | cell row column',
-
   branding: false,
-  content_css: '{{ asset("css/tinymce-content.css") }}',
   content_style: 'body { min-height:400px !important; }',
+  base_url: '{{ asset('assets/js/tinymce') }}',
 
   setup(editor) {
     editor.on('change', () => editor.save());
   }
 });
+}
+</script>
+<script>
+// Fallback loader: if TinyMCE failed to load locally, load from CDN and init
+;(function(){
+  function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
+  onReady(function(){
+    if (window.tinymce) return; // already available
+    const el = document.getElementById('description');
+    if (!el) return;
+    const start = function(){
+      try { const inst = tinymce.get('description'); if (inst) inst.remove(); } catch(_) {}
+      tinymce.init({
+        selector: '#description',
+        height: 400,
+        min_height: 400,
+        menubar: true,
+        plugins: [
+          'advlist autolink lists link image charmap preview anchor',
+          'searchreplace visualblocks code fullscreen',
+          'insertdatetime media table paste code help wordcount',
+          'quickbars emoticons autoresize'
+        ],
+        toolbar: [
+          'undo redo | fontselect fontsizeselect |', 
+          'bold italic underline strikethrough forecolor backcolor |',
+          'alignleft aligncenter alignright alignjustify |',
+          'bullist numlist outdent indent | removeformat | link image media | code'
+        ].join(' '),
+        font_formats: [
+          'Arial=arial,helvetica,sans-serif;', 
+          'Courier New=courier new,courier,monospace;', 
+          'Georgia=georgia,palatino,serif;', 
+          'Tahoma=tahoma,arial,helvetica,sans-serif;', 
+          'Times New Roman=times new roman,times,serif;', 
+          'Verdana=verdana,geneva,sans-serif'
+        ].join(' '),
+        fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt',
+        browser_contextmenu: true,
+        browser_spellcheck: true,
+        gecko_spellcheck: true,
+        elementpath: false,
+        branding: false,
+        content_style: 'body { min-height:400px !important; }',
+        base_url: '{{ asset('assets/js/tinymce') }}',
+        setup(editor) {
+          editor.on('change', () => editor.save());
+        }
+      });
+    };
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js';
+    s.referrerPolicy = 'origin';
+    s.onload = start;
+    s.onerror = function(){ console.warn('TinyMCE CDN failed to load'); };
+    document.head.appendChild(s);
+  });
+})();
 </script>
 @endpush

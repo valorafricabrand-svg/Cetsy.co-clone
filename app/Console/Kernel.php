@@ -32,6 +32,8 @@ class Kernel extends ConsoleKernel
 
         // Ship-by reminders for buyers and sellers at 08:00 daily
         $schedule->command('orders:notify-shipby')->dailyAt('08:00');
+
+        // Subscription expiry reminders are scheduled in bootstrap/app.php
     }
 
     /**

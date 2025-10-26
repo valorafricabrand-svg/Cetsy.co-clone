@@ -16,9 +16,22 @@
     @endif
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="h5 mb-0">Seller Information</h3>
-        <div>
-            <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-primary me-2">
+        <h3 class="h5 mb-0">User Information</h3>
+        <div class="d-flex align-items-center gap-2">
+            @if(method_exists($user,'isSeller') && $user->isSeller())
+                <a href="{{ route('admin.sellers.login-as', $user->id) }}" 
+                                class="btn btn-sm btn-outline-success me-2"
+                                onclick="return confirm('Are you sure you want to login as this seller?')">
+                                <i class="fas fa-user-secret me-1"></i> Login as Seller
+                            </a>
+            @endif
+
+            @if((method_exists($user,'isSeller') && $user->isSeller()) || (method_exists($user,'isBuyer') && $user->isBuyer()))
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#topupWalletModal">
+                    <i class="fas fa-wallet me-1"></i> Top Up Wallet
+                </button>
+            @endif
+            <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-primary">
                 <i class="fas fa-pencil-alt me-1"></i> Edit User
             </a>
             <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">
@@ -45,6 +58,25 @@
                         <div class="col-sm-4 fw-bold">Email:</div>
                         <div class="col-sm-8">
                             <a href="mailto:{{ $user->email }}" class="text-decoration-none">{{ $user->email }}</a>
+                            @if(!$user->email_verified_at)
+                                <form action="{{ route('admin.users.resend-verification', $user) }}" method="POST" class="d-inline ms-2">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" onclick="return confirm('Resend verification email to this user?')">
+                                        Resend verification
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 fw-bold">Email Verified:</div>
+                        <div class="col-sm-8">
+                            @if($user->email_verified_at)
+                                <span class="badge bg-success">Verified</span>
+                                <small class="text-muted ms-2">{{ $user->email_verified_at->format('M d, Y \a\t h:i A') }}</small>
+                            @else
+                                <span class="badge bg-warning text-dark">Unverified</span>
+                            @endif
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -104,20 +136,44 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    @if(!$user->is_active)
-                        <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="mb-3">
-                            @csrf
-                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve this Seller Account?')">
-                                <i class="fas fa-check me-2"></i>Approve Account
-                            </button>
+                    
+                    @if($user->email_verified_at)
+                        <form action="{{ route('admin.users.mark-unverified', $user) }}" method="POST" class="mb-3">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-warning w-100" onclick="return confirm('Mark this user\'s email as unverified?')">
+                        <i class="fas fa-undo me-2"></i>Mark Email Unverified
+                        </button>
                         </form>
-                    @else
-                        <form action="{{ route('admin.users.deactivate', $user) }}" method="POST" class="mb-3">
-                            @csrf
-                            <button type="submit" class="btn btn-warning w-100" onclick="return confirm('Deactivate this Seller Account?')">
-                                <i class="fas fa-ban me-2"></i>Deactivate Account
-                            </button>
+                        @else
+                        <form action="{{ route('admin.users.mark-verified', $user) }}" method="POST" class="mb-3">
+                        @csrf
+                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Mark this user\'s email as verified?')">
+                        <i class="fas fa-check me-2"></i>Mark Email Verified
+                        </button>
                         </form>
+                        <form action="{{ route('admin.users.resend-verification', $user) }}" method="POST" class="mb-3">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-primary w-100" onclick="return confirm('Resend verification email to this user?')">
+                        <i class="fas fa-envelope me-2"></i>Resend Verification Email
+                        </button>
+                        </form>
+                    @endif
+                    @if(method_exists($user,'isSeller') && $user->isSeller())
+                        @if(!$user->is_active)
+                            <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="mb-3">
+                                @csrf
+                                <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve this seller account?')">
+                                    <i class="fas fa-check me-2"></i>Approve Account
+                                </button>
+                            </form>
+                        @else
+                            <form action="{{ route('admin.users.deactivate', $user) }}" method="POST" class="mb-3">
+                                @csrf
+                                <button type="submit" class="btn btn-warning w-100" onclick="return confirm('Deactivate this seller account?')">
+                                    <i class="fas fa-ban me-2"></i>Deactivate Account
+                                </button>
+                            </form>
+                        @endif
                     @endif
 
                     <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.');">
@@ -257,5 +313,43 @@
             </div>
         </div>
     </div>
+    @if((method_exists($user,'isSeller') && $user->isSeller()) || (method_exists($user,'isBuyer') && $user->isBuyer()))
+    <!-- Top Up Wallet Modal -->
+    <div class="modal fade" id="topupWalletModal" tabindex="-1" aria-labelledby="topupWalletModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="topupWalletModalLabel">Top Up Wallet</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form method="POST" action="{{ route('admin.wallets.store') }}">
+            @csrf
+            <input type="hidden" name="seller" value="{{ $user->id }}">
+            <div class="modal-body">
+              <div class="mb-2 small text-muted">
+                Account: <strong>{{ $user->name }}</strong> (ID: {{ $user->id }}, {{ $user->email }})
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Current Wallet Balance</label>
+                <input type="text" class="form-control" value="{{ get_currency() }} {{ number_format(wallet('completed', $user->id), 2) }}" disabled>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Amount (USD)</label>
+                <input type="number" name="amount" class="form-control" step="0.01" min="0.01" placeholder="e.g. 50.00" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Description (optional)</label>
+                <input type="text" name="description" class="form-control" value="Admin top-up" maxlength="1000">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-success">Top Up</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    @endif
 </div>
 @endsection

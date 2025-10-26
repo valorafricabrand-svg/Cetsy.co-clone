@@ -92,21 +92,42 @@
 
       <div class="modal-body">
         @forelse($variationTypes as $type)
-          <div class="mb-4 p-3 border rounded d-flex justify-content-between align-items-start">
-            <div class="me-3">
-              <strong>{{ $type->name }}</strong>
-              <div class="mt-2">
-                @foreach($type->options as $opt)
-                  <span class="badge bg-light text-dark me-1 mb-1">{{ $opt->value }}</span>
-                @endforeach
+          <div class="mb-4 p-3 border rounded">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="me-3">
+                <strong>{{ $type->name }}</strong>
+                <div class="small text-muted">Affects price: {{ $type->affects_price ? 'Yes' : 'No' }}</div>
+                <div class="mt-2">
+                  @foreach($type->options as $opt)
+                    <span class="badge bg-light text-dark me-1 mb-1">{{ $opt->value }}</span>
+                  @endforeach
+                </div>
               </div>
+              <form action="{{ route('variationTypes.destroy', $type) }}" method="POST"
+                    onsubmit="return confirm('Delete this variation type and its options?')">
+                @csrf
+                @method('DELETE')
+                <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i> Delete</button>
+              </form>
             </div>
-            <form action="{{ route('variationTypes.destroy', $type) }}" method="POST"
-                  onsubmit="return confirm('Delete this variation type and its options?')">
-              @csrf
-              @method('DELETE')
-              <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i> Delete</button>
-            </form>
+
+            <div class="mt-3">
+              <form class="row gy-2 gx-3 align-items-center" method="POST" action="{{ route('variationTypes.affects_price', $type) }}">
+                @csrf
+                @method('PATCH')
+                <div class="col-auto">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="1" id="ap_{{ $type->id }}" name="affects_price" {{ $type->affects_price ? 'checked' : '' }}>
+                    <label class="form-check-label" for="ap_{{ $type->id }}">
+                      Affects price
+                    </label>
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <button class="btn btn-sm btn-primary">Save</button>
+                </div>
+              </form>
+            </div>
           </div>
         @empty
           <p class="text-muted mb-0">No variation types found.</p>
@@ -129,7 +150,11 @@
               <small class="form-text text-muted">Separate options with commas.</small>
             </div>
           </div>
-          <div class="mt-3">
+          <div class="mt-3 d-flex align-items-center gap-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="1" id="affects_price_new" name="affects_price">
+              <label class="form-check-label" for="affects_price_new">Affects price</label>
+            </div>
             <button type="submit" class="btn btn-success">Add Type</button>
           </div>
         </form>
@@ -234,9 +259,20 @@
                   @endforeach
 
                   <div class="row g-3">
-                    <div class="col-12">
+                    <div class="col-md-6">
                       <label class="form-label">Price</label>
                       <input type="number" step="0.01" min="0" name="price" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Stock <span class="text-muted">(leave blank for unlimited)</span></label>
+                      <input
+                        type="number"
+                        step="1"
+                        min="0"
+                        name="stock"
+                        class="form-control"
+                        value="{{ old('stock', 0) }}"
+                        placeholder="Unlimited">
                     </div>
                   </div>
 
@@ -263,6 +299,7 @@
                       <tr>
                         <th>Combination</th>
                         <th style="width:160px;">Price</th>
+                        <th style="width:140px;">Stock</th>
                         <th class="text-end" style="width:160px;">Actions</th>
                       </tr>
                     </thead>
@@ -286,6 +323,17 @@
                           <td>
                             <input type="number" step="0.01" min="0" class="form-control form-control-sm"
                                    name="price" value="{{ $v->price }}" form="{{ $formId }}" required>
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              step="1"
+                              min="0"
+                              class="form-control form-control-sm"
+                              name="stock"
+                              value="{{ $v->stock ?? '' }}"
+                              placeholder="Unlimited"
+                              form="{{ $formId }}">
                           </td>
                           <td class="text-end">
                             <button class="btn btn-sm btn-primary me-1" form="{{ $formId }}">Save</button>

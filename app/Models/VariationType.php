@@ -13,6 +13,7 @@ class VariationType extends Model
         'product_id',
         'name',
         'link_photos',
+        'affects_price',
     ];
 
     /**

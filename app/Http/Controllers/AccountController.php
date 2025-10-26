@@ -67,8 +67,18 @@ public function orderDetails(Order $order)
     $order->loadMissing([
         'items.product',
         'items.shippingProfile.processingTime',
-        'shop'
+        'shop',
+        'payments' => fn($query) => $query->orderBy('created_at'),
     ]);
+
+    // Mark order notifications as read for the buyer
+    try {
+        \App\Models\Activity::where('user_id', Auth::id())
+            ->where('type', \App\Models\Activity::TYPE_ORDER)
+            ->where(function($q) use ($order) { $q->where('related_id', $order->id)->orWhereNull('related_id'); })
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+    } catch (\Throwable $e) { /* non-fatal */ }
 
     return view('account.order_details', compact('order'));
 }

@@ -47,12 +47,20 @@
       </a>
 
       @if($order->status === \App\Models\Order::STATUS_PENDING)
-        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
-                data-bs-toggle="modal"
-                data-bs-target="#processModal-{{ $order->id }}">
-          <i class="fa-solid fa-gear"></i> Process
-        </button>
-        @include('seller.orders.modals.process')
+        @php $paid = method_exists($order,'isPaid') ? $order->isPaid() : false; @endphp
+        @if($paid)
+          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                  data-bs-toggle="modal"
+                  data-bs-target="#processModal-{{ $order->id }}">
+            <i class="fa-solid fa-gear"></i> Process
+          </button>
+          @include('seller.orders.modals.process')
+        @else
+          <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" disabled
+                  title="Awaiting buyer payment">
+            <i class="fa-solid fa-hourglass-half"></i> Pending Payment
+          </button>
+        @endif
 
         {{-- Cancel moved into kebab menu --}}
       @elseif($order->status === \App\Models\Order::STATUS_PROCESSING)
@@ -163,7 +171,7 @@
               if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
               if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
             }
-            $placedAt = optional($order->created_at);
+            $placedAt = $order->created_at instanceof \Carbon\Carbon ? $order->created_at : ($order->created_at ? \Carbon\Carbon::parse($order->created_at) : null);
             $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
             $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
             $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);

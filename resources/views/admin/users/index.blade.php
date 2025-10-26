@@ -16,9 +16,9 @@
     @endif
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="h5 mb-0">All Sellers</h3>
+        <h3 class="h5 mb-0">All {{ ($role ?? 'seller') === 'buyer' ? 'Buyers' : 'Sellers' }}</h3>
         <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> New Seller
+            <i class="fas fa-plus me-1"></i> New User
         </a>
     </div>
 
@@ -31,6 +31,7 @@
                 <option value="inactive" {{ request('status')==='inactive' ? 'selected' : '' }}>Inactive</option>
             </select>
         </div>
+        @if(($role ?? 'seller') === 'seller')
         <div class="col-md-3">
             <label class="form-label">KYC Status</label>
             <select name="kyc_status" class="form-select">
@@ -40,6 +41,7 @@
                 @endforeach
             </select>
         </div>
+        @endif
         <div class="col-md-4">
             <label class="form-label">Search</label>
             <input type="text" class="form-control" name="q" value="{{ request('q') }}" placeholder="Name, email, or shop name">
@@ -58,8 +60,10 @@
                         <th scope="col">#</th>
                         <th scope="col">Name</th>
                         <th scope="col">Email</th>
-                        <th scope="col">Shop</th>
-                        <th scope="col">KYC</th>
+                        @if(($role ?? 'seller') === 'seller')
+                          <th scope="col">Shop</th>
+                          <th scope="col">KYC</th>
+                        @endif
                         <th scope="col">Status</th>
                         <th scope="col" class="text-end">Wallet</th>
                         <th scope="col" class="text-end">Actions</th>
@@ -73,29 +77,33 @@
                             </th>
                             <td>{{ $user->name }}</td>
                             <td>{{ $user->email }}</td>
-                            <td>{{ optional($user->shop)->name ?? '—' }}</td>
-                            <td>
-                                @php($kyc = optional($user->kyc)->status)
-                                @if($kyc==='approved')
-                                  <span class="badge bg-success">Approved</span>
-                                @elseif($kyc==='pending')
-                                  <span class="badge bg-warning text-dark">Pending</span>
-                                @elseif($kyc==='rejected')
-                                  <span class="badge bg-danger">Rejected</span>
-                                @else
-                                  <span class="badge bg-secondary">N/A</span>
-                                @endif
-                            </td>
+                            @if(($role ?? 'seller') === 'seller')
+                              <td>{{ optional($user->shop)->name ?? '–' }}</td>
+                              <td>
+                                  @php($kyc = optional($user->kyc)->status)
+                                  @if($kyc==='approved')
+                                    <span class="badge bg-success">Approved</span>
+                                  @elseif($kyc==='pending')
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                  @elseif($kyc==='rejected')
+                                    <span class="badge bg-danger">Rejected</span>
+                                  @else
+                                    <span class="badge bg-secondary">N/A</span>
+                                  @endif
+                              </td>
+                            @endif
                             <td>
                                 <span class="badge {{ $user->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $user->is_active ? 'Active' : 'Inactive' }}</span>
                             </td>
                             <td class="text-end">{{ get_currency() }} {{ number_format((float)($user->wallet_balance ?? 0),2) }}</td>
                             <td class="text-end">
-                                <a href="{{ route('admin.sellers.login-as', $user->id) }}" 
-                                               class="btn btn-sm btn-outline-success me-2"
-                                               onclick="return confirm('Are you sure you want to login as this seller?')">
-                                                <i class="fas fa-user-secret me-1"></i> Login as Seller
-                                            </a>
+                                @if(method_exists($user,'isSeller') && $user->isSeller())
+                                  <a href="{{ route('admin.sellers.login-as', $user->id) }}" 
+                                                 class="btn btn-sm btn-outline-success me-2"
+                                                 onclick="return confirm('Are you sure you want to login as this seller?')">
+                                                  <i class="fas fa-user-secret me-1"></i> Login as Seller
+                                              </a>
+                                @endif
                                 <a href="{{ route('admin.users.show', $user) }}" class="btn btn-sm btn-outline-secondary me-1">
                                     <i class="fas fa-eye"></i>
                                 </a>

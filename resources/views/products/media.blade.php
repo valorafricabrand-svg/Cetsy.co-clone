@@ -18,6 +18,7 @@
   .toolbar-btn{min-width:34px}
   .progress-mini{height:4px;background:#e9ecef;border-radius:2px;overflow:hidden}
   .progress-mini>div{height:100%;background:var(--accent);width:0;transition:width .2s}
+  [x-cloak]{display:none!important;}
 
   /* Cropper wrapper */
   #cropWrapper{position:relative;width:100%;height:72vh;max-height:calc(100vh - 220px);background:#111;overflow:hidden;}
@@ -30,7 +31,7 @@
 @section('content')
 @php $current = \Illuminate\Support\Facades\Route::currentRouteName(); @endphp
 
-<div class="content" x-data="mediaPage()" x-init="init()">
+<div class="content" x-data="mediaPage({ existingIds: @json($product->media->pluck('id')) })" x-init="init()">
 
   {{-- Tabs header --}}
   <div class="page-header-sticky">
@@ -67,7 +68,38 @@
 
   {{-- ===== Current Media ===== --}}
   <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-light"><h5 class="mb-0">Current Media</h5></div>
+    <div class="card-header bg-light d-flex flex-wrap gap-2 align-items-center justify-content-between">
+      <h5 class="mb-0">Current Media</h5>
+      @if($product->media->count())
+        <div class="d-flex align-items-center gap-2" x-show="existingIds.length" x-cloak>
+          <button type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  @click="toggleSelectAllExisting()"
+                  :disabled="existingIds.length === 0">
+            <span x-text="selectedExisting.length && selectedExisting.length === existingIds.length ? 'Clear Selection' : 'Select All'"></span>
+          </button>
+          <span class="text-muted small" x-show="selectedExisting.length" x-text="`${selectedExisting.length} selected`"></span>
+          <form action="{{ route('media.bulk-destroy', $product) }}"
+                method="POST"
+                x-ref="bulkDeleteForm"
+                class="d-inline">
+            @csrf
+            @method('DELETE')
+            <div x-ref="bulkDeleteContainer"></div>
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2"
+                    :disabled="selectedExisting.length === 0"
+                    @click="submitBulkDelete">
+              <i class="fas fa-trash"></i>
+              <span>Delete Selected</span>
+              <span class="badge bg-danger bg-opacity-10 text-danger"
+                    x-show="selectedExisting.length"
+                    x-text="selectedExisting.length"></span>
+            </button>
+          </form>
+        </div>
+      @endif
+    </div>
     <div class="card-body">
       @if($product->media->count())
         <div class="row g-3">
@@ -77,7 +109,14 @@
               $isFeatured = $product->featured_image === $mediaUrl;
             @endphp
             <div class="col-6 col-sm-4 col-md-3">
-              <div class="card">
+              <div class="card position-relative"
+                   :class="selectedExisting.includes({{ $media->id }}) ? 'border-primary border-2 shadow' : ''">
+                <div class="position-absolute top-0 start-0 m-2 bg-white rounded-pill shadow-sm">
+                  <input type="checkbox"
+                         class="form-check-input"
+                         x-model.number="selectedExisting"
+                         value="{{ $media->id }}">
+                </div>
                 @if($media->type === 'video')
                   <video src="{{ $mediaUrl }}" class="card-img-top" style="height:140px;object-fit:cover;" controls></video>
                 @else
@@ -280,10 +319,16 @@
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
 <script>
-function mediaPage(){
+function mediaPage(config = {}){
+  const normalizedExisting = Array.isArray(config.existingIds)
+    ? config.existingIds.map(id => Number(id))
+    : [];
   return {
     // Upload (new images)
     items: [], dragging:false,
+    // Existing media selection
+    existingIds: normalizedExisting,
+    selectedExisting: [],
     // Crop
     cropper:null, cropModal:null, cropSaving:false,
     activeRatio: NaN, quality: 92, dimText:'',
@@ -306,6 +351,9 @@ function mediaPage(){
       this.cropModal = new bootstrap.Modal(modalEl, { backdrop:'static' });
       // Attach BEFORE showing to avoid race
       document.getElementById('cropApplyBtn').addEventListener('click', ()=> this.applyCrop());
+
+      this.$watch('selectedExisting', () => this.updateBulkField());
+      this.updateBulkField();
     },
 
     // ---------- Upload list helpers ----------
@@ -421,6 +469,7 @@ function mediaPage(){
       if(this.newIndex !== null){
         const it = this.items[this.newIndex];
         it.b64 = dataURL; // mark as cropped-override
+        it.file = null;   // drop original file so only the cropped version uploads
         // Update preview to reflect the crop
         if(it.previewUrl){ URL.revokeObjectURL(it.previewUrl); }
         it.previewUrl = dataURL;
@@ -437,6 +486,19 @@ function mediaPage(){
       this.cropper = null;
       this.existingMediaId = null;
       this.newIndex = null;
+    },
+
+    // ---------- Selection helpers ----------
+    toggleSelectAllExisting(){
+      if(!this.existingIds.length){
+        this.selectedExisting = [];
+        return;
+      }
+      if(this.selectedExisting.length === this.existingIds.length){
+        this.selectedExisting = [];
+      } else {
+        this.selectedExisting = [...this.existingIds];
+      }
     },
 
     // ---------- Submit upload form (normal POST) ----------
@@ -465,14 +527,54 @@ function mediaPage(){
         }
       });
 
-      // Optional: If ALL items are cropped (we have b64 for every item),
-      // we can clear the native file input so only b64s are sent.
-      const allCropped = this.items.length > 0 && this.items.every(it=> !!it.b64);
-      if(allCropped && this.$refs.fileInput){
-        this.$refs.fileInput.value = '';
+      // Rebuild the native file input so it only carries uncropped files
+      if(this.$refs.fileInput){
+        try {
+          const dt = new DataTransfer();
+          this.items.forEach(it => {
+            if(it.file instanceof File){
+              dt.items.add(it.file);
+            }
+          });
+          if(dt.items.length){
+            this.$refs.fileInput.files = dt.files;
+          } else {
+            this.$refs.fileInput.value = '';
+          }
+        } catch (error) {
+          // Fallback: if DataTransfer is unavailable and we have cropped items, clear input
+          const hasCropped = this.items.some(it => it.b64);
+          if(hasCropped){
+            this.$refs.fileInput.value = '';
+          }
+        }
       }
 
       // Normal form submit proceeds.
+    },
+
+    submitBulkDelete(){
+      if(this.selectedExisting.length === 0) return;
+      if(!confirm(`Delete ${this.selectedExisting.length} selected media item${this.selectedExisting.length === 1 ? '' : 's'}?`)){
+        return;
+      }
+      this.updateBulkField();
+      if(this.$refs.bulkDeleteForm){
+        this.$refs.bulkDeleteForm.submit();
+      }
+    },
+
+    updateBulkField(){
+      const holder = this.$refs && this.$refs.bulkDeleteContainer;
+      if(!holder) return;
+      holder.innerHTML = '';
+      this.selectedExisting.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'media_ids[]';
+        input.value = id;
+        holder.appendChild(input);
+      });
     },
   }
 }

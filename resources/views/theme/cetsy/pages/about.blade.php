@@ -177,7 +177,7 @@
           <a href="{{ url('/login') }}" class="btn btn-success btn-lg btn-pill">
             <i class="fas fa-user-check me-2"></i> Get Started as a Seller
           </a>
-          <a href="{{ url('/explore') }}" class="btn btn-soft-success btn-lg btn-pill">
+          <a href="{{ url('/listings') }}" class="btn btn-soft-success btn-lg btn-pill">
             <i class="fas fa-compass me-2"></i> Explore Marketplace
           </a>
         </div>

@@ -223,7 +223,7 @@
 
       {{-- Auto-release Days --}}
       <div class="col-md-4">
-        <label class="form-label">Auto‑release&nbsp;Days</label>
+        <label class="form-label">Auto-release&nbsp;Days</label>
         <input type="number"
                name="auto_release_days"
                class="form-control @error('auto_release_days') is-invalid @enderror"
@@ -233,12 +233,24 @@
         @error('auto_release_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
 
+      {{-- Subscription Grace Period (days) --}}
+      <div class="col-md-4">
+        <label class="form-label">Subscription Grace Period (days)</label>
+        <input type="number"
+               name="subscription_grace_days"
+               class="form-control @error('subscription_grace_days') is-invalid @enderror"
+               value="{{ old('subscription_grace_days', $settings->subscription_grace_days ?? 5) }}"
+               step="1" min="0" max="60" placeholder="5">
+        <div class="form-text">Number of days after end date that a shop remains active.</div>
+        @error('subscription_grace_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
     </div>
   </div>
-</div>
+  </div>
 
-    <!-- ========== SHIPPING DEFAULTS ========== -->
-    <div class="card shadow-sm mb-4">
+  <!-- ========== SHIPPING DEFAULTS ========== -->
+  <div class="card shadow-sm mb-4">
       <div class="card-header bg-light fw-semibold">Shipping Defaults</div>
       <div class="card-body">
         @php
@@ -256,7 +268,42 @@
         <label class="form-label">Default Couriers (one per line)</label>
         <textarea name="couriers" rows="6" class="form-control" placeholder="e.g. DHL\nFedEx\nUPS">{{ old('couriers', $couriersFromSettings) }}</textarea>
         <div class="form-text">Shown in "Service" selects. Sellers can still choose Manual/Other to type a custom courier.</div>
+  </div>
+
+  <!-- ========== PRODUCT DUPLICATION ========== -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light fw-semibold">Product Duplication</div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">SKU Strategy</label>
+          @php
+            $dupStrategy = function_exists('setting') ? setting('duplicate_sku_strategy', env('DUPLICATE_SKU_STRATEGY','append')) : env('DUPLICATE_SKU_STRATEGY','append');
+          @endphp
+          <select name="duplicate_sku_strategy" class="form-select">
+            @foreach(['append'=>'Append suffix','clear'=>'Clear on duplicate','keep'=>'Keep as-is'] as $k=>$label)
+              <option value="{{ $k }}" {{ old('duplicate_sku_strategy', $dupStrategy) === $k ? 'selected' : '' }}>{{ $label }}</option>
+            @endforeach
+          </select>
+          <div class="form-text">How variant SKUs are generated on duplicates.</div>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">SKU Suffix</label>
+          @php $dupSuffix = function_exists('setting') ? setting('duplicate_sku_suffix', env('DUPLICATE_SKU_SUFFIX','DUP')) : env('DUPLICATE_SKU_SUFFIX','DUP'); @endphp
+          <input type="text" name="duplicate_sku_suffix" class="form-control" value="{{ old('duplicate_sku_suffix', $dupSuffix) }}">
+          <div class="form-text">Used when strategy is Append (e.g., DUP).</div>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Random Length</label>
+          @php $dupLen = (int) (function_exists('setting') ? setting('duplicate_sku_random_len', env('DUPLICATE_SKU_RANDOM_LEN',4)) : env('DUPLICATE_SKU_RANDOM_LEN',4)); @endphp
+          <input type="number" name="duplicate_sku_random_len" class="form-control" step="1" min="1" max="12" value="{{ old('duplicate_sku_random_len', $dupLen) }}">
+          <div class="form-text">Length of trailing random token (1–12).</div>
+        </div>
       </div>
+    </div>
+  </div>
     </div>
 
     <!-- Action Buttons -->
@@ -285,3 +332,4 @@
 </script>
 @endpush
 @endsection
+

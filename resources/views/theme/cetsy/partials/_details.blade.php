@@ -5,18 +5,50 @@
   $discountPercent = $finalPrice < $basePrice && $basePrice > 0
       ? round((1 - $finalPrice / $basePrice) * 100)
       : 0;
+
+  $ptype      = strtolower((string)($product->product_type ?? $product->type ?? ''));
+  $isDigital  = in_array($ptype, ['digital','download','digital_download','digital-download']);
+  $variants   = collect();
+
+  if (! $isDigital && method_exists($product, 'loadMissing')) {
+      try {
+          $product->loadMissing('variations');
+          $variants = $product->relationLoaded('variations') && $product->variations
+              ? $product->variations
+              : collect();
+      } catch (\Throwable $e) {
+          $variants = collect();
+      }
+  }
+
+  $isOutOfStock = $isDigital ? false : product_is_out_of_stock($product);
+  $stockCount   = null;
+  if (! $isDigital) {
+      if ($variants->isNotEmpty()) {
+          $numericStocks = $variants->pluck('stock')->filter(static fn($value) => ! is_null($value));
+          if ($numericStocks->isNotEmpty()) {
+              $stockCount = $numericStocks->sum();
+          }
+      } elseif (! is_null($product->stock)) {
+          $stockCount = (int) $product->stock;
+      }
+  }
 @endphp
 
 <div class="position-lg-sticky" style="top: 1rem;">
   <h1 class="h2 fw-bold">{{ $product->name }}</h1>
 
-  {{-- Ratings --}}
+  {{-- Ratings (shop-wide) --}}
   <div class="mb-2">
-    @php $avg = round($product->reviews_avg_rating ?? 0); @endphp
+    @php
+      $shop = $product->shop;
+      $avg  = round((float) ($shop->reviews_avg_rating ?? $shop->reviews()->avg('rating') ?? 0));
+      $cnt  = (int) ($shop->reviews_count ?? $shop->reviews()->count() ?? 0);
+    @endphp
     @for($i = 1; $i <= 5; $i++)
       <i class="fa-star{{ $i <= $avg ? ' fa-solid text-warning' : ' fa-regular text-muted' }}"></i>
     @endfor
-    <small class="ms-1 text-muted">({{ $product->reviews_count ?? 0 }} reviews)</small>
+    <small class="ms-1 text-muted">({{ $cnt }} reviews)</small>
   </div>
 
   {{-- Price --}}
@@ -41,9 +73,12 @@
         {{ $product->shop->name }}
       </a>
     </span>
-    @if ($product->type === 'physical')
-      <span class="badge {{ $product->stock > 0 ? 'bg-primary bg-opacity-10 text-primary' : 'bg-danger bg-opacity-10 text-danger' }}">
-        {{ $product->stock > 0 ? 'In Stock' : 'Out of Stock' }}
+    @if (! $isDigital)
+      <span class="badge {{ $isOutOfStock ? 'bg-danger bg-opacity-10 text-danger' : 'bg-primary bg-opacity-10 text-primary' }}">
+        {{ $isOutOfStock ? 'Out of Stock' : 'In Stock' }}
+        @if (! $isOutOfStock && ! is_null($stockCount))
+          <span class="ms-1">({{ $stockCount }})</span>
+        @endif
       </span>
     @endif
   </div>

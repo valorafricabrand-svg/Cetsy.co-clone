@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Models\Shop;
 use App\Models\Country;
@@ -14,7 +15,7 @@ use App\Models\WishlistItem;
 use App\Models\Kyc;
 use App\Models\Subscription;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -114,7 +115,20 @@ class User extends Authenticatable
      */
     public function hasActiveSubscription(): bool
     {
-        return $this->subscription && $this->subscription->isActive();
+        // Backward compatibility: if shop-specific check fails, fallback to user subscription
+        return $this->hasActiveShopSubscription() || ($this->subscription && $this->subscription->isActive());
+    }
+
+    public function hasActiveShopSubscription(): bool
+    {
+        $shop = $this->shop;
+        if (!$shop) return false;
+        $grace = function_exists('subscription_grace_days') ? (int) subscription_grace_days() : (int) setting('subscription_grace_days', 5);
+        // Active if end_date + grace > now() => end_date > now()->subDays(grace)
+        return Subscription::where('shop_id', $shop->id)
+            ->where('status', 'active')
+            ->where('end_date', '>', now()->subDays($grace))
+            ->exists();
     }
 
     /**

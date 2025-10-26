@@ -53,6 +53,23 @@
 
 <div class="content">
 
+    @if (session('status') === 'verification-link-sent')
+        <div class="alert alert-success d-flex justify-content-between align-items-center" role="alert">
+            <div>A new verification link was sent to your email.</div>
+        </div>
+    @endif
+    @if (! auth()->user()->hasVerifiedEmail())
+        <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+            <div>
+                Your email is not verified. Please check your inbox for a verification link.
+            </div>
+            <form method="POST" action="{{ route('verification.send') }}" class="ms-3">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-warning">Resend verification email</button>
+            </form>
+        </div>
+    @endif
+
     {{-- Header: shop info + quick actions --}}
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
@@ -125,6 +142,13 @@
                     'class' => 'text-primary',
                     'href'  => route('seller.offers.index')
                 ],
+                [
+                    'value' => $favorites_messages_total . "<small class='text-muted ms-1'>(7d: ".$favorites_messages_week.")</small>",
+                    'label' => 'Messages from Favorites',
+                    'icon'  => 'fas fa-comments',
+                    'class' => 'text-secondary',
+                    'href'  => route('seller.favorites.index')
+                ],
             ];
         @endphp
 
@@ -182,11 +206,12 @@
                                                     if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
                                                     if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
                                                 }
-                                                $placedAt = optional($o->created_at);
+                                                // Use Carbon instance directly (avoid Optional wrapper in comparisons)
+                                                $placedAt = $o->created_at instanceof \Carbon\Carbon ? $o->created_at : ($o->created_at ? \Carbon\Carbon::parse($o->created_at) : null);
                                                 $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
                                                 $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
-                                                $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
-                                                $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
+                                                $shipStartLabel = ($shipStart && $placedAt && $shipStart->isSameDay($placedAt)) ? 'today' : ($shipStart ? $shipStart->format('M j') : null);
+                                                $shipEndLabel   = ($shipEnd && $placedAt && $shipEnd->isSameDay($placedAt)) ? 'today' : ($shipEnd ? $shipEnd->format('M j') : null);
                                             @endphp
                                             @php $dispatchBy = $shipEndLabel ?? $shipStartLabel; @endphp
                                             <div class="small text-muted mt-1">

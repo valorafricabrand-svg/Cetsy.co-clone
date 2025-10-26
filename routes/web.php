@@ -63,7 +63,8 @@ use App\Http\Controllers\Seller\{
     BuyerController,
     FavoriteController,
     PaymentMethodController,
-    ReviewController as SellerReviewController
+    ReviewController as SellerReviewController,
+    ShopPostController
 };
 
 /*
@@ -105,6 +106,17 @@ Route::get('/privacy', function () {
 Route::get('/terms', function () {
     return themed_view('pages.terms');
 })->name('terms');
+// Aliases for legacy links
+Route::get('/privacy-policy', function () {
+    return themed_view('pages.privacy');
+})->name('privacy.policy');
+Route::get('/terms-of-service', function () {
+    return themed_view('pages.terms');
+})->name('terms.of.service');
+Route::get('/intro', function () {
+    // Direct to About as an intro/overview
+    return themed_view('pages.about');
+})->name('intro');
 Route::get('/seller-forum', function () {
     return themed_view('pages.seller-forum');
 })->name('seller-forum');
@@ -123,6 +135,24 @@ Route::get('/about', function () {
 Route::get('/house-policy', function () {
     return themed_view('pages.house-policy');
 })->name('house-policy');
+
+// User Agreement (footer link)
+Route::get('/user-agreement', function () {
+    return themed_view('pages.user-agreement');
+})->name('user-agreement');
+
+// Additional policy pages (linked from House Rules)
+Route::get('/cetsyip_policy', function () {
+    return themed_view('pages.cetsyip_policy');
+})->name('cetsyip_policy');
+Route::get('/payment_policy', function () {
+    return themed_view('pages.payment_policy');
+})->name('payment_policy');
+
+// Restricted / Prohibited items
+Route::get('/restricted_for_sale', function () {
+    return themed_view('pages.restricted_for_sale');
+})->name('restricted_for_sale');
 
 // Product listings & categories
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -226,9 +256,15 @@ Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('r
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */
+
+// Allow all authenticated users to access dashboard (show alert if unverified)
+Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+
 Route::middleware(['auth','verified'])->group(function () {
 
-    Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+    // Navbar unread counters (AJAX)
+    Route::get('/nav/counts', [\App\Http\Controllers\NotificationController::class, 'counts'])
+        ->name('notifications.counts');
 
     Route::patch('products/{product}/renewal', [ProductController::class, 'updateRenewal'])
         ->name('products.updateRenewal');
@@ -261,6 +297,8 @@ Route::middleware(['auth','verified'])->group(function () {
 
     Route::post('variation-types/{variationType}/options', [VariationController::class, 'storeOption'])
         ->name('variationOptions.store');
+    Route::patch('variation-types/{variationType}/affects-price', [VariationController::class, 'toggleAffectsPrice'])
+        ->name('variationTypes.affects_price');
     Route::patch('variation-options/{option}', [VariationController::class, 'updateOption'])
         ->name('variationOptions.update');
     Route::delete('variation-options/{option}', [VariationController::class, 'destroyOption'])
@@ -276,6 +314,8 @@ Route::middleware(['auth','verified'])->group(function () {
         ->name('messages.store');
     Route::post('/products/{product}/media', [MediaController::class, 'upload'])
         ->name('media.upload');
+    Route::delete('/products/{product}/media/bulk', [MediaController::class, 'bulkDestroy'])
+        ->name('media.bulk-destroy');
     Route::delete('/media/{media}', [MediaController::class, 'destroy'])
         ->name('media.destroy');
     Route::delete('/digital-files/{digitalFile}', [DigitalFileController::class, 'destroy'])
@@ -296,6 +336,11 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::resource('products', ProductController::class)
         ->except(['create', 'store'])
         ->middleware('kyc.after.two.sales');
+    // Product Shipping (page + save)
+    Route::get('products/{product}/shipping', [ProductController::class, 'shipping'])
+        ->name('products.shipping');
+    Route::patch('products/{product}/shipping', [ProductController::class, 'updateShipping'])
+        ->name('products.shipping.update');
     Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate'])
         ->name('products.duplicate');
 
@@ -339,8 +384,6 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::prefix('wallet')->name('wallet.')->group(function () {
         Route::get('/', [WalletController::class, 'index'])->name('index');
         Route::get('/deposit', [WalletController::class, 'depositForm'])->name('deposit.form');
-        Route::post('/deposit/otp-verify', [WalletController::class, 'verifyDepositOtp'])->name('deposit.otp.verify');
-        Route::post('/deposit/otp-resend', [WalletController::class, 'resendDepositOtp'])->name('deposit.otp.resend');
         Route::post('/deposit', [WalletController::class, 'storeDeposit'])->name('deposit.store');
         Route::post('/deposit/paypal', [WalletController::class, 'handlePayPalDeposit'])->name('deposit.paypal');
 
@@ -375,6 +418,7 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Notifications
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/open/{id}', [\App\Http\Controllers\NotificationController::class, 'open'])->name('notifications.open');
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
 
@@ -402,6 +446,19 @@ Route::middleware(['auth','verified'])->group(function () {
     });
 });
 
+// Admin routes for user management additions
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    // Resend email verification for a specific user
+    Route::post('/users/{user}/resend-verification', [UserController::class, 'resendVerification'])
+        ->name('users.resend-verification');
+
+    // Toggle email verification status
+    Route::post('/users/{user}/mark-verified', [UserController::class, 'markEmailVerified'])
+        ->name('users.mark-verified');
+    Route::post('/users/{user}/mark-unverified', [UserController::class, 'markEmailUnverified'])
+        ->name('users.mark-unverified');
+});
+
 
 /*
 |--------------------------------------------------------------------------
@@ -411,12 +468,15 @@ Route::middleware(['auth','verified'])->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
-    Route::resource('wallets', AdminWalletController::class)->except(['create', 'store']);
+    // Admin Wallets: enable create/store so admins can top up sellers
+    Route::resource('wallets', AdminWalletController::class);
     Route::delete('wallets/bulk', [AdminWalletController::class, 'bulk'])->name('wallets.bulk');
     Route::patch('kyc/bulk', [KycController::class, 'bulk'])->name('kyc.bulk');
 
     // Users
     Route::resource('users', UserController::class);
+    // Buyers index alias, reusing the same controller (filters buyers by default)
+    Route::get('buyers', [UserController::class, 'index'])->name('buyers.index');
     Route::post('users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
     Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::get('sellers/{userId}/login-as', [UserController::class, 'loginAs'])->name('sellers.login-as');
@@ -480,6 +540,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{payout}/resend', 'resendAuto')->name('resend');
         Route::post('/{payout}/fail', 'fail')->name('fail');
     });
+        Route::get('payout-requests/export', [AdminPayoutRequestController::class, 'export'])->name('payouts.export');
+        Route::post('payout-requests/bulk-approve', [AdminPayoutRequestController::class, 'bulkApprove'])->name('payouts.bulk-approve');
+        Route::post('payout-requests/bulk-reject', [AdminPayoutRequestController::class, 'bulkReject'])->name('payouts.bulk-reject');
 
     // Payments
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
@@ -532,41 +595,34 @@ Route::post('/admin/categories/{category}/attributes', [CategoryAttributeControl
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('seller.')->group(function () {
-
-    Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
-    Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
-    Route::resource('deals', DealController::class)
-        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
-    
-    // Additional deal routes
-    Route::post('deals/{deal}/stop', [DealController::class, 'stop'])->name('deals.stop');
-    Route::get('deals/products/search', [DealController::class, 'searchProducts'])->name('deals.products.search');
-
-    Route::get('/products/pricing/bulk', [BulkPriceController::class, 'create'])
-        ->name('products.pricing.bulk');
-    Route::post('/products/pricing/bulk', [BulkPriceController::class, 'store'])
-        ->name('products.pricing.bulk.store');
-
-    // Subscription management - accessible without active subscription
+    // Subscription management - accessible without active subscription only
+    Route::get('billing', function () {
+        return view('seller.billing');
+    })->name('billing.index');
     Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription');
     Route::post('subscription', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
     Route::post('subscription/wallet', [SubscriptionController::class, 'walletPay'])->name('subscription.wallet.pay');
     Route::get('subscription/success/{id}', [SubscriptionController::class, 'successDeposit'])->name('subscription.success');
     Route::post('subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 
-
-    // Shop Management
-    Route::get('/shop/index', [ShopController::class, 'index'])->name('shops.index');
-    Route::get('/shop/create', [ShopController::class, 'create'])->name('shop.create');
-    Route::post('/shop', [ShopController::class, 'store'])->name('shops.store');
-    Route::get('/shops/{shop:slug}', [ShopController::class, 'show'])->name('shops.show');
-    Route::get('/shops/{shop}/edit', [ShopController::class, 'edit'])->name('shops.edit');
-    Route::patch('/shops/{shop}', [ShopController::class, 'update'])->name('shops.update');
-
-    // Seller notifications (view + mark as read)
+    // Seller notifications (accessible without active subscription)
     Route::get('notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+
+    // Seller KYC (accessible without active subscription)
+    Route::get('kyc', [KycController::class, 'show'])->name('kyc');
+    // 2-step KYC
+    Route::get('kyc/info', [KycController::class, 'info'])->name('kyc.info');
+    Route::post('kyc/info', [KycController::class, 'postInfo'])->name('kyc.info.submit');
+    Route::get('kyc/documents', [KycController::class, 'documents'])->name('kyc.documents');
+    Route::post('kyc/documents', [KycController::class, 'postDocuments'])->name('kyc.documents.submit');
+    // Legacy single-submit (kept for compatibility)
+    Route::post('kyc', [KycController::class, 'submit'])->name('kyc.submit');
+
+    // Seller order history (read-only; accessible without active subscription)
+    Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 });
 
 /*
@@ -574,19 +630,40 @@ Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('selle
 | Seller Routes - Active Subscription Required
 |--------------------------------------------------------------------------
 */
+// Seller dashboard accessible to authenticated sellers (email may be unverified)
+Route::middleware(['auth', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
+    Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
+});
+
 Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])->prefix('seller')->name('seller.')->group(function () {
     // Dashboard & Analytics
-    Route::get('dashboard', [SellerDashboard::class, 'index'])->name('dashboard');
+    // (dashboard route defined above without 'verified' to allow access with alert)
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+
+    // Deals (require active subscription)
+    Route::resource('deals', DealController::class)
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+    Route::post('deals/{deal}/stop', [DealController::class, 'stop'])->name('deals.stop');
+    Route::get('deals/products/search', [DealController::class, 'searchProducts'])->name('deals.products.search');
+
+    // Bulk pricing (require active subscription)
+    Route::get('/products/pricing/bulk', [BulkPriceController::class, 'create'])->name('products.pricing.bulk');
+    Route::post('/products/pricing/bulk', [BulkPriceController::class, 'store'])->name('products.pricing.bulk.store');
 
     // Holiday Mode
     Route::post('holiday-mode/enable', [SellerDashboard::class, 'enableHolidayMode'])->name('holiday-mode.enable');
     Route::post('holiday-mode/disable', [SellerDashboard::class, 'disableHolidayMode'])->name('holiday-mode.disable');
 
+    // Shop Management (require active subscription)
+    Route::get('/shop/index', [ShopController::class, 'index'])->name('shops.index');
+    Route::get('/shop/create', [ShopController::class, 'create'])->name('shop.create');
+    Route::post('/shop', [ShopController::class, 'store'])->name('shops.store');
+    Route::get('/shops/{shop:slug}', [ShopController::class, 'show'])->name('shops.show');
+    Route::get('/shops/{shop}/edit', [ShopController::class, 'edit'])->name('shops.edit');
+    Route::patch('/shops/{shop}', [ShopController::class, 'update'])->name('shops.update');
 
-    // Order Management
-    Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
-    Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    
+    // Order Management (actions require active subscription)
     Route::get('order/payments', [OrderController::class, 'orderPayments'])->name('orders.payments');
     Route::patch('orders/{order}/process', [OrderController::class, 'process'])->name('orders.process');
     Route::post('orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
@@ -595,17 +672,10 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
 
     Route::resource('shipping_profiles', ShippingProfileController::class)
         ->except(['show']);
-    // KYC Management
-    Route::get('kyc', [KycController::class, 'show'])->name('kyc');
-    Route::post('kyc', [KycController::class, 'submit'])->name('kyc.submit');
-
     // Payout Management
     Route::get('payouts', [PayoutRequestController::class, 'index'])->name('payouts.index');
     Route::post('payouts', [PayoutRequestController::class, 'store'])->name('payouts.store');
-    Route::get('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyForm'])->name('payouts.otp.verify')->withoutMiddleware(['ensure.seller.subscription','seller']);
-    Route::post('payouts/{payout}/verify', [PayoutRequestController::class, 'verifyOtp'])->name('payouts.otp.submit')->withoutMiddleware(['ensure.seller.subscription','seller']);
-    Route::post('payouts/{payout}/resend-otp', [PayoutRequestController::class, 'resendOtp'])->name('payouts.otp.resend')->withoutMiddleware(['ensure.seller.subscription','seller']);
-    Route::post('payouts/{payout}/cancel', [PayoutRequestController::class, 'cancel'])->name('payouts.otp.cancel')->withoutMiddleware(['ensure.seller.subscription','seller']);
+    // OTP routes defined in unguarded auth group below to ensure access without subscription
 
     // Services
     Route::resource('services', ServiceController::class);
@@ -647,13 +717,18 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
 | Buyer Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(function () {
+// Buyer dashboard accessible to authenticated users (email may be unverified)
+Route::middleware(['auth'])->prefix('buyer')->name('buyer.')->group(function () {
     Route::get('dashboard', [BuyerDashboard::class, 'index'])->name('dashboard');
+});
+
+Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(function () {
 
     // Buyer notifications (view + mark as read)
     Route::get('notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::get('orders/created', [OrderController::class, 'createdSummary'])->name('orders.created');
     Route::get('orders/{order}', [AccountController::class, 'orderDetails'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('messages', [MessageController::class, 'buyerIndex'])->name('messages.index');
@@ -715,3 +790,10 @@ if (app()->environment('local')) {
 require __DIR__ . '/auth.php';
 
    
+
+// Admin utilities for managing users' email verification
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::post('/users/{user}/resend-verification', [UserController::class, 'resendVerification'])->name('users.resend-verification');
+    Route::post('/users/{user}/mark-verified', [UserController::class, 'markEmailVerified'])->name('users.mark-verified');
+    Route::post('/users/{user}/mark-unverified', [UserController::class, 'markEmailUnverified'])->name('users.mark-unverified');
+});

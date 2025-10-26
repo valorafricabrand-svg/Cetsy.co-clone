@@ -66,6 +66,7 @@ class Shop extends Model
         'slug',
         'bio',
         'logo',
+        'is_active',
         'featured_image',
         'announcement',
         'policies',
@@ -117,7 +118,13 @@ class Shop extends Model
      */
     protected $casts = [
         'enable_2fa' => 'boolean',
+        'is_active' => 'boolean',
     ];
+
+    public function isActive(): bool
+    {
+        return (bool)($this->is_active ?? true);
+    }
 
     /**
      * Additional accessors to append to model arrays.

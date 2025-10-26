@@ -2,6 +2,22 @@
 @section('content')
 <div class="content-wrapper p-4">
     <div class="dashboard-container">
+        @if (session('status') === 'verification-link-sent')
+            <div class="alert alert-success" role="alert">
+                A new verification link was sent to your email.
+            </div>
+        @endif
+        @if (! auth()->user()->hasVerifiedEmail())
+            <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+                <div>
+                    Your email is not verified. Please check your inbox for a verification link.
+                </div>
+                <form method="POST" action="{{ route('verification.send') }}" class="ms-3">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-warning">Resend verification email</button>
+                </form>
+            </div>
+        @endif
         <!-- Welcome Section -->
         <div class="mb-4">
             <h3 class="text-dark">Dashboard</h3>
@@ -105,4 +121,3 @@
     </div>
 </div>
 @endsection
-

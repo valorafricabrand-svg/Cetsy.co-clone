@@ -52,6 +52,25 @@ class MessageController extends Controller
                 'related_type' => 'message'
             ]);
 
+            // Log sender activity (keep in log) with optional source context
+            $senderDesc = 'You messaged ' . ($receiver->name ?? 'a buyer');
+            if ($product) {
+                $senderDesc .= ' about "' . $product->name . '"';
+            }
+            $props = [];
+            if ($request->filled('source')) {
+                $props['source'] = $request->input('source');
+            }
+            Activity::create([
+                'user_id' => $request->user()->id,
+                'is_read' => true,
+                'description' => $senderDesc,
+                'type' => \App\Models\Activity::TYPE_MESSAGE,
+                'related_id' => $message->id,
+                'related_type' => 'message',
+                'properties' => $props,
+            ]);
+
             // Send email to receiver (shop owner)
             try {
                 Mail::to($receiver->email)
@@ -85,7 +104,7 @@ class MessageController extends Controller
             ->groupBy(function($message) use ($user) {
                 // Group by product and the other participant
                 $otherUserId = $message->sender_id == $user->id ? $message->receiver_id : $message->sender_id;
-                return $message->product_id . '-' . $otherUserId;
+                return (($message->product_id ?? 0)) . '-' . $otherUserId;
             })
             ->map(function($messages) use ($user) {
                 // Get the latest message and other participant info
@@ -101,7 +120,7 @@ class MessageController extends Controller
                     'product' => $latestMessage->product,
                     'unread_count' => $messages->where('receiver_id', $user->id)->where('is_read', false)->count(),
                     'total_messages' => $messages->count(),
-                    'conversation_id' => $latestMessage->product_id . '-' . $otherUserId
+                    'conversation_id' => (($latestMessage->product_id ?? 0)) . '-' . $otherUserId
                 ];
             })
             ->sortByDesc('latest_message.created_at');
@@ -144,7 +163,10 @@ class MessageController extends Controller
         $otherUserId = $parts[1];
         
         // Validate that the user is part of this conversation
-        $conversationExists = Message::where('product_id', $productId)
+        $conversationExists = Message::where(function($q) use ($productId){
+                if ((int)$productId === 0) { $q->whereNull('product_id'); }
+                else { $q->where('product_id', $productId); }
+            })
             ->where(function($query) use ($user, $otherUserId) {
                 $query->where(function($q) use ($user, $otherUserId) {
                     $q->where('sender_id', $user->id)->where('receiver_id', $otherUserId);
@@ -159,7 +181,10 @@ class MessageController extends Controller
         }
 
         // Get all messages for this conversation
-        $messages = Message::where('product_id', $productId)
+        $messages = Message::where(function($q) use ($productId){
+                if ((int)$productId === 0) { $q->whereNull('product_id'); }
+                else { $q->where('product_id', $productId); }
+            })
             ->where(function($query) use ($user, $otherUserId) {
                 $query->where(function($q) use ($user, $otherUserId) {
                     $q->where('sender_id', $user->id)->where('receiver_id', $otherUserId);
@@ -178,8 +203,18 @@ class MessageController extends Controller
             }
         });
 
+        // Clear related notification entries for messages so badges update
+        try {
+            \App\Models\Activity::where('user_id', $user->id)
+                ->where('type', \App\Models\Activity::TYPE_MESSAGE)
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
         $otherUser = User::find($otherUserId);
-        $product = Product::find($productId);
+        $product = (int)$productId === 0 ? null : Product::find($productId);
         $shop = $product && $product->shop ? $product->shop : ($otherUser ? $otherUser->shop : null);
 
         return view('buyer.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'shop'));

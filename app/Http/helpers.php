@@ -50,6 +50,19 @@ function shop(){
     return 'Cetsy';
 }
 
+/**
+ * Subscription grace period in days (from settings with a default of 5).
+ */
+function subscription_grace_days(): int
+{
+    try {
+        $v = (int) setting('subscription_grace_days', 5);
+        return $v > 0 ? $v : 5;
+    } catch (\Throwable $e) {
+        return 5;
+    }
+}
+
     function avatar_img_url( $source, $img = null){
       $url_path = '';
       if ($img){
@@ -233,7 +246,7 @@ if (! function_exists('currency_symbol')) {
         } catch (\Throwable $e) {}
         return match ($code) {
             'USD' => '$',
-            'EUR' => '€',
+            'EUR' => '',
             'GBP' => '£',
             'JPY' => '¥',
             'INR' => '₹',
@@ -268,6 +281,68 @@ if (! function_exists('apply_discount')) {
         $product = Product::find($productId);
 
         return $product ? $product->applyDiscount($price) : $price;
+    }
+}
+
+if (! function_exists('product_has_available_stock')) {
+    /**
+     * Determine whether a product currently has sellable stock.
+     * For items with variations, at least one variant must have stock > 0 or be unlimited (null).
+     * For simple items, a null stock means "unlimited".
+     */
+    function product_has_available_stock($product): bool
+    {
+        if (! $product) {
+            return false;
+        }
+
+        $type = strtolower((string)($product->product_type ?? $product->type ?? ''));
+        $digitalTypes = ['digital', 'download', 'digital_download', 'digital-download', 'service'];
+        if (in_array($type, $digitalTypes, true)) {
+            return true;
+        }
+
+        // Attempt to reuse any loaded variants to avoid N+1 queries.
+        $variants = collect();
+        if (method_exists($product, 'variations')) {
+            try {
+                if (method_exists($product, 'loadMissing')) {
+                    $product->loadMissing('variations');
+                }
+                if ($product->relationLoaded('variations')) {
+                    $variants = $product->variations ?? collect();
+                } else {
+                    $variants = $product->variations()->get();
+                }
+            } catch (\Throwable $e) {
+                $variants = collect();
+            }
+        }
+
+        if ($variants->isNotEmpty()) {
+            foreach ($variants as $variant) {
+                $stock = $variant->stock;
+                if ($stock === null || (int) $stock > 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Fallback to legacy/simple stock column.
+        $stock = $product->stock;
+        if ($stock === null) {
+            return true;
+        }
+
+        return (int) $stock > 0;
+    }
+}
+
+if (! function_exists('product_is_out_of_stock')) {
+    function product_is_out_of_stock($product): bool
+    {
+        return ! product_has_available_stock($product);
     }
 }
 
@@ -337,23 +412,51 @@ if (! function_exists('product_thumb_url')) {
             return setting('favicon_url') ?: asset('storage/placeholder.jpg');
         }
 
+        $normalize = function (?string $path): ?string {
+            if (!$path) return null;
+            $p = ltrim($path, '/');
+            // If DB stored 'public/...' or 'storage/...', strip the prefix for Storage::disk('public')->url()
+            if (str_starts_with($p, 'public/'))   { $p = substr($p, 7); }
+            if (str_starts_with($p, 'storage/'))  { $p = substr($p, 8); }
+            return $p;
+        };
+
+        // 1) Featured image
         $fi = $product->featured_image ?? null;
         if (!empty($fi)) {
-            return str_starts_with($fi, 'http') ? $fi : asset('storage/' . ltrim($fi, '/'));
+            if (str_starts_with($fi, 'http')) {
+                return $fi;
+            }
+            $rel = $normalize($fi);
+            try {
+                return \Storage::disk('public')->url($rel);
+            } catch (\Throwable $e) {
+                return asset('storage/' . ltrim($rel ?: $fi, '/'));
+            }
         }
 
+        // 2) First media
         $firstMedia = method_exists($product, 'media') ? $product->media->first() : null;
         if ($firstMedia && !empty($firstMedia->url)) {
-            return asset('storage/' . ltrim($firstMedia->url, '/'));
+            $rel = $normalize($firstMedia->url);
+            try {
+                return \Storage::disk('public')->url($rel);
+            } catch (\Throwable $e) {
+                return asset('storage/' . ltrim($rel ?: $firstMedia->url, '/'));
+            }
         }
 
-        $shopLogo = ($product->shop && $product->shop->logo)
-            ? asset('storage/' . ltrim($product->shop->logo, '/'))
-            : null;
-        if ($shopLogo) {
-            return $shopLogo;
+        // 3) Shop logo
+        if ($product->shop && !empty($product->shop->logo)) {
+            $rel = $normalize($product->shop->logo);
+            try {
+                return \Storage::disk('public')->url($rel);
+            } catch (\Throwable $e) {
+                return asset('storage/' . ltrim($rel ?: $product->shop->logo, '/'));
+            }
         }
 
+        // 4) Fallbacks
         return setting('favicon_url') ?: asset('storage/placeholder.jpg');
     }
 }
@@ -587,4 +690,3 @@ if (! function_exists('couriers_list')) {
 
 
 ?>
-

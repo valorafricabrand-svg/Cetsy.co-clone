@@ -158,179 +158,17 @@ class WalletController extends Controller
 
     public function depositForm()
     {
-        // Gate deposit behind lightweight email OTP
-        if (!$this->isDepositOtpVerified()) {
-            // Seed an OTP if none or expired, then show verify screen
-            Log::info('wallet.deposit.otp_gate', [
-                'user_id' => Auth::id(),
-                'ip'      => request()->ip(),
-            ]);
-            $cooldown = $this->maybeSeedDepositOtp();
-            $verifyRoute = route('wallet.deposit.otp.verify');
-            $resendRoute = route('wallet.deposit.otp.resend');
-            $purpose     = 'with your deposit';
-            return view('wallet.deposit-otp', compact('cooldown','verifyRoute','resendRoute','purpose'));
-        }
-
         $balance = $this->currentBalance(auth()->id());
         return view('wallet.deposit', compact('balance'));
     }
 
-    /**
-     * Verify the deposit OTP from the email.
-     */
-    public function verifyDepositOtp(Request $request)
-    {
-        $data = $request->validate([
-            'code' => 'required|string|min:4|max:8',
-        ]);
-
-        $session = session('deposit_otp', []);
-        $hash    = $session['hash'] ?? null;
-        $expires = !empty($session['expires_at']) ? \Carbon\Carbon::parse($session['expires_at']) : null;
-        $attempts= (int) ($session['attempts'] ?? 0);
-
-        if ($attempts >= 5) {
-            Log::warning('wallet.deposit.otp_attempts_limit', [
-                'user_id' => Auth::id(),
-                'ip'      => $request->ip(),
-            ]);
-            return back()->withErrors(['code' => 'Too many attempts. Please resend a new code.']);
-        }
-        if (!$hash || !$expires || now()->greaterThan($expires)) {
-            Log::warning('wallet.deposit.otp_expired_or_missing', [
-                'user_id' => Auth::id(),
-                'ip'      => $request->ip(),
-                'has_hash'=> (bool) $hash,
-                'expires' => $expires?->toISOString(),
-            ]);
-            return back()->withErrors(['code' => 'Code expired. Please resend a new code.']);
-        }
-        if (!Hash::check($data['code'], $hash)) {
-            $session['attempts'] = $attempts + 1;
-            session(['deposit_otp' => $session]);
-            Log::warning('wallet.deposit.otp_invalid', [
-                'user_id'   => Auth::id(),
-                'ip'        => $request->ip(),
-                'attempts'  => $session['attempts'] ?? null,
-            ]);
-            return back()->withErrors(['code' => 'Invalid code. Please try again.']);
-        }
-
-        // Mark verified for 15 minutes
-        $session['verified_until'] = now()->addMinutes(15)->toISOString();
-        session(['deposit_otp' => $session]);
-
-        Log::info('wallet.deposit.otp_verified', [
-            'user_id' => Auth::id(),
-            'ip'      => $request->ip(),
-        ]);
-        return redirect()->route('wallet.deposit.form')->with('success', 'Verification successful. You can proceed with your deposit.');
-    }
-
-    /**
-     * Resend a new OTP with short cooldown and limited retries.
-     */
-    public function resendDepositOtp(Request $request)
-    {
-        Log::info('wallet.deposit.otp_resend_request', [
-            'user_id' => Auth::id(),
-            'ip'      => $request->ip(),
-        ]);
-        $cooldown = $this->maybeSeedDepositOtp(true);
-        if ($cooldown > 0) {
-            Log::info('wallet.deposit.otp_resend_throttled', [
-                'user_id' => Auth::id(),
-                'ip'      => $request->ip(),
-                'wait'    => $cooldown,
-            ]);
-            return back()->withErrors(['code' => 'Please wait '.$cooldown.' seconds before requesting another code.']);
-        }
-        return back()->with('status', 'A new verification code has been sent to your email.');
-    }
-
     private function isDepositOtpVerified(): bool
     {
-        $session = session('deposit_otp');
-        if (!$session) return false;
-        $until = data_get($session, 'verified_until');
-        if (!$until) return false;
-        try { return now()->lessThan(\Carbon\Carbon::parse($until)); } catch (\Throwable $e) { return false; }
+        // OTP requirement disabled for wallet deposits.
+        // Always treat deposit OTP as verified.
+        return true;
     }
 
-    /**
-     * Generate and email an OTP if none present or on resend.
-     * Returns remaining cooldown seconds before a resend is allowed.
-     */
-    private function maybeSeedDepositOtp(bool $resend = false): int
-    {
-        $user = Auth::user();
-        $session = session('deposit_otp', []);
-
-        $cooldownSec = 120; // 2 minutes
-        $maxResends  = 3;
-
-        $lastSentIso = $session['last_sent_at'] ?? null;
-        $resends     = (int) ($session['resends'] ?? 0);
-
-        if ($resend) {
-            if ($resends >= $maxResends) {
-                Log::warning('wallet.deposit.otp_max_resends', [
-                    'user_id' => $user?->id,
-                    'resends' => $resends,
-                ]);
-                return $cooldownSec; // signal not allowed; treat as need to wait
-            }
-            if ($lastSentIso) {
-                try {
-                    $next = \Carbon\Carbon::parse($lastSentIso)->addSeconds($cooldownSec);
-                    if (now()->lt($next)) {
-                        $wait = $next->diffInSeconds(now());
-                        Log::info('wallet.deposit.otp_cooldown', [
-                            'user_id' => $user?->id,
-                            'wait'    => $wait,
-                        ]);
-                        return $wait;
-                    }
-                } catch (\Throwable $e) {}
-            }
-        }
-
-        // If we already have an unexpired code and not explicitly resending, keep it
-        if (!$resend && !empty($session['expires_at'])) {
-            try {
-                if (now()->lessThan(\Carbon\Carbon::parse($session['expires_at']))) {
-                    Log::info('wallet.deposit.otp_reuse', [
-                        'user_id' => $user?->id,
-                    ]);
-                    return 0;
-                }
-            } catch (\Throwable $e) {}
-        }
-
-        $code = (string) random_int(100000, 999999);
-        $session['hash']       = Hash::make($code);
-        $session['expires_at'] = now()->addMinutes(10)->toISOString();
-        $session['attempts']   = 0;
-        $session['last_sent_at'] = now()->toISOString();
-        $session['resends']    = $resends + ($resend ? 1 : 0);
-        // Do not change verified_until here
-        session(['deposit_otp' => $session]);
-
-        try {
-            if ($user && $user->email) {
-                Mail::to($user->email)->send(new \App\Mail\WalletDepositOtpMail($user, $code));
-            }
-            Log::info('wallet.deposit.otp_mail_sent', [
-                'user_id' => $user?->id,
-                'email'   => $user?->email,
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('wallet.deposit.otp_mail_failed', ['user_id' => $user?->id, 'error' => $e->getMessage()]);
-        }
-
-        return 0;
-    }
 
     /* -------------------------------------------------------------
      | Payout OTP gate (pre-modal)
@@ -841,12 +679,15 @@ public function payListing(Request $request, $id)
             $nextDue = now()->addMonths(4);
         }
 
-        // 4) Activate product & set due date
-        $product->update([
-            'is_active'       => true,
+        // 4) Set due date; publish only if featured image present
+        $updates = [
             'listing_paid_at' => now(),
             'next_due_date'   => $nextDue,
-        ]);
+        ];
+        if (!empty($product->featured_image)) {
+            $updates['is_active'] = true;
+        }
+        $product->update($updates);
 
         // 5) Build a unique local transaction ID
         $localTxId = $request->input('transaction_id');
@@ -929,11 +770,14 @@ public function payListing(Request $request, $id)
         }
 
         DB::transaction(function () use ($product, $nextDue) {
-            $product->update([
-                'is_active'       => true,
+            $updates = [
                 'listing_paid_at' => now(),
                 'next_due_date'   => $nextDue,
-            ]);
+            ];
+            if (!empty($product->featured_image)) {
+                $updates['is_active'] = true;
+            }
+            $product->update($updates);
         });
 
         // Build unique local tx id
@@ -987,7 +831,7 @@ public function payOrder(Request $request, $id)
 
         if ($order->isPaid()) {
             return redirect()
-                ->route('buyer.orders.show', $order->id)
+                ->route('orders.show', $order->id)
                 ->with('error', 'This order has already been paid.');
         }
 
@@ -1116,7 +960,7 @@ public function payOrder(Request $request, $id)
         }
 
      
-      return redirect()->route('buyer.orders.show', $order->id)
+      return redirect()->route('orders.show', $order->id)
             ->with('success', 'Your payment has been received. Your order is being processed; you will receive a call from our sales team shortly.');
     }
 

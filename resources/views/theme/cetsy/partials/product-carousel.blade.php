@@ -35,7 +35,7 @@
                 }
                 .product-carousel-item {
                     flex: 0 0 auto;
-                    min-width: 240px;
+                    width: 260px;
                     scroll-snap-align: start;
                 }
                 .carousel-control {
@@ -161,3 +161,4 @@
         </section>
     @endif
 @endif
+

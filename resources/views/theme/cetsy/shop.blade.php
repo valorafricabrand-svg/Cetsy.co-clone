@@ -1,4 +1,4 @@
-@extends('theme.'.theme().'.layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('main')
 <!-- Shop Hero Section -->
@@ -8,13 +8,11 @@
       <div class="col-lg-9 d-flex align-items-center gap-4">
         {{-- Shop Logo --}}
 <img 
-  src="{{ $shop->logo 
-      ? asset('storage/' . $shop->logo) 
-      : setting('favicon_url') }}" 
+  src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg')) }}" 
   alt="{{ $shop->name }} logo" 
   class="rounded-circle shadow-sm border" 
   style="width:80px; height:80px; object-fit:cover;" 
->
+  onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
 
 
         <div class="flex-grow-1">
@@ -23,7 +21,10 @@
 
           {{-- Shop Stats --}}
           @php
-            $totalSales     = $shop->orderItems()->whereRelation('order', 'status', 'completed')->count();
+            $totalSales     = $shop->orders()->whereIn('status', [
+              \App\Models\Order::STATUS_COMPLETED,
+              \App\Models\Order::STATUS_DELIVERED,
+            ])->count();
             $totalProducts  = $shop->products()->where('is_active', true)->count();
             $memberSince    = $shop->created_at->diffForHumans();
             $averageRating  = $shop->reviews()->avg('rating') ?? 0;
@@ -32,11 +33,11 @@
           <div class="d-flex flex-wrap align-items-center gap-4 mb-3">
             <div class="d-flex align-items-center gap-2">
               <i class="fas fa-shopping-bag text-success"></i>
-              <small class="text-muted">{{ $totalSales }} sales</small>
+              <small class="text-muted">{{ $totalSales }} {{ Str::plural('sale', $totalSales) }}</small>
             </div>
             <div class="d-flex align-items-center gap-2">
               <i class="fas fa-box text-primary"></i>
-              <small class="text-muted">{{ $totalProducts }} items</small>
+              <small class="text-muted">{{ $totalProducts }} {{ Str::plural('item', $totalProducts) }}</small>
             </div>
             <div class="d-flex align-items-center gap-2">
               <i class="fas fa-calendar text-info"></i>
@@ -67,7 +68,7 @@
                     @endfor
                   </div>
                   <small class="fw-semibold text-dark">{{ number_format($averageRating,1) }}</small>
-                  <small class="text-muted">({{ $reviewCount }} reviews)</small>
+                  <small class="text-muted">({{ $reviewCount }} {{ Str::plural('review', $reviewCount) }})</small>
                 </div>
               </a>
             @else
@@ -154,7 +155,7 @@
 @if($shop->featured_image)
   <section class="py-4 bg-white">
     <div class="container">
-      <img src="{{ asset('storage/' . $shop->featured_image) }}"
+      <img src="{{ $shop->featured_image_url ?? asset('storage/' . $shop->featured_image) }}"
            alt="Featured image for {{ $shop->name }}"
            class="w-100 rounded shadow-sm"
            style="height:300px; object-fit:cover;">
@@ -176,9 +177,9 @@
               <select id="priceFilter" class="form-select form-select-sm">
                 <option value="">All</option>
                 <option value="0-10">Under $10</option>
-                <option value="10-25">$10–25</option>
-                <option value="25-50">$25–50</option>
-                <option value="50-100">$50–100</option>
+                <option value="10-25">$10â“25</option>
+                <option value="25-50">$25â“50</option>
+                <option value="50-100">$50â“100</option>
                 <option value="100+">Over $100</option>
               </select>
             </div>
@@ -186,24 +187,24 @@
               <small class="form-label fw-semibold">Type</small>
               <select id="typeFilter" class="form-select form-select-sm">
                 <option value="">All Types</option>
-                <option value="physical">Physical</option>
+                <option value="physical">Products</option>
                 <option value="digital">Digital</option>
-                <option value="service">Service</option>
+                <option value="service">Services</option>
               </select>
             </div>
             <div>
               <small class="form-label fw-semibold">Sort By</small>
               <select id="sortFilter" class="form-select form-select-sm">
                 <option value="newest">Newest</option>
-                <option value="price-low">Price: Low → High</option>
-                <option value="price-high">Price: High → Low</option>
+                <option value="price-low">Price: Low â†’ High</option>
+                <option value="price-high">Price: High â†’ Low</option>
                 <option value="rating">Top Rated</option>
               </select>
             </div>
           </div>
           <div class="d-flex align-items-center gap-3">
             <span class="small text-muted">
-              {{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }} of {{ $products->total() }}
+              {{ $products->firstItem() ?? 0 }}â“{{ $products->lastItem() ?? 0 }} of {{ $products->total() }}
             </span>
             <div class="btn-group btn-group-sm" role="group">
               <input type="radio" class="btn-check" name="viewMode" id="viewGrid" value="grid" autocomplete="off" checked>
@@ -217,7 +218,7 @@
         {{-- Grid View --}}
         <div id="gridView" class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
           @forelse($products as $product)
-            <div class="col product-item" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ $product->average_rating }}">
+            <div class="col product-item" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ $shop->reviews_avg_rating ?? ($shop->average_rating ?? 0) }}">
               @include('theme.'.theme().'.partials.product-card', ['item'=>$product])
             </div>
           @empty
@@ -248,7 +249,7 @@
                   }
               }
             @endphp
-            <div class="list-group-item product-item d-flex align-items-center" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ $product->average_rating }}">
+            <div class="list-group-item product-item d-flex align-items-center" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ $shop->reviews_avg_rating ?? ($shop->average_rating ?? 0) }}">
               <img src="{{ $thumbUrl }}" alt="{{ $product->name }}" class="rounded" style="width:80px; height:80px; object-fit:cover;">
               <div class="ms-3 flex-grow-1">
                 <h6 class="mb-1">{{ $product->name }}</h6>
@@ -312,7 +313,7 @@
                     <i class="fa{{ $i <= floor($averageRating) ? 's' : 'r' }} fa-star text-warning"></i>
                   @endfor
                 </div>
-                <small class="text-muted">{{ $reviewCount }} reviews</small>
+                <small class="text-muted">{{ $reviewCount }} {{ Str::plural('review', $reviewCount) }}</small>
               </div>
             </div>
           </div>
@@ -395,7 +396,7 @@
       <input type="hidden" name="receiver_id" value="{{ $shop->user_id }}">
       <input type="hidden" name="product_id" value="">
       <div class="modal-header">
-        <h5 class="modal-title" id="messageModalLabel">Message Seller – {{ $shop->name }}</h5>
+        <h5 class="modal-title" id="messageModalLabel">Message Seller â“ {{ $shop->name }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -413,8 +414,16 @@
 
 @push('scripts')
 <script>
-// Filter and sort functionality
+// Fix modal title encoding and filter/sort wiring
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensure clean UTF-8 dash in modal title regardless of source encoding
+    try {
+        var lbl = document.getElementById('messageModalLabel');
+        if (lbl) {
+            lbl.textContent = 'Message Seller \u2013 {{ addslashes($shop->name) }}';
+        }
+    } catch (e) {}
+
     const priceFilter = document.getElementById('priceFilter');
     const sortFilter = document.getElementById('sortFilter');
     const typeFilter = document.getElementById('typeFilter');
@@ -468,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function filterProducts() {
         const priceRange = priceFilter.value;
         const productType = typeFilter.value;
-        const products = document.querySelectorAll('.product-item');
+        const products = document.querySelectorAll('#gridView .product-item');
         
         products.forEach(product => {
             const price = parseFloat(product.dataset.price);
@@ -488,15 +497,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 show = false;
             }
             
-            product.style.display = show ? 'block' : 'none';
+            // Do not force display; let Bootstrap's grid manage layout
+            product.style.display = show ? '' : 'none';
         });
     }
     
     // Sort functionality
     function sortProducts() {
         const sortBy = sortFilter.value;
-        const container = document.querySelector('.row');
-        const products = Array.from(document.querySelectorAll('.product-item'));
+        const container = document.getElementById('gridView');
+        const products = Array.from(document.querySelectorAll('#gridView .product-item'));
         
         products.sort((a, b) => {
             const priceA = parseFloat(a.dataset.price);
@@ -623,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const listView = document.getElementById('listView');
 
     function items() {
-      return Array.from(document.querySelectorAll('.product-item'));
+      return Array.from(document.querySelectorAll('#gridView .product-item'));
     }
 
     function applyFilters() {

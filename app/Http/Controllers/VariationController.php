@@ -21,22 +21,26 @@ class VariationController extends Controller
      * Request payload:
      *  - values[] : array of variation_option IDs (required)
      *  - price    : decimal (required)
-     *
-     * NOTE: SKU/stock are not accepted from the request. We default them (sku=null, stock=0).
+     *  - stock    : integer >= 0 (optional, blank => unlimited)
      */
     public function store(Request $request, Product $product): RedirectResponse
     {
+        if ($request->has('stock') && $request->filled('stock') === false) {
+            $request->merge(['stock' => null]);
+        }
+
         $data = $request->validate([
             'values'   => ['required', 'array', 'min:1'],
             'values.*' => ['integer', 'exists:variation_options,id'],
             'price'    => ['required', 'numeric', 'min:0'],
+            'stock'    => ['nullable', 'integer', 'min:0'],
         ]);
 
         $variant = $product->variations()->create([
             'price' => $data['price'],
             // If your table has these columns and they are NOT NULL, keep the safe defaults:
             'sku'   => null,
-            'stock' => 0,
+            'stock' => array_key_exists('stock', $data) ? $data['stock'] : null,
         ]);
 
         $variant->options()->sync($data['values']);
@@ -53,6 +57,16 @@ class VariationController extends Controller
      */
     public function bulkStore(Request $request, Product $product): RedirectResponse
     {
+        if ($request->has('variations') && is_array($request->input('variations'))) {
+            $normalized = collect($request->input('variations'))->map(function ($row) {
+                if (array_key_exists('stock', $row) && ($row['stock'] === '' || $row['stock'] === null)) {
+                    $row['stock'] = null;
+                }
+                return $row;
+            })->all();
+            $request->merge(['variations' => $normalized]);
+        }
+
         $payload = $request->validate([
             'variations'                    => ['required', 'array', 'min:1'],
 
@@ -66,6 +80,7 @@ class VariationController extends Controller
 
             // Common field
             'variations.*.price'            => ['required', 'numeric', 'min:0'],
+            'variations.*.stock'            => ['nullable', 'integer', 'min:0'],
         ]);
 
         foreach ($payload['variations'] as $row) {
@@ -83,7 +98,7 @@ class VariationController extends Controller
             $variant = $product->variations()->create([
                 'price' => $row['price'],
                 'sku'   => null,
-                'stock' => 0,
+                'stock' => array_key_exists('stock', $row) ? ($row['stock'] ?? null) : null,
             ]);
 
             $variant->options()->sync($optionIds);
@@ -93,19 +108,31 @@ class VariationController extends Controller
     }
 
     /**
-     * Update a variant (price only).
+     * Update a variant (price + optional stock).
      * Request payload:
      *  - price : decimal (required)
+     *  - stock : integer >= 0 | null (optional)
      */
     public function update(Request $request, Variant $variation): RedirectResponse
     {
+        if ($request->has('stock') && $request->filled('stock') === false) {
+            $request->merge(['stock' => null]);
+        }
+
         $data = $request->validate([
             'price' => ['required', 'numeric', 'min:0'],
+            'stock' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $variation->update([
+        $payload = [
             'price' => $data['price'],
-        ]);
+        ];
+
+        if (array_key_exists('stock', $data)) {
+            $payload['stock'] = $data['stock'];
+        }
+
+        $variation->update($payload);
 
         return back()->with('success', 'Variant updated.');
     }
@@ -138,9 +165,13 @@ class VariationController extends Controller
                     ->where(fn ($q) => $q->where('product_id', $product->id)),
             ],
             'options' => ['nullable', 'string'],
+            'affects_price' => ['nullable','boolean'],
         ]);
 
-        $type = $product->variationTypes()->create(['name' => $data['name']]);
+        $type = $product->variationTypes()->create([
+            'name' => $data['name'],
+            'affects_price' => (bool) ($data['affects_price'] ?? false),
+        ]);
 
         if (!empty($data['options'])) {
             collect(explode(',', $data['options']))
@@ -163,9 +194,13 @@ class VariationController extends Controller
                     ->where(fn ($q) => $q->where('product_id', $variationType->product_id))
                     ->ignore($variationType->id),
             ],
+            'affects_price' => ['nullable','boolean'],
         ]);
 
-        $variationType->update(['name' => $data['name']]);
+        $variationType->update([
+            'name' => $data['name'],
+            'affects_price' => (bool) ($data['affects_price'] ?? false),
+        ]);
 
         return back()->with('success', 'Variation type updated.');
     }
@@ -335,5 +370,13 @@ class VariationController extends Controller
             return back()->with('error', 'Failed to delete the option. Please try again.');
         }
     }
-}
 
+    /** Quickly toggle whether a variation type affects price. */
+    public function toggleAffectsPrice(Request $request, VariationType $variationType): RedirectResponse
+    {
+        $variationType->update([
+            'affects_price' => $request->boolean('affects_price'),
+        ]);
+        return back()->with('success', 'Variation type updated.');
+    }
+}

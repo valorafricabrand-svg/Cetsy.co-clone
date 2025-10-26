@@ -49,9 +49,7 @@
   <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
     <div class="d-flex align-items-center gap-3">
     
-        <img src="{{ $shop->logo 
-      ? asset('storage/' . $shop->logo) 
-      : setting('favicon_url') }}" alt="{{ $shop->name }} logo" class="shop-avatar">
+        <img src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : setting('favicon_url') }}" alt="{{ $shop->name }} logo" class="shop-avatar">
     
 
       <div>
@@ -249,11 +247,6 @@
         </div>
       </div>
 
-      {{-- Placeholder for listings --}}
-      <div class="text-center text-muted mt-4">
-        (Product listings will appear here soon&hellip;)
-      </div>
-
     </div>
 
     <div class="col-lg-4">
@@ -271,7 +264,7 @@
             </div>
             <div class="col-12 d-flex justify-content-between">
               <span class="text-muted">Country</span>
-              <span class="fw-medium">{{ $shop->country }}</span>
+              <span class="fw-medium">{{ country_name($shop->country) }}</span>
             </div>
             <div class="col-12 d-flex justify-content-between">
               <span class="text-muted">Currency</span>
@@ -298,18 +291,18 @@
           </a>
         </div>
         <div class="card-body">
-          @if($paymentMethods->count() > 0)
+            @if($paymentMethods->count() > 0)
             <div class="row gy-3">
               @foreach($paymentMethods as $paymentMethod)
                 <div class="col-12">
-                  <div class="d-flex align-items-start justify-content-between">
-                    <div>
+                  <div class="row g-2 align-items-start">
+                    <div class="col-12 col-sm-7">
                       <div class="fw-semibold">{{ $paymentMethod->paymentType->name }}</div>
-                      <div class="text-muted small">{{ $paymentMethod->account_number }}</div>
+                      <div class="text-muted small text-break">{{ $paymentMethod->account_number }}</div>
                     </div>
-                    <div class="text-end">
+                    <div class="col-12 col-sm-5 text-sm-end">
                       <div class="text-muted small">Account Name</div>
-                      <div class="fw-medium">{{ $paymentMethod->account_name }}</div>
+                      <div class="fw-medium text-break">{{ $paymentMethod->account_name }}</div>
                     </div>
                   </div>
                 </div>
@@ -359,13 +352,37 @@
                 <span class="fw-medium">{{ $subscription->end_date ? $subscription->end_date->format('M d, Y') : 'N/A' }}</span>
               </div>
 
-              @if($subscription->end_date && $subscription->end_date->isFuture())
+              @if($subscription->end_date)
+                @php
+                  $signedDays = (int) now()->diffInDays($subscription->end_date, false);
+                @endphp
                 <div class="col-12">
-                  <div class="alert alert-info mb-0">
+                  <div class="alert mb-0 {{ $signedDays > 0 ? 'alert-info' : 'alert-warning' }}">
                     <i class="fas fa-info-circle me-2"></i>
-                    Your subscription will expire on {{ $subscription->end_date->format('M d, Y') }}
-                    @if($subscription->end_date->diffInDays(now()) <= 7)
-                      <span class="text-warning fw-bold">(Expires soon&hellip;))</span>
+                    @if($signedDays > 0)
+                      @php $daysLeft = $signedDays; @endphp
+                      Your subscription will expire on {{ $subscription->end_date->format('M d, Y') }}
+                      @if($daysLeft <= 30)
+                        @php $cls = $daysLeft <= 7 ? 'text-danger' : 'text-warning'; @endphp
+                        <span class="fw-bold {{ $cls }}">
+                          (Expires in {{ number_format($daysLeft, 0) }} {{ Str::plural('day', $daysLeft) }})
+                        </span>
+                      @endif
+                    @else
+                      @php $daysAgo = abs($signedDays); @endphp
+                      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                        <div>
+                          Your subscription expired on {{ $subscription->end_date->format('M d, Y') }}
+                          <span class="fw-bold text-danger">
+                            (Expired {{ number_format($daysAgo, 0) }} {{ Str::plural('day', $daysAgo) }} ago)
+                          </span>
+                        </div>
+                        @if(Auth::id() === $shop->user_id)
+                          <a href="{{ route('seller.subscription') }}" class="btn btn-sm btn-warning mt-2 mt-md-0">
+                            <i class="fas fa-undo me-1"></i> Renew Now
+                          </a>
+                        @endif
+                      </div>
                     @endif
                   </div>
                 </div>

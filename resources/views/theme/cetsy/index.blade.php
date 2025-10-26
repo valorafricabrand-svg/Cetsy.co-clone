@@ -1,4 +1,4 @@
-@extends('theme.'.theme().'.layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('main')
 
@@ -151,11 +151,11 @@
       <!-- Hero Text -->
       <div class="col-lg-6 text-center text-lg-start reveal">
         <h1 class="display-4 fw-bold text-success mb-2">
-          Cetsy — Your Global Marketplace
+          Cetsy &mdash; Your Global Marketplace
         </h1>
 
         <p class="lead text-muted" style="max-width: 520px;">
-          Your global marketplace where you’ll find almost anything—from anyone, anywhere.
+          Your global marketplace where you&rsquo;ll find almost anything&mdash;from anyone, anywhere.
         </p>
 
         <div class="cta-group d-flex justify-content-center justify-content-lg-start gap-3">
@@ -184,7 +184,8 @@
         <img
           src="{{ asset('assets/images/illustrator.webp') }}"
           alt="World map with shopping icons"
-          class="img-fluid hero-img rounded shadow">
+          class="img-fluid hero-img rounded shadow"
+          onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
       </div>
     </div>
   </div>
@@ -235,15 +236,15 @@
             <div class="card-flat h-100">
               <div class="ratio ratio-1x1 overflow-hidden rounded-top ratio-cover">
                 @if($cat->image)
-                  <img src="{{ asset('storage/'.$cat->image) }}" alt="{{ $cat->name }}" class="w-100 h-100">
+                  <img src="{{ asset('storage/'.$cat->image) }}" alt="{{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}" class="w-100 h-100">
                 @else
                   <div class="d-flex align-items-center justify-content-center h-100 bg-secondary text-white fw-semibold">
-                    {{ $cat->name }}
+                    {{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
                   </div>
                 @endif
               </div>
               <div class="card-body p-2">
-                <p class="text-center text-dark small fw-semibold mb-0">{{ $cat->name }}</p>
+                <p class="text-center text-dark small fw-semibold mb-0">{{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}</p>
               </div>
             </div>
           </a>
@@ -341,15 +342,15 @@
       <div class="mx-auto" style="max-width: 900px;">
         <span class="stat-chip mb-3">
           <i class="fas fa-star"></i>
-          Since 2021 • Global Marketplace
+          Since 2021 &bull; Global Marketplace
         </span>
 
         <h2 class="display-6 fw-bold text-dark mb-2">Who is Cetsy?</h2>
         <p class="lead mb-3 text-secondary">
-          <span class="fw-semibold text-success">“Cetsy”</span> is a Malagasy word that means <em>“that’s it”</em>.
+          <span class="fw-semibold text-success">&ldquo;Cetsy&rdquo;</span> is a Malagasy word that means <em>&ldquo;that&rsquo;s it&rdquo;</em>.
         </p>
         <p class="fs-5 text-muted mb-4">
-          Your global marketplace where anyone can find almost everything—from everyone, everywhere.
+          Your global marketplace where anyone can find almost everything&mdash;from everyone, everywhere.
         </p>
 
         <!-- Quick stats -->
@@ -375,7 +376,7 @@
           <p class="text-muted mb-3">
             Cetsy is a global e-commerce marketplace founded in 2021 to better connect world markets.
             Privately held and based in Ohio, USA, it enables sellers to list nearly any item they can legally sell
-            in their region—safely and simply.
+            in their region safely and simply.
           </p>
           <a class="link-arrow" href="{{ url('/about') }}">
             Learn our story <i class="fas fa-arrow-right"></i>
@@ -415,7 +416,7 @@
             <h3 class="h4 mb-0">Start now</h3>
           </div>
           <p class="text-muted mb-3">
-            Become a Cetsy Seller in a few steps. Review the Seller Agreement to see what we expect—and what
+            Become a Cetsy Seller in a few steps. Review the Seller Agreement to see what we expect and what
             you can expect from us. Questions? Email us or use LIVE CHAT anytime.
           </p>
           <div class="d-flex flex-wrap gap-2">
@@ -457,3 +458,5 @@
 </section>
 
 @endsection
+
+

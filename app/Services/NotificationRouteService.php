@@ -16,7 +16,9 @@ class NotificationRouteService
         
         switch ($type) {
             case Activity::TYPE_MESSAGE:
-                return self::getMessageRoute($user);
+                return self::getMessageRoute($user, $notification);
+            case Activity::TYPE_WISHLIST:
+                return self::getWishlistRoute($notification, $user);
                 
             case Activity::TYPE_OFFER:
                 return self::getOfferRoute($user);
@@ -47,15 +49,62 @@ class NotificationRouteService
     /**
      * Get message route based on user role
      */
-    private static function getMessageRoute(User $user): string
+    private static function getMessageRoute(User $user, ?Activity $notification = null): string
     {
+        try {
+            if ($notification && $notification->related_id) {
+                $msg = \App\Models\Message::find((int) $notification->related_id);
+                if ($msg) {
+                    $otherId = $user->id === $msg->sender_id ? $msg->receiver_id : $msg->sender_id;
+                    $pid = (int) ($msg->product_id ?? 0);
+                    $convId  = $pid . '-' . (int) $otherId;
+                    if ($user->isSeller()) { return route('seller.messages.show', $convId); }
+                    if ($user->isAdmin()) { return route('admin.messages.index'); }
+                    return route('buyer.messages.show', $convId);
+                }
+            }
+        } catch (\Throwable $e) {}
+        if ($user->isSeller()) { return route('seller.messages.index'); }
+        if ($user->isAdmin()) { return route('admin.messages.index'); }
+        return route('buyer.messages.index');
+    }
+
+    private static function getWishlistRoute(Activity $notification, User $user): string
+    {
+        // For sellers: deep link to conversation with prefilled message
         if ($user->isSeller()) {
-            return route('admin.messages.index');
-        } elseif ($user->isAdmin()) {
-            return route('admin.messages.index'); 
-        } else {
-            return route('admin.messages.index');
+            $productId = (int) ($notification->related_id ?? 0);
+            $buyerId = (int) ($notification->causer_id ?? 0);
+            if ($productId > 0 && $buyerId > 0) {
+                $conversationId = $productId.'-'.$buyerId;
+                $prefill = '';
+                try {
+                    $product = \App\Models\Product::find($productId);
+                    $buyer = \App\Models\User::find($buyerId);
+                    if ($product && $buyer) {
+                        $prefill = 'Hi '.$buyer->name.', thanks for favoriting “'.$product->name.'”. Can I answer any questions or offer help?';
+                    }
+                } catch (\Throwable $e) {}
+                $url = route('seller.messages.show', $conversationId);
+                if ($prefill) {
+                    $url .= '?prefill='.urlencode($prefill);
+                }
+                return $url;
+            }
+            return route('seller.messages.index');
         }
+        // Buyers -> product page; Admin -> notifications
+        if ($user->isBuyer()) {
+            $productId = (int) ($notification->related_id ?? 0);
+            if ($productId > 0) {
+                try {
+                    $p = \App\Models\Product::find($productId);
+                    if ($p) return route('products.show', $p->slug ?? $p->id);
+                } catch (\Throwable $e) {}
+            }
+            return route('products.index');
+        }
+        return route('admin.notifications.index');
     }
 
     /**
@@ -164,6 +213,8 @@ class NotificationRouteService
         switch ($type) {
             case Activity::TYPE_MESSAGE:
                 return 'View Messages';
+            case Activity::TYPE_WISHLIST:
+                return $user->isSeller() ? 'Message Buyer' : 'View Product';
             case Activity::TYPE_OFFER:
                 return 'View Offers';
             case Activity::TYPE_ORDER:

@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
         <h2 class="mb-0 text-success">
             <i class="fa-solid fa-cart-shopping me-2"></i>
-            Orders for {{ $user->name }}
+            Orders for {{ $shop->name ?? $user->name }}
         </h2>
         
         @if($disputeCount > 0 || $appealCount > 0)
@@ -479,12 +479,42 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
                             if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
                         }
-                        $placedAt = optional($order->created_at);
+                        $placedAt = $order->created_at instanceof \Carbon\Carbon ? $order->created_at : ($order->created_at ? \Carbon\Carbon::parse($order->created_at) : null);
                         $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
                         $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
                         $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
                         $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
                         $dispatchBy = $shipEndLabel ?? $shipStartLabel;
+                        $formatDateTime = static function ($value) {
+                            if (! $value) {
+                                return null;
+                            }
+                            if (! $value instanceof \Carbon\Carbon) {
+                                try {
+                                    $value = \Carbon\Carbon::parse($value);
+                                } catch (\Throwable $e) {
+                                    return null;
+                                }
+                            }
+                            return $value->format('M j, Y \a\t g:i A');
+                        };
+                        if ($order->status === \App\Models\Order::STATUS_COMPLETED) {
+                            $progressMessage = $formatDateTime($order->completed_at ?: $order->delivered_at)
+                                ? 'Completed on '.$formatDateTime($order->completed_at ?: $order->delivered_at)
+                                : 'Completed';
+                        } elseif ($order->status === \App\Models\Order::STATUS_DELIVERED) {
+                            $progressMessage = $formatDateTime($order->delivered_at)
+                                ? 'Delivered on '.$formatDateTime($order->delivered_at)
+                                : 'Delivered';
+                        } elseif ($order->status === \App\Models\Order::STATUS_SHIPPED) {
+                            $progressMessage = $formatDateTime($order->shipped_at)
+                                ? 'Shipped on '.$formatDateTime($order->shipped_at)
+                                : 'Shipped';
+                        } elseif ($dispatchBy) {
+                            $progressMessage = 'Dispatch by '.$dispatchBy;
+                        } else {
+                            $progressMessage = 'Dispatch soon';
+                        }
                     @endphp
 
                     <a href="{{ route('seller.orders.show', $order) }}" class="list-group-item list-group-item-action p-3">
@@ -493,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="text-muted small">{{ optional($order->created_at)->format('d M Y') }}</div>
                         </div>
                         <div class="mb-2">
-                            <div class="small text-muted">Customer</div>
+                            <div class="small text-muted">Buyer</div>
                             <div class="text-truncate">{{ $order->full_name }}</div>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -502,17 +532,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <span class="badge {{ $order->getStatusBadgeClass() }} text-capitalize">{{ $order->status }}</span>
+                            @if($order->status === \App\Models\Order::STATUS_PENDING)
+                                <span class="badge bg-warning text-dark">Pending payment</span>
+                            @endif
                             @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
                                 <small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
                             @endif
                         </div>
-                        <div class="small text-muted mb-2">
-                            @if($dispatchBy)
-                                Dispatch by {{ $dispatchBy }}
-                            @else
-                                Dispatch soon
-                            @endif
-                        </div>
+                        <div class="small text-muted mb-2">{{ $progressMessage }}</div>
                         @if($dispute)
                             <div class="small mb-1">
                                 @if($dispute->appeal)
@@ -554,7 +581,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <thead class="table-light text-nowrap">
                             <tr>
                                 <th>#</th>
-                                <th>Customer</th>
+                                <th>Buyer</th>
                                 <th>Phone</th>
                                 <th class="text-center">Qty</th>
                                 <th class="text-end">Amount</th>
@@ -584,6 +611,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                            class="badge {{ $order->getStatusBadgeClass() }} text-capitalize">
                                             {{ $order->status }}
                                         </a>
+                                        @if($order->status === \App\Models\Order::STATUS_PENDING)
+                                            <div class="small text-warning fw-semibold mt-1">Pending payment</div>
+                                        @endif
                                         @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
                                             <br><small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
                                         @endif
@@ -596,20 +626,44 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
                                                 if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
                                             }
-                                            $placedAt = optional($order->created_at);
+                                            $placedAt = $order->created_at instanceof \Carbon\Carbon ? $order->created_at : ($order->created_at ? \Carbon\Carbon::parse($order->created_at) : null);
                                             $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
                                             $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
                                             $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
                                             $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
                                             $dispatchBy = $shipEndLabel ?? $shipStartLabel;
+                                            $formatDateTime = static function ($value) {
+                                                if (! $value) {
+                                                    return null;
+                                                }
+                                                if (! $value instanceof \Carbon\Carbon) {
+                                                    try {
+                                                        $value = \Carbon\Carbon::parse($value);
+                                                    } catch (\Throwable $e) {
+                                                        return null;
+                                                    }
+                                                }
+                                                return $value->format('M j, Y \a\t g:i A');
+                                            };
+                                            if ($order->status === \App\Models\Order::STATUS_COMPLETED) {
+                                                $progressMessage = $formatDateTime($order->completed_at ?: $order->delivered_at)
+                                                    ? 'Completed on '.$formatDateTime($order->completed_at ?: $order->delivered_at)
+                                                    : 'Completed';
+                                            } elseif ($order->status === \App\Models\Order::STATUS_DELIVERED) {
+                                                $progressMessage = $formatDateTime($order->delivered_at)
+                                                    ? 'Delivered on '.$formatDateTime($order->delivered_at)
+                                                    : 'Delivered';
+                                            } elseif ($order->status === \App\Models\Order::STATUS_SHIPPED) {
+                                                $progressMessage = $formatDateTime($order->shipped_at)
+                                                    ? 'Shipped on '.$formatDateTime($order->shipped_at)
+                                                    : 'Shipped';
+                                            } elseif ($dispatchBy) {
+                                                $progressMessage = 'Dispatch by '.$dispatchBy;
+                                            } else {
+                                                $progressMessage = 'Dispatch soon';
+                                            }
                                         @endphp
-                                        <div class="small text-muted mt-1">
-                                            @if($dispatchBy)
-                                                Dispatch by {{ $dispatchBy }}
-                                            @else
-                                                Dispatch soon
-                                            @endif
-                                        </div>
+                                        <div class="small text-muted mt-1">{{ $progressMessage }}</div>
                                     </td>
                                     <td class="dispute-appeal-cell">
                                         @if($dispute)

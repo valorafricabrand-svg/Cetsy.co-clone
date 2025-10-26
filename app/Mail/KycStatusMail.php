@@ -30,9 +30,13 @@ class KycStatusMail extends Mailable
      */
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Your KYC Status Has Been ' . ucfirst($this->status),
-        );
+        $subject = match ($this->status) {
+            'approved' => 'Your KYC Has Been Approved',
+            'rejected' => 'Your KYC Has Been Rejected',
+            'needs_correction' => 'Action Required: KYC Needs Correction',
+            default => 'Your KYC Status Was Updated',
+        };
+        return new Envelope(subject: $subject);
     }
 
     /**
@@ -57,7 +61,13 @@ class KycStatusMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Your KYC Status Has Been ' . ucfirst($this->status))
+        $subject = match ($this->status) {
+            'approved' => 'Your KYC Has Been Approved',
+            'rejected' => 'Your KYC Has Been Rejected',
+            'needs_correction' => 'Action Required: KYC Needs Correction',
+            default => 'Your KYC Status Was Updated',
+        };
+        return $this->subject($subject)
             ->view('emails.kyc_status')
             ->with([
                 'status' => $this->status,

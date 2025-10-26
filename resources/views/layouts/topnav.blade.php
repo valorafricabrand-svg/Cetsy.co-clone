@@ -1,4 +1,4 @@
-@php
+﻿@php
     // Ensure Activity model is correctly imported in the controller or view
     use App\Models\Activity;
     use Illuminate\Support\Str;
@@ -7,11 +7,23 @@
     $role = $user->isAdmin() ? 'admin' : ($user->isSeller() ? 'seller' : 'buyer');
 
     // Notifications
-    if ($role === 'admin') {
-        // Admin sees all unread activities, not just their own
-        $notificationsCount = Activity::where('is_read', false)->count();
-        $recentNotifications = Activity::orderBy('created_at', 'desc')->limit(2)->get();
+    if ($user->isAdmin()) {
+        // Include legacy global entries for admins
+        $notificationsCount = Activity::where(function($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereNull('user_id');
+            })
+            ->where('is_read', false)
+            ->count();
+        $recentNotifications = Activity::where(function($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereNull('user_id');
+            })
+            ->orderBy('created_at', 'desc')
+            ->limit(2)
+            ->get();
     } else {
+        // Per-user for non-admins
         $notificationsCount = Activity::where('user_id', $user->id)
             ->where('is_read', false)
             ->count();
@@ -85,7 +97,10 @@
             </button>
             <a class="navbar-brand me-1 me-sm-3" href="{{ url('/') }}">
                 <div class="d-flex align-items-center">
-                    <img src="{{ setting('logo_url') }}" style="height: 50px;">
+                    @php
+                      $__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg');
+                    @endphp
+                    <img src="{{ $__logo }}" style="height: 50px;" onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
                 </div>
             </a>
         </div>
@@ -100,8 +115,8 @@
                     $currentCurrency = get_currency();
                     $navCurrencies = collect([
                         (object)['code' => 'USD','symbol' => '$'],
-                        (object)['code' => 'EUR','symbol' => '€'],
-                        (object)['code' => 'GBP','symbol' => '£'],
+                        (object)['code' => 'EUR','symbol' => 'â‚¬'],
+                        (object)['code' => 'GBP','symbol' => 'Â£'],
                         (object)['code' => 'KES','symbol' => 'KES'],
                     ]);
                 }
@@ -143,7 +158,7 @@
                         <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="{{ $item['label'] }}">
                             <i class="{{ $item['icon'] }} fa-lg"></i>
                             @if($item['badge'] > 0)
-                                <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+                                <span id="topNotifCount" class="badge bg-danger position-absolute top-0 start-100 translate-middle" style="display: {{ $notificationsCount>0 ? 'inline-block' : 'none' }};">
                                     {{ $item['badge'] > 99 ? '99+' : $item['badge'] }}
                                 </span>
                             @endif
@@ -165,12 +180,19 @@
                                                         @php
                                                             $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, $user);
                                                             $linkText = \App\Services\NotificationRouteService::getLinkText($notification, $user);
+                                                            $hasOpen = \Illuminate\Support\Facades\Route::has('notifications.open');
                                                         @endphp
                                                         @if($route && $route !== route('notifications.index'))
                                                             <div class="mt-2">
-                                                                <a href="{{ $route }}" class="btn btn-sm btn-outline-primary">
-                                                                    {{ $linkText }}
-                                                                </a>
+                                                                @if($hasOpen)
+                                                                    <a href="{{ route('notifications.open', $notification->id) }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
+                                                                        {{ $linkText }}
+                                                                    </a>
+                                                                @else
+                                                                    <a href="{{ $route }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
+                                                                        {{ $linkText }}
+                                                                    </a>
+                                                                @endif
                                                             </div>
                                                         @endif
                                                     </div>
@@ -202,7 +224,7 @@
                                                             @endphp
                                                             <strong>{{ $from }}:</strong> {{ $snippet }}
                                                         </p>
-                                                        <small class="text-body-quaternary">{{ $msg->created_at->diffForHumans() }} • Dispute #{{ $msg->dispute_id }}</small>
+                                                        <small class="text-body-quaternary">{{ $msg->created_at->diffForHumans() }} â¢ Dispute #{{ $msg->dispute_id }}</small>
                                                         <div class="mt-2">
                                                             <a href="{{ route('disputes.show', $msg->dispute_id) }}" class="btn btn-sm btn-outline-warning">
                                                                 View Dispute
@@ -270,10 +292,10 @@
                                     <a class="dropdown-item" href="{{ route('profile.edit') }}">
                                         <i class="fa fa-user"></i> <span>Profile</span>
                                     </a>
-                                    <a class="dropdown-item" href="{{ url('billings') }}">
+                                    <a class="dropdown-item" href="{{ route('seller.billing.index') }}">
                                         <i class="fa fa-users"></i> <span>Manage your billings</span>
                                     </a>
-                                    <a class="dropdown-item" href="{{ url('subscribe') }}">
+                                    <a class="dropdown-item" href="{{ route('seller.subscription') }}">
                                         <i class="fa fa-users"></i> <span>Manage your subscriptions</span>
                                     </a>
                                 @else

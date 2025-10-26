@@ -24,13 +24,13 @@
                                 </a>
                                 <div class="d-flex align-items-center">
                                     <div class="avatar-lg bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3">
-                                        {{ strtoupper(substr($otherUser->name ?? 'C', 0, 1)) }}
+                                        {{ strtoupper(substr($otherUser?->name ?? 'C', 0, 1)) }}
                                     </div>
                                     <div>
-                                        <h4 class="mb-1 fw-bold">{{ $otherUser->name ?? 'Customer' }}</h4>
+                                        <h4 class="mb-1 fw-bold">{{ $otherUser?->name ?? 'Customer' }}</h4>
                                         <p class="text-muted mb-0 small">
                                             <i class="bi bi-envelope me-1"></i>
-                                            {{ $otherUser->email ?? 'No email' }}
+                                            {{ $otherUser?->email ?? 'No email' }}
                                         </p>
                                         <span class="badge bg-info small mt-1">
                                             <i class="bi bi-chat-dots me-1"></i>{{ $messages->count() }} message{{ $messages->count() > 1 ? 's' : '' }}
@@ -60,7 +60,8 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             @if($product->media && $product->media->count() > 0)
-                                <img src="{{ $product->media->first()->getUrl() }}" alt="{{ $product->name }}" 
+                                @php($thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null))
+                                <img src="{{ $thumb }}" alt="{{ $product->name }}" 
                                      class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
                             @else
                                 <div class="bg-light rounded d-flex align-items-center justify-content-center me-3" 
@@ -91,7 +92,7 @@
                         <div class="mt-2">
                             <small class="text-muted">
                                 <i class="bi bi-info-circle me-1"></i>
-                                This conversation is between you and {{ $otherUser->name ?? 'the customer' }} about this specific product.
+                                This conversation is between you and {{ $otherUser?->name ?? 'the customer' }} about this specific product.
                             </small>
                         </div>
                     </div>
@@ -153,7 +154,7 @@
                                     placeholder="Type your professional reply here..." 
                                     required
                                     maxlength="2000"
-                                >{{ old('message') }}</textarea>
+                                >{{ old('message', request('prefill')) }}</textarea>
                                 <div class="form-text d-flex justify-content-between">
                                     <span>Be professional and helpful in your response</span>
                                     <span id="charCount">0/2000</span>
@@ -166,7 +167,7 @@
                                 <div class="reply-info">
                                     <div class="d-flex align-items-center text-muted">
                                         <i class="bi bi-info-circle me-1"></i>
-                                        <small>Reply will be sent to {{ $otherUser->email ?? 'the customer' }}</small>
+                                        <small>Reply will be sent to {{ $otherUser?->email ?? 'the customer' }}</small>
                                     </div>
                                     <div class="d-flex align-items-center text-muted mt-1">
                                         <i class="bi bi-clock me-1"></i>
@@ -209,8 +210,8 @@
                                     <span class="detail-label text-secondary">
                                         <i class="bi bi-box me-1"></i> Product
                                     </span>
-                                    <span class="badge bg-primary ms-2 text-truncate" style="max-width: 160px;" title="{{ $product->name ?? '' }}">
-                                        {{ $product->name ? \Illuminate\Support\Str::limit($product->name, 25) : 'No product specified' }}
+                                    <span class="badge bg-primary ms-2 text-truncate" style="max-width: 160px;" title="{{ $product?->name ?? '' }}">
+                                        {{ $product?->name ? \Illuminate\Support\Str::limit($product?->name, 25) : 'No product specified' }}
                                     </span>
                                     @if($product)
                                         <span class="badge bg-light text-dark border ms-2">ID: #{{ $product->id }}</span>
@@ -222,7 +223,7 @@
                                     <span class="detail-label text-secondary">
                                         <i class="bi bi-person me-1"></i> Customer
                                     </span>
-                                    <span class="badge bg-info ms-2">{{ $otherUser->name ?? 'Unknown' }}</span>
+                                    <span class="badge bg-info ms-2">{{ $otherUser?->name ?? 'Unknown' }}</span>
                                 </div>
                                 <div class="detail-item mb-3">
                                     <span class="detail-label text-secondary">
