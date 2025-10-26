@@ -296,6 +296,7 @@ public function storeOrder(Request $request)
                 'row_id'            => $rowId,
                 'product'           => $product,
                 'variation_summary' => $variationSummary,
+                'variant_id'        => $variantId,
                 'quantity'          => $qty,
                 'unit_price'        => $unitPrice,
                 'profiles'          => $profiles->values()->all(), // keep snapshot for traceability
@@ -377,6 +378,10 @@ public function storeOrder(Request $request)
                 $orderItem = new \App\Models\OrderItem();
                 $orderItem->order_id            = $order->id;
                 $orderItem->product_id          = $r['product']->id;
+                // Persist selected variant when available for accurate stock tracking later
+                if (!empty($r['variant_id'])) {
+                    $orderItem->product_variation_id = (int) $r['variant_id'];
+                }
                 $orderItem->variation_summary   = $r['variation_summary']; // store plain text summary
                 $orderItem->quantity            = (int)$r['quantity'];
                 $orderItem->price               = (float)$r['unit_price'];
@@ -645,8 +650,30 @@ public function storeOrder(Request $request)
             ]);
         }
 
+        // If this payment transitions from pending -> processing, reduce inventory
+        if ($order->status === Order::STATUS_PENDING) {
+            try {
+                $order->loadMissing('items.product');
+                foreach ($order->items as $item) {
+                    $product = $item->product; if (!$product) continue;
+                    if (strtolower((string)($product->type ?? 'physical')) !== 'physical') continue;
+                    $qty = max(1, (int) ($item->quantity ?? 1));
+                    if (!is_null($product->stock)) {
+                        $new = max(0, ((int)$product->stock) - $qty);
+                        if ($new !== (int)$product->stock) { $product->update(['stock' => $new]); }
+                    }
+                    $variantId = (int) ($item->getAttribute('product_variation_id') ?? 0);
+                    if ($variantId > 0) {
+                        try { $variant = \App\Models\Variant::find($variantId); if ($variant && !is_null($variant->stock)) { $vnew = max(0, ((int)$variant->stock) - $qty); if ($vnew !== (int)$variant->stock) { $variant->update(['stock' => $vnew]); } } } catch (\Throwable $e) { /* ignore */ }
+                    }
+                }
+            } catch (\Throwable $e) { \Log::warning('order.inventory.decrement_failed', ['order_id'=>$order->id, 'error'=>$e->getMessage()]); }
+            $order->status = Order::STATUS_PROCESSING;
+            $order->save();
+        }
+
         return redirect()
-            ->route('account.orders')
+            ->route('buyer.orders.show', $order->id)
             ->with('success', 'Your payment has been received. Your order is now processing.');
     }
 
