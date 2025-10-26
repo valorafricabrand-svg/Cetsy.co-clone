@@ -18,6 +18,17 @@ class OfferController extends Controller
             'offer_price' => ['required','numeric','min:1'],
         ]);
 
+        // Load product and compute the effective price buyers see
+        $product = Product::with('shop.user')->findOrFail($data['product_id']);
+        $finalPrice = (float) ($product->discounted_price ?? $product->price);
+
+        // Disallow offers that exceed the listing price
+        if ((float) $data['offer_price'] > $finalPrice) {
+            return back()->withErrors([
+                'offer_price' => 'Offer cannot exceed the listing price (' . get_currency() . ' ' . number_format($finalPrice, 2) . ').'
+            ])->withInput();
+        }
+
         $offer = Offer::updateOrCreate(
             [
                 'product_id' => $data['product_id'],
@@ -29,10 +40,8 @@ class OfferController extends Controller
             ]
         );
 
-        // Send email to shop owner
+        // Send email to shop owner (best-effort)
         try {
-            $product = Product::with('shop.user')->find($data['product_id']);
-            
             if ($product && $product->shop && $product->shop->user) {
                 Mail::to($product->shop->user->email)
                     ->send(new OfferReceivedMail(
@@ -51,8 +60,8 @@ class OfferController extends Controller
                     'related_id' => $offer->id,
                     'related_type' => 'offer'
                 ]);
-            } 
-        } catch (\Exception $e) {
+            }
+        } catch (\Throwable $e) {
             // Log the error but don't break the user experience
             \Log::error('Failed to send offer notification email: ' . $e->getMessage());
         }
