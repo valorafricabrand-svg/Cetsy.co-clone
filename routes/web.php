@@ -641,6 +641,9 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
     // (dashboard route defined above without 'verified' to allow access with alert)
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
+    // Seller inventory report
+    Route::get('reports/inventory', [\App\Http\Controllers\Seller\InventoryReportController::class, 'index'])->name('reports.inventory');
+
     // Deals (require active subscription)
     Route::resource('deals', DealController::class)
         ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
