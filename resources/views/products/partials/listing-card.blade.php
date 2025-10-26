@@ -104,15 +104,24 @@
             </p>
 
             <div class="fw-bold mb-3">
+                @php $isService = (strtolower((string)($product->type ?? '')) === 'service'); @endphp
                 @if (!is_null($lowestVariantPrice))
-                    <div class="small text-muted lh-1">From</div>
+                    <div class="small text-muted lh-1">{{ $isService ? 'Priced From' : 'From' }}</div>
                     <div class="text-success">{{ $formatMoney($lowestVariantPrice) }}</div>
                 @else
-                    @if (!empty($product->discount_price) && $product->discount_price < ($product->price ?? 0))
-                        <span class="text-success me-2">{{ $formatMoney($product->discount_price) }}</span>
-                        <span class="text-muted text-decoration-line-through">{{ $formatMoney($product->price) }}</span>
+                    @if ($isService)
+                        <div class="small text-muted lh-1">Priced From</div>
+                        <span class="text-success">{{ $formatMoney($product->discount_price && $product->discount_price < ($product->price ?? 0) ? $product->discount_price : $product->price) }}</span>
+                        @if (!empty($product->discount_price) && $product->discount_price < ($product->price ?? 0))
+                            <span class="text-muted text-decoration-line-through ms-2">{{ $formatMoney($product->price) }}</span>
+                        @endif
                     @else
-                        <span class="text-success">{{ $formatMoney($product->price) }}</span>
+                        @if (!empty($product->discount_price) && $product->discount_price < ($product->price ?? 0))
+                            <span class="text-success me-2">{{ $formatMoney($product->discount_price) }}</span>
+                            <span class="text-muted text-decoration-line-through">{{ $formatMoney($product->price) }}</span>
+                        @else
+                            <span class="text-success">{{ $formatMoney($product->price) }}</span>
+                        @endif
                     @endif
                 @endif
             </div>

@@ -1106,10 +1106,16 @@ public function changeStatus(Request $request, Product $product)
             ->with('warning', 'Add a featured image before publishing this listing.');
     }
 
+    // If trying to publish (1) but no listing payment yet, block
+    if ($data['status'] == 1 && empty($product->listing_paid_at)) {
+        return back()
+            ->with('warning', 'Please pay the listing fee before publishing this listing.');
+    }
+
     // If trying to publish (1) but next_due_date is past, block:
     if ($data['status']==1 && Carbon::now()->gt($product->next_due_date)) {
         return back()
-             ->with('warning', 'Your listing has expired – please renew before publishing.');
+             ->with('warning', 'Your listing has expired — please renew before publishing.');
     }
 
     $product->update(['is_active' => $data['status']]);
@@ -1674,6 +1680,19 @@ public function shipping(Product $product, Request $request)
                 ->map(fn($t) => trim($t))
                 ->filter()
                 ->implode(', ');
+        }
+
+        // Enforce publish eligibility from settings as well
+        if (isset($data['is_active']) && (int)$data['is_active'] === 1) {
+            if (empty($product->featured_image)) {
+                return back()->with('warning', 'Add a featured image before publishing this listing.');
+            }
+            if (empty($product->listing_paid_at)) {
+                return back()->with('warning', 'Please pay the listing fee before activating this listing.');
+            }
+            if (!empty($product->next_due_date) && Carbon::now()->gt($product->next_due_date)) {
+                return back()->with('warning', 'Your listing has expired — please renew before publishing.');
+            }
         }
 
         $product->update($data);
