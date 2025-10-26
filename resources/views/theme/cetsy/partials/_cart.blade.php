@@ -196,7 +196,7 @@
       <span class="badge bg-secondary">Uncategorised</span>
     @endif
   </p>
-  @if ($product->country)
+  @if ($product->country && (($product->type ?? '') === 'physical'))
     <p class="mb-4 small text-muted">
       <i class="fa-solid fa-globe-africa me-1"></i>
       Ships from {{ $product->country->name }}
@@ -588,7 +588,5 @@
   }
 </script>
 @endpush
-
-
 
 

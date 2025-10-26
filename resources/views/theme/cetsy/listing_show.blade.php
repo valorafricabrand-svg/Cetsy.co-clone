@@ -140,7 +140,9 @@
     @include('theme.'.theme().'.partials._tabs_nav')
     <div class="tab-content bg-white p-4 border-bottom border-start border-end rounded-bottom-4 shadow-sm">
       @include('theme.'.theme().'.partials._tab_description')
-      @include('theme.'.theme().'.partials._tab_shipping')
+      @if(($product->type ?? '') !== 'service')
+        @include('theme.'.theme().'.partials._tab_shipping')
+      @endif
       @include('theme.'.theme().'.partials._tab_reviews')
       @include('theme.'.theme().'.partials._tab_faq')
     </div>

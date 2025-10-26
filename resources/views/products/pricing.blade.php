@@ -53,7 +53,11 @@
 
         <div class="row g-3">
           <div class="col-md-4">
-            <label class="form-label">Price ({{ get_currency() }})</label>
+            <label class="form-label"
+                   x-data="{ t: '{{ $product->type }}' }"
+                   x-text="t==='service' ? 'Priced From ({{ get_currency() }})' : 'Price ({{ get_currency() }})'">
+              Price ({{ get_currency() }})
+            </label>
             <input type="number" step="0.01" min="0" name="price" class="form-control @error('price') is-invalid @enderror"
                    x-model.number="price" value="{{ old('price', $product->price) }}" required>
             @error('price') <div class="invalid-feedback">{{ $message }}</div> @enderror
