@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Auth\Events\Registered;
 
 class UserController extends Controller
 {
@@ -98,6 +99,55 @@ class UserController extends Controller
     {
         return view('admin.users.show', compact('user'));
     }
+
+    /**
+     * Resend verification email to user (admin action).
+     */
+    public function resendVerification(User $user)
+    {
+        if (method_exists($user, 'hasVerifiedEmail') && $user->hasVerifiedEmail()) {
+            return back()->with('success', 'Email is already verified.');
+        }
+
+        // Fire default Registered event and explicitly send notification if available
+        event(new Registered($user));
+        if (method_exists($user, 'sendEmailVerificationNotification')) {
+            $user->sendEmailVerificationNotification();
+        }
+
+        return back()->with('success', 'Verification email resent successfully.');
+    }
+
+    /**
+     * Mark email as verified (admin action).
+     */
+    public function markEmailVerified(User $user)
+    {
+        if (method_exists($user, 'hasVerifiedEmail') && $user->hasVerifiedEmail()) {
+            return back()->with('success', 'Email already verified.');
+        }
+
+        $user->forceFill(['email_verified_at' => now()])->save();
+        return back()->with('success', 'Email marked as verified.');
+    }
+
+    /**
+     * Mark email as unverified (admin action).
+     */
+    public function markEmailUnverified(User $user)
+    {
+        if (!method_exists($user, 'hasVerifiedEmail') || !$user->hasVerifiedEmail()) {
+            // If method not present, just proceed to null; else message when already unverified
+            if (method_exists($user, 'hasVerifiedEmail')) {
+                return back()->with('success', 'Email already unverified.');
+            }
+        }
+
+        $user->forceFill(['email_verified_at' => null])->save();
+        return back()->with('success', 'Email marked as unverified.');
+    }
+
+    
 
     /**
      * Show the form for editing the specified user.

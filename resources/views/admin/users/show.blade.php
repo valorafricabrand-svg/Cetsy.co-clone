@@ -18,6 +18,14 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="h5 mb-0">User Information</h3>
         <div class="d-flex align-items-center gap-2">
+            @if(method_exists($user,'isSeller') && $user->isSeller())
+                <a href="{{ route('admin.sellers.login-as', $user->id) }}" 
+                                class="btn btn-sm btn-outline-success me-2"
+                                onclick="return confirm('Are you sure you want to login as this seller?')">
+                                <i class="fas fa-user-secret me-1"></i> Login as Seller
+                            </a>
+            @endif
+
             @if((method_exists($user,'isSeller') && $user->isSeller()) || (method_exists($user,'isBuyer') && $user->isBuyer()))
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#topupWalletModal">
                     <i class="fas fa-wallet me-1"></i> Top Up Wallet
@@ -50,6 +58,25 @@
                         <div class="col-sm-4 fw-bold">Email:</div>
                         <div class="col-sm-8">
                             <a href="mailto:{{ $user->email }}" class="text-decoration-none">{{ $user->email }}</a>
+                            @if(!$user->email_verified_at)
+                                <form action="{{ route('admin.users.resend-verification', $user) }}" method="POST" class="d-inline ms-2">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" onclick="return confirm('Resend verification email to this user?')">
+                                        Resend verification
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 fw-bold">Email Verified:</div>
+                        <div class="col-sm-8">
+                            @if($user->email_verified_at)
+                                <span class="badge bg-success">Verified</span>
+                                <small class="text-muted ms-2">{{ $user->email_verified_at->format('M d, Y \a\t h:i A') }}</small>
+                            @else
+                                <span class="badge bg-warning text-dark">Unverified</span>
+                            @endif
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -109,6 +136,28 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    
+                    @if($user->email_verified_at)
+                        <form action="{{ route('admin.users.mark-unverified', $user) }}" method="POST" class="mb-3">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-warning w-100" onclick="return confirm('Mark this user\'s email as unverified?')">
+                        <i class="fas fa-undo me-2"></i>Mark Email Unverified
+                        </button>
+                        </form>
+                        @else
+                        <form action="{{ route('admin.users.mark-verified', $user) }}" method="POST" class="mb-3">
+                        @csrf
+                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Mark this user\'s email as verified?')">
+                        <i class="fas fa-check me-2"></i>Mark Email Verified
+                        </button>
+                        </form>
+                        <form action="{{ route('admin.users.resend-verification', $user) }}" method="POST" class="mb-3">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-primary w-100" onclick="return confirm('Resend verification email to this user?')">
+                        <i class="fas fa-envelope me-2"></i>Resend Verification Email
+                        </button>
+                        </form>
+                    @endif
                     @if(method_exists($user,'isSeller') && $user->isSeller())
                         @if(!$user->is_active)
                             <form action="{{ route('admin.users.approve', $user) }}" method="POST" class="mb-3">

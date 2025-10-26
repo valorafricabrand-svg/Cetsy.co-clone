@@ -327,7 +327,23 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-muted">
                                         @if(isset($notification->causer_id))
-                                            <i class="fas fa-user me-1"></i> By: {{ $notification->causer->name ?? 'System' }}
+                                            @php
+                                                $displayName = 'System';
+                                                $causer = $notification->causer;
+                                                if ($causer) {
+                                                    // If causer is a User and a seller, prefer their shop name
+                                                    if ($causer instanceof \App\Models\User) {
+                                                        if ($causer->isSeller() && optional($causer->shop)->name) {
+                                                            $displayName = $causer->shop->name;
+                                                        } else {
+                                                            $displayName = $causer->name ?? 'System';
+                                                        }
+                                                    } elseif (isset($causer->name)) {
+                                                        $displayName = $causer->name;
+                                                    }
+                                                }
+                                            @endphp
+                                            <i class="fas fa-user me-1"></i> By: {{ $displayName }}
                                         @endif
                                     </small>
                                     
@@ -347,7 +363,7 @@
                     <!-- Pagination -->
                     <div class="p-3 border-top">
                         <div class="d-flex justify-content-center">
-                            {{ $notifications->links() }}
+                            {{ $notifications->links("pagination::bootstrap-5") }}
                         </div>
                     </div>
                 @else

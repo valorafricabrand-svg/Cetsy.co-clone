@@ -111,7 +111,7 @@
                             <h6 class="alert-heading">Important Information</h6>
                             <ul class="mb-0">
                                 <li>All communications must be conducted through Cetsy's messaging system</li>
-                                <li>Disputes will be reviewed within 5 minutes</li>
+                                <li>Disputes will be reviewed within 24 Hours</li>
                                 <li>You have 7 days to appeal a resolution decision</li>
                                 <li>Provide clear evidence to support your case</li>
                             </ul>

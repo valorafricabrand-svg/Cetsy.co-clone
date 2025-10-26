@@ -446,6 +446,19 @@ Route::middleware(['auth','verified'])->group(function () {
     });
 });
 
+// Admin routes for user management additions
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    // Resend email verification for a specific user
+    Route::post('/users/{user}/resend-verification', [UserController::class, 'resendVerification'])
+        ->name('users.resend-verification');
+
+    // Toggle email verification status
+    Route::post('/users/{user}/mark-verified', [UserController::class, 'markEmailVerified'])
+        ->name('users.mark-verified');
+    Route::post('/users/{user}/mark-unverified', [UserController::class, 'markEmailUnverified'])
+        ->name('users.mark-unverified');
+});
+
 
 /*
 |--------------------------------------------------------------------------
@@ -778,6 +791,9 @@ require __DIR__ . '/auth.php';
 
    
 
-
-
-
+// Admin utilities for managing users' email verification
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::post('/users/{user}/resend-verification', [UserController::class, 'resendVerification'])->name('users.resend-verification');
+    Route::post('/users/{user}/mark-verified', [UserController::class, 'markEmailVerified'])->name('users.mark-verified');
+    Route::post('/users/{user}/mark-unverified', [UserController::class, 'markEmailUnverified'])->name('users.mark-unverified');
+});
