@@ -316,15 +316,29 @@
                   </div>
 
                   <div class="col-12 col-md-3 col-lg-3 text-md-end">
-                    @if(isset($finalPrice, $basePrice) && is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
-                      <div class="d-flex align-items-baseline gap-2 justify-content-md-end mb-2">
-                        <span class="fw-bold text-success">{{ get_currency() }} {{ number_format($finalPrice, 2) }}</span>
-                        <span class="text-muted text-decoration-line-through">{{ get_currency() }} {{ number_format($basePrice, 2) }}</span>
-                      </div>
-                    @elseif(isset($basePrice))
-                      <div class="h5 mb-2 text-success">{{ get_currency() }} {{ number_format($basePrice, 2) }}</div>
+                    @php
+                      $isService = (strtolower((string)($item->type ?? '')) === 'service');
+                      $lowestVariantPrice = optional($item->variations)->whereNotNull('price')->min('price');
+                    @endphp
+                    @if($isService)
+                      <div class="small text-muted">Priced From</div>
+                      @php $from = $lowestVariantPrice ?? (is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice ? $finalPrice : $basePrice); @endphp
+                      @if(isset($from) && is_numeric($from))
+                        <div class="h5 mb-2 text-success">{{ get_currency() }} {{ number_format($from, 2) }}</div>
+                      @else
+                        <div class="text-muted small mb-2">Contact for price</div>
+                      @endif
                     @else
-                      <div class="text-muted small mb-2">Contact for price</div>
+                      @if(isset($finalPrice, $basePrice) && is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
+                        <div class="d-flex align-items-baseline gap-2 justify-content-md-end mb-2">
+                          <span class="fw-bold text-success">{{ get_currency() }} {{ number_format($finalPrice, 2) }}</span>
+                          <span class="text-muted text-decoration-line-through">{{ get_currency() }} {{ number_format($basePrice, 2) }}</span>
+                        </div>
+                      @elseif(isset($basePrice))
+                        <div class="h5 mb-2 text-success">{{ get_currency() }} {{ number_format($basePrice, 2) }}</div>
+                      @else
+                        <div class="text-muted small mb-2">Contact for price</div>
+                      @endif
                     @endif
 
                     <a href="{{ route('listing.show', $item->slug) }}" class="btn btn-success btn-sm">

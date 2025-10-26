@@ -97,7 +97,7 @@
          data-decimals="{{ $__dec }}"
          data-variant-index='@json($variantIndex)'>
       <span class="fw-bold text-success">
-        <span id="js-from-label" class="me-1 small text-muted">From</span>
+        <span id="js-from-label" class="me-1 small text-muted">{{ (($product->type ?? '') === 'service') ? 'Priced From' : 'From' }}</span>
         <span id="js-price-amount">{{ $currency }} {{ $format($defaultDisplayPrice) }}</span>
       </span>
       @if ($discountPercent > 0)
@@ -588,5 +588,4 @@
   }
 </script>
 @endpush
-
 
