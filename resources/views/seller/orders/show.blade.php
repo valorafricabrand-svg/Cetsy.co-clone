@@ -96,11 +96,12 @@
               </a>
             </li>
           @else
+            {{-- Sellers do not initiate disputes; buyers open disputes and sellers respond. --}}
             <li>
-              <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('disputes.create', ['order_id' => $order->id]) }}">
-                <i class="fa-solid fa-exclamation-triangle text-warning"></i>
-                <span>Initiate Dispute</span>
-              </a>
+              <span class="dropdown-item text-muted small d-flex align-items-center gap-2" title="Sellers do not initiate disputes">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Disputes are initiated by buyers</span>
+              </span>
             </li>
           @endif
           @if(in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
@@ -652,7 +653,7 @@
     <div class="card-body text-center">
       <p class="text-muted mb-2">No disputes have been filed for this order.</p>
       <p class="small text-muted mb-0">
-        If you encounter any issues with this order, you can initiate a dispute using the button above.
+        Sellers do not initiate disputes. If a buyer opens a dispute, it will appear here and you’ll be notified to respond.
       </p>
     </div>
   </div>

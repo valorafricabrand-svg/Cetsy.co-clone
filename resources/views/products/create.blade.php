@@ -176,7 +176,7 @@
         <label class="form-label fw-semibold"
                x-text="type==='service' ? 'Response Time (optional)' : 'Processing Time'">Processing Time</label>
         <select name="processing_time_id" class="form-select @error('processing_time_id') is-invalid @enderror">
-          <option value="">Choose a processing time</option>
+          <option value="" x-text="type==='service' ? 'Choose a Response time' : 'Choose a processing time'">Choose a processing time</option>
           @foreach($processingTimes as $pt)
             <option value="{{ $pt->id }}" @selected(old('processing_time_id')==$pt->id)>
               {{ $pt->name }} ({{ $pt->days }} days)
