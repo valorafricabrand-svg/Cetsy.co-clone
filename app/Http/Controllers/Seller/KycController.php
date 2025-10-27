@@ -77,11 +77,11 @@ class KycController extends Controller
     // Step 2: Documents - POST (final submit)
     public function postDocuments(Request $request)
     {
-        // Check subscription first
-        if (!auth()->user()->hasActiveSubscription()) {
-            return redirect()->route('seller.subscription')
-                ->with('error', 'Please subscribe first to access KYC verification.');
-        }
+        // Allow KYC submission even if the seller's subscription is inactive.
+        // Rationale: Admins need to review identity documents to onboard or
+        // re‑enable sellers, and tests/routes declare KYC is accessible
+        // without an active subscription. Removing this gate fixes cases
+        // where sellers think they submitted but no record is created.
 
         $step1 = session('kyc.step1');
         if (!$step1) {
@@ -183,11 +183,7 @@ class KycController extends Controller
 
     public function submit(Request $request)
     {
-        // Check subscription first
-        if (!auth()->user()->hasActiveSubscription()) {
-            return redirect()->route('seller.subscription')
-                ->with('error', 'Please subscribe first to access KYC verification.');
-        }
+        // Allow submission without an active subscription.
 
         // Build validation rules (allow keeping existing files)
         $existingKyc = auth()->user()->kyc;
