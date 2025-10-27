@@ -397,6 +397,29 @@ if (! function_exists('theme')) {
     }
 }
 
+if (! function_exists('support_email')) {
+    /**
+     * Resolve the public support email.
+     * Priority: settings table (support_email) -> env SUPPORT_EMAIL -> default fallback.
+     */
+    function support_email(): string
+    {
+        try {
+            $email = setting('support_email');
+            if (is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return $email;
+            }
+        } catch (\Throwable $e) {}
+
+        $env = env('SUPPORT_EMAIL');
+        if (is_string($env) && filter_var($env, FILTER_VALIDATE_EMAIL)) {
+            return $env;
+        }
+
+        return 'hello@cetsy.co';
+    }
+}
+
 if (! function_exists('product_thumb_url')) {
     /**
      * Build a product thumbnail URL with fallbacks:

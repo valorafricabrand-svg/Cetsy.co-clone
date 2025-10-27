@@ -51,6 +51,6 @@ By using the Services, you agree to these Terms and to our Privacy Policy. We ma
 • Entire agreement; severability; waiver; assignment terms.
 
 14. Contact
-• hello@cetsy.co or provided legal form.
+• {{ support_email() }} or provided legal form.
   </pre>
 </section>

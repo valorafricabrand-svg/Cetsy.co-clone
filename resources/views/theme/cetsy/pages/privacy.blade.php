@@ -78,7 +78,7 @@
         <h3 id="rights" class="h5 mt-4">Your Data Rights</h3>
         <p class="mb-3">Where applicable, you may request access, correction, deletion, or portability of your data, and object to or restrict certain processing.</p>
         <h3 id="security" class="h5 mt-4">Security</h3>
-        <p class="mb-0">We use industry-standard safeguards. No method is 100% secure. For questions, contact <a href="mailto:hello@cetsy.co">hello@cetsy.co</a>.</p>
+        <p class="mb-0">We use industry-standard safeguards. No method is 100% secure. For questions, contact <a href="mailto:{{ support_email() }}">{{ support_email() }}</a>.</p>
       </div>
     </div>
   </section>
