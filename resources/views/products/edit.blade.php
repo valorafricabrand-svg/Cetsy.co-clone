@@ -195,11 +195,11 @@
             <label for="processing_time_id" class="form-label fw-semibold" x-text="type==='service' ? 'Response Time (optional)' : 'Processing Time'">Processing Time</label>
             <select id="processing_time_id" name="processing_time_id"
                     class="form-select @error('processing_time_id') is-invalid @enderror">
-              <option value="" disabled>Choose a processing time</option>
+              <option value="" disabled x-text="type==='service' ? 'Choose a Response time' : 'Choose a processing time'">Choose a processing time</option>
               @foreach($processingTimes as $pt)
                 <option value="{{ $pt->id }}"
                   @selected(old('processing_time_id',$product->processing_time_id)==$pt->id)>
-                  {{ $pt->name }} — {{ $pt->days }} day{{ $pt->days>1?'s':'' }}
+                  {{ $pt->name }} – {{ $pt->days }} day{{ $pt->days>1?'s':'' }}
                 </option>
               @endforeach
             </select>
