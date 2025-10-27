@@ -919,7 +919,7 @@
             <ul class="list-unstyled mb-4">
               <li class="mb-2"><a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">Reach Us</a></li>
               <li class="text-white-50 mb-1 footer-text">
-                <strong>Email:</strong> <a href="mailto:hello@cetsy.co" class="text-white">hello@cetsy.co</a>
+                <strong>Email:</strong> <a href="mailto:{{ support_email() }}" class="text-white">{{ support_email() }}</a>
               </li>
             </ul>
 

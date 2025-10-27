@@ -24,6 +24,6 @@ Commitment
 • Ongoing innovation, robust support, strong security, fair policies
 
 Join
-• Become part of a global trade community; contact: hello@cetsy.co
+• Become part of a global trade community; contact: {{ support_email() }}
   </pre>
 </section>
