@@ -1684,13 +1684,22 @@ public function shipping(Product $product, Request $request)
 
         // Enforce publish eligibility from settings as well
         if (isset($data['is_active']) && (int)$data['is_active'] === 1) {
+            // Require a featured image
             if (empty($product->featured_image)) {
                 return back()->with('warning', 'Add a featured image before publishing this listing.');
             }
-            if (empty($product->listing_paid_at)) {
+
+            // Check payment + expiry with robust date handling
+            $hasPaid = !empty($product->listing_paid_at);
+            $notExpired = empty($product->next_due_date) || (function() use ($product) {
+                try { return Carbon::parse($product->next_due_date)->isFuture(); }
+                catch (\Exception $e) { return true; }
+            })();
+
+            if (!$hasPaid) {
                 return back()->with('warning', 'Please pay the listing fee before activating this listing.');
             }
-            if (!empty($product->next_due_date) && Carbon::now()->gt($product->next_due_date)) {
+            if (!$notExpired) {
                 return back()->with('warning', 'Your listing has expired — please renew before publishing.');
             }
         }
