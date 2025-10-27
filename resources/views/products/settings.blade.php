@@ -56,6 +56,8 @@
             @php
               $isActive = (int) old('is_active', $product->is_active);
               $hasFeatured = !empty($product->featured_image);
+              // A listing is eligible to activate when it's been paid at least once
+              // and the next due date is either empty or in the future.
               $eligibleToActivate = !empty($product->listing_paid_at)
                                     && (empty($product->next_due_date) || \Carbon\Carbon::parse($product->next_due_date)->isFuture());
               $canToggleOn = $eligibleToActivate && $hasFeatured;
@@ -70,7 +72,8 @@
               @if(!$hasFeatured)
                 Add a featured image to enable activation.
               @endif
-              @if(!$eligibleToActivate)
+              {{-- Only show pay/renew guidance if the listing is not currently active --}}
+              @if($isActive !== 1 && !$eligibleToActivate)
                 @if(empty($product->listing_paid_at))
                   <div class="mt-1">
                     <span>Pay the listing fee to activate.</span>
