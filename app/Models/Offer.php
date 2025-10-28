@@ -222,8 +222,8 @@ class Offer extends Model
             return null;
         }
 
-        // Extract original price from notes
-        preg_match('/Original offer: \$?([\d,]+\.?\d*)/', $this->buyer_notes, $matches);
+        // Extract original price from notes - handles both "$10,000.00" and "USD 10,000.00" formats
+        preg_match('/Original offer: (?:\$|[A-Z]{3})?\s?([\d,]+\.?\d*)/', $this->buyer_notes, $matches);
         if (isset($matches[1])) {
             $originalPrice = str_replace(',', '', $matches[1]);
             return (object) [
