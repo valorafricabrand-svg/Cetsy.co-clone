@@ -398,15 +398,22 @@
                   </a>
                 </li>
               @else
-                @if(auth()->user()->shop)
+                @php
+                  $authUser = auth()->user();
+                  $navShop  = optional($authUser->shop)->name;
+                @endphp
+                @if($authUser->shop)
                   <li class="nav-item d-none d-lg-block">
-                    <a class="nav-link" href="{{ route('seller.shops.show', auth()->user()->shop) }}">My Shop</a>
+                    <a class="nav-link" href="{{ route('seller.shops.show', $authUser->shop) }}">My Shop</a>
                   </li>
                 @endif
 
                 <li class="nav-item dropdown d-none d-lg-block">
-                  <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                    {{ auth()->user()->name }}
+                  <a class="nav-link dropdown-toggle d-flex flex-column align-items-start text-start" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                    <span class="fw-semibold">{{ $navShop ?? $authUser->name }}</span>
+                    @if($navShop)
+                      <span class="small text-muted">{{ $authUser->name }}</span>
+                    @endif
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                     <li><a class="dropdown-item" href="{{ route('dashboard') }}">Dashboard</a></li>
