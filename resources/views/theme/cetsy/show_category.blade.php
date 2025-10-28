@@ -298,6 +298,9 @@
                               ? asset('storage/'.ltrim($firstVideo->url,'/'))
                               : null;
                           }
+                          $styleExtra = (isset($firstVideo) && $firstVideo && (!isset($firstImage) || !$firstImage))
+                            ? 'opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease;'
+                            : '';
                         @endphp
                         @if($hasVideo)
                           <span class="position-absolute top-0 start-0 m-2 px-2 py-1 rounded text-white" style="background:rgba(0,0,0,.7); font-size:.72rem;"><i class="fas fa-play me-1"></i>Video</span>
@@ -306,7 +309,7 @@
                           src="{{ $thumb }}"
                           alt="{{ $item->name }}"
                           class="w-100 h-100"
-                          style="object-fit:cover; @if(isset($firstVideo) && $firstVideo && (!isset($firstImage) || !$firstImage)) opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease; @endif"
+                          style="object-fit:cover; {{ $styleExtra }}"
                           @if($vid) data-video-src="{{ $vid }}" @endif>
                       </div>
                     </a>
