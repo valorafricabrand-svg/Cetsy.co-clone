@@ -25,6 +25,7 @@
   $currency   = get_currency();
   $basePrice  = (float) ($item->price ?? 0);
   $salePrice  = (float) ($item->discounted_price ?? $basePrice);
+  $isService  = (strtolower((string)($item->type ?? '')) === 'service');
 
   // Lowest variation price (only consider variants that actually have a price)
   // Make sure controller eager-loads: with('variations.options', 'media', 'shop', ...)
@@ -124,21 +125,31 @@
     </div>
 
     {{-- Price --}}
-    @if ($hasVariantPricing)
-      {{-- Variant-based listing price: show the lowest as "From" --}}
+    @if ($isService)
+      {{-- Services: always show "Priced From" --}}
       <div class="mb-3">
-        <div class="small text-muted lh-1">From</div>
-        <div class="fw-bold text-success">{{ $formatMoney($lowestVariantPrice) }}</div>
+        <div class="small text-muted lh-1">Priced From</div>
+        <div class="fw-bold text-success">
+          {{ $formatMoney($hasVariantPricing ? $lowestVariantPrice : ($salePrice < $basePrice ? $salePrice : $basePrice)) }}
+        </div>
       </div>
     @else
-      {{-- No variant pricing, use product pricing with discount display if applicable --}}
-      @if ($salePrice < $basePrice)
-        <div class="d-flex align-items-baseline gap-3 mb-3">
-          <span class="fw-bold text-success">{{ $formatMoney($salePrice) }}</span>
-          <span class="text-muted text-decoration-line-through">{{ $formatMoney($basePrice) }}</span>
+      @if ($hasVariantPricing)
+        {{-- Variant-based listing price: show the lowest as "From" --}}
+        <div class="mb-3">
+          <div class="small text-muted lh-1">From</div>
+          <div class="fw-bold text-success">{{ $formatMoney($lowestVariantPrice) }}</div>
         </div>
       @else
-        <p class="fw-bold text-success mb-3">{{ $formatMoney($basePrice) }}</p>
+        {{-- No variant pricing, use product pricing with discount display if applicable --}}
+        @if ($salePrice < $basePrice)
+          <div class="d-flex align-items-baseline gap-3 mb-3">
+            <span class="fw-bold text-success">{{ $formatMoney($salePrice) }}</span>
+            <span class="text-muted text-decoration-line-through">{{ $formatMoney($basePrice) }}</span>
+          </div>
+        @else
+          <p class="fw-bold text-success mb-3">{{ $formatMoney($basePrice) }}</p>
+        @endif
       @endif
     @endif
 

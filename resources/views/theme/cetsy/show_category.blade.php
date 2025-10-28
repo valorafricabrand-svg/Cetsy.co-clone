@@ -287,11 +287,30 @@
                   <div class="col-4 col-md-3 col-lg-2">
                     <a href="{{ route('listing.show', $item->slug) }}" class="d-block rounded overflow-hidden">
                       <div class="ratio ratio-1x1 bg-white position-relative">
-                        @php $hasVideo = (isset($item->media) && method_exists($item->media,'firstWhere') && $item->media->firstWhere('type','video')); @endphp
+                        @php
+                          $hasVideo = (isset($item->media)
+                                       && method_exists($item->media,'firstWhere')
+                                       && $item->media->firstWhere('type','video'));
+                          // Precompute preview video URL for inline data attribute
+                          $vid = null;
+                          if (!isset($firstImage) || !$firstImage) {
+                            $vid = (isset($firstVideo) && $firstVideo && !empty($firstVideo->url))
+                              ? asset('storage/'.ltrim($firstVideo->url,'/'))
+                              : null;
+                          }
+                          $styleExtra = (isset($firstVideo) && $firstVideo && (!isset($firstImage) || !$firstImage))
+                            ? 'opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease;'
+                            : '';
+                        @endphp
                         @if($hasVideo)
                           <span class="position-absolute top-0 start-0 m-2 px-2 py-1 rounded text-white" style="background:rgba(0,0,0,.7); font-size:.72rem;"><i class="fas fa-play me-1"></i>Video</span>
                         @endif
-                        <img src="{{ $thumb }}" alt="{{ $item->name }}" class="w-100 h-100" style="object-fit:cover; @if(isset($firstVideo) && $firstVideo && (!isset($firstImage) || !$firstImage)) opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease; @endif" @if(!isset($firstImage) || !$firstImage) @php($vid = isset($firstVideo)&&$firstVideo?asset('storage/'.ltrim($firstVideo->url,'/')):null) @endif @if(isset($vid) && $vid) data-video-src="{{ $vid }}" @endif>
+                        <img
+                          src="{{ $thumb }}"
+                          alt="{{ $item->name }}"
+                          class="w-100 h-100"
+                          style="object-fit:cover; {{ $styleExtra }}"
+                          @if($vid) data-video-src="{{ $vid }}" @endif>
                       </div>
                     </a>
                   </div>
@@ -316,15 +335,29 @@
                   </div>
 
                   <div class="col-12 col-md-3 col-lg-3 text-md-end">
-                    @if(isset($finalPrice, $basePrice) && is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
-                      <div class="d-flex align-items-baseline gap-2 justify-content-md-end mb-2">
-                        <span class="fw-bold text-success">{{ get_currency() }} {{ number_format($finalPrice, 2) }}</span>
-                        <span class="text-muted text-decoration-line-through">{{ get_currency() }} {{ number_format($basePrice, 2) }}</span>
-                      </div>
-                    @elseif(isset($basePrice))
-                      <div class="h5 mb-2 text-success">{{ get_currency() }} {{ number_format($basePrice, 2) }}</div>
+                    @php
+                      $isService = (strtolower((string)($item->type ?? '')) === 'service');
+                      $lowestVariantPrice = optional($item->variations)->whereNotNull('price')->min('price');
+                    @endphp
+                    @if($isService)
+                      <div class="small text-muted">Priced From</div>
+                      @php $from = $lowestVariantPrice ?? (is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice ? $finalPrice : $basePrice); @endphp
+                      @if(isset($from) && is_numeric($from))
+                        <div class="h5 mb-2 text-success">{{ get_currency() }} {{ number_format($from, 2) }}</div>
+                      @else
+                        <div class="text-muted small mb-2">Contact for price</div>
+                      @endif
                     @else
-                      <div class="text-muted small mb-2">Contact for price</div>
+                      @if(isset($finalPrice, $basePrice) && is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
+                        <div class="d-flex align-items-baseline gap-2 justify-content-md-end mb-2">
+                          <span class="fw-bold text-success">{{ get_currency() }} {{ number_format($finalPrice, 2) }}</span>
+                          <span class="text-muted text-decoration-line-through">{{ get_currency() }} {{ number_format($basePrice, 2) }}</span>
+                        </div>
+                      @elseif(isset($basePrice))
+                        <div class="h5 mb-2 text-success">{{ get_currency() }} {{ number_format($basePrice, 2) }}</div>
+                      @else
+                        <div class="text-muted small mb-2">Contact for price</div>
+                      @endif
                     @endif
 
                     <a href="{{ route('listing.show', $item->slug) }}" class="btn btn-success btn-sm">

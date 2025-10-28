@@ -210,12 +210,14 @@ public function variations() {
         return $this->belongsToMany(Deal::class);
     }
 
-    /** Returns the active deal (site‑wide or for this product) */
+    /** Returns the active deal for this product's shop (site-wide within the shop or specific to this product) */
     public function activeDeal()
     {
         $now = Carbon::now();
         return Deal::where('starts_at', '<=', $now)
                    ->where('ends_at', '>=', $now)
+                   // Important: only consider deals from the same shop
+                   ->where('shop_id', $this->shop_id)
                    ->where(function($q) {
                        $q->where('applies_to_all', true)
                          ->orWhereHas('products', fn($qb) =>

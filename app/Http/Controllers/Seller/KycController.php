@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers\Seller;
 
@@ -15,6 +15,21 @@ use Illuminate\Support\Facades\Log;
 
 class KycController extends Controller
 {
+    private function notifySupportOfSubmission(Kyc $kyc): void
+    {
+        try {
+            $email = (string) (setting('support_email') ?: env('SUPPORT_EMAIL') ?: 'hello@cetsy.co');
+            if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                Mail::to($email)->send(new SupportKycSubmittedMail($kyc));
+            }
+        } catch (\Throwable $mailEx) {
+            Log::warning('Failed to send support KYC submitted email', [
+                'kyc_id'  => $kyc->id,
+                'user_id' => optional($kyc->user)->id,
+                'error'   => $mailEx->getMessage(),
+            ]);
+        }
+    }
     public function show()
     {
         $kyc = auth()->user()->kyc;
@@ -77,11 +92,11 @@ class KycController extends Controller
     // Step 2: Documents - POST (final submit)
     public function postDocuments(Request $request)
     {
-        // Check subscription first
-        if (!auth()->user()->hasActiveSubscription()) {
-            return redirect()->route('seller.subscription')
-                ->with('error', 'Please subscribe first to access KYC verification.');
-        }
+        // Allow KYC submission even if the seller's subscription is inactive.
+        // Rationale: Admins need to review identity documents to onboard or
+        // reâ€‘enable sellers, and tests/routes declare KYC is accessible
+        // without an active subscription. Removing this gate fixes cases
+        // where sellers think they submitted but no record is created.
 
         $step1 = session('kyc.step1');
         if (!$step1) {
@@ -157,15 +172,7 @@ class KycController extends Controller
             }
 
             // Support email
-            try {
-                Mail::to('hello@cetsy.co')->send(new SupportKycSubmittedMail($kyc));
-            } catch (\Throwable $mailEx) {
-                \Log::warning('Failed to send support KYC submitted email', [
-                    'kyc_id' => $kyc->id,
-                    'user_id' => $user->id,
-                    'error' => $mailEx->getMessage(),
-                ]);
-            }
+            $this->notifySupportOfSubmission($kyc);
 
             \DB::commit();
             session()->forget('kyc.step1');
@@ -183,11 +190,7 @@ class KycController extends Controller
 
     public function submit(Request $request)
     {
-        // Check subscription first
-        if (!auth()->user()->hasActiveSubscription()) {
-            return redirect()->route('seller.subscription')
-                ->with('error', 'Please subscribe first to access KYC verification.');
-        }
+        // Allow submission without an active subscription.
 
         // Build validation rules (allow keeping existing files)
         $existingKyc = auth()->user()->kyc;
@@ -265,15 +268,7 @@ class KycController extends Controller
             }
 
             // Notify support via email
-            try {
-                Mail::to('hello@cetsy.co')->send(new SupportKycSubmittedMail($kyc));
-            } catch (\Throwable $mailEx) {
-                \Log::warning('Failed to send support KYC submitted email', [
-                    'kyc_id' => $kyc->id,
-                    'user_id' => $user->id,
-                    'error' => $mailEx->getMessage(),
-                ]);
-            }
+            ->notifySupportOfSubmission(\);
 
             \DB::commit();
             return redirect()->route('seller.kyc')->with('success', 'KYC submitted. We will review your documents soon.');
@@ -394,7 +389,7 @@ class KycController extends Controller
             return back()->with('error', 'No records selected.');
         }
 
-        // authorize – tweak to your role logic
+        // authorize â€“ tweak to your role logic
         if (!auth()->user()->isAdmin()) {
             abort(403);
         }
@@ -468,3 +463,5 @@ class KycController extends Controller
         return back()->with('success', $msg);
     }
 }
+
+

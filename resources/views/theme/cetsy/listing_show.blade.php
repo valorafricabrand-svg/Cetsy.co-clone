@@ -78,26 +78,58 @@
             $isPhysical = ($product->type ?? '') === 'physical';
             $shipProfiles = $product->shippingProfiles ?? collect();
 
-            // Choose a shipping cost to display: default profile's base_rate, otherwise the lowest base_rate
-            $defaultProfile = $defaultShipId
-              ? $shipProfiles->firstWhere('id', (int) $defaultShipId)
-              : null;
+            // New: prefer per-product shipping rows (shipping_profiles table)
+            $rows = \App\Models\ShippingProfile::where('product_id', $product->id)->get();
             $shipCost = null;
-            if ($defaultProfile && isset($defaultProfile->base_rate)) {
-              $shipCost = (float) $defaultProfile->base_rate;
-            } elseif ($shipProfiles->isNotEmpty()) {
-              $shipCost = (float) $shipProfiles->min(fn($sp)=> (float) ($sp->base_rate ?? 0));
+            $pickupAvailable = false;
+
+            if ($rows->isNotEmpty()) {
+              $defaultGroup = optional($rows->firstWhere('is_default', true))->profile_name
+                           ?? optional($rows->first())->profile_name;
+              $groupRows = $defaultGroup ? $rows->where('profile_name', $defaultGroup) : collect();
+
+              if ($groupRows->isNotEmpty()) {
+                $allFree = $groupRows->every(function ($r) {
+                  $type = strtolower((string)($r->charge_type ?? ''));
+                  $base = (float)($r->base_rate ?? 0);
+                  return $type === 'free' || $base <= 0.0;
+                });
+                if ($allFree) {
+                  $shipCost = 0.0;
+                } else {
+                  $min = $groupRows->filter(function ($r) {
+                    $type = strtolower((string)($r->charge_type ?? ''));
+                    return $type !== 'free';
+                  })->min(function ($r) { return (float)($r->base_rate ?? 0); });
+                  if (is_numeric($min)) {
+                    $shipCost = (float)$min;
+                  }
+                }
+              }
+              $pickupAvailable = $rows->contains(function ($r) {
+                return (bool)($r->pickup_available ?? false);
+              });
             }
 
-            // Determine pickup availability; fall back to a DB exists() check if attribute not loaded
-            $pickupAvailable = false;
-            if ($shipProfiles->isNotEmpty() && array_key_exists('pickup_available', $shipProfiles->first()->getAttributes())) {
-              $pickupAvailable = $shipProfiles->contains(fn($sp) => (bool) ($sp->pickup_available ?? false));
-            } else {
-              try {
-                $pickupAvailable = $product->shippingProfiles()->where('pickup_available', true)->exists();
-              } catch (\Throwable $e) {
-                $pickupAvailable = false;
+            // Fallback: legacy pivot-based profiles if no rows computed
+            if (is_null($shipCost)) {
+              $defaultProfile = $defaultShipId
+                ? $shipProfiles->firstWhere('id', (int) $defaultShipId)
+                : null;
+              if ($defaultProfile && isset($defaultProfile->base_rate)) {
+                $shipCost = (float) $defaultProfile->base_rate;
+              } elseif ($shipProfiles->isNotEmpty()) {
+                $shipCost = (float) $shipProfiles->min(fn($sp)=> (float) ($sp->base_rate ?? 0));
+              }
+
+              if ($shipProfiles->isNotEmpty() && array_key_exists('pickup_available', $shipProfiles->first()->getAttributes())) {
+                $pickupAvailable = $pickupAvailable || $shipProfiles->contains(fn($sp) => (bool) ($sp->pickup_available ?? false));
+              } else {
+                try {
+                  $pickupAvailable = $pickupAvailable || $product->shippingProfiles()->where('pickup_available', true)->exists();
+                } catch (\Throwable $e) {
+                  $pickupAvailable = $pickupAvailable || false;
+                }
               }
             }
           @endphp
@@ -143,7 +175,9 @@
     @include('theme.'.theme().'.partials._tabs_nav')
     <div class="tab-content bg-white p-4 border-bottom border-start border-end rounded-bottom-4 shadow-sm">
       @include('theme.'.theme().'.partials._tab_description')
-      @include('theme.'.theme().'.partials._tab_shipping')
+      @if(($product->type ?? '') !== 'service')
+        @include('theme.'.theme().'.partials._tab_shipping')
+      @endif
       @include('theme.'.theme().'.partials._tab_reviews')
       @include('theme.'.theme().'.partials._tab_faq')
     </div>

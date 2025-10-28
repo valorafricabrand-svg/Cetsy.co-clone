@@ -69,8 +69,8 @@ Data may be processed in the U.S. or other locations.
 We may update this policy and will notify if material changes occur.
 
 10. Contact Us
-Contact: hello@cetsy.co (or via provided form).
-
+Contact: {{ support_email() }} (or via provided form).
+  
 Cookie Policy (Summary)
 • Strictly necessary, performance, functionality, and advertising cookies.
 • Third-party cookies may be used.

@@ -46,6 +46,7 @@
     // Shopper wallet balance & ability to cover
     $walletBalance = wallet();
     $canPayWithWallet = $walletBalance >= $rawAmount;
+    $topUpNeeded = max(0, (float)$rawAmount - (float)$walletBalance);
 @endphp
 
 {{-- -------------------------------------------------------------------
@@ -66,12 +67,31 @@
                         </p>
 
                         {{-- Plan and Amount display --}}
-                        <div class="alert alert-info text-center">
-                            <div class="fw-semibold mb-1">{{ $planName }} Plan</div>
-                            <div class="small text-muted mb-2">Duration: {{ $duration }}</div>
-                            <div class="fw-semibold">
-                                Amount: {{ $currency }} {{ number_format($rawAmount, 2) }}
+                        <div class="alert alert-info">
+                            <div class="text-center mb-2">
+                                <div class="fw-semibold">{{ $planName }} Plan</div>
+                                <div class="small text-muted">Duration: {{ $duration }}</div>
                             </div>
+                            <ul class="list-unstyled mb-0">
+                                <li class="d-flex justify-content-between">
+                                    <span>Plan Amount</span>
+                                    <span>{{ $currency }} {{ number_format($rawAmount, 2) }}</span>
+                                </li>
+                                <li class="d-flex justify-content-between">
+                                    <span>Wallet Balance</span>
+                                    <span>{{ $currency }} {{ number_format((float)$walletBalance, 2) }}</span>
+                                </li>
+                                <li class="d-flex justify-content-between fw-semibold">
+                                    <span>Amount Due</span>
+                                    <span class="{{ $canPayWithWallet ? 'text-success' : 'text-danger' }}">{{ $currency }} {{ number_format($rawAmount, 2) }}</span>
+                                </li>
+                                @unless($canPayWithWallet)
+                                    <li class="d-flex justify-content-between">
+                                        <span>Top Up Needed</span>
+                                        <span class="text-danger">{{ $currency }} {{ number_format($topUpNeeded, 2) }}</span>
+                                    </li>
+                                @endunless
+                            </ul>
                         </div>
 
                         {{-- ── 1️⃣  WALLET OPTION ─────────────────────────── --}}

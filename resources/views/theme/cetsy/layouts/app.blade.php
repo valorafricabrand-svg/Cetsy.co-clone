@@ -888,11 +888,11 @@
 
     {{-- Footer --}}
     @php $settings = \App\Models\Setting::first(); @endphp
-    <footer class="bg-dark text-white pt-5 mt-5">
+    <footer class="site-footer bg-dark text-white py-5 mt-5">
       <div class="container px-3 px-sm-5">
-        <div class="row gx-4 gy-5">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 gx-4 gy-5">
           <!-- About (blurb) -->
-          <div class="col-12 col-md-4">
+          <div class="col">
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">About</h4>
             <p class="text-white-50 footer-text mb-0">
               Cetsy is a global marketplace connecting buyers and sellers worldwide, empowering entrepreneurs to list legal products and services with payments, tools, and a community built on trust, discovery, and growth.
@@ -900,7 +900,7 @@
           </div>
 
           <!-- Quick Links -->
-          <div class="col-12 col-md-4">
+          <div class="col">
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Quick Links</h4>
             <ul class="list-unstyled mb-0">
               @foreach([
@@ -913,13 +913,23 @@
             </ul>
           </div>
 
+          <!-- Accounts -->
+          <div class="col">
+            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Accounts</h4>
+            <ul class="list-unstyled mb-0">
+              <li class="mb-2"><a href="{{ route('shops.index') }}" class="footer-link text-white-50 text-decoration-none">Shops</a></li>
+              <li class="mb-2"><a href="{{ route('login') }}" class="footer-link text-white-50 text-decoration-none">Login</a></li>
+              <li class="mb-2"><a href="{{ route('register') }}" class="footer-link text-white-50 text-decoration-none">Register</a></li>
+            </ul>
+          </div>
+
           <!-- Support -->
-          <div class="col-12 col-md-4">
+          <div class="col">
             <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Support</h4>
             <ul class="list-unstyled mb-4">
               <li class="mb-2"><a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">Reach Us</a></li>
               <li class="text-white-50 mb-1 footer-text">
-                <strong>Email:</strong> <a href="mailto:hello@cetsy.co" class="text-white">hello@cetsy.co</a>
+                <strong>Email:</strong> <a href="mailto:{{ support_email() }}" class="text-white">{{ support_email() }}</a>
               </li>
             </ul>
 
@@ -1065,3 +1075,4 @@ s0.parentNode.insertBefore(s1,s0);
 <!--End of Tawk.to Script-->
 </body>
 </html>
+

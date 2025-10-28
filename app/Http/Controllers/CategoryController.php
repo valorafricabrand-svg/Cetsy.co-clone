@@ -203,6 +203,7 @@ public function categoryShow($slug)
 
     // Paginate products under this category or any of its descendants
     $products = \App\Models\Product::whereIn('category_id', $ids->unique()->values())
+        ->where('is_active', 1)
         ->with([
             'media',
             'shop' => function ($q) {

@@ -22,6 +22,50 @@ use Illuminate\Support\Str;
 
 class WalletController extends Controller
 {
+    /**
+     * Decrement inventory for a paid order (idempotent by status).
+     * Only reduces stock for physical products and clamps to 0.
+     */
+    protected function decrementInventoryForOrder(\App\Models\Order $order): void
+    {
+        try {
+            $order->loadMissing('items.product');
+            foreach ($order->items as $item) {
+                $product = $item->product;
+                if (!$product) { continue; }
+                if (strtolower((string)($product->type ?? 'physical')) !== 'physical') { continue; }
+
+                $qty = max(1, (int) ($item->quantity ?? 1));
+
+                // Decrement product stock if tracked
+                if (!is_null($product->stock)) {
+                    $new = max(0, ((int) $product->stock) - $qty);
+                    if ($new !== (int) $product->stock) {
+                        $product->update(['stock' => $new]);
+                    }
+                }
+
+                // Optionally decrement variant stock when present
+                $variantId = (int) ($item->getAttribute('product_variation_id') ?? 0);
+                if ($variantId > 0) {
+                    try {
+                        $variant = \App\Models\Variant::find($variantId);
+                        if ($variant && !is_null($variant->stock)) {
+                            $vnew = max(0, ((int)$variant->stock) - $qty);
+                            if ($vnew !== (int)$variant->stock) {
+                                $variant->update(['stock' => $vnew]);
+                            }
+                        }
+                    } catch (\Throwable $e) { /* ignore variant failures */ }
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('order.inventory.decrement_failed', [
+                'order_id' => $order->id ?? null,
+                'error'    => $e->getMessage(),
+            ]);
+        }
+    }
     /* -------------------------------------------------------------
      | Helpers
      |-------------------------------------------------------------- */
@@ -831,7 +875,7 @@ public function payOrder(Request $request, $id)
 
         if ($order->isPaid()) {
             return redirect()
-                ->route('orders.show', $order->id)
+                ->route('buyer.orders.show', $order->id)
                 ->with('error', 'This order has already been paid.');
         }
 
@@ -876,7 +920,9 @@ public function payOrder(Request $request, $id)
 
         // Mark order as successful if payment record was created
         if ($payment) {
-            $order->status = 'processing';
+            $wasPending = ($order->status === \App\Models\Order::STATUS_PENDING);
+            if ($wasPending) { $this->decrementInventoryForOrder($order); }
+            $order->status = \App\Models\Order::STATUS_PROCESSING;
             $order->save();
         }
 
@@ -960,7 +1006,7 @@ public function payOrder(Request $request, $id)
         }
 
      
-      return redirect()->route('orders.show', $order->id)
+      return redirect()->route('buyer.orders.show', $order->id)
             ->with('success', 'Your payment has been received. Your order is being processed; you will receive a call from our sales team shortly.');
     }
 

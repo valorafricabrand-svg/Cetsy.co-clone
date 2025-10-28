@@ -55,6 +55,7 @@
         'Shop & Settings' => [
             ['route'=>'seller.shop.create','icon'=>'fas fa-store','label'=>'My Shop'],
             ['route'=>'seller.analytics.index','icon'=>'fas fa-chart-line','label'=>'Analytics'],
+            ['route'=>'seller.reports.inventory','icon'=>'fas fa-boxes-stacked','label'=>'Inventory Report'],
             ['route'=>'seller.subscription','icon'=>'fas fa-file-invoice','label'=>'Subscriptions'],
             ['route'=>'seller.kyc','icon'=>'fas fa-id-card','label'=>'KYC'],
         ],

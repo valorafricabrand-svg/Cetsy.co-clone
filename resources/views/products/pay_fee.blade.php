@@ -96,14 +96,19 @@
                     <template x-if="noPaymentDue">
                       <span class="text-success">0.00 {{ $currency }}</span>
                     </template>
-                    <template x-if="!noPaymentDue && canPayFromWallet">
-                      <span class="text-success">0.00 {{ $currency }}</span>
-                    </template>
-                    <template x-if="!noPaymentDue && !canPayFromWallet">
-                      <span class="text-danger"><span x-text="fmt(topUpNeeded)"></span> {{ $currency }}</span>
+                    <template x-if="!noPaymentDue">
+                      <span :class="canPayFromWallet ? 'text-success' : 'text-danger'">
+                        <span x-text="fmt(currentFee)"></span> {{ $currency }}
+                      </span>
                     </template>
                   </span>
                 </li>
+                <template x-if="!noPaymentDue && !canPayFromWallet">
+                  <li class="list-group-item">
+                    <span>Top Up Needed</span>
+                    <span class="amount text-danger"><span x-text="fmt(topUpNeeded)"></span> {{ $currency }}</span>
+                  </li>
+                </template>
               </ul>
             </div>
 

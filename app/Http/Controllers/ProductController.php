@@ -714,6 +714,17 @@ public function listing(string $slug)
         ->whereSlug($slug)
         ->firstOrFail();
 
+    // Public visibility: only active listings are publicly viewable.
+    // Allow owner and admins to view paused/draft via direct link (preview).
+    $isActive = (int)($product->is_active ?? 0) === 1;
+    $viewerId = \Illuminate\Support\Facades\Auth::id();
+    $ownerId  = optional($product->shop)->user_id;
+    $isOwner  = $viewerId && ($viewerId === $ownerId);
+    $isAdmin  = auth()->check() && (bool) (auth()->user()->is_admin ?? false);
+    if (! $isActive && ! ($isOwner || $isAdmin)) {
+        abort(404);
+    }
+
     /* ------------------------------------------------------------
      | 2.  Record a view (logged-in users and guests)
      |------------------------------------------------------------ */
@@ -750,6 +761,7 @@ public function listing(string $slug)
 
     $moreFromShop = $product->shop->products()
         ->where('id','!=',$product->id)
+        ->where('is_active', 1)
         ->latest()
         ->take(8)
         ->get();
@@ -1094,10 +1106,16 @@ public function changeStatus(Request $request, Product $product)
             ->with('warning', 'Add a featured image before publishing this listing.');
     }
 
+    // If trying to publish (1) but no listing payment yet, block
+    if ($data['status'] == 1 && empty($product->listing_paid_at)) {
+        return back()
+            ->with('warning', 'Please pay the listing fee before publishing this listing.');
+    }
+
     // If trying to publish (1) but next_due_date is past, block:
     if ($data['status']==1 && Carbon::now()->gt($product->next_due_date)) {
         return back()
-             ->with('warning', 'Your listing has expired – please renew before publishing.');
+             ->with('warning', 'Your listing has expired — please renew before publishing.');
     }
 
     $product->update(['is_active' => $data['status']]);
@@ -1662,6 +1680,28 @@ public function shipping(Product $product, Request $request)
                 ->map(fn($t) => trim($t))
                 ->filter()
                 ->implode(', ');
+        }
+
+        // Enforce publish eligibility from settings as well
+        if (isset($data['is_active']) && (int)$data['is_active'] === 1) {
+            // Require a featured image
+            if (empty($product->featured_image)) {
+                return back()->with('warning', 'Add a featured image before publishing this listing.');
+            }
+
+            // Check payment + expiry with robust date handling
+            $hasPaid = !empty($product->listing_paid_at);
+            $notExpired = empty($product->next_due_date) || (function() use ($product) {
+                try { return Carbon::parse($product->next_due_date)->isFuture(); }
+                catch (\Exception $e) { return true; }
+            })();
+
+            if (!$hasPaid) {
+                return back()->with('warning', 'Please pay the listing fee before activating this listing.');
+            }
+            if (!$notExpired) {
+                return back()->with('warning', 'Your listing has expired — please renew before publishing.');
+            }
         }
 
         $product->update($data);

@@ -52,15 +52,42 @@
 
         <div class="row g-3">
           <div class="col-md-4">
-            <label class="form-label">Status</label>
-            @php $isActive = (int) old('is_active', $product->is_active); @endphp
-            <select name="is_active" class="form-select @error('is_active') is-invalid @enderror" required>
-              <option value="0" {{ $isActive===0 ? 'selected' : '' }}>Pending</option>
-              <option value="1" {{ $isActive===1 ? 'selected' : '' }}>Active</option>
-              <option value="2" {{ $isActive===2 ? 'selected' : '' }}>Paused</option>
-              <option value="3" {{ $isActive===3 ? 'selected' : '' }}>Suspended</option>
-              <option value="4" {{ $isActive===4 ? 'selected' : '' }}>Closed</option>
-            </select>
+            <label class="form-label">Listing Status</label>
+            @php
+              $isActive = (int) old('is_active', $product->is_active);
+              $hasFeatured = !empty($product->featured_image);
+              // A listing is eligible to activate when it's been paid at least once
+              // and the next due date is either empty or in the future.
+              $eligibleToActivate = !empty($product->listing_paid_at)
+                                    && (empty($product->next_due_date) || \Carbon\Carbon::parse($product->next_due_date)->isFuture());
+              $canToggleOn = $eligibleToActivate && $hasFeatured;
+            @endphp
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="statusToggle"
+                     {{ $isActive===1 ? 'checked' : '' }} {{ $canToggleOn || $isActive===1 ? '' : 'disabled' }}>
+              <label class="form-check-label" for="statusToggle">{{ $isActive===1 ? 'Active' : 'Paused' }}</label>
+            </div>
+            <input type="hidden" name="is_active" id="is_active" value="{{ $isActive===1 ? 1 : 2 }}">
+            <div class="form-text">
+              @if(!$hasFeatured)
+                Add a featured image to enable activation.
+              @endif
+              {{-- Only show pay/renew guidance if the listing is not currently active --}}
+              @if($isActive !== 1 && !$eligibleToActivate)
+                @if(empty($product->listing_paid_at))
+                  <div class="mt-1">
+                    <span>Pay the listing fee to activate.</span>
+                    <form class="d-inline" method="POST" action="{{ route('products.pay-fee', $product) }}">
+                      @csrf
+                      <input type="hidden" name="plan" value="monthly">
+                      <button class="btn btn-link p-0 align-baseline">Pay to activate</button>
+                    </form>
+                  </div>
+                @else
+                  <div class="mt-1">Renew your listing to activate.</div>
+                @endif
+              @endif
+            </div>
             @error('is_active') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
@@ -109,3 +136,15 @@
   </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var cb = document.getElementById('statusToggle');
+    var hidden = document.getElementById('is_active');
+    if(cb && hidden){
+      cb.addEventListener('change', function(){ hidden.value = cb.checked ? 1 : 2; });
+    }
+  });
+  </script>
+@endpush

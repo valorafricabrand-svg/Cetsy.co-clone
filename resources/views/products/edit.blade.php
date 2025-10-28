@@ -94,9 +94,13 @@
 
           {{-- Price & Discount --}}
           <div class="col-md-6">
-            <label for="price" class="form-label fw-semibold">Price ({{ get_currency() }})</label>
+            <label for="price" class="form-label fw-semibold"
+                   x-text="type==='service' ? 'Priced From ({{ get_currency() }})' : 'Price ({{ get_currency() }})'">
+              Price ({{ get_currency() }})
+            </label>
             <input type="number" id="price" name="price" step="0.01" min="0"
                    class="form-control @error('price') is-invalid @enderror"
+                   x-bind:placeholder="type==='service' ? 'Enter starting price' : ''"
                    value="{{ old('price',$product->price) }}" required>
             @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
@@ -138,7 +142,8 @@
 
           {{-- Country --}}
           <div class="col-md-6">
-            <label for="country_id" class="form-label fw-semibold">Country of Origin</label>
+            <label for="country_id" class="form-label fw-semibold"
+                   x-text="type==='service' ? 'Service Area' : 'Country of Origin'">Country of Origin</label>
             <select id="country_id" name="country_id"
                     class="form-select @error('country_id') is-invalid @enderror" required>
               <option value="" disabled>Choose a country</option>
@@ -154,23 +159,47 @@
 
           {{-- Postal Code --}}
           <div class="col-md-6">
-            <label for="origin_postal_code" class="form-label fw-semibold">Origin Postal Code</label>
-            <input type="text" id="origin_postal_code" name="origin_postal_code"
-                   class="form-control @error('origin_postal_code') is-invalid @enderror"
-                   value="{{ old('origin_postal_code',$product->origin_postal_code) }}">
-            @error('origin_postal_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            <template x-if="type!=='service'">
+              <div>
+                <label for="origin_postal_code" class="form-label fw-semibold">Origin Postal Code</label>
+                <input type="text" id="origin_postal_code" name="origin_postal_code"
+                       class="form-control @error('origin_postal_code') is-invalid @enderror"
+                       value="{{ old('origin_postal_code',$product->origin_postal_code) }}">
+                @error('origin_postal_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+              </div>
+            </template>
+            <template x-if="type==='service'">
+              <div>
+                <label class="form-label fw-semibold">State(s)/Region(s)</label>
+                <div class="form-control d-flex flex-wrap gap-2 py-2">
+                  <template x-for="(tag,i) in serviceRegions" :key="i">
+                    <span class="badge bg-primary bg-opacity-10 text-primary">
+                      <span x-text="tag"></span>
+                      <button type="button" class="btn-close btn-close-white ms-1" aria-label="Remove"
+                              style="filter: invert(1); opacity:.6" @click="serviceRegions.splice(i,1)"></button>
+                    </span>
+                  </template>
+                  <input type="text" class="border-0 flex-grow-1" placeholder="Type a region and press Enter"
+                         x-model="serviceRegionInput"
+                         @keydown.enter.prevent="addServiceRegion()"
+                         @keydown.",".prevent="addServiceRegion()">
+                </div>
+                <input type="hidden" name="origin_postal_code" :value="serviceRegions.join(',')">
+                <div class="form-text">Add multiple regions; press Enter after each.</div>
+              </div>
+            </template>
           </div>
 
-          {{-- Processing Time --}}
+          {{-- Processing/Response Time --}}
           <div class="col-md-6">
-            <label for="processing_time_id" class="form-label fw-semibold">Processing Time</label>
+            <label for="processing_time_id" class="form-label fw-semibold" x-text="type==='service' ? 'Response Time (optional)' : 'Processing Time'">Processing Time</label>
             <select id="processing_time_id" name="processing_time_id"
                     class="form-select @error('processing_time_id') is-invalid @enderror">
-              <option value="" disabled>Choose a processing time</option>
+              <option value="" disabled x-text="type==='service' ? 'Choose a Response time' : 'Choose a processing time'">Choose a processing time</option>
               @foreach($processingTimes as $pt)
                 <option value="{{ $pt->id }}"
                   @selected(old('processing_time_id',$product->processing_time_id)==$pt->id)>
-                  {{ $pt->name }} — {{ $pt->days }} day{{ $pt->days>1?'s':'' }}
+                  {{ $pt->name }} – {{ $pt->days }} day{{ $pt->days>1?'s':'' }}
                 </option>
               @endforeach
             </select>
@@ -330,9 +359,17 @@ function listingForm(){
     type: '{{ old('type',$product->type) }}',
     categoryId: '{{ old('category_id',$product->category_id) }}',
     fallback: false,
+    // Regions tags for services
+    serviceRegions: (('{{ old('origin_postal_code',$product->origin_postal_code) }}').split(',').map(s=>s.trim()).filter(Boolean)),
+    serviceRegionInput: '',
     init(){
       this.loadCategories();
       toggleSections();
+    },
+    addServiceRegion(){
+      const t = (this.serviceRegionInput||'').trim();
+      if(!t) return; if(this.serviceRegions.includes(t)) { this.serviceRegionInput=''; return; }
+      this.serviceRegions.push(t); this.serviceRegionInput='';
     },
     async loadCategories(){
       const sel = document.getElementById('category_id');

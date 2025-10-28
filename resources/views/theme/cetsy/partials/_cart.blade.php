@@ -104,7 +104,7 @@
          data-decimals="{{ $__dec }}"
          data-variant-index='@json($variantIndex)'>
       <span class="fw-bold text-success">
-        <span id="js-from-label" class="me-1 small text-muted">From</span>
+        <span id="js-from-label" class="me-1 small text-muted">{{ (($product->type ?? '') === 'service') ? 'Priced From' : 'From' }}</span>
         <span id="js-price-amount">{{ $currency }} {{ $format($defaultDisplayPrice) }}</span>
       </span>
       @if ($discountPercent > 0)
@@ -203,7 +203,7 @@
       <span class="badge bg-secondary">Uncategorised</span>
     @endif
   </p>
-  @if ($product->country)
+  @if ($product->country && (($product->type ?? '') === 'physical'))
     <p class="mb-4 small text-muted">
       <i class="fa-solid fa-globe-africa me-1"></i>
       Ships from {{ $product->country->name }}
