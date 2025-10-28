@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class WalletController extends Controller
 {
@@ -129,6 +130,62 @@ class WalletController extends Controller
         }
 
         return preg_match('/^2547\d{8}$/', $p) ? $p : null;
+    }
+    /**
+     * Return the available listing plan labels.
+     *
+     * @return array<string,string>
+     */
+    protected function listingPlanLabels(): array
+    {
+        return [
+            'monthly'  => 'Monthly',
+            '3months'  => '3-Month',
+            '4months'  => '4-Month',
+            'yearly'   => 'Yearly',
+        ];
+    }
+
+    /**
+     * Resolve the amount and renewal date for a listing plan.
+     *
+     * @return array{plan:string,label:string,amount:float,due:\Carbon\CarbonInterface}
+     */
+    protected function resolveListingPlan(Product $product, string $plan): array
+    {
+        $labels = $this->listingPlanLabels();
+        if (! isset($labels[$plan])) {
+            $plan = '4months';
+        }
+
+        $baseFee     = (float) ($product->category->listing_fee ?? 0);
+        $monthlyBase = $baseFee / 4;
+
+        switch ($plan) {
+            case 'monthly':
+                $amount = $monthlyBase;
+                $nextDue = now()->addMonth();
+                break;
+            case '3months':
+                $amount = $monthlyBase * 3;
+                $nextDue = now()->addMonths(3);
+                break;
+            case 'yearly':
+                $amount = $monthlyBase * 12;
+                $nextDue = now()->addYear();
+                break;
+            default:
+                $amount = $monthlyBase * 4;
+                $nextDue = now()->addMonths(4);
+                break;
+        }
+
+        return [
+            'plan'   => $plan,
+            'label'  => $labels[$plan],
+            'amount' => max($amount, 0),
+            'due'    => $nextDue,
+        ];
     }
 
     /* -------------------------------------------------------------
@@ -706,24 +763,103 @@ public function payListing(Request $request, $id)
     // 1) Fetch the product
     $product = Product::findOrFail($id);
 
-        // 2) Validate plan & via
-        $data = $request->validate([
-            'plan' => ['required', 'in:monthly,4months'],
-            'via'  => ['required', 'in:wallet,paypal'],
+    $validPlans = array_keys($this->listingPlanLabels());
+
+    // 2) Validate plan & via
+    $data = $request->validate([
+        'plan' => ['required', Rule::in($validPlans)],
+        'via'  => ['required', 'in:wallet,paypal'],
+    ]);
+
+    $planDetails = $this->resolveListingPlan($product, $data['plan']);
+    $fee         = $planDetails['amount'];
+    $nextDue     = $planDetails['due'];
+
+    // 4) Set due date; publish only if featured image present
+    $updates = [
+        'listing_paid_at' => now(),
+        'next_due_date'   => $nextDue,
+    ];
+    if (!empty($product->featured_image)) {
+        $updates['is_active'] = true;
+    }
+    $product->update($updates);
+
+    // 5) Build a unique local transaction ID
+    $localTxId = $request->input('transaction_id');
+    if (! $localTxId) {
+        do {
+            $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
+        } while (Payment::where('local_transaction_id', $localTxId)->exists());
+    }
+
+    // 6) If paying via wallet, record a Wallet debit
+    if ($data['via'] === 'wallet') {
+        $currentBalance = Wallet::where('user_id', Auth::id())
+            ->latest('created_at')
+            ->value('balance') ?? 0;
+
+        Wallet::create([
+            'user_id'     => Auth::id(),
+            'credit'      => 0,
+            'debit'       => $fee,
+            'balance'     => $currentBalance - $fee,
+            'reference'   => strtoupper(uniqid('TXN-')),
+            'method'      => 'wallet',
+            'description' => "Listing fee ({$planDetails['plan']})",
         ]);
 
-        // 3) Compute fee & next due date
-        $fourMonthFee = (float) $product->category->listing_fee;
+        Activity::create([
+            'user_id' => Auth::id(),
+            'is_read' => false,
+            'description' => 'You paid for a listing fee of $' . number_format($fee, 2)
+        ]);
+    }
 
-        if ($data['plan'] === 'monthly') {
-            $fee     = $fourMonthFee / 4;
-            $nextDue = now()->addMonth();
-        } else {
-            $fee     = $fourMonthFee;
-            $nextDue = now()->addMonths(4);
+    // 7) Record the Payment
+    Payment::create([
+        'shop_id'              => $product->shop_id,
+        'total_amount'         => $fee,
+        'payment_method'       => $data['via'],
+        'status'               => '3',  // completed
+        'currency'             => $product->currency ?? 'USD',
+        'local_transaction_id' => $localTxId,
+        'payment_name'         => 'listing_fee',
+    ]);
+
+    // 8) Redirect with success
+    return view('products.success_deposit_fee', [
+        'product'   => $product,
+        'plan'      => $planDetails['plan'],
+        'planLabel' => $planDetails['label'],
+        'amount'    => $fee,
+        'nextDue'   => $nextDue,
+    ]);
+}
+public function payListing2(Request $request, $id)
+{
+    $product = Product::findOrFail($id);
+
+    $validPlans = array_keys($this->listingPlanLabels());
+
+    $data = $request->validate([
+        'plan' => ['required', Rule::in($validPlans)],
+        'via'  => ['required', 'in:wallet,paypal'],
+    ]);
+
+    $planDetails = $this->resolveListingPlan($product, $data['plan']);
+    $fee         = $planDetails['amount'];
+    $nextDue     = $planDetails['due'];
+
+    // If paying by wallet, check balance first
+    if ($data['via'] === 'wallet') {
+        $bal = $this->currentBalance(Auth::id());
+        if ($bal < $fee) {
+            return back()->with('error', 'Insufficient wallet balance.');
         }
+    }
 
-        // 4) Set due date; publish only if featured image present
+    DB::transaction(function () use ($product, $nextDue) {
         $updates = [
             'listing_paid_at' => now(),
             'next_due_date'   => $nextDue,
@@ -732,142 +868,48 @@ public function payListing(Request $request, $id)
             $updates['is_active'] = true;
         }
         $product->update($updates);
+    });
 
-        // 5) Build a unique local transaction ID
-        $localTxId = $request->input('transaction_id');
-        if (! $localTxId) {
-            do {
-                $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
-            } while (Payment::where('local_transaction_id', $localTxId)->exists());
-        }
+    // Build unique local tx id
+    $localTxId = $request->input('transaction_id');
+    if (!$localTxId) {
+        do {
+            $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
+        } while (Payment::where('local_transaction_id', $localTxId)->exists());
+    }
 
-        // 6) If paying via wallet, record a Wallet debit
-        if ($data['via'] === 'wallet') {
+    // If via wallet, record debit with running balance
+    if ($data['via'] === 'wallet') {
+        $this->appendWalletRow(Auth::id(), 0, $fee, [
+            'method'      => 'wallet',
+            'description' => "Listing fee ({$planDetails['plan']})",
+        ]);
 
-            $currentBalance = Wallet::where('user_id', Auth::id())
-                ->latest('created_at')
-                ->value('balance') ?? 0;
-
-            $wallet = Wallet::create([
-                'user_id'     => Auth::id(),
-                'credit'      => 0,
-                'debit'       => $fee,
-                'balance'     => $currentBalance - $fee,
-                'reference'   => strtoupper(uniqid('TXN-')),
-                'method'      => 'wallet',
-                'description' => "Listing fee ({$data['plan']})",
-            ]);
-
-        // Create activity record for the seller
         Activity::create([
-            'user_id' => Auth::id(),
-            'is_read' => false,
-            'description' => 'You paid for a listing fee of $' . number_format($fee, 2)
+            'user_id'     => Auth::id(),
+            'is_read'     => false,
+            'description' => 'You paid for a listing fee of $' . number_format($fee, 2),
         ]);
     }
 
-        // 7) Record the Payment
-        Payment::create([
-            'shop_id'              => $product->shop_id,
-            'total_amount'         => $fee,
-            'payment_method'       => $data['via'],
-            'status'               => '3',  // completed
-            'currency'             => $product->currency ?? 'USD',
-            'local_transaction_id' => $localTxId,
-            'payment_name'         => 'listing_fee',
-        ]);
+    Payment::create([
+        'shop_id'              => $product->shop_id,
+        'total_amount'         => $fee,
+        'payment_method'       => $data['via'],
+        'status'               => '3',  // completed
+        'currency'             => $product->currency ?? 'USD',
+        'local_transaction_id' => $localTxId,
+        'payment_name'         => 'listing_fee',
+    ]);
 
-        // 8) Redirect with success
-        return view('products.success_deposit_fee', [
-            'product' => $product,
-            'plan'    => $data['plan'],
-            'amount'  => $fee,
-            'nextDue' => $nextDue,
-        ]);
-    }
-
-    public function payListing2(Request $request, $id)
-    {
-        $product = Product::findOrFail($id);
-
-        $data = $request->validate([
-            'plan' => ['required', 'in:monthly,4months'],
-            'via'  => ['required', 'in:wallet,paypal'],
-        ]);
-
-        $fourMonthFee = (float) $product->category->listing_fee;
-
-        if ($data['plan'] === 'monthly') {
-            $fee     = $fourMonthFee / 4;
-            $nextDue = now()->addMonth();
-        } else {
-            $fee     = $fourMonthFee;
-            $nextDue = now()->addMonths(4);
-        }
-
-        // If paying by wallet, check balance first
-        if ($data['via'] === 'wallet') {
-            $bal = $this->currentBalance(Auth::id());
-            if ($bal < $fee) {
-                return back()->with('error', 'Insufficient wallet balance.');
-            }
-        }
-
-        DB::transaction(function () use ($product, $nextDue) {
-            $updates = [
-                'listing_paid_at' => now(),
-                'next_due_date'   => $nextDue,
-            ];
-            if (!empty($product->featured_image)) {
-                $updates['is_active'] = true;
-            }
-            $product->update($updates);
-        });
-
-        // Build unique local tx id
-        $localTxId = $request->input('transaction_id');
-        if (!$localTxId) {
-            do {
-                $localTxId = 'TRAN_' . time() . Str::upper(Str::random(6));
-            } while (Payment::where('local_transaction_id', $localTxId)->exists());
-        }
-
-        // If via wallet, record debit with running balance
-        if ($data['via'] === 'wallet') {
-            $this->appendWalletRow(Auth::id(), 0, $fee, [
-                'method'      => 'wallet',
-                'description' => "Listing fee ({$data['plan']})",
-            ]);
-
-            Activity::create([
-                'user_id'     => Auth::id(),
-                'is_read'     => false,
-                'description' => 'You paid for a listing fee of $' . number_format($fee, 2),
-            ]);
-        }
-
-        Payment::create([
-            'shop_id'              => $product->shop_id,
-            'total_amount'         => $fee,
-            'payment_method'       => $data['via'],
-            'status'               => '3',  // completed
-            'currency'             => $product->currency ?? 'USD',
-            'local_transaction_id' => $localTxId,
-            'payment_name'         => 'listing_fee',
-        ]);
-
-        return view('products.success_deposit_fee', [
-            'product' => $product,
-            'plan'    => $data['plan'],
-            'amount'  => $fee,
-            'nextDue' => $nextDue,
-        ]);
-    }
-
-    /* -------------------------------------------------------------
-     | Order payments (wallet / mpesa / paypal)
-     |-------------------------------------------------------------- */
-
+    return view('products.success_deposit_fee', [
+        'product'   => $product,
+        'plan'      => $planDetails['plan'],
+        'planLabel' => $planDetails['label'],
+        'amount'    => $fee,
+        'nextDue'   => $nextDue,
+    ]);
+}
 public function payOrder(Request $request, $id)
     {
         // Retrieve the order/invoice
@@ -1011,3 +1053,14 @@ public function payOrder(Request $request, $id)
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
