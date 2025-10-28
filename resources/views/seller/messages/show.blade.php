@@ -14,6 +14,28 @@
                     </div>
                 @endif
 
+                @if($errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Error:</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
+
+                @if(!$product)
+                    <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+                        <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        <strong>No Product Associated</strong>
+                        <p class="mb-0 mt-2">This conversation does not have a product associated with it. You cannot reply to conversations without a specific product. Please ask the customer to contact you from a specific product page.</p>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
+
                 {{-- Header Section --}}
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body p-4">
@@ -131,61 +153,73 @@
                 </div>
 
                 {{-- Reply Form --}}
-                <div class="card shadow-sm border-0 reply-card">
-                    <div class="card-header bg-light">
+                <div class="card shadow-sm border-0 reply-card {{ !$product ? 'opacity-75' : '' }}">
+                    <div class="card-header {{ !$product ? 'bg-secondary' : 'bg-light' }}">
                         <div class="d-flex align-items-center">
-                            <i class="bi bi-reply-fill me-2 text-success"></i>
-                            <h5 class="mb-0">Send Reply</h5>
+                            <i class="bi bi-reply-fill me-2 {{ !$product ? 'text-white' : 'text-success' }}"></i>
+                            <h5 class="mb-0 {{ !$product ? 'text-white' : '' }}">Send Reply</h5>
                         </div>
                     </div>
                     <div class="card-body p-4">
-                        <form method="POST" action="{{ route('seller.messages.reply', $conversationId) }}" id="replyForm">
-                            @csrf
-                            <div class="mb-3">
-                                <label for="message" class="form-label fw-bold">
-                                    <i class="bi bi-pencil me-1"></i>
-                                    Your Message
-                                </label>
-                                <textarea 
-                                    name="message" 
-                                    id="message" 
-                                    class="form-control form-control-lg @error('message') is-invalid @enderror" 
-                                    rows="4" 
-                                    placeholder="Type your professional reply here..." 
-                                    required
-                                    maxlength="2000"
-                                >{{ old('message', request('prefill')) }}</textarea>
-                                <div class="form-text d-flex justify-content-between">
-                                    <span>Be professional and helpful in your response</span>
-                                    <span id="charCount">0/2000</span>
-                                </div>
-                                @error('message')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                        @if(!$product)
+                            <div class="text-center py-4">
+                                <i class="bi bi-lock-fill text-muted mb-3" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mb-2">Reply Form Disabled</h5>
+                                <p class="text-muted mb-0">
+                                    You cannot reply to this conversation because no product is associated with it.
+                                    <br>
+                                    Please ask the customer to start a new conversation from a specific product page.
+                                </p>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="reply-info">
-                                    <div class="d-flex align-items-center text-muted">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        <small>Reply will be sent to {{ $otherUser?->email ?? 'the customer' }}</small>
+                        @else
+                            <form method="POST" action="{{ route('seller.messages.reply', $conversationId) }}" id="replyForm">
+                                @csrf
+                                <div class="mb-3">
+                                    <label for="message" class="form-label fw-bold">
+                                        <i class="bi bi-pencil me-1"></i>
+                                        Your Message
+                                    </label>
+                                    <textarea 
+                                        name="message" 
+                                        id="message" 
+                                        class="form-control form-control-lg @error('message') is-invalid @enderror" 
+                                        rows="4" 
+                                        placeholder="Type your professional reply here..." 
+                                        required
+                                        maxlength="2000"
+                                    >{{ old('message', request('prefill')) }}</textarea>
+                                    <div class="form-text d-flex justify-content-between">
+                                        <span>Be professional and helpful in your response</span>
+                                        <span id="charCount">0/2000</span>
                                     </div>
-                                    <div class="d-flex align-items-center text-muted mt-1">
-                                        <i class="bi bi-clock me-1"></i>
-                                        <small>Customer will receive an email notification</small>
+                                    @error('message')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="reply-info">
+                                        <div class="d-flex align-items-center text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            <small>Reply will be sent to {{ $otherUser?->email ?? 'the customer' }}</small>
+                                        </div>
+                                        <div class="d-flex align-items-center text-muted mt-1">
+                                            <i class="bi bi-clock me-1"></i>
+                                            <small>Customer will receive an email notification</small>
+                                        </div>
+                                    </div>
+                                    <div class="reply-actions">
+                                        <button type="button" class="btn btn-outline-secondary me-2" onclick="clearForm()">
+                                            <i class="bi bi-x-circle me-1"></i>
+                                            Clear
+                                        </button>
+                                        <button type="submit" class="btn btn-success btn-lg px-4" id="sendButton">
+                                            <i class="bi bi-send me-1"></i>
+                                            Send Reply
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="reply-actions">
-                                    <button type="button" class="btn btn-outline-secondary me-2" onclick="clearForm()">
-                                        <i class="bi bi-x-circle me-1"></i>
-                                        Clear
-                                    </button>
-                                    <button type="submit" class="btn btn-success btn-lg px-4" id="sendButton">
-                                        <i class="bi bi-send me-1"></i>
-                                        Send Reply
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
+                            </form>
+                        @endif
                     </div>
                 </div>
 
@@ -326,33 +360,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const charCount = document.getElementById('charCount');
     const sendButton = document.getElementById('sendButton');
     
-    // Character counter
-    textarea.addEventListener('input', function() {
-        const length = this.value.length;
-        charCount.textContent = `${length}/2000`;
+    // Only initialize form elements if they exist (when product is present)
+    if (textarea && charCount && sendButton) {
+        // Character counter
+        textarea.addEventListener('input', function() {
+            const length = this.value.length;
+            charCount.textContent = `${length}/2000`;
+            
+            if (length > 1900) {
+                charCount.style.color = '#dc3545';
+            } else if (length > 1500) {
+                charCount.style.color = '#ffc107';
+            } else {
+                charCount.style.color = '#6c757d';
+            }
+        });
         
-        if (length > 1900) {
-            charCount.style.color = '#dc3545';
-        } else if (length > 1500) {
-            charCount.style.color = '#ffc107';
-        } else {
-            charCount.style.color = '#6c757d';
-        }
-    });
-    
-    // Auto-resize textarea
-    textarea.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 200) + 'px';
-    });
-    
-    // Send on Enter (but allow Shift+Enter for new line)
-    textarea.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendButton.click();
-        }
-    });
+        // Auto-resize textarea
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        });
+        
+        // Send on Enter (but allow Shift+Enter for new line)
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendButton.click();
+            }
+        });
+    }
     
     // Scroll to bottom of conversation
     const container = document.getElementById('conversationContainer');
@@ -362,9 +399,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function clearForm() {
-    document.getElementById('message').value = '';
-    document.getElementById('charCount').textContent = '0/2000';
-    document.getElementById('charCount').style.color = '#6c757d';
+    const messageField = document.getElementById('message');
+    const charCountField = document.getElementById('charCount');
+    if (messageField && charCountField) {
+        messageField.value = '';
+        charCountField.textContent = '0/2000';
+        charCountField.style.color = '#6c757d';
+    }
 }
 </script>
 @endpush
