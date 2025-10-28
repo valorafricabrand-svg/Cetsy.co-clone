@@ -5,6 +5,8 @@
 
     $user = auth()->user();
     $role = $user->isAdmin() ? 'admin' : ($user->isSeller() ? 'seller' : 'buyer');
+    $shopName = $user->isSeller() ? optional($user->shop)->name : null;
+    $displayName = $shopName ?: $user->name;
 
     // Notifications
     if ($user->isAdmin()) {
@@ -262,7 +264,7 @@
             <li class="nav-item dropdown">
                 <a class="nav-link lh-1 pe-0" id="navbarDropdownUser" href="#" role="button" data-bs-toggle="dropdown"
                     aria-haspopup="true" aria-expanded="false">
-                    <span class="fs-8">{{ Auth::user()->name }}</span>
+                    <span class="fs-8">{{ $displayName }}</span>
                     <i class="fas fa-angle-down"></i>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end navbar-dropdown-caret py-0 dropdown-profile shadow border"
@@ -273,7 +275,10 @@
                                 <div class="avatar avatar-xl">
                                     <img class="rounded-circle" src="{{ Auth::user()->get_gravatar(150) }}" alt="" />
                                 </div>
-                                <h6 class="mt-2 text-body-emphasis">{{ Auth::user()->name }} - {{ Auth::user()->id }} </h6>
+                                <h6 class="mt-2 text-body-emphasis mb-0">{{ $displayName }} - {{ Auth::user()->id }}</h6>
+                                @if($shopName)
+                                    <p class="text-muted small mb-0">{{ Auth::user()->name }}</p>
+                                @endif
                             </div>
                         </div>
                         <div class="card-footer p-0 border-top border-translucent">
