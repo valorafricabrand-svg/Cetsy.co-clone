@@ -211,8 +211,7 @@ class Offer extends Model
         }
         
         $history->push($this);
-        // Exclude the current offer when fetching counter offers to avoid duplicates
-        $history = $history->merge($this->counterOffers()->where('id', '!=', $this->id)->orderBy('created_at')->get());
+        $history = $history->merge($this->counterOffers()->orderBy('created_at')->get());
         
         return $history;
     }
