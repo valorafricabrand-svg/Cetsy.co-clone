@@ -1,5 +1,10 @@
 DirectoryIndex index.php
 
 RewriteEngine On 
+
+# Force non-www canonical domain
+RewriteCond %{HTTP_HOST} ^www\.cetsy\.co$ [NC]
+RewriteRule ^(.*)$ https://cetsy.co/$1 [L,R=301]
+
 RewriteRule ^$ public/index.php [L]
 RewriteRule ^((?!public/).*)$ public/$1 [L,NC]
