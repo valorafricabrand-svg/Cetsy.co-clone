@@ -246,9 +246,22 @@ class MessageController extends Controller
         $productId = $parts[0];
         $otherUserId = $parts[1];
         
+        // Check if this is a no-product conversation
+        if ((int)$productId === 0) {
+            return back()->withErrors([
+                'message' => 'Cannot reply to this conversation. No product is associated with this conversation. Please ask the customer to start a new conversation from a specific product page.'
+            ])->withInput();
+        }
+        
         // Validate that the product belongs to the seller's shop
         $product = Product::find($productId);
-        if (!$product || $product->shop_id !== $shop->id) {
+        if (!$product) {
+            return back()->withErrors([
+                'message' => 'Cannot reply to this conversation. The product associated with this conversation no longer exists.'
+            ])->withInput();
+        }
+        
+        if ($product->shop_id !== $shop->id) {
             abort(403, 'You are not authorized to reply to this conversation.');
         }
         
