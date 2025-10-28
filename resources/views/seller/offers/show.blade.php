@@ -150,21 +150,38 @@
                         </div>
                         <div class="card-body">
                             <div class="timeline">
+                                @php
+                                    $lastDisplayedPrice = null;
+                                @endphp
                                 @foreach($offerHistory as $index => $historyOffer)
-                                    <div class="timeline-item {{ $historyOffer->id === $offer->id ? 'active' : '' }}">
-                                        <div class="timeline-marker {{ $historyOffer->id === $offer->id ? 'bg-primary' : 'bg-secondary' }}"></div>
+                                    @php
+                                        // Get the current price for comparison
+                                        $currentPrice = is_object($historyOffer) && isset($historyOffer->offer_price) 
+                                            ? (float) $historyOffer->offer_price 
+                                            : null;
+                                        
+                                        // Skip if this price is the same as the last displayed price
+                                        if ($currentPrice !== null && $lastDisplayedPrice !== null && $currentPrice === $lastDisplayedPrice) {
+                                            continue;
+                                        }
+                                        
+                                        // Update last displayed price
+                                        $lastDisplayedPrice = $currentPrice;
+                                    @endphp
+                                    <div class="timeline-item {{ isset($historyOffer->id) && $historyOffer->id === $offer->id ? 'active' : '' }}">
+                                        <div class="timeline-marker {{ isset($historyOffer->id) && $historyOffer->id === $offer->id ? 'bg-primary' : 'bg-secondary' }}"></div>
                                         <div class="timeline-content">
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div>
                                                     <h6 class="mb-1">
-                                                        {{ $historyOffer->is_counter_offer ? 'Counter Offer' : 'Original Offer' }}
-                                                        @if($historyOffer->id === $offer->id)
+                                                        {{ isset($historyOffer->is_original) && $historyOffer->is_original ? 'Original Offer' : (isset($historyOffer->is_counter_offer) && $historyOffer->is_counter_offer ? 'Counter Offer' : 'Original Offer') }}
+                                                        @if(isset($historyOffer->id) && $historyOffer->id === $offer->id)
                                                             <span class="badge bg-primary ms-2">Current</span>
                                                         @endif
                                                     </h6>
                                                     <p class="mb-1">
-                                                        <strong>{{ $historyOffer->formatted_price }}</strong>
-                                                        @if($historyOffer->is_counter_offer && $historyOffer->originalOffer)
+                                                        <strong>{{ isset($historyOffer->formatted_price) ? $historyOffer->formatted_price : (shop_currency() . ' ' . number_format($historyOffer->offer_price, 2)) }}</strong>
+                                                        @if(isset($historyOffer->is_counter_offer) && $historyOffer->is_counter_offer && isset($historyOffer->originalOffer) && $historyOffer->originalOffer)
                                                             @php
                                                                 $diff = $historyOffer->getPriceDifference();
                                                                 $diffPercent = $historyOffer->getPriceDifferencePercentage();
@@ -177,9 +194,9 @@
                                                     </p>
                                                     <small class="text-muted">{{ $historyOffer->created_at->format('d M Y, H:i') }}</small>
                                                 </div>
-                                                <span class="badge {{ $historyOffer->status_badge_class }}">{{ $historyOffer->status_label }}</span>
+                                                <span class="badge {{ isset($historyOffer->status_badge_class) ? $historyOffer->status_badge_class : 'bg-secondary' }}">{{ isset($historyOffer->status_label) ? $historyOffer->status_label : $historyOffer->status }}</span>
                                             </div>
-                                            @if($historyOffer->seller_notes)
+                                            @if(isset($historyOffer->seller_notes) && $historyOffer->seller_notes)
                                                 <div class="mt-2 p-2 bg-light rounded">
                                                     <small class="text-muted">Seller Notes:</small><br>
                                                     <small>{{ $historyOffer->seller_notes }}</small>
