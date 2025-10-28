@@ -514,8 +514,14 @@
                   : 0;
               } catch (\Throwable $e) { $msgCount = 0; }
             @endphp
+            @php
+              $uShopName = optional($u->shop)->name;
+            @endphp
             <div class="mb-3">
-              <div class="fw-semibold mb-2">Hi, {{ $u->name }}</div>
+              <div class="fw-semibold mb-1">Hi, {{ $uShopName ?? $u->name }}</div>
+              @if($uShopName)
+                <div class="text-muted small mb-2">{{ $u->name }}</div>
+              @endif
               <div class="list-group list-group-flush">
                 <a href="{{ route('dashboard') }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
                   <i class="fas fa-gauge"></i>
