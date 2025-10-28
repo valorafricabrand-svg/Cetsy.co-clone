@@ -255,7 +255,34 @@
       @endif
 
       {{-- Listing Fee / Renewal / Suspension Prompt --}}
-      @php use Carbon\Carbon; @endphp
+      @php
+        use Carbon\Carbon;
+
+        $baseFee      = (float) ($product->category?->listing_fee ?? 0);
+        $monthlyBase  = $baseFee / 4;
+        $planButtons  = [
+          'monthly' => [
+            'label' => 'Monthly',
+            'class' => 'btn-outline-success',
+            'amount' => max($monthlyBase, 0),
+          ],
+          '3months' => [
+            'label' => '3-Month',
+            'class' => 'btn-outline-primary',
+            'amount' => max($monthlyBase * 3, 0),
+          ],
+          '4months' => [
+            'label' => '4-Month',
+            'class' => 'btn-success',
+            'amount' => max($monthlyBase * 4, 0),
+          ],
+          'yearly' => [
+            'label' => 'Yearly',
+            'class' => 'btn-outline-dark',
+            'amount' => max($monthlyBase * 12, 0),
+          ],
+        ];
+      @endphp
 
       @if($product->is_active === 3)
         {{-- Suspended --}}
@@ -273,28 +300,19 @@
             Your subscription expired on {{ Carbon::parse($product->next_due_date)->format('M d, Y') }}. Renew below to reactivate your listing.
           </div>
 
-          @php
-              $baseFee    = $product->category?->listing_fee ?? 0;
-              $monthlyFee = $baseFee / 3;
-          @endphp
+          @php $actionPrefix = 'Renew'; @endphp
 
-          <div class="d-flex gap-2 mb-4">
-            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
-              @csrf
-              <input type="hidden" name="plan" value="monthly">
-              <button class="btn btn-outline-success">
-                Renew Monthly<br>
-                <small>{{ money($monthlyFee) }}</small>
-              </button>
-            </form>
-            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
-              @csrf
-              <input type="hidden" name="plan" value="4months">
-              <button class="btn btn-success">
-                Renew 4-Month<br>
-                <small>{{ money($baseFee) }}</small>
-              </button>
-            </form>
+          <div class="d-flex flex-wrap gap-2 mb-4">
+            @foreach($planButtons as $planKey => $option)
+              <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+                @csrf
+                <input type="hidden" name="plan" value="{{ $planKey }}">
+                <button class="btn {{ $option['class'] }}">
+                  {{ $actionPrefix }} {{ $option['label'] }}<br>
+                  <small>{{ money($option['amount']) }}</small>
+                </button>
+              </form>
+            @endforeach
           </div>
         @else
           {{-- Paused but not yet due --}}
@@ -311,28 +329,19 @@
           This listing isn’t live yet. Pay the fee below to activate it.
         </div>
 
-        @php
-            $baseFee    = $product->category?->listing_fee ?? 0;
-            $monthlyFee = $baseFee / 3;
-        @endphp
+        @php $actionPrefix = 'Pay'; @endphp
 
-        <div class="d-flex gap-2 mb-4">
-          <form method="POST" action="{{ route('products.pay-fee', $product) }}">
-            @csrf
-            <input type="hidden" name="plan" value="monthly">
-            <button class="btn btn-outline-success">
-              Pay Monthly<br>
-              <small>{{ money($monthlyFee) }}</small>
-            </button>
-          </form>
-          <form method="POST" action="{{ route('products.pay-fee', $product) }}">
-            @csrf
-            <input type="hidden" name="plan" value="4months">
-            <button class="btn btn-success">
-              Pay 4-Month<br>
-              <small>{{ money($baseFee) }}</small>
-            </button>
-          </form>
+        <div class="d-flex flex-wrap gap-2 mb-4">
+          @foreach($planButtons as $planKey => $option)
+            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+              @csrf
+              <input type="hidden" name="plan" value="{{ $planKey }}">
+              <button class="btn {{ $option['class'] }}">
+                {{ $actionPrefix }} {{ $option['label'] }}<br>
+                <small>{{ money($option['amount']) }}</small>
+              </button>
+            </form>
+          @endforeach
         </div>
       @endif
 

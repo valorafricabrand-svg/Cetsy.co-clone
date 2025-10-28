@@ -9,7 +9,7 @@
       <h4 class="mb-0 text-white">Payment Received!</h4>
     </div>
     <div class="card-body">
-      <p>Your <strong>{{ ucfirst($plan) }}</strong> plan payment of 
+      <p>Your <strong>{{ $planLabel ?? ucfirst($plan) }}</strong> plan payment of 
          <strong>{{ $product->currency }}{{ number_format($amount,2) }}</strong> 
          has been successfully processed.
       </p>

@@ -966,18 +966,48 @@ public function listings(Request $request)
 // In your controller:
 public function payFee(Request $request, Product $product)
 {
+    $validPlans = ['monthly', '3months', '4months', 'yearly'];
 
-   
-    $request->validate([
-        'plan' => ['required','in:monthly,4months'],
+    $validated = $request->validate([
+        'plan' => ['required', Rule::in($validPlans)],
     ]);
-    // … compute $fee, $label, $due …
+
+    $baseFee     = (float) ($product->category->listing_fee ?? 0);
+    $monthlyBase = $baseFee / 4;
+
+    $plans = [
+        'monthly' => [
+            'label'  => 'Monthly',
+            'months' => 1,
+            'amount' => max($monthlyBase, 0),
+        ],
+        '3months' => [
+            'label'  => '3-Month',
+            'months' => 3,
+            'amount' => max($monthlyBase * 3, 0),
+        ],
+        '4months' => [
+            'label'  => '4-Month',
+            'months' => 4,
+            'amount' => max($monthlyBase * 4, 0),
+        ],
+        'yearly' => [
+            'label'  => 'Yearly',
+            'months' => 12,
+            'amount' => max($monthlyBase * 12, 0),
+        ],
+    ];
+
+    $selectedPlan = $validated['plan'];
+    if (! isset($plans[$selectedPlan])) {
+        $selectedPlan = array_key_first($plans);
+    }
+
     return view('products.pay_fee', [
-        'order'        => $product,
-        'plan'         => $request->plan,      // pass it here
-        'fourMonthFee' => $product->category->listing_fee,
-        'monthlyFee'   => $product->category->listing_fee / 3,
-        'walletBalance'=> auth()->check() ? wallet() : 0,
+        'order'         => $product,
+        'plan'          => $selectedPlan,
+        'plans'         => $plans,
+        'walletBalance' => auth()->check() ? wallet() : 0,
     ]);
 }
 
@@ -995,19 +1025,40 @@ public function successDeposit(Request $request, $id)
 
     // 2) Validate the plan
     $plan = $request->input('plan', '4months');
-    if (! in_array($plan, ['monthly','4months'])) {
+    $planLabels = [
+        'monthly'  => 'Monthly',
+        '3months'  => '3-Month',
+        '4months'  => '4-Month',
+        'yearly'   => 'Yearly',
+    ];
+    if (! array_key_exists($plan, $planLabels)) {
         $plan = '4months';
     }
 
     // 3) Compute fee & next due date
-    $fourMonthFee = (float) $product->category->listing_fee;
-    if ($plan === 'monthly') {
-        $fee     = $fourMonthFee / 4;
-        $nextDue = now()->addMonth();
-    } else {
-        $fee     = $fourMonthFee;
-        $nextDue = now()->addMonths(4);
+    $baseFee     = (float) ($product->category->listing_fee ?? 0);
+    $monthlyBase = $baseFee / 4;
+
+    switch ($plan) {
+        case 'monthly':
+            $fee     = $monthlyBase;
+            $nextDue = now()->addMonth();
+            break;
+        case '3months':
+            $fee     = $monthlyBase * 3;
+            $nextDue = now()->addMonths(3);
+            break;
+        case 'yearly':
+            $fee     = $monthlyBase * 12;
+            $nextDue = now()->addYear();
+            break;
+        default:
+            $fee     = $monthlyBase * 4;
+            $nextDue = now()->addMonths(4);
+            break;
     }
+
+    $fee = max($fee, 0);
 
     // 4) Activate the product and set due date
     $product->update([
@@ -1040,10 +1091,11 @@ public function successDeposit(Request $request, $id)
 
     // 8) Show a dedicated success page
     return view('products.success_deposit_fee', [
-        'product' => $product,
-        'plan'    => $plan,
-        'amount'  => $fee,
-        'nextDue' => $nextDue,
+        'product'   => $product,
+        'plan'      => $plan,
+        'planLabel' => $planLabels[$plan] ?? ucfirst($plan),
+        'amount'    => $fee,
+        'nextDue'   => $nextDue,
     ]);
 }
 
@@ -1721,3 +1773,6 @@ public function shipping(Product $product, Request $request)
     }
 
 }
+
+
+

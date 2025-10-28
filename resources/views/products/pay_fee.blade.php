@@ -1,29 +1,38 @@
-{{-- resources/views/listings/checkout.blade.php --}}
+{{-- resources/views/products/pay_fee.blade.php --}}
 @extends('layouts.app')
-@section('title','Process Payment')
-
-
+@section('title', 'Process Payment')
 
 @php
   // ------- Inputs -------
-  $currency        = $order->currency ?? 'USD';
-  $fourMonthFeeRaw = (float) ($order->category?->listing_fee ?? 0);   // base for 4 months
+  $currency      = $order->currency ?? 'USD';
+  $zeroDecimal   = ['BIF','CLP','DJF','GNF','JPY','KMF','KRW','MGA','PYG','RWF','UGX','VND','VUV','XAF','XOF','XPF'];
+  $isZeroDecimal = in_array($currency, $zeroDecimal, true);
 
-  // Currencies without minor units (for formatting)
-  $zeroDecimal     = ['BIF','CLP','DJF','GNF','JPY','KMF','KRW','MGA','PYG','RWF','UGX','VND','VUV','XAF','XOF','XPF'];
-  $isZeroDecimal   = in_array($currency, $zeroDecimal, true);
+  // Normalize the plan configuration coming from the controller
+  $planConfig = [];
+  foreach (($plans ?? []) as $planKey => $config) {
+    $rawAmount = (float) ($config['amount'] ?? 0);
+    $amount    = $isZeroDecimal ? (float) round($rawAmount) : (float) round($rawAmount, 2);
 
-  // Round values consistently for the UI
-  $fourMonthFee    = $isZeroDecimal ? (float) round($fourMonthFeeRaw) : (float) round($fourMonthFeeRaw, 2);
-  $monthlyFee      = $isZeroDecimal ? (float) round($fourMonthFee / 4) : (float) round($fourMonthFee / 4, 2);
+    $planConfig[$planKey] = [
+      'label' => $config['label'] ?? ucfirst(str_replace('_', ' ', $planKey)),
+      'amount'=> $amount,
+    ];
+  }
 
-  // Wallet balance (from helper) — clamp negatives to 0 for safety/visibility
-  $walletBalanceRaw = wallet();
+  $planKeys    = array_keys($planConfig);
+  $initialPlan = $plan ?? ($planKeys[0] ?? null);
+  if (! in_array($initialPlan, $planKeys, true)) {
+    $initialPlan = $planKeys[0] ?? null;
+  }
+
+  $initialFee = ($initialPlan && isset($planConfig[$initialPlan]))
+    ? (float) $planConfig[$initialPlan]['amount']
+    : 0.0;
+
+  // Wallet balance (from helper/controller) - clamp negatives to 0 for safety/visibility
+  $walletBalanceRaw = $walletBalance ?? (function_exists('wallet') ? wallet() : 0);
   $walletBalance    = max(0, (float) ($walletBalanceRaw ?? 0));
-
-  // Initial plan & fee (so we can safely server-hide wallet button before JS)
-  $initialPlan = $plan ?? 'monthly';
-  $initialFee  = $initialPlan === 'monthly' ? $monthlyFee : $fourMonthFee;
 
   // Server-side gate: should the wallet button be visible on first render?
   $showWalletFormInitial = ($walletBalance > 0) && ($initialFee > 0) && ($walletBalance >= $initialFee);
@@ -46,37 +55,40 @@
           <div class="text-center mb-3">
             <div class="badge-dot success subtle mb-2">Secure Checkout</div>
             <h1 class="h3 headline mb-1">Complete Your Payment</h1>
-            <p class="subtle mb-0">We’ll use your wallet to pay for the listing.</p>
+            <p class="subtle mb-0">We'll use your wallet to pay for the listing.</p>
           </div>
 
           <div
             x-data="checkoutPlans({
               currency: @js($currency),
-              monthly : @js($monthlyFee),
-              four    : @js($fourMonthFee),
-              wallet  : @js($walletBalance),    // already clamped to 0
-              initial : @js($initialPlan),
-              zeroDec : @js($isZeroDecimal),
-              orderId : @js($order->id),
+              plans: @js($planConfig),
+              wallet: @js($walletBalance),
+              initial: @js($initialPlan),
+              zeroDec: @js($isZeroDecimal),
+              orderId: @js($order->id),
               depositUrl: @js($depositUrl),
             })"
             x-init="init()"
             x-cloak
           >
             {{-- PLAN SELECTOR --}}
-            <div class="plan-toggle d-flex justify-content-center gap-3 mb-4">
-              <button type="button" class="btn" :class="{ 'active': plan==='monthly' }" @click="setPlan('monthly')">
-                <div class="fw-semibold">Monthly</div>
-                <small class="subtle">
-                  <span x-text="fmt(monthly)"></span> {{ $currency }}
-                </small>
-              </button>
-              <button type="button" class="btn" :class="{ 'active': plan==='4months' }" @click="setPlan('4months')">
-                <div class="fw-semibold">4-Month</div>
-                <small class="subtle">
-                  <span x-text="fmt(four)"></span> {{ $currency }}
-                </small>
-              </button>
+            <div class="plan-toggle d-flex justify-content-center gap-3 mb-4" x-show="hasPlans">
+              <template x-for="([key, details], index) in planEntries" :key="key">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  :class="{ 'active btn-secondary text-white border-0': plan === key }"
+                  @click="setPlan(key)"
+                >
+                  <div class="fw-semibold" x-text="details.label || key"></div>
+                  <small class="subtle">
+                    <span x-text="fmt(details.amount)"></span> {{ $currency }}
+                  </small>
+                </button>
+              </template>
+            </div>
+            <div x-show="!hasPlans" class="alert alert-warning mt-3">
+              No listing plans are currently available for this category. Please contact support.
             </div>
 
             {{-- BREAKDOWN --}}
@@ -135,7 +147,7 @@
               {{-- If nothing to pay at all (free/comp) --}}
               <div x-show="noPaymentDue" class="alert subtle mt-3" style="background:rgba(148,163,184,.12);">
                 <strong class="d-block mb-1" style="color:var(--ink)">No payment due</strong>
-                <span>Your selected plan doesn’t require a payment right now.</span>
+                <span>Your selected plan does not require a payment right now.</span>
               </div>
 
               {{-- If wallet is 0 or insufficient: show Top Up Wallet CTA only --}}
@@ -144,7 +156,7 @@
                   Top Up Wallet
                 </a>
                 <small class="d-block subtle mt-2">
-                  You’ll be redirected to the wallet deposit page to add
+                  You will be redirected to the wallet deposit page to add
                   <strong><span x-text="fmt(topUpNeeded)"></span> {{ $currency }}</strong>.
                 </small>
               </div>
@@ -165,48 +177,66 @@
 @endsection
 
 @section('scripts')
-
 <script>
-function checkoutPlans(cfg){
+function checkoutPlans(cfg) {
   return {
     currency: cfg.currency,
-    monthly : Number(cfg.monthly || 0),
-    four    : Number(cfg.four || 0),
-    wallet  : Number(cfg.wallet || 0), // server already clamps negatives to 0
-    zeroDec : !!cfg.zeroDec,
-    plan    : cfg.initial ?? 'monthly',
-    orderId : cfg.orderId,
+    plans: cfg.plans || {},
+    wallet: Number(cfg.wallet || 0),
+    zeroDec: !!cfg.zeroDec,
+    plan: cfg.initial && cfg.plans && cfg.plans[cfg.initial] ? cfg.initial : null,
     depositUrl: cfg.depositUrl,
+    orderId: cfg.orderId,
 
-    get currentFee(){ return this.plan === 'monthly' ? this.monthly : this.four; },
-    get planLabel(){ return this.plan === 'monthly' ? 'Monthly' : '4-Month'; },
-
-    // Wallet button must be hidden when wallet <= 0 OR wallet < fee
-    get canPayFromWallet(){
-      return (this.wallet > 0) && (this.currentFee > 0) && (this.wallet >= this.currentFee);
+    get planEntries() {
+      return Object.entries(this.plans || {});
     },
 
-    // Nothing to pay (e.g., fee is 0)
-    get noPaymentDue(){ return this.currentFee <= 0.000001; },
+    get hasPlans() {
+      return this.planEntries.length > 0;
+    },
 
-    get topUpNeeded(){ return Math.max(0, this.currentFee - this.wallet); },
+    get currentDetails() {
+      if (!this.plan || !this.plans[this.plan]) {
+        return { amount: 0, label: '' };
+      }
+      return this.plans[this.plan];
+    },
 
-    fmt(n){
-      const v = Number(n || 0);
+    get currentFee() {
+      return Number(this.currentDetails.amount || 0);
+    },
+
+    get planLabel() {
+      return this.currentDetails.label || (this.plan ?? '');
+    },
+
+    get canPayFromWallet() {
+      return this.hasPlans && this.wallet > 0 && this.currentFee > 0 && this.wallet >= this.currentFee;
+    },
+
+    get noPaymentDue() {
+      return !this.hasPlans || this.currentFee <= 0.000001;
+    },
+
+    get topUpNeeded() {
+      return Math.max(0, this.currentFee - this.wallet);
+    },
+
+    fmt(value) {
+      const v = Number(value || 0);
       return this.zeroDec ? String(Math.round(v)) : v.toFixed(2);
     },
 
-    setPlan(p){
-      this.plan = p;
-      // Also toggle server-hidden form in case Alpine wasn't initialized yet
-      const form = document.getElementById('wallet-pay-form');
-      if(form){
-        if(this.canPayFromWallet){ form.classList.remove('d-none'); }
-        else{ form.classList.add('d-none'); }
+    setPlan(key) {
+      if (!this.plans[key]) {
+        return;
       }
+      this.plan = key;
+      this.syncForm();
     },
 
-    buildDepositUrl(){
+    buildDepositUrl() {
       const amt = this.zeroDec ? Math.round(this.topUpNeeded) : this.topUpNeeded.toFixed(2);
       const u = new URL(this.depositUrl, window.location.origin);
       u.searchParams.set('amount', amt);
@@ -214,15 +244,24 @@ function checkoutPlans(cfg){
       return u.toString();
     },
 
-    init(){
-      // Ensure correct initial visibility even if Alpine loads after DOM paint
+    syncForm() {
       const form = document.getElementById('wallet-pay-form');
-      if(form){
-        if(this.canPayFromWallet){ form.classList.remove('d-none'); }
-        else{ form.classList.add('d-none'); }
+      if (form) {
+        if (this.canPayFromWallet) {
+          form.classList.remove('d-none');
+        } else {
+          form.classList.add('d-none');
+        }
       }
-    }
-  }
+    },
+
+    init() {
+      if (!this.plan && this.hasPlans) {
+        this.plan = this.planEntries[0][0];
+      }
+      this.syncForm();
+    },
+  };
 }
 </script>
 @endsection
