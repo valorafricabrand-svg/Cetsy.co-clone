@@ -232,11 +232,30 @@
                 <div class="col-4 col-md-3 col-lg-2">
                   <a href="{{ route('listing.show', $item->slug) }}" class="d-block rounded overflow-hidden">
                     <div class="ratio ratio-1x1 bg-white position-relative">
-                      @php $hasVideo = (isset($item->media) && method_exists($item->media,'firstWhere') && $item->media->firstWhere('type','video')); @endphp
+                      @php
+                        $hasVideo = (isset($item->media)
+                                     && method_exists($item->media,'firstWhere')
+                                     && $item->media->firstWhere('type','video'));
+                        $vid = null;
+                        if (!isset($firstImage) || !$firstImage) {
+                          $vid = (isset($firstVideo) && $firstVideo && !empty($firstVideo->url))
+                            ? asset('storage/'.ltrim($firstVideo->url,'/'))
+                            : null;
+                        }
+                        $styleExtra = (isset($firstVideo) && $firstVideo && (!isset($firstImage) || !$firstImage))
+                          ? 'opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease;'
+                          : '';
+                      @endphp
                       @if($hasVideo)
                         <span class="position-absolute top-0 start-0 m-2 px-2 py-1 rounded text-white" style="background:rgba(0,0,0,.7); font-size:.72rem;"><i class="fas fa-play me-1"></i>Video</span>
                       @endif
-                      <img src="{{ $thumb }}" alt="{{ $item->name }}" class="img-fluid w-100 h-100" loading="lazy" decoding="async" style="object-fit:cover; @if(isset($firstVideo) && $firstVideo && (!isset($firstImage) || !$firstImage)) opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease; @endif" @if(!isset($firstImage) || !$firstImage) @php($vid = isset($firstVideo)&&$firstVideo?asset('storage/'.ltrim($firstVideo->url,'/')):null) @endif @if(isset($vid) && $vid) data-video-src="{{ $vid }}" @endif>
+                      <img
+                        src="{{ $thumb }}"
+                        alt="{{ $item->name }}"
+                        class="img-fluid w-100 h-100"
+                        loading="lazy" decoding="async"
+                        style="object-fit:cover; {{ $styleExtra }}"
+                        @if($vid) data-video-src="{{ $vid }}" @endif>
                     </div>
                   </a>
                 </div>
