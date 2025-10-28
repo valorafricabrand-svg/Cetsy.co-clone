@@ -271,7 +271,7 @@
                                 <dt class="col-6">Offer Price</dt>
                                 <dd class="col-6 fw-bold text-success">{{ $offer->formatted_price }}</dd>
                                 
-                                @if($offer->product->price)
+                                @if($offer->product->price && $offer->product->price > 0)
                                     @php
                                         $discount = (($offer->product->price - $offer->offer_price) / $offer->product->price) * 100;
                                     @endphp
