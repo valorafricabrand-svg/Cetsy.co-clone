@@ -185,6 +185,9 @@
           @forelse ($products as $item)
             <div class="col-6 col-md-4 col-lg-3">
               @include('theme.'.theme().'.partials.product-card', ['item' => $item])
+              @if(($item->type ?? '') === 'physical' && (int)($item->stock ?? 0) === 1 && ($item->is_reserved ?? false))
+                <div class="mt-2 small text-danger">Reserved in another pending order</div>
+              @endif
             </div>
           @empty
             <div class="col-12 text-center text-muted py-5 empty-spot">

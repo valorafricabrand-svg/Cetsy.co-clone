@@ -68,6 +68,9 @@
 
           {{-- Add to Cart --}}
           @include('theme.'.theme().'.partials._cart')
+          @if(($product->type ?? '') === 'physical' && (int)($product->stock ?? 0) === 1 && ($product->is_reserved ?? false))
+            <div class="alert alert-warning mt-3">This item is reserved in another pending order and cannot be purchased right now.</div>
+          @endif
 
           {{-- Shipping Summary --}}
           @php

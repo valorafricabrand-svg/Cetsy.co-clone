@@ -22,6 +22,13 @@
       $isOutOfStock = $isPhysical && (!is_null($product->stock)) && ((int)$product->stock < 1);
   }
 
+  // Reservation rule: if physical, stock==1, and has pending unpaid order item, treat as unavailable
+  try {
+      if ($isPhysical && (int)($product->stock ?? 0) === 1 && ($product->is_reserved ?? false)) {
+          $isOutOfStock = true;
+      }
+  } catch (\Throwable $e) { /* ignore */ }
+
   // Build a compact index: variant-combination key -> {id, price, options:[ids]}
   // Only include variants that have a price.
   $variantIndex = [];
@@ -280,10 +287,10 @@
 
           {{-- Override destination just for this button --}}
           <button type="submit"
-                   class="btn btn-primary btn-lg"
-                   id="js-buy-now"
-                   formaction="{{ route('cart.buy') }}"
-                   {{ $isOutOfStock ? 'disabled' : 'disabled' }}>
+                    class="btn btn-primary btn-lg"
+                    id="js-buy-now"
+                    formaction="{{ route('cart.buy') }}"
+                    {{ $isOutOfStock ? 'disabled' : 'disabled' }}>
             <i class="fa-solid fa-bolt me-1"></i>
             <span class="js-buy-label">{{ $isOutOfStock ? 'Out of Stock' : 'Select options' }}</span>
           </button>
@@ -588,7 +595,6 @@
   }
 </script>
 @endpush
-
 
 
 

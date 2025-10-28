@@ -281,7 +281,10 @@
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
       @forelse($services as $item)
         <div class="col-6 col-md-3 col-lg-3 reveal">
-          @include('theme.'.theme().'.partials.product-card', ['item' => $item])
+              @include('theme.'.theme().'.partials.product-card', ['item' => $item])
+              @if(($item->type ?? '') === 'physical' && (int)($item->stock ?? 0) === 1 && ($item->is_reserved ?? false))
+                <div class="mt-2 small text-danger">Reserved in another pending order</div>
+              @endif
         </div>
       @empty
         <p class="col-12 text-center text-muted fs-5 fw-medium">No services available.</p>
@@ -458,5 +461,4 @@
 </section>
 
 @endsection
-
 

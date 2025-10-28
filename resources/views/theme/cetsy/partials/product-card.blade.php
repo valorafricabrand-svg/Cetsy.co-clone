@@ -50,6 +50,12 @@
 
   {{-- Thumbnail --}}
   <div class="ratio ratio-1x1 rounded-top overflow-hidden product-thumb">
+    @php
+      $isReserved = (($item->type ?? '') === 'physical') && (int)($item->stock ?? 0) === 1 && (($item->is_reserved ?? false));
+    @endphp
+    @if($isReserved)
+      <span class="position-absolute top-0 end-0 m-1 badge bg-danger">Reserved</span>
+    @endif
     
 @php
       // Build a safe thumbnail: prefer featured image, else first image media, else shop logo/placeholder.
