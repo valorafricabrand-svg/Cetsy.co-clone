@@ -888,7 +888,7 @@
 
     {{-- Footer --}}
     @php $settings = \App\Models\Setting::first(); @endphp
-    <footer class="bg-dark text-white pt-5 mt-5">
+    <footer class="site-footer bg-dark text-white py-5 mt-5">
       <div class="container px-3 px-sm-5">
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 gx-4 gy-5">
           <!-- About (blurb) -->
@@ -1075,3 +1075,4 @@ s0.parentNode.insertBefore(s1,s0);
 <!--End of Tawk.to Script-->
 </body>
 </html>
+
