@@ -236,6 +236,12 @@ class CartController extends Controller
                 'product_id' => 'This product is no longer available.',
             ]);
         }
+        // Reservation rule: for single-quantity physical items reserved by a pending unpaid order, block purchase
+        if ((($product->type ?? null) === 'physical') && (int)($product->stock ?? 0) === 1 && ($product->is_reserved ?? false)) {
+            throw ValidationException::withMessages([
+                'quantity' => 'This item is currently reserved by another pending order.',
+            ]);
+        }
         $qty = max(1, (int) ($data['quantity'] ?? 1));
         $profiles   = $this->profilesForProduct($product->id); // ?o. strict per-product
         $defaultId  = collect($profiles)->firstWhere('is_default', true)['id']

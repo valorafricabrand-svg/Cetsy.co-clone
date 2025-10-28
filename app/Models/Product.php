@@ -70,6 +70,31 @@ class Product extends Model
     ];
 
     /**
+     * Determine if the product should be considered reserved:
+     * - Only for physical products with stock exactly 1
+     * - There exists a pending order item referencing this product (unpaid)
+     */
+    public function getIsReservedAttribute(): bool
+    {
+        try {
+            if (($this->type ?? null) !== 'physical') return false;
+            $stock = (int) ($this->stock ?? 0);
+            if ($stock !== 1) return false;
+
+            return \App\Models\OrderItem::where('product_id', $this->id)
+                ->whereHas('order', function ($q) {
+                    $q->where('status', \App\Models\Order::STATUS_PENDING)
+                      ->whereDoesntHave('payments', function($pq){
+                          $pq->where('paymentStatus', 3); // successful
+                      });
+                })
+                ->exists();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
      * A product belongs to a shop.
      */
     public function shop()
