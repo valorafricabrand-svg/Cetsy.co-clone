@@ -101,12 +101,15 @@ class MediaController extends Controller
     /**
      * Delete a product media image.
      */
-    public function destroy(Media $media)
+    public function destroy(Request $request, Media $media)
     {
         $product = $media->product;
         $before  = $product ? $product->media()->count() : null;
-        Storage::disk('public')->delete($media->url);
+        $filePath = $media->url;
+
+        Storage::disk('public')->delete($filePath);
         $media->delete();
+
         try {
             if ($product) {
                 $after = $product->media()->count();
@@ -120,12 +123,25 @@ class MediaController extends Controller
                     'properties'   => [
                         'section' => 'media',
                         'action'  => 'delete',
-                        'file'    => $media->url,
+                        'file'    => $filePath,
                         'counters'=> ['media' => ['from' => $before, 'to' => $after]],
                     ],
                 ]);
             }
-        } catch (\Throwable $e) { Log::error('media.activity.delete_failed', ['media_id' => $media->id, 'error' => $e->getMessage()]); }
+        } catch (\Throwable $e) {
+            Log::error('media.activity.delete_failed', [
+                'media_id' => $media->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success'   => true,
+                'removed'   => 1,
+                'remaining' => $product ? $product->media()->count() : 0,
+            ]);
+        }
 
         return back()->with('success', 'Media deleted successfully.');
     }
@@ -145,11 +161,23 @@ class MediaController extends Controller
         $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
 
         if (empty($ids)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Select at least one media item to delete.',
+                ], 422);
+            }
             return back()->withErrors('Select at least one media item to delete.');
         }
 
         $mediaItems = $product->media()->whereIn('id', $ids)->get();
         if ($mediaItems->isEmpty()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No matching media found for bulk delete.',
+                ], 404);
+            }
             return back()->withErrors('No matching media found for bulk delete.');
         }
 
@@ -187,6 +215,14 @@ class MediaController extends Controller
 
         $count = count($deletedFiles);
         $message = $count === 1 ? '1 media item deleted.' : "{$count} media items deleted.";
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success'   => true,
+                'removed'   => $count,
+                'remaining' => $product->media()->count(),
+            ]);
+        }
 
         return back()->with('success', $message);
     }
