@@ -46,6 +46,16 @@
       ? \App\Models\Product::whereIn('id', $productIds)->pluck('type','id')->toArray()
       : [];
 
+  $shippingCalculator = static function ($baseRate, $additionalRate, $quantity) {
+      $quantity = max(0, (int) $quantity);
+      if ($quantity < 1) {
+          return 0.0;
+      }
+      $base       = (float) $baseRate;
+      $additional = (float) $additionalRate;
+      return $base + max($quantity - 1, 0) * $additional;
+  };
+
   // Helper to read the selected profile snapshot from session (for PHYSICAL only)
   $getSelectedProfile = function(array $row) {
       $profiles = collect($row['shipping_profiles'] ?? []);
@@ -55,14 +65,14 @@
           $selected = $profiles->first();
       }
       // Always return a consistent array shape
-      return $selected ?: ['name' => 'Standard', 'base_rate' => 0];
+      return $selected ?: ['name' => 'Standard', 'base_rate' => 0, 'additional_rate' => 0];
   };
 
   // Subtotal (products only)
   $subtotal = collect($cart)->sum(fn($i) => ((float)($i['price'] ?? 0)) * (int)($i['quantity'] ?? 1));
 
   // Shipping total: zero for digital rows, selected profile * qty for physical rows
-  $totalShipping = collect($cart)->sum(function($i) use ($getSelectedProfile, $productTypes) {
+  $totalShipping = collect($cart)->sum(function($i) use ($getSelectedProfile, $productTypes, $shippingCalculator) {
       $qty  = (int)($i['quantity'] ?? 1);
       $pid  = (int)($i['product_id'] ?? 0);
       $type = $i['product_type'] ?? ($productTypes[$pid] ?? null); // prefer cart snapshot if ever stored
@@ -71,7 +81,9 @@
       if ($isDigital) return 0.0;
 
       $prof = $getSelectedProfile($i);
-      return (float)($prof['base_rate'] ?? 0) * $qty;
+      $baseRate = (float)($prof['base_rate'] ?? 0);
+      $addRate  = (float)($prof['additional_rate'] ?? 0);
+      return $shippingCalculator($baseRate, $addRate, $qty);
   });
 
   $grandTotal = $subtotal + $totalShipping;
@@ -276,8 +288,11 @@
                   $isDigital = ($type === 'digital');
 
                   // Physical: use selected shipping profile snapshot; Digital: rate=0 and show "No shipping"
-                  $prof  = $isDigital ? ['name' => 'No shipping (digital)', 'base_rate' => 0] : $getSelectedProfile($row);
-                  $rate  = (float)($prof['base_rate'] ?? 0);
+                  $prof  = $isDigital ? ['name' => 'No shipping (digital)', 'base_rate' => 0, 'additional_rate' => 0] : $getSelectedProfile($row);
+                  $baseRate  = $isDigital ? 0.0 : (float)($prof['base_rate'] ?? 0);
+                  $addRate   = $isDigital ? 0.0 : (float)($prof['additional_rate'] ?? 0);
+                  $shipTotal = $isDigital ? 0.0 : $shippingCalculator($baseRate, $addRate, $qty);
+                  $lineTotal = ($unit * $qty) + $shipTotal;
 
                   // Label (match cart/index formatting) — only meaningful for physical
                   if ($isDigital) {
@@ -302,11 +317,11 @@
                       <small class="text-muted">{{ $row['variation_summary'] }}</small><br>
                     @endif
                     <small>
-                      {{ $label }} ({{ $currency }} {{ number_format($rate,2) }})
+                      {{ $label }} ({{ $currency }} {{ number_format($shipTotal,2) }})
                     </small>
                     <div class="mt-1">× {{ $qty }}</div>
                   </div>
-                  <div>{{ $currency }} {{ number_format(($unit + $rate) * $qty,2) }}</div>
+                  <div>{{ $currency }} {{ number_format($lineTotal,2) }}</div>
                 </li>
               @endforeach
             </ul>
@@ -374,3 +389,8 @@
   </div>
 </div>
 @endsection
+
+
+
+
+
