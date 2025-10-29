@@ -212,10 +212,20 @@ public function storeOrder(Request $request)
 
     $validated = $request->validate($rules);
 
-    $cart = $request->session()->get('cart', []);
-    if (empty($cart)) {
-        return back()->withErrors(['cart' => 'Your cart is empty.']);
-    }
+      $cart = $request->session()->get('cart', []);
+      if (empty($cart)) {
+          return back()->withErrors(['cart' => 'Your cart is empty.']);
+      }
+
+      $computeShipping = static function ($baseRate, $additionalRate, $quantity) {
+          $quantity = max(0, (int) $quantity);
+          if ($quantity < 1) {
+              return 0.0;
+          }
+          $base       = (float) $baseRate;
+          $additional = (float) $additionalRate;
+          return $base + max($quantity - 1, 0) * $additional;
+      };
 
     try {
         DB::beginTransaction();
@@ -288,22 +298,26 @@ public function storeOrder(Request $request)
                 $selected = $profiles->firstWhere('is_default', true) ?: $profiles->first();
             }
             // If still nothing (no profiles), treat as zero-rate
-            $unitShip = (float)($selected['base_rate'] ?? 0);
-            $selProfId = $selected['id'] ?? null;
+              $baseRate = (float)($selected['base_rate'] ?? 0);
+              $additionalRate = (float)($selected['additional_rate'] ?? 0);
+              $shipTotal = $computeShipping($baseRate, $additionalRate, $qty);
+              $selProfId = $selected['id'] ?? null;
 
-            // Accumulate for this shop
-            $itemsByShop[$product->shop_id][] = [
-                'row_id'            => $rowId,
+              // Accumulate for this shop
+              $itemsByShop[$product->shop_id][] = [
+                  'row_id'            => $rowId,
                 'product'           => $product,
                 'variation_summary' => $variationSummary,
                 'variant_id'        => $variantId,
                 'quantity'          => $qty,
                 'unit_price'        => $unitPrice,
-                'profiles'          => $profiles->values()->all(), // keep snapshot for traceability
-                'selected_profile'  => $selected,
-                'selected_profile_id' => $selProfId,
-                'unit_shipping'     => $unitShip,
-            ];
+                  'profiles'          => $profiles->values()->all(), // keep snapshot for traceability
+                  'selected_profile'  => $selected,
+                  'selected_profile_id' => $selProfId,
+                  'base_shipping_rate'       => $baseRate,
+                  'additional_shipping_rate' => $additionalRate,
+                  'shipping_total'           => $shipTotal,
+              ];
         }
 
         if (empty($itemsByShop)) {
@@ -318,9 +332,9 @@ public function storeOrder(Request $request)
             $shopSubtotal  = 0.0;
             $shopShipTotal = 0.0;
 
-            foreach ($rows as $r) {
-                $lineSub  = $r['unit_price']   * $r['quantity'];
-                $lineShip = $r['unit_shipping'] * $r['quantity'];
+              foreach ($rows as $r) {
+                  $lineSub  = $r['unit_price']   * $r['quantity'];
+                  $lineShip = (float)($r['shipping_total'] ?? 0.0);
 
                 $shopSubtotal  += $lineSub;
                 $shopShipTotal += $lineShip;
@@ -385,8 +399,8 @@ public function storeOrder(Request $request)
                 $orderItem->variation_summary   = $r['variation_summary']; // store plain text summary
                 $orderItem->quantity            = (int)$r['quantity'];
                 $orderItem->price               = (float)$r['unit_price'];
-                $orderItem->shipping_profile_id = $r['selected_profile_id']; // can be null
-                $orderItem->shipping_cost       = (float)($r['unit_shipping'] * $r['quantity']);
+                  $orderItem->shipping_profile_id = $r['selected_profile_id']; // can be null
+                  $orderItem->shipping_cost       = (float)($r['shipping_total'] ?? 0.0);
                 $orderItem->save();
 
                 // Optional: decrement stock here if you manage inventory on checkout

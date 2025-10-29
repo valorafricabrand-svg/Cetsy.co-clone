@@ -218,6 +218,7 @@ class CartController extends Controller
                 'id'                 => (int)$p->id,
                 'name'               => $p->name,
                 'base_rate'          => (float)$p->base_rate,
+                'additional_rate'    => (float)$p->additional_rate,
                 'is_default'         => (bool)$p->is_default,
                 'dest_location_type' => $p->dest_location_type,               // e.g. 'everywhere_else'
                 'dest_country_name'  => optional($p->destCountry)->name,      // safe string or null

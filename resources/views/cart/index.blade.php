@@ -30,6 +30,15 @@
       $productTypes = $productIds
         ? \App\Models\Product::whereIn('id', $productIds)->pluck('type','id')->toArray()
         : [];
+      $shippingCalculator = static function ($baseRate, $additionalRate, $quantity) {
+        $quantity = max(0, (int) $quantity);
+        if ($quantity < 1) {
+          return 0.0;
+        }
+        $base       = (float) $baseRate;
+        $additional = (float) $additionalRate;
+        return $base + max($quantity - 1, 0) * $additional;
+      };
     @endphp
     @if($cart === [])
       <div class="text-center py-5">
@@ -64,8 +73,10 @@
               $selectedId = (int)($item['selected_shipping_profile_id'] ?? 0);
               // Rate is zero for digital items (hidden UI), otherwise selected profile's base_rate
               $selected   = $profilesC->firstWhere('id', $selectedId);
-              $rate       = $isDigital ? 0.0 : (float)($selected['base_rate'] ?? 0.0);
-              $lineTotal  = ($unitPrice + $rate) * $qty;
+              $baseRate   = $isDigital ? 0.0 : (float)($selected['base_rate'] ?? 0.0);
+              $addRate    = $isDigital ? 0.0 : (float)($selected['additional_rate'] ?? 0.0);
+              $shipTotal  = $isDigital ? 0.0 : $shippingCalculator($baseRate, $addRate, $qty);
+              $lineTotal  = ($unitPrice * $qty) + $shipTotal;
               $photoUrl   = $item['photo'] ?? null; // absolute URL already stored by controller
             @endphp
             <tr
@@ -134,6 +145,7 @@
                         <option
                           value="{{ $p['id'] }}"
                           data-base-rate="{{ (float)$p['base_rate'] }}"
+                          data-additional-rate="{{ (float)($p['additional_rate'] ?? 0) }}"
                           @selected((int)$p['id'] === $selectedId)
                         >
                           {{ $label }} ({{ $currency }} {{ number_format((float)$p['base_rate'],2) }})
@@ -177,7 +189,7 @@
           </tbody>
           <tfoot class="table-light">
             @php
-              $grand = collect($cart)->sum(function($i) use ($productTypes) {
+              $grand = collect($cart)->sum(function($i) use ($productTypes, $shippingCalculator) {
                 $qty   = (int)($i['quantity'] ?? 1);
                 $unit  = (float)($i['price'] ?? 0);
                 $typeFromCart = $i['product_type'] ?? null;
@@ -185,8 +197,11 @@
                 $isDigital    = ($typeFromCart ?? $typeFromDb) === 'digital';
                 $profiles = collect($i['shipping_profiles'] ?? []);
                 $selId    = (int)($i['selected_shipping_profile_id'] ?? 0);
-                $rate     = $isDigital ? 0.0 : (float) optional($profiles->firstWhere('id',$selId))['base_rate'] ?? 0.0;
-                return ($unit + $rate) * $qty;
+                $selected = $profiles->firstWhere('id',$selId);
+                $baseRate = $isDigital ? 0.0 : (float)($selected['base_rate'] ?? 0.0);
+                $addRate  = $isDigital ? 0.0 : (float)($selected['additional_rate'] ?? 0.0);
+                $shipping = $isDigital ? 0.0 : $shippingCalculator($baseRate, $addRate, $qty);
+                return ($unit * $qty) + $shipping;
               });
             @endphp
             <tr>
@@ -209,8 +224,10 @@
             $profilesC  = collect($item['shipping_profiles'] ?? []);
             $selectedId = (int)($item['selected_shipping_profile_id'] ?? 0);
             $selected   = $profilesC->firstWhere('id', $selectedId);
-            $rate       = $isDigital ? 0.0 : (float)($selected['base_rate'] ?? 0.0);
-            $lineTotal  = ($unitPrice + $rate) * $qty;
+            $baseRate   = $isDigital ? 0.0 : (float)($selected['base_rate'] ?? 0.0);
+            $addRate    = $isDigital ? 0.0 : (float)($selected['additional_rate'] ?? 0.0);
+            $shipTotal  = $isDigital ? 0.0 : $shippingCalculator($baseRate, $addRate, $qty);
+            $lineTotal  = ($unitPrice * $qty) + $shipTotal;
             $photoUrl   = $item['photo'] ?? null;
           @endphp
           <div class="card shadow-sm mb-3"
@@ -264,11 +281,12 @@
                               $minD = (int)($p['processing_min_days'] ?? 0);
                               $maxD = (int)($p['processing_max_days'] ?? 0);
                             @endphp
-                            <option value="{{ $p['id'] }}"
-                                    data-base-rate="{{ (float)($p['base_rate'] ?? 0) }}"
-                                    data-proc-min="{{ $minD }}"
-                                    data-proc-max="{{ $maxD }}"
-                                    @selected($selectedId === (int)$p['id'])>
+                              <option value="{{ $p['id'] }}"
+                                     data-base-rate="{{ (float)($p['base_rate'] ?? 0) }}"
+                                     data-additional-rate="{{ (float)($p['additional_rate'] ?? 0) }}"
+                                     data-proc-min="{{ $minD }}"
+                                     data-proc-max="{{ $maxD }}"
+                                     @selected($selectedId === (int)$p['id'])>
                               {{ $p['name'] ?? 'Shipping' }} ({{ $currency }} {{ number_format((float)($p['base_rate'] ?? 0),2) }})
                             </option>
                           @endforeach
@@ -359,16 +377,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const flash = document.getElementById('flash-container');
   function money(n){ return cur+' '+(+n).toFixed(2); }
   function getRow(el){ return el.closest('[data-row-id]'); }
-  function rowTotal($row){
-    const unit      = +$row.dataset.unitPrice;
-    const qty       = +$row.dataset.quantity;
-    const isDigital = ($row.dataset.isDigital === '1');
-    let rate = 0;
-    if (!isDigital) {
-      const sel = $row.querySelector('.js-shipping-select');
-      rate = sel && sel.selectedOptions.length ? +(sel.selectedOptions[0].dataset.baseRate || 0) : 0;
+  function shippingTotal($row, qty) {
+    if (!$row || qty <= 0) {
+      return 0;
     }
-    return (unit + rate) * qty;
+    const sel = $row.querySelector('.js-shipping-select');
+    if (!sel || !sel.selectedOptions.length) {
+      return 0;
+    }
+    const opt        = sel.selectedOptions[0];
+    const base       = Number(opt.dataset.baseRate || 0);
+    const additional = Number(opt.dataset.additionalRate || 0);
+    return base + Math.max(qty - 1, 0) * additional;
+  }
+  function rowTotal($row){
+    const unit = Number($row.dataset.unitPrice || 0);
+    const qty  = parseInt($row.dataset.quantity || '0', 10) || 0;
+    const isDigital = ($row.dataset.isDigital === '1');
+    const shipping = isDigital ? 0 : shippingTotal($row, qty);
+    return (unit * qty) + shipping;
   }
   function refreshRow($row){
     const lt = $row.querySelector('.line-total');
