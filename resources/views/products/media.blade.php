@@ -79,24 +79,26 @@
             <span x-text="selectedExisting.length && selectedExisting.length === existingIds.length ? 'Clear Selection' : 'Select All'"></span>
           </button>
           <span class="text-muted small" x-show="selectedExisting.length" x-text="`${selectedExisting.length} selected`"></span>
-          <form action="{{ route('media.bulk-destroy', $product) }}"
-                method="POST"
-                x-ref="bulkDeleteForm"
-                class="d-inline">
-            @csrf
-            @method('DELETE')
-            <div x-ref="bulkDeleteContainer"></div>
-            <button type="button"
-                    class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2"
-                    :disabled="selectedExisting.length === 0"
-                    @click="submitBulkDelete">
-              <i class="fas fa-trash"></i>
-              <span>Delete Selected</span>
-              <span class="badge bg-danger bg-opacity-10 text-danger"
-                    x-show="selectedExisting.length"
-                    x-text="selectedExisting.length"></span>
-            </button>
-          </form>
+          <button type="button"
+                  class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2"
+                  :disabled="selectedExisting.length === 0 || deletingExisting"
+                  @click="confirmBulkDelete()">
+            <template x-if="!deletingExisting">
+              <span class="d-flex align-items-center gap-2">
+                <i class="fas fa-trash"></i>
+                <span>Delete Selected</span>
+                <span class="badge bg-danger bg-opacity-10 text-danger"
+                      x-show="selectedExisting.length"
+                      x-text="selectedExisting.length"></span>
+              </span>
+            </template>
+            <template x-if="deletingExisting">
+              <span class="d-flex align-items-center gap-2">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <span>Deleting...</span>
+              </span>
+            </template>
+          </button>
         </div>
       @endif
     </div>
@@ -145,13 +147,13 @@
                   @endif
 
                   {{-- Delete --}}
-                  <form action="{{ route('media.destroy', $media) }}"
-                        method="POST"
-                        class="d-inline"
-                        onsubmit="return confirm('Remove media?')">
-                    @csrf @method('DELETE')
-                    <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                  </form>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            :disabled="deletingExisting"
+                            @click.prevent="confirmDeleteExisting({{ $media->id }})"
+                            title="Delete media">
+                      <i class="fas fa-trash"></i>
+                    </button>
                 </div>
               </div>
             </div>
@@ -203,7 +205,7 @@
           <i class="bi bi-cloud-arrow-up fs-2 d-block mb-2"></i>
           Drag & drop images or videos here or click to browse
         </p>
-        <small class="text-muted">Images up to 5MB • Videos up to 50MB</small>
+        <small class="text-muted">Images up to 5MB - Videos up to 50MB</small>
       </div>
 
       {{-- Previews --}}
@@ -324,11 +326,15 @@ function mediaPage(config = {}){
     ? config.existingIds.map(id => Number(id))
     : [];
   return {
-    // Upload (new images)
-    items: [], dragging:false,
-    // Existing media selection
-    existingIds: normalizedExisting,
-    selectedExisting: [],
+      // Upload (new images)
+      items: [], dragging:false,
+      // Existing media selection & deletion
+      existingIds: normalizedExisting,
+      selectedExisting: [],
+      deletingExisting:false,
+      deleteUrlBase: '{{ url('media') }}',
+      bulkDeleteUrl: '{{ route('media.bulk-destroy', $product) }}',
+      csrfToken: '{{ csrf_token() }}',
     // Crop
     cropper:null, cropModal:null, cropSaving:false,
     activeRatio: NaN, quality: 92, dimText:'',
@@ -553,30 +559,86 @@ function mediaPage(config = {}){
       // Normal form submit proceeds.
     },
 
-    submitBulkDelete(){
-      if(this.selectedExisting.length === 0) return;
-      if(!confirm(`Delete ${this.selectedExisting.length} selected media item${this.selectedExisting.length === 1 ? '' : 's'}?`)){
-        return;
-      }
-      this.updateBulkField();
-      if(this.$refs.bulkDeleteForm){
-        this.$refs.bulkDeleteForm.submit();
-      }
-    },
+    confirmDeleteExisting(id){
+        if(this.deletingExisting) return;
+        if(!confirm('Delete this media item?')) return;
+        this.performDelete([id], false);
+      },
 
-    updateBulkField(){
-      const holder = this.$refs && this.$refs.bulkDeleteContainer;
-      if(!holder) return;
-      holder.innerHTML = '';
-      this.selectedExisting.forEach(id => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'media_ids[]';
-        input.value = id;
-        holder.appendChild(input);
-      });
-    },
+      confirmBulkDelete(){
+        if(this.deletingExisting || this.selectedExisting.length === 0) return;
+        const count = this.selectedExisting.length;
+        const label = count === 1 ? 'this media item' : `${count} media items`;
+        if(!confirm(`Delete ${label}?`)) return;
+        this.performDelete(this.selectedExisting, true);
+      },
+
+      async performDelete(ids, forceBulk = false){
+        const uniqueIds = Array.from(new Set((ids || []).map(id => Number(id)).filter(Number.isFinite)));
+        if(!uniqueIds.length) return;
+        this.deletingExisting = true;
+        try{
+          if(forceBulk || uniqueIds.length > 1){
+            const res = await fetch(this.bulkDeleteUrl, {
+              method:'DELETE',
+              headers:{
+                'X-CSRF-TOKEN': this.csrfToken,
+                'Content-Type':'application/json',
+                'Accept':'application/json'
+              },
+              body: JSON.stringify({media_ids: uniqueIds})
+            });
+            if(!res.ok) throw new Error(await res.text());
+          } else {
+            const res = await fetch(`${this.deleteUrlBase}/${uniqueIds[0]}`, {
+              method:'DELETE',
+              headers:{
+                'X-CSRF-TOKEN': this.csrfToken,
+                'Accept':'application/json'
+              }
+            });
+            if(!res.ok) throw new Error(await res.text());
+          }
+
+          const stringIds = uniqueIds.map(String);
+          let removed = 0;
+          stringIds.forEach(id => {
+            const node = document.querySelector(`[data-media-id=\"${id}\"]`);
+            if(node){
+              node.remove();
+              removed++;
+            }
+          });
+
+          if(removed){
+            this.existingIds = this.existingIds
+              .filter(id => !uniqueIds.includes(Number(id)))
+              .map(id => Number(id));
+          }
+
+          this.selectedExisting = this.selectedExisting
+            .filter(id => !uniqueIds.includes(Number(id)))
+            .map(id => Number(id));
+
+          if(this.existingIds.length === 0){
+            this.selectedExisting = [];
+          }
+        }catch(error){
+          console.error(error);
+          alert('Failed to delete media. Please try again.');
+        }finally{
+          this.deletingExisting = false;
+        }
+      },
   }
 }
 </script>
 @endpush
+
+
+
+
+
+
+
+
