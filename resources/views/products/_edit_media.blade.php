@@ -27,21 +27,53 @@
   .ratio-chip.active, .ratio-chip:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
   .progress-mini{height:4px;background:#e9ecef;border-radius:2px;overflow:hidden}
   .progress-mini > div{height:100%;background:var(--accent);width:0;transition:width .2s}
+  [x-cloak]{display:none!important;}
 </style>
 @endpush
 
 {{-- This wrapper now controls both existing-image cropping and new-image uploads --}}
 <div x-data="modernUploader()" x-init="init()">
 
-  {{-- ─── Current Media (with Crop button) ─── --}}
+  {{-- ------------------ Current Media (with Crop button) ------------------ --}}
   <div class="card mb-4 shadow-sm">
     <div class="card-header bg-light"><h5>Current Media</h5></div>
     <div class="card-body">
       @if($product->media->count())
-        <div class="row g-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3" x-show="existingCount > 0">
+          <div class="small text-muted" x-cloak x-text="selectedExisting.length ? `${selectedExisting.length} selected` : ''"></div>
+          <div class="ms-auto">
+            <button type="button"
+                    class="btn btn-outline-danger btn-sm d-inline-flex align-items-center"
+                    x-cloak
+                    x-show="selectedExisting.length"
+                    :disabled="deletingExisting"
+                    @click="confirmBulkDelete()">
+              <template x-if="!deletingExisting">
+                <span><i class="fas fa-trash me-1"></i>Delete selected</span>
+              </template>
+              <template x-if="deletingExisting">
+                <span class="d-inline-flex align-items-center">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Deleting...
+                </span>
+              </template>
+            </button>
+          </div>
+        </div>
+        <div class="row g-3" x-show="existingCount > 0">
           @foreach($product->media as $media)
-            <div class="col-6 col-sm-4 col-md-3">
-              <div class="card">
+            <div class="col-6 col-sm-4 col-md-3" data-media-id="{{ $media->id }}">
+              <div class="card position-relative h-100"
+                   :class="selectedExisting.includes('{{ (string) $media->id }}') ? 'border-danger border-2 shadow' : ''">
+                <div class="position-absolute top-0 start-0 m-2">
+                  <div class="form-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           value="{{ $media->id }}"
+                           x-model="selectedExisting"
+                           :disabled="deletingExisting">
+                  </div>
+                </div>
                 @if($media->type === 'video')
                   <video src="{{ asset('storage/'.$media->url) }}" class="card-img-top" style="height:140px;object-fit:cover;" controls></video>
                 @else
@@ -73,25 +105,26 @@
                   </button>
                   @endif
 
-                  <form action="{{ route('media.destroy', $media) }}"
-                        method="POST"
-                        class="d-inline"
-                        onsubmit="return confirm('Remove media?')">
-                    @csrf @method('DELETE')
-                    <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                  </form>
+                  <button type="button"
+                          class="btn btn-sm btn-outline-danger"
+                          :disabled="deletingExisting"
+                          @click.prevent="confirmDeleteExisting({{ $media->id }})"
+                          title="Delete media">
+                    <i class="fas fa-trash"></i>
+                  </button>
                 </div>
               </div>
             </div>
           @endforeach
         </div>
+        <p class="text-muted" x-show="existingCount === 0" x-cloak>No media uploaded yet.</p>
       @else
         <p class="text-muted">No media uploaded yet.</p>
       @endif
     </div>
   </div>
 
-  {{-- ─── Upload New Media ─── --}}
+  {{-- ------------------ Upload New Media ------------------ --}}
   <div class="card shadow-sm mb-5">
     <div class="card-header bg-light d-flex justify-content-between align-items-center">
       <h5 class="mb-0"><i class="bi bi-images me-2"></i>Upload Media</h5>
@@ -117,7 +150,7 @@
           <i class="bi bi-cloud-arrow-up fs-2 d-block mb-2"></i>
           Drag & drop images or videos here or click to browse
         </p>
-        <small class="text-muted">Images up to 5MB • Videos up to 50MB</small>
+        <small class="text-muted">Images up to 5MB ------ Videos up to 50MB</small>
         <input type="file"
                class="d-none"
                multiple
@@ -179,7 +212,7 @@
     </form>
   </div>
 
-  {{-- ─── Crop Modal (shared) ─── --}}
+  {{-- ------------------ Crop Modal (shared) ------------------ --}}
   <div class="modal fade" id="cropModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
       <div class="modal-content">
@@ -237,10 +270,18 @@
 <script>
 function modernUploader(){
   return {
-    // ── Upload state ──
+    // ------------ Upload state ------------
     items: [], dragging:false, loading:false,
 
-    // ── Crop state ──
+    // ------------ Existing media state ------------
+    selectedExisting: [],
+    existingCount: {{ $product->media->count() }},
+    deletingExisting:false,
+    deleteUrlBase: '{{ url('media') }}',
+    bulkDeleteUrl: '{{ route('media.bulk-destroy', $product) }}',
+    csrfToken: '{{ csrf_token() }}',
+
+    // ------------ Crop state ------------
     cropper:null,
     cropModal:null,
     currentIndex:null,
@@ -267,7 +308,72 @@ function modernUploader(){
       document.getElementById('cropApplyBtn').addEventListener('click', ()=> this.applyCrop());
     },
 
-    // ── New uploads ──
+    // ------------ Existing media actions ------------
+    confirmDeleteExisting(id){
+      if(this.deletingExisting) return;
+      if(!confirm('Remove this media item?')) return;
+      this.performDelete([id], false);
+    },
+    confirmBulkDelete(){
+      if(this.deletingExisting || !this.selectedExisting.length) return;
+      const count = this.selectedExisting.length;
+      const label = count === 1 ? 'this media item' : `${count} media items`;
+      if(!confirm(`Remove ${label}?`)) return;
+      const ids = this.selectedExisting.map(id => Number(id)).filter(Number.isFinite);
+      this.performDelete(ids, true);
+    },
+    async performDelete(ids, forceBulk = false){
+      const uniqueIds = Array.from(new Set((ids || []).map(id => Number(id)).filter(Number.isFinite)));
+      if(!uniqueIds.length) return;
+      this.deletingExisting = true;
+      try{
+        if(forceBulk || uniqueIds.length > 1){
+          const res = await fetch(this.bulkDeleteUrl, {
+            method:'DELETE',
+            headers:{
+              'X-CSRF-TOKEN': this.csrfToken,
+              'Content-Type':'application/json',
+              'Accept':'application/json'
+            },
+            body: JSON.stringify({media_ids: uniqueIds})
+          });
+          if(!res.ok) throw new Error(await res.text());
+        }else{
+          const res = await fetch(`${this.deleteUrlBase}/${uniqueIds[0]}`, {
+            method:'DELETE',
+            headers:{
+              'X-CSRF-TOKEN': this.csrfToken,
+              'Accept':'application/json'
+            }
+          });
+          if(!res.ok) throw new Error(await res.text());
+        }
+        const stringIds = uniqueIds.map(String);
+        let removed = 0;
+        stringIds.forEach(id => {
+          const node = document.querySelector(`[data-media-id="${id}"]`);
+          if(node){
+            node.remove();
+            removed++;
+          }
+        });
+        if(removed){
+          this.existingCount = Math.max(0, this.existingCount - removed);
+        }
+        this.selectedExisting = this.selectedExisting.filter(id => !stringIds.includes(id));
+        if(this.existingCount === 0){
+          this.selectedExisting = [];
+        }
+      }catch(error){
+        console.error(error);
+        alert('Failed to delete media. Please try again.');
+      }finally{
+        this.deletingExisting = false;
+      }
+    },
+
+
+    // ------------ New uploads ------------
     handleDrop(e){ this.dragging=false; this.addFiles(e.dataTransfer.files); },
     addFiles(files){
       [...files].forEach(f=>{
@@ -295,7 +401,7 @@ function modernUploader(){
       });
     },
 
-    // ── Open cropper ──
+    // ------------ Open cropper ------------
     openNewCrop(i){ this.currentIndex = i; this.openCropper(this.items[i].url); },
     openExistingCrop(id, url){
       this.existingMediaId = id;
@@ -323,7 +429,7 @@ function modernUploader(){
       },{once:true});
     },
 
-    // ── Crop controls ──
+    // ------------ Crop controls ------------
     setRatio(r){ this.activeRatio = r; this.cropper.setAspectRatio(r); },
     zoom(v){ this.cropper.zoom(v); },
     rotate(d){ this.cropper.rotate(d); },
@@ -331,7 +437,7 @@ function modernUploader(){
     flipY(){ this.flipYState = !this.flipYState; this.cropper.scaleY(this.flipYState?-1:1); },
     reset(){ this.cropper.reset(); this.flipXState = this.flipYState = false; this.activeRatio = NaN; },
 
-    // ── Apply crop ──
+    // ------------ Apply crop ------------
     applyCrop(){
       if(this.existingMediaId){
         return this.applyExistingCrop();
@@ -352,7 +458,7 @@ function modernUploader(){
       }, 'image/jpeg', this.quality/100);
     },
 
-    // ── Crop existing on server ──
+    // ------------ Crop existing on server ------------
     async applyExistingCrop(){
       this.cropSaving = true;
       const canvas = this.cropper.getCroppedCanvas({maxWidth:4096,maxHeight:4096});
@@ -380,7 +486,7 @@ function modernUploader(){
       }, 'image/jpeg', this.quality/100);
     },
 
-    // ── Remove & Submit ──
+    // ------------ Remove & Submit ------------
     remove(i){
       URL.revokeObjectURL(this.items[i].url);
       this.items.splice(i,1);
