@@ -25,9 +25,13 @@
                         <tr class="text-center">
                             <td>{{ $pay->id }}</td>
                             <td>
-                                <a href="{{ route('seller.orders.show', $pay->order_id) }}" class="text-primary text-decoration-underline">
-                                    #{{ $pay->order_id }}
-                                </a>
+                                @if(!empty($pay->order_id))
+                                    <a href="{{ route('buyer.orders.show', $pay->order_id) }}" class="text-primary text-decoration-underline">
+                                        #{{ $pay->order_id }}
+                                    </a>
+                                @else
+                                    —
+                                @endif
                             </td>
                             <td>
                                 {{ $pay->shop_id }} -
