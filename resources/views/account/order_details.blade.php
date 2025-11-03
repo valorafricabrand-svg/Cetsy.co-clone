@@ -463,7 +463,7 @@
               <div class="small">Share feedback with the seller by leaving a quick review.</div>
             </div>
           </div>
-          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{{ $pendingReviewModalId }}">
+          <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#{{ $pendingReviewModalId }}">
             <i class="bi bi-pencil-square"></i> Leave a Review
           </button>
         </div>
@@ -711,7 +711,7 @@
                         @if($product && $product->type === 'digital' && ! $downloaded)
                           <span class="text-muted small">Download required to review</span>
                         @else
-                          <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
+                          <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
                             <i class="bi bi-star"></i> Review
                           </button>
                         @endif
@@ -996,8 +996,6 @@
   @endif
 @endforeach
 @endsection
-
-
 
 
 

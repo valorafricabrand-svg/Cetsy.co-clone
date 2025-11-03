@@ -1017,6 +1017,22 @@
                         <a href="{{ route('orders.chat.show', $order->id) }}" class="btn btn-outline-info">
                             <i class="bi bi-chat"></i> Order Chat
                         </a>
+
+                        @php
+                            $viewerIsBuyer = auth()->check() && auth()->id() === ($dispute->buyer_id ?? null);
+                            $orderIsShipped = $order && ($order->status === \App\Models\Order::STATUS_SHIPPED);
+                            $disputeClosedOrResolved = $dispute->isClosed() || $dispute->isResolved() || $dispute->isMutuallyResolved();
+                        @endphp
+                        @if($viewerIsBuyer && $orderIsShipped && $disputeClosedOrResolved)
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#deliverModal-{{ $order->id }}">
+                                <i class="bi bi-check2-circle"></i> Mark Delivered
+                            </button>
+                        @endif
+                        @if($viewerIsBuyer && $order && $order->status === \App\Models\Order::STATUS_DELIVERED)
+                            <a href="{{ route('buyer.orders.show', $order->id) }}#reviews" class="btn btn-outline-warning">
+                                <i class="bi bi-star"></i> Leave a Review
+                            </a>
+                        @endif
                         @endif
                         
                         @if($dispute->status !== 'resolved' && $dispute->status !== 'closed' && $dispute->status !== 'final' && (auth()->id() === $dispute->created_by || auth()->user()->isAdmin()))
@@ -2013,6 +2029,20 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     @endif
 @endif
+
+    {{-- Buyer Post-Dispute Action: Mark Delivered (when dispute closed/resolved and order is shipped) --}}
+    @php
+        $viewerIsBuyer = auth()->check() && auth()->id() === ($dispute->buyer_id ?? null);
+        $orderForAction = isset($order) && $order ? $order : $dispute->order;
+        $orderIsShipped = $orderForAction && ($orderForAction->status === \App\Models\Order::STATUS_SHIPPED);
+        $disputeClosedOrResolved = $dispute->isClosed() || $dispute->isResolved() || $dispute->isMutuallyResolved();
+    @endphp
+    @if($viewerIsBuyer && $orderForAction && $orderIsShipped && $disputeClosedOrResolved)
+        @once
+            {{-- Include the buyer deliver modal once for this page --}}
+            @include('seller.orders.modals.delivered', ['order' => $orderForAction])
+        @endonce
+    @endif
 
 {{-- Close Dispute Modal --}}
 <div class="modal fade" id="closeDisputeModal" tabindex="-1" aria-labelledby="closeDisputeModalLabel" aria-hidden="true">
