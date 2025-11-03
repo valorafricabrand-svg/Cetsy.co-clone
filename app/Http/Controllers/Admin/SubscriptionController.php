@@ -113,6 +113,56 @@ class SubscriptionController extends Controller
     }
 
     /**
+     * CSV export for MRR shops list in a given month (Y-m or 'current').
+     */
+    public function mrrShopsExport(Request $request, string $ym)
+    {
+        $now = Carbon::now();
+        if ($ym === 'current') { $ms = $now->copy()->startOfMonth(); }
+        else {
+            try { $ms = Carbon::createFromFormat('Y-m', $ym)->startOfMonth(); }
+            catch (\Throwable $e) { $ms = $now->copy()->startOfMonth(); }
+        }
+        $me = $ms->copy()->endOfMonth();
+
+        $query = Subscription::with(['shop','user'])
+            ->where('status', 'active')
+            ->where('start_date', '<=', $me)
+            ->where(function ($q) use ($ms) { $q->whereNull('end_date')->orWhere('end_date', '>=', $ms); })
+            ->orderByDesc('amount');
+
+        if ($request->filled('payment_method')) {
+            $query->where('payment_method', $request->query('payment_method'));
+        }
+
+        $rows = $query->get();
+        $filename = 'mrr_shops_' . $ms->format('Y_m') . '.csv';
+        $headers = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function() use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Shop', 'Owner', 'Amount', 'Start', 'End', 'Status', 'Method']);
+            foreach ($rows as $s) {
+                fputcsv($out, [
+                    optional($s->shop)->name,
+                    optional($s->user)->name,
+                    (string) $s->amount,
+                    optional($s->start_date)->format('Y-m-d'),
+                    optional($s->end_date)->format('Y-m-d'),
+                    (string) $s->status,
+                    (string) $s->payment_method,
+                ]);
+            }
+            fclose($out);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
      * Listing Fee Revenue summary (by month), optional from/to like MRR.
      */
     public function listingFees(Request $request): View

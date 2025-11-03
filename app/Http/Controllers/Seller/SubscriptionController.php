@@ -86,7 +86,7 @@ class SubscriptionController extends Controller
             'total_amount'          => $subscriptionFee,
             'payment_method'        => 'wallet',
             'payment_status'        => 'successful',
-            'status'                => '3', // Completed
+            'paymentStatus'         => 3, // Completed
             'currency'              => 'USD',
             'local_transaction_id'  => $localTxId,
             'payment_name'          => 'subscription_fee',
@@ -181,7 +181,7 @@ class SubscriptionController extends Controller
             'total_amount'          => $subscriptionFee,
             'payment_method'        => $method,
             'payment_status'        => 'successful',
-            'status'                => '3', // Completed
+            'paymentStatus'         => 3, // Completed
             'currency'              => 'USD',
             'local_transaction_id'  => $localTxId,
             'payment_name'          => 'subscription_fee',

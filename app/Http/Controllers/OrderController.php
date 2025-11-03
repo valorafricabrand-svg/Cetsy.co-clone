@@ -615,7 +615,8 @@ public function storeOrder(Request $request)
             'shop_id'              => $order->shop_id,
             'total_amount'         => $order->total_amount,
             'payment_method'       => $method,
-            'status'               => '3',
+            'paymentStatus'        => 3,
+            'payment_status'       => 'successful',
             'currency'             => $currency,
             'local_transaction_id' => $localTxId,
         ];
