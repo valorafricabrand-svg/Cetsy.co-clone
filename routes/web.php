@@ -518,6 +518,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
     Route::put('settings/{setting}', [AdminSetting::class, 'update'])->name('settings.update');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
+    Route::get('reports/mrr', [AdminSubscriptionController::class, 'mrr'])->name('reports.mrr');
+    Route::get('reports/mrr/{ym}/shops', [AdminSubscriptionController::class, 'mrrShops'])->name('reports.mrr.shops');
     Route::get('reports/inventory', [\App\Http\Controllers\Admin\InventoryReportController::class, 'index'])->name('reports.inventory');
     Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::patch('reviews/{review}/approve', [ReviewController::class, 'approve'])->name('reviews.approve');
