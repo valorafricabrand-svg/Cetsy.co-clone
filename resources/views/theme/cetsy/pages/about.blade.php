@@ -1,6 +1,10 @@
 @extends('theme.'.theme().'.layouts.app')
 
 @section('main')
+@php($__about = App\Models\PolicySection::where('slug','about-cetsy')->first())
+@if($__about && trim((string)$__about->content) !== '')
+  {!! $__about->content !!}
+@else
 <!-- ====== About Section (Enhanced) ====== -->
 <section class="py-6 bg-white position-relative overflow-hidden">
   <style>
@@ -186,4 +190,5 @@
   </div>
 </section>
 <!-- ====== About Section End ====== -->
+@endif
 @endsection
