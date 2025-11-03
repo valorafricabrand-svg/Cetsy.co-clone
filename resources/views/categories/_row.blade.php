@@ -7,7 +7,7 @@
   $indentHtml = $depth > 0 ? str_repeat('&nbsp;', $depth * 3) . '↳&nbsp;' : '';
 @endphp
 
-<tr>
+<tr data-id="{{ $cat->id }}" data-parent-id="{{ $cat->parent_id ?? '' }}">
   {{-- Select --}}
   <td class="text-center">
     <input type="checkbox" class="category-checkbox" name="ids[]" value="{{ $cat->id }}">
@@ -31,6 +31,11 @@
     @else
       {{ $cat->name }}
     @endif
+    <button type="button"
+            class="btn btn-sm btn-outline-secondary ms-2 select-subtree"
+            data-id="{{ $cat->id }}">
+      Select children
+    </button>
   </td>
 
   {{-- Type --}}
