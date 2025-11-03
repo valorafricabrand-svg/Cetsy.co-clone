@@ -5,20 +5,55 @@
 @section('content')
 <div class="content">
   <div class="container">
-    {{-- Header with title and search/filter --}}
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-      <h3 class="text-dark mb-3 mb-md-0">My Orders</h3>
-      <form class="d-flex w-100 w-md-auto" method="GET" action="{{ url()->current() }}">
-        <input
-          type="search"
-          name="q"
-          value="{{ request('q') }}"
-          class="form-control form-control-sm me-2"
-          placeholder="Search orders..."
-          aria-label="Search orders"
-        >
-        <button class="btn btn-sm btn-primary" type="submit">Search</button>
-      </form>
+    {{-- Header with title and filters --}}
+    <div class="mb-3">
+      <div class="d-flex flex-column flex-lg-row gap-3 align-items-lg-end justify-content-between">
+        <h3 class="text-dark mb-0">My Orders</h3>
+        <form method="GET" action="{{ url()->current() }}" class="w-100">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+              <label class="form-label small text-muted">Search</label>
+              <input type="search" name="q" value="{{ request('q') }}" class="form-control form-control-sm" placeholder="Search orders by # or status">
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label small text-muted">From</label>
+              <input type="date" name="from" value="{{ request('from') }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label small text-muted">To</label>
+              <input type="date" name="to" value="{{ request('to') }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label small text-muted">Sort</label>
+              <select name="sort" class="form-select form-select-sm">
+                <option value="newest" @selected(request('sort','newest')==='newest')>Newest</option>
+                <option value="amount_desc" @selected(request('sort')==='amount_desc')>Amount (high→low)</option>
+                <option value="amount_asc" @selected(request('sort')==='amount_asc')>Amount (low→high)</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-12 d-flex gap-2">
+              <div class="btn-group" role="group" aria-label="Status filters">
+                @php($st=request('status'))
+                <a class="btn btn-sm {{ $st? 'btn-outline-secondary':'btn-secondary' }}" href="{{ url()->current() }}">All{{ isset($summary['all'])? ' ('.$summary['all'].')':'' }}</a>
+                @foreach([
+                  \App\Models\Order::STATUS_PENDING=>'Pending',
+                  \App\Models\Order::STATUS_PROCESSING=>'Processing',
+                  \App\Models\Order::STATUS_SHIPPED=>'Shipped',
+                  \App\Models\Order::STATUS_DELIVERED=>'Delivered',
+                  \App\Models\Order::STATUS_COMPLETED=>'Completed',
+                  \App\Models\Order::STATUS_CANCELLED=>'Cancelled',
+                  \App\Models\Order::STATUS_REFUNDED=>'Refunded',
+                ] as $code=>$label)
+                  <a class="btn btn-sm {{ $st===$code? 'btn-secondary':'btn-outline-secondary' }}" href="{{ url()->current().'?'.http_build_query(array_filter(array_merge(request()->except('page'),['status'=>$code]))) }}">
+                    {{ $label }}@if(!empty($summary[strtolower($label)])) ({{ $summary[strtolower($label)] }}) @endif
+                  </a>
+                @endforeach
+              </div>
+              <button class="btn btn-sm btn-primary ms-auto" type="submit">Apply</button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
 
     @if($orders->isNotEmpty())
@@ -106,8 +141,9 @@
                   <div class="small text-muted mt-1">{{ $progressMessage }}</div>
                 </td>
                 <td>{{ money((float) ($order->total_amount ?? 0)) }}</td>
-                <td>
+                <td class="text-nowrap">
                   <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                  <a href="{{ route('orders.chat.show', $order->id) }}" class="btn btn-sm btn-outline-primary">Chat</a>
                 </td>
               </tr>
             @endforeach
