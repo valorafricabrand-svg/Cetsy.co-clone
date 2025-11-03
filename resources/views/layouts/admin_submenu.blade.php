@@ -31,7 +31,8 @@
         'items' => [
           ['label' => 'Dashboard', 'icon' => 'fas fa-tachometer-alt', 'url' => route('admin.dashboard'), 'match' => ['admin.dashboard']],
           ['label' => 'Reports',   'icon' => 'fas fa-chart-bar',      'url' => route('admin.reports'),   'match' => ['admin.reports']],
-          ['label' => 'MRR',        'icon' => 'fas fa-chart-line', 'url' => route('admin.reports.mrr'), 'match' => ['admin.reports.mrr']],
+          ['label' => 'MRR',           'icon' => 'fas fa-chart-line', 'url' => route('admin.reports.mrr'),           'match' => ['admin.reports.mrr']],
+          ['label' => 'Listing Fees',  'icon' => 'fas fa-receipt',    'url' => route('admin.reports.listing-fees'),  'match' => ['admin.reports.listing-fees']],
           ['label' => 'Notifications', 'icon' => 'fas fa-bell', 'url' => route('admin.notifications.index'), 'match' => ['admin.notifications.*'], 'count' => $unreadNotifications],
         ],
       ],

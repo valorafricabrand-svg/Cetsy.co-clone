@@ -63,7 +63,13 @@
         <tbody>
         @forelse($subs as $s)
           <tr>
-            <td>{{ $s->shop->name ?? '—' }}</td>
+            <td>
+              @if(!empty($s->shop))
+                <a href="{{ route('shop.show', $s->shop->id) }}" class="text-decoration-none" target="_blank">{{ $s->shop->name }}</a>
+              @else
+                &mdash;
+              @endif
+            </td>
             <td class="d-none d-md-table-cell">{{ $s->user->name ?? '—' }}</td>
             <td class="text-end">{{ get_currency() }} {{ number_format((float)$s->amount, 2) }}</td>
             <td class="d-none d-lg-table-cell">{{ optional($s->start_date)->format('Y-m-d') }}</td>
