@@ -334,7 +334,7 @@ Route::middleware(['auth','verified'])->group(function () {
         ->middleware('kyc.after.two.sales')
         ->name('products.store');
     Route::resource('products', ProductController::class)
-        ->except(['create', 'store'])
+        ->except(['create', 'store', 'edit'])
         ->middleware('kyc.after.two.sales');
     // Product Shipping (page + save)
     Route::get('products/{product}/shipping', [ProductController::class, 'shipping'])
