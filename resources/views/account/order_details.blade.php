@@ -141,11 +141,11 @@
             @include('seller.orders.modals.delivered')
 
             <button class="btn btn-outline-warning btn-lg d-flex align-items-center gap-2 px-4 py-2 has-tooltip"
-                    data-bs-placement="bottom" title="Assess the shipped product or report a problem"
+                    data-bs-placement="bottom" title="Asses the shipped product or report a problem"
                     data-bs-toggle="modal"
                     data-bs-target="#assessModal-{{ $order->id }}">
               <i class="bi bi-clipboard-check fs-5"></i>
-              <span>Assess&nbsp;Delivery</span>
+              <span>Asses&nbsp;Delivery</span>
             </button>
           @endif
 
@@ -197,7 +197,7 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="assessModalLabel-{{ $order->id }}">Assess Delivered Item</h5>
+            <h5 class="modal-title" id="assessModalLabel-{{ $order->id }}">Asses Delivered Item</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">

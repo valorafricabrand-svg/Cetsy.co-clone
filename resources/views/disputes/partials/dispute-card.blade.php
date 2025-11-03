@@ -18,7 +18,7 @@
 
         <div class="mb-3">
             <p class="card-text">
-                {{ Str::limit($dispute->description, 100) }}
+                {!! Str::limit($dispute->description, 100) !!}
             </p>
         </div>
 
