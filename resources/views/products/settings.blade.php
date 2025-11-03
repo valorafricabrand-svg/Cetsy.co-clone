@@ -79,7 +79,8 @@
                     <span>Pay the listing fee to activate.</span>
                     <form class="d-inline" method="POST" action="{{ route('products.pay-fee', $product) }}">
                       @csrf
-                      <input type="hidden" name="plan" value="monthly">
+                      @php $freq = (int) ($product->category?->listing_frequency ?? 4); $planKey = $freq === 1 ? 'monthly' : '4months'; @endphp
+                      <input type="hidden" name="plan" value="{{ $planKey }}">
                       <button class="btn btn-link p-0 align-baseline">Pay to activate</button>
                     </form>
                   </div>
