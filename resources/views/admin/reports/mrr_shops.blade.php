@@ -24,7 +24,7 @@
           @endforeach
         </select>
       </div>
-      @if($hasPlan)
+      @if(!empty($plans))
       <div class="col-12 col-md-4">
         <label class="form-label">Plan</label>
         <select name="plan" class="form-select">
@@ -81,4 +81,5 @@
   </div>
 </div>
 @endsection
+
 
