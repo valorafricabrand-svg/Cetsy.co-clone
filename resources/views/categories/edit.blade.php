@@ -158,6 +158,15 @@
         >
       </div>
 
+      <!-- Listing Frequency -->
+      <div class="mb-4">
+        <label for="listing_frequency" class="form-label">Listing Frequency</label>
+        <select id="listing_frequency" name="listing_frequency" class="form-select" required>
+          <option value="1" @selected(old('listing_frequency', $category->listing_frequency) == 1 || old('listing_frequency', $category->listing_frequency) === '1')>1 month</option>
+          <option value="4" @selected(old('listing_frequency', $category->listing_frequency) == 4 || old('listing_frequency', $category->listing_frequency) === '4')>4 months</option>
+        </select>
+      </div>
+
       <!-- Description -->
       <div class="mb-4">
         <label for="description" class="form-label">Description</label>

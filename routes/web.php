@@ -485,6 +485,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         [CategoryAttributeController::class, 'destroy']
     )->name('category-attributes.destroy');
     Route::resource('categories', CategoryController::class);
+    // Bulk update categories (listing_fee, listing_type, listing_frequency)
+    Route::post('categories/bulk-update', [CategoryController::class, 'bulkUpdate'])->name('categories.bulk-update');
 
     // KYC
     Route::get('kyc', [KycController::class, 'index'])->name('kyc.index');

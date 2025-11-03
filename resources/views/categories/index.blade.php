@@ -33,21 +33,29 @@
         </form>
 
         {{-- new category --}}
-        <a href="{{ route('admin.categories.create') }}" class="btn btn-primary ms-md-3">
-          + New Category
-        </a>
+        <div class="d-flex gap-2 ms-md-3">
+          <button type="button" id="bulkUpdateBtn" class="btn btn-outline-primary" disabled data-bs-toggle="modal" data-bs-target="#bulkUpdateModal">
+            Bulk Update
+          </button>
+          <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
+            + New Category
+          </a>
+        </div>
       </div>
       {{-- /TOP BAR ----------------------------------------------------------- --}}
 
       @if($parents->isEmpty())
         <p class="text-muted">No categories found.</p>
       @else
-        <div class="card shadow-sm">
-          <div class="card-body p-0">
-            <div class="table-responsive">
-            <table class="table table-bordered table-striped mb-0">
+          <div class="card shadow-sm">
+            <div class="card-body p-0">
+              <div class="table-responsive">
+              <table class="table table-bordered table-striped mb-0">
               <thead class="table-light">
                 <tr>
+                  <th class="text-center" style="width:40px">
+                    <input type="checkbox" id="select_all">
+                  </th>
                   <th style="width:70px">Image</th>
                   <th>Name</th>
                   <th>Type</th>
@@ -61,13 +69,118 @@
                   @include('categories._row', ['cat' => $parent, 'depth' => 0])
                 @endforeach
               </tbody>
-            </table>
+              </table>
+              </div>
             </div>
           </div>
-        </div>
+
+          <!-- Bulk Update Modal -->
+          <div class="modal fade" id="bulkUpdateModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+              <form class="modal-content" action="{{ route('admin.categories.bulk-update') }}" method="POST" id="bulkUpdateForm">
+                @csrf
+                <div class="modal-header">
+                  <h5 class="modal-title">Bulk Update Categories</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <p class="text-muted mb-3">
+                    Applying changes to <span id="selectedCount">0</span> selected categor<span id="selectedCountPlural">ies</span>.
+                  </p>
+
+                  <div class="mb-3">
+                    <label class="form-label">Listing Fee</label>
+                    <input type="number" name="listing_fee" step="0.01" class="form-control" placeholder="Leave blank to keep">
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Listing Type</label>
+                    <select name="listing_type" class="form-select">
+                      <option value="">— Leave unchanged —</option>
+                      <option value="products">Products</option>
+                      <option value="services">Services</option>
+                      <option value="digital">Digital Downloads</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Listing Frequency</label>
+                    <select name="listing_frequency" class="form-select">
+                      <option value="">— Leave unchanged —</option>
+                      <option value="1">1 month</option>
+                      <option value="4">4 months</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Update Selected</button>
+                </div>
+              </form>
+            </div>
+          </div>
       @endif
 
     </div>
   </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function(){
+  function ready(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
+  ready(function(){
+    const selectAll = document.getElementById('select_all');
+    const checkboxes = () => Array.from(document.querySelectorAll('.category-checkbox'));
+    const bulkBtn = document.getElementById('bulkUpdateBtn');
+    const selectedCountEl = document.getElementById('selectedCount');
+    const selectedCountPlural = document.getElementById('selectedCountPlural');
+    const bulkModalEl = document.getElementById('bulkUpdateModal');
+
+    function updateState(){
+      const count = checkboxes().filter(cb => cb.checked).length;
+      bulkBtn.disabled = count === 0;
+      if (selectedCountEl) selectedCountEl.textContent = count;
+      if (selectedCountPlural) selectedCountPlural.textContent = count === 1 ? 'y' : 'ies';
+      if (selectAll) selectAll.checked = count > 0 && count === checkboxes().length;
+      if (selectAll) selectAll.indeterminate = count > 0 && count < checkboxes().length;
+    }
+
+    if (selectAll) {
+      selectAll.addEventListener('change', function(){
+        checkboxes().forEach(cb => cb.checked = selectAll.checked);
+        updateState();
+      });
+    }
+
+    checkboxes().forEach(cb => cb.addEventListener('change', updateState));
+    updateState();
+
+    // Populate hidden inputs on modal show
+    if (bulkModalEl) {
+      bulkModalEl.addEventListener('show.bs.modal', function (e) {
+        const selected = checkboxes().filter(cb => cb.checked);
+        if (selected.length === 0) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return false;
+        }
+        const form = document.getElementById('bulkUpdateForm');
+        if (!form) return;
+        // Remove previous hidden ids
+        Array.from(form.querySelectorAll('input[type="hidden"][name="ids[]"]')).forEach(el => el.remove());
+        // Add selected ids
+        selected.forEach(cb => {
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = 'ids[]';
+          hidden.value = cb.value;
+          form.appendChild(hidden);
+        });
+      });
+    }
+  });
+})();
+</script>
+@endpush
