@@ -1037,12 +1037,13 @@ public function successDeposit(Request $request, $id)
         } while (Payment::where('local_transaction_id', $localTx)->exists());
     }
 
-    // 7) Record the payment
+    // 7) Record the payment (mark successful)
     Payment::create([
         'shop_id'              => $product->shop_id,
         'total_amount'         => $fee,
         'payment_method'       => $via,
-        'status'               => '3',    // completed
+        'paymentStatus'        => 3,
+        'payment_status'       => 'successful',
         'currency'             => $product->currency ?? 'USD',
         'local_transaction_id' => $localTx,
         'payment_name'         => 'listing_fee',

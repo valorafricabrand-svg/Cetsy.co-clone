@@ -801,12 +801,13 @@ public function payListing(Request $request, $id)
         ]);
     }
 
-    // 7) Record the Payment
+    // 7) Record the Payment (successful)
     Payment::create([
         'shop_id'              => $product->shop_id,
         'total_amount'         => $fee,
         'payment_method'       => $data['via'],
-        'status'               => '3',  // completed
+        'paymentStatus'        => 3,
+        'payment_status'       => 'successful',
         'currency'             => $product->currency ?? 'USD',
         'local_transaction_id' => $localTxId,
         'payment_name'         => 'listing_fee',
@@ -882,7 +883,8 @@ public function payListing2(Request $request, $id)
         'shop_id'              => $product->shop_id,
         'total_amount'         => $fee,
         'payment_method'       => $data['via'],
-        'status'               => '3',  // completed
+        'paymentStatus'        => 3,
+        'payment_status'       => 'successful',
         'currency'             => $product->currency ?? 'USD',
         'local_transaction_id' => $localTxId,
         'payment_name'         => 'listing_fee',
@@ -930,7 +932,8 @@ public function payOrder(Request $request, $id)
             'shop_id'              => $order->shop_id,
             'total_amount'         => $order->total_amount,
             'payment_method'       => $method,
-            'status'               => '3',
+            'paymentStatus'        => 3,
+            'payment_status'       => 'successful',
             'currency'             => $currency,
             'local_transaction_id' => $localTxId,
         ];
