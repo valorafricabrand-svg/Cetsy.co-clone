@@ -991,6 +991,23 @@ public function storeOrder(Request $request)
                     'reference'  => 'seller_debit_'.$order->id,
                     'description'=> 'Order cancellation - payment reversed',
                 ]);
+
+                // Restock inventory for physical products
+                try {
+                    $order->loadMissing('items.product');
+                    foreach ($order->items as $item) {
+                        $product = $item->product; if (!$product) continue;
+                        if (strtolower((string)($product->type ?? 'physical')) !== 'physical') continue;
+                        $qty = max(1, (int) ($item->quantity ?? 1));
+                        if (!is_null($product->stock)) {
+                            $product->update(['stock' => ((int)$product->stock) + $qty]);
+                        }
+                        $variantId = (int) ($item->getAttribute('product_variation_id') ?? 0);
+                        if ($variantId > 0) {
+                            try { $variant = \App\Models\Variant::find($variantId); if ($variant && !is_null($variant->stock)) { $variant->update(['stock' => ((int)$variant->stock) + $qty]); } } catch (\Throwable $e) { /* ignore */ }
+                        }
+                    }
+                } catch (\Throwable $e) { \Log::warning('order.inventory.restock_failed', ['order_id'=>$order->id, 'error'=>$e->getMessage()]); }
             } else {
                 // Buyer hasn't paid (order is PENDING) - simple cancellation
                 $order->update([
@@ -1064,6 +1081,23 @@ public function storeOrder(Request $request)
                     'reference'  => 'seller_cancellation_debit_'.$order->id,
                     'description'=> 'Order cancelled by seller - payment reversed',
                 ]);
+
+                // Restock inventory for physical products
+                try {
+                    $order->loadMissing('items.product');
+                    foreach ($order->items as $item) {
+                        $product = $item->product; if (!$product) continue;
+                        if (strtolower((string)($product->type ?? 'physical')) !== 'physical') continue;
+                        $qty = max(1, (int) ($item->quantity ?? 1));
+                        if (!is_null($product->stock)) {
+                            $product->update(['stock' => ((int)$product->stock) + $qty]);
+                        }
+                        $variantId = (int) ($item->getAttribute('product_variation_id') ?? 0);
+                        if ($variantId > 0) {
+                            try { $variant = \App\Models\Variant::find($variantId); if ($variant && !is_null($variant->stock)) { $variant->update(['stock' => ((int)$variant->stock) + $qty]); } } catch (\Throwable $e) { /* ignore */ }
+                        }
+                    }
+                } catch (\Throwable $e) { \Log::warning('order.inventory.restock_failed', ['order_id'=>$order->id, 'error'=>$e->getMessage()]); }
             } else {
                 // Buyer hasn't paid (order is PENDING) - simple cancellation
                 $order->update([

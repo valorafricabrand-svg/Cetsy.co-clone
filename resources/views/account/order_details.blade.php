@@ -120,6 +120,16 @@
             <span>Back</span>
           </a>
 
+          @if(in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
+            <button class="btn btn-outline-danger btn-lg d-flex align-items-center gap-2 px-4 py-2"
+                    data-bs-toggle="modal"
+                    data-bs-target="#cancelModal-{{ $order->id }}"
+                    title="Cancel this order">
+              <i class="bi bi-x-circle fs-5"></i>
+              <span>Cancel&nbsp;Order</span>
+            </button>
+          @endif
+
           @if($order->status === \App\Models\Order::STATUS_SHIPPED)
             <button class="btn btn-outline-success btn-lg d-flex align-items-center gap-2 px-4 py-2 has-tooltip"
                     data-bs-placement="bottom" title="Confirm you received the order"
@@ -148,6 +158,31 @@
           </div>
         @endif
   </div>
+
+  @if(in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
+    <div class="modal fade" id="cancelModal-{{ $order->id }}" tabindex="-1" aria-labelledby="cancelModalLabel-{{ $order->id }}" aria-hidden="true">
+      <div class="modal-dialog">
+        <form method="POST" action="{{ route('buyer.orders.cancel', $order) }}" class="modal-content">
+          @csrf
+          <div class="modal-header">
+            <h5 class="modal-title" id="cancelModalLabel-{{ $order->id }}">Cancel Order #{{ $order->id }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-3">Are you sure you want to cancel this order? This action cannot be undone.</p>
+            <div class="mb-3">
+              <label for="cancel-reason-{{ $order->id }}" class="form-label">Reason (optional)</label>
+              <textarea name="cancel_reason" id="cancel-reason-{{ $order->id }}" class="form-control" rows="3" placeholder="Tell the seller why you’re cancelling"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Order</button>
+            <button type="submit" class="btn btn-danger">Confirm Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  @endif
 
   {{-- Processing timeline & ship-by notice --}}
   @php
@@ -895,7 +930,6 @@
   @endif
 @endforeach
 @endsection
-
 
 
 
