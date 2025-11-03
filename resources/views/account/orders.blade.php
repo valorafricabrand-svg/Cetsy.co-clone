@@ -27,8 +27,8 @@
               <label class="form-label small text-muted">Sort</label>
               <select name="sort" class="form-select form-select-sm">
                 <option value="newest" @selected(request('sort','newest')==='newest')>Newest</option>
-                <option value="amount_desc" @selected(request('sort')==='amount_desc')>Amount (high→low)</option>
-                <option value="amount_asc" @selected(request('sort')==='amount_asc')>Amount (low→high)</option>
+                <option value="amount_desc" @selected(request('sort')==='amount_desc')>Amount (high to low)</option>
+                <option value="amount_asc" @selected(request('sort')==='amount_asc')>Amount (low to high)</option>
               </select>
             </div>
             <div class="col-12 col-md-12 d-flex gap-2">
