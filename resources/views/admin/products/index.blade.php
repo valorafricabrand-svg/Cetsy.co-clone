@@ -75,6 +75,8 @@
                             <th scope="col">Price</th>
                             <th scope="col">Stock</th>
                             <th scope="col">Status</th>
+                            <th scope="col">Subscription</th>
+                            <th scope="col">Next Due</th>
                             <th scope="col">Created</th>
                             <th scope="col" class="text-end">Actions</th>
                         </tr>
@@ -151,6 +153,26 @@
                                 </td>
                                 <td>
                                     <span class="badge bg-{{ $class }}">{{ $label }}</span>
+                                </td>
+                                <td>
+                                    @php
+                                        $paid = !empty($product->listing_paid_at);
+                                        $due = $product->next_due_date ? \Carbon\Carbon::parse($product->next_due_date) : null;
+                                    @endphp
+                                    @if(!$paid)
+                                        <span class="badge bg-secondary">Not Paid</span>
+                                    @elseif($due && $due->isFuture())
+                                        <span class="badge bg-success">Active</span>
+                                    @else
+                                        <span class="badge bg-danger">Expired</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($product->next_due_date)
+                                        <small class="text-muted">{{ \Carbon\Carbon::parse($product->next_due_date)->format('M d, Y') }}</small>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
                                 </td>
                                 <td>
                                     <small class="text-muted">
@@ -272,6 +294,14 @@
                                 [$label, $class] = $statusMap[$product->is_active] ?? ['Closed', 'dark'];
                             @endphp
                             <span class="badge bg-{{ $class }}">{{ $label }}</span>
+                        </div>
+
+                        <hr>
+                        <div class="mb-3">
+                            <label class="form-label">Next Due Date (Expiration)</label>
+                            <input type="date" name="next_due_date" class="form-control"
+                                   value="{{ $product->next_due_date ? \Carbon\Carbon::parse($product->next_due_date)->format('Y-m-d') : '' }}">
+                            <div class="form-text">Leave blank to keep the current expiration date.</div>
                         </div>
                     </div>
                     <div class="modal-footer">

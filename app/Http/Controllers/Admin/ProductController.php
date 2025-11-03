@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ProductController extends Controller
 {
@@ -108,12 +109,21 @@ class ProductController extends Controller
      */
     public function toggleStatus(Request $request, Product $product)
     {
-        $request->validate([
+        $data = $request->validate([
             'status' => 'required|in:0,1,2,3',
+            'next_due_date' => 'nullable|date',
         ]);
 
-        $status = (int) $request->input('status');
-        $product->update(['is_active' => $status]);
+        $status = (int) $data['status'];
+        $updates = ['is_active' => $status];
+        if (!empty($data['next_due_date'])) {
+            try {
+                $updates['next_due_date'] = Carbon::parse($data['next_due_date'])->endOfDay();
+            } catch (\Throwable $e) {
+                // ignore parse error; keep existing date
+            }
+        }
+        $product->update($updates);
 
         // Determine status message
         $statusMessages = [
