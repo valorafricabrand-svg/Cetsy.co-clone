@@ -34,7 +34,7 @@
               <td>{{ $order->id }}</td>
               <td>
                 @if($order->shop)
-                  <a href="{{ route('shop.show', $order->shop->id) }}">{{ $order->shop->name }}</a>
+<a href="{{ route('shop.show', $order->shop->slug) }}">{{ $order->shop->name }}</a>
                 @else
                   <span class="text-muted">Unknown shop</span>
                 @endif
@@ -75,7 +75,7 @@
             <div class="mb-2 text-truncate">
               <span class="text-muted small">Shop:</span>
               @if($order->shop)
-                <a href="{{ route('shop.show', $order->shop->id) }}" class="text-decoration-none">{{ $order->shop->name }}</a>
+<a href="{{ route('shop.show', $order->shop->slug) }}" class="text-decoration-none">{{ $order->shop->name }}</a>
               @else
                 <span class="text-muted">Unknown shop</span>
               @endif

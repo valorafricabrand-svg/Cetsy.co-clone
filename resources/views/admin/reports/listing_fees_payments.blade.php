@@ -53,7 +53,7 @@
             <tr>
               <td>
                 @if(!empty($p->shop))
-                  <a href="{{ route('shop.show', $p->shop->id) }}" class="text-decoration-none" target="_blank">{{ $p->shop->name }}</a>
+                  <a href="{{ route('shop.show', $p->shop->slug) }}" class="text-decoration-none" target="_blank">{{ $p->shop->name }}</a>
                 @else
                   &mdash;
                 @endif
@@ -72,4 +72,3 @@
   </div>
 </div>
 @endsection
-

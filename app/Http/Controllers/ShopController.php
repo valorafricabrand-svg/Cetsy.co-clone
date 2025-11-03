@@ -148,7 +148,11 @@ class ShopController extends Controller
 
     public function showPublic(Request $request, $id)
     {
-        $shop = Shop::whereSlug($id)->firstOrFail();
+        // Accept either slug or numeric ID for backward compatibility
+        $shop = Shop::whereSlug($id)->first();
+        if (!$shop) {
+            $shop = Shop::findOrFail($id);
+        }
 
         $products = $shop->products()
             ->where('is_active', 1)

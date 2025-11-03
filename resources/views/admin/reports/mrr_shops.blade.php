@@ -65,7 +65,7 @@
           <tr>
             <td>
               @if(!empty($s->shop))
-                <a href="{{ route('shop.show', $s->shop->id) }}" class="text-decoration-none" target="_blank">{{ $s->shop->name }}</a>
+                <a href="{{ route('shop.show', $s->shop->slug) }}" class="text-decoration-none" target="_blank">{{ $s->shop->name }}</a>
               @else
                 &mdash;
               @endif
