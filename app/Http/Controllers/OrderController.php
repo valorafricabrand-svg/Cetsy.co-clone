@@ -617,6 +617,7 @@ public function storeOrder(Request $request)
             'payment_method'       => $method,
             'paymentStatus'        => 3,
             'payment_status'       => 'successful',
+            'payment_name'         => 'order_payment',
             'currency'             => $currency,
             'local_transaction_id' => $localTxId,
         ];

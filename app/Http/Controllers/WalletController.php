@@ -400,8 +400,8 @@ class WalletController extends Controller
 
 
 
-public function handlePayPalDeposit(Request $request)
-{
+    public function handlePayPalDeposit(Request $request)
+    {
     if (!$this->isDepositOtpVerified()) {
         \Log::warning('wallet.deposit.action_blocked_missing_otp', [
             'user_id' => Auth::id(),
@@ -410,21 +410,44 @@ public function handlePayPalDeposit(Request $request)
         ]);
         return response()->json(['success' => false, 'error' => 'Two-factor verification required.'], 403);
     }
-    $request->validate([
-        'amount' => 'required|numeric|min:1',
-    ]);
+        $request->validate([
+            'amount'   => 'required|numeric|min:1',
+            'fee'      => 'nullable|numeric|min:0',
+            'gross'    => 'nullable',
+            'currency' => 'nullable|string|size:3',
+        ]);
 
     try {
         // Create wallet transaction
-        $wallet = Wallet::create([
-            'user_id'     => Auth::id(),
-            'credit'      => $request->amount,
-            'debit'       => 0,
-            'balance'     => 0, // Optionally recalculate this later
-            'reference'   => strtoupper(uniqid('TXN-')),
-            'method'      => 'paypal',
-            'description' => 'Manual deposit via PayPal',
-        ]);
+            $wallet = Wallet::create([
+                'user_id'     => Auth::id(),
+                'credit'      => $request->amount,
+                'debit'       => 0,
+                'balance'     => 0, // Optionally recalculate this later
+                'reference'   => strtoupper(uniqid('TXN-')),
+                'method'      => 'paypal',
+                'description' => 'Manual deposit via PayPal',
+            ]);
+
+            // Record the online payment fee as a Payment row (for buyer visibility)
+            $fee = (float) ($request->input('fee', 0));
+            if ($fee > 0.0001) {
+                try {
+                    Payment::create([
+                        'user_id'              => Auth::id(),
+                        'total_amount'         => $fee,
+                        'payment_method'       => 'paypal',
+                        'payment_status'       => 'successful',
+                        'paymentStatus'        => 3,
+                        'currency'             => $request->input('currency', 'USD'),
+                        'payment_name'         => 'online_payment_fee',
+                        'more_details'         => json_encode([
+                            'gross'      => $request->input('gross'),
+                            'net_credit' => (float)$request->amount,
+                        ]),
+                    ]);
+                } catch (\Throwable $e) { \Log::warning('wallet.deposit.fee_record_failed', ['user_id'=>Auth::id(), 'error'=>$e->getMessage()]); }
+            }
 
         // Send success email to user
         try {
@@ -934,6 +957,7 @@ public function payOrder(Request $request, $id)
             'payment_method'       => $method,
             'paymentStatus'        => 3,
             'payment_status'       => 'successful',
+            'payment_name'         => 'order_payment',
             'currency'             => $currency,
             'local_transaction_id' => $localTxId,
         ];
