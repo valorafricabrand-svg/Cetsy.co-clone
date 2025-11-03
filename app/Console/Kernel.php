@@ -33,6 +33,9 @@ class Kernel extends ConsoleKernel
         // Ship-by reminders for buyers and sellers at 08:00 daily
         $schedule->command('orders:notify-shipby')->dailyAt('08:00');
 
+        // Auto-cancel orders that stay pending beyond 24 hours (runs hourly)
+        $schedule->command('orders:auto-cancel')->hourly();
+
         // Subscription expiry reminders are scheduled in bootstrap/app.php
     }
 

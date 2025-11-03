@@ -3,11 +3,18 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\Order;
 use App\Models\Address;
 use App\Models\Payment;
 use App\Models\Wishlist;
 use App\Models\WalletTransaction;
+use App\Models\Wallet;
+use App\Mail\OrderCancelledShopOwnerMail;
+use App\Mail\OrderCancelledBuyerMail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 use App\Services\Recommendation\ProductRecommendationService;
 
 class AccountController extends Controller
@@ -82,6 +89,101 @@ public function orderDetails(Order $order)
 
     return view('account.order_details', compact('order'));
 }
+
+    public function cancelOrder(Request $request, Order $order)
+    {
+        abort_if(!Auth::check() || $order->user_id !== Auth::id(), 404);
+
+        $cancellable = [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING];
+        if (!in_array($order->status, $cancellable, true)) {
+            return back()->with('error', 'This order cannot be cancelled at its current status.');
+        }
+
+        $validated = $request->validate([
+            'cancel_reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $reason = $validated['cancel_reason'] ?? null;
+
+        DB::transaction(function () use ($order, $reason) {
+            if ($order->status === Order::STATUS_PROCESSING) {
+                // Paid order: mark as refunded, wallet entries, and restock
+                $order->update([
+                    'status'        => Order::STATUS_REFUNDED,
+                    'cancel_reason' => $reason,
+                ]);
+
+                // Refund buyer
+                Wallet::create([
+                    'user_id'    => $order->user_id,
+                    'credit'     => (float) $order->total_amount,
+                    'debit'      => 0,
+                    'balance'    => 0,
+                    'reference'  => 'refund_'.$order->id,
+                    'description'=> 'Order refund',
+                ]);
+
+                // Debit seller
+                $shopUserId = optional($order->shop)->user_id;
+                if ($shopUserId) {
+                    Wallet::create([
+                        'user_id'    => $shopUserId,
+                        'credit'     => 0,
+                        'debit'      => (float) $order->total_amount,
+                        'balance'    => 0,
+                        'reference'  => 'seller_debit_'.$order->id,
+                        'description'=> 'Order cancellation - payment reversed',
+                    ]);
+                }
+
+                // Restock inventory (physical items only)
+                try {
+                    $order->loadMissing('items.product');
+                    foreach ($order->items as $item) {
+                        $product = $item->product; if (!$product) continue;
+                        if (strtolower((string)($product->type ?? 'physical')) !== 'physical') continue;
+                        $qty = max(1, (int) ($item->quantity ?? 1));
+                        if (!is_null($product->stock)) {
+                            $product->update(['stock' => ((int)$product->stock) + $qty]);
+                        }
+                        $variantId = (int) ($item->getAttribute('product_variation_id') ?? 0);
+                        if ($variantId > 0) {
+                            try { $variant = \App\Models\Variant::find($variantId); if ($variant && !is_null($variant->stock)) { $variant->update(['stock' => ((int)$variant->stock) + $qty]); } } catch (\Throwable $e) { /* ignore */ }
+                        }
+                    }
+                } catch (\Throwable $e) { Log::warning('order.inventory.restock_failed', ['order_id'=>$order->id, 'error'=>$e->getMessage()]); }
+            } else {
+                // Pending: simple cancel (no inventory decremented yet)
+                $order->update([
+                    'status'        => Order::STATUS_CANCELLED,
+                    'cancel_reason' => $reason,
+                ]);
+            }
+        });
+
+        // Emails to buyer and shop owner (best-effort)
+        try {
+            $order->load(['items.product', 'shop.user', 'user']);
+            $buyer     = $order->user;
+            $shop      = $order->shop;
+            $shopOwner = optional($shop)->user;
+
+            if ($buyer && $buyer->email) {
+                Mail::to($buyer->email)->send(
+                    new OrderCancelledBuyerMail($order, $buyer, $shop, $reason)
+                );
+            }
+            if ($shopOwner && $shopOwner->email) {
+                Mail::to($shopOwner->email)->send(
+                    new OrderCancelledShopOwnerMail($order, $shopOwner, $buyer, $shop, $reason)
+                );
+            }
+        } catch (Throwable $e) {
+            Log::error('order.cancel.email_failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+        }
+
+        return redirect()->route('buyer.orders.show', $order)->with('success', 'Order cancelled successfully.');
+    }
 
     public function payments()
     {

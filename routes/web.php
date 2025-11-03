@@ -736,6 +736,7 @@ Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(f
     Route::post('notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::get('orders/created', [OrderController::class, 'createdSummary'])->name('orders.created');
     Route::get('orders/{order}', [AccountController::class, 'orderDetails'])->name('orders.show');
+    Route::post('orders/{order}/cancel', [AccountController::class, 'cancelOrder'])->name('orders.cancel');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('messages', [MessageController::class, 'buyerIndex'])->name('messages.index');
     Route::get('messages/{conversationId}', [MessageController::class, 'show'])->name('messages.show');
