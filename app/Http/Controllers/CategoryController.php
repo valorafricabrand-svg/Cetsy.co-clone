@@ -276,13 +276,13 @@ $category = Category::find($id);
               });
         })
         ->orderBy('name')
-        ->get(['id','name']);
+        ->get(['id','name','parent_id']);
 
     $children = Category::query()
         ->whereNotNull('parent_id')
         ->where('listing_type', $listingType)
         ->orderBy('name')
-        ->get(['id','name']);
+        ->get(['id','name','parent_id']);
 
         $categories = $parents->concat($children)
             ->unique('id')
@@ -291,7 +291,7 @@ $category = Category::find($id);
         // Fallback: if none matched (e.g., data not tagged yet), return all so seller can proceed
         if ($categories->isEmpty()) {
             $fallbackUsed = true;
-            $categories = Category::query()->orderBy('name')->get(['id','name']);
+            $categories = Category::query()->orderBy('name')->get(['id','name','parent_id']);
         }
 
         return response()

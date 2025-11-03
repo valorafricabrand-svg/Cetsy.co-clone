@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', $product->name . ' | Edit Details')
 
 @push('styles')
@@ -145,16 +145,35 @@
 window.__ALL_CATEGORIES__ = @json($__ALL_CATS);
 function detailsForm(){
   return {
-    type: '{{ old('type',$product->type) }}',
-    categoryId: '{{ old('category_id',$product->category_id) }}',
+    type: @json(old('type', $product->type)),
+    categoryId: @json(old('category_id', $product->category_id)),
     fallback: false,
-    init(){ this.loadCategories(); },
+    categories: [],
+    catsFlat: [],
+    init(){ if(!this.type && this.categoryId){ const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : []; const cat = all.find(x => String(x.id)===String(this.categoryId)); if (cat && cat.listing_type){ const rev = {products:'physical', services:'service', digital:'digital'}; this.type = rev[String(cat.listing_type)] || this.type; } } this.loadCategories(); },
     filterLocalByType(tp){
       const map = { physical: 'products', service: 'services', digital: 'digital' };
       const want = map[String(tp) || ''] || null;
       if (!want) return [];
       const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : [];
       return all.filter(c => (String(c.listing_type || '').toLowerCase() === want));
+    },
+    flattenWithIndent(items){
+      const byId = new Map();
+      const roots = [];
+      (items || []).forEach(it => byId.set(String(it.id), { ...it, children: [] }));
+      byId.forEach(node => {
+        const pid = node.parent_id ? String(node.parent_id) : '';
+        if (pid && byId.has(pid)) byId.get(pid).children.push(node); else roots.push(node);
+      });
+      const out = [];
+      const walk = (n,d) => {
+        const p = d>0 ? ('\u2014 '.repeat(d)) : '';
+        out.push({ id:n.id, indented: p + (n.name || '') });
+        (n.children || []).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).forEach(c=>walk(c,d+1));
+      };
+      roots.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).forEach(r=>walk(r,0));
+      return out;
     },
     async loadCategories(){
       const sel = document.getElementById('category_id');
@@ -177,29 +196,31 @@ function detailsForm(){
         if (this.fallback || !Array.isArray(cats) || cats.length === 0) {
           cats = this.filterLocalByType(this.type);
         }
+        this.categories = cats;
+        this.catsFlat = this.flattenWithIndent(cats);
         sel.innerHTML = '<option value="">Choose category</option>';
-        (Array.isArray(cats) ? cats : []).forEach(c=>{
+        (Array.isArray(this.catsFlat) ? this.catsFlat : []).forEach(c=>{
           const o = document.createElement('option');
-          o.value = c.id; o.text = c.name;
+          o.value = c.id; o.text = c.indented;
           if(String(c.id)===String(this.categoryId)) o.selected=true;
           sel.append(o);
         });
       }catch(e){
         console.warn('Categories load warning:', e);
         this.fallback=false;
-        // Try local fallback by type
         const cats = this.filterLocalByType(this.type);
         if (cats.length) {
+          this.categories = cats;
+          this.catsFlat = this.flattenWithIndent(cats);
           sel.innerHTML = '<option value="">Choose category</option>';
-          cats.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.text=c.name; if(String(c.id)===String(this.categoryId)) o.selected=true; sel.append(o); });
+          this.catsFlat.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.text=c.indented; if(String(c.id)===String(this.categoryId)) o.selected=true; sel.append(o); });
         } else {
           sel.innerHTML = '<option>Error loading categories</option>';
         }
       }
     }
   }
-}
-;(function(){
+};(function(){
   function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
   onReady(function(){
     const el = document.getElementById('description');
@@ -232,3 +253,7 @@ function detailsForm(){
 })();
 </script>
 @endpush
+
+
+
+
