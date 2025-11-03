@@ -882,9 +882,9 @@ public function storeOrder(Request $request)
         abort_unless($order->status === Order::STATUS_SHIPPED, 422, 'Only shipped orders can be marked as delivered.');
 
         DB::transaction(function () use ($order) {
-            // 1) Mark order as completed and set delivered_at timestamp
+            // 1) Mark order as delivered and set delivered_at timestamp
             $order->update([
-                'status'       => Order::STATUS_COMPLETED,
+                'status'       => Order::STATUS_DELIVERED,
                 'delivered_at' => now(),
             ]);
 
@@ -982,14 +982,21 @@ public function storeOrder(Request $request)
                     'description'=> 'Order refund',
                 ]);
 
-                // Debit seller to reverse the payment
+                // Debit seller to reverse the payment (on-hold if funds are still on hold)
+                $sellerId = $order->shop->user_id;
+                $hasOnHold = \App\Models\Wallet::where('user_id', $sellerId)
+                    ->where('status', 'on_hold')
+                    ->where('meta->order_id', $order->id)
+                    ->exists();
                 Wallet::create([
-                    'user_id'    => $order->shop->user_id,
+                    'user_id'    => $sellerId,
                     'credit'     => 0,
                     'debit'      => $order->total_amount,
                     'balance'    => 0,
                     'reference'  => 'seller_debit_'.$order->id,
                     'description'=> 'Order cancellation - payment reversed',
+                    'status'     => $hasOnHold ? 'on_hold' : 'completed',
+                    'meta'       => ['order_id' => $order->id],
                 ]);
 
                 // Restock inventory for physical products
@@ -1072,14 +1079,21 @@ public function storeOrder(Request $request)
                     'description'=> 'Order cancelled by seller - refund',
                 ]);
 
-                // Debit seller to reverse the payment
+                // Debit seller to reverse the payment (on-hold if funds are still on hold)
+                $sellerId = $order->shop->user_id;
+                $hasOnHold = \App\Models\Wallet::where('user_id', $sellerId)
+                    ->where('status', 'on_hold')
+                    ->where('meta->order_id', $order->id)
+                    ->exists();
                 Wallet::create([
-                    'user_id'    => $order->shop->user_id,
+                    'user_id'    => $sellerId,
                     'credit'     => 0,
                     'debit'      => $order->total_amount,
                     'balance'    => 0,
                     'reference'  => 'seller_cancellation_debit_'.$order->id,
                     'description'=> 'Order cancelled by seller - payment reversed',
+                    'status'     => $hasOnHold ? 'on_hold' : 'completed',
+                    'meta'       => ['order_id' => $order->id],
                 ]);
 
                 // Restock inventory for physical products

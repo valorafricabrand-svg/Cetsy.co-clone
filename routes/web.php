@@ -436,6 +436,9 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::post('/{dispute}/mutual-resolution', [\App\Http\Controllers\DisputeController::class, 'initiateMutualResolution'])->name('mutual-resolution.initiate');
         Route::post('/{dispute}/mutual-resolution/agree', [\App\Http\Controllers\DisputeController::class, 'agreeToMutualResolution'])->name('mutual-resolution.agree');
 
+        // Seller refund acceptance (partial or full refund to buyer wallet)
+        Route::post('/{dispute}/refund', [\App\Http\Controllers\DisputeController::class, 'refund'])->name('refund');
+
         // Mark Dispute as Closed
         Route::post('/{dispute}/close', [\App\Http\Controllers\DisputeController::class, 'markAsClosed'])->name('close');
 

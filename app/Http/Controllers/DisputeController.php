@@ -19,6 +19,7 @@ use App\Mail\DisputeClosedMail;
 use App\Mail\DisputeResponseMail;
 use App\Models\Activity;
 use App\Models\EvidenceRequest;
+use App\Models\Wallet;
 
 
 class DisputeController extends Controller
@@ -1167,6 +1168,116 @@ class DisputeController extends Controller
         } else {
             return back()->with('success', 'You have agreed to the mutual resolution. Waiting for the other party.');
         }
+    }
+
+    /**
+     * Seller accepts and issues a refund (partial or full) to the buyer's wallet.
+     */
+    public function refund(Request $request, Dispute $dispute)
+    {
+        $user = Auth::user();
+
+        // Only seller can issue refunds on this dispute
+        $isSeller = ($dispute->seller_id === $user->id)
+            || (optional($dispute->order?->shop)->user_id === $user->id);
+        if (!$isSeller) {
+            abort(403, 'Only the seller can issue a refund for this dispute.');
+        }
+
+        // Cannot refund if already resolved/closed
+        if ($dispute->isResolved() || $dispute->isClosed()) {
+            return back()->withErrors(['error' => 'This dispute has already been resolved or closed.']);
+        }
+
+        $data = $request->validate([
+            'refund_percent' => 'required|numeric|min:1|max:100',
+        ]);
+
+        $order = $dispute->order()->with('shop')->first();
+        if (!$order) {
+            return back()->withErrors(['error' => 'Order not found for this dispute.']);
+        }
+
+        $percent = (float) $data['refund_percent'];
+        $baseTotal = (float) ($order->total_amount ?? 0);
+        $amount = round($baseTotal * ($percent / 100), 2);
+        if ($amount <= 0) {
+            return back()->withErrors(['error' => 'Refund amount must be greater than zero.']);
+        }
+
+        DB::transaction(function () use ($dispute, $order, $amount, $percent) {
+            // Credit buyer wallet
+            Wallet::create([
+                'user_id'    => $dispute->buyer_id,
+                'credit'     => $amount,
+                'debit'      => 0,
+                'balance'    => 0,
+                'reference'  => 'dispute_refund_'.$dispute->id,
+                'description'=> 'Dispute refund for Order #'.$order->id,
+                'meta'       => ['order_id' => $order->id, 'dispute_id' => $dispute->id, 'percent' => $percent],
+            ]);
+
+            // Debit seller wallet
+            $sellerId = $dispute->seller_id ?: optional($order->shop)->user_id;
+            if ($sellerId) {
+                // If seller funds are still on hold for this order, reflect the refund as an on-hold debit
+                $hasOnHold = \App\Models\Wallet::where('user_id', $sellerId)
+                    ->where('status', 'on_hold')
+                    ->where('meta->order_id', $order->id)
+                    ->exists();
+
+                Wallet::create([
+                    'user_id'    => $sellerId,
+                    'credit'     => 0,
+                    'debit'      => $amount,
+                    'balance'    => 0,
+                    'reference'  => 'dispute_refund_'.$dispute->id,
+                    'description'=> 'Dispute refund for Order #'.$order->id,
+                    'status'     => $hasOnHold ? 'on_hold' : 'completed',
+                    'meta'       => ['order_id' => $order->id, 'dispute_id' => $dispute->id, 'percent' => $percent],
+                ]);
+            }
+
+            // Update dispute as resolved with refund
+            $decision = $percent >= 100 ? Dispute::DECISION_BUYER_WINS : Dispute::DECISION_PARTIAL_REFUND;
+            $resolution = 'Seller issued a '.rtrim(rtrim(number_format($percent, 2), '0'), '.')."% refund (".get_currency().' '.number_format($amount, 2).") to buyer.";
+            $dispute->markAsResolved($resolution, $decision, $amount, $sellerId ?? null);
+
+            // If full refund, mark order as refunded and restock inventory
+            if ($percent >= 100) {
+                if ($order->status !== \App\Models\Order::STATUS_REFUNDED) {
+                    $order->update(['status' => \App\Models\Order::STATUS_REFUNDED]);
+                }
+                try {
+                    $order->loadMissing('items.product');
+                    foreach ($order->items as $item) {
+                        $product = $item->product; if (!$product) continue;
+                        if (strtolower((string)($product->type ?? 'physical')) !== 'physical') continue;
+                        $qty = max(1, (int) ($item->quantity ?? 1));
+                        if (!is_null($product->stock)) {
+                            $product->update(['stock' => ((int)$product->stock) + $qty]);
+                        }
+                        $variantId = (int) ($item->getAttribute('product_variation_id') ?? 0);
+                        if ($variantId > 0) {
+                            try { $variant = \App\Models\Variant::find($variantId); if ($variant && !is_null($variant->stock)) { $variant->update(['stock' => ((int)$variant->stock) + $qty]); } } catch (\Throwable $e) { /* ignore */ }
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('dispute.refund.restock_failed', ['dispute_id' => $dispute->id, 'order_id' => $order->id, 'error' => $e->getMessage()]);
+                }
+            }
+
+            // System message log
+            DisputeMessage::create([
+                'dispute_id' => $dispute->id,
+                'user_id'    => null,
+                'message'    => $resolution,
+                'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                'is_internal'=> false,
+            ]);
+        });
+
+        return back()->with('success', 'Refund processed and dispute marked as resolved.');
     }
 
     /**
