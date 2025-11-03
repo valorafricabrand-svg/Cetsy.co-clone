@@ -38,6 +38,10 @@
             Bulk Update
           </button>
           <div class="vr d-none d-md-block"></div>
+          <button type="button" id="bulkMoveBtn" class="btn btn-outline-secondary" disabled data-bs-toggle="modal" data-bs-target="#bulkMoveModal">
+            Move To Parent
+          </button>
+          <div class="vr d-none d-md-block"></div>
           <button type="button" id="collapseAll" class="btn btn-outline-secondary">Collapse All</button>
           <button type="button" id="expandAll"   class="btn btn-outline-secondary">Expand All</button>
           <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
@@ -123,6 +127,42 @@
               </form>
             </div>
           </div>
+
+          <!-- Bulk Move Modal -->
+          <div class="modal fade" id="bulkMoveModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+              <form class="modal-content" action="{{ route('admin.categories.bulk-move') }}" method="POST" id="bulkMoveForm">
+                @csrf
+                <div class="modal-header">
+                  <h5 class="modal-title">Move Categories</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <p class="text-muted">Select a new parent for the selected categories. Choose “None” to move them to top level.</p>
+
+                  <label class="form-label">New Parent</label>
+                  <select name="parent_id" class="form-select">
+                    <option value="">— None (Top level) —</option>
+                    @php
+                      $renderOptions = function($nodes, $depth = 0) use (&$renderOptions) {
+                        foreach ($nodes as $node) {
+                          echo '<option value="'.$node->id.'">'.str_repeat('— ', $depth).e($node->name).'</option>';
+                          if ($node->relationLoaded('children') && $node->children->isNotEmpty()) {
+                              $renderOptions($node->children, $depth+1);
+                          }
+                        }
+                      };
+                    @endphp
+                    @php $renderOptions($parents); @endphp
+                  </select>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Move Selected</button>
+                </div>
+              </form>
+            </div>
+          </div>
       @endif
 
     </div>
@@ -141,12 +181,15 @@
     const selectedCountEl = document.getElementById('selectedCount');
     const selectedCountPlural = document.getElementById('selectedCountPlural');
     const bulkModalEl = document.getElementById('bulkUpdateModal');
+    const bulkMoveModalEl = document.getElementById('bulkMoveModal');
+    const bulkMoveBtn = document.getElementById('bulkMoveBtn');
     const collapseAllBtn = document.getElementById('collapseAll');
     const expandAllBtn   = document.getElementById('expandAll');
 
     function updateState(){
       const count = checkboxes().filter(cb => cb.checked).length;
       bulkBtn.disabled = count === 0;
+      if (bulkMoveBtn) bulkMoveBtn.disabled = count === 0;
       if (selectedCountEl) selectedCountEl.textContent = count;
       if (selectedCountPlural) selectedCountPlural.textContent = count === 1 ? 'y' : 'ies';
       if (selectAll) selectAll.checked = count > 0 && count === checkboxes().length;
@@ -233,6 +276,27 @@
         // Remove previous hidden ids
         Array.from(form.querySelectorAll('input[type="hidden"][name="ids[]"]')).forEach(el => el.remove());
         // Add selected ids
+        selected.forEach(cb => {
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = 'ids[]';
+          hidden.value = cb.value;
+          form.appendChild(hidden);
+        });
+      });
+    }
+
+    if (bulkMoveModalEl) {
+      bulkMoveModalEl.addEventListener('show.bs.modal', function (e) {
+        const selected = checkboxes().filter(cb => cb.checked);
+        if (selected.length === 0) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return false;
+        }
+        const form = document.getElementById('bulkMoveForm');
+        if (!form) return;
+        Array.from(form.querySelectorAll('input[type="hidden"][name="ids[]"]')).forEach(el => el.remove());
         selected.forEach(cb => {
           const hidden = document.createElement('input');
           hidden.type = 'hidden';
