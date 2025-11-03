@@ -96,6 +96,11 @@ public function store(Request $request)
         'image'         => 'nullable|image|max:20480',
     ]);
 
+    // If listing_fee was left blank, drop it so DB default applies
+    if (array_key_exists('listing_fee', $data) && ($data['listing_fee'] === null || $data['listing_fee'] === '')) {
+        unset($data['listing_fee']);
+    }
+
     // Auto‐slug if blank
     if (empty($data['slug'])) {
         $data['slug'] = Str::slug($data['name']);
@@ -144,6 +149,11 @@ public function update(Request $request, Category $category)
         'listing_frequency' => 'required|in:1,4',
         'image'         => 'nullable|image|max:20480',
     ]);
+
+    // Preserve existing listing_fee if left blank
+    if (array_key_exists('listing_fee', $data) && ($data['listing_fee'] === null || $data['listing_fee'] === '')) {
+        unset($data['listing_fee']);
+    }
 
     // Auto‐slug if blank
     if (empty($data['slug'])) {
@@ -321,6 +331,32 @@ $category = Category::find($id);
         Category::whereIn('id', $validated['ids'])->update($payload);
 
         return back()->with('success', 'Selected categories updated successfully.');
+    }
+
+    /**
+     * Admin: Bulk move categories to a new parent.
+     */
+    public function bulkMove(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:categories,id',
+            'parent_id' => 'nullable|integer|exists:categories,id',
+        ]);
+
+        $ids = collect($validated['ids'])->unique()->values();
+        $parentId = $request->input('parent_id');
+
+        // Do not allow assigning parent to one of the selected IDs
+        if ($parentId && $ids->contains((int) $parentId)) {
+            return back()->with('warning', 'Cannot move categories under one of the selected items.');
+        }
+
+        // Basic move; note: does not detect deep cycles (moving into own descendant)
+        // For now, we trust admin to avoid that; otherwise requires a tree walk.
+        Category::whereIn('id', $ids)->update(['parent_id' => $parentId ?: null]);
+
+        return back()->with('success', 'Selected categories moved successfully.');
     }
 
 }

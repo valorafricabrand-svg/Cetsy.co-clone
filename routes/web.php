@@ -485,6 +485,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         [CategoryAttributeController::class, 'destroy']
     )->name('category-attributes.destroy');
     Route::resource('categories', CategoryController::class);
+    // Bulk update and move categories
+    Route::post('categories/bulk-update', [CategoryController::class, 'bulkUpdate'])->name('categories.bulk-update');
+    Route::post('categories/bulk-move',   [CategoryController::class, 'bulkMove'])->name('categories.bulk-move');
     // Bulk update categories (listing_fee, listing_type, listing_frequency)
     Route::post('categories/bulk-update', [CategoryController::class, 'bulkUpdate'])->name('categories.bulk-update');
 
