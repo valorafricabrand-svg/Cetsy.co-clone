@@ -321,25 +321,46 @@
 
       @elseif($product->is_active !== 1)
         {{-- Not active / pending --}}
-        <div class="alert alert-warning d-flex align-items-center mb-4">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          This listing isn’t live yet. Pay the fee below to activate it.
-        </div>
+        @php
+          $hasPaid   = !empty($product->listing_paid_at);
+          $isDueSoon = $product->next_due_date && !\Carbon\Carbon::parse($product->next_due_date)->isFuture();
+          $dueFuture = $product->next_due_date && \Carbon\Carbon::parse($product->next_due_date)->isFuture();
+        @endphp
 
-        @php $actionPrefix = 'Pay'; @endphp
+        @if($hasPaid && $dueFuture)
+          <div class="alert alert-warning d-flex align-items-center mb-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Listing not live yet. Add a featured image, then publish your listing.
+          </div>
+          <div class="d-flex flex-wrap gap-2 mb-4">
+            <a href="{{ route('products.media', $product) }}" class="btn btn-primary">
+              Add Featured Image
+            </a>
+            <a href="{{ route('products.settings', $product) }}" class="btn btn-outline-secondary">
+              Go to Settings
+            </a>
+          </div>
+        @else
+          <div class="alert alert-warning d-flex align-items-center mb-4">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            This listing isn’t live yet. Pay the fee below to activate it.
+          </div>
 
-        <div class="d-flex flex-wrap gap-2 mb-4">
-          @foreach($planButtons as $planKey => $option)
-            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
-              @csrf
-              <input type="hidden" name="plan" value="{{ $planKey }}">
-              <button class="btn {{ $option['class'] }}">
-                {{ $actionPrefix }} {{ $option['label'] }}<br>
-                <small>{{ money($option['amount']) }}</small>
-              </button>
-            </form>
-          @endforeach
-        </div>
+          @php $actionPrefix = 'Pay'; @endphp
+
+          <div class="d-flex flex-wrap gap-2 mb-4">
+            @foreach($planButtons as $planKey => $option)
+              <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+                @csrf
+                <input type="hidden" name="plan" value="{{ $planKey }}">
+                <button class="btn {{ $option['class'] }}">
+                  {{ $actionPrefix }} {{ $option['label'] }}<br>
+                  <small>{{ money($option['amount']) }}</small>
+                </button>
+              </form>
+            @endforeach
+          </div>
+        @endif
       @endif
 
       {{-- Action Links --}}

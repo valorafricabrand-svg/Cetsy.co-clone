@@ -27,7 +27,7 @@
         <p>Your payment is recorded and your next due date is
            <strong>{{ \Carbon\Carbon::parse($nextDue)->toFormattedDateString() }}</strong>.
         </p>
-        <a href="{{ route('products.edit', $product) }}" class="btn btn-primary w-100 mb-2">
+        <a href="{{ route('products.media', $product) }}" class="btn btn-primary w-100 mb-2">
           Add Featured Image
         </a>
         <a href="{{ route('products.show', $product) }}" class="btn btn-outline-secondary w-100">
