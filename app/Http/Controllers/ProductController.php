@@ -585,7 +585,13 @@ public function update(Request $request, Product $product)
             $newProduct = $product->replicate();
             $newProduct->name = $product->name . ' (Copy)';
             $newProduct->slug = Str::slug($newProduct->name) . '-' . Str::random(6);
-            $newProduct->is_active = 0;
+            // Reset listing-related fields so the copy doesn't inherit subscription/expiry
+            $newProduct->is_active       = 0;
+            $newProduct->listing_paid_at = null;
+            $newProduct->next_due_date   = null;
+            if (isset($newProduct->renewal_type)) {
+                $newProduct->renewal_type = 'automatic'; // enum not-null
+            }
             $newProduct->save();
 
             // 2) Media
