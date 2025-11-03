@@ -70,10 +70,9 @@
                 x-model="categoryId"
                 required>
           <option value="">Choose category</option>
-          <template x-for="cat in categories" :key="cat.id">
-            <option :value="cat.id" x-text="cat.name"
-                    :selected="String(cat.id) === '{{ old('category_id') }}'">
-            </option>
+          <template x-for="cat in catsFlat" :key="cat.id">
+            <option :value="cat.id" x-text="cat.indented"
+                    :selected="String(cat.id) === '{{ old('category_id') }}'"></option>
           </template>
         </select>
         <div x-show="loading" class="form-text text-muted">Loading categories…</div>
@@ -210,7 +209,7 @@
 
 <script>
   // Local cache of categories (id, name, listing_type) as a robust fallback
-  window.__ALL_CATEGORIES__ = @json(\App\Models\Category::select('id','name','listing_type')->orderBy('name')->get());
+  window.__ALL_CATEGORIES__ = @json($categories);
 
 
   function listingForm() {
@@ -218,6 +217,7 @@
       type: '{{ old('type','physical') }}',
       categoryId: '{{ old('category_id','') }}',
       categories: [],
+      catsFlat: [],
       loading: false,
       fallback: false,
       // service regions tags input state
@@ -260,9 +260,11 @@
           if (this.fallback || this.categories.length === 0) {
             this.categories = this.filterLocalByType(this.type);
           }
+          this.catsFlat = this.flattenWithIndent(this.categories);
         } catch (e) {
           console.warn('Categories load warning:', e);
           this.categories = this.filterLocalByType(this.type);
+          this.catsFlat = this.flattenWithIndent(this.categories);
           this.fallback = false;
         } finally {
           this.loading = false;
@@ -270,6 +272,29 @@
             this.categoryId = '{{ old('category_id') }}';
           }
         }
+      },
+
+      // Build a tree and return a flattened list with indentation
+      flattenWithIndent(items){
+        const byId = new Map();
+        const roots = [];
+        (items || []).forEach(it => { byId.set(String(it.id), { ...it, children: [] }); });
+        byId.forEach(node => {
+          const pid = node.parent_id ? String(node.parent_id) : '';
+          if (pid && byId.has(pid)) byId.get(pid).children.push(node); else roots.push(node);
+        });
+        const out = [];
+        const walk = (node, depth) => {
+          const prefix = depth > 0 ? ('\u2014 '.repeat(depth)) : '';
+          out.push({ id: node.id, indented: prefix + node.name });
+          if (node.children && node.children.length) {
+            node.children.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
+            node.children.forEach(ch => walk(ch, depth+1));
+          }
+        };
+        roots.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
+        roots.forEach(r => walk(r, 0));
+        return out;
       },
 
       addManualVariation() {
@@ -419,3 +444,4 @@ if (window.tinymce) tinymce.init({
 })();
 </script>
 @endpush
+
