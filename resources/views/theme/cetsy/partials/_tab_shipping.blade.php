@@ -44,12 +44,12 @@
       // Combine processing + transit to estimated delivery window
       $etaStart = null; $etaEnd = null; $etaLabel = null; $procLabel = null; $transitLabel = null;
       if ($procMin !== null && $procMax !== null) {
-        $procLabel = ($procMin === $procMax) ? ($procMin.' day'.($procMin==1?'':'s')) : ($procMin.'–'.$procMax.' days');
+        $procLabel = ($procMin === $procMax) ? ($procMin.' day'.($procMin==1?'':'s')) : ($procMin.'-'.$procMax.' days');
       } elseif ($procMin !== null) {
         $procLabel = $procMin.' day'.($procMin==1?'':'s');
       }
       if ($daysMin !== null && $daysMax !== null) {
-        $transitLabel = ($daysMin === $daysMax) ? ($daysMin.' day'.($daysMin==1?'':'s')) : ($daysMin.'–'.$daysMax.' days');
+        $transitLabel = ($daysMin === $daysMax) ? ($daysMin.' day'.($daysMin==1?'':'s')) : ($daysMin.'-'.$daysMax.' days');
       } elseif ($daysMin !== null) {
         $transitLabel = $daysMin.' day'.($daysMin==1?'':'s');
       }
@@ -63,7 +63,7 @@
         $fmt = function($d){ return $d ? $d->format('M j') : null; };
         $etaStart = $minTotal > 0 ? $base->copy()->addDays($minTotal) : null;
         $etaEnd   = $maxTotal !== null ? $base->copy()->addDays($maxTotal) : null;
-        if ($etaStart && $etaEnd) { $etaLabel = $fmt($etaStart).' – '.$fmt($etaEnd); }
+        if ($etaStart && $etaEnd) { $etaLabel = $fmt($etaStart).' - '.$fmt($etaEnd); }
         elseif ($etaStart)        { $etaLabel = $fmt($etaStart); }
         elseif ($etaEnd)          { $etaLabel = $fmt($etaEnd); }
       }
@@ -74,7 +74,7 @@
       <i class="fa-solid fa-truck-fast text-success"></i>
       <div>
         <div class="fw-semibold">Estimated delivery</div>
-        <div class="small text-muted">{{ $etaLabel }} @if($procLabel || $transitLabel) · (Processing {{ $procLabel ?? '—' }}, Transit {{ $transitLabel ?? '—' }}) @endif</div>
+        <div class="small text-muted">{{ $etaLabel }} @if($procLabel || $transitLabel) - (Processing {{ $procLabel ?? '-' }}, Transit {{ $transitLabel ?? '-' }}) @endif</div>
       </div>
     </div>
   @endif
