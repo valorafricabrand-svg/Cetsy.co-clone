@@ -510,6 +510,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('kyc/{kyc}', [KycController::class, 'update'])->name('kyc.update');
     Route::get('kyc/{kyc}', [KycController::class, 'showDetails'])->name('kyc.showDetails');
 
+    // User Agreement (Policies)
+    Route::get('user-agreement', [\App\Http\Controllers\Admin\PolicySectionController::class, 'index'])->name('policies.index');
+    Route::get('user-agreement/{slug}/edit', [\App\Http\Controllers\Admin\PolicySectionController::class, 'edit'])->name('policies.edit');
+    Route::put('user-agreement/{slug}', [\App\Http\Controllers\Admin\PolicySectionController::class, 'update'])->name('policies.update');
     // Settings, Reports
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
     Route::put('settings/{setting}', [AdminSetting::class, 'update'])->name('settings.update');
