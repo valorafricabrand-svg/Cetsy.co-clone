@@ -253,7 +253,7 @@
                                     <strong>Initial Dispute Description</strong>
                                     <small class="text-muted ms-2">by {{ $dispute->buyer_id === auth()->id() ? 'You' : $dispute->buyer->name }}</small>
                                 </h6>
-                                <p class="mb-3 fs-6">{{ $dispute->description }}</p>
+                                <p class="mb-3 fs-6">{!! $dispute->description !!}</p>
                                 
                                 {{-- Initial Evidence Display --}}
                                 @if($dispute->evidence && count($dispute->evidence) > 0)
@@ -346,6 +346,96 @@
             </div>
 
             
+
+            {{-- Seller Refund Action --}}
+            @php
+                $isSeller = auth()->check() && (($dispute->seller_id ?? null) === auth()->id() || optional($dispute->order->shop)->user_id === auth()->id());
+            @endphp
+            @if($isSeller && !$dispute->isResolved() && !$dispute->isClosed())
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h6 class="mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-cash-coin"></i> Issue Refund to Buyer
+                        </h6>
+                        <div class="d-flex align-items-center gap-2">
+                          <form method="POST" action="{{ route('disputes.refund', $dispute) }}">
+                            @csrf
+                            <input type="hidden" name="refund_percent" value="100">
+                            <button type="submit" class="btn btn-sm btn-success">
+                              <i class="bi bi-check2-circle"></i> Accept Full Refund (100%)
+                            </button>
+                          </form>
+                          <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#refundModal-{{ $dispute->id }}">
+                            <i class="bi bi-sliders"></i> Offer Partial Refund
+                          </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">You can resolve this dispute by issuing a partial or full refund to the buyer's wallet.</p>
+                        <ul class="mb-0 small text-muted">
+                            <li>Refund is credited to the buyer and debited from your wallet.</li>
+                            <li>For non-delivery, consider a full (100%) refund.</li>
+                            <li>For damaged or not as described, you may agree on a partial refund.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Refund Modal -->
+                <div class="modal fade" id="refundModal-{{ $dispute->id }}" tabindex="-1" aria-labelledby="refundModalLabel-{{ $dispute->id }}" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <form method="POST" action="{{ route('disputes.refund', $dispute) }}" class="modal-content">
+                      @csrf
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="refundModalLabel-{{ $dispute->id }}">Confirm Refund</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        @php $orderTotal = (float)($dispute->order->total_amount ?? 0); @endphp
+                        <div class="mb-3">
+                          <label for="refund-percent-{{ $dispute->id }}" class="form-label">Refund Percentage (%)</label>
+                          <input type="number" name="refund_percent" id="refund-percent-{{ $dispute->id }}" class="form-control" value="50" min="1" max="100" step="0.01" required>
+                          <div class="form-text">Order Total: {{ get_currency() }} {{ number_format($orderTotal, 2) }}. Set the percentage to refund to the buyer.</div>
+                        </div>
+                        <div class="alert alert-info" id="refund-amount-box-{{ $dispute->id }}">
+                          <i class="bi bi-calculator"></i>
+                          <strong>Refund Amount:</strong>
+                          <span id="refund-amount-{{ $dispute->id }}">{{ get_currency() }} {{ number_format($orderTotal, 2) }}</span>
+                        </div>
+                        <p class="small text-muted mb-0">This will credit the buyer's wallet and debit your wallet. This action cannot be undone.</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">
+                          <i class="bi bi-check2-circle"></i> Confirm Refund
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                @push('scripts')
+                <script>
+                (function(){
+                  document.addEventListener('DOMContentLoaded', function(){
+                    var input = document.getElementById('refund-percent-{{ $dispute->id }}');
+                    var amountEl = document.getElementById('refund-amount-{{ $dispute->id }}');
+                    var total = {{ $orderTotal }};
+                    var currency = @json(get_currency());
+                    function fmt(n){ try { return n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); } catch(e){ return (Math.round(n*100)/100).toFixed(2); } }
+                    function recalc(){
+                      var p = parseFloat(input.value || '0');
+                      if (isNaN(p) || p < 0) p = 0;
+                      if (p > 100) p = 100;
+                      var amt = total * (p/100);
+                      amountEl.textContent = currency + ' ' + fmt(amt);
+                    }
+                    input.addEventListener('input', recalc);
+                    recalc();
+                  });
+                })();
+                </script>
+                @endpush
+            @endif
 
             {{-- Mutual Resolution Section --}}
             @if($dispute->canBeMutuallyResolved())
@@ -784,7 +874,7 @@
                                 {{-- Message Content --}}
                                 <div class="message-content p-3 rounded">
                                     <p class="mb-3">
-                                        {{ $messageContent }}
+                                        {!! $messageContent !!}
                                     </p>
                                     
                                     {{-- Attachments Display --}}
