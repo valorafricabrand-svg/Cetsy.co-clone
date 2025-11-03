@@ -11,6 +11,44 @@ function favicon_url(){
     return '';
 }
 
+if (! function_exists('storage_rel_path')) {
+    /**
+     * Strip leading public/storage prefixes and leading slash.
+     */
+    function storage_rel_path(?string $path): ?string
+    {
+        if (!$path) return null;
+        $p = ltrim($path, '/');
+        if (str_starts_with($p, 'public/'))  { $p = substr($p, 7); }
+        if (str_starts_with($p, 'storage/')) { $p = substr($p, 8); }
+        return $p;
+    }
+}
+
+if (! function_exists('media_url')) {
+    /**
+     * Build a public URL for a media path, with fallback across common dirs.
+     */
+    function media_url(?string $path): string
+    {
+        if (!$path) return asset('storage/placeholder.jpg');
+        $rel = storage_rel_path($path);
+        try {
+            if (\Storage::disk('public')->exists($rel)) {
+                return \Storage::disk('public')->url($rel);
+            }
+        } catch (\Throwable $e) {}
+
+        $basename = basename($rel);
+        foreach (['product-media','product_media','product-images','products'] as $dir) {
+            $cand = $dir . '/' . $basename;
+            try { if (\Storage::disk('public')->exists($cand)) return \Storage::disk('public')->url($cand); } catch (\Throwable $e) {}
+        }
+
+        return asset('storage/' . ltrim($rel ?: $path, '/'));
+    }
+}
+
 function logo_url(){
 
     
@@ -435,13 +473,35 @@ if (! function_exists('product_thumb_url')) {
             return setting('favicon_url') ?: asset('storage/placeholder.jpg');
         }
 
+        // Normalize a path to a public-disk relative path
         $normalize = function (?string $path): ?string {
             if (!$path) return null;
             $p = ltrim($path, '/');
-            // If DB stored 'public/...' or 'storage/...', strip the prefix for Storage::disk('public')->url()
-            if (str_starts_with($p, 'public/'))   { $p = substr($p, 7); }
-            if (str_starts_with($p, 'storage/'))  { $p = substr($p, 8); }
+            if (str_starts_with($p, 'public/'))  { $p = substr($p, 7); }
+            if (str_starts_with($p, 'storage/')) { $p = substr($p, 8); }
             return $p;
+        };
+
+        // Try to resolve to an existing file on the public disk.
+        $resolvePublic = function (?string $rel) use ($normalize): ?string {
+            if (!$rel) return null;
+            $rel = $normalize($rel);
+            try {
+                if (\Storage::disk('public')->exists($rel)) {
+                    return $rel;
+                }
+            } catch (\Throwable $e) {}
+
+            $basename = basename($rel);
+            $candidates = [];
+            // If original included a directory, try its filename in common folders
+            $candidates[] = $rel;
+            $dirs = ['product-media','product_media','product-images','products'];
+            foreach ($dirs as $dir) { $candidates[] = $dir . '/' . $basename; }
+            foreach ($candidates as $cand) {
+                try { if (\Storage::disk('public')->exists($cand)) return $cand; } catch (\Throwable $e) {}
+            }
+            return $rel;
         };
 
         // 1) Featured image
@@ -450,33 +510,24 @@ if (! function_exists('product_thumb_url')) {
             if (str_starts_with($fi, 'http')) {
                 return $fi;
             }
-            $rel = $normalize($fi);
-            try {
-                return \Storage::disk('public')->url($rel);
-            } catch (\Throwable $e) {
-                return asset('storage/' . ltrim($rel ?: $fi, '/'));
-            }
+            $rel = $resolvePublic($fi);
+            try { return \Storage::disk('public')->url($rel); }
+            catch (\Throwable $e) { return asset('storage/' . ltrim($rel ?: $fi, '/')); }
         }
 
         // 2) First media
         $firstMedia = method_exists($product, 'media') ? $product->media->first() : null;
         if ($firstMedia && !empty($firstMedia->url)) {
-            $rel = $normalize($firstMedia->url);
-            try {
-                return \Storage::disk('public')->url($rel);
-            } catch (\Throwable $e) {
-                return asset('storage/' . ltrim($rel ?: $firstMedia->url, '/'));
-            }
+            $rel = $resolvePublic($firstMedia->url);
+            try { return \Storage::disk('public')->url($rel); }
+            catch (\Throwable $e) { return asset('storage/' . ltrim($rel ?: $firstMedia->url, '/')); }
         }
 
         // 3) Shop logo
         if ($product->shop && !empty($product->shop->logo)) {
-            $rel = $normalize($product->shop->logo);
-            try {
-                return \Storage::disk('public')->url($rel);
-            } catch (\Throwable $e) {
-                return asset('storage/' . ltrim($rel ?: $product->shop->logo, '/'));
-            }
+            $rel = $resolvePublic($product->shop->logo);
+            try { return \Storage::disk('public')->url($rel); }
+            catch (\Throwable $e) { return asset('storage/' . ltrim($rel ?: $product->shop->logo, '/')); }
         }
 
         // 4) Fallbacks

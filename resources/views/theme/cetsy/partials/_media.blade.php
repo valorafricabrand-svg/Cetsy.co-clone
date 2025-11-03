@@ -10,7 +10,7 @@
   // Helper: Build srcset for responsive sharpness.
   // Swap these with real resized variants if you generate them.
   $srcsetFor = function (string $path) {
-      $url = asset('storage/' . ltrim($path, '/'));
+      $url = media_url($path);
       return implode(', ', [
           "{$url} 800w",
           "{$url} 1200w",
@@ -41,18 +41,18 @@
               </span>
               <video controls class="d-block w-100 ratio-box"
                      style="aspect-ratio: 4/3; object-fit: contain; background:#f7f7f7">
-                <source src="{{ asset('storage/'.$media->url) }}" />
+                <source src="{{ media_url($media->url) }}" />
               </video>
             </div>
           @else
             {{-- Image wrapper enables hover lens zoom (desktop) + click to open lightbox --}}
             <div class="zoom-wrap"
-                 data-full="{{ asset('storage/'.$media->url) }}"
+                 data-full="{{ media_url($media->url) }}"
                  data-index="{{ $i }}"
                  role="button"
                  title="Click to open full-screen">
               <img
-                src="{{ asset('storage/'.$media->url) }}"
+                src="{{ media_url($media->url) }}"
                 srcset="{{ $srcsetFor($media->url) }}"
                 sizes="{{ $sizesAttr }}"
                 class="d-block w-100 ratio-box"
@@ -86,7 +86,7 @@
                data-bs-slide-to="{{ $i }}"
                style="width:74px;height:74px;cursor:pointer;overflow:hidden;border-radius:.5rem;border:1px solid rgba(0,0,0,.08)">
             <video
-              src="{{ asset('storage/'.$media->url) }}"
+              src="{{ media_url($media->url) }}"
               class="w-100 h-100"
               style="object-fit: cover"
               muted
@@ -94,7 +94,7 @@
           </div>
         @else
           <img
-            src="{{ asset('storage/'.$media->url) }}"
+            src="{{ media_url($media->url) }}"
             srcset="{{ $srcsetFor($media->url) }}"
             sizes="74px"
             class="img-thumbnail thumb @if($i === 0) border-success @endif"
