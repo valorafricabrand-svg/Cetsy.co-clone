@@ -62,7 +62,7 @@
                     <p><strong>Created At:</strong> {{ $product->created_at->format('d M Y') }}</p>
                     <p><strong>Description:</strong><br>{{ $product->description }}</p>
                     <div class="mt-4">
-                        <a href="{{ route('seller.editProduct', $product->id) }}" class="btn btn-outline-primary">Edit Product</a>
+                        <a href="{{ route('products.details', $product->id) }}" class="btn btn-outline-primary">Edit Product</a>
                     </div>
                 </div>
             </div>
