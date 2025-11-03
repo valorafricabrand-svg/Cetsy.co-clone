@@ -133,54 +133,6 @@
               }
             }
 
-            // Processing time → estimated dispatch window (min/max days)
-            $procMin = null; $procMax = null;
-            try {
-              // 1) Prefer product.processing_time_id
-              if (!empty($product->processing_time_id)) {
-                $pt = \App\Models\ProcessingTime::find($product->processing_time_id);
-                if ($pt) {
-                  if (isset($pt->days) && is_numeric($pt->days)) { $procMin = $procMax = (int) $pt->days; }
-                  else {
-                    $procMin = is_numeric($pt->start_day ?? null) ? (int) $pt->start_day : null;
-                    $procMax = is_numeric($pt->end_day   ?? null) ? (int) $pt->end_day   : null;
-                  }
-                }
-              }
-              // 2) Otherwise, try shipping rows' custom mins
-              if (($procMin === null && $procMax === null) && isset($rows)) {
-                $minRow = $rows->min(fn($r) => (int) ($r->processing_custom_min ?? PHP_INT_MAX));
-                if (is_int($minRow) && $minRow !== PHP_INT_MAX) { $procMin = $minRow; }
-                // If a named processing_time_id is on rows, try to read it
-                $rowPtId = $rows->firstWhere('processing_time_id', '!=', null)->processing_time_id ?? null;
-                if ($rowPtId && ($pt2 = \App\Models\ProcessingTime::find($rowPtId))) {
-                  if ($procMin === null && isset($pt2->days) && is_numeric($pt2->days)) { $procMin = (int) $pt2->days; }
-                  if (isset($pt2->start_day) && is_numeric($pt2->start_day)) { $procMin = $procMin ?? (int) $pt2->start_day; }
-                  if (isset($pt2->end_day)   && is_numeric($pt2->end_day))   { $procMax = (int) $pt2->end_day; }
-                }
-              }
-            } catch (\Throwable $e) { /* ignore */ }
-
-            // Compute dispatch-by date(s)
-            $dispatchLabel = null; $procLabel = null;
-            try {
-              if ($procMin !== null || $procMax !== null) {
-                $today = now();
-                $start = $procMin !== null ? $today->copy()->addDays((int)$procMin) : null;
-                $end   = $procMax !== null ? $today->copy()->addDays((int)$procMax) : null;
-                $fmt = function($d){ return $d ? $d->format('M j') : null; };
-                if ($start && $end) { $dispatchLabel = $fmt($start) . ' – ' . $fmt($end); }
-                elseif ($start)    { $dispatchLabel = $fmt($start); }
-                elseif ($end)      { $dispatchLabel = $fmt($end); }
-
-                if ($procMin !== null && $procMax !== null) {
-                  $procLabel = $procMin === $procMax ? ($procMin.' day'.($procMin==1?'':'s'))
-                                                      : ($procMin.'–'.$procMax.' days');
-                } elseif ($procMin !== null) {
-                  $procLabel = $procMin.' day'.($procMin==1?'':'s');
-                }
-              }
-            } catch (\Throwable $e) { /* ignore */ }
           @endphp
 
           @if($isPhysical)
@@ -208,16 +160,6 @@
                   </div>
                 </div>
 
-                @if($procMin !== null || $procMax !== null)
-                  <div class="vr d-none d-md-block"></div>
-                  <div class="d-flex align-items-center gap-2">
-                    <i class="fa-solid fa-clock text-secondary"></i>
-                    <div class="small">
-                      <div class="fw-semibold">Processing</div>
-                      <div class="text-muted">{{ $procLabel ?? '—' }}@if($dispatchLabel) · Dispatch by {{ $dispatchLabel }} @endif</div>
-                    </div>
-                  </div>
-                @endif
               </div>
             </div>
           @endif
