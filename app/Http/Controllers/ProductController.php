@@ -521,7 +521,7 @@ public function update(Request $request, Product $product)
     $this->recordProductActivity($product, 'full_update', $changes, $extra);
 
     return redirect()
-        ->route('products.edit', $product)
+        ->route('products.show', $product)
         ->with('success', 'Product updated successfully!');
 }
 
@@ -678,7 +678,7 @@ public function update(Request $request, Product $product)
             }
         });
 
-        return redirect()->route('products.edit', $newProduct)
+        return redirect()->route('products.show', $newProduct)
             ->with('success', 'Product duplicated successfully! Variations, options, and variant combinations were copied.');
     }
 

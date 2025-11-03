@@ -12,11 +12,12 @@
                 <thead class="table-light text-center">
                     <tr>
                         <th>Payment ID</th>
-                        <th>Order ID</th>
-                        <th>Shop</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Total ({{ get_currency() }})</th>
+                         <th>Order ID</th>
+                         <th>Shop</th>
+                         <th>Date</th>
+                         <th>Type</th>
+                         <th>Status</th>
+                         <th>Total ({{ get_currency() }})</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -34,7 +35,20 @@
                             </td>
                             <td>{{ optional($pay->created_at)->format('d M Y') ?? 'N/A' }}</td>
                             <td>
-                                <span class="badge {{ $pay->payment_status == 'completed' ? 'bg-success' : 'bg-warning text-dark' }}">
+                                @php
+                                  $labelMap = [
+                                    'listing_fee'        => 'Listing Fee',
+                                    'online_payment_fee' => 'Online Payment Fee',
+                                    'subscription_fee'   => 'Subscription Fee',
+                                    'order_payment'      => 'Order Payment',
+                                  ];
+                                  $typeLabel = $labelMap[$pay->payment_name ?? ''] ?? ($pay->order_id ? 'Order Payment' : 'Payment');
+                                @endphp
+                                {{ $typeLabel }}
+                            </td>
+                            <td>
+                                @php($ok = in_array($pay->payment_status, ['successful','completed'], true))
+                                <span class="badge {{ $ok ? 'bg-success' : 'bg-warning text-dark' }}">
                                     {{ ucfirst($pay->payment_status) }}
                                 </span>
                             </td>

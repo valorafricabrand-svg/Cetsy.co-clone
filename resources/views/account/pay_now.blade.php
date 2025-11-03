@@ -52,21 +52,22 @@
   // Shortfall the user must cover via online method (before fees)
   $shortfallBase   = max(0, $orderTotal - $walletApplied);
 
-  // Online fee only applies to the shortfall, not the wallet-applied portion
+  // Online fee only applies to PayPal (on the shortfall only)
   $paypalFeeShort  = round($shortfallBase * $transactionFeePercent, 2);
 
-  // What we'll actually charge online right now
-  $amountDueNow    = $shortfallBase + $paypalFeeShort;
+  // Amount due now (for wallet/MPesa): shortfall only
+  $amountDueNow    = $shortfallBase;
 
   // Display string for "Amount Due Now" respecting zero-decimal currencies
   $amountDueNowDisplay = in_array($currency, $zeroDecimal)
       ? (string) intval(round($amountDueNow))
       : number_format($amountDueNow, 2, '.', '');
 
-  // PayPal createOrder amount (must be a string)
+  // PayPal createOrder amount (shortfall + fee) must be a string
+  $paypalGross     = $shortfallBase + $paypalFeeShort;
   $paypalAmountStr = in_array($currency, $zeroDecimal)
-      ? (string) intval(round($amountDueNow))
-      : number_format($amountDueNow, 2, '.', '');
+      ? (string) intval(round($paypalGross))
+      : number_format($paypalGross, 2, '.', '');
 
   // KES preview for M-Pesa (convert only the shortfall base; fees are PayPal-specific)
   $usdToKesRate = (float) env('USD_TO_KES', 130);
@@ -107,14 +108,7 @@
                 </li>
               @endif
 
-              @if($shortfallBase > 0)
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Online Payment Fee
-                    <small class="text-muted">({{ number_format($transactionFeePercentDisplay, 2) }}%)</small>
-                  </span>
-                  <span>{{ $currency }} {{ number_format($paypalFeeShort, 2) }}</span>
-                </li>
-              @endif
+              {{-- No fee shown here; PayPal fee shown near PayPal button only --}}
 
               <li class="list-group-item d-flex justify-content-between fw-bold">
                 <span>Amount&nbsp;Due&nbsp;Now</span>
@@ -169,6 +163,9 @@
 
             {{-- ── PayPal / Card (charges only amountDueNow) ───────────── --}}
             @if($shortfallBase > 0)
+              <div class="text-center small text-muted mb-2">
+                Paying with PayPal adds an online fee of {{ $currency }} {{ number_format($paypalFeeShort, 2) }} ({{ number_format($transactionFeePercentDisplay, 2) }}%).
+              </div>
               <div id="paypal-button-container" class="text-center mb-3"></div>
             @endif
 
@@ -203,8 +200,10 @@ $(function () {
 
     // ========= PayPal (only if shortfall exists) =========
     @if($shortfallBase > 0)
-    const PAYPAL_AMOUNT_STR = @json($paypalAmountStr);  // exact "Amount Due Now"
-    const SHORTFALL_BASE    = Number(@json((float) $shortfallBase)); // how much to credit to wallet after capture
+    const PAYPAL_AMOUNT_STR = @json($paypalAmountStr);  // exact "Amount Due Now" (includes fee)
+    const SHORTFALL_BASE    = Number(@json((float) $shortfallBase)); // credit to wallet (excludes fee)
+    const PAYPAL_FEE        = Number(@json((float) $paypalFeeShort)); // fee component (PayPal only)
+    const CURRENCY          = @json($currency);
 
     paypal.Buttons({
       style:{ layout:'vertical', color:'blue', shape:'rect', label:'paypal' },
@@ -220,6 +219,9 @@ $(function () {
               $.post("{{ route('wallet.deposit.paypal') }}", {
                   _token : '{{ csrf_token() }}',
                   amount : SHORTFALL_BASE,
+                  fee    : PAYPAL_FEE,
+                  gross  : PAYPAL_AMOUNT_STR,
+                  currency: CURRENCY,
                   method : 'paypal',
                   order_id: details?.id || null
               }, function(resp){
