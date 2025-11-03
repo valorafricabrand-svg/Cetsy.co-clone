@@ -75,6 +75,53 @@
   } catch (\Throwable $e) {
       // ignore
   }
+
+  // Processing time (estimated dispatch window)
+  $procMin = null; $procMax = null; $procLabel = null; $dispatchLabel = null;
+  try {
+      if (!empty($product->processing_time_id)) {
+          $pt = \App\Models\ProcessingTime::find($product->processing_time_id);
+          if ($pt) {
+              if (isset($pt->days) && is_numeric($pt->days)) { $procMin = $procMax = (int) $pt->days; }
+              else {
+                  $procMin = is_numeric($pt->start_day ?? null) ? (int)$pt->start_day : null;
+                  $procMax = is_numeric($pt->end_day   ?? null) ? (int)$pt->end_day   : null;
+              }
+          }
+      }
+
+      // Fallback: try per-product shipping rows for custom min or referenced processing_time_id
+      if ($procMin === null && $procMax === null) {
+          $rows = \App\Models\ShippingProfile::where('product_id', $product->id)->get();
+          if ($rows->isNotEmpty()) {
+              $minRow = $rows->min(fn($r) => (int) ($r->processing_custom_min ?? PHP_INT_MAX));
+              if (is_int($minRow) && $minRow !== PHP_INT_MAX) { $procMin = $minRow; }
+              $rowPtId = $rows->firstWhere('processing_time_id', '!=', null)->processing_time_id ?? null;
+              if ($rowPtId && ($pt2 = \App\Models\ProcessingTime::find($rowPtId))) {
+                  if ($procMin === null && isset($pt2->days) && is_numeric($pt2->days)) { $procMin = (int)$pt2->days; }
+                  if (isset($pt2->start_day) && is_numeric($pt2->start_day)) { $procMin = $procMin ?? (int)$pt2->start_day; }
+                  if (isset($pt2->end_day)   && is_numeric($pt2->end_day))   { $procMax = (int)$pt2->end_day; }
+              }
+          }
+      }
+
+      if ($procMin !== null || $procMax !== null) {
+          $today = now();
+          $start = $procMin !== null ? $today->copy()->addDays((int)$procMin) : null;
+          $end   = $procMax !== null ? $today->copy()->addDays((int)$procMax) : null;
+          $fmt   = function($d){ return $d ? $d->format('M j') : null; };
+          if ($start && $end)      { $dispatchLabel = $fmt($start).' – '.$fmt($end); }
+          elseif ($start)          { $dispatchLabel = $fmt($start); }
+          elseif ($end)            { $dispatchLabel = $fmt($end); }
+
+          if ($procMin !== null && $procMax !== null) {
+              $procLabel = $procMin === $procMax ? ($procMin.' day'.($procMin==1?'':'s'))
+                                                : ($procMin.'–'.$procMax.' days');
+          } elseif ($procMin !== null) {
+              $procLabel = $procMin.' day'.($procMin==1?'':'s');
+          }
+      }
+  } catch (\Throwable $e) { /* ignore */ }
 @endphp
 
 <div class="position-lg-sticky" style="top: 1rem;">
@@ -271,6 +318,14 @@
             </div>
           @endforeach
         </div>
+
+        {{-- Processing time / dispatch estimate --}}
+        @if($procMin !== null || $procMax !== null)
+          <div class="small text-muted mb-2">
+            <i class="fa-solid fa-clock me-1"></i>
+            Processing: {{ $procLabel ?? '—' }}@if($dispatchLabel) · Dispatch by {{ $dispatchLabel }} @endif
+          </div>
+        @endif
 
         {{-- Actions: Add to Cart + Buy Now --}}
         @if($isOutOfStock)
@@ -595,5 +650,4 @@
   }
 </script>
 @endpush
-
 
