@@ -47,9 +47,9 @@ class AccountController extends Controller
     {
         // Start query scoped to current user
         $query = Order::where('user_id', Auth::id())
-            ->with(['items.shippingProfile.processingTime']);
+            ->with(['items.shippingProfile.processingTime', 'shop']);
 
-        // If a search term is provided, filter by order ID or status
+        // Text search (ID or status)
         if ($search = $request->input('q')) {
             $query->where(function($q) use ($search) {
                 $q->where('id', 'like', "%{$search}%")
@@ -57,14 +57,43 @@ class AccountController extends Controller
             });
         }
 
-        // Get paginated results, newest first
-        $orders = $query
-            ->orderBy('id', 'desc')
-            ->paginate(10)
-            ->withQueryString(); // keep search param on pagination links
+        // Status filter
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
 
-        // Return the enhanced view
-        return view('account.orders', compact('orders'));
+        // Date range filter
+        $from = $request->input('from');
+        $to   = $request->input('to');
+        try { if ($from) { $fromC = \Carbon\Carbon::createFromFormat('Y-m-d', $from)->startOfDay(); $query->where('created_at', '>=', $fromC); } } catch (\Throwable $e) {}
+        try { if ($to)   { $toC   = \Carbon\Carbon::createFromFormat('Y-m-d', $to)->endOfDay();   $query->where('created_at', '<=', $toC);   } } catch (\Throwable $e) {}
+
+        // Sorting
+        $sort = $request->input('sort', 'newest');
+        if ($sort === 'amount_desc') {
+            $query->orderByDesc('total_amount');
+        } elseif ($sort === 'amount_asc') {
+            $query->orderBy('total_amount');
+        } else {
+            $query->orderByDesc('id');
+        }
+
+        $orders = $query->paginate(10)->withQueryString();
+
+        // Summary counters (quick filters)
+        $base = Order::where('user_id', Auth::id());
+        $summary = [
+            'all'        => (clone $base)->count(),
+            'pending'    => (clone $base)->where('status', Order::STATUS_PENDING)->count(),
+            'processing' => (clone $base)->where('status', Order::STATUS_PROCESSING)->count(),
+            'shipped'    => (clone $base)->where('status', Order::STATUS_SHIPPED)->count(),
+            'delivered'  => (clone $base)->where('status', Order::STATUS_DELIVERED)->count(),
+            'completed'  => (clone $base)->where('status', Order::STATUS_COMPLETED)->count(),
+            'cancelled'  => (clone $base)->where('status', Order::STATUS_CANCELLED)->count(),
+            'refunded'   => (clone $base)->where('status', Order::STATUS_REFUNDED)->count(),
+        ];
+
+        return view('account.orders', compact('orders', 'summary'));
     }
 
 public function orderDetails(Order $order)
