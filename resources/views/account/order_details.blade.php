@@ -139,6 +139,14 @@
               <span>Mark&nbsp;Delivered</span>
             </button>
             @include('seller.orders.modals.delivered')
+
+            <button class="btn btn-outline-warning btn-lg d-flex align-items-center gap-2 px-4 py-2 has-tooltip"
+                    data-bs-placement="bottom" title="Assess the shipped product or report a problem"
+                    data-bs-toggle="modal"
+                    data-bs-target="#assessModal-{{ $order->id }}">
+              <i class="bi bi-clipboard-check fs-5"></i>
+              <span>Assess&nbsp;Delivery</span>
+            </button>
           @endif
 
         </div>
@@ -180,6 +188,64 @@
             <button type="submit" class="btn btn-danger">Confirm Cancel</button>
           </div>
         </form>
+      </div>
+    </div>
+  @endif
+
+  @if($order->status === \App\Models\Order::STATUS_SHIPPED)
+    <div class="modal fade" id="assessModal-{{ $order->id }}" tabindex="-1" aria-labelledby="assessModalLabel-{{ $order->id }}" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="assessModalLabel-{{ $order->id }}">Assess Delivered Item</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="card h-100 border-success">
+                  <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <i class="bi bi-bag-check text-success"></i>
+                      <strong>Received as described</strong>
+                    </div>
+                    <p class="text-muted mb-3">No damage or issues. Mark order as delivered.</p>
+                    <form method="POST" action="{{ route('buyer.orders.status', $order) }}" class="mt-auto">
+                      @csrf
+                      @method('PATCH')
+                      <input type="hidden" name="action" value="deliver">
+                      <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check2-circle"></i> Mark as Delivered
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card h-100 border-danger">
+                  <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <i class="bi bi-exclamation-triangle text-danger"></i>
+                      <strong>There is a problem</strong>
+                    </div>
+                    <p class="text-muted mb-3">Start a dispute if the item arrived damaged, not as described, or never arrived.</p>
+                    <div class="d-grid gap-2 mt-auto">
+                      <a class="btn btn-outline-danger" href="{{ route('disputes.create', ['order_id' => $order->id, 'type' => \App\Models\Dispute::TYPE_QUALITY_ISSUES]) }}">
+                        <i class="bi bi-tools"></i> Not as described / Damaged
+                      </a>
+                      <a class="btn btn-outline-danger" href="{{ route('disputes.create', ['order_id' => $order->id, 'type' => \App\Models\Dispute::TYPE_SHIPPING_ISSUES]) }}">
+                        <i class="bi bi-truck"></i> Never arrived / Not received
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
       </div>
     </div>
   @endif
@@ -930,7 +996,6 @@
   @endif
 @endforeach
 @endsection
-
 
 
 
