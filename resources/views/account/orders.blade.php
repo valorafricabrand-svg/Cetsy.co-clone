@@ -33,7 +33,7 @@
             </div>
             <div class="col-12 col-md-12 d-flex gap-2">
               <div class="btn-group" role="group" aria-label="Status filters">
-                @php($st=request('status'))
+                @php $st = request('status'); @endphp
                 <a class="btn btn-sm {{ $st? 'btn-outline-secondary':'btn-secondary' }}" href="{{ url()->current() }}">All{{ isset($summary['all'])? ' ('.$summary['all'].')':'' }}</a>
                 @foreach([
                   \App\Models\Order::STATUS_PENDING=>'Pending',
