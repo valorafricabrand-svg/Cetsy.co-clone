@@ -92,6 +92,7 @@ public function store(Request $request)
         'listing_type'  => 'required|in:products,services,digital',
         'description'   => 'nullable|string|max:1000',
         'listing_fee'   => 'nullable|numeric|min:0',
+        'listing_frequency' => 'required|in:1,4',
         'image'         => 'nullable|image|max:20480',
     ]);
 
@@ -140,6 +141,7 @@ public function update(Request $request, Category $category)
         'listing_type'  => 'required|in:products,services,digital',
         'description'   => 'nullable|string|max:1000',
         'listing_fee'   => 'nullable|numeric|min:0',
+        'listing_frequency' => 'required|in:1,4',
         'image'         => 'nullable|image|max:20480',
     ]);
 
@@ -287,7 +289,38 @@ $category = Category::find($id);
             ->header('X-Categories-Fallback', $fallbackUsed ? '1' : '0');
     }
 
+    /**
+     * Admin: Bulk update selected categories' fields.
+     * Allows updating listing_fee, listing_type, and listing_frequency.
+     */
+    public function bulkUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:categories,id',
+            'listing_fee' => 'nullable|numeric|min:0',
+            'listing_type' => 'nullable|in:products,services,digital',
+            'listing_frequency' => 'nullable|in:1,4',
+        ]);
 
+        $payload = [];
+        if ($request->filled('listing_fee')) {
+            $payload['listing_fee'] = $request->input('listing_fee');
+        }
+        if ($request->filled('listing_type')) {
+            $payload['listing_type'] = $request->input('listing_type');
+        }
+        if ($request->filled('listing_frequency')) {
+            $payload['listing_frequency'] = (int) $request->input('listing_frequency');
+        }
 
+        if (empty($payload)) {
+            return back()->with('warning', 'No changes selected. Choose at least one field.');
+        }
+
+        Category::whereIn('id', $validated['ids'])->update($payload);
+
+        return back()->with('success', 'Selected categories updated successfully.');
+    }
 
 }

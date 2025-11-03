@@ -50,6 +50,7 @@
               <tr><th>Slug</th><td>{{ $category->slug }}</td></tr>
               <tr><th>Parent</th><td>{{ $category->parent?->name ?? '—' }}</td></tr>
               <tr><th>Listing fee</th><td>{{ get_currency() }} {{ number_format($category->listing_fee,2) }}</td></tr>
+              <tr><th>Listing frequency</th><td>{{ $category->listing_frequency }} month{{ $category->listing_frequency == 1 ? '' : 's' }}</td></tr>
               <tr><th>Created</th><td>{{ $category->created_at }}</td></tr>
             </tbody>
             </table>

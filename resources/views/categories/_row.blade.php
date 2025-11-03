@@ -8,6 +8,10 @@
 @endphp
 
 <tr>
+  {{-- Select --}}
+  <td class="text-center">
+    <input type="checkbox" class="category-checkbox" name="ids[]" value="{{ $cat->id }}">
+  </td>
   {{-- Image --}}
   <td class="text-center">
     @if($cat->image)
