@@ -33,10 +33,13 @@
         </form>
 
         {{-- new category --}}
-        <div class="d-flex gap-2 ms-md-3">
+        <div class="d-flex gap-2 ms-md-3 align-items-center">
           <button type="button" id="bulkUpdateBtn" class="btn btn-outline-primary" disabled data-bs-toggle="modal" data-bs-target="#bulkUpdateModal">
             Bulk Update
           </button>
+          <div class="vr d-none d-md-block"></div>
+          <button type="button" id="collapseAll" class="btn btn-outline-secondary">Collapse All</button>
+          <button type="button" id="expandAll"   class="btn btn-outline-secondary">Expand All</button>
           <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
             + New Category
           </a>
@@ -50,17 +53,18 @@
           <div class="card shadow-sm">
             <div class="card-body p-0">
               <div class="table-responsive">
-              <table class="table table-bordered table-striped mb-0">
+              <table class="table table-striped mb-0 align-middle table-hover category-table">
               <thead class="table-light">
                 <tr>
                   <th class="text-center" style="width:40px">
                     <input type="checkbox" id="select_all">
                   </th>
                   <th style="width:70px">Image</th>
-                  <th>Name</th>
+                  <th style="min-width:280px">Name</th>
                   <th>Type</th>
                   <th>Parent</th>
-                  <th>Listing Fee</th>
+                  <th>Fee</th>
+                  <th>Cycle</th>
                   <th class="text-end" style="width:220px">Actions</th>
                 </tr>
               </thead>
@@ -137,6 +141,8 @@
     const selectedCountEl = document.getElementById('selectedCount');
     const selectedCountPlural = document.getElementById('selectedCountPlural');
     const bulkModalEl = document.getElementById('bulkUpdateModal');
+    const collapseAllBtn = document.getElementById('collapseAll');
+    const expandAllBtn   = document.getElementById('expandAll');
 
     function updateState(){
       const count = checkboxes().filter(cb => cb.checked).length;
@@ -205,6 +211,14 @@
       updateState();
     }, false);
 
+    // Expand/Collapse helpers
+    function setCollapsed(collapsed){
+      document.querySelectorAll('tr[data-parent-id]')
+        .forEach(row => row.classList.toggle('d-none', collapsed));
+    }
+    if (collapseAllBtn) collapseAllBtn.addEventListener('click', () => setCollapsed(true));
+    if (expandAllBtn)   expandAllBtn.addEventListener('click',  () => setCollapsed(false));
+
     // Populate hidden inputs on modal show
     if (bulkModalEl) {
       bulkModalEl.addEventListener('show.bs.modal', function (e) {
@@ -232,3 +246,13 @@
 })();
 </script>
 @endpush
+
+@push('styles')
+<style>
+  .category-table thead th { position: sticky; top: 0; z-index: 1; }
+  .badge-soft { background: rgba(99,102,241,.12); color:#4f46e5; border:1px solid rgba(79,70,229,.25); padding:.35rem .5rem; border-radius:.5rem; font-weight:600; }
+  .badge-soft.green { background: rgba(16,185,129,.12); color:#065f46; border-color: rgba(16,185,129,.25); }
+  .slug { font-size: 12px; color:#6b7280; }
+</style>
+@endpush
+
