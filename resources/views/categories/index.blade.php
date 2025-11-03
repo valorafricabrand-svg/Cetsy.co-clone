@@ -157,6 +157,54 @@
     checkboxes().forEach(cb => cb.addEventListener('change', updateState));
     updateState();
 
+    // Build parent->children adjacency map from DOM
+    const childMap = (function(){
+      const map = {};
+      document.querySelectorAll('tr[data-id]')
+        .forEach(row => {
+          const id = row.getAttribute('data-id');
+          const pid = row.getAttribute('data-parent-id');
+          if (pid) {
+            if (!map[pid]) map[pid] = [];
+            map[pid].push(id);
+          }
+        });
+      return map;
+    })();
+
+    function descendantsOf(id){
+      const out = [];
+      const stack = (childMap[id] ? [...childMap[id]] : []);
+      while (stack.length){
+        const cid = stack.pop();
+        out.push(cid);
+        if (childMap[cid]) stack.push(...childMap[cid]);
+      }
+      return out;
+    }
+
+    function checkboxFor(id){
+      return document.querySelector('.category-checkbox[value="'+id+'"]');
+    }
+
+    // Delegate click: select all descendants for a row
+    document.addEventListener('click', function(e){
+      const btn = e.target.closest('.select-subtree');
+      if (!btn) return;
+      const id = btn.getAttribute('data-id');
+      const ids = descendantsOf(id);
+      if (ids.length === 0) return; // nothing to do
+      const allSelected = ids.every(cid => {
+        const cb = checkboxFor(cid);
+        return cb && cb.checked;
+      });
+      ids.forEach(cid => {
+        const cb = checkboxFor(cid);
+        if (cb) cb.checked = !allSelected; // toggle: select if not all selected, else deselect all
+      });
+      updateState();
+    }, false);
+
     // Populate hidden inputs on modal show
     if (bulkModalEl) {
       bulkModalEl.addEventListener('show.bs.modal', function (e) {
