@@ -487,13 +487,13 @@
         return;
       }
 
-      // Find best matching variant that includes all chosen ids (both price and any selected non-price)
+      // Find best matching variant that includes all chosen price-affecting option ids.
+      // Non-price selects do not participate in variant resolution and must not block enabling.
       let best = null;
       for (const key in variantIndex) {
         const entry = variantIndex[key];
         const opts = Array.isArray(entry?.options) ? entry.options : [];
-        const containsAll = priceChosen.every(id => opts.indexOf(Number(id)) !== -1)
-          && nonPriceChosen.every(id => opts.indexOf(Number(id)) !== -1);
+        const containsAll = priceChosen.every(id => opts.indexOf(Number(id)) !== -1);
         if (!containsAll) continue;
         if (!best || parseFloat(entry.price) < parseFloat(best.price)) best = entry;
       }
@@ -595,6 +595,5 @@
   }
 </script>
 @endpush
-
 
 
