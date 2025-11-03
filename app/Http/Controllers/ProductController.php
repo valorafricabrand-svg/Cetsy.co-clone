@@ -966,42 +966,26 @@ public function listings(Request $request)
 // In your controller:
 public function payFee(Request $request, Product $product)
 {
-    $validPlans = ['monthly', '3months', '4months', 'yearly'];
+    $freq = (int) ($product->category->listing_frequency ?? 4);
+    $freq = in_array($freq, [1,4], true) ? $freq : 4;
+    $baseFee = (float) ($product->category->listing_fee ?? 0);
+
+    // Only allow the plan matching the category's frequency
+    $allowedPlan = $freq === 1 ? 'monthly' : '4months';
 
     $validated = $request->validate([
-        'plan' => ['required', Rule::in($validPlans)],
+        'plan' => ['required', Rule::in([$allowedPlan])],
     ]);
 
-    $baseFee     = (float) ($product->category->listing_fee ?? 0);
-    $monthlyBase = $baseFee / 4;
-
     $plans = [
-        'monthly' => [
-            'label'  => 'Monthly',
-            'months' => 1,
-            'amount' => max($monthlyBase, 0),
-        ],
-        '3months' => [
-            'label'  => '3-Month',
-            'months' => 3,
-            'amount' => max($monthlyBase * 3, 0),
-        ],
-        '4months' => [
-            'label'  => '4-Month',
-            'months' => 4,
-            'amount' => max($monthlyBase * 4, 0),
-        ],
-        'yearly' => [
-            'label'  => 'Yearly',
-            'months' => 12,
-            'amount' => max($monthlyBase * 12, 0),
+        $allowedPlan => [
+            'label'  => $freq === 1 ? 'Monthly' : '4-Month',
+            'months' => $freq,
+            'amount' => max($baseFee, 0),
         ],
     ];
 
-    $selectedPlan = $validated['plan'];
-    if (! isset($plans[$selectedPlan])) {
-        $selectedPlan = array_key_first($plans);
-    }
+    $selectedPlan = $validated['plan'] ?? $allowedPlan;
 
     return view('products.pay_fee', [
         'order'         => $product,
@@ -1023,40 +1007,15 @@ public function successDeposit(Request $request, $id)
     // 1) Retrieve the product or 404
     $product = Product::findOrFail($id);
 
-    // 2) Validate the plan
-    $plan = $request->input('plan', '4months');
-    $planLabels = [
-        'monthly'  => 'Monthly',
-        '3months'  => '3-Month',
-        '4months'  => '4-Month',
-        'yearly'   => 'Yearly',
-    ];
-    if (! array_key_exists($plan, $planLabels)) {
-        $plan = '4months';
-    }
+    // 2) Category-driven plan (1-month or 4-month cycle)
+    $freq = (int) ($product->category->listing_frequency ?? 4);
+    $freq = in_array($freq, [1,4], true) ? $freq : 4;
+    $plan = $freq === 1 ? 'monthly' : '4months';
+    $planLabels = [ 'monthly' => 'Monthly', '4months' => '4-Month' ];
 
-    // 3) Compute fee & next due date
-    $baseFee     = (float) ($product->category->listing_fee ?? 0);
-    $monthlyBase = $baseFee / 4;
-
-    switch ($plan) {
-        case 'monthly':
-            $fee     = $monthlyBase;
-            $nextDue = now()->addMonth();
-            break;
-        case '3months':
-            $fee     = $monthlyBase * 3;
-            $nextDue = now()->addMonths(3);
-            break;
-        case 'yearly':
-            $fee     = $monthlyBase * 12;
-            $nextDue = now()->addYear();
-            break;
-        default:
-            $fee     = $monthlyBase * 4;
-            $nextDue = now()->addMonths(4);
-            break;
-    }
+    // 3) Fee is per-category cycle; due date is now + frequency months
+    $fee     = max(0, (float) ($product->category->listing_fee ?? 0));
+    $nextDue = now()->addMonths($freq);
 
     $fee = max($fee, 0);
 

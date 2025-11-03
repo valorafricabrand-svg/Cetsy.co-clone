@@ -259,29 +259,26 @@
         use Carbon\Carbon;
 
         $baseFee      = (float) ($product->category?->listing_fee ?? 0);
-        $monthlyBase  = $baseFee / 4;
-        $planButtons  = [
-          'monthly' => [
-            'label' => 'Monthly',
-            'class' => 'btn-outline-success',
-            'amount' => max($monthlyBase, 0),
-          ],
-          '3months' => [
-            'label' => '3-Month',
-            'class' => 'btn-outline-primary',
-            'amount' => max($monthlyBase * 3, 0),
-          ],
-          '4months' => [
-            'label' => '4-Month',
-            'class' => 'btn-success',
-            'amount' => max($monthlyBase * 4, 0),
-          ],
-          'yearly' => [
-            'label' => 'Yearly',
-            'class' => 'btn-outline-dark',
-            'amount' => max($monthlyBase * 12, 0),
-          ],
-        ];
+        $freq         = (int) ($product->category?->listing_frequency ?? 4);
+        $freq         = in_array($freq, [1,4], true) ? $freq : 4;
+        // Only offer the plan matching the category frequency
+        if ($freq === 1) {
+          $planButtons = [
+            'monthly' => [
+              'label' => 'Monthly',
+              'class' => 'btn-success',
+              'amount' => max($baseFee, 0),
+            ],
+          ];
+        } else {
+          $planButtons = [
+            '4months' => [
+              'label' => '4-Month',
+              'class' => 'btn-success',
+              'amount' => max($baseFee, 0),
+            ],
+          ];
+        }
       @endphp
 
       @if($product->is_active === 3)
