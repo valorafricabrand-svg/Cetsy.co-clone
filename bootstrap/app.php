@@ -41,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Console\Commands\NotifyShipBy::class,
         \App\Console\Commands\SendSubscriptionExpiryReminders::class,
         \App\Console\Commands\BackfillSubscriptionShop::class,
+        \App\Console\Commands\AutoCancelPendingOrders::class,
     ])
     ->withSchedule(function (Schedule $schedule) {
         // Define your scheduled tasks here
@@ -51,6 +52,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('subscriptions:remind-expiring')->everyMinute();
         // Deactivate expired subscriptions and shops daily
         $schedule->command('subscriptions:deactivate-expired')->everyMinute();
+        // Auto-cancel pending orders daily
+        $schedule->command('orders:auto-cancel')->everyMinute();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
