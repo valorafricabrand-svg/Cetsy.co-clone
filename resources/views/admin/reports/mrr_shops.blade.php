@@ -13,6 +13,35 @@
 
   <div class="card shadow-sm mb-3">
     <div class="card-body d-flex justify-content-between align-items-center">
+  <form method="GET" action="{{ route('admin.reports.mrr.shops', $ms->format('Y-m')) }}" class="card shadow-sm mb-3">
+    <div class="card-body row g-3 align-items-end">
+      <div class="col-12 col-md-4">
+        <label class="form-label">Payment Method</label>
+        <select name="payment_method" class="form-select">
+          <option value="">All</option>
+          @foreach(($paymentMethods ?? []) as $pm)
+            <option value="{{ $pm }}" @selected(($filters['payment_method'] ?? '') === $pm)>{{ ucfirst($pm) }}</option>
+          @endforeach
+        </select>
+      </div>
+      @if(!empty($plans))
+      <div class="col-12 col-md-4">
+        <label class="form-label">Plan</label>
+        <select name="plan" class="form-select">
+          <option value="">All</option>
+          @foreach(($plans ?? []) as $pl)
+            <option value="{{ $pl }}" @selected(($filters['plan'] ?? '') === $pl)>{{ $pl }}</option>
+          @endforeach
+        </select>
+      </div>
+      @endif
+      <div class="col-12 col-md-4 d-flex gap-2">
+        <button class="btn btn-primary mt-auto">Filter</button>
+        <a href="{{ route('admin.reports.mrr.shops', $ms->format('Y-m')) }}" class="btn btn-outline-secondary mt-auto">Reset</a>
+        <a href="{{ route('admin.reports.mrr.shops.export', $ms->format('Y-m')) }}?payment_method={{ urlencode($filters['payment_method'] ?? '') }}&plan={{ urlencode($filters['plan'] ?? '') }}" class="btn btn-success mt-auto">Download CSV</a>
+      </div>
+    </div>
+  </form>
       <div class="text-muted">Month: <strong>{{ $label }}</strong></div>
       <div class="fw-semibold">Total: {{ get_currency() }} {{ number_format($total, 2) }}</div>
     </div>
@@ -52,4 +81,5 @@
   </div>
 </div>
 @endsection
+
 

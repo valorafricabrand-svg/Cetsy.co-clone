@@ -110,4 +110,3 @@ class SubscriptionController extends Controller
         return view('admin.reports.mrr_shops', compact('subs', 'total', 'label', 'ms'));
     }
 }
-
