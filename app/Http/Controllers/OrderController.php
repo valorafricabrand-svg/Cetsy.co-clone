@@ -703,7 +703,7 @@ public function storeOrder(Request $request)
             'courier'        => 'required|string|max:100',
             'courier_other'  => 'nullable|string|max:100',
             'tracking_no'    => 'required|string|max:120',
-            'tracking_url'   => 'nullable|url|max:255',
+            'tracking_url'   => 'required|url|max:255',
             'shipped_at'     => 'nullable|date',
             'ship_notes'     => 'nullable|string|max:1000',
         ]);

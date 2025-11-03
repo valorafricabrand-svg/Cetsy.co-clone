@@ -745,8 +745,9 @@
 
             <div class="col-md-6">
               <div class="form-floating">
-                <input type="url" class="form-control" id="trackingUrlInput" name="tracking_url" placeholder="https://carrier.example/track/ABC123">
-                <label for="trackingUrlInput">Tracking URL (optional)</label>
+                <input type="url" class="form-control" id="trackingUrlInput" name="tracking_url" placeholder="https://carrier.example/track/ABC123" required>
+                <label for="trackingUrlInput">Tracking URL *</label>
+                <div class="invalid-feedback">Tracking URL is required.</div>
                 <div class="form-text">Paste a direct tracking link from the courier.</div>
               </div>
             </div>
@@ -826,4 +827,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
-
