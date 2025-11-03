@@ -703,6 +703,7 @@ public function storeOrder(Request $request)
             'courier'        => 'required|string|max:100',
             'courier_other'  => 'nullable|string|max:100',
             'tracking_no'    => 'required|string|max:120',
+            'tracking_url'   => 'nullable|url|max:255',
             'shipped_at'     => 'nullable|date',
             'ship_notes'     => 'nullable|string|max:1000',
         ]);
@@ -722,6 +723,7 @@ public function storeOrder(Request $request)
                 'status'      => Order::STATUS_SHIPPED,
                 'courier'     => $data['courier'],
                 'tracking_no' => $data['tracking_no'],
+                'tracking_url'=> $data['tracking_url'] ?? null,
                 'shipped_at'  => $data['shipped_at'] ?? now(),
                 'ship_notes'  => $data['ship_notes'] ?? null,
             ]);
@@ -735,6 +737,7 @@ public function storeOrder(Request $request)
             $shippingData = [
                 'courier'     => $data['courier'],
                 'tracking_no' => $data['tracking_no'],
+                'tracking_url'=> $data['tracking_url'] ?? null,
                 'ship_notes'  => $data['ship_notes'] ?? null,
             ];
 
@@ -765,6 +768,7 @@ public function storeOrder(Request $request)
             'courier'        => 'required|string|max:100',
             'courier_other'  => 'nullable|string|max:100',
             'tracking_no'    => 'required|string|max:120',
+            'tracking_url'   => 'nullable|url|max:255',
             'shipped_at'     => 'nullable|date',
             'ship_notes'     => 'nullable|string|max:1000',
         ]);
@@ -782,6 +786,7 @@ public function storeOrder(Request $request)
         $original = [
             'courier'     => (string)($order->courier ?? ''),
             'tracking_no' => (string)($order->tracking_no ?? ''),
+            'tracking_url'=> (string)($order->tracking_url ?? ''),
             'shipped_at'  => $order->shipped_at,
             'ship_notes'  => (string)($order->ship_notes ?? ''),
         ];
@@ -789,6 +794,7 @@ public function storeOrder(Request $request)
         $newValues = [
             'courier'     => (string)$data['courier'],
             'tracking_no' => (string)$data['tracking_no'],
+            'tracking_url'=> (string)($data['tracking_url'] ?? $order->tracking_url),
             'shipped_at'  => $data['shipped_at'] ?? $order->shipped_at,
             'ship_notes'  => $data['ship_notes'] ?? $order->ship_notes,
         ];
@@ -803,7 +809,7 @@ public function storeOrder(Request $request)
         };
 
         $changed = [];
-        foreach (['courier','tracking_no','ship_notes'] as $f) {
+        foreach (['courier','tracking_no','tracking_url','ship_notes'] as $f) {
             if ((string)($original[$f] ?? '') !== (string)($newValues[$f] ?? '')) {
                 $changed[$f] = [
                     'old' => (string)($original[$f] ?? ''),
@@ -824,6 +830,7 @@ public function storeOrder(Request $request)
                 // keep existing status; just update fields
                 'courier'     => $newValues['courier'],
                 'tracking_no' => $newValues['tracking_no'],
+                'tracking_url'=> $newValues['tracking_url'],
                 'shipped_at'  => $newValues['shipped_at'],
                 'ship_notes'  => $newValues['ship_notes'],
             ]);
@@ -839,6 +846,7 @@ public function storeOrder(Request $request)
                 $shippingData = [
                     'courier'     => $order->courier,
                     'tracking_no' => $order->tracking_no,
+                    'tracking_url'=> $order->tracking_url,
                     'shipped_at'  => $order->shipped_at,
                     'ship_notes'  => $order->ship_notes,
                 ];

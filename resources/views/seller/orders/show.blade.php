@@ -151,6 +151,15 @@
             </div>
           @endforeach
 
+          @if(!empty($order->tracking_url))
+            <div class="d-flex justify-content-between mb-2">
+              <span class="fw-semibold">Tracking Link:</span>
+              <span>
+                <a href="{{ $order->tracking_url }}" target="_blank" rel="noopener" class="link-primary">Open tracking</a>
+              </span>
+            </div>
+          @endif
+
           <div class="d-flex justify-content-between mb-2">
             <span class="fw-semibold">Shipping Fee:</span>
             <span>{{ $symbol }} {{ number_format($shippingVal,2) }}</span>
@@ -620,6 +629,13 @@
 
             <div class="col-md-6">
               <div class="form-floating">
+                <input type="url" class="form-control" id="editTrackingUrlInput" name="tracking_url" value="{{ old('tracking_url', $order->tracking_url) }}" placeholder="https://carrier.example/track/ABC123">
+                <label for="editTrackingUrlInput">Tracking URL (optional)</label>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-floating">
                 <input type="date" class="form-control" id="editShipDateInput" name="shipped_at" value="{{ old('shipped_at', optional($order->shipped_at)->toDateString() ?? now()->toDateString()) }}">
                 <label for="editShipDateInput">Shipping date</label>
               </div>
@@ -729,6 +745,14 @@
 
             <div class="col-md-6">
               <div class="form-floating">
+                <input type="url" class="form-control" id="trackingUrlInput" name="tracking_url" placeholder="https://carrier.example/track/ABC123">
+                <label for="trackingUrlInput">Tracking URL (optional)</label>
+                <div class="form-text">Paste a direct tracking link from the courier.</div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-floating">
                 <input type="date" class="form-control" id="shipDateInput" name="shipped_at" value="{{ old('shipped_at', now()->toDateString()) }}">
                 <label for="shipDateInput">Shipping date</label>
               </div>
@@ -802,7 +826,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
-
-
-
 
