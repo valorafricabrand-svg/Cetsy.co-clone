@@ -192,7 +192,8 @@ class WalletController extends Controller
             $query->whereDate('created_at', '<=', $request->to);
         }
 
-        $transactions = $query->orderBy('created_at', 'desc')->paginate(10);
+        // Order wallet list by most recently updated entries
+        $transactions = $query->orderBy('updated_at', 'desc')->paginate(10);
 
         $balance = Wallet::where('user_id', Auth::id())
             ->where('status', 'completed')
