@@ -134,6 +134,9 @@
             </select>
           </div>
         @endforeach
+        <div id="variant-price-note" class="small text-muted mb-2 d-none">
+          Selected price: <span id="variant-price-val"></span>
+        </div>
       @endif
 
       {{-- Quantity --}}
@@ -168,6 +171,8 @@
     const basePrice = {{ json_encode((float)$finalPrice) }}; // price displayed when no variant selected
     const currency  = @json($currency);
     const priceEl   = document.getElementById('price-current');
+    const vNote     = document.getElementById('variant-price-note');
+    const vNoteVal  = document.getElementById('variant-price-val');
 
     function resolveVariant(selectedByType){
       // selectedByType: { typeId: optionId }
@@ -226,6 +231,12 @@
         ? variant.price
         : basePrice;
       priceEl.textContent = `${currency} ${formatPrice(price)}`;
+      if (vNote && vNoteVal) {
+        const hasVariantPrice = !!(variant && typeof variant.price === 'number' && !isNaN(variant.price));
+        const show = hasVariantPrice && (variant.price !== basePrice);
+        vNote.classList.toggle('d-none', !show);
+        if (show) vNoteVal.textContent = `${currency} ${formatPrice(variant.price)}`;
+      }
     }
 
     document.addEventListener('change', function(e){
