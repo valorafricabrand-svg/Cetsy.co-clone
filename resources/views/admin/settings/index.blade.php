@@ -159,8 +159,8 @@
     </div>
 
 <!-- ========== PAYMENT, CURRENCY & PAYOUTS ========== -->
-<div class="card shadow-sm mb-4">
-  <div class="card-header bg-light fw-semibold">Payment, Currency &amp; Payouts</div>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light fw-semibold">Payment, Currency &amp; Payouts</div>
 
   <div class="card-body">
     <div class="row g-3">
@@ -196,6 +196,23 @@
                step="0.0001" min="0" max="10"
                placeholder="0.0398" title="Enter as decimal e.g. 0.0398 for 3.98 %">
         @error('paypal_transaction_fee_percent') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
+      {{-- Release Fee % (applied when on-hold funds are released to available) --}}
+      @php
+        $releaseFee = function_exists('setting') ? setting('release_fee_percent', env('HOLD_RELEASE_FEE_PERCENT', 5.5)) : env('HOLD_RELEASE_FEE_PERCENT', 5.5);
+      @endphp
+      <div class="col-md-2">
+        <label class="form-label">Release&nbsp;Fee&nbsp;%</label>
+        <input type="number"
+               name="release_fee_percent"
+               class="form-control @error('release_fee_percent') is-invalid @enderror"
+               value="{{ old('release_fee_percent', $settings->release_fee_percent ?? $releaseFee) }}"
+               step="0.01" min="0" max="100"
+               placeholder="5.5"
+               title="Percent deducted from on-hold funds when released to available">
+        <div class="form-text">Default: {{ env('HOLD_RELEASE_FEE_PERCENT', 5.5) }}% (overridden here if set).</div>
+        @error('release_fee_percent') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
 
       {{-- Payout Fee % (store as percent, e.g., 1.5) --}}

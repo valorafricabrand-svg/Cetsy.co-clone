@@ -67,6 +67,7 @@ class SettingsController extends Controller
         'paypal_transaction_fee_percent'  => 'nullable|string|max:255',
         'default_currency'  => 'required|string|size:3',
         // Payout settings (fee stored as percent; e.g. 1.5 for 1.5%)
+        'release_fee_percent' => 'nullable|numeric|min:0|max:100',
         'fee_rate'          => 'nullable|numeric|min:0|max:100',
         'min_amount'        => 'nullable|numeric|min:0',
         'auto_release_days' => 'nullable|integer|min:1|max:365',
@@ -111,7 +112,7 @@ class SettingsController extends Controller
 
     // Persist duplication settings either as columns (if present) or key-value rows
     try {
-        $dupKeys = ['duplicate_sku_strategy','duplicate_sku_suffix','duplicate_sku_random_len'];
+        $dupKeys = ['duplicate_sku_strategy','duplicate_sku_suffix','duplicate_sku_random_len','release_fee_percent'];
         foreach ($dupKeys as $k) {
             $val = $request->input($k, null);
             if ($val === null) continue;
