@@ -345,7 +345,7 @@
 
     // Determine which selects are actually relevant to priced variants (price-affecting only)
     function isSelectRelevant(selectEl) {
-      if (String(selectEl.getAttribute('data-price-affecting')) !== '1') return false;
+      // A select is relevant if any of its option IDs appears in any priced variant
       const opts = Array.from(selectEl.options).filter(o => o.value);
       return opts.some(o => viableOptionIdSet.has(parseInt(o.value, 10)));
     }
@@ -487,15 +487,23 @@
         return;
       }
 
-      // Find best matching variant that includes all price-affecting choices.
-      // Non price-affecting selections should NOT block enabling the buttons.
-      let best = null;
-      for (const key in variantIndex) {
-        const entry = variantIndex[key];
-        const opts = Array.isArray(entry?.options) ? entry.options : [];
-        const containsPrice = priceChosen.every(id => opts.indexOf(Number(id)) !== -1);
-        if (!containsPrice) continue;
-        if (!best || parseFloat(entry.price) < parseFloat(best.price)) best = entry;
+      // Try exact match by all chosen option IDs that appear in priced variants
+      const chosenAll = selects
+        .map(s => parseInt(s.value || '0', 10))
+        .filter(id => !!id && viableOptionIdSet.has(id))
+        .sort((a,b)=>a-b);
+      const exactKey = chosenAll.join('-');
+
+      let best = variantIndex[exactKey] || null;
+      if (!best) {
+        // Fallback: find best variant that includes all price-affecting choices.
+        for (const key in variantIndex) {
+          const entry = variantIndex[key];
+          const opts = Array.isArray(entry?.options) ? entry.options : [];
+          const containsPrice = priceChosen.every(id => opts.indexOf(Number(id)) !== -1);
+          if (!containsPrice) continue;
+          if (!best || parseFloat(entry.price) < parseFloat(best.price)) best = entry;
+        }
       }
 
       if (best) {
@@ -638,4 +646,3 @@
   }
 </script>
 @endpush
-
