@@ -488,6 +488,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('blog-posts', AdminBlogPostController::class);
     Route::resource('blog-categories', AdminBlogCategoryController::class)->except(['show']);
     Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
+    Route::post('products/bulk-status', [\App\Http\Controllers\Admin\ProductController::class, 'bulkStatus'])->name('products.bulk-status');
     // Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
 
     /* update + destroy — shallow, no category prefix */
