@@ -593,8 +593,50 @@
       }
     }catch(_){ /* no-op */ }
   }
+
+  // Override with ASCII-safe label suffix to avoid mojibake in some environments
+  function updateOptionLabelsPA(){
+    try{
+      const selects = Array.from(document.querySelectorAll('.js-variant-select'));
+      const priceBlock = document.getElementById('js-price-block');
+      const variantIndex = JSON.parse(priceBlock?.getAttribute('data-variant-index') || '{}');
+      const viableOptionIdSet = (function(){
+        const set = new Set();
+        for (const key in variantIndex) {
+          const entry = variantIndex[key];
+          if (entry && Array.isArray(entry.options)) entry.options.forEach(id => set.add(Number(id)));
+        }
+        return set;
+      })();
+      function minPriceForOption(optionId){
+        let min = null;
+        for (const key in variantIndex) {
+          const entry = variantIndex[key];
+          const opts = Array.isArray(entry?.options) ? entry.options : [];
+          if (opts.indexOf(Number(optionId)) !== -1) {
+            const p = parseFloat(entry.price);
+            if (!Number.isNaN(p)) min = (min===null||p<min)?p:min;
+          }
+        }
+        return min;
+      }
+      for (const s of selects) {
+        const perOptionMin = JSON.parse(s.getAttribute('data-option-min') || '{}');
+        for (const opt of Array.from(s.options)) {
+          if (!opt.value) continue;
+          const baseLabel = opt.getAttribute('data-label') || opt.textContent;
+          const optId = parseInt(opt.value,10);
+          if (viableOptionIdSet.has(optId)){
+            const min = perOptionMin && perOptionMin[optId] != null ? parseFloat(perOptionMin[optId]) : minPriceForOption(optId);
+            opt.textContent = (min != null && !Number.isNaN(min)) ? `${baseLabel} - ${fmt(min)}` : baseLabel;
+          } else {
+            opt.textContent = baseLabel;
+          }
+        }
+      }
+    }catch(_){ /* no-op */ }
+  }
 </script>
 @endpush
-
 
 
