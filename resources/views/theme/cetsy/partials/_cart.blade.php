@@ -487,14 +487,14 @@
         return;
       }
 
-      // Find best matching variant that includes all chosen ids (both price and any selected non-price)
+      // Find best matching variant that includes all price-affecting choices.
+      // Non price-affecting selections should NOT block enabling the buttons.
       let best = null;
       for (const key in variantIndex) {
         const entry = variantIndex[key];
         const opts = Array.isArray(entry?.options) ? entry.options : [];
-        const containsAll = priceChosen.every(id => opts.indexOf(Number(id)) !== -1)
-          && nonPriceChosen.every(id => opts.indexOf(Number(id)) !== -1);
-        if (!containsAll) continue;
+        const containsPrice = priceChosen.every(id => opts.indexOf(Number(id)) !== -1);
+        if (!containsPrice) continue;
         if (!best || parseFloat(entry.price) < parseFloat(best.price)) best = entry;
       }
 
@@ -638,5 +638,4 @@
   }
 </script>
 @endpush
-
 
