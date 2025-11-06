@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class ProductController extends Controller
@@ -35,10 +36,29 @@ class ProductController extends Controller
             $query->where('type', $type);
         }
 
+        // Filter by status (is_active) if provided. Accepts 0,1,2,3 or named aliases
+        if (($status = $request->input('status')) !== null && $status !== '') {
+            $map = [
+                'inactive'  => 0,
+                'active'    => 1,
+                'paused'    => 2,
+                'suspended' => 3,
+            ];
+            $value = is_numeric($status) ? (int) $status : ($map[strtolower((string)$status)] ?? null);
+            if ($value !== null) {
+                $query->where('is_active', $value);
+            }
+        }
+
         $products = $query->paginate(20)->withQueryString();
         $shops = Shop::orderBy('name')->get();
 
-        return view('admin.products.index', compact('products', 'shops'));
+        // Status counters for quick context (optional UI)
+        $statusCounts = Product::select('is_active', DB::raw('count(*) as cnt'))
+            ->groupBy('is_active')
+            ->pluck('cnt', 'is_active');
+
+        return view('admin.products.index', compact('products', 'shops', 'statusCounts'));
     }
 
     /**
@@ -137,6 +157,33 @@ class ProductController extends Controller
         return redirect()
             ->route('admin.products.index')
             ->with('success', "Product {$statusText} successfully.");
+    }
+
+    /**
+     * Bulk update product status for selected product IDs.
+     */
+    public function bulkStatus(Request $request)
+    {
+        $data = $request->validate([
+            'ids'           => ['required','array','min:1'],
+            'ids.*'         => ['integer','exists:products,id'],
+            'status'        => ['required','in:0,1,2,3'],
+            'next_due_date' => ['nullable','date'],
+        ]);
+
+        $updates = ['is_active' => (int)$data['status']];
+        if (!empty($data['next_due_date'])) {
+            try { $updates['next_due_date'] = Carbon::parse($data['next_due_date'])->endOfDay(); } catch (\Throwable $e) {}
+        }
+
+        Product::whereIn('id', $data['ids'])->update($updates);
+
+        $map = [0=>'deactivated',1=>'activated',2=>'paused',3=>'suspended'];
+        $statusText = $map[(int)$data['status']] ?? 'updated';
+
+        return redirect()
+            ->route('admin.products.index', $request->only(['search','shop_id','type','status']))
+            ->with('success', 'Selected products '.$statusText.' successfully.');
     }
 
    public function listings(Request $request)

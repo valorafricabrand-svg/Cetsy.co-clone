@@ -44,6 +44,17 @@
                         <option value="service" {{ request('type') == 'service' ? 'selected' : '' }}>Service</option>
                     </select>
                 </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select id="status" name="status" class="form-select">
+                        @php $st = request('status'); @endphp
+                        <option value="" {{ ($st===null||$st==='') ? 'selected' : '' }}>All Statuses</option>
+                        <option value="1" {{ $st==='1' ? 'selected' : '' }}>Active</option>
+                        <option value="0" {{ $st==='0' ? 'selected' : '' }}>Inactive</option>
+                        <option value="2" {{ $st==='2' ? 'selected' : '' }}>Paused</option>
+                        <option value="3" {{ $st==='3' ? 'selected' : '' }}>Suspended</option>
+                    </select>
+                </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="fas fa-search me-1"></i> Search
@@ -53,14 +64,33 @@
         </div>
     </div>
 
+    @isset($statusCounts)
+        <div class="mb-3 d-flex flex-wrap gap-2 small">
+            @php
+                $map = [0=>['Inactive','secondary'],1=>['Active','success'],2=>['Paused','warning'],3=>['Suspended','secondary']];
+            @endphp
+            @foreach($map as $k=>[$label,$cls])
+                <span class="badge bg-{{ $cls }} bg-opacity-10 text-{{ $cls }}">
+                    {{ $label }}: <strong class="ms-1">{{ (int)($statusCounts[$k] ?? 0) }}</strong>
+                </span>
+            @endforeach
+        </div>
+    @endisset
+
     {{-- Products Table --}}
     @if($products->count())
         <div class="card shadow-sm">
             <div class="card-header bg-light">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">All Products ({{ $products->total() }})</h5>
-                    <div class="text-muted small">
-                        Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of {{ $products->total() }} products
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnBulk"
+                                data-bs-toggle="modal" data-bs-target="#bulkStatusModal" disabled>
+                            <i class="fas fa-layer-group me-1"></i> Bulk Update Status
+                        </button>
+                        <div class="text-muted small">
+                            Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of {{ $products->total() }} products
+                        </div>
                     </div>
                 </div>
             </div>
@@ -68,6 +98,8 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
+                            <th scope="col" style="width:36px"><input type="checkbox" id="selectAll"></th>
+                            <th scope="col" style="width:36px"><input type="checkbox" id="selectAll"></th>
                             <th scope="col">#</th>
                             <th scope="col">Product</th>
                             <th scope="col">Shop</th>
@@ -94,6 +126,7 @@
                                     ?? ['Closed', 'dark'];
                             @endphp
                             <tr>
+                                <td><input type="checkbox" class="row-check" value="{{ $product->id }}"></td>
                                 <th scope="row">
                                     {{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}
                                 </th>
@@ -318,4 +351,81 @@
 
 @endforeach
 @endsection
+
+{{-- Bulk Status Modal Markup --}}
+<!-- Bulk Status Modal -->
+<div class="modal fade" id="bulkStatusModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" method="POST" action="{{ route('admin.products.bulk-status') }}" id="bulkStatusForm">
+      @csrf
+      <div class="modal-header">
+        <h5 class="modal-title">Bulk Update Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">New Status</label>
+          <select name="status" class="form-select" required>
+            <option value="1">Active</option>
+            <option value="0">Inactive</option>
+            <option value="2">Paused</option>
+            <option value="3">Suspended</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Next Due Date (optional)</label>
+          <input type="date" name="next_due_date" class="form-control">
+        </div>
+        <div id="bulkIds"></div>
+        <div class="form-text">Applies to the selected listings only.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Update</button>
+      </div>
+    </form>
+  </div>
+  </div>
+{{-- End Bulk Status Modal --}}
+
+@push('scripts')
+<script>
+(function(){
+  const selectAll = document.getElementById('selectAll');
+  const btnBulk = document.getElementById('btnBulk');
+  const bulkForm = document.getElementById('bulkStatusForm');
+  const bulkIds = document.getElementById('bulkIds');
+  const rows = () => Array.from(document.querySelectorAll('.row-check'));
+  function refreshBulkButton(){
+    const any = rows().some(ch => ch.checked);
+    if (btnBulk) btnBulk.disabled = !any;
+  }
+  if (selectAll){
+    selectAll.addEventListener('change', () => {
+      rows().forEach(ch => ch.checked = selectAll.checked);
+      refreshBulkButton();
+    });
+  }
+  document.addEventListener('change', (e)=>{
+    if (e.target && e.target.classList.contains('row-check')){
+      refreshBulkButton();
+    }
+  });
+  if (bulkForm){
+    bulkForm.addEventListener('submit', function(ev){
+      // Clear previous
+      while (bulkIds.firstChild) bulkIds.removeChild(bulkIds.firstChild);
+      const checked = rows().filter(ch => ch.checked).map(ch => ch.value);
+      if (!checked.length){ ev.preventDefault(); return; }
+      checked.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden'; input.name = 'ids[]'; input.value = id;
+        bulkIds.appendChild(input);
+      });
+    });
+  }
+  refreshBulkButton();
+})();
+</script>
+@endpush
 
