@@ -99,7 +99,6 @@
                     <thead class="table-light">
                         <tr>
                             <th scope="col" style="width:36px"><input type="checkbox" id="selectAll"></th>
-                            <th scope="col" style="width:36px"><input type="checkbox" id="selectAll"></th>
                             <th scope="col">#</th>
                             <th scope="col">Product</th>
                             <th scope="col">Shop</th>
@@ -253,7 +252,6 @@
 
 {{-- Status Management Modals --}}
 @foreach($products as $product)
-   @foreach($products as $product)
     <!-- Status Management Modal -->
     <div class="modal fade" id="statusModal{{ $product->id }}" tabindex="-1" aria-labelledby="statusModalLabel{{ $product->id }}" aria-hidden="true">
         <div class="modal-dialog">
@@ -347,8 +345,6 @@
             </div>
         </div>
     </div>
-@endforeach
-
 @endforeach
 @endsection
 

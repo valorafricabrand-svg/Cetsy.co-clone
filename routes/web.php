@@ -524,8 +524,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('reports/mrr/{ym}/shops/export', [AdminSubscriptionController::class, 'mrrShopsExport'])->name('reports.mrr.shops.export');
     // Listing fee revenue
     Route::get('reports/listing-fees', [AdminSubscriptionController::class, 'listingFees'])->name('reports.listing-fees');
-    Route::get('reports/transaction-fees', \\App\\Http\\Controllers\\Admin\\TransactionFeeReportController::class.'@index')->name('reports.transaction-fees');
-    Route::get('reports/transaction-fees/export', \\App\\Http\\Controllers\\Admin\\TransactionFeeReportController::class.'@export')->name('reports.transaction-fees.export');
+    Route::get('reports/transaction-fees', [\App\Http\Controllers\Admin\TransactionFeeReportController::class, 'index'])->name('reports.transaction-fees');
+    Route::get('reports/transaction-fees/export', [\App\Http\Controllers\Admin\TransactionFeeReportController::class, 'export'])->name('reports.transaction-fees.export');
     Route::get('reports/listing-fees/{ym}/payments', [AdminSubscriptionController::class, 'listingFeesPayments'])->name('reports.listing-fees.payments');
     Route::get('reports/listing-fees/{ym}/export', [AdminSubscriptionController::class, 'listingFeesExport'])->name('reports.listing-fees.export');
     Route::get('reports/inventory', [\App\Http\Controllers\Admin\InventoryReportController::class, 'index'])->name('reports.inventory');
