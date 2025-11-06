@@ -264,7 +264,7 @@
                       <input type="number" step="0.01" min="0" name="price" class="form-control" required>
                     </div>
                     <div class="col-md-6">
-                      <label class="form-label">Stock <span class="text-muted">(leave blank for unlimited)</span></label>
+                      <label class="form-label">Stock</label>
                       <input
                         type="number"
                         step="1"

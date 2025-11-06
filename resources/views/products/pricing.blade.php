@@ -73,7 +73,7 @@
           </div>
 
           <div class="col-md-4">
-            <label class="form-label">Stock (leave blank for unlimited)</label>
+            <label class="form-label">Stock</label>
             <input type="number" step="1" min="0" name="stock" class="form-control @error('stock') is-invalid @enderror"
                    value="{{ old('stock', $product->stock) }}">
             @error('stock') <div class="invalid-feedback">{{ $message }}</div> @enderror
