@@ -92,7 +92,7 @@
 
     {{-- Processing / Dispatch hint --}}
     @if($procLabel || $dispatchLabel)
-      <div class="alert alert-light border d-flex align-items-center gap-3 mb-3">
+      <div class="alert alert-light border d-flex align-items-center gap-3 mb-3 text-dark">
         <i class="fa-regular fa-clock text-success"></i>
         <div>
           @if($procLabel)
@@ -205,4 +205,3 @@
   })();
 </script>
 @endpush
-
