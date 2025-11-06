@@ -322,24 +322,33 @@
       @elseif($product->is_active !== 1)
         {{-- Not active / pending --}}
         @php
-          $hasPaid   = !empty($product->listing_paid_at);
-          $isDueSoon = $product->next_due_date && !\Carbon\Carbon::parse($product->next_due_date)->isFuture();
-          $dueFuture = $product->next_due_date && \Carbon\Carbon::parse($product->next_due_date)->isFuture();
+          $hasPaid     = !empty($product->listing_paid_at);
+          $isDueSoon   = $product->next_due_date && !\Carbon\Carbon::parse($product->next_due_date)->isFuture();
+          $dueFuture   = $product->next_due_date && \Carbon\Carbon::parse($product->next_due_date)->isFuture();
+          $hasFeatured = !empty($product->featured_image)
+                        || ($product->media && $product->media->count() > 0);
         @endphp
 
         @if($hasPaid && $dueFuture)
-          <div class="alert alert-warning d-flex align-items-center mb-3">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            Listing not live yet. Add a featured image, then publish your listing.
-          </div>
-          <div class="d-flex flex-wrap gap-2 mb-4">
-            <a href="{{ route('products.media', $product) }}" class="btn btn-primary">
-              Add Featured Image
-            </a>
-            <a href="{{ route('products.settings', $product) }}" class="btn btn-outline-secondary">
-              Go to Settings
-            </a>
-          </div>
+          @if(! $hasFeatured)
+            <div class="alert alert-warning d-flex align-items-center mb-3">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              Listing not live yet. Add a featured image, then publish your listing.
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-4">
+              <a href="{{ route('products.media', $product) }}" class="btn btn-primary">Add Featured Image</a>
+              <a href="{{ route('products.settings', $product) }}" class="btn btn-outline-secondary">Go to Settings</a>
+            </div>
+          @else
+            <div class="alert alert-info d-flex align-items-center mb-3">
+              <i class="fas fa-circle-info me-2"></i>
+              Listing ready to publish. Review settings and publish when you're ready.
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-4">
+              <a href="{{ route('products.settings', $product) }}" class="btn btn-primary">Go to Settings</a>
+              <a href="{{ route('products.media', $product) }}" class="btn btn-outline-secondary">Manage Media</a>
+            </div>
+          @endif
         @else
           <div class="alert alert-warning d-flex align-items-center mb-4">
             <i class="fas fa-exclamation-triangle me-2"></i>
