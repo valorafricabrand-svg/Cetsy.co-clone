@@ -259,29 +259,26 @@
         use Carbon\Carbon;
 
         $baseFee      = (float) ($product->category?->listing_fee ?? 0);
-        $monthlyBase  = $baseFee / 4;
-        $planButtons  = [
-          'monthly' => [
-            'label' => 'Monthly',
-            'class' => 'btn-outline-success',
-            'amount' => max($monthlyBase, 0),
-          ],
-          '3months' => [
-            'label' => '3-Month',
-            'class' => 'btn-outline-primary',
-            'amount' => max($monthlyBase * 3, 0),
-          ],
-          '4months' => [
-            'label' => '4-Month',
-            'class' => 'btn-success',
-            'amount' => max($monthlyBase * 4, 0),
-          ],
-          'yearly' => [
-            'label' => 'Yearly',
-            'class' => 'btn-outline-dark',
-            'amount' => max($monthlyBase * 12, 0),
-          ],
-        ];
+        $freq         = (int) ($product->category?->listing_frequency ?? 4);
+        $freq         = in_array($freq, [1,4], true) ? $freq : 4;
+        // Only offer the plan matching the category frequency
+        if ($freq === 1) {
+          $planButtons = [
+            'monthly' => [
+              'label' => 'Monthly',
+              'class' => 'btn-success',
+              'amount' => max($baseFee, 0),
+            ],
+          ];
+        } else {
+          $planButtons = [
+            '4months' => [
+              'label' => '4-Month',
+              'class' => 'btn-success',
+              'amount' => max($baseFee, 0),
+            ],
+          ];
+        }
       @endphp
 
       @if($product->is_active === 3)
@@ -324,25 +321,46 @@
 
       @elseif($product->is_active !== 1)
         {{-- Not active / pending --}}
-        <div class="alert alert-warning d-flex align-items-center mb-4">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          This listing isn’t live yet. Pay the fee below to activate it.
-        </div>
+        @php
+          $hasPaid   = !empty($product->listing_paid_at);
+          $isDueSoon = $product->next_due_date && !\Carbon\Carbon::parse($product->next_due_date)->isFuture();
+          $dueFuture = $product->next_due_date && \Carbon\Carbon::parse($product->next_due_date)->isFuture();
+        @endphp
 
-        @php $actionPrefix = 'Pay'; @endphp
+        @if($hasPaid && $dueFuture)
+          <div class="alert alert-warning d-flex align-items-center mb-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Listing not live yet. Add a featured image, then publish your listing.
+          </div>
+          <div class="d-flex flex-wrap gap-2 mb-4">
+            <a href="{{ route('products.media', $product) }}" class="btn btn-primary">
+              Add Featured Image
+            </a>
+            <a href="{{ route('products.settings', $product) }}" class="btn btn-outline-secondary">
+              Go to Settings
+            </a>
+          </div>
+        @else
+          <div class="alert alert-warning d-flex align-items-center mb-4">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            This listing isn’t live yet. Pay the fee below to activate it.
+          </div>
 
-        <div class="d-flex flex-wrap gap-2 mb-4">
-          @foreach($planButtons as $planKey => $option)
-            <form method="POST" action="{{ route('products.pay-fee', $product) }}">
-              @csrf
-              <input type="hidden" name="plan" value="{{ $planKey }}">
-              <button class="btn {{ $option['class'] }}">
-                {{ $actionPrefix }} {{ $option['label'] }}<br>
-                <small>{{ money($option['amount']) }}</small>
-              </button>
-            </form>
-          @endforeach
-        </div>
+          @php $actionPrefix = 'Pay'; @endphp
+
+          <div class="d-flex flex-wrap gap-2 mb-4">
+            @foreach($planButtons as $planKey => $option)
+              <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+                @csrf
+                <input type="hidden" name="plan" value="{{ $planKey }}">
+                <button class="btn {{ $option['class'] }}">
+                  {{ $actionPrefix }} {{ $option['label'] }}<br>
+                  <small>{{ money($option['amount']) }}</small>
+                </button>
+              </form>
+            @endforeach
+          </div>
+        @endif
       @endif
 
       {{-- Action Links --}}

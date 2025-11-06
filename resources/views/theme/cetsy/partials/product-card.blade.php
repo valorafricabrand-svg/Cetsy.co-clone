@@ -61,25 +61,11 @@
 @php
       // Build a safe thumbnail: prefer featured image, else first image media, else shop logo/placeholder.
       $thumb = null; $mediaType = 'image';
-      if (!empty($item->featured_image)) {
-        $thumb = str_starts_with($item->featured_image, 'http')
-                ? $item->featured_image
-                : asset('storage/' . ltrim($item->featured_image, '/'));
-      } else {
-        $firstImage = $item->relationLoaded('media') ? $item->media->firstWhere('type','image') : optional($item->media)->firstWhere('type','image');
-        $firstVideo = $item->relationLoaded('media') ? $item->media->firstWhere('type','video') : optional($item->media)->firstWhere('type','video');
-        if ($firstImage && !empty($firstImage->url)) {
-          $thumb = asset('storage/' . ltrim($firstImage->url, '/'));
-          $mediaType = 'image';
-        } else {
-          // No image in media; avoid using video files as <img> sources in listings
-          $shopLogo = ($item->shop && $item->shop->logo)
-                      ? asset('storage/' . ltrim($item->shop->logo, '/'))
-                      : (setting('favicon_url') ?: asset('assets/img/placeholder.svg'));
-          $thumb = $shopLogo;
-          $mediaType = 'image';
-        }
-      }
+      // Use centralized helper with normalization + fallbacks
+      $thumb = product_thumb_url($item);
+      $firstImage = $item->relationLoaded('media') ? $item->media->firstWhere('type','image') : optional($item->media)->firstWhere('type','image');
+      $firstVideo = $item->relationLoaded('media') ? $item->media->firstWhere('type','video') : optional($item->media)->firstWhere('type','video');
+      $mediaType = 'image';
       // Mark if product has any video media (to show a badge)
       $hasVideo = $item->relationLoaded('media') ? (bool) optional($item->media)->firstWhere('type','video') : (bool) optional($item->media)->firstWhere('type','video');
     @endphp
@@ -90,7 +76,7 @@
 
     @php
       $dataVideoSrc = (isset($firstVideo) && $firstVideo && empty($firstImage) && empty($item->featured_image))
-        ? asset('storage/' . ltrim($firstVideo->url,'/'))
+        ? media_url($firstVideo->url)
         : null;
     @endphp
     <img src="{{ $thumb }}"

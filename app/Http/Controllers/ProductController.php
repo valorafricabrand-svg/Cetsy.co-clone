@@ -521,7 +521,7 @@ public function update(Request $request, Product $product)
     $this->recordProductActivity($product, 'full_update', $changes, $extra);
 
     return redirect()
-        ->route('products.edit', $product)
+        ->route('products.show', $product)
         ->with('success', 'Product updated successfully!');
 }
 
@@ -585,7 +585,13 @@ public function update(Request $request, Product $product)
             $newProduct = $product->replicate();
             $newProduct->name = $product->name . ' (Copy)';
             $newProduct->slug = Str::slug($newProduct->name) . '-' . Str::random(6);
-            $newProduct->is_active = 0;
+            // Reset listing-related fields so the copy doesn't inherit subscription/expiry
+            $newProduct->is_active       = 0;
+            $newProduct->listing_paid_at = null;
+            $newProduct->next_due_date   = null;
+            if (isset($newProduct->renewal_type)) {
+                $newProduct->renewal_type = 'automatic'; // enum not-null
+            }
             $newProduct->save();
 
             // 2) Media
@@ -678,7 +684,7 @@ public function update(Request $request, Product $product)
             }
         });
 
-        return redirect()->route('products.edit', $newProduct)
+        return redirect()->route('products.show', $newProduct)
             ->with('success', 'Product duplicated successfully! Variations, options, and variant combinations were copied.');
     }
 
@@ -966,42 +972,26 @@ public function listings(Request $request)
 // In your controller:
 public function payFee(Request $request, Product $product)
 {
-    $validPlans = ['monthly', '3months', '4months', 'yearly'];
+    $freq = (int) ($product->category->listing_frequency ?? 4);
+    $freq = in_array($freq, [1,4], true) ? $freq : 4;
+    $baseFee = (float) ($product->category->listing_fee ?? 0);
+
+    // Only allow the plan matching the category's frequency
+    $allowedPlan = $freq === 1 ? 'monthly' : '4months';
 
     $validated = $request->validate([
-        'plan' => ['required', Rule::in($validPlans)],
+        'plan' => ['required', Rule::in([$allowedPlan])],
     ]);
 
-    $baseFee     = (float) ($product->category->listing_fee ?? 0);
-    $monthlyBase = $baseFee / 4;
-
     $plans = [
-        'monthly' => [
-            'label'  => 'Monthly',
-            'months' => 1,
-            'amount' => max($monthlyBase, 0),
-        ],
-        '3months' => [
-            'label'  => '3-Month',
-            'months' => 3,
-            'amount' => max($monthlyBase * 3, 0),
-        ],
-        '4months' => [
-            'label'  => '4-Month',
-            'months' => 4,
-            'amount' => max($monthlyBase * 4, 0),
-        ],
-        'yearly' => [
-            'label'  => 'Yearly',
-            'months' => 12,
-            'amount' => max($monthlyBase * 12, 0),
+        $allowedPlan => [
+            'label'  => $freq === 1 ? 'Monthly' : '4-Month',
+            'months' => $freq,
+            'amount' => max($baseFee, 0),
         ],
     ];
 
-    $selectedPlan = $validated['plan'];
-    if (! isset($plans[$selectedPlan])) {
-        $selectedPlan = array_key_first($plans);
-    }
+    $selectedPlan = $validated['plan'] ?? $allowedPlan;
 
     return view('products.pay_fee', [
         'order'         => $product,
@@ -1023,40 +1013,15 @@ public function successDeposit(Request $request, $id)
     // 1) Retrieve the product or 404
     $product = Product::findOrFail($id);
 
-    // 2) Validate the plan
-    $plan = $request->input('plan', '4months');
-    $planLabels = [
-        'monthly'  => 'Monthly',
-        '3months'  => '3-Month',
-        '4months'  => '4-Month',
-        'yearly'   => 'Yearly',
-    ];
-    if (! array_key_exists($plan, $planLabels)) {
-        $plan = '4months';
-    }
+    // 2) Category-driven plan (1-month or 4-month cycle)
+    $freq = (int) ($product->category->listing_frequency ?? 4);
+    $freq = in_array($freq, [1,4], true) ? $freq : 4;
+    $plan = $freq === 1 ? 'monthly' : '4months';
+    $planLabels = [ 'monthly' => 'Monthly', '4months' => '4-Month' ];
 
-    // 3) Compute fee & next due date
-    $baseFee     = (float) ($product->category->listing_fee ?? 0);
-    $monthlyBase = $baseFee / 4;
-
-    switch ($plan) {
-        case 'monthly':
-            $fee     = $monthlyBase;
-            $nextDue = now()->addMonth();
-            break;
-        case '3months':
-            $fee     = $monthlyBase * 3;
-            $nextDue = now()->addMonths(3);
-            break;
-        case 'yearly':
-            $fee     = $monthlyBase * 12;
-            $nextDue = now()->addYear();
-            break;
-        default:
-            $fee     = $monthlyBase * 4;
-            $nextDue = now()->addMonths(4);
-            break;
-    }
+    // 3) Fee is per-category cycle; due date is now + frequency months
+    $fee     = max(0, (float) ($product->category->listing_fee ?? 0));
+    $nextDue = now()->addMonths($freq);
 
     $fee = max($fee, 0);
 
@@ -1078,12 +1043,13 @@ public function successDeposit(Request $request, $id)
         } while (Payment::where('local_transaction_id', $localTx)->exists());
     }
 
-    // 7) Record the payment
+    // 7) Record the payment (mark successful)
     Payment::create([
         'shop_id'              => $product->shop_id,
         'total_amount'         => $fee,
         'payment_method'       => $via,
-        'status'               => '3',    // completed
+        'paymentStatus'        => 3,
+        'payment_status'       => 'successful',
         'currency'             => $product->currency ?? 'USD',
         'local_transaction_id' => $localTx,
         'payment_name'         => 'listing_fee',

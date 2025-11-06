@@ -7,7 +7,11 @@
   $indentHtml = $depth > 0 ? str_repeat('&nbsp;', $depth * 3) . '↳&nbsp;' : '';
 @endphp
 
-<tr>
+<tr data-id="{{ $cat->id }}" data-parent-id="{{ $cat->parent_id ?? '' }}">
+  {{-- Select --}}
+  <td class="text-center">
+    <input type="checkbox" class="category-checkbox" name="ids[]" value="{{ $cat->id }}">
+  </td>
   {{-- Image --}}
   <td class="text-center">
     @if($cat->image)
@@ -27,16 +31,34 @@
     @else
       {{ $cat->name }}
     @endif
+    <div class="slug">/{{ $cat->slug }}</div>
+    <button type="button"
+            class="btn btn-sm btn-outline-secondary ms-2 mt-1 select-subtree"
+            data-id="{{ $cat->id }}">
+      Select children
+    </button>
   </td>
 
   {{-- Type --}}
-  <td>{{ $cat->listing_type ? ucfirst($cat->listing_type) : '—' }}</td>
+  <td>
+    @if($cat->listing_type)
+      <span class="badge badge-soft">{{ ucfirst($cat->listing_type) }}</span>
+    @else
+      —
+    @endif
+  </td>
 
   {{-- Parent --}}
   <td>{{ $cat->parent?->name ?? '—' }}</td>
 
   {{-- Listing Fee --}}
   <td>{{ get_currency() }} {{ number_format((float)($cat->listing_fee ?? 0), 2) }}</td>
+
+  {{-- Cycle --}}
+  <td>
+    @php $f = (int) ($cat->listing_frequency ?? 4); @endphp
+    <span class="badge badge-soft green">{{ $f }} mo{{ $f === 1 ? '' : 's' }}</span>
+  </td>
 
   {{-- Actions --}}
   <td class="text-end">

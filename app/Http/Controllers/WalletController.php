@@ -153,37 +153,19 @@ class WalletController extends Controller
      */
     protected function resolveListingPlan(Product $product, string $plan): array
     {
-        $labels = $this->listingPlanLabels();
-        if (! isset($labels[$plan])) {
-            $plan = '4months';
-        }
+        // Category-driven frequency (1 or 4 months) and fee per cycle
+        $freq = (int) ($product->category->listing_frequency ?? 4);
+        $freq = in_array($freq, [1,4], true) ? $freq : 4;
+        $labels = ['monthly' => 'Monthly', '4months' => '4-Month'];
 
-        $baseFee     = (float) ($product->category->listing_fee ?? 0);
-        $monthlyBase = $baseFee / 4;
-
-        switch ($plan) {
-            case 'monthly':
-                $amount = $monthlyBase;
-                $nextDue = now()->addMonth();
-                break;
-            case '3months':
-                $amount = $monthlyBase * 3;
-                $nextDue = now()->addMonths(3);
-                break;
-            case 'yearly':
-                $amount = $monthlyBase * 12;
-                $nextDue = now()->addYear();
-                break;
-            default:
-                $amount = $monthlyBase * 4;
-                $nextDue = now()->addMonths(4);
-                break;
-        }
+        $plan = $freq === 1 ? 'monthly' : '4months';
+        $amount = max(0, (float) ($product->category->listing_fee ?? 0));
+        $nextDue = now()->addMonths($freq);
 
         return [
             'plan'   => $plan,
             'label'  => $labels[$plan],
-            'amount' => max($amount, 0),
+            'amount' => $amount,
             'due'    => $nextDue,
         ];
     }
@@ -418,8 +400,8 @@ class WalletController extends Controller
 
 
 
-public function handlePayPalDeposit(Request $request)
-{
+    public function handlePayPalDeposit(Request $request)
+    {
     if (!$this->isDepositOtpVerified()) {
         \Log::warning('wallet.deposit.action_blocked_missing_otp', [
             'user_id' => Auth::id(),
@@ -428,21 +410,44 @@ public function handlePayPalDeposit(Request $request)
         ]);
         return response()->json(['success' => false, 'error' => 'Two-factor verification required.'], 403);
     }
-    $request->validate([
-        'amount' => 'required|numeric|min:1',
-    ]);
+        $request->validate([
+            'amount'   => 'required|numeric|min:1',
+            'fee'      => 'nullable|numeric|min:0',
+            'gross'    => 'nullable',
+            'currency' => 'nullable|string|size:3',
+        ]);
 
     try {
         // Create wallet transaction
-        $wallet = Wallet::create([
-            'user_id'     => Auth::id(),
-            'credit'      => $request->amount,
-            'debit'       => 0,
-            'balance'     => 0, // Optionally recalculate this later
-            'reference'   => strtoupper(uniqid('TXN-')),
-            'method'      => 'paypal',
-            'description' => 'Manual deposit via PayPal',
-        ]);
+            $wallet = Wallet::create([
+                'user_id'     => Auth::id(),
+                'credit'      => $request->amount,
+                'debit'       => 0,
+                'balance'     => 0, // Optionally recalculate this later
+                'reference'   => strtoupper(uniqid('TXN-')),
+                'method'      => 'paypal',
+                'description' => 'Manual deposit via PayPal',
+            ]);
+
+            // Record the online payment fee as a Payment row (for buyer visibility)
+            $fee = (float) ($request->input('fee', 0));
+            if ($fee > 0.0001) {
+                try {
+                    Payment::create([
+                        'user_id'              => Auth::id(),
+                        'total_amount'         => $fee,
+                        'payment_method'       => 'paypal',
+                        'payment_status'       => 'successful',
+                        'paymentStatus'        => 3,
+                        'currency'             => $request->input('currency', 'USD'),
+                        'payment_name'         => 'online_payment_fee',
+                        'more_details'         => json_encode([
+                            'gross'      => $request->input('gross'),
+                            'net_credit' => (float)$request->amount,
+                        ]),
+                    ]);
+                } catch (\Throwable $e) { \Log::warning('wallet.deposit.fee_record_failed', ['user_id'=>Auth::id(), 'error'=>$e->getMessage()]); }
+            }
 
         // Send success email to user
         try {
@@ -763,11 +768,14 @@ public function payListing(Request $request, $id)
     // 1) Fetch the product
     $product = Product::findOrFail($id);
 
-    $validPlans = array_keys($this->listingPlanLabels());
+    // Only accept the plan that matches the product's category frequency
+    $freq = (int) ($product->category->listing_frequency ?? 4);
+    $freq = in_array($freq, [1,4], true) ? $freq : 4;
+    $allowedPlan = $freq === 1 ? 'monthly' : '4months';
 
     // 2) Validate plan & via
     $data = $request->validate([
-        'plan' => ['required', Rule::in($validPlans)],
+        'plan' => ['required', Rule::in([$allowedPlan])],
         'via'  => ['required', 'in:wallet,paypal'],
     ]);
 
@@ -816,12 +824,13 @@ public function payListing(Request $request, $id)
         ]);
     }
 
-    // 7) Record the Payment
+    // 7) Record the Payment (successful)
     Payment::create([
         'shop_id'              => $product->shop_id,
         'total_amount'         => $fee,
         'payment_method'       => $data['via'],
-        'status'               => '3',  // completed
+        'paymentStatus'        => 3,
+        'payment_status'       => 'successful',
         'currency'             => $product->currency ?? 'USD',
         'local_transaction_id' => $localTxId,
         'payment_name'         => 'listing_fee',
@@ -839,11 +848,12 @@ public function payListing(Request $request, $id)
 public function payListing2(Request $request, $id)
 {
     $product = Product::findOrFail($id);
-
-    $validPlans = array_keys($this->listingPlanLabels());
+    $freq = (int) ($product->category->listing_frequency ?? 4);
+    $freq = in_array($freq, [1,4], true) ? $freq : 4;
+    $allowedPlan = $freq === 1 ? 'monthly' : '4months';
 
     $data = $request->validate([
-        'plan' => ['required', Rule::in($validPlans)],
+        'plan' => ['required', Rule::in([$allowedPlan])],
         'via'  => ['required', 'in:wallet,paypal'],
     ]);
 
@@ -896,7 +906,8 @@ public function payListing2(Request $request, $id)
         'shop_id'              => $product->shop_id,
         'total_amount'         => $fee,
         'payment_method'       => $data['via'],
-        'status'               => '3',  // completed
+        'paymentStatus'        => 3,
+        'payment_status'       => 'successful',
         'currency'             => $product->currency ?? 'USD',
         'local_transaction_id' => $localTxId,
         'payment_name'         => 'listing_fee',
@@ -944,7 +955,9 @@ public function payOrder(Request $request, $id)
             'shop_id'              => $order->shop_id,
             'total_amount'         => $order->total_amount,
             'payment_method'       => $method,
-            'status'               => '3',
+            'paymentStatus'        => 3,
+            'payment_status'       => 'successful',
+            'payment_name'         => 'order_payment',
             'currency'             => $currency,
             'local_transaction_id' => $localTxId,
         ];

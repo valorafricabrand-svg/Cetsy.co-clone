@@ -72,6 +72,15 @@
         <div class="card-body d-flex flex-column">
             <h5 class="card-title mb-1">{{ Str::limit($product->name, 40) }}</h5>
             <div class="text-muted small mb-2">ID: #{{ $product->id }}</div>
+            @php $due = $product->next_due_date ? \Carbon\Carbon::parse($product->next_due_date) : null; @endphp
+            @if($due)
+                <div class="small mb-2">
+                    <span class="badge bg-light text-dark border">
+                        <i class="far fa-calendar-alt me-1"></i>
+                        {{ $due->isFuture() ? 'Expires' : 'Expired' }}: {{ $due->toFormattedDateString() }}
+                    </span>
+                </div>
+            @endif
             @php
                 // Variation awareness for seller: show if variants exist and compute a lowest priced variant
                 $hasVariants = false;

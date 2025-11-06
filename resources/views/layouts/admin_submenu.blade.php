@@ -31,6 +31,8 @@
         'items' => [
           ['label' => 'Dashboard', 'icon' => 'fas fa-tachometer-alt', 'url' => route('admin.dashboard'), 'match' => ['admin.dashboard']],
           ['label' => 'Reports',   'icon' => 'fas fa-chart-bar',      'url' => route('admin.reports'),   'match' => ['admin.reports']],
+          ['label' => 'MRR',           'icon' => 'fas fa-chart-line', 'url' => route('admin.reports.mrr'),           'match' => ['admin.reports.mrr']],
+          ['label' => 'Listing Fees',  'icon' => 'fas fa-receipt',    'url' => route('admin.reports.listing-fees'),  'match' => ['admin.reports.listing-fees']],
           ['label' => 'Notifications', 'icon' => 'fas fa-bell', 'url' => route('admin.notifications.index'), 'match' => ['admin.notifications.*'], 'count' => $unreadNotifications],
         ],
       ],
@@ -49,6 +51,8 @@
         'items' => [
           ['label' => 'Blog Posts',      'icon' => 'fas fa-newspaper', 'url' => route('admin.blog-posts.index'),      'match' => ['admin.blog-posts.*'],      'count' => $draftPosts],
           ['label' => 'Blog Categories', 'icon' => 'fas fa-folder',    'url' => route('admin.blog-categories.index'), 'match' => ['admin.blog-categories.*']],
+          ['label' => 'User Agreement', 'icon' => 'fas fa-file-contract', 'url' => route('admin.policies.index'), 'match' => ['admin.policies.*']],
+          ['label' => 'About Page', 'icon' => 'fas fa-circle-info', 'url' => route('admin.policies.edit', 'about-cetsy'), 'match' => ['admin.policies.edit']],
         ],
       ],
       [
@@ -110,3 +114,4 @@
     </div>
   </div>
 @endif
+

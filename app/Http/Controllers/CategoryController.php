@@ -92,8 +92,14 @@ public function store(Request $request)
         'listing_type'  => 'required|in:products,services,digital',
         'description'   => 'nullable|string|max:1000',
         'listing_fee'   => 'nullable|numeric|min:0',
+        'listing_frequency' => 'required|in:1,4',
         'image'         => 'nullable|image|max:20480',
     ]);
+
+    // If listing_fee was left blank, drop it so DB default applies
+    if (array_key_exists('listing_fee', $data) && ($data['listing_fee'] === null || $data['listing_fee'] === '')) {
+        unset($data['listing_fee']);
+    }
 
     // Auto‐slug if blank
     if (empty($data['slug'])) {
@@ -140,8 +146,14 @@ public function update(Request $request, Category $category)
         'listing_type'  => 'required|in:products,services,digital',
         'description'   => 'nullable|string|max:1000',
         'listing_fee'   => 'nullable|numeric|min:0',
+        'listing_frequency' => 'required|in:1,4',
         'image'         => 'nullable|image|max:20480',
     ]);
+
+    // Preserve existing listing_fee if left blank
+    if (array_key_exists('listing_fee', $data) && ($data['listing_fee'] === null || $data['listing_fee'] === '')) {
+        unset($data['listing_fee']);
+    }
 
     // Auto‐slug if blank
     if (empty($data['slug'])) {
@@ -264,13 +276,13 @@ $category = Category::find($id);
               });
         })
         ->orderBy('name')
-        ->get(['id','name']);
+        ->get(['id','name','parent_id']);
 
     $children = Category::query()
         ->whereNotNull('parent_id')
         ->where('listing_type', $listingType)
         ->orderBy('name')
-        ->get(['id','name']);
+        ->get(['id','name','parent_id']);
 
         $categories = $parents->concat($children)
             ->unique('id')
@@ -279,7 +291,7 @@ $category = Category::find($id);
         // Fallback: if none matched (e.g., data not tagged yet), return all so seller can proceed
         if ($categories->isEmpty()) {
             $fallbackUsed = true;
-            $categories = Category::query()->orderBy('name')->get(['id','name']);
+            $categories = Category::query()->orderBy('name')->get(['id','name','parent_id']);
         }
 
         return response()
@@ -287,7 +299,64 @@ $category = Category::find($id);
             ->header('X-Categories-Fallback', $fallbackUsed ? '1' : '0');
     }
 
+    /**
+     * Admin: Bulk update selected categories' fields.
+     * Allows updating listing_fee, listing_type, and listing_frequency.
+     */
+    public function bulkUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:categories,id',
+            'listing_fee' => 'nullable|numeric|min:0',
+            'listing_type' => 'nullable|in:products,services,digital',
+            'listing_frequency' => 'nullable|in:1,4',
+        ]);
 
+        $payload = [];
+        if ($request->filled('listing_fee')) {
+            $payload['listing_fee'] = $request->input('listing_fee');
+        }
+        if ($request->filled('listing_type')) {
+            $payload['listing_type'] = $request->input('listing_type');
+        }
+        if ($request->filled('listing_frequency')) {
+            $payload['listing_frequency'] = (int) $request->input('listing_frequency');
+        }
 
+        if (empty($payload)) {
+            return back()->with('warning', 'No changes selected. Choose at least one field.');
+        }
+
+        Category::whereIn('id', $validated['ids'])->update($payload);
+
+        return back()->with('success', 'Selected categories updated successfully.');
+    }
+
+    /**
+     * Admin: Bulk move categories to a new parent.
+     */
+    public function bulkMove(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:categories,id',
+            'parent_id' => 'nullable|integer|exists:categories,id',
+        ]);
+
+        $ids = collect($validated['ids'])->unique()->values();
+        $parentId = $request->input('parent_id');
+
+        // Do not allow assigning parent to one of the selected IDs
+        if ($parentId && $ids->contains((int) $parentId)) {
+            return back()->with('warning', 'Cannot move categories under one of the selected items.');
+        }
+
+        // Basic move; note: does not detect deep cycles (moving into own descendant)
+        // For now, we trust admin to avoid that; otherwise requires a tree walk.
+        Category::whereIn('id', $ids)->update(['parent_id' => $parentId ?: null]);
+
+        return back()->with('success', 'Selected categories moved successfully.');
+    }
 
 }

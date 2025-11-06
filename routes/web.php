@@ -334,7 +334,7 @@ Route::middleware(['auth','verified'])->group(function () {
         ->middleware('kyc.after.two.sales')
         ->name('products.store');
     Route::resource('products', ProductController::class)
-        ->except(['create', 'store'])
+        ->except(['create', 'store', 'edit'])
         ->middleware('kyc.after.two.sales');
     // Product Shipping (page + save)
     Route::get('products/{product}/shipping', [ProductController::class, 'shipping'])
@@ -501,6 +501,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         [CategoryAttributeController::class, 'destroy']
     )->name('category-attributes.destroy');
     Route::resource('categories', CategoryController::class);
+    // Bulk update and move categories
+    Route::post('categories/bulk-update', [CategoryController::class, 'bulkUpdate'])->name('categories.bulk-update');
+    Route::post('categories/bulk-move',   [CategoryController::class, 'bulkMove'])->name('categories.bulk-move');
+    // Bulk update categories (listing_fee, listing_type, listing_frequency)
+    Route::post('categories/bulk-update', [CategoryController::class, 'bulkUpdate'])->name('categories.bulk-update');
 
     // KYC
     Route::get('kyc', [KycController::class, 'index'])->name('kyc.index');
@@ -508,10 +513,21 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('kyc/{kyc}', [KycController::class, 'update'])->name('kyc.update');
     Route::get('kyc/{kyc}', [KycController::class, 'showDetails'])->name('kyc.showDetails');
 
+    // User Agreement (Policies)
+    Route::get('user-agreement', [\App\Http\Controllers\Admin\PolicySectionController::class, 'index'])->name('policies.index');
+    Route::get('user-agreement/{slug}/edit', [\App\Http\Controllers\Admin\PolicySectionController::class, 'edit'])->name('policies.edit');
+    Route::put('user-agreement/{slug}', [\App\Http\Controllers\Admin\PolicySectionController::class, 'update'])->name('policies.update');
     // Settings, Reports
     Route::get('settings', [AdminSetting::class, 'index'])->name('settings');
     Route::put('settings/{setting}', [AdminSetting::class, 'update'])->name('settings.update');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
+    Route::get('reports/mrr', [AdminSubscriptionController::class, 'mrr'])->name('reports.mrr');
+    Route::get('reports/mrr/{ym}/shops', [AdminSubscriptionController::class, 'mrrShops'])->name('reports.mrr.shops');
+    Route::get('reports/mrr/{ym}/shops/export', [AdminSubscriptionController::class, 'mrrShopsExport'])->name('reports.mrr.shops.export');
+    // Listing fee revenue
+    Route::get('reports/listing-fees', [AdminSubscriptionController::class, 'listingFees'])->name('reports.listing-fees');
+    Route::get('reports/listing-fees/{ym}/payments', [AdminSubscriptionController::class, 'listingFeesPayments'])->name('reports.listing-fees.payments');
+    Route::get('reports/listing-fees/{ym}/export', [AdminSubscriptionController::class, 'listingFeesExport'])->name('reports.listing-fees.export');
     Route::get('reports/inventory', [\App\Http\Controllers\Admin\InventoryReportController::class, 'index'])->name('reports.inventory');
     Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::patch('reviews/{review}/approve', [ReviewController::class, 'approve'])->name('reviews.approve');

@@ -34,16 +34,35 @@
             This page contains the full text of Cetsy’s User Agreement and related policies. Use the contents to jump to a section.
           </div>
 
-          <div id="privacy" class="anchor">@include('theme.cetsy.pages.user-agreement.sections.1_privacy')</div>
-          <div id="terms" class="mt-4 anchor">@include('theme.cetsy.pages.user-agreement.sections.2_terms')</div>
-          <div id="seller-forum" class="mt-4 anchor">@include('theme.cetsy.pages.user-agreement.sections.3_seller_forum')</div>
-          <div id="seller-tips" class="mt-4 anchor">@include('theme.cetsy.pages.user-agreement.sections.4_seller_tips')</div>
-          <div id="buyer-tips" class="mt-4 anchor">@include('theme.cetsy.pages.user-agreement.sections.5_buyer_tips')</div>
-          <div id="house-rules" class="mt-4 anchor">@include('theme.cetsy.pages.user-agreement.sections.6_house_rules')</div>
-          <div id="about-cetsy" class="mt-4 anchor">@include('theme.cetsy.pages.user-agreement.sections.7_about')</div>
-          <div id="prohibited" class="mt-4 anchor">@include('theme.cetsy.pages.user-agreement.sections.8_prohibited_items')</div>
-          <div id="behavioural" class="mt-4 anchor">@include('theme.cetsy.pages.user-agreement.sections.9_behavioural')</div>
-          <div id="fees" class="mt-4 anchor">@include('theme.cetsy.pages.user-agreement.sections.10_fees')</div>
+          @php($__sec = App\Models\PolicySection::where('slug','privacy')->first())
+          <div id="privacy" class="anchor">{!! $__sec && trim((string)$__sec->content) !== '' ? $__sec->content : view('theme.cetsy.pages.user-agreement.sections.1_privacy') !!}</div>
+
+          @php($__sec = App\Models\PolicySection::where('slug','terms')->first())
+          <div id="terms" class="mt-4 anchor">{!! $__sec && trim((string)$__sec->content) !== '' ? $__sec->content : view('theme.cetsy.pages.user-agreement.sections.2_terms') !!}</div>
+
+          @php($__sec = App\Models\PolicySection::where('slug','seller-forum')->first())
+          <div id="seller-forum" class="mt-4 anchor">{!! $__sec && trim((string)$__sec->content) !== '' ? $__sec->content : view('theme.cetsy.pages.user-agreement.sections.3_seller_forum') !!}</div>
+
+          @php($__sec = App\Models\PolicySection::where('slug','seller-tips')->first())
+          <div id="seller-tips" class="mt-4 anchor">{!! $__sec && trim((string)$__sec->content) !== '' ? $__sec->content : view('theme.cetsy.pages.user-agreement.sections.4_seller_tips') !!}</div>
+
+          @php($__sec = App\Models\PolicySection::where('slug','buyer-tips')->first())
+          <div id="buyer-tips" class="mt-4 anchor">{!! $__sec && trim((string)$__sec->content) !== '' ? $__sec->content : view('theme.cetsy.pages.user-agreement.sections.5_buyer_tips') !!}</div>
+
+          @php($__sec = App\Models\PolicySection::where('slug','house-rules')->first())
+          <div id="house-rules" class="mt-4 anchor">{!! $__sec && trim((string)$__sec->content) !== '' ? $__sec->content : view('theme.cetsy.pages.user-agreement.sections.6_house_rules') !!}</div>
+
+          @php($__sec = App\Models\PolicySection::where('slug','about-cetsy')->first())
+          <div id="about-cetsy" class="mt-4 anchor">{!! $__sec && trim((string)$__sec->content) !== '' ? $__sec->content : view('theme.cetsy.pages.user-agreement.sections.7_about') !!}</div>
+
+          @php($__sec = App\Models\PolicySection::where('slug','prohibited')->first())
+          <div id="prohibited" class="mt-4 anchor">{!! $__sec && trim((string)$__sec->content) !== '' ? $__sec->content : view('theme.cetsy.pages.user-agreement.sections.8_prohibited_items') !!}</div>
+
+          @php($__sec = App\Models\PolicySection::where('slug','behavioural')->first())
+          <div id="behavioural" class="mt-4 anchor">{!! $__sec && trim((string)$__sec->content) !== '' ? $__sec->content : view('theme.cetsy.pages.user-agreement.sections.9_behavioural') !!}</div>
+
+          @php($__sec = App\Models\PolicySection::where('slug','fees')->first())
+          <div id="fees" class="mt-4 anchor">{!! $__sec && trim((string)$__sec->content) !== '' ? $__sec->content : view('theme.cetsy.pages.user-agreement.sections.10_fees') !!}</div>
         </div>
       </div>
     </div>
@@ -58,4 +77,3 @@
   .list-group-item-action { font-size: 0.95rem; }
 </style>
 @endpush
-
