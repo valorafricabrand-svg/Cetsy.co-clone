@@ -172,32 +172,11 @@
         </form>
       @endif
 
-      {{-- Type & Price --}}
-      <p class="mb-2 text-muted">
+      {{-- Type (price removed per request) --}}
+      <p class="mb-3 text-muted">
         <i class="fas fa-box me-1"></i>
         <strong>Type:</strong> {{ ucfirst($product->type) }}
       </p>
-      <div class="mb-3">
-        @php
-          $basePrice  = $product->price;
-          $finalPrice = $product->discounted_price;
-        @endphp
-
-        @if($finalPrice < $basePrice)
-          <div class="d-flex align-items-baseline gap-3 mb-3">
-            <span class="fw-bold text-success">
-              {{ money() }}
-            </span>
-            <span class="text-muted text-decoration-line-through">
-              {{ money() }}
-            </span>
-          </div>
-        @else
-          <p class="fw-bold text-success mb-3">
-            {{ money() }}
-          </p>
-        @endif
-      </div>
 
       {{-- Listing Dates --}}
       @if($product->is_active === 1)
