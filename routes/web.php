@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BlogController;
@@ -280,7 +280,7 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Variation routes
     Route::prefix('products/{product}')->group(function () {
-        Route::post('variation‑types', [VariationController::class, 'storeType'])
+        Route::post('variationâ€‘types', [VariationController::class, 'storeType'])
             ->name('variationTypes.store');
         Route::post('variations', [VariationController::class, 'store'])
             ->name('variations.store');
@@ -292,7 +292,7 @@ Route::middleware(['auth','verified'])->group(function () {
         ->name('variations.update');
     Route::delete('variations/{variation}', [VariationController::class, 'destroy'])
         ->name('variations.destroy');
-    Route::delete('variation‑types/{variationType}', [VariationController::class, 'destroyType'])
+    Route::delete('variationâ€‘types/{variationType}', [VariationController::class, 'destroyType'])
         ->name('variationTypes.destroy');
 
     Route::post('variation-types/{variationType}/options', [VariationController::class, 'storeOption'])
@@ -398,7 +398,7 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::post('/wallet/deposit/mpesa/stk', [WalletController::class, 'startMpesaStk'])
         ->name('wallet.deposit.mpesa.stk');
 
-    // Poll status (frontend “listens” by polling this)
+    // Poll status (frontend â€œlistensâ€ by polling this)
     Route::get('/wallet/deposit/mpesa/status/{ref}', [WalletController::class, 'mpesaStatus'])->name('wallet.deposit.mpesa.status');
 
     // Account
@@ -488,7 +488,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('products/bulk-status', [\App\Http\Controllers\Admin\ProductController::class, 'bulkStatus'])->name('products.bulk-status');
     // Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
 
-    /* update + destroy — shallow, no category prefix */
+    /* update + destroy â€” shallow, no category prefix */
     Route::put(
         '/category-attributes/{attribute}',
         [CategoryAttributeController::class, 'update']
@@ -524,6 +524,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('reports/mrr/{ym}/shops/export', [AdminSubscriptionController::class, 'mrrShopsExport'])->name('reports.mrr.shops.export');
     // Listing fee revenue
     Route::get('reports/listing-fees', [AdminSubscriptionController::class, 'listingFees'])->name('reports.listing-fees');
+    Route::get('reports/transaction-fees', \\App\\Http\\Controllers\\Admin\\TransactionFeeReportController::class.'@index')->name('reports.transaction-fees');
+    Route::get('reports/transaction-fees/export', \\App\\Http\\Controllers\\Admin\\TransactionFeeReportController::class.'@export')->name('reports.transaction-fees.export');
     Route::get('reports/listing-fees/{ym}/payments', [AdminSubscriptionController::class, 'listingFeesPayments'])->name('reports.listing-fees.payments');
     Route::get('reports/listing-fees/{ym}/export', [AdminSubscriptionController::class, 'listingFeesExport'])->name('reports.listing-fees.export');
     Route::get('reports/inventory', [\App\Http\Controllers\Admin\InventoryReportController::class, 'index'])->name('reports.inventory');
