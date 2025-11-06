@@ -20,6 +20,19 @@
     $resolvedDispute = $disputes->where('status', 'resolved')->first();
   }
 
+  // Detect if the active dispute contains a system message indicating an exchange was requested
+  $exchangeRequested = false;
+  if ($activeDispute && method_exists($activeDispute, 'messages')) {
+    try {
+      $msgs = $activeDispute->messages ?? collect();
+      $exchangeRequested = $msgs->contains(function($m){
+        $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+        $text   = strtolower((string)($m->message ?? ''));
+        return $typeOk && (str_contains($text, 'return/exchange') || str_contains($text, 'exchange'));
+      });
+    } catch (\Throwable $e) { $exchangeRequested = false; }
+  }
+
   // Compute safe totals in case DB totals are null/missing
   $computedSubtotal = ($order->items ?? collect())->sum(function($it){
     return (float)($it->price ?? 0) * (int)($it->quantity ?? 1);
@@ -41,6 +54,12 @@
     </h2>
 
     <div class="btn-toolbar gap-2 flex-wrap">
+      @if($activeDispute && $exchangeRequested)
+        <span class="badge bg-warning text-dark d-flex align-items-center gap-1" title="Buyer requested an exchange via dispute">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          Exchange Requested
+        </span>
+      @endif
       <a href="{{ route('orders.chat.show', $order->id) }}"
          class="btn btn-outline-info btn-sm d-flex align-items-center gap-1">
         <i class="fa-solid fa-comments"></i> Messages
@@ -785,9 +804,12 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Auto-show ship modal if URL contains ?ship=1
+  // Auto-show ship modal if URL contains ?ship=1 OR after server-side errors
   const params = new URLSearchParams(window.location.search);
-  if (params.get('ship') === '1') {
+  const shouldShowByQuery = params.get('ship') === '1';
+  const shouldShowByErrors = Boolean(@json(optional($errors->getBag('ship'))->any()));
+  const shouldShowByFlag = Boolean(@json(session('show_ship_modal', false)));
+  if (shouldShowByQuery || shouldShowByErrors || shouldShowByFlag) {
     const modalEl = document.getElementById('shipModal');
     modalEl && new bootstrap.Modal(modalEl).show();
   }

@@ -358,13 +358,9 @@
                             <i class="bi bi-cash-coin"></i> Issue Refund to Buyer
                         </h6>
                         <div class="d-flex align-items-center gap-2">
-                          <form method="POST" action="{{ route('disputes.refund', $dispute) }}">
-                            @csrf
-                            <input type="hidden" name="refund_percent" value="100">
-                            <button type="submit" class="btn btn-sm btn-success">
-                              <i class="bi bi-check2-circle"></i> Accept Full Refund (100%)
-                            </button>
-                          </form>
+                          <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#fullRefundModal-{{ $dispute->id }}">
+                            <i class="bi bi-check2-circle"></i> Accept Full Refund (100%)
+                          </button>
                           <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#refundModal-{{ $dispute->id }}">
                             <i class="bi bi-sliders"></i> Offer Partial Refund
                           </button>
@@ -413,6 +409,29 @@
                   </div>
                 </div>
 
+                <!-- Full Refund Confirm Modal -->
+                <div class="modal fade" id="fullRefundModal-{{ $dispute->id }}" tabindex="-1" aria-labelledby="fullRefundModalLabel-{{ $dispute->id }}" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <form method="POST" action="{{ route('disputes.refund', $dispute) }}" class="modal-content">
+                      @csrf
+                      <input type="hidden" name="refund_percent" value="100">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="fullRefundModalLabel-{{ $dispute->id }}">Confirm Full Refund</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        Are you sure you want to accept a full refund (100%)? This will credit the buyer and debit your wallet.
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">
+                          <i class="bi bi-check2-circle"></i> Confirm Full Refund
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
                 @push('scripts')
                 <script>
                 (function(){
@@ -437,8 +456,8 @@
                 @endpush
             @endif
 
-            {{-- Mutual Resolution Section --}}
-            @if($dispute->canBeMutuallyResolved())
+            {{-- Mutual Resolution Section (disabled via config) --}}
+            @if(config('disputes.enable_mutual_resolution') && $dispute->canBeMutuallyResolved())
                 <div class="card mb-4 border-success">
                     <div class="card-header bg-success text-white">
                         <h6 class="mb-0">
@@ -539,8 +558,8 @@
                 </div>
             @endif
 
-            {{-- Show mutual resolution status if already resolved --}}
-            @if($dispute->isMutuallyResolved())
+            {{-- Show mutual resolution status if already resolved (respect config) --}}
+            @if(config('disputes.enable_mutual_resolution') && $dispute->isMutuallyResolved())
                 <div class="alert alert-success mb-4">
                     <h6 class="alert-heading">
                         <i class="bi bi-handshake"></i> Mutually Resolved

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Http\Controllers\Seller;
 
@@ -94,7 +94,7 @@ class KycController extends Controller
     {
         // Allow KYC submission even if the seller's subscription is inactive.
         // Rationale: Admins need to review identity documents to onboard or
-        // reâ€‘enable sellers, and tests/routes declare KYC is accessible
+        // re�?`enable sellers, and tests/routes declare KYC is accessible
         // without an active subscription. Removing this gate fixes cases
         // where sellers think they submitted but no record is created.
 
@@ -268,7 +268,7 @@ class KycController extends Controller
             }
 
             // Notify support via email
-            ->notifySupportOfSubmission(\);
+            $this->notifySupportOfSubmission($kyc);
 
             \DB::commit();
             return redirect()->route('seller.kyc')->with('success', 'KYC submitted. We will review your documents soon.');
@@ -389,7 +389,7 @@ class KycController extends Controller
             return back()->with('error', 'No records selected.');
         }
 
-        // authorize â€“ tweak to your role logic
+        // authorize �?" tweak to your role logic
         if (!auth()->user()->isAdmin()) {
             abort(403);
         }
