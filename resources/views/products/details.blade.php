@@ -75,12 +75,26 @@
 
           <div class="col-md-6">
             <label class="form-label fw-semibold">Category</label>
+            <input type="text"
+                   class="form-control form-control-sm mb-2"
+                   placeholder="Search categories..."
+                   x-model="categorySearch"
+                   @input="filterCategories()"
+                   autocomplete="off"
+                   aria-label="Search categories">
             <select id="category_id" name="category_id" x-model="categoryId"
                     class="form-select @error('category_id') is-invalid @enderror" required>
               <option value="">Choose category</option>
-              {{-- filled by Alpine --}}
+              <template x-for="cat in catsFiltered" :key="cat.id">
+                <option :value="cat.id" x-text="cat.indented"
+                        :selected="String(cat.id) === '{{ old('category_id', $product->category_id) }}'"></option>
+              </template>
             </select>
-            <div x-show="fallback" class="form-text text-warning">Showing all categories (fallback). Ask admin to tag categories by type.</div>
+            <div x-show="!loading && categorySearch && !catsFiltered.length" class="form-text text-muted">
+              No categories match your search.
+            </div>
+            <div x-show="loading" class="form-text text-muted">Loading categories...</div>
+            <div x-show="fallback && !loading" class="form-text text-warning">Showing all categories (fallback). Ask admin to tag categories by type.</div>
             @error('category_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
@@ -143,83 +157,96 @@
 <script>
 // Local cache of categories for robust fallback when API fails/redirects
 window.__ALL_CATEGORIES__ = @json($__ALL_CATS);
-function detailsForm(){
-  return {
-    type: @json(old('type', $product->type)),
-    categoryId: @json(old('category_id', $product->category_id)),
-    fallback: false,
-    categories: [],
-    catsFlat: [],
-    init(){ if(!this.type && this.categoryId){ const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : []; const cat = all.find(x => String(x.id)===String(this.categoryId)); if (cat && cat.listing_type){ const rev = {products:'physical', services:'service', digital:'digital'}; this.type = rev[String(cat.listing_type)] || this.type; } } this.loadCategories(); },
-    filterLocalByType(tp){
-      const map = { physical: 'products', service: 'services', digital: 'digital' };
-      const want = map[String(tp) || ''] || null;
-      if (!want) return [];
-      const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : [];
-      return all.filter(c => (String(c.listing_type || '').toLowerCase() === want));
-    },
-    flattenWithIndent(items){
-      const byId = new Map();
-      const roots = [];
-      (items || []).forEach(it => byId.set(String(it.id), { ...it, children: [] }));
-      byId.forEach(node => {
-        const pid = node.parent_id ? String(node.parent_id) : '';
-        if (pid && byId.has(pid)) byId.get(pid).children.push(node); else roots.push(node);
-      });
-      const out = [];
-      const walk = (n,d) => {
-        const p = d>0 ? ('\u2014 '.repeat(d)) : '';
-        out.push({ id:n.id, indented: p + (n.name || '') });
-        (n.children || []).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).forEach(c=>walk(c,d+1));
-      };
-      roots.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).forEach(r=>walk(r,0));
-      return out;
-    },
-    async loadCategories(){
-      const sel = document.getElementById('category_id');
-      if(!sel) return;
-      sel.innerHTML = '<option>Loading…</option>';
-      if(!this.type){ sel.innerHTML = '<option value="">Choose category</option>'; return; }
-      try{
-        const url = `/api/categories/by-type/${encodeURIComponent(this.type)}?_=${Date.now()}`;
-        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        let cats;
-        const ct = res.headers.get('content-type') || '';
-        this.fallback = (res.headers.get('x-categories-fallback') === '1');
-        if (ct.includes('application/json')) {
-          cats = await res.json();
-        } else {
-          const txt = await res.text();
-          try { cats = JSON.parse(txt); } catch { console.warn('Categories API non-JSON:', txt.slice(0,200)); cats = []; }
-        }
-        if (this.fallback || !Array.isArray(cats) || cats.length === 0) {
-          cats = this.filterLocalByType(this.type);
-        }
-        this.categories = cats;
-        this.catsFlat = this.flattenWithIndent(cats);
-        sel.innerHTML = '<option value="">Choose category</option>';
-        (Array.isArray(this.catsFlat) ? this.catsFlat : []).forEach(c=>{
-          const o = document.createElement('option');
-          o.value = c.id; o.text = c.indented;
-          if(String(c.id)===String(this.categoryId)) o.selected=true;
-          sel.append(o);
-        });
-      }catch(e){
-        console.warn('Categories load warning:', e);
-        this.fallback=false;
-        const cats = this.filterLocalByType(this.type);
-        if (cats.length) {
-          this.categories = cats;
-          this.catsFlat = this.flattenWithIndent(cats);
-          sel.innerHTML = '<option value="">Choose category</option>';
-          this.catsFlat.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.text=c.indented; if(String(c.id)===String(this.categoryId)) o.selected=true; sel.append(o); });
-        } else {
-          sel.innerHTML = '<option>Error loading categories</option>';
-        }
-      }
-    }
-  }
+function detailsForm(){
+  return {
+    type: @json(old('type', $product->type)),
+    categoryId: @json(old('category_id', $product->category_id)),
+    fallback: false,
+    categories: [],
+    catsFlat: [],
+    catsFiltered: [],
+    categorySearch: '',
+    loading: false,
+    init(){ if(!this.type && this.categoryId){ const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : []; const cat = all.find(x => String(x.id)===String(this.categoryId)); if (cat && cat.listing_type){ const rev = {products:'physical', services:'service', digital:'digital'}; this.type = rev[String(cat.listing_type)] || this.type; } } this.loadCategories(); },
+    filterLocalByType(tp){
+      const map = { physical: 'products', service: 'services', digital: 'digital' };
+      const want = map[String(tp) || ''] || null;
+      if (!want) return [];
+      const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : [];
+      return all.filter(c => (String(c.listing_type || '').toLowerCase() === want));
+    },
+    flattenWithIndent(items){
+      const byId = new Map();
+      const roots = [];
+      (items || []).forEach(it => byId.set(String(it.id), { ...it, children: [] }));
+      byId.forEach(node => {
+        const pid = node.parent_id ? String(node.parent_id) : '';
+        if (pid && byId.has(pid)) byId.get(pid).children.push(node); else roots.push(node);
+      });
+      const out = [];
+      const walk = (n,d) => {
+        const label = String(n.name || '');
+        const p = d>0 ? ('\u2014 '.repeat(d)) : '';
+        out.push({ id:n.id, indented: p + label, name: label, searchable: label.toLowerCase() });
+        (n.children || []).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).forEach(c=>walk(c,d+1));
+      };
+      roots.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).forEach(r=>walk(r,0));
+      return out;
+    },
+    async loadCategories(){
+      if(!this.type){
+        this.categories = [];
+        this.catsFlat = [];
+        this.catsFiltered = [];
+        this.categorySearch = '';
+        this.loading = false;
+        return;
+      }
+      this.loading = true;
+      this.categorySearch = '';
+      try{
+        const url = `/api/categories/by-type/${encodeURIComponent(this.type)}?_=${Date.now()}`;
+        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        let cats;
+        const ct = res.headers.get('content-type') || '';
+        this.fallback = (res.headers.get('x-categories-fallback') === '1');
+        if (ct.includes('application/json')) {
+          cats = await res.json();
+        } else {
+          const txt = await res.text();
+          try { cats = JSON.parse(txt); } catch { console.warn('Categories API non-JSON:', txt.slice(0,200)); cats = []; }
+        }
+        if (this.fallback || !Array.isArray(cats) || cats.length === 0) {
+          cats = this.filterLocalByType(this.type);
+        }
+        this.categories = Array.isArray(cats) ? cats : [];
+        this.catsFlat = this.flattenWithIndent(this.categories);
+        this.filterCategories();
+      }catch(e){
+        console.warn('Categories load warning:', e);
+        this.fallback=false;
+        const cats = this.filterLocalByType(this.type);
+        this.categories = cats;
+        this.catsFlat = this.flattenWithIndent(cats);
+        this.filterCategories();
+      } finally {
+        this.loading = false;
+      }
+    },
+    filterCategories(){
+      const term = (this.categorySearch || '').trim().toLowerCase();
+      const base = term
+        ? this.catsFlat.filter(cat => cat.searchable.includes(term))
+        : this.catsFlat.slice();
+      const selectedId = this.categoryId ? String(this.categoryId) : null;
+      if (selectedId && !base.some(cat => String(cat.id) === selectedId)) {
+        const selectedCat = this.catsFlat.find(cat => String(cat.id) === selectedId);
+        if (selectedCat) base.unshift(selectedCat);
+      }
+      this.catsFiltered = base;
+    }
+  }
 };(function(){
   function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
   onReady(function(){
