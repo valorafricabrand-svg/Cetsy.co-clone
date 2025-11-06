@@ -45,6 +45,63 @@
         </div>
     </div>
 
+    {{-- Seller notice: buyer requested return/exchange and order reset to processing --}}
+    @php
+        $isSellerUser = auth()->check() && (($dispute->seller_id ?? null) === auth()->id() || optional($dispute->order?->shop)->user_id === auth()->id());
+        $exchangeRequested = false;
+        try {
+            $msgs = $dispute->messages ?? collect();
+            $exchangeRequested = $msgs->contains(function($m){
+                $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+                $text   = strtolower((string)($m->message ?? ''));
+                return $typeOk && (str_contains($text,'return/exchange') || str_contains($text,'reset to processing') || str_contains($text,'exchange'));
+            });
+        } catch (\Throwable $e) { $exchangeRequested = false; }
+    @endphp
+    @if($isSellerUser && $exchangeRequested)
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>
+                The buyer has requested a order refund and your order has been restored to processing state, please ship that product again.
+            </div>
+        </div>
+    @endif
+
+    {{-- Pending refund proposal notice and actions --}}
+    @php
+        $pendingRefund = method_exists($dispute, 'getPendingRefund') ? $dispute->getPendingRefund() : null;
+        $isBuyerUser = auth()->check() && $dispute->buyer_id === auth()->id();
+    @endphp
+    @if($pendingRefund)
+        <div class="alert alert-warning" role="alert">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <strong>Pending Refund Proposal:</strong>
+                    Seller proposed a {{ rtrim(rtrim(number_format($pendingRefund['percent'] ?? 0, 2), '0'), '.') }}% refund
+                    ({{ get_currency() }} {{ number_format($pendingRefund['amount'] ?? 0, 2) }}).
+                </div>
+                @if($isBuyerUser)
+                    <div class="d-flex gap-2">
+                        <form method="POST" action="{{ route('disputes.refund-proposal.accept', $dispute->id) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <i class="bi bi-check-circle"></i> Accept
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('disputes.refund-proposal.decline', $dispute->id) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-x-circle"></i> Decline
+                            </button>
+                        </form>
+                    </div>
+                @else
+                    <span class="badge bg-warning text-dark">Awaiting buyer response</span>
+                @endif
+            </div>
+        </div>
+    @endif
+
     {{-- Dispute Statistics --}}
     <div class="row mb-4">
         <div class="col-md-3 col-sm-6 mb-3">

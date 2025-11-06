@@ -55,9 +55,9 @@
 
     <div class="btn-toolbar gap-2 flex-wrap">
       @if($activeDispute && $exchangeRequested)
-        <span class="badge bg-warning text-dark d-flex align-items-center gap-1" title="Buyer requested an exchange via dispute">
-          <i class="fa-solid fa-arrows-rotate"></i>
-          Exchange Requested
+        <span class="badge bg-warning text-dark d-flex align-items-center gap-2" title="Buyer requested a return/exchange via dispute">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          The buyer has requested a order refund and your order has been restored to processing state, please ship that product again.
         </span>
       @endif
       <a href="{{ route('orders.chat.show', $order->id) }}"
