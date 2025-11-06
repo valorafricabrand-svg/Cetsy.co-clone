@@ -1702,8 +1702,10 @@ public function shipping(Product $product, Request $request)
 
         // Enforce publish eligibility from settings as well
         if (isset($data['is_active']) && (int)$data['is_active'] === 1) {
-            // Require a featured image
-            if (empty($product->featured_image)) {
+            // Require a featured image OR at least one media item
+            $hasFeatured = !empty($product->featured_image);
+            try { $hasFeatured = $hasFeatured || ($product->media && $product->media->count() > 0); } catch (\Throwable $e) { /* ignore */ }
+            if (! $hasFeatured) {
                 return back()->with('warning', 'Add a featured image before publishing this listing.');
             }
 

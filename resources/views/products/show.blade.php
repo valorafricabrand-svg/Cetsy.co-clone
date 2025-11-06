@@ -345,6 +345,24 @@
               Listing ready to publish. Review settings and publish when you're ready.
             </div>
             <div class="d-flex flex-wrap gap-2 mb-4">
+              <form action="{{ route('products.settings.update', $product) }}" method="POST" onsubmit="return confirm('Publish this listing now?');">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="is_active" value="1">
+                <input type="hidden" name="renewal_type" value="{{ $product->renewal_type ?? 'automatic' }}">
+                @if(!empty($product->visibility))
+                  <input type="hidden" name="visibility" value="{{ $product->visibility }}">
+                @endif
+                @if(!empty($product->slug))
+                  <input type="hidden" name="slug" value="{{ $product->slug }}">
+                @endif
+                @if(!empty($product->tags))
+                  <input type="hidden" name="tags" value="{{ $product->tags }}">
+                @endif
+                <button class="btn btn-success">
+                  <i class="fa-solid fa-check me-1"></i> Publish Now
+                </button>
+              </form>
               <a href="{{ route('products.settings', $product) }}" class="btn btn-primary">Go to Settings</a>
               <a href="{{ route('products.media', $product) }}" class="btn btn-outline-secondary">Manage Media</a>
             </div>
