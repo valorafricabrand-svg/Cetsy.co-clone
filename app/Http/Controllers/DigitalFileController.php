@@ -113,10 +113,10 @@ class DigitalFileController extends Controller
                             'delivered_at' => $order->delivered_at ?: now(),
                         ]);
 
-                        // Release seller funds that were on hold for this order
+                        // Release seller funds that were on hold for this order (apply fee)
                         $sellerId = optional($order->shop)->user_id;
                         if ($sellerId) {
-                            Wallet::where('user_id', $sellerId)
+                            $rows = Wallet::where('user_id', $sellerId)
                                 ->where('status', 'on_hold')
                                 ->where(function ($q) use ($order) {
                                     $q->where('meta->order_id', $order->id)
@@ -127,7 +127,30 @@ class DigitalFileController extends Controller
                                               ->limit(1);
                                       });
                                 })
-                                ->update(['status' => 'completed']);
+                                ->get();
+                            if ($rows->isNotEmpty()) {
+                                $percent = (float) (function_exists('setting') ? setting('release_fee_percent', env('HOLD_RELEASE_FEE_PERCENT', 5.5)) : env('HOLD_RELEASE_FEE_PERCENT', 5.5));
+                                foreach ($rows as $row) {
+                                    $amount = (float) (($row->credit ?? 0) - ($row->debit ?? 0));
+                                    $fee = round(max(0, $amount) * max(0, $percent) / 100, 2);
+                                    if ($fee > 0.0) {
+                                        Wallet::create([
+                                            'user_id'     => $sellerId,
+                                            'credit'      => 0,
+                                            'debit'       => $fee,
+                                            'balance'     => 0,
+                                            'type'        => 'transaction_fee',
+                                            'method'      => 'platform_fee',
+                                            'reference'   => 'FEE-'.$row->id,
+                                            'description' => 'Transaction fee '.$percent.'% for Order #'.$order->id,
+                                            'status'      => 'completed',
+                                            'meta'        => [ 'source_wallet_id' => $row->id, 'order_id' => $order->id, 'percent' => $percent ],
+                                        ]);
+                                    }
+                                    $row->status = 'completed';
+                                    $row->save();
+                                }
+                            }
                         }
                     });
 
