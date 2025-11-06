@@ -84,9 +84,16 @@
   <div class="card-body">
     {{-- Price --}}
     <div class="d-flex align-items-baseline gap-3 mb-3">
-      <div class="h4 m-0 text-success">{{ $currency }} {{ number_format($finalPrice, 2) }}</div>
+      <div class="h4 m-0 text-success"
+           id="price-current"
+           data-base="{{ number_format($finalPrice, 2, '.', '') }}"
+           data-currency="{{ $currency }}">
+        {{ $currency }} {{ number_format($finalPrice, 2) }}
+      </div>
       @if($hasDiscount)
-        <div class="text-muted text-decoration-line-through">{{ $currency }} {{ number_format($basePrice, 2) }}</div>
+        <div class="text-muted text-decoration-line-through" id="price-compare">
+          {{ $currency }} {{ number_format($basePrice, 2) }}
+        </div>
       @endif
     </div>
 
@@ -156,9 +163,11 @@
 @push('scripts')
 <script>
   (function(){
-    const types    = @json($typesJson);
-    const variants = @json($variantsJson);
+    const types     = @json($typesJson);
+    const variants  = @json($variantsJson);
     const basePrice = {{ json_encode((float)$finalPrice) }}; // price displayed when no variant selected
+    const currency  = @json($currency);
+    const priceEl   = document.getElementById('price-current');
 
     function resolveVariant(selectedByType){
       // selectedByType: { typeId: optionId }
@@ -186,16 +195,27 @@
         // No variations; allow immediate submission
         variantIdInput.value = '';
         btnAdd.disabled = btnBuy.disabled = false;
+        updatePrice(null);
         return;
       }
 
       if (v) {
         variantIdInput.value = v.id;
         btnAdd.disabled = btnBuy.disabled = false;
+        updatePrice(v);
       } else {
         variantIdInput.value = '';
         btnAdd.disabled = btnBuy.disabled = true;
+        updatePrice(null);
       }
+    }
+
+    function updatePrice(variant){
+      if (!priceEl) return;
+      const price = (variant && typeof variant.price === 'number' && !isNaN(variant.price))
+        ? variant.price
+        : basePrice;
+      priceEl.textContent = `${currency} ${formatPrice(price)}`;
     }
 
     document.addEventListener('change', function(e){
