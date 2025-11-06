@@ -133,7 +133,8 @@ public function index(Request $request)
             'items.shippingProfile.processingTime',
             'shop.user',
             'user',
-            'disputes'
+            'disputes',
+            'disputes.messages'
         );
         // Mark order notifications as read for the seller
         try {

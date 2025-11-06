@@ -106,14 +106,29 @@
                             @enderror
                         </div>
 
+                        <!-- Return / Exchange Option -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="request_return_exchange" name="request_return_exchange" value="1" {{ old('request_return_exchange') ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold text-warning" for="request_return_exchange">
+                                    Request a return/exchange (reset order to Processing)
+                                </label>
+                            </div>
+                            <div class="small text-warning fw-semibold mt-1">
+                                If selected, we will reset the order status to <strong class="text-warning">Processing</strong> so the seller can ship a replacement and update tracking details. Previous tracking info (if any) will be cleared.
+                            </div>
+                        </div>
+
                         <!-- Important Information -->
-                        <div class="alert alert-info">
-                            <h6 class="alert-heading">Important Information</h6>
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading fw-bold">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Important Information
+                            </h6>
                             <ul class="mb-0">
-                                <li>All communications must be conducted through Cetsy's messaging system</li>
-                                <li>Disputes will be reviewed within 24 Hours</li>
-                                <li>You have 7 days to appeal a resolution decision</li>
-                                <li>Provide clear evidence to support your case</li>
+                                <li class="fw-semibold">All communications must be conducted through Cetsy's messaging system</li>
+                                <li class="fw-semibold">Disputes will be reviewed within 3 Working days</li>
+                                <li class="fw-semibold">Provide clear evidence to support your case</li>
                             </ul>
                         </div>
 

@@ -178,7 +178,8 @@ class DisputeController extends Controller
                     Dispute::TYPE_OTHER
                 ])],
                 'description' => 'required|string|max:2000',
-                'evidence.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240'
+                'evidence.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
+                'request_return_exchange' => 'nullable|boolean',
             ]);
 
             \Log::info('Validation passed', ['data' => $data]);
@@ -230,6 +231,9 @@ class DisputeController extends Controller
             $buyerId = $isBuyer ? Auth::id() : $order->user_id;
             $sellerId = $isBuyer ? $order->shop->user_id : Auth::id();
 
+            // Whether buyer requested a return/exchange
+            $wantsExchange = $isBuyer && $request->boolean('request_return_exchange');
+
             \Log::info('User role determination', [
                 'is_buyer' => $isBuyer,
                 'buyer_id' => $buyerId,
@@ -254,7 +258,7 @@ class DisputeController extends Controller
             \Log::info('About to create dispute in transaction');
 
             // Create the dispute and return it from the transaction
-            $dispute = DB::transaction(function () use ($data, $order, $evidence, $buyerId, $sellerId) {
+            $dispute = DB::transaction(function () use ($data, $order, $evidence, $buyerId, $sellerId, $wantsExchange) {
                 \Log::info('Inside transaction - creating dispute');
                 
                 $dispute = Dispute::create([
@@ -291,6 +295,40 @@ class DisputeController extends Controller
                 ]);
 
                 \Log::info('System message created');
+
+                // If buyer requested return/exchange, reset order to processing and clear previous shipment details
+                if ($wantsExchange) {
+                    try {
+                        if (!in_array($order->status, [Order::STATUS_CANCELLED, Order::STATUS_REFUNDED], true)) {
+                            $order->update([
+                                'status'       => Order::STATUS_PROCESSING,
+                                'courier'      => null,
+                                'tracking_no'  => null,
+                                'tracking_url' => null,
+                                'shipped_at'   => null,
+                                'ship_notes'   => null,
+                            ]);
+
+                            DisputeMessage::create([
+                                'dispute_id' => $dispute->id,
+                                'user_id' => null,
+                                'message' => 'Buyer requested a return/exchange. Order reset to processing so seller can ship a replacement and update tracking.',
+                                'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                                'is_internal' => false
+                            ]);
+                        } else {
+                            \Log::info('Return/exchange requested but order is not eligible for reset', [
+                                'order_id' => $order->id,
+                                'status' => $order->status,
+                            ]);
+                        }
+                    } catch (\Throwable $e) {
+                        \Log::error('Failed to reset order for return/exchange', [
+                            'order_id' => $order->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
 
                 return $dispute; // Return the dispute from the transaction
             });
@@ -1088,6 +1126,9 @@ class DisputeController extends Controller
      */
     public function initiateMutualResolution(Request $request, Dispute $dispute)
     {
+        if (!config('disputes.enable_mutual_resolution')) {
+            abort(404);
+        }
         $user = Auth::user();
 
         // Check if user is authorized
@@ -1126,6 +1167,9 @@ class DisputeController extends Controller
      */
     public function agreeToMutualResolution(Request $request, Dispute $dispute)
     {
+        if (!config('disputes.enable_mutual_resolution')) {
+            abort(404);
+        }
         $user = Auth::user();
 
         // Check if user is authorized
