@@ -65,17 +65,27 @@
       {{-- 3) Category --}}
       <div class="mb-3">
         <label class="form-label fw-semibold">Category</label>
+        <input type="text"
+               class="form-control form-control-sm mb-2"
+               placeholder="Search categories..."
+               x-model="categorySearch"
+               @input="filterCategories()"
+               autocomplete="off"
+               aria-label="Search categories">
         <select name="category_id" id="category_id"
                 class="form-select @error('category_id') is-invalid @enderror"
                 x-model="categoryId"
                 required>
           <option value="">Choose category</option>
-          <template x-for="cat in catsFlat" :key="cat.id">
+          <template x-for="cat in catsFiltered" :key="cat.id">
             <option :value="cat.id" x-text="cat.indented"
                     :selected="String(cat.id) === '{{ old('category_id') }}'"></option>
           </template>
         </select>
-        <div x-show="loading" class="form-text text-muted">Loading categories…</div>
+        <div x-show="!loading && categorySearch && !catsFiltered.length" class="form-text text-muted">
+          No categories match your search.
+        </div>
+        <div x-show="loading" class="form-text text-muted">Loading categories...</div>
         <div x-show="fallback && !loading" class="form-text text-warning">
           Showing all categories. Ask admin to tag categories by listing type for better filtering.
         </div>
@@ -214,14 +224,16 @@
 
   function listingForm() {
     return {
-      type: '{{ old('type','physical') }}',
-      categoryId: '{{ old('category_id','') }}',
+      type: @json(old('type','physical')),
+      categoryId: @json(old('category_id','')),
       categories: [],
       catsFlat: [],
+      catsFiltered: [],
+      categorySearch: '',
       loading: false,
       fallback: false,
       // service regions tags input state
-      serviceRegions: (('{{ old('origin_postal_code','') }}').split(',').map(s=>s.trim()).filter(Boolean)),
+      serviceRegions: ((@json(old('origin_postal_code','')) || '').split(',').map(s=>s.trim()).filter(Boolean)),
       serviceRegionInput: '',
       variations: [], variationType:'', variationOption:'',
       previews: [], idCounter:0, sortable:null,
@@ -241,6 +253,9 @@
       async loadCategories() {
         this.categories = [];
         this.categoryId = '';
+        this.categorySearch = '';
+        this.catsFlat = [];
+        this.catsFiltered = [];
         if (! this.type) return;
         this.loading = true;
         try {
@@ -261,15 +276,17 @@
             this.categories = this.filterLocalByType(this.type);
           }
           this.catsFlat = this.flattenWithIndent(this.categories);
+          this.filterCategories();
         } catch (e) {
           console.warn('Categories load warning:', e);
           this.categories = this.filterLocalByType(this.type);
           this.catsFlat = this.flattenWithIndent(this.categories);
+          this.filterCategories();
           this.fallback = false;
         } finally {
           this.loading = false;
-          if ('{{ old('type') }}' === this.type && '{{ old('category_id') }}') {
-            this.categoryId = '{{ old('category_id') }}';
+          if ((@json(old('type')) || '') === this.type && (@json(old('category_id')) || '')) {
+            this.categoryId = @json(old('category_id'));
           }
         }
       },
@@ -285,8 +302,14 @@
         });
         const out = [];
         const walk = (node, depth) => {
+          const label = String(node.name || '');
           const prefix = depth > 0 ? ('\u2014 '.repeat(depth)) : '';
-          out.push({ id: node.id, indented: prefix + node.name });
+          out.push({
+            id: node.id,
+            indented: prefix + label,
+            name: label,
+            searchable: label.toLowerCase()
+          });
           if (node.children && node.children.length) {
             node.children.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
             node.children.forEach(ch => walk(ch, depth+1));
@@ -295,6 +318,19 @@
         roots.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||'')));
         roots.forEach(r => walk(r, 0));
         return out;
+      },
+
+      filterCategories() {
+        const term = (this.categorySearch || '').trim().toLowerCase();
+        const base = term
+          ? this.catsFlat.filter(cat => cat.searchable.includes(term))
+          : this.catsFlat.slice();
+        const selectedId = this.categoryId ? String(this.categoryId) : null;
+        if (selectedId && !base.some(cat => String(cat.id) === selectedId)) {
+          const selectedCat = this.catsFlat.find(cat => String(cat.id) === selectedId);
+          if (selectedCat) base.unshift(selectedCat);
+        }
+        this.catsFiltered = base;
       },
 
       addManualVariation() {
