@@ -594,9 +594,50 @@ public function update(Request $request, Product $product)
             }
             $newProduct->save();
 
-            // 2) Media
-            foreach ($product->media as $media) {
-                $newProduct->media()->create($media->replicate()->toArray());
+            // 2) Media: physically copy files and create new records with new URLs
+            try {
+                foreach ($product->media as $media) {
+                    $src = (string) ($media->url ?? '');
+                    $srcRel = ltrim((function($p){
+                        if (function_exists('storage_rel_path')) return storage_rel_path($p);
+                        return ltrim($p, '/');
+                    })($src), '/');
+
+                    $dest = $srcRel;
+                    try {
+                        // Create a new unique filename in the same directory (default to product-media)
+                        $dir  = trim(dirname($srcRel), '.');
+                        if ($dir === '' || $dir === '/') { $dir = 'product-media'; }
+                        $base = pathinfo($srcRel, PATHINFO_FILENAME);
+                        $ext  = pathinfo($srcRel, PATHINFO_EXTENSION);
+                        $ext  = $ext ? ('.'.$ext) : '';
+                        $dest = $dir.'/dup-'.$newProduct->id.'-'.now()->timestamp.'-'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(8)).$ext;
+
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($srcRel)) {
+                            \Illuminate\Support\Facades\Storage::disk('public')->copy($srcRel, $dest);
+                        } else {
+                            // Attempt a fallback if src was already a storage URL
+                            $alt = ltrim($src, '/');
+                            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($alt)) {
+                                \Illuminate\Support\Facades\Storage::disk('public')->copy($alt, $dest);
+                            } else {
+                                // If source not found, just keep reference to original (non-fatal)
+                                $dest = $srcRel ?: $src;
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        // Keep best-effort
+                        $dest = $srcRel ?: $src;
+                    }
+
+                    $newProduct->media()->create([
+                        'type'     => $media->type,
+                        'url'      => $dest,
+                        'position' => $media->position,
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                // do not fail duplication if media copy has issues
             }
 
             // 3) Legacy simple variants (ProductVariant model)
@@ -607,10 +648,72 @@ public function update(Request $request, Product $product)
                 $newProduct->variants()->create($clone->toArray());
             }
 
-            // 4) Digital files
-            foreach ($product->digitalFiles as $file) {
-                $newProduct->digitalFiles()->create($file->replicate()->toArray());
-            }
+            // 3.5) Featured image: if a local storage path, copy and point the duplicate to a new file
+            try {
+                $fi = (string) ($product->featured_image ?? '');
+                if (!empty($fi)) {
+                    // Normalize to a public-disk relative path when possible
+                    $fiRel = function_exists('storage_rel_path') ? storage_rel_path($fi) : ltrim($fi, '/');
+                    // If it looks like an absolute URL to storage, try to peel off domain and storage/
+                    if (str_starts_with($fiRel, 'http://') || str_starts_with($fiRel, 'https://')) {
+                        $parsed = parse_url($fiRel, PHP_URL_PATH);
+                        $fiRel  = is_string($parsed) ? ltrim($parsed, '/') : $fiRel;
+                        $fiRel  = preg_replace('#^storage/#','',$fiRel);
+                    }
+                    $dir  = 'product-media';
+                    $ext  = pathinfo($fiRel, PATHINFO_EXTENSION) ?: 'jpg';
+                    $dest = $dir.'/dup-fi-'.$newProduct->id.'-'.now()->timestamp.'-'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(6)).'.'.$ext;
+                    try {
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($fiRel)) {
+                            \Illuminate\Support\Facades\Storage::disk('public')->copy($fiRel, $dest);
+                            $newProduct->featured_image = $dest; // store as relative path
+                            $newProduct->save();
+                        }
+                    } catch (\Throwable $e) { /* ignore */ }
+                }
+            } catch (\Throwable $e) { /* ignore */ }
+
+            // 4) Digital files: copy physical file and create fresh rows
+            try {
+                foreach ($product->digitalFiles as $df) {
+                    $src = (string) ($df->filepath ?? '');
+                    if (!$src) { // nothing to copy; fall back to replicate
+                        $newProduct->digitalFiles()->create($df->replicate()->toArray());
+                        continue;
+                    }
+
+                    $diskName = (string) ($df->disk ?? 'private');
+                    $ext  = pathinfo($src, PATHINFO_EXTENSION) ?: 'bin';
+                    $dest = 'digital-files/dup-'.$newProduct->id.'-'.now()->timestamp.'-'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(8)).'.'.$ext;
+
+                    $copied = false;
+                    try {
+                        if (\Illuminate\Support\Facades\Storage::disk($diskName)->exists($src)) {
+                            \Illuminate\Support\Facades\Storage::disk($diskName)->copy($src, $dest);
+                            $copied = true;
+                        }
+                    } catch (\Throwable $e) { /* try generic copy next */ }
+                    if (!$copied) {
+                        try {
+                            if (\Illuminate\Support\Facades\Storage::exists($src)) {
+                                \Illuminate\Support\Facades\Storage::copy($src, $dest);
+                                $copied = true;
+                            }
+                        } catch (\Throwable $e) { /* ignore */ }
+                    }
+
+                    $newRow = $newProduct->digitalFiles()->create([
+                        'filename' => $df->filename ? ('Copy of '.$df->filename) : basename($src),
+                        'filepath' => $copied ? $dest : $src,
+                    ]);
+                    try {
+                        if ($copied && \Illuminate\Support\Facades\Schema::hasColumn($newRow->getTable(), 'disk')) {
+                            $newRow->disk = $diskName;
+                            $newRow->save();
+                        }
+                    } catch (\Throwable $e) { /* ignore */ }
+                }
+            } catch (\Throwable $e) { /* non-fatal */ }
 
             // 5) Modern variations: clone VariationTypes + Options, then Variants + pivot options
             $typeIdMap = [];
