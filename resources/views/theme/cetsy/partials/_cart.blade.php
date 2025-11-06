@@ -144,17 +144,18 @@ $hasDiscount = $finalPrice + 0.0001 < $basePrice; // allow minor float noise // 
 
                 {{-- Variations --}}
                 @if($variationTypes->isNotEmpty())
-                @foreach($variationTypes as $vt)
-                <div class="mb-3">
-                    <label class="form-label">{{ $vt->name }}</label>
-                    <select class="form-select js-variant-select" name="variations[]" data-type-id="{{ $vt->id }}">
-                        <option value="">Select {{ strtolower($vt->name) }}</option>
-                        @foreach(($vt->options ?? collect()) as $opt)
-                        <option value="{{ $opt->id }}">{{ $opt->value }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                @endforeach
+        @foreach($variationTypes as $vt)
+          <div class="mb-3">
+            <label class="form-label">{{ $vt->name }}</label>
+            <select class="form-select js-variant-select" name="variations[]" data-type-id="{{ $vt->id }}">
+              <option value="">Select {{ strtolower($vt->name) }}</option>
+              @foreach(($vt->options ?? collect()) as $opt)
+                <option value="{{ $opt->id }}">{{ $opt->value }}</option>
+              @endforeach
+            </select>
+            <div class="form-text small text-muted mt-1" id="js-type-hint-{{ $vt->id }}"></div>
+          </div>
+        @endforeach
                 <div id="variant-price-note" class="small text-muted mb-2 d-none">
                     Selected price: <span id="variant-price-val"></span>
                 </div>
@@ -264,6 +265,10 @@ $hasDiscount = $finalPrice + 0.0001 < $basePrice; // allow minor float noise // 
 
             // Update per-option price hints based on current selections
             refreshOptionPriceHints(selectedByType);
+            // Also update a visible hint below each select for the selected option
+            if (typeof updateSelectedTypeHints === 'function') {
+                updateSelectedTypeHints(selectedByType);
+            }
         }
 
         function updatePrice(variant) {
@@ -322,6 +327,25 @@ $hasDiscount = $finalPrice + 0.0001 < $basePrice; // allow minor float noise // 
                     opt.textContent = opt.dataset.label + (min !== null ?
                         ` — ${currency} ${formatPrice(min)}` : '');
                 });
+            });
+        }
+
+        // Visible hint under each select showing the price for the currently chosen option
+        function updateSelectedTypeHints(selectedByType){
+            const selects = Array.from(document.querySelectorAll('.js-variant-select'));
+            selects.forEach(sel => {
+                const typeId = String(sel.dataset.typeId);
+                const constraints = { ...selectedByType };
+                delete constraints[typeId];
+                const hintEl = document.getElementById(`js-type-hint-${typeId}`);
+                if (!hintEl) return;
+                const val = sel.value;
+                if (val) {
+                    const m = minPriceFor(typeId, val, constraints);
+                    hintEl.textContent = (m !== null) ? `Price: ${currency} ${formatPrice(m)}` : '';
+                } else {
+                    hintEl.textContent = '';
+                }
             });
         }
 
