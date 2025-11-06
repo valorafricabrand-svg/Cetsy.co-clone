@@ -14,7 +14,7 @@ class Dispute extends Model
     use HasFactory;
 
     protected $fillable = [
-        'order_id', 'buyer_id', 'seller_id', 'created_by', 'type', 'status', 
+        'order_id', 'buyer_id', 'seller_id', 'assigned_admin_id', 'created_by', 'type', 'status', 
         'description', 'evidence', 'resolution', 'resolved_by', 
         'resolved_at', 'appeal_deadline', 'can_appeal',
         'decision', 'refund_amount', 'admin_notes',
@@ -76,6 +76,11 @@ class Dispute extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    public function assignedAdmin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_admin_id');
     }
 
     public function resolvedBy(): BelongsTo
@@ -259,6 +264,49 @@ class Dispute extends Model
             self::DECISION_APPEAL_REJECTED => 'Appeal Rejected',
             default => 'Pending'
         };
+    }
+
+    // Pending refund helpers stored inside admin_notes as JSON
+    public function getPendingRefund(): ?array
+    {
+        $notes = $this->admin_notes;
+        if (!is_string($notes) || trim($notes) === '') {
+            return null;
+        }
+        try {
+            $data = json_decode($notes, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($data) && isset($data['pending_refund'])) {
+                return is_array($data['pending_refund']) ? $data['pending_refund'] : null;
+            }
+        } catch (\Throwable $e) {}
+        return null;
+    }
+
+    public function setPendingRefund(array $payload): void
+    {
+        $existing = [];
+        if (is_string($this->admin_notes) && trim($this->admin_notes) !== '') {
+            $tmp = json_decode($this->admin_notes, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($tmp)) {
+                $existing = $tmp;
+            }
+        }
+        $existing['pending_refund'] = $payload;
+        $this->admin_notes = json_encode($existing);
+        $this->save();
+    }
+
+    public function clearPendingRefund(): void
+    {
+        if (!is_string($this->admin_notes) || trim($this->admin_notes) === '') {
+            return;
+        }
+        $tmp = json_decode($this->admin_notes, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($tmp) && array_key_exists('pending_refund', $tmp)) {
+            unset($tmp['pending_refund']);
+            $this->admin_notes = empty($tmp) ? null : json_encode($tmp);
+            $this->save();
+        }
     }
 
     public function setAppealDeadline(): void

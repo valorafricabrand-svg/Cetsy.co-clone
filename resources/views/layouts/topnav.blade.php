@@ -177,24 +177,25 @@
                                             <div class="dropdown-item p-2 border-bottom border-translucent">
                                                 <div class="d-flex align-items-center">
                                                     <div class="flex-1">
-                                                        <p class="mb-1 text-body-secondary small">{{ $notification->description }}</p>
-                                                        <small class="text-body-quaternary">{{ $notification->created_at->diffForHumans() }}</small>
                                                         @php
                                                             $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, $user);
                                                             $linkText = \App\Services\NotificationRouteService::getLinkText($notification, $user);
                                                             $hasOpen = \Illuminate\Support\Facades\Route::has('notifications.open');
+                                                            $href = $hasOpen ? route('notifications.open', $notification->id) : $route;
                                                         @endphp
                                                         @if($route && $route !== route('notifications.index'))
+                                                            <a href="{{ $href }}" class="mb-1 small d-block text-decoration-none {{ $notification->is_read ? 'text-body-secondary' : 'fw-semibold' }}">
+                                                                {{ $notification->description }}
+                                                            </a>
+                                                        @else
+                                                            <p class="mb-1 text-body-secondary small">{{ $notification->description }}</p>
+                                                        @endif
+                                                        <small class="text-body-quaternary">{{ $notification->created_at->diffForHumans() }}</small>
+                                                        @if($route && $route !== route('notifications.index'))
                                                             <div class="mt-2">
-                                                                @if($hasOpen)
-                                                                    <a href="{{ route('notifications.open', $notification->id) }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
-                                                                        {{ $linkText }}
-                                                                    </a>
-                                                                @else
-                                                                    <a href="{{ $route }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
-                                                                        {{ $linkText }}
-                                                                    </a>
-                                                                @endif
+                                                                <a href="{{ $href }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
+                                                                    {{ $linkText ?: 'Open' }}
+                                                                </a>
                                                             </div>
                                                         @endif
                                                     </div>

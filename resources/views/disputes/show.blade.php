@@ -45,6 +45,146 @@
         </div>
     </div>
 
+    @php
+        // Show banner if any admin message exists in this dispute
+        try {
+            $adminIntervened = ($dispute->messages ?? collect())->contains(function($m){
+                return ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_ADMIN_MESSAGE;
+            });
+        } catch (\Throwable $e) { $adminIntervened = false; }
+    @endphp
+    @if($adminIntervened)
+        <div class="alert alert-info d-flex align-items-center" role="alert">
+            <i class="bi bi-shield-check me-2"></i>
+            <div>Customer Support is now intervening in this dispute. Please continue communication here.</div>
+        </div>
+    @endif
+
+    {{-- Seller notice: buyer requested return/exchange and order reset to processing --}}
+    @php
+        $isSellerUser = auth()->check() && (($dispute->seller_id ?? null) === auth()->id() || optional($dispute->order?->shop)->user_id === auth()->id());
+        $exchangeRequested = false;
+        try {
+            $msgs = $dispute->messages ?? collect();
+            $exchangeRequested = $msgs->contains(function($m){
+                $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+                $text   = strtolower((string)($m->message ?? ''));
+                return $typeOk && (str_contains($text,'return/exchange') || str_contains($text,'reset to processing') || str_contains($text,'exchange'));
+            });
+        } catch (\Throwable $e) { $exchangeRequested = false; }
+    @endphp
+    @if($isSellerUser && $exchangeRequested)
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>
+                The buyer has requested a order refund and your order has been restored to processing state, please ship that product again.
+            </div>
+        </div>
+    @endif
+
+    {{-- Pending refund proposal notice and actions --}}
+    @php
+        $pendingRefund = method_exists($dispute, 'getPendingRefund') ? $dispute->getPendingRefund() : null;
+        $isBuyerUser = auth()->check() && $dispute->buyer_id === auth()->id();
+    @endphp
+    @if($pendingRefund)
+        <div class="alert alert-warning" role="alert">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <strong>Pending Refund Proposal:</strong>
+                    Seller proposed a {{ rtrim(rtrim(number_format($pendingRefund['percent'] ?? 0, 2), '0'), '.') }}% refund
+                    ({{ get_currency() }} {{ number_format($pendingRefund['amount'] ?? 0, 2) }}).
+                </div>
+                @if($isBuyerUser)
+                    <div class="d-flex gap-2">
+                        <form method="POST" action="{{ route('disputes.refund-proposal.accept', $dispute->id) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <i class="bi bi-check-circle"></i> Accept
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('disputes.refund-proposal.decline', $dispute->id) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-x-circle"></i> Decline
+                            </button>
+                        </form>
+                    </div>
+                @else
+                    <span class="badge bg-warning text-dark">Awaiting buyer response</span>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    {{-- Contact Support (buyer & seller) and Admin Request Evidence --}}
+    @php $isResolvedOrClosed = $dispute->isResolved() || $dispute->isClosed(); @endphp
+    @if(!$isResolvedOrClosed)
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-life-preserver me-1"></i> Need Help?</span>
+                @if(auth()->check() && (auth()->id() === $dispute->buyer_id || auth()->id() === $dispute->seller_id) && !$adminIntervened)
+                    <form method="POST" action="{{ route('disputes.contact-support', $dispute->id) }}" class="m-0">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-dark">
+                            <i class="bi bi-headset"></i> Contact Support
+                        </button>
+                    </form>
+                @endif
+            </div>
+            @if(auth()->check() && method_exists(auth()->user(), 'isAdmin') && auth()->user()->isAdmin())
+                <div class="card-body">
+                    <div class="mb-0 small text-muted">
+                        Assigned Admin: <strong>{{ $dispute->assignedAdmin->name ?? 'None' }}</strong>
+                        @if(empty($dispute->assignedAdmin))
+                            <form method="POST" action="{{ route('disputes.assign-admin', $dispute->id) }}" class="d-inline ms-2">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-info">Assign to Me</button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    {{-- Pending evidence requests for current user --}}
+    @if(isset($evidenceRequests) && auth()->check())
+        @php $myPendingReqs = $evidenceRequests->where('requested_from', auth()->id())->where('status','pending'); @endphp
+        @foreach($myPendingReqs as $req)
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Additional Information Requested:</strong>
+                    {{ $req->message }}
+                    @if($req->deadline)
+                        <span class="ms-2 small text-muted">Deadline: {{ $req->deadline->format('M d, Y') }}</span>
+                    @endif
+                </div>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#evidenceRespond-{{ $req->id }}">
+                    Provide Info
+                </button>
+            </div>
+            <div id="evidenceRespond-{{ $req->id }}" class="collapse mb-3">
+                <form action="{{ route('disputes.evidence-requests.respond', $req->id) }}" method="POST" enctype="multipart/form-data" class="border rounded p-3">
+                    @csrf
+                    <div class="mb-2">
+                        <label class="form-label">Notes</label>
+                        <textarea name="response_notes" class="form-control" rows="3" placeholder="Add any explanation or notes..." required></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Attachments</label>
+                        <input type="file" name="submitted_evidence[]" class="form-control" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" required>
+                        <div class="form-text">Max 10MB per file. Supported: JPG, PNG, PDF, DOC, DOCX</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Submit Response
+                    </button>
+                </form>
+            </div>
+        @endforeach
+    @endif
+
     {{-- Dispute Statistics --}}
     <div class="row mb-4">
         <div class="col-md-3 col-sm-6 mb-3">

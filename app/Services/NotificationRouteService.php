@@ -12,6 +12,11 @@ class NotificationRouteService
      */
     public static function getRouteForNotification(Activity $notification, User $user): ?string
     {
+        // 1) If explicit link stored on activity, prefer it
+        if (!empty($notification->link)) {
+            return $notification->link;
+        }
+
         $type = $notification->type ?? 'general';
         
         switch ($type) {
@@ -24,7 +29,10 @@ class NotificationRouteService
                 return self::getOfferRoute($user);
                 
             case Activity::TYPE_ORDER:
-                return self::getOrderRoute($user);
+                return self::getOrderRoute($user, $notification);
+            
+            case Activity::TYPE_DISPUTE:
+                return self::getDisputeRoute($user, $notification);
                 
             case Activity::TYPE_KYC:
                 return self::getKycRoute($user);
@@ -124,15 +132,44 @@ class NotificationRouteService
     /**
      * Get order route based on user role
      */
-    private static function getOrderRoute(User $user): string
+    private static function getOrderRoute(User $user, ?Activity $notification = null): string
     {
+        $orderId = (int) ($notification->related_id ?? 0);
         if ($user->isSeller()) {
+            if ($orderId > 0 && \Illuminate\Support\Facades\Route::has('seller.orders.show')) {
+                return route('seller.orders.show', $orderId);
+            }
+            if (\Illuminate\Support\Facades\Route::has('seller.orders.index')) {
+                return route('seller.orders.index');
+            }
             return route('orders.index');
         } elseif ($user->isAdmin()) {
             return route('admin.dashboard'); // Admin doesn't have specific order route
         } else {
+            if ($orderId > 0 && \Illuminate\Support\Facades\Route::has('buyer.orders.show')) {
+                return route('buyer.orders.show', $orderId);
+            }
             return route('account.orders');
         }
+    }
+
+    /**
+     * Get dispute route based on user role and related_id
+     */
+    private static function getDisputeRoute(User $user, ?Activity $notification = null): string
+    {
+        $disputeId = (int) ($notification->related_id ?? 0);
+        if ($user->isAdmin()) {
+            // Unify to public dispute view even for admins
+            if ($disputeId > 0 && \Illuminate\Support\Facades\Route::has('disputes.show')) {
+                return route('disputes.show', $disputeId);
+            }
+            return route('admin.notifications.index');
+        }
+        if ($disputeId > 0 && \Illuminate\Support\Facades\Route::has('disputes.show')) {
+            return route('disputes.show', $disputeId);
+        }
+        return route('notifications.index');
     }
 
     /**
@@ -218,7 +255,9 @@ class NotificationRouteService
             case Activity::TYPE_OFFER:
                 return 'View Offers';
             case Activity::TYPE_ORDER:
-                return 'View Orders';
+                return 'View Order';
+            case Activity::TYPE_DISPUTE:
+                return 'View Dispute';
             case Activity::TYPE_KYC:
                 return 'View KYC';
             case Activity::TYPE_WALLET:

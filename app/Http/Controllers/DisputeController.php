@@ -20,6 +20,7 @@ use App\Mail\DisputeResponseMail;
 use App\Models\Activity;
 use App\Models\EvidenceRequest;
 use App\Models\Wallet;
+use App\Models\User;
 
 
 class DisputeController extends Controller
@@ -430,15 +431,17 @@ class DisputeController extends Controller
     {
         $user = Auth::user();
 
-        // Check if user is authorized to view this dispute (either buyer or specifically involved as seller)
-        $isAuthorized = $dispute->buyer_id === $user->id || // User is the buyer
-                       $dispute->seller_id === $user->id;   // User is specifically the seller in this dispute
+        // Check if user is authorized to view this dispute (buyer, seller, or admin)
+        $isAuthorized = ($dispute->buyer_id === $user->id) // User is the buyer
+                       || ($dispute->seller_id === $user->id) // User is specifically the seller
+                       || (method_exists($user, 'isAdmin') && $user->isAdmin()); // Admins can view
 
         if (!$isAuthorized) {
             abort(403, 'Unauthorized access to dispute.');
         }
 
         $dispute->load(['order.shop', 'buyer', 'seller', 'messages.user', 'appeal']);
+        $dispute->loadMissing(['assignedAdmin']);
         // Mark dispute notifications as read for this user
         try {
             Activity::where('user_id', $user->id)
@@ -450,7 +453,7 @@ class DisputeController extends Controller
 
         // Get dispute messages
         $disputeMessages = $dispute->messages()
-            ->when(!$user->isAdmin(), function ($query) {
+            ->when(!(method_exists($user, 'isAdmin') && $user->isAdmin()), function ($query) {
                 return $query->public();
             })
             ->with('user')
@@ -531,6 +534,10 @@ class DisputeController extends Controller
         // Get order details for context
         $order = $dispute->order;
         $orderItems = $order ? $order->items()->with('product')->get() : collect();
+        // Load evidence requests for the dispute (for admin display and party responses)
+        $evidenceRequests = EvidenceRequest::where('dispute_id', $dispute->id)
+            ->latest('created_at')
+            ->get();
 
         // Debug logging for message counts
         \Log::info('Dispute messages loaded', [
@@ -544,12 +551,13 @@ class DisputeController extends Controller
         ]);
 
         return view('disputes.show', compact(
-            'dispute', 
-            'allMessages', 
-            'disputeMessages', 
-            'orderMessages', 
-            'order', 
-            'orderItems'
+            'dispute',
+            'allMessages',
+            'disputeMessages',
+            'orderMessages',
+            'order',
+            'orderItems',
+            'evidenceRequests'
         ));
     }
 
@@ -560,9 +568,10 @@ class DisputeController extends Controller
     {
         $user = Auth::user();
 
-        // Check if user is authorized to add messages (either buyer or specifically involved as seller)
-        $isAuthorized = $dispute->buyer_id === $user->id || // User is the buyer
-                       $dispute->seller_id === $user->id;   // User is specifically the seller in this dispute
+        // Check if user is authorized to add messages (buyer, seller, or admin)
+        $isAuthorized = ($dispute->buyer_id === $user->id)
+                       || ($dispute->seller_id === $user->id)
+                       || (method_exists($user, 'isAdmin') && $user->isAdmin());
 
         if (!$isAuthorized) {
             abort(403, 'Unauthorized access to dispute.');
@@ -574,9 +583,13 @@ class DisputeController extends Controller
         ]);
 
         // Determine message type
-        $messageType = $dispute->buyer_id === $user->id 
-            ? DisputeMessage::TYPE_BUYER_MESSAGE 
-            : DisputeMessage::TYPE_SELLER_MESSAGE;
+        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+            $messageType = DisputeMessage::TYPE_ADMIN_MESSAGE;
+        } else {
+            $messageType = $dispute->buyer_id === $user->id 
+                ? DisputeMessage::TYPE_BUYER_MESSAGE 
+                : DisputeMessage::TYPE_SELLER_MESSAGE;
+        }
 
         // Handle file uploads
         $attachments = [];
@@ -655,6 +668,123 @@ class DisputeController extends Controller
         }
 
         return back()->with('success', 'Message added successfully.');
+    }
+
+    /**
+     * Buyer or Seller: escalate dispute to support (admin).
+     */
+    public function contactSupport(Request $request, Dispute $dispute)
+    {
+        $user = Auth::user();
+        $isParty = ($dispute->buyer_id === $user->id) || ($dispute->seller_id === $user->id);
+        abort_unless($isParty, 403);
+
+        // If support already intervened, do not allow re-request
+        if ($dispute->messages()->where('type', \App\Models\DisputeMessage::TYPE_ADMIN_MESSAGE)->exists()) {
+            return back()->withErrors(['error' => 'Support already intervened. Please continue in this thread.']);
+        }
+
+        DB::transaction(function () use ($dispute, $user) {
+            if ($dispute->isPending()) {
+                $dispute->update(['status' => Dispute::STATUS_UNDER_REVIEW]);
+            }
+
+            DisputeMessage::create([
+                'dispute_id' => $dispute->id,
+                'user_id'    => null,
+                'message'    => ($user->id === $dispute->buyer_id ? 'Buyer' : 'Seller') . ' requested support review. Admin notified.',
+                'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                'is_internal'=> false,
+            ]);
+
+            // Notify all admins via Activity
+            try {
+                $admins = User::where('user_type', User::TYPE_ADMIN)->get(['id']);
+                foreach ($admins as $admin) {
+                    Activity::create([
+                        'user_id'     => $admin->id,
+                        'is_read'     => false,
+                        'description' => 'Support requested for Dispute #'.$dispute->id,
+                        'type'        => Activity::TYPE_DISPUTE,
+                        'related_id'  => $dispute->id,
+                        'related_type'=> 'dispute',
+                        'link'        => route('disputes.show', $dispute->id),
+                    ]);
+                }
+            } catch (\Throwable $e) { /* non-fatal */ }
+        });
+
+        return back()->with('success', 'Support has been notified. An admin will review and follow up here.');
+    }
+
+    /**
+     * Admin: request additional information/evidence from buyer or seller on same page.
+     */
+    public function requestEvidence(Request $request, Dispute $dispute)
+    {
+        $user = Auth::user();
+        abort_unless(method_exists($user, 'isAdmin') && $user->isAdmin(), 403);
+
+        $data = $request->validate([
+            'for'      => 'required|in:buyer,seller',
+            'message'  => 'required|string|max:1000',
+            'deadline' => 'nullable|date',
+        ]);
+
+        $requestedFrom = $data['for'] === 'buyer' ? $dispute->buyer_id : $dispute->seller_id;
+
+        $evidence = EvidenceRequest::create([
+            'dispute_id' => $dispute->id,
+            'appeal_id'  => null,
+            'requested_from' => $requestedFrom,
+            'requested_by'   => $user->id,
+            'message'        => $data['message'],
+            'status'         => EvidenceRequest::STATUS_PENDING,
+            'deadline'       => $data['deadline'] ?? now()->addDays(3),
+        ]);
+
+        // Public system message
+        DisputeMessage::create([
+            'dispute_id' => $dispute->id,
+            'user_id'    => null,
+            'message'    => 'Admin requested additional information from '.($data['for']).'.',
+            'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+            'is_internal'=> false,
+        ]);
+
+        // Notify the requested party
+        try {
+            Activity::create([
+                'user_id'     => $requestedFrom,
+                'is_read'     => false,
+                'description' => 'Admin requested additional information for Dispute #'.$dispute->id,
+                'type'        => Activity::TYPE_DISPUTE,
+                'related_id'  => $dispute->id,
+                'related_type'=> 'dispute',
+                'link'        => route('disputes.show', $dispute->id),
+            ]);
+        } catch (\Throwable $e) { /* non-fatal */ }
+
+        return back()->with('success', 'Evidence request sent.');
+    }
+
+    /** Assign this dispute to the current admin (for accountability and messaging context). */
+    public function assignAdmin(Request $request, Dispute $dispute)
+    {
+        $user = Auth::user();
+        abort_unless(method_exists($user, 'isAdmin') && $user->isAdmin(), 403);
+
+        $dispute->update(['assigned_admin_id' => $user->id]);
+
+        DisputeMessage::create([
+            'dispute_id' => $dispute->id,
+            'user_id'    => null,
+            'message'    => 'Admin '.$user->name.' is now assigned to this dispute.',
+            'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+            'is_internal'=> false,
+        ]);
+
+        return back()->with('success', 'You are now assigned to this dispute.');
     }
 
     /**
@@ -1249,6 +1379,51 @@ class DisputeController extends Controller
             return back()->withErrors(['error' => 'Refund amount must be greater than zero.']);
         }
 
+        // For partial refunds, create proposal and wait for buyer acceptance
+        if ($percent < 100) {
+            try {
+                $dispute->setPendingRefund([
+                    'percent'     => $percent,
+                    'amount'      => $amount,
+                    'proposed_by' => $user->id,
+                    'proposed_at' => now()->toDateTimeString(),
+                ]);
+
+                DisputeMessage::create([
+                    'dispute_id' => $dispute->id,
+                    'user_id'    => null,
+                    'message'    => 'Seller proposed a '.rtrim(rtrim(number_format($percent, 2), '0'), '.')."% refund (".get_currency().' '.number_format($amount, 2).") to buyer. Waiting for buyer to accept or decline.",
+                    'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                    'is_internal'=> false,
+                ]);
+
+                if ($dispute->status === Dispute::STATUS_PENDING) {
+                    $dispute->update(['status' => Dispute::STATUS_UNDER_REVIEW]);
+                }
+
+                try {
+                    $buyer = $dispute->buyer;
+                    if ($buyer) {
+                        Activity::create([
+                            'user_id'     => $buyer->id,
+                            'is_read'     => false,
+                            'description' => 'Seller proposed a '.rtrim(rtrim(number_format($percent, 2), '0'), '.')."% refund for dispute #{$dispute->id}.",
+                            'type'        => Activity::TYPE_DISPUTE,
+                            'related_id'  => $dispute->id,
+                            'related_type'=> 'dispute',
+                            'link'        => route('disputes.show', $dispute->id),
+                        ]);
+                    }
+                } catch (\Throwable $e) { /* non-fatal */ }
+
+                return back()->with('success', 'Refund proposal sent. Waiting for buyer to accept or decline.');
+            } catch (\Throwable $e) {
+                \Log::error('dispute.refund.proposal_failed', ['dispute_id' => $dispute->id, 'error' => $e->getMessage()]);
+                return back()->withErrors(['error' => 'Failed to create refund proposal. Please try again.']);
+            }
+        }
+
+        // Full refund: process immediately as before
         DB::transaction(function () use ($dispute, $order, $amount, $percent) {
             // Credit buyer wallet
             Wallet::create([
@@ -1264,7 +1439,6 @@ class DisputeController extends Controller
             // Debit seller wallet
             $sellerId = $dispute->seller_id ?: optional($order->shop)->user_id;
             if ($sellerId) {
-                // If seller funds are still on hold for this order, reflect the refund as an on-hold debit
                 $hasOnHold = \App\Models\Wallet::where('user_id', $sellerId)
                     ->where('status', 'on_hold')
                     ->where('meta->order_id', $order->id)
@@ -1282,36 +1456,32 @@ class DisputeController extends Controller
                 ]);
             }
 
-            // Update dispute as resolved with refund
-            $decision = $percent >= 100 ? Dispute::DECISION_BUYER_WINS : Dispute::DECISION_PARTIAL_REFUND;
-            $resolution = 'Seller issued a '.rtrim(rtrim(number_format($percent, 2), '0'), '.')."% refund (".get_currency().' '.number_format($amount, 2).") to buyer.";
+            $decision = Dispute::DECISION_BUYER_WINS;
+            $resolution = 'Seller issued a full refund ('.get_currency().' '.number_format($amount, 2).') to buyer.';
             $dispute->markAsResolved($resolution, $decision, $amount, $sellerId ?? null);
 
-            // If full refund, mark order as refunded and restock inventory
-            if ($percent >= 100) {
-                if ($order->status !== \App\Models\Order::STATUS_REFUNDED) {
-                    $order->update(['status' => \App\Models\Order::STATUS_REFUNDED]);
-                }
-                try {
-                    $order->loadMissing('items.product');
-                    foreach ($order->items as $item) {
-                        $product = $item->product; if (!$product) continue;
-                        if (strtolower((string)($product->type ?? 'physical')) !== 'physical') continue;
-                        $qty = max(1, (int) ($item->quantity ?? 1));
-                        if (!is_null($product->stock)) {
-                            $product->update(['stock' => ((int)$product->stock) + $qty]);
-                        }
-                        $variantId = (int) ($item->getAttribute('product_variation_id') ?? 0);
-                        if ($variantId > 0) {
-                            try { $variant = \App\Models\Variant::find($variantId); if ($variant && !is_null($variant->stock)) { $variant->update(['stock' => ((int)$variant->stock) + $qty]); } } catch (\Throwable $e) { /* ignore */ }
-                        }
-                    }
-                } catch (\Throwable $e) {
-                    \Log::warning('dispute.refund.restock_failed', ['dispute_id' => $dispute->id, 'order_id' => $order->id, 'error' => $e->getMessage()]);
-                }
+            if ($order->status !== \App\Models\Order::STATUS_REFUNDED) {
+                $order->update(['status' => \App\Models\Order::STATUS_REFUNDED]);
             }
 
-            // System message log
+            try {
+                $order->loadMissing('items.product');
+                foreach ($order->items as $item) {
+                    $product = $item->product; if (!$product) continue;
+                    if (strtolower((string)($product->type ?? 'physical')) !== 'physical') continue;
+                    $qty = max(1, (int) ($item->quantity ?? 1));
+                    if (!is_null($product->stock)) {
+                        $product->update(['stock' => ((int)$product->stock) + $qty]);
+                    }
+                    $variantId = (int) ($item->getAttribute('product_variation_id') ?? 0);
+                    if ($variantId > 0) {
+                        try { $variant = \App\Models\Variant::find($variantId); if ($variant && !is_null($variant->stock)) { $variant->update(['stock' => ((int)$variant->stock) + $qty]); } } catch (\Throwable $e) { /* ignore */ }
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('dispute.refund.restock_failed', ['dispute_id' => $dispute->id, 'order_id' => $order->id, 'error' => $e->getMessage()]);
+            }
+
             DisputeMessage::create([
                 'dispute_id' => $dispute->id,
                 'user_id'    => null,
@@ -1321,7 +1491,139 @@ class DisputeController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Refund processed and dispute marked as resolved.');
+        return back()->with('success', 'Refund issued successfully and dispute resolved.');
+    }
+
+    /**
+     * Buyer accepts a pending refund proposal; process the refund now and resolve the dispute.
+     */
+    public function acceptRefundProposal(Dispute $dispute)
+    {
+        $user = Auth::user();
+        abort_unless($dispute->buyer_id === $user->id, 403);
+
+        $pending = $dispute->getPendingRefund();
+        if (!$pending) {
+            return back()->withErrors(['error' => 'No refund proposal to accept.']);
+        }
+
+        $order = $dispute->order()->with('shop')->first();
+        if (!$order) {
+            return back()->withErrors(['error' => 'Order not found for this dispute.']);
+        }
+
+        $percent = (float) ($pending['percent'] ?? 0);
+        $amount  = (float) ($pending['amount'] ?? 0);
+        if ($percent <= 0 || $amount <= 0) {
+            return back()->withErrors(['error' => 'Invalid refund proposal values.']);
+        }
+
+        try {
+            DB::transaction(function () use ($dispute, $order, $amount, $percent, $user) {
+                Wallet::create([
+                    'user_id'    => $dispute->buyer_id,
+                    'credit'     => $amount,
+                    'debit'      => 0,
+                    'balance'    => 0,
+                    'reference'  => 'dispute_refund_'.$dispute->id,
+                    'description'=> 'Dispute refund for Order #'.$order->id,
+                    'meta'       => ['order_id' => $order->id, 'dispute_id' => $dispute->id, 'percent' => $percent],
+                ]);
+
+                $sellerId = $dispute->seller_id ?: optional($order->shop)->user_id;
+                if ($sellerId) {
+                    $hasOnHold = \App\Models\Wallet::where('user_id', $sellerId)
+                        ->where('status', 'on_hold')
+                        ->where('meta->order_id', $order->id)
+                        ->exists();
+
+                    Wallet::create([
+                        'user_id'    => $sellerId,
+                        'credit'     => 0,
+                        'debit'      => $amount,
+                        'balance'    => 0,
+                        'reference'  => 'dispute_refund_'.$dispute->id,
+                        'description'=> 'Dispute refund for Order #'.$order->id,
+                        'status'     => $hasOnHold ? 'on_hold' : 'completed',
+                        'meta'       => ['order_id' => $order->id, 'dispute_id' => $dispute->id, 'percent' => $percent],
+                    ]);
+                }
+
+                $decision   = Dispute::DECISION_PARTIAL_REFUND;
+                $resolution = 'Buyer accepted a '.rtrim(rtrim(number_format($percent, 2), '0'), '.')."% refund (".get_currency().' '.number_format($amount, 2).").";
+                $dispute->markAsResolved($resolution, $decision, $amount, $user->id);
+
+                $dispute->clearPendingRefund();
+
+                DisputeMessage::create([
+                    'dispute_id' => $dispute->id,
+                    'user_id'    => null,
+                    'message'    => 'Buyer accepted the refund proposal. Dispute resolved.',
+                    'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                    'is_internal'=> false,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            \Log::error('dispute.refund.accept_failed', [
+                'dispute_id' => $dispute->id,
+                'error'      => $e->getMessage(),
+            ]);
+            return back()->withErrors(['error' => 'Failed to process refund. Please try again.']);
+        }
+
+        return back()->with('success', 'Refund processed and dispute resolved.');
+    }
+
+    /**
+     * Buyer declines a pending refund proposal.
+     */
+    public function declineRefundProposal(Dispute $dispute)
+    {
+        $user = Auth::user();
+        abort_unless($dispute->buyer_id === $user->id, 403);
+
+        $pending = $dispute->getPendingRefund();
+        if (!$pending) {
+            return back()->withErrors(['error' => 'No refund proposal to decline.']);
+        }
+
+        try {
+            $dispute->clearPendingRefund();
+            DisputeMessage::create([
+                'dispute_id' => $dispute->id,
+                'user_id'    => null,
+                'message'    => 'Buyer declined the refund proposal. Waiting for further actions.',
+                'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                'is_internal'=> false,
+            ]);
+
+            if ($dispute->status === Dispute::STATUS_PENDING) {
+                $dispute->update(['status' => Dispute::STATUS_UNDER_REVIEW]);
+            }
+
+            try {
+                $seller = $dispute->seller;
+                if ($seller) {
+                    Activity::create([
+                        'user_id'     => $seller->id,
+                        'is_read'     => false,
+                        'description' => 'Buyer declined the refund proposal on dispute #'.$dispute->id.'.',
+                        'type'        => Activity::TYPE_DISPUTE,
+                        'related_id'  => $dispute->id,
+                        'related_type'=> 'dispute',
+                        'link'        => route('disputes.show', $dispute->id),
+                    ]);
+                }
+            } catch (\Throwable $e) { /* non-fatal */ }
+        } catch (\Throwable $e) {
+            \Log::error('dispute.refund.decline_failed', [
+                'dispute_id' => $dispute->id,
+                'error'      => $e->getMessage(),
+            ]);
+            return back()->withErrors(['error' => 'Failed to decline proposal. Please try again.']);
+        }
+
+        return back()->with('success', 'Refund proposal declined.');
     }
 
     /**
@@ -1605,3 +1907,4 @@ class DisputeController extends Controller
         }
     }
 }
+
