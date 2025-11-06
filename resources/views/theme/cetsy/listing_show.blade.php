@@ -63,8 +63,27 @@
       {{-- DETAILS + CART + ACTIONS --}}
       <div class="col-lg-5" data-aos="fade-left">
         <div class="position-lg-sticky" style="top: 1rem;">
-          {{-- Product Details --}}
-          <!-- @include('theme.'.theme().'.partials._details') -->
+          {{-- Product Title / Meta --}}
+          <div class="mb-4">
+            <h1 class="h3 fw-semibold text-dark mb-2">{{ $product->name }}</h1>
+            <div class="d-flex flex-wrap gap-3 text-muted small">
+              @if(optional($product->shop)->name)
+                <span>Sold by
+                  <a href="{{ route('shops.show', $product->shop) }}"
+                     class="fw-semibold text-decoration-none">{{ $product->shop->name }}</a>
+                </span>
+              @endif
+              @if(optional($product->category)->name)
+                <span>
+                  Category:
+                  <span class="fw-semibold text-dark">{{ $product->category->name }}</span>
+                </span>
+              @endif
+              @if($product->country)
+                <span>Ships from {{ $product->country->name }}</span>
+              @endif
+            </div>
+          </div>
 
           {{-- Add to Cart --}}
           @include('theme.'.theme().'.partials._cart')
