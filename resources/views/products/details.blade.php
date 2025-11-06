@@ -75,27 +75,58 @@
 
           <div class="col-md-6">
             <label class="form-label fw-semibold">Category</label>
-            <input type="text"
-                   class="form-control form-control-sm mb-2"
-                   placeholder="Search categories..."
-                   x-model="categorySearch"
-                   @input="filterCategories()"
-                   autocomplete="off"
-                   aria-label="Search categories">
-            <select id="category_id" name="category_id" x-model="categoryId"
-                    class="form-select @error('category_id') is-invalid @enderror" required>
-              <option value="">Choose category</option>
-              <template x-for="cat in catsFiltered" :key="cat.id">
-                <option :value="cat.id" x-text="cat.indented"
-                        :selected="String(cat.id) === '{{ old('category_id', $product->category_id) }}'"></option>
-              </template>
-            </select>
-            <div x-show="!loading && categorySearch && !catsFiltered.length" class="form-text text-muted">
+            <div class="position-relative">
+              <input type="text"
+                     class="form-control @error('category_id') is-invalid @enderror"
+                     placeholder="Search categories..."
+                     x-model="categorySearch"
+                     @input="handleCategoryInput()"
+                     @focus="openCategorySuggestions()"
+                     @keydown.arrow-down.prevent="moveCategoryHighlight(1)"
+                     @keydown.arrow-up.prevent="moveCategoryHighlight(-1)"
+                     @keydown.enter.prevent="selectHighlightedCategory()"
+                     @keydown.escape.prevent="closeCategorySuggestions()"
+                     @blur="handleCategoryBlur()"
+                     autocomplete="off"
+                     role="combobox"
+                     aria-autocomplete="list"
+                     :aria-expanded="showCatSuggestions ? 'true' : 'false'"
+                     aria-controls="details-category-suggestion-list"
+                     aria-label="Search categories">
+              <input type="hidden" name="category_id" :value="categoryId || ''">
+              <div id="details-category-suggestion-list"
+                   class="dropdown-menu w-100 shadow-sm mt-1"
+                   :class="{ 'show': showCatSuggestions }"
+                   style="max-height: 16rem; overflow-y: auto;"
+                   x-cloak
+                   x-show="showCatSuggestions"
+                   x-transition
+                   @mousedown.prevent>
+                <template x-if="loading">
+                  <div class="dropdown-item text-muted">Loading categories...</div>
+                </template>
+                <template x-if="!loading && !catsFiltered.length">
+                  <div class="dropdown-item text-muted">No categories match your search.</div>
+                </template>
+                <template x-for="(cat, idx) in catsFiltered" :key="cat.id">
+                  <button type="button"
+                          class="dropdown-item text-truncate"
+                          :class="{ 'active': idx === catHighlightIndex }"
+                          @click="selectCategory(cat)">
+                    <span x-text="cat.indented"></span>
+                  </button>
+                </template>
+              </div>
+            </div>
+            <div class="form-text text-muted mt-1" x-show="categoryId && !showCatSuggestions">
+              Selected: <span class="fw-semibold" x-text="currentCategoryLabel()"></span>
+            </div>
+            <div x-show="loading" class="form-text text-muted mt-1">Loading categories...</div>
+            <div x-show="!loading && categorySearch && !catsFiltered.length" class="form-text text-muted mt-1" x-cloak>
               No categories match your search.
             </div>
-            <div x-show="loading" class="form-text text-muted">Loading categories...</div>
             <div x-show="fallback && !loading" class="form-text text-warning">Showing all categories (fallback). Ask admin to tag categories by type.</div>
-            @error('category_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            @error('category_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
           </div>
 
           
@@ -157,96 +188,318 @@
 <script>
 // Local cache of categories for robust fallback when API fails/redirects
 window.__ALL_CATEGORIES__ = @json($__ALL_CATS);
-function detailsForm(){
-  return {
-    type: @json(old('type', $product->type)),
-    categoryId: @json(old('category_id', $product->category_id)),
-    fallback: false,
-    categories: [],
-    catsFlat: [],
-    catsFiltered: [],
-    categorySearch: '',
-    loading: false,
-    init(){ if(!this.type && this.categoryId){ const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : []; const cat = all.find(x => String(x.id)===String(this.categoryId)); if (cat && cat.listing_type){ const rev = {products:'physical', services:'service', digital:'digital'}; this.type = rev[String(cat.listing_type)] || this.type; } } this.loadCategories(); },
-    filterLocalByType(tp){
-      const map = { physical: 'products', service: 'services', digital: 'digital' };
-      const want = map[String(tp) || ''] || null;
-      if (!want) return [];
-      const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : [];
-      return all.filter(c => (String(c.listing_type || '').toLowerCase() === want));
-    },
-    flattenWithIndent(items){
-      const byId = new Map();
-      const roots = [];
-      (items || []).forEach(it => byId.set(String(it.id), { ...it, children: [] }));
-      byId.forEach(node => {
-        const pid = node.parent_id ? String(node.parent_id) : '';
-        if (pid && byId.has(pid)) byId.get(pid).children.push(node); else roots.push(node);
-      });
-      const out = [];
-      const walk = (n,d) => {
-        const label = String(n.name || '');
-        const p = d>0 ? ('\u2014 '.repeat(d)) : '';
-        out.push({ id:n.id, indented: p + label, name: label, searchable: label.toLowerCase() });
-        (n.children || []).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).forEach(c=>walk(c,d+1));
-      };
-      roots.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).forEach(r=>walk(r,0));
-      return out;
-    },
-    async loadCategories(){
-      if(!this.type){
-        this.categories = [];
-        this.catsFlat = [];
-        this.catsFiltered = [];
-        this.categorySearch = '';
-        this.loading = false;
-        return;
-      }
-      this.loading = true;
-      this.categorySearch = '';
-      try{
-        const url = `/api/categories/by-type/${encodeURIComponent(this.type)}?_=${Date.now()}`;
-        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        let cats;
-        const ct = res.headers.get('content-type') || '';
-        this.fallback = (res.headers.get('x-categories-fallback') === '1');
-        if (ct.includes('application/json')) {
-          cats = await res.json();
-        } else {
-          const txt = await res.text();
-          try { cats = JSON.parse(txt); } catch { console.warn('Categories API non-JSON:', txt.slice(0,200)); cats = []; }
-        }
-        if (this.fallback || !Array.isArray(cats) || cats.length === 0) {
-          cats = this.filterLocalByType(this.type);
-        }
-        this.categories = Array.isArray(cats) ? cats : [];
-        this.catsFlat = this.flattenWithIndent(this.categories);
-        this.filterCategories();
-      }catch(e){
-        console.warn('Categories load warning:', e);
-        this.fallback=false;
-        const cats = this.filterLocalByType(this.type);
-        this.categories = cats;
-        this.catsFlat = this.flattenWithIndent(cats);
-        this.filterCategories();
-      } finally {
-        this.loading = false;
-      }
-    },
-    filterCategories(){
-      const term = (this.categorySearch || '').trim().toLowerCase();
-      const base = term
-        ? this.catsFlat.filter(cat => cat.searchable.includes(term))
-        : this.catsFlat.slice();
-      const selectedId = this.categoryId ? String(this.categoryId) : null;
-      if (selectedId && !base.some(cat => String(cat.id) === selectedId)) {
-        const selectedCat = this.catsFlat.find(cat => String(cat.id) === selectedId);
-        if (selectedCat) base.unshift(selectedCat);
-      }
-      this.catsFiltered = base;
-    }
-  }
+function detailsForm(){
+
+  return {
+
+    type: @json(old('type', $product->type)),
+
+    categoryId: @json(old('category_id', $product->category_id)),
+
+    fallback: false,
+
+    categories: [],
+
+    catsFlat: [],
+
+    catsFiltered: [],
+
+    categorySearch: '',
+
+    loading: false,
+    showCatSuggestions: false,
+    catHighlightIndex: -1,
+
+    init(){ if(!this.type && this.categoryId){ const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : []; const cat = all.find(x => String(x.id)===String(this.categoryId)); if (cat && cat.listing_type){ const rev = {products:'physical', services:'service', digital:'digital'}; this.type = rev[String(cat.listing_type)] || this.type; } } this.loadCategories(); },
+
+    filterLocalByType(tp){
+
+      const map = { physical: 'products', service: 'services', digital: 'digital' };
+
+      const want = map[String(tp) || ''] || null;
+
+      if (!want) return [];
+
+      const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : [];
+
+      return all.filter(c => (String(c.listing_type || '').toLowerCase() === want));
+
+    },
+
+    flattenWithIndent(items){
+
+      const byId = new Map();
+
+      const roots = [];
+
+      (items || []).forEach(it => byId.set(String(it.id), { ...it, children: [] }));
+
+      byId.forEach(node => {
+
+        const pid = node.parent_id ? String(node.parent_id) : '';
+
+        if (pid && byId.has(pid)) byId.get(pid).children.push(node); else roots.push(node);
+
+      });
+
+      const out = [];
+
+      const walk = (n,d) => {
+
+        const label = String(n.name || '');
+
+        const p = d>0 ? ('\u2014 '.repeat(d)) : '';
+
+        out.push({ id:n.id, indented: p + label, name: label, searchable: label.toLowerCase() });
+
+        (n.children || []).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).forEach(c=>walk(c,d+1));
+
+      };
+
+      roots.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).forEach(r=>walk(r,0));
+
+      return out;
+
+    },
+
+    async loadCategories(){
+
+      if(!this.type){
+
+        this.categories = [];
+
+        this.catsFlat = [];
+
+        this.catsFiltered = [];
+
+        this.categorySearch = '';
+
+        this.showCatSuggestions = false;
+
+        this.catHighlightIndex = -1;
+
+        this.loading = false;
+
+        return;
+
+      }
+
+      this.loading = true;
+
+      this.categorySearch = '';
+
+      this.showCatSuggestions = false;
+
+      this.catHighlightIndex = -1;
+
+      try{
+
+        const url = `/api/categories/by-type/${encodeURIComponent(this.type)}?_=${Date.now()}`;
+
+        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        let cats;
+
+        const ct = res.headers.get('content-type') || '';
+
+        this.fallback = (res.headers.get('x-categories-fallback') === '1');
+
+        if (ct.includes('application/json')) {
+
+          cats = await res.json();
+
+        } else {
+
+          const txt = await res.text();
+
+          try { cats = JSON.parse(txt); } catch { console.warn('Categories API non-JSON:', txt.slice(0,200)); cats = []; }
+
+        }
+
+        if (this.fallback || !Array.isArray(cats) || cats.length === 0) {
+
+          cats = this.filterLocalByType(this.type);
+
+        }
+
+        this.categories = Array.isArray(cats) ? cats : [];
+
+        this.catsFlat = this.flattenWithIndent(this.categories);
+
+        this.filterCategories();
+
+      }catch(e){
+
+        console.warn('Categories load warning:', e);
+
+        this.fallback=false;
+
+        const cats = this.filterLocalByType(this.type);
+
+        this.categories = cats;
+
+        this.catsFlat = this.flattenWithIndent(cats);
+
+        this.filterCategories();
+
+      } finally {
+
+        this.loading = false;
+
+        this.syncCategoryInputFromSelection();
+
+      }
+
+    },
+
+    filterCategories(){
+
+      const term = (this.categorySearch || '').trim().toLowerCase();
+
+      const base = term
+
+        ? this.catsFlat.filter(cat => cat.searchable.includes(term))
+
+        : this.catsFlat.slice();
+
+      const selectedId = this.categoryId ? String(this.categoryId) : null;
+
+      if (selectedId && !base.some(cat => String(cat.id) === selectedId)) {
+
+        const selectedCat = this.catsFlat.find(cat => String(cat.id) === selectedId);
+
+        if (selectedCat) base.unshift(selectedCat);
+
+      }
+
+      this.catsFiltered = base;
+
+      if (!this.catsFiltered.length) {
+
+        this.catHighlightIndex = -1;
+
+      } else if (this.catHighlightIndex >= this.catsFiltered.length) {
+
+        this.catHighlightIndex = this.catsFiltered.length - 1;
+
+      }
+
+    },
+
+    openCategorySuggestions(){
+
+      if (this.loading) return;
+
+      this.showCatSuggestions = true;
+
+      if (!this.catsFiltered.length) this.filterCategories();
+
+      if (this.catHighlightIndex === -1 && this.catsFiltered.length) {
+
+        this.catHighlightIndex = 0;
+
+      }
+
+    },
+
+    closeCategorySuggestions(){
+
+      this.showCatSuggestions = false;
+
+      this.catHighlightIndex = -1;
+
+    },
+
+    handleCategoryBlur(){
+
+      setTimeout(() => this.closeCategorySuggestions(), 120);
+
+    },
+
+    handleCategoryInput(){
+
+      this.categoryId = null;
+
+      this.filterCategories();
+
+      this.catHighlightIndex = this.catsFiltered.length ? 0 : -1;
+
+      this.openCategorySuggestions();
+
+    },
+
+    moveCategoryHighlight(step){
+
+      if (!this.catsFiltered.length) return;
+
+      if (!this.showCatSuggestions) this.openCategorySuggestions();
+
+      if (this.catHighlightIndex === -1) {
+
+        this.catHighlightIndex = step > 0 ? 0 : this.catsFiltered.length - 1;
+
+        return;
+
+      }
+
+      const max = this.catsFiltered.length;
+
+      this.catHighlightIndex = (this.catHighlightIndex + step + max) % max;
+
+    },
+
+    selectHighlightedCategory(){
+
+      if (!this.catsFiltered.length) return;
+
+      const idx = this.catHighlightIndex >= 0 ? this.catHighlightIndex : 0;
+
+      const cat = this.catsFiltered[idx];
+
+      if (cat) this.selectCategory(cat);
+
+    },
+
+    selectCategory(cat){
+
+      if (!cat) {
+
+        this.categoryId = null;
+
+        this.categorySearch = '';
+
+      } else {
+
+        this.categoryId = cat.id;
+
+        this.categorySearch = cat.name;
+
+      }
+
+      this.closeCategorySuggestions();
+
+    },
+
+    currentCategoryLabel(){
+
+      const selected = this.catsFlat.find(cat => String(cat.id) === String(this.categoryId));
+
+      return selected ? selected.name : '';
+
+    },
+
+    syncCategoryInputFromSelection(){
+
+      const label = this.currentCategoryLabel();
+
+      this.categorySearch = label || '';
+
+    }
+
+  }
+
 };(function(){
   function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); } else { fn(); } }
   onReady(function(){
