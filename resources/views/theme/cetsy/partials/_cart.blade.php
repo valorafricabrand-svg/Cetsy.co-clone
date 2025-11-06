@@ -223,6 +223,9 @@
         updatePrice(null);
       }
       btnAdd.disabled = btnBuy.disabled = false;
+
+      // Update per-option price hints based on current selections
+      refreshOptionPriceHints(selectedByType);
     }
 
     function updatePrice(variant){
@@ -239,10 +242,52 @@
       }
     }
 
+    // Ensure we keep the original option labels for restoring
+    function ensureBaseOptionLabels(){
+      document.querySelectorAll('.js-variant-select option').forEach(opt => {
+        if (!opt.dataset.label) opt.dataset.label = opt.textContent.trim();
+      });
+    }
+
+    // Compute minimal variant price for a given type/option under current constraints
+    function minPriceFor(typeId, optionId, constraints){
+      let min = null;
+      variants.forEach(v => {
+        if (String(v.byType[typeId]) !== String(optionId)) return;
+        for (const [tid, val] of Object.entries(constraints)){
+          if (!val) continue;
+          if (String(v.byType[tid]) !== String(val)) return; // not compatible
+        }
+        if (typeof v.price === 'number' && !isNaN(v.price)){
+          min = (min === null) ? v.price : Math.min(min, v.price);
+        }
+      });
+      return min;
+    }
+
+    // Update the option text to include a price hint (e.g., “— USD 12.00”) where determinable
+    function refreshOptionPriceHints(selectedByType){
+      ensureBaseOptionLabels();
+      const selects = Array.from(document.querySelectorAll('.js-variant-select'));
+      selects.forEach(sel => {
+        const typeId = String(sel.dataset.typeId);
+        const constraints = { ...selectedByType };
+        delete constraints[typeId];
+        Array.from(sel.options).forEach(opt => {
+          if (!opt.value) { opt.textContent = opt.dataset.label; return; }
+          const min = minPriceFor(typeId, opt.value, constraints);
+          opt.textContent = opt.dataset.label + (min !== null ? ` — ${currency} ${formatPrice(min)}` : '');
+        });
+      });
+    }
+
     document.addEventListener('change', function(e){
       if (e.target && e.target.classList.contains('js-variant-select')) updateUI();
     });
-    document.addEventListener('DOMContentLoaded', updateUI);
+    document.addEventListener('DOMContentLoaded', function(){
+      ensureBaseOptionLabels();
+      updateUI();
+    });
   })();
 </script>
 @endpush
