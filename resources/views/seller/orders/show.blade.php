@@ -804,9 +804,12 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Auto-show ship modal if URL contains ?ship=1
+  // Auto-show ship modal if URL contains ?ship=1 OR after server-side errors
   const params = new URLSearchParams(window.location.search);
-  if (params.get('ship') === '1') {
+  const shouldShowByQuery = params.get('ship') === '1';
+  const shouldShowByErrors = Boolean(@json(optional($errors->getBag('ship'))->any()));
+  const shouldShowByFlag = Boolean(@json(session('show_ship_modal', false)));
+  if (shouldShowByQuery || shouldShowByErrors || shouldShowByFlag) {
     const modalEl = document.getElementById('shipModal');
     modalEl && new bootstrap.Modal(modalEl).show();
   }

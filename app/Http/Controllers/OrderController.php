@@ -701,35 +701,65 @@ public function storeOrder(Request $request)
     {
         $this->authorizeSeller($order);
 
-        $data = $request->validate([
-            'courier'        => 'required|string|max:100',
-            'courier_other'  => 'nullable|string|max:100',
-            'tracking_no'    => 'required|string|max:120',
-            'tracking_url'   => 'required|url|max:255',
-            'shipped_at'     => 'nullable|date',
-            'ship_notes'     => 'nullable|string|max:1000',
+        // Log the attempt with sanitized inputs
+        \Log::info('order.ship.attempt', [
+            'order_id'  => $order->id,
+            'seller_id' => auth()->id(),
+            'input'     => $request->except(['_token'])
         ]);
+
+        try {
+            $data = $request->validate([
+                'courier'        => 'required|string|max:100',
+                'courier_other'  => 'nullable|string|max:100',
+                'tracking_no'    => 'required|string|max:120',
+                'tracking_url'   => 'required|url|max:255',
+                'shipped_at'     => 'nullable|date',
+                'ship_notes'     => 'nullable|string|max:1000',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            \Log::warning('order.ship.validation_failed', [
+                'order_id'  => $order->id,
+                'seller_id' => auth()->id(),
+                'errors'    => $ve->errors(),
+            ]);
+            return back()->withErrors($ve->errors(), 'ship')->withInput()->with('show_ship_modal', true);
+        }
 
         // If 'Manual'/'Other' selected, require a typed courier name
         $selected = strtolower((string)($data['courier'] ?? ''));
         $typed    = trim((string)($request->input('courier_other', '')));
         if (in_array($selected, ['other','manual'], true)) {
             if ($typed === '') {
-                return back()->withErrors(['courier_other' => 'Please enter a courier name.'])->withInput();
+                \Log::warning('order.ship.courier_missing_manual_name', [
+                    'order_id' => $order->id,
+                    'seller_id'=> auth()->id(),
+                ]);
+                return back()->withErrors(['courier_other' => 'Please enter a courier name.'], 'ship')->withInput()->with('show_ship_modal', true);
             }
             $data['courier'] = mb_substr($typed, 0, 100);
         }
 
-        DB::transaction(function () use ($order, $data) {
-            $order->update([
-                'status'      => Order::STATUS_SHIPPED,
-                'courier'     => $data['courier'],
-                'tracking_no' => $data['tracking_no'],
-                'tracking_url'=> $data['tracking_url'] ?? null,
-                'shipped_at'  => $data['shipped_at'] ?? now(),
-                'ship_notes'  => $data['ship_notes'] ?? null,
+        try {
+            DB::transaction(function () use ($order, $data) {
+                $order->update([
+                    'status'      => Order::STATUS_SHIPPED,
+                    'courier'     => $data['courier'],
+                    'tracking_no' => $data['tracking_no'],
+                    'tracking_url'=> $data['tracking_url'] ?? null,
+                    'shipped_at'  => $data['shipped_at'] ?? now(),
+                    'ship_notes'  => $data['ship_notes'] ?? null,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            \Log::error('order.ship.update_failed', [
+                'order_id'  => $order->id,
+                'seller_id' => auth()->id(),
+                'error'     => $e->getMessage(),
+                'trace'     => $e->getTraceAsString(),
             ]);
-        });
+            return back()->withErrors(['error' => 'Failed to mark order as shipped. Please try again.'], 'ship')->withInput()->with('show_ship_modal', true);
+        }
 
         try {
             $order->load(['items.product', 'shop.user', 'user']);
@@ -749,12 +779,18 @@ public function storeOrder(Request $request)
             \Mail::to($buyer->email)->send(
                 new \App\Mail\OrderShippedBuyerMail($order, $buyer, $order->shop, $shippingData)
             );
-        } catch (\Exception $e) {
-            Log::error('Failed to send shipping emails: '.$e->getMessage(), [
-                'order_id' => $order->id,
+        } catch (\Throwable $e) {
+            \Log::error('order.ship.email_failed', [
+                'order_id'  => $order->id,
+                'seller_id' => auth()->id(),
+                'error'     => $e->getMessage(),
             ]);
         }
 
+        \Log::info('order.ship.success', [
+            'order_id'  => $order->id,
+            'seller_id' => auth()->id(),
+        ]);
         return back()->with('success', 'Order marked as shipped.');
     }
 
