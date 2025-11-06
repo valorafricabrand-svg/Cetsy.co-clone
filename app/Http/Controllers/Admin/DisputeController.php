@@ -69,42 +69,7 @@ class DisputeController extends Controller
      */
     public function show(Dispute $dispute)
     {
-        $dispute->load(['order.shop', 'buyer', 'seller', 'messages.user', 'appeal', 'resolvedBy']);
-
-        // Get dispute messages
-        $disputeMessages = $dispute->messages()
-            ->with('user')
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        // Get order messages (if they exist) - ONLY from the specific order involved in this dispute
-        $orderMessages = collect();
-        $order = $dispute->order;
-        $orderItems = collect();
-        
-        if ($order && method_exists($order, 'messages')) {
-            $orderMessages = $order->messages()
-                ->with('user')
-                ->orderBy('created_at', 'asc')
-                ->get();
-                
-            // Get order items
-            if (method_exists($order, 'items')) {
-                $orderItems = $order->items()->with('product')->get();
-            }
-        }
-
-        // Combine all messages for unified display
-        $allMessages = $disputeMessages->concat($orderMessages)->sortBy('created_at');
-
-        return view('admin.disputes.show', compact(
-            'dispute', 
-            'allMessages', 
-            'disputeMessages', 
-            'orderMessages', 
-            'order', 
-            'orderItems'
-        ));
+        return redirect()->route('disputes.show', $dispute->id);
     }
 
     /**
@@ -152,7 +117,7 @@ class DisputeController extends Controller
             ]);
         });
 
-        return redirect()->route('admin.admin-disputes.show', $dispute->id)
+        return redirect()->route('disputes.show', $dispute->id)
             ->with('success', 'Dispute resolved and closed successfully.');
     }
 
@@ -225,7 +190,7 @@ class DisputeController extends Controller
             ]);
         });
 
-        return redirect()->route('admin.admin-disputes.show', $dispute->id)
+        return redirect()->route('disputes.show', $dispute->id)
             ->with('success', 'Dispute resolved and closed successfully.');
     }
 
@@ -659,3 +624,4 @@ class DisputeController extends Controller
         }
     }
 }
+

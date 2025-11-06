@@ -160,8 +160,9 @@ class NotificationRouteService
     {
         $disputeId = (int) ($notification->related_id ?? 0);
         if ($user->isAdmin()) {
-            if ($disputeId > 0 && \Illuminate\Support\Facades\Route::has('admin.disputes.show')) {
-                return route('admin.disputes.show', $disputeId);
+            // Unify to public dispute view even for admins
+            if ($disputeId > 0 && \Illuminate\Support\Facades\Route::has('disputes.show')) {
+                return route('disputes.show', $disputeId);
             }
             return route('admin.notifications.index');
         }

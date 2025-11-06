@@ -429,6 +429,8 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::post('/', [\App\Http\Controllers\DisputeController::class, 'store'])->name('store');
         Route::get('/{dispute}', [\App\Http\Controllers\DisputeController::class, 'show'])->name('show');
         Route::post('/{dispute}/messages', [\App\Http\Controllers\DisputeController::class, 'addMessage'])->name('messages.store');
+        // Escalate to support
+        Route::post('/{dispute}/contact-support', [\App\Http\Controllers\DisputeController::class, 'contactSupport'])->name('contact-support');
         if (config('disputes.enable_appeals')) {
             Route::get('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'showAppealForm'])->name('appeal.create');
             Route::post('/{dispute}/appeal', [\App\Http\Controllers\DisputeController::class, 'submitAppeal'])->name('appeal.store');
@@ -446,9 +448,12 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::post('/{dispute}/close', [\App\Http\Controllers\DisputeController::class, 'markAsClosed'])->name('close');
 
         // Evidence Request Responses
-        if (config('disputes.enable_appeals')) {
-            Route::post('/evidence-requests/{evidenceRequest}/respond', [\App\Http\Controllers\EvidenceRequestController::class, 'respond'])->name('evidence-requests.respond');
-        }
+        // Evidence responses (enabled regardless of appeals)
+        Route::post('/evidence-requests/{evidenceRequest}/respond', [\App\Http\Controllers\EvidenceRequestController::class, 'respond'])->name('evidence-requests.respond');
+        // Admin evidence request from dispute page (admin only)
+        Route::post('/{dispute}/request-evidence', [\App\Http\Controllers\DisputeController::class, 'requestEvidence'])->name('request-evidence');
+        // Admin assign dispute
+        Route::post('/{dispute}/assign-admin', [\App\Http\Controllers\DisputeController::class, 'assignAdmin'])->name('assign-admin');
     });
 });
 

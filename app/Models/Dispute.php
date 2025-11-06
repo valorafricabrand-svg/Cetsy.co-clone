@@ -14,7 +14,7 @@ class Dispute extends Model
     use HasFactory;
 
     protected $fillable = [
-        'order_id', 'buyer_id', 'seller_id', 'created_by', 'type', 'status', 
+        'order_id', 'buyer_id', 'seller_id', 'assigned_admin_id', 'created_by', 'type', 'status', 
         'description', 'evidence', 'resolution', 'resolved_by', 
         'resolved_at', 'appeal_deadline', 'can_appeal',
         'decision', 'refund_amount', 'admin_notes',
@@ -76,6 +76,11 @@ class Dispute extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    public function assignedAdmin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_admin_id');
     }
 
     public function resolvedBy(): BelongsTo

@@ -20,6 +20,7 @@ use App\Mail\DisputeResponseMail;
 use App\Models\Activity;
 use App\Models\EvidenceRequest;
 use App\Models\Wallet;
+use App\Models\User;
 
 
 class DisputeController extends Controller
@@ -430,15 +431,17 @@ class DisputeController extends Controller
     {
         $user = Auth::user();
 
-        // Check if user is authorized to view this dispute (either buyer or specifically involved as seller)
-        $isAuthorized = $dispute->buyer_id === $user->id || // User is the buyer
-                       $dispute->seller_id === $user->id;   // User is specifically the seller in this dispute
+        // Check if user is authorized to view this dispute (buyer, seller, or admin)
+        $isAuthorized = ($dispute->buyer_id === $user->id) // User is the buyer
+                       || ($dispute->seller_id === $user->id) // User is specifically the seller
+                       || (method_exists($user, 'isAdmin') && $user->isAdmin()); // Admins can view
 
         if (!$isAuthorized) {
             abort(403, 'Unauthorized access to dispute.');
         }
 
         $dispute->load(['order.shop', 'buyer', 'seller', 'messages.user', 'appeal']);
+        $dispute->loadMissing(['assignedAdmin']);
         // Mark dispute notifications as read for this user
         try {
             Activity::where('user_id', $user->id)
@@ -450,7 +453,7 @@ class DisputeController extends Controller
 
         // Get dispute messages
         $disputeMessages = $dispute->messages()
-            ->when(!$user->isAdmin(), function ($query) {
+            ->when(!(method_exists($user, 'isAdmin') && $user->isAdmin()), function ($query) {
                 return $query->public();
             })
             ->with('user')
@@ -531,6 +534,10 @@ class DisputeController extends Controller
         // Get order details for context
         $order = $dispute->order;
         $orderItems = $order ? $order->items()->with('product')->get() : collect();
+        // Load evidence requests for the dispute (for admin display and party responses)
+        $evidenceRequests = EvidenceRequest::where('dispute_id', $dispute->id)
+            ->latest('created_at')
+            ->get();
 
         // Debug logging for message counts
         \Log::info('Dispute messages loaded', [
@@ -544,12 +551,13 @@ class DisputeController extends Controller
         ]);
 
         return view('disputes.show', compact(
-            'dispute', 
-            'allMessages', 
-            'disputeMessages', 
-            'orderMessages', 
-            'order', 
-            'orderItems'
+            'dispute',
+            'allMessages',
+            'disputeMessages',
+            'orderMessages',
+            'order',
+            'orderItems',
+            'evidenceRequests'
         ));
     }
 
@@ -560,9 +568,10 @@ class DisputeController extends Controller
     {
         $user = Auth::user();
 
-        // Check if user is authorized to add messages (either buyer or specifically involved as seller)
-        $isAuthorized = $dispute->buyer_id === $user->id || // User is the buyer
-                       $dispute->seller_id === $user->id;   // User is specifically the seller in this dispute
+        // Check if user is authorized to add messages (buyer, seller, or admin)
+        $isAuthorized = ($dispute->buyer_id === $user->id)
+                       || ($dispute->seller_id === $user->id)
+                       || (method_exists($user, 'isAdmin') && $user->isAdmin());
 
         if (!$isAuthorized) {
             abort(403, 'Unauthorized access to dispute.');
@@ -574,9 +583,13 @@ class DisputeController extends Controller
         ]);
 
         // Determine message type
-        $messageType = $dispute->buyer_id === $user->id 
-            ? DisputeMessage::TYPE_BUYER_MESSAGE 
-            : DisputeMessage::TYPE_SELLER_MESSAGE;
+        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+            $messageType = DisputeMessage::TYPE_ADMIN_MESSAGE;
+        } else {
+            $messageType = $dispute->buyer_id === $user->id 
+                ? DisputeMessage::TYPE_BUYER_MESSAGE 
+                : DisputeMessage::TYPE_SELLER_MESSAGE;
+        }
 
         // Handle file uploads
         $attachments = [];
@@ -655,6 +668,123 @@ class DisputeController extends Controller
         }
 
         return back()->with('success', 'Message added successfully.');
+    }
+
+    /**
+     * Buyer or Seller: escalate dispute to support (admin).
+     */
+    public function contactSupport(Request $request, Dispute $dispute)
+    {
+        $user = Auth::user();
+        $isParty = ($dispute->buyer_id === $user->id) || ($dispute->seller_id === $user->id);
+        abort_unless($isParty, 403);
+
+        // If support already intervened, do not allow re-request
+        if ($dispute->messages()->where('type', \App\Models\DisputeMessage::TYPE_ADMIN_MESSAGE)->exists()) {
+            return back()->withErrors(['error' => 'Support already intervened. Please continue in this thread.']);
+        }
+
+        DB::transaction(function () use ($dispute, $user) {
+            if ($dispute->isPending()) {
+                $dispute->update(['status' => Dispute::STATUS_UNDER_REVIEW]);
+            }
+
+            DisputeMessage::create([
+                'dispute_id' => $dispute->id,
+                'user_id'    => null,
+                'message'    => ($user->id === $dispute->buyer_id ? 'Buyer' : 'Seller') . ' requested support review. Admin notified.',
+                'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                'is_internal'=> false,
+            ]);
+
+            // Notify all admins via Activity
+            try {
+                $admins = User::where('user_type', User::TYPE_ADMIN)->get(['id']);
+                foreach ($admins as $admin) {
+                    Activity::create([
+                        'user_id'     => $admin->id,
+                        'is_read'     => false,
+                        'description' => 'Support requested for Dispute #'.$dispute->id,
+                        'type'        => Activity::TYPE_DISPUTE,
+                        'related_id'  => $dispute->id,
+                        'related_type'=> 'dispute',
+                        'link'        => route('disputes.show', $dispute->id),
+                    ]);
+                }
+            } catch (\Throwable $e) { /* non-fatal */ }
+        });
+
+        return back()->with('success', 'Support has been notified. An admin will review and follow up here.');
+    }
+
+    /**
+     * Admin: request additional information/evidence from buyer or seller on same page.
+     */
+    public function requestEvidence(Request $request, Dispute $dispute)
+    {
+        $user = Auth::user();
+        abort_unless(method_exists($user, 'isAdmin') && $user->isAdmin(), 403);
+
+        $data = $request->validate([
+            'for'      => 'required|in:buyer,seller',
+            'message'  => 'required|string|max:1000',
+            'deadline' => 'nullable|date',
+        ]);
+
+        $requestedFrom = $data['for'] === 'buyer' ? $dispute->buyer_id : $dispute->seller_id;
+
+        $evidence = EvidenceRequest::create([
+            'dispute_id' => $dispute->id,
+            'appeal_id'  => null,
+            'requested_from' => $requestedFrom,
+            'requested_by'   => $user->id,
+            'message'        => $data['message'],
+            'status'         => EvidenceRequest::STATUS_PENDING,
+            'deadline'       => $data['deadline'] ?? now()->addDays(3),
+        ]);
+
+        // Public system message
+        DisputeMessage::create([
+            'dispute_id' => $dispute->id,
+            'user_id'    => null,
+            'message'    => 'Admin requested additional information from '.($data['for']).'.',
+            'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+            'is_internal'=> false,
+        ]);
+
+        // Notify the requested party
+        try {
+            Activity::create([
+                'user_id'     => $requestedFrom,
+                'is_read'     => false,
+                'description' => 'Admin requested additional information for Dispute #'.$dispute->id,
+                'type'        => Activity::TYPE_DISPUTE,
+                'related_id'  => $dispute->id,
+                'related_type'=> 'dispute',
+                'link'        => route('disputes.show', $dispute->id),
+            ]);
+        } catch (\Throwable $e) { /* non-fatal */ }
+
+        return back()->with('success', 'Evidence request sent.');
+    }
+
+    /** Assign this dispute to the current admin (for accountability and messaging context). */
+    public function assignAdmin(Request $request, Dispute $dispute)
+    {
+        $user = Auth::user();
+        abort_unless(method_exists($user, 'isAdmin') && $user->isAdmin(), 403);
+
+        $dispute->update(['assigned_admin_id' => $user->id]);
+
+        DisputeMessage::create([
+            'dispute_id' => $dispute->id,
+            'user_id'    => null,
+            'message'    => 'Admin '.$user->name.' is now assigned to this dispute.',
+            'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+            'is_internal'=> false,
+        ]);
+
+        return back()->with('success', 'You are now assigned to this dispute.');
     }
 
     /**
@@ -1777,3 +1907,4 @@ class DisputeController extends Controller
         }
     }
 }
+
