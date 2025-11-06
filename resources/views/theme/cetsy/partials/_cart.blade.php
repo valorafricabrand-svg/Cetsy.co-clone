@@ -186,28 +186,38 @@
       const selects = Array.from(document.querySelectorAll('.js-variant-select'));
       const selectedByType = {};
       selects.forEach(sel => { selectedByType[String(sel.dataset.typeId)] = sel.value; });
-      const v = resolveVariant(selectedByType);
       const btnAdd = document.getElementById('btn-add');
       const btnBuy = document.getElementById('btn-buy');
       const variantIdInput = document.getElementById('variant_id');
 
       if (types.length === 0) {
-        // No variations; allow immediate submission
         variantIdInput.value = '';
         btnAdd.disabled = btnBuy.disabled = false;
         updatePrice(null);
         return;
       }
 
-      if (v) {
-        variantIdInput.value = v.id;
-        btnAdd.disabled = btnBuy.disabled = false;
-        updatePrice(v);
-      } else {
+      const allSelected = types.every(t => {
+        const val = selectedByType[String(t.id)];
+        return val !== undefined && String(val) !== '';
+      });
+
+      if (!allSelected) {
         variantIdInput.value = '';
         btnAdd.disabled = btnBuy.disabled = true;
         updatePrice(null);
+        return;
       }
+
+      const variant = resolveVariant(selectedByType);
+      if (variant) {
+        variantIdInput.value = variant.id;
+        updatePrice(variant);
+      } else {
+        variantIdInput.value = '';
+        updatePrice(null);
+      }
+      btnAdd.disabled = btnBuy.disabled = false;
     }
 
     function updatePrice(variant){
