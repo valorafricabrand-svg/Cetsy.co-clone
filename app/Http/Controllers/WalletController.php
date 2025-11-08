@@ -184,6 +184,16 @@ class WalletController extends Controller
             $query->where('debit', '>', 0);
         }
 
+        // Optional status filter so sellers can see exactly what's on hold
+        if ($request->filled('status')) {
+            $status = strtolower((string) $request->input('status'));
+            // Allow only known statuses used by wallet rows
+            $allowed = ['on_hold', 'completed', 'failed', 'pending'];
+            if (in_array($status, $allowed, true)) {
+                $query->where('status', $status);
+            }
+        }
+
         if ($request->from) {
             $query->whereDate('created_at', '>=', $request->from);
         }
