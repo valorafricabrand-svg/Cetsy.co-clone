@@ -490,26 +490,32 @@
             {{-- Seller Refund Action --}}
             @php
                 $isSeller = auth()->check() && (($dispute->seller_id ?? null) === auth()->id() || optional($dispute->order->shop)->user_id === auth()->id());
+                $isAdmin  = auth()->check() && (method_exists(auth()->user(), 'isAdmin') ? auth()->user()->isAdmin() : false);
+                $canRefund = $isSeller || $isAdmin;
             @endphp
-            @if($isSeller && !$dispute->isResolved() && !$dispute->isClosed())
+            @if($canRefund && !$dispute->isResolved() && !$dispute->isClosed())
                 <div class="card mb-4 border-warning">
                     <div class="card-header bg-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <h6 class="mb-0 d-flex align-items-center gap-2">
                             <i class="bi bi-cash-coin"></i> Issue Refund to Buyer
                         </h6>
                         <div class="d-flex align-items-center gap-2">
+                          @php
+                              $fullRefundLabel = $isAdmin ? 'Issue Full Refund (100%)' : 'Accept Full Refund (100%)';
+                              $partialRefundLabel = $isAdmin ? 'Propose Partial Refund' : 'Offer Partial Refund';
+                          @endphp
                           <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#fullRefundModal-{{ $dispute->id }}">
-                            <i class="bi bi-check2-circle"></i> Accept Full Refund (100%)
+                            <i class="bi bi-check2-circle"></i> {{ $fullRefundLabel }}
                           </button>
                           <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#refundModal-{{ $dispute->id }}">
-                            <i class="bi bi-sliders"></i> Offer Partial Refund
+                            <i class="bi bi-sliders"></i> {{ $partialRefundLabel }}
                           </button>
                         </div>
                     </div>
                     <div class="card-body">
                         <p class="mb-2">You can resolve this dispute by issuing a partial or full refund to the buyer's wallet.</p>
                         <ul class="mb-0 small text-muted">
-                            <li>Refund is credited to the buyer and debited from your wallet.</li>
+                            <li>Refund is credited to the buyer and debited from the seller's wallet.</li>
                             <li>For non-delivery, consider a full (100%) refund.</li>
                             <li>For damaged or not as described, you may agree on a partial refund.</li>
                         </ul>
@@ -537,7 +543,7 @@
                           <strong>Refund Amount:</strong>
                           <span id="refund-amount-{{ $dispute->id }}">{{ get_currency() }} {{ number_format($orderTotal, 2) }}</span>
                         </div>
-                        <p class="small text-muted mb-0">This will credit the buyer's wallet and debit your wallet. This action cannot be undone.</p>
+                        <p class="small text-muted mb-0">This will credit the buyer's wallet and debit the seller's wallet. This action cannot be undone.</p>
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -560,7 +566,8 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                       </div>
                       <div class="modal-body">
-                        Are you sure you want to accept a full refund (100%)? This will credit the buyer and debit your wallet.
+                        @php $fullVerb = $isAdmin ? 'issue' : 'accept'; @endphp
+                        Are you sure you want to {{ $fullVerb }} a full refund (100%)? This will credit the buyer and debit the seller's wallet.
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

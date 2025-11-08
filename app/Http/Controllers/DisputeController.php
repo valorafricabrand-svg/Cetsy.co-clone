@@ -21,6 +21,7 @@ use App\Models\Activity;
 use App\Models\EvidenceRequest;
 use App\Models\Wallet;
 use App\Models\User;
+use App\Mail\AdminDisputeActionMail;
 
 
 class DisputeController extends Controller
@@ -613,6 +614,30 @@ class DisputeController extends Controller
             'type' => $messageType,
             'is_internal' => false
         ]);
+
+        // If this is the first admin message, post a system note and auto-assign
+        try {
+            if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+                $adminMsgCount = $dispute->messages()->where('type', \App\Models\DisputeMessage::TYPE_ADMIN_MESSAGE)->count();
+                if ($adminMsgCount === 1) {
+                    DisputeMessage::create([
+                        'dispute_id' => $dispute->id,
+                        'user_id'    => 1, // System user
+                        'message'    => 'Customer support has intervened. Please continue here.',
+                        'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                        'is_internal'=> false,
+                    ]);
+                    if (empty($dispute->assigned_admin_id)) {
+                        $dispute->update(['assigned_admin_id' => $user->id]);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Failed posting first-admin system note or auto-assign', [
+                'dispute_id' => $dispute->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         try {
             $dispute->loadMissing(['buyer', 'seller']);
@@ -1351,11 +1376,12 @@ class DisputeController extends Controller
     {
         $user = Auth::user();
 
-        // Only seller can issue refunds on this dispute
+        // Seller or Admin can issue refunds on this dispute
         $isSeller = ($dispute->seller_id === $user->id)
             || (optional($dispute->order?->shop)->user_id === $user->id);
-        if (!$isSeller) {
-            abort(403, 'Only the seller can issue a refund for this dispute.');
+        $isAdmin = method_exists($user, 'isAdmin') && $user->isAdmin();
+        if (!$isSeller && !$isAdmin) {
+            abort(403, 'Only the seller or an admin can issue a refund for this dispute.');
         }
 
         // Cannot refund if already resolved/closed
@@ -1392,7 +1418,7 @@ class DisputeController extends Controller
                 DisputeMessage::create([
                     'dispute_id' => $dispute->id,
                     'user_id'    => null,
-                    'message'    => 'Seller proposed a '.rtrim(rtrim(number_format($percent, 2), '0'), '.')."% refund (".get_currency().' '.number_format($amount, 2).") to buyer. Waiting for buyer to accept or decline.",
+                    'message'    => ($isAdmin ? 'Admin' : 'Seller') . ' proposed a '.rtrim(rtrim(number_format($percent, 2), '0'), '.')."% refund (".get_currency().' '.number_format($amount, 2).") to buyer. Waiting for buyer to accept or decline.",
                     'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
                     'is_internal'=> false,
                 ]);
@@ -1424,7 +1450,7 @@ class DisputeController extends Controller
         }
 
         // Full refund: process immediately as before
-        DB::transaction(function () use ($dispute, $order, $amount, $percent) {
+        DB::transaction(function () use ($dispute, $order, $amount, $percent, $isAdmin, $user) {
             // Credit buyer wallet
             Wallet::create([
                 'user_id'    => $dispute->buyer_id,
@@ -1457,8 +1483,8 @@ class DisputeController extends Controller
             }
 
             $decision = Dispute::DECISION_BUYER_WINS;
-            $resolution = 'Seller issued a full refund ('.get_currency().' '.number_format($amount, 2).') to buyer.';
-            $dispute->markAsResolved($resolution, $decision, $amount, $sellerId ?? null);
+                $resolution = ($isAdmin ? 'Admin' : 'Seller') . ' issued a full refund ('.get_currency().' '.number_format($amount, 2).') to buyer.';
+                $dispute->markAsResolved($resolution, $decision, $amount, $user->id);
 
             if ($order->status !== \App\Models\Order::STATUS_REFUNDED) {
                 $order->update(['status' => \App\Models\Order::STATUS_REFUNDED]);
@@ -1490,6 +1516,19 @@ class DisputeController extends Controller
                 'is_internal'=> false,
             ]);
         });
+
+        // If admin performed the refund, notify both parties
+        if ($isAdmin) {
+            try {
+                $dispute->refresh()->loadMissing(['buyer','seller']);
+                foreach (['buyer','seller'] as $role) {
+                    $u = $dispute->{$role};
+                    if ($u && $u->email) {
+                        Mail::to($u->email)->send(new AdminDisputeActionMail($dispute, $u, $user, 'refunded'));
+                    }
+                }
+            } catch (\Throwable $e) { \Log::error('admin.dispute.mail_failed', ['id'=>$dispute->id, 'error'=>$e->getMessage()]); }
+        }
 
         return back()->with('success', 'Refund issued successfully and dispute resolved.');
     }

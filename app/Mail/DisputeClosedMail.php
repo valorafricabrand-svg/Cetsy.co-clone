@@ -34,6 +34,8 @@ class DisputeClosedMail extends Mailable
                 'recipient' => $this->recipient,
                 'closedBy' => $this->closedBy,
                 'order' => $this->dispute->order,
+                'decisionLabel' => $this->dispute->getDecisionLabel(),
+                'favorOutcome' => $this->dispute->getFavorOutcomeLabel(),
             ]);
     }
 }

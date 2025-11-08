@@ -266,6 +266,21 @@ class Dispute extends Model
         };
     }
 
+    /**
+     * Human-friendly outcome summary indicating who was favored.
+     * Used in emails and system messages when disputes are closed.
+     */
+    public function getFavorOutcomeLabel(): string
+    {
+        return match ($this->decision) {
+            self::DECISION_BUYER_WINS => 'Buyer favored',
+            self::DECISION_SELLER_WINS => 'Seller favored',
+            self::DECISION_PARTIAL_REFUND => 'Partial refund',
+            self::DECISION_NO_ACTION => 'No action',
+            default => $this->getDecisionLabel(),
+        };
+    }
+
     // Pending refund helpers stored inside admin_notes as JSON
     public function getPendingRefund(): ?array
     {

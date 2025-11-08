@@ -8,6 +8,13 @@
     <h1>Dispute #{{ $dispute->id }} Closed</h1>
     <p>Hi {{ $recipient->name }},</p>
     <p>The dispute for order #{{ $order->id }} has been closed by {{ $closedBy->name ?? 'our support team' }} on {{ optional($dispute->closed_at)->format('M d, Y \a\t g:i A') ?? now()->format('M d, Y') }}.</p>
+    <p><strong>Decision:</strong> {{ $decisionLabel ?? $dispute->getDecisionLabel() }}</p>
+    @php($outcome = $favorOutcome ?? $dispute->getFavorOutcomeLabel())
+    @if(in_array($outcome, ['Buyer favored','Seller favored']))
+        <p>Based on the provided evidence, the case favored the {{ strtolower(str_replace(' favored', '', $outcome)) }}.</p>
+    @else
+        <p>Outcome: {{ $outcome }}.</p>
+    @endif
     <p><strong>Resolution Summary:</strong></p>
     <p>{!! nl2br(e($dispute->resolution ?? 'No additional notes were provided.')) !!}</p>
     <p>If you require any follow-up, please reach out to support and reference dispute #{{ $dispute->id }}.</p>
