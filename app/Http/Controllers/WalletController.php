@@ -205,6 +205,33 @@ class WalletController extends Controller
         // Order wallet list by most recently updated entries
         $transactions = $query->orderBy('updated_at', 'desc')->paginate(10);
 
+        // Collect related orders for the current page to compute ETA for on-hold funds
+        $ordersById = collect();
+        try {
+            $orderIds = [];
+            foreach ($transactions->getCollection() as $txn) {
+                $oid = $txn->order_id ?? null;
+                if (!$oid && !empty($txn->meta)) {
+                    $meta = is_array($txn->meta) ? $txn->meta : @json_decode($txn->meta, true);
+                    if (is_array($meta) && !empty($meta['order_id'])) {
+                        $oid = (int) $meta['order_id'];
+                    }
+                }
+                if ($oid) { $orderIds[] = (int) $oid; }
+            }
+            if (!empty($orderIds)) {
+                $ordersById = \App\Models\Order::select('id','status','shipped_at','delivered_at','updated_at')
+                    ->whereIn('id', array_unique($orderIds))
+                    ->get()
+                    ->keyBy('id');
+            }
+        } catch (\Throwable $e) {
+            // fail-soft: leave empty mapping
+            $ordersById = collect();
+        }
+
+        $autoReleaseDays = (int) (function_exists('setting') ? setting('auto_release_days', 3) : 3);
+
         $balance = Wallet::where('user_id', Auth::id())
             ->where('status', 'completed')
             ->selectRaw('SUM(credit - debit) as balance')
@@ -246,7 +273,20 @@ class WalletController extends Controller
 
         return view(
             'wallet.index',
-            compact('transactions', 'balance', 'onHold', 'paymentMethods', 'paymentTypes', 'feeRate', 'minAmount', 'maxPayout', 'otpPendingPayout', 'payoutOtpVerified')
+            compact(
+                'transactions',
+                'balance',
+                'onHold',
+                'paymentMethods',
+                'paymentTypes',
+                'feeRate',
+                'minAmount',
+                'maxPayout',
+                'otpPendingPayout',
+                'payoutOtpVerified',
+                'ordersById',
+                'autoReleaseDays',
+            )
         );
     }
 

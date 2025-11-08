@@ -293,6 +293,7 @@
                             <th>Date</th>
                             <th>Description</th>
                             <th>Status</th>
+                            <th>Hold Info</th>
                             <th class="text-end">Credit (USD)</th>
                             <th class="text-end">Debit (USD)</th>
                         </tr>
@@ -319,6 +320,44 @@
                                     @endif
                                 </td>
                                 <td>{{ ucfirst(str_replace('_',' ', $transaction->status ?? 'completed')) }}</td>
+                                <td>
+                                    @if(($transaction->status ?? null) === 'on_hold')
+                                        @php
+                                            $oid = $orderId ?? null;
+                                            $o = $oid ? ($ordersById[$oid] ?? null) : null;
+                                        @endphp
+                                        @if($o)
+                                            @php
+                                                $status = strtolower((string)($o->status ?? ''));
+                                                $eta = null;
+                                                if ($status === 'shipped') {
+                                                    $base = $o->shipped_at ?? $o->updated_at;
+                                                    if ($base) {
+                                                        $eta = $base->copy()->addDays($autoReleaseDays);
+                                                    }
+                                                }
+                                            @endphp
+                                            <div class="small">
+                                                <span class="badge bg-light text-dark">Order {{ $status }}</span>
+                                                @if($eta)
+                                                    <div class="text-muted">ETA: {{ $eta->format('d M Y') }} (auto-release {{ $autoReleaseDays }} days after shipped)</div>
+                                                @else
+                                                    @if($status === 'processing' || $status === 'pending')
+                                                        <div class="text-muted">Waiting for shipment</div>
+                                                    @elseif($status === 'delivered' || $status === 'completed')
+                                                        <div class="text-muted">Releasing shortly</div>
+                                                    @else
+                                                        <div class="text-muted">Release after shipment/delivery</div>
+                                                    @endif
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="small text-muted">Awaiting payment confirmation</div>
+                                        @endif
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
                                 <td class="text-end text-success">
                                     {{ $transaction->credit > 0 ? number_format($transaction->credit, 2) : '-' }}
                                 </td>
@@ -329,7 +368,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted">No transactions found.</td>
+                                <td colspan="6" class="text-center text-muted">No transactions found.</td>
                             </tr>
                         @endforelse
                     </tbody>
