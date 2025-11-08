@@ -56,14 +56,19 @@
                 </div>
                 <div class="col-md-4">
                     <div class="card shadow-sm border-0 h-100">
-                        <div class="card-body d-flex align-items-center">
-                            <i class="fas fa-pause-circle fa-2x text-warning me-3"></i>
-                            <div>
-                                <div class="text-muted small">On Hold</div>
-                                <div class="fs-4 fw-bold">
-                                    USD {{ number_format($onHold, 2) }}
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-pause-circle fa-2x text-warning me-3"></i>
+                                <div>
+                                    <div class="text-muted small">On Hold</div>
+                                    <div class="fs-4 fw-bold">
+                                        USD {{ number_format($onHold, 2) }}
+                                    </div>
                                 </div>
                             </div>
+                            <a href="{{ route('wallet.index', array_merge(request()->query(), ['status' => 'on_hold'])) }}" class="btn btn-sm btn-outline-secondary" title="View on-hold transactions">
+                                View
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -261,6 +266,13 @@
             </select>
         </div>
                 <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="on_hold" {{ request('status') === 'on_hold' ? 'selected' : '' }}>On Hold</option>
+                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <input type="date" name="from" value="{{ request('from') }}" class="form-control" placeholder="From date">
                 </div>
                 <div class="col-md-3">
@@ -289,7 +301,23 @@
                         @forelse ($transactions as $transaction)
                             <tr>
                                 <td>{{ $transaction->created_at->format('d M Y, h:i A') }}</td>
-                                <td>{{ $transaction->description ?? 'Transaction' }}</td>
+                                <td>
+                                    {{ $transaction->description ?? 'Transaction' }}
+                                    @php
+                                        $meta = is_array($transaction->meta) ? $transaction->meta : (json_decode($transaction->meta ?? '', true) ?: []);
+                                        $orderId = $meta['order_id'] ?? ($transaction->order_id ?? null);
+                                    @endphp
+                                    @if($orderId && (auth()->user()->isSeller() ?? false))
+                                        <div class="small text-muted">
+                                            Order #{{ $orderId }}
+                                            @if(\Illuminate\Support\Facades\Route::has('seller.orders.show'))
+                                                <a href="{{ route('seller.orders.show', $orderId) }}">view</a>
+                                            @else
+                                                <a href="{{ url('/seller/orders/'.$orderId) }}">view</a>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </td>
                                 <td>{{ ucfirst(str_replace('_',' ', $transaction->status ?? 'completed')) }}</td>
                                 <td class="text-end text-success">
                                     {{ $transaction->credit > 0 ? number_format($transaction->credit, 2) : '-' }}
