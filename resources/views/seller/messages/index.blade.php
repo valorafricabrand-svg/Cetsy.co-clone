@@ -174,6 +174,13 @@
                                                 <i class="bi bi-check-circle me-1"></i> Mark Read
                                             </button>
                                         </form>
+                                    @elseif(!empty($conversation['last_received_message_id']))
+                                        <form method="POST" action="{{ route('seller.messages.mark-unread', $conversation['last_received_message_id']) }}" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm px-3 shadow-sm" title="Mark as Unread">
+                                                <i class="bi bi-dot"></i> Mark Unread
+                                            </button>
+                                        </form>
                                     @endif
                                     <a href="{{ route('seller.messages.show', $conversation['conversation_id']) }}" class="btn btn-success btn-sm px-3 shadow-sm reply-btn">
                                         <i class="bi bi-chat-dots me-1"></i> View & Reply

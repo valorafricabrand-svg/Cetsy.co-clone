@@ -731,6 +731,7 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
     Route::get('messages/{conversationId}', [\App\Http\Controllers\Seller\MessageController::class, 'show'])->name('messages.show');
     Route::post('messages/{conversationId}/reply', [\App\Http\Controllers\Seller\MessageController::class, 'reply'])->name('messages.reply');
     Route::post('messages/{message}/mark-read', [\App\Http\Controllers\Seller\MessageController::class, 'markAsRead'])->name('messages.mark-read');
+    Route::post('messages/{message}/mark-unread', [\App\Http\Controllers\Seller\MessageController::class, 'markAsUnread'])->name('messages.mark-unread');
     Route::post('messages/bulk-mark-read', [\App\Http\Controllers\Seller\MessageController::class, 'bulkMarkAsRead'])->name('messages.bulk-mark-read');
 
     // Favorites
