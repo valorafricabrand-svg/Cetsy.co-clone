@@ -36,16 +36,24 @@ class NotificationController extends Controller
 
         $activity->update(['is_read' => true]);
 
+        if ($request->wantsJson() || $request->ajax() || $request->headers->get('Accept') === 'application/json') {
+            return response()->json(['success' => true]);
+        }
+
         return back()->with('success', 'Notification marked as read.');
     }
 
-    public function markAllAsRead()
+    public function markAllAsRead(Request $request)
     {
         $user = Auth::user();
 
         Activity::where('user_id', $user->id)
             ->where('is_read', false)
             ->update(['is_read' => true]);
+
+        if ($request->wantsJson() || $request->ajax() || $request->headers->get('Accept') === 'application/json') {
+            return response()->json(['success' => true]);
+        }
 
         return redirect()->back()->with('success', 'All notifications marked as read.');
     }
@@ -71,9 +79,34 @@ class NotificationController extends Controller
             $activity->save();
         }
 
+        // Resolve destination with basic pre-authorization checks to avoid 403s
+        $route = null;
+        try {
+            $type = $activity->type ?? 'general';
+            if ($type === \App\Models\Activity::TYPE_ORDER && $activity->related_id) {
+                $order = \App\Models\Order::with('shop')->find((int) $activity->related_id);
+                if ($order) {
+                    $isBuyer = (int)$order->user_id === (int)$user->id;
+                    $isSeller = (int)optional($order->shop)->user_id === (int)$user->id;
+                    if (!($isBuyer || $isSeller || (method_exists($user,'isAdmin') && $user->isAdmin()))) {
+                        return redirect()->route('notifications.index');
+                    }
+                }
+            } elseif ($type === \App\Models\Activity::TYPE_DISPUTE && $activity->related_id) {
+                $dispute = \App\Models\Dispute::find((int) $activity->related_id);
+                if ($dispute) {
+                    $isParty = (int)$dispute->buyer_id === (int)$user->id || (int)$dispute->seller_id === (int)$user->id;
+                    $isAdmin = method_exists($user,'isAdmin') && $user->isAdmin();
+                    if (!($isParty || $isAdmin)) {
+                        return redirect()->route('notifications.index');
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
         // Resolve destination
         try {
-            $route = \App\Services\NotificationRouteService::getRouteForNotification($activity, $user);
+            $route = $route ?: \App\Services\NotificationRouteService::getRouteForNotification($activity, $user);
         } catch (\Throwable $e) {
             $route = null;
         }

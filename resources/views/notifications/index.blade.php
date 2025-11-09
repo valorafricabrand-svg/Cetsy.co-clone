@@ -594,7 +594,7 @@
                     Notifications
                 </h1>
                 @if($notifications->where('is_read', false)->count() > 0)
-                    <form method="POST" action="{{ route('notifications.mark-all-read') }}" class="d-inline">
+                    <form method="POST" action="{{ route('notifications.mark-all-read') }}" class="d-inline mark-all-form">
                         @csrf
                         <button type="submit" class="btn mark-all-btn">
                             <i class="fas fa-check-double me-1"></i>
@@ -772,7 +772,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentListItem = document.getElementById(`notification-${currentNotificationId}`);
             
             document.getElementById('notificationDescription').textContent = this.dataset.notificationDescription;
-            document.getElementById('markReadForm').action = `/notifications/${currentNotificationId}/mark-read`;
+            document.getElementById('markReadForm').action = `{{ url('/notifications') }}/${currentNotificationId}/mark-read`;
             
             const modal = new bootstrap.Modal(document.getElementById('markReadModal'));
             modal.show();

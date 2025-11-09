@@ -89,6 +89,7 @@
                         <th>Product</th>
                         <th>Customer</th>
                         <th>Latest Message</th>
+                        <th class="text-center">Status</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -157,6 +158,13 @@
                                     </span>
                                 </div>
                             </td>
+                            <td class="text-center">
+                                @if($conversation['unread_count'] > 0)
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-dot"></i> Unread</span>
+                                @else
+                                    <span class="badge bg-success"><i class="bi bi-check2"></i> Read</span>
+                                @endif
+                            </td>
                             <td class="text-end">
                                 <div class="d-flex gap-2 justify-content-end">
                                     @if($conversation['unread_count'] > 0)
@@ -175,7 +183,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">
+                            <td colspan="6" class="text-center py-4 text-muted">
                                 <i class="bi bi-inbox me-2"></i> No conversations found for your products.
                             </td>
                         </tr>
