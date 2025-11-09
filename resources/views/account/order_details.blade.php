@@ -710,10 +710,16 @@
                     {{-- Review (only after delivery) --}}
                     <td class="text-center">
                       @if($reviewed)
-                        <span class="badge bg-success d-inline-flex align-items-center gap-1">
-                          <i class="bi bi-check-circle"></i>
-                          {{ $item->review->rating }} &#9733;
-                        </span>
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                          <span class="badge bg-success d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-check-circle"></i>
+                            {{ $item->review->rating }} &#9733;
+                          </span>
+                          @php $editModalId = 'editReview_'.$item->id; @endphp
+                          <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $editModalId }}">
+                            <i class="bi bi-pencil"></i> Edit
+                          </button>
+                        </div>
                       @elseif($canReviewDelivered || ($product && $product->type === 'digital' && $canReviewDigitalIfCompleted))
                         @php $downloaded = !empty($item->downloaded_at); @endphp
                         @if($product && $product->type === 'digital' && ! $downloaded)
@@ -967,7 +973,7 @@
       : $canReviewDelivered;
   @endphp
   @if($allowReviewModal && !$item->review)
-    @php($modalId = 'reviewModal_'.$item->id)
+    @php $modalId = 'reviewModal_'.$item->id; @endphp
     <div class="modal fade" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg">
         <form method="POST" action="{{ route('orders.items.reviews.store',[$item->order_id,$item->id]) }}" class="modal-content">
@@ -1002,7 +1008,44 @@
       </div>
     </div>
   @endif
+  @if($item->review)
+    @php($editModalId = 'editReview_'.$item->id)
+    <div class="modal fade" id="{{ $editModalId }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <form method="POST" action="{{ route('orders.items.reviews.update',[$item->order_id,$item->id,$item->review->id]) }}" class="modal-content">
+          @csrf
+          @method('PATCH')
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Review — {{ optional($item->product)->name }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-warning small">
+              You can only increase your original rating. Lower ratings are disabled.
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Rating</label>
+              <select name="rating" class="form-select" required>
+                @for($i=5;$i>=1;$i--)
+                  <option value="{{ $i }}" {{ $i == $item->review->rating ? 'selected' : '' }} {{ $i < $item->review->rating ? 'disabled' : '' }}>
+                    {{ $i }} &#9733; {{ $i < $item->review->rating ? '(locked)' : '' }}
+                  </option>
+                @endfor
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Comment</label>
+              <textarea name="comment" rows="4" class="form-control" placeholder="Update your feedback if needed">{{ $item->review->comment }}</textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary">
+              <i class="bi bi-save"></i> Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  @endif
 @endforeach
 @endsection
-
-
