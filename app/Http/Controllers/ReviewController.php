@@ -6,6 +6,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Shop;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Review;
 
 class ReviewController extends Controller
 {
@@ -63,4 +65,36 @@ class ReviewController extends Controller
         return back()->with('success', 'Thank you for your review!');
     }
     
+    /**
+     * Update an existing review. Buyers may only increase their rating, not decrease it.
+     */
+    public function update(Request $request, Order $order, OrderItem $item, Review $review)
+    {
+        // Ensure the review belongs to the given order + item
+        abort_if((int)$review->order_id !== (int)$order->id, 404);
+        abort_if((int)$review->order_item_id !== (int)$item->id, 404);
+
+        // Ensure current user owns the order
+        abort_if((int)$order->user_id !== (int)Auth::id(), 403);
+
+        $data = $request->validate([
+            'rating'  => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:2000',
+        ]);
+
+        // Enforce upgrade-only rating change
+        $old = (int) $review->rating;
+        $new = (int) $data['rating'];
+        if ($new < $old) {
+            return back()->withErrors(['rating' => 'You can only increase your original rating.'])->withInput();
+        }
+
+        // Apply updates (allow comment change either way)
+        $review->update([
+            'rating'  => $new,
+            'comment' => $data['comment'] ?? $review->comment,
+        ]);
+
+        return back()->with('success', 'Your review has been updated.');
+    }
 }

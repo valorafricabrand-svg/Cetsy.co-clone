@@ -377,6 +377,8 @@ Route::middleware(['auth','verified'])->group(function () {
     // Reviews
     Route::post('/orders/{order}/items/{item}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])
         ->name('orders.items.reviews.store');
+    Route::patch('/orders/{order}/items/{item}/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'update'])
+        ->name('orders.items.reviews.update');
     Route::get('/shops/{shop}/reviews', [\App\Http\Controllers\ReviewController::class, 'shopReviews'])
         ->name('shop.reviews');
 
