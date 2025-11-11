@@ -26,7 +26,7 @@ class NotificationRouteService
                 return self::getWishlistRoute($notification, $user);
                 
             case Activity::TYPE_OFFER:
-                return self::getOfferRoute($user);
+                return self::getOfferRoute($user, $notification);
                 
             case Activity::TYPE_ORDER:
                 return self::getOrderRoute($user, $notification);
@@ -118,13 +118,27 @@ class NotificationRouteService
     /**
      * Get offer route based on user role
      */
-    private static function getOfferRoute(User $user): string
+    private static function getOfferRoute(User $user, ?Activity $notification = null): string
     {
+        $offerId = (int) ($notification->related_id ?? 0);
+
         if ($user->isSeller()) {
+            // Deep link to a specific offer if possible
+            if ($offerId > 0 && \Illuminate\Support\Facades\Route::has('seller.offers.show')) {
+                return route('seller.offers.show', $offerId);
+            }
             return route('seller.offers.index');
         } elseif ($user->isAdmin()) {
             return route('admin.dashboard'); // Admin doesn't have specific offer route
         } else {
+            // Buyer: deep link to offer details when available
+            if ($offerId > 0 && \Illuminate\Support\Facades\Route::has('buyer.offers.details')) {
+                return route('buyer.offers.details', $offerId);
+            }
+            // Fallback: buyer offers dashboard or available products
+            if (\Illuminate\Support\Facades\Route::has('buyer.offers')) {
+                return route('buyer.offers');
+            }
             return route('buyer.offers.available-products');
         }
     }

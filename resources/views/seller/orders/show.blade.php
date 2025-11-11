@@ -43,6 +43,10 @@
   $subtotalVal = isset($order->subtotal) ? (float)$order->subtotal : (float)$computedSubtotal;
   $shippingVal = isset($order->shipping_cost) ? (float)$order->shipping_cost : (float)$computedShipping;
   $totalVal    = isset($order->total_amount) ? (float)$order->total_amount : (float)($subtotalVal + $shippingVal);
+  // Determine if this order contains only digital items
+  $digitalOnly = ($order->items ?? collect())->every(function($it){
+    return optional($it->product)->type === 'digital';
+  });
 @endphp
 
 <div class="content">
@@ -83,11 +87,17 @@
 
         {{-- Cancel moved into kebab menu --}}
       @elseif($order->status === \App\Models\Order::STATUS_PROCESSING)
-        <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1"
-                data-bs-toggle="modal"
-                data-bs-target="#shipModal">
-          <i class="fa-solid fa-truck"></i> Ship
-        </button>
+        @if($digitalOnly)
+          <span class="badge bg-secondary d-flex align-items-center gap-2" title="Digital order - no shipping required">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Digital order
+          </span>
+        @else
+          <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1"
+                  data-bs-toggle="modal"
+                  data-bs-target="#shipModal">
+            <i class="fa-solid fa-truck"></i> Ship
+          </button>
+        @endif
 
         {{-- Cancel moved into kebab menu --}}
       @elseif($order->status === \App\Models\Order::STATUS_SHIPPED)

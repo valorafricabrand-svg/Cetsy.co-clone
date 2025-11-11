@@ -102,6 +102,7 @@ public function orderDetails(Order $order)
 
     $order->loadMissing([
         'items.product',
+        'items.product.digitalFiles',
         'items.shippingProfile.processingTime',
         'shop',
         'payments' => fn($query) => $query->orderBy('created_at'),
