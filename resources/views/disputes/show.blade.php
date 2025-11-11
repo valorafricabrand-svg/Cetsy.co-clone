@@ -323,7 +323,17 @@
                                 This dispute is related to Order #{{ $order->id }} from {{ $order->shop->name ?? 'the shop' }}
                             </small>
                         </div>
-                        <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-sm btn-outline-primary">
+                        @php
+                            $authUser  = auth()->user();
+                            $sellerId  = optional($order->shop)->user_id;
+                            $asSeller  = $authUser && ((int)$authUser->id === (int)$sellerId || (method_exists($authUser,'isSeller') ? $authUser->isSeller() : false));
+                            $orderHref = $asSeller && \Illuminate\Support\Facades\Route::has('seller.orders.show')
+                                ? route('seller.orders.show', $order->id)
+                                : (\Illuminate\Support\Facades\Route::has('buyer.orders.show')
+                                    ? route('buyer.orders.show', $order->id)
+                                    : route('orders.show', $order->id));
+                        @endphp
+                        <a href="{{ $orderHref }}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-eye"></i> View Full Order
                         </a>
                     </div>
@@ -450,7 +460,15 @@
                             
                             <h6>Order</h6>
                             <p class="mb-3">
-                                <a href="{{ route('buyer.orders.show', $dispute->order->id) }}" class="text-decoration-none">
+                                @php
+                                    $o = $dispute->order; $sellerId2 = optional($o->shop)->user_id; $asSeller2 = $authUser && (int)$authUser->id === (int)$sellerId2;
+                                    $orderHref2 = $asSeller2 && \Illuminate\Support\Facades\Route::has('seller.orders.show')
+                                        ? route('seller.orders.show', $o->id)
+                                        : (\Illuminate\Support\Facades\Route::has('buyer.orders.show')
+                                            ? route('buyer.orders.show', $o->id)
+                                            : route('orders.show', $o->id));
+                                @endphp
+                                <a href="{{ $orderHref2 }}" class="text-decoration-none">
                                     Order #{{ $dispute->order->id }}
                                 </a>
                             </p>

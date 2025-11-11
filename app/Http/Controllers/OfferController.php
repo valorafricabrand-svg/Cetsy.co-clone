@@ -40,18 +40,17 @@ class OfferController extends Controller
             ]
         );
 
-        // Send email to shop owner (best-effort)
-        try {
-            if ($product && $product->shop && $product->shop->user) {
+        // Notify shop owner via email (best-effort) and always create an activity
+        if ($product && $product->shop && $product->shop->user) {
+            try {
                 Mail::to($product->shop->user->email)
-                    ->send(new OfferReceivedMail(
-                        $offer,
-                        $product,
-                        $request->user(),
-                        $product->shop->user
-                    ));
+                    ->send(new OfferReceivedMail($offer, $product, $request->user(), $product->shop->user));
+            } catch (\Throwable $e) {
+                \Log::warning('offer.email_failed', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
+            }
 
-                // Create activity record for the seller
+            // Create activity record for the seller regardless of email success
+            try {
                 Activity::create([
                     'user_id' => $product->shop->user->id,
                     'is_read' => false,
@@ -60,10 +59,9 @@ class OfferController extends Controller
                     'related_id' => $offer->id,
                     'related_type' => 'offer'
                 ]);
+            } catch (\Throwable $e) {
+                \Log::error('offer.activity_failed', ['offer_id' => $offer->id, 'seller_id' => $product->shop->user->id, 'error' => $e->getMessage()]);
             }
-        } catch (\Throwable $e) {
-            // Log the error but don't break the user experience
-            \Log::error('Failed to send offer notification email: ' . $e->getMessage());
         }
 
         return back()->with('success', 'Offer submitted! The seller will review it soon.');

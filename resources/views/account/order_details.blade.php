@@ -88,6 +88,42 @@
 
         {{-- Action buttons --}}
         <div class="btn-toolbar flex-wrap gap-2">
+          @php
+            // Collect all downloadable files across digital items in this order
+            $__digitalFiles = [];
+            foreach (($order->items ?? []) as $__it) {
+              $p = optional($__it->product);
+              if ($p && ($p->type === 'digital')) {
+                foreach (($p->digitalFiles ?? collect()) as $__df) {
+                  $__digitalFiles[] = $__df;
+                }
+              }
+            }
+            $__canDownloadAll = in_array(
+              $order->status,
+              [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED]
+            ) && count($__digitalFiles) > 0;
+          @endphp
+
+          @if($__canDownloadAll)
+            @if(count($__digitalFiles) === 1)
+              <a href="{{ route('digital-files.download', $__digitalFiles[0]) }}"
+                 class="btn btn-success btn-lg d-flex align-items-center gap-2 px-4 py-2"
+                 data-bs-toggle="tooltip" data-bs-placement="bottom"
+                 title="Download your digital file">
+                <i class="bi bi-cloud-download fs-5"></i>
+                <span>Download</span>
+              </a>
+            @else
+              <button type="button"
+                      class="btn btn-success btn-lg d-flex align-items-center gap-2 px-4 py-2"
+                      data-bs-toggle="modal" data-bs-target="#downloadAllModal"
+                      title="Download your digital files">
+                <i class="bi bi-cloud-download fs-5"></i>
+                <span>Download Files</span>
+              </button>
+            @endif
+          @endif
 
           @if($order->status === \App\Models\Order::STATUS_PENDING)
             <a href="{{ route('pay_now', $order->id) }}"
@@ -419,6 +455,17 @@
           <span class="fw-semibold">{{ money((float)($order->total_amount ?? 0)) }}</span>
         </span>
       </div>
+
+      @php
+        $isPending = ($order->status === \App\Models\Order::STATUS_PENDING);
+        $hasDigitalPending = $order->items->contains(function($it){ return optional($it->product)->type === 'digital'; });
+      @endphp
+      @if($hasDigitalPending && $isPending)
+        <div class="alert alert-warning mt-3 mb-0" role="alert">
+          <i class="bi bi-lock me-2"></i>
+          This order includes digital items. Downloads unlock after payment is completed.
+        </div>
+      @endif
 
       @php
         $hasDigital = $order->items->contains(function($it){ return optional($it->product)->type === 'digital'; });
@@ -961,8 +1008,53 @@
       </div>
     @endif
 
-  </div>
 </div>
+</div>
+
+@php
+  // Prepare a modal listing when multiple digital files exist
+  $__dlFiles = [];
+  foreach (($order->items ?? []) as $__it) {
+    $p = optional($__it->product);
+    if ($p && ($p->type === 'digital')) {
+      foreach (($p->digitalFiles ?? collect()) as $__df) {
+        $__dlFiles[] = $__df;
+      }
+    }
+  }
+  $__showDownloadModal = in_array($order->status, [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED])
+                        && count($__dlFiles) > 1;
+@endphp
+@if($__showDownloadModal)
+  <div class="modal fade" id="downloadAllModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Your Downloads</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <ul class="list-group list-group-flush">
+            @foreach($__dlFiles as $__file)
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="me-3 text-truncate">
+                  <i class="bi bi-file-earmark-arrow-down me-2"></i>
+                  <span class="text-truncate d-inline-block" style="max-width: 18rem;" title="{{ $__file->filename }}">{{ $__file->filename }}</span>
+                </div>
+                <a href="{{ route('digital-files.download', $__file) }}" class="btn btn-sm btn-success">
+                  <i class="bi bi-download"></i> Download
+                </a>
+              </li>
+            @endforeach
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+@endif
 
 {{-- ===== REVIEW MODALS (Delivered for physical; Completed/Delivered + download for digital) ===== --}}
 @foreach($order->items as $item)

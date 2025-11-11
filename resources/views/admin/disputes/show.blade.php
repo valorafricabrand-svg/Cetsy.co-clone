@@ -215,7 +215,16 @@
                                 This dispute is related to Order #{{ $order->id }} from {{ $order->shop->name ?? 'the shop' }}
                             </small>
                         </div>
-                        <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-sm btn-outline-primary">
+                        @php
+                            $authUser  = auth()->user();
+                            $sellerId  = optional($order->shop)->user_id;
+                            $orderHref = (\Illuminate\Support\Facades\Route::has('seller.orders.show') && $authUser && (int)$authUser->id === (int)$sellerId)
+                                ? route('seller.orders.show', $order->id)
+                                : (\Illuminate\Support\Facades\Route::has('buyer.orders.show')
+                                    ? route('buyer.orders.show', $order->id)
+                                    : route('orders.show', $order->id));
+                        @endphp
+                        <a href="{{ $orderHref }}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-eye"></i> View Full Order
                         </a>
                     </div>
