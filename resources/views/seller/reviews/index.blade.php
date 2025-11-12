@@ -4,12 +4,14 @@
 
 @push('styles')
 <style>
-  .rating-stars i { color: #f5c518; }
-  .rating-stars i.muted { color: #e2e8f0; }
+  /* Star colors */
+  .rating-stars .star-filled { color: #e5780b !important; }
+  .rating-stars .star-empty { color: #000000 !important; }
   .stat-card { border: 0; }
   .stat-card .value { font-size: 2rem; font-weight: 700; }
   .stat-card .label { text-transform: uppercase; font-size: .75rem; letter-spacing: .08em; }
   .review-comment { white-space: pre-line; }
+  .seller-response { white-space: pre-line; }
 </style>
 @endpush
 
@@ -161,7 +163,11 @@
               <td>
                 <div class="rating-stars mb-1">
                   @for($i = 1; $i <= 5; $i++)
-                    <i class="fas fa-star {{ $i <= (int) $review->rating ? '' : 'muted' }}"></i>
+                    @if($i <= (int) $review->rating)
+                      <i class="fas fa-star star-filled"></i>
+                    @else
+                      <i class="far fa-star star-empty"></i>
+                    @endif
                   @endfor
                 </div>
                 <div class="small text-muted">{{ $review->rating }} / 5</div>
@@ -172,6 +178,45 @@
                 @else
                   <span class="text-muted small">No comment left</span>
                 @endif
+
+                @if(!empty($review->image_path))
+                  <div class="mt-2">
+                    <a href="{{ asset('storage/'.ltrim($review->image_path,'/')) }}" target="_blank">
+                      <img src="{{ asset('storage/'.ltrim($review->image_path,'/')) }}" alt="Review image" style="max-width: 120px; max-height: 120px; border-radius: 6px;"/>
+                    </a>
+                  </div>
+                @endif
+
+                {{-- Seller response display / form --}}
+                <div class="mt-2">
+                  @if(!empty($review->seller_response))
+                    <div class="border rounded p-2 bg-light">
+                      <div class="fw-semibold mb-1">Your response</div>
+                      <div class="seller-response small">{{ $review->seller_response }}</div>
+                      <div class="d-flex gap-2 mt-2">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#respondForm-{{ $review->id }}" aria-expanded="false" aria-controls="respondForm-{{ $review->id }}">
+                          Edit response
+                        </button>
+                      </div>
+                    </div>
+                  @else
+                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#respondForm-{{ $review->id }}" aria-expanded="false" aria-controls="respondForm-{{ $review->id }}">
+                      Respond
+                    </button>
+                  @endif
+                </div>
+
+                <div class="collapse mt-2" id="respondForm-{{ $review->id }}">
+                  <form action="{{ route('seller.reviews.respond', $review) }}" method="POST" class="border rounded p-2">
+                    @csrf
+                    <label for="seller_response_{{ $review->id }}" class="form-label mb-1">Your response</label>
+                    <textarea class="form-control" id="seller_response_{{ $review->id }}" name="seller_response" rows="3" maxlength="2000" placeholder="Write a helpful, professional reply visible to the buyer.">{{ old('seller_response', $review->seller_response) }}</textarea>
+                    <div class="d-flex justify-content-end gap-2 mt-2">
+                      <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#respondForm-{{ $review->id }}">Cancel</button>
+                    </div>
+                  </form>
+                </div>
               </td>
               <td>
                 <div class="fw-semibold">{{ optional($review->created_at)->format('M d, Y') }}</div>

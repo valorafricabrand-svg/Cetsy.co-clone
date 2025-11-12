@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Activity;
 use App\Models\User;
+use App\Models\Review;
 
 class NotificationRouteService
 {
@@ -260,6 +261,10 @@ class NotificationRouteService
     public static function getLinkText(Activity $notification, User $user): string
     {
         $type = $notification->type ?? 'general';
+        // If this notification is about a Review, prefer a review-specific label
+        if (($notification->related_type ?? null) === Review::class) {
+            return 'View Reviews';
+        }
         
         switch ($type) {
             case Activity::TYPE_MESSAGE:

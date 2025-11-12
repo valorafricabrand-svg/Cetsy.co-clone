@@ -1068,7 +1068,7 @@
     @php $modalId = 'reviewModal_'.$item->id; @endphp
     <div class="modal fade" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg">
-        <form method="POST" action="{{ route('orders.items.reviews.store',[$item->order_id,$item->id]) }}" class="modal-content">
+        <form method="POST" enctype="multipart/form-data" action="{{ route('orders.items.reviews.store',[$item->order_id,$item->id]) }}" class="modal-content">
           @csrf
           <div class="modal-header">
             <h5 class="modal-title">Review &mdash; {{ optional($item->product)->name }}</h5>
@@ -1089,6 +1089,11 @@
               <label class="form-label fw-semibold">Comment <span class="text-muted">&mdash;</span></label>
               <textarea name="comment" rows="4" class="form-control" placeholder="Share details of your experience"></textarea>
             </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Add a photo (optional)</label>
+              <input type="file" name="photo" accept="image/*" class="form-control">
+              <div class="form-text">JPEG, PNG, GIF, or WebP up to 5MB.</div>
+            </div>
           </div>
 
           <div class="modal-footer">
@@ -1104,7 +1109,7 @@
     @php($editModalId = 'editReview_'.$item->id)
     <div class="modal fade" id="{{ $editModalId }}" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg">
-        <form method="POST" action="{{ route('orders.items.reviews.update',[$item->order_id,$item->id,$item->review->id]) }}" class="modal-content">
+        <form method="POST" enctype="multipart/form-data" action="{{ route('orders.items.reviews.update',[$item->order_id,$item->id,$item->review->id]) }}" class="modal-content">
           @csrf
           @method('PATCH')
           <div class="modal-header">
@@ -1128,6 +1133,24 @@
             <div class="mb-3">
               <label class="form-label fw-semibold">Comment</label>
               <textarea name="comment" rows="4" class="form-control" placeholder="Update your feedback if needed">{{ $item->review->comment }}</textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Update photo (optional)</label>
+              <input type="file" name="photo" accept="image/*" class="form-control">
+              <div class="form-text">JPEG, PNG, GIF, or WebP up to 5MB. Uploading a new image replaces the existing one.</div>
+              @if(!empty($item->review->image_path))
+                <div class="mt-2">
+                  <a href="{{ asset('storage/'.ltrim($item->review->image_path,'/')) }}" target="_blank">
+                    <img src="{{ asset('storage/'.ltrim($item->review->image_path,'/')) }}" alt="Current review image" style="max-width: 120px; max-height: 120px; border-radius: 6px;"/>
+                  </a>
+                </div>
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" value="1" id="remove_photo_{{ $item->id }}" name="remove_photo">
+                  <label class="form-check-label" for="remove_photo_{{ $item->id }}">
+                    Remove current photo
+                  </label>
+                </div>
+              @endif
             </div>
           </div>
           <div class="modal-footer">

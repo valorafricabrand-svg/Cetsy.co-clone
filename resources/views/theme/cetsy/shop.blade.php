@@ -281,7 +281,7 @@
         <div class="row">
           <div class="col-lg-8">
             <h3 class="h5 fw-bold mb-4">Reviews</h3>
-            @forelse($shop->reviews()->latest()->paginate(10) as $review)
+            @forelse($shop->reviews()->with(['user','orderItem.product'])->latest()->paginate(10) as $review)
               <div class="card mb-3 shadow-sm">
                 <div class="card-body">
                   <div class="d-flex align-items-center mb-2">
@@ -295,7 +295,44 @@
                       <small class="text-muted ms-2">{{ $review->created_at->diffForHumans() }}</small>
                     </div>
                   </div>
-                  <p class="mb-0 text-secondary">{{ $review->comment }}</p>
+
+                  @if($review->orderItem && $review->orderItem->product)
+                    @php
+                      $product = $review->orderItem->product;
+                      $thumbUrl = null;
+                      if (!empty($product->featured_image)) {
+                        $thumbUrl = str_starts_with($product->featured_image, 'http')
+                          ? $product->featured_image
+                          : asset('storage/' . ltrim($product->featured_image, '/'));
+                      } elseif (method_exists($product, 'media') && ($product->relationLoaded('media') ? $product->media->isNotEmpty() : false)) {
+                        $firstImage = $product->media->firstWhere('type','image');
+                        if ($firstImage) { $thumbUrl = asset('storage/' . ltrim($firstImage->url,'/')); }
+                      } elseif (method_exists($product, 'media')) {
+                        try {
+                          $firstImage = $product->media()->where('type','image')->first();
+                          if ($firstImage) { $thumbUrl = asset('storage/' . ltrim($firstImage->url,'/')); }
+                        } catch (\Throwable $e) {}
+                      }
+                    @endphp
+                    <div class="d-flex align-items-center mb-2">
+                      @if($thumbUrl)
+                        <img src="{{ $thumbUrl }}" alt="{{ $product->name }} thumbnail" class="me-2" style="width:56px;height:56px;object-fit:cover;border-radius:6px;">
+                      @endif
+                      <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="small text-decoration-none">{{ $product->name }}</a>
+                    </div>
+                  @endif
+
+                  @if($review->comment)
+                    <p class="mb-0 text-secondary">{{ $review->comment }}</p>
+                  @endif
+
+                  @if(!empty($review->image_path))
+                    <div class="mt-2">
+                      <a href="{{ asset('storage/' . ltrim($review->image_path,'/')) }}" target="_blank">
+                        <img src="{{ asset('storage/' . ltrim($review->image_path,'/')) }}" alt="Review photo" style="max-width:160px;max-height:160px;border-radius:8px;">
+                      </a>
+                    </div>
+                  @endif
                 </div>
               </div>
             @empty
