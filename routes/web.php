@@ -741,6 +741,7 @@ Route::middleware(['auth', 'verified', 'seller', 'ensure.seller.subscription'])-
 
     // Reviews
     Route::get('reviews', [SellerReviewController::class, 'index'])->name('reviews.index');
+    Route::post('reviews/{review}/respond', [SellerReviewController::class, 'respond'])->name('reviews.respond');
 
     // Payment Methods
     Route::resource('payment-methods', PaymentMethodController::class);
