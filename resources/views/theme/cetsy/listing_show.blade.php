@@ -28,7 +28,7 @@ $product->shippingProfiles->firstWhere('pivot.is_default', true)
 )->id;
 @endphp
 
-<section class="py-6" style="background:#f8faf9">
+<section class="py-4 py-lg-5" style="background:#f3f4f6">
     <div class="container" x-data="{
          qty: 1,
          busy: false,
@@ -53,15 +53,16 @@ $product->shippingProfiles->firstWhere('pivot.is_default', true)
         </div>
         @endif
 
-        <div class="row g-lg-5">
-            {{-- GALLERY --}}
-            <div class="col-lg-7" data-aos="fade-right">
-                @include('theme.'.theme().'.partials._media')
-            </div>
+        <div class="bg-white rounded-4 shadow-sm p-3 p-lg-4 mb-4">
+            <div class="row g-lg-5 align-items-start">
+                {{-- GALLERY --}}
+                <div class="col-lg-7" data-aos="fade-right">
+                    @include('theme.'.theme().'.partials._media')
+                </div>
 
-            {{-- DETAILS + CART + ACTIONS --}}
-            <div class="col-lg-5" data-aos="fade-left">
-                <div class="position-lg-sticky" style="top: 1rem;">
+                {{-- DETAILS + CART + ACTIONS --}}
+                <div class="col-lg-5" data-aos="fade-left">
+                    <div class="position-lg-sticky" style="top: 1rem;">
                     {{-- Product Details --}}
                     <!-- @include('theme.'.theme().'.partials._details') -->
 
@@ -173,6 +174,7 @@ $product->shippingProfiles->firstWhere('pivot.is_default', true)
 
                         {{-- Share Links --}}
                         @include('theme.'.theme().'.partials._share')
+                    </div>
                 </div>
             </div>
         </div>
