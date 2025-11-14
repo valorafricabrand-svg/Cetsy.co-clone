@@ -24,91 +24,128 @@
 @endphp
 
 <div data-aos="fade-right">
-  {{-- Main Carousel (NO AUTO-SLIDE) --}}
-  <div id="productCarousel"
-       class="carousel slide shadow-sm rounded-4 overflow-hidden mb-3"
-       data-bs-interval="false"      {{-- disable interval --}}
-       data-bs-touch="true"          {{-- allow swipe --}}
-       data-bs-keyboard="true">      {{-- allow keyboard arrows --}}
-
-    <div class="carousel-inner">
-      @foreach($product->media as $i => $media)
-        <div class="carousel-item @if($i === 0) active @endif">
+  <div class="d-flex gap-3 align-items-start">
+    {{-- Vertical Thumbnail Navigator --}}
+    @if($product->media->count() > 1)
+      <div class="d-none d-md-flex flex-column gap-2 me-1" style="max-height:420px;overflow-y:auto;">
+        @foreach($product->media as $i => $media)
           @if($media->type === 'video')
-            <div class="position-relative">
-              <span class="badge bg-dark bg-opacity-75 position-absolute top-0 start-0 m-2" style="font-size:.75rem;">
-                <i class="fas fa-play me-1"></i>Video
-              </span>
-              <video controls class="d-block w-100 ratio-box"
-                     style="aspect-ratio: 4/3; object-fit: contain; background:#f7f7f7">
-                <source src="{{ media_url($media->url) }}" />
-              </video>
+            <div class="thumb video-thumb @if($i===0) border-success @endif"
+                 data-bs-target="#productCarousel"
+                 data-bs-slide-to="{{ $i }}"
+                 style="width:64px;height:64px;cursor:pointer;overflow:hidden;border-radius:.5rem;border:1px solid rgba(0,0,0,.08)">
+              <video
+                src="{{ media_url($media->url) }}"
+                class="w-100 h-100"
+                style="object-fit: cover"
+                muted
+              ></video>
             </div>
           @else
-            {{-- Image wrapper enables hover lens zoom (desktop) + click to open lightbox --}}
-            <div class="zoom-wrap"
-                 data-full="{{ media_url($media->url) }}"
-                 data-index="{{ $i }}"
-                 role="button"
-                 title="Click to open full-screen">
+            <img
+              src="{{ media_url($media->url) }}"
+              srcset="{{ $srcsetFor($media->url) }}"
+              sizes="64px"
+              class="img-thumbnail thumb @if($i === 0) border-success @endif"
+              style="width:64px;height:64px;object-fit:cover;cursor:pointer;border-radius:.5rem"
+              data-bs-target="#productCarousel"
+              data-bs-slide-to="{{ $i }}"
+              alt="Thumbnail {{ $i + 1 }}"
+              loading="lazy"
+              decoding="async"
+            >
+          @endif
+        @endforeach
+      </div>
+    @endif
+
+    {{-- Main Carousel (NO AUTO-SLIDE) --}}
+    <div class="flex-grow-1">
+      <div id="productCarousel"
+           class="carousel slide shadow-sm rounded-4 overflow-hidden mb-3"
+           data-bs-interval="false"
+           data-bs-touch="true"
+           data-bs-keyboard="true">
+
+        <div class="carousel-inner">
+          @foreach($product->media as $i => $media)
+            <div class="carousel-item @if($i === 0) active @endif">
+              @if($media->type === 'video')
+                <div class="position-relative">
+                  <span class="badge bg-dark bg-opacity-75 position-absolute top-0 start-0 m-2" style="font-size:.75rem;">
+                    <i class="fas fa-play me-1"></i>Video
+                  </span>
+                  <video controls class="d-block w-100 ratio-box"
+                         style="aspect-ratio: 4/3; object-fit: contain; background:#f7f7f7">
+                    <source src="{{ media_url($media->url) }}" />
+                  </video>
+                </div>
+              @else
+                <div class="zoom-wrap"
+                     data-full="{{ media_url($media->url) }}"
+                     data-index="{{ $i }}"
+                     role="button"
+                     title="Click to open full-screen">
+                  <img
+                    src="{{ media_url($media->url) }}"
+                    srcset="{{ $srcsetFor($media->url) }}"
+                    sizes="{{ $sizesAttr }}"
+                    class="d-block w-100 ratio-box"
+                    style="aspect-ratio: 4/3; object-fit: contain; background:#f7f7f7"
+                    alt="{{ $media->alt ?? ($product->name . ' image ' . ($i+1)) }}"
+                    @if($i===0) fetchpriority="high" decoding="async" @else loading="lazy" decoding="async" @endif
+                  >
+                </div>
+              @endif
+            </div>
+          @endforeach
+        </div>
+
+        @if($product->media->count() > 1)
+          <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev" aria-label="Previous">
+            <span class="carousel-control-prev-icon"></span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next" aria-label="Next">
+            <span class="carousel-control-next-icon"></span>
+          </button>
+        @endif
+      </div>
+
+      {{-- Thumbnails for mobile (horizontal) --}}
+      @if($product->media->count() > 1)
+        <div class="d-flex d-md-none gap-2 flex-wrap justify-content-center">
+          @foreach($product->media as $i => $media)
+            @if($media->type === 'video')
+              <div class="thumb video-thumb @if($i===0) border-success @endif"
+                   data-bs-target="#productCarousel"
+                   data-bs-slide-to="{{ $i }}"
+                   style="width:64px;height:64px;cursor:pointer;overflow:hidden;border-radius:.5rem;border:1px solid rgba(0,0,0,.08)">
+                <video
+                  src="{{ media_url($media->url) }}"
+                  class="w-100 h-100"
+                  style="object-fit: cover"
+                  muted
+                ></video>
+              </div>
+            @else
               <img
                 src="{{ media_url($media->url) }}"
                 srcset="{{ $srcsetFor($media->url) }}"
-                sizes="{{ $sizesAttr }}"
-                class="d-block w-100 ratio-box"
-                style="aspect-ratio: 4/3; object-fit: contain; background:#f7f7f7"
-                alt="{{ $media->alt ?? ($product->name . ' image ' . ($i+1)) }}"
-                @if($i===0) fetchpriority="high" decoding="async" @else loading="lazy" decoding="async" @endif
+                sizes="64px"
+                class="img-thumbnail thumb @if($i === 0) border-success @endif"
+                style="width:64px;height:64px;object-fit:cover;cursor:pointer;border-radius:.5rem"
+                data-bs-target="#productCarousel"
+                data-bs-slide-to="{{ $i }}"
+                alt="Thumbnail {{ $i + 1 }}"
+                loading="lazy"
+                decoding="async"
               >
-            </div>
-          @endif
+            @endif
+          @endforeach
         </div>
-      @endforeach
+      @endif
     </div>
-
-    @if($product->media->count() > 1)
-      <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev" aria-label="Previous">
-        <span class="carousel-control-prev-icon"></span>
-      </button>
-      <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next" aria-label="Next">
-        <span class="carousel-control-next-icon"></span>
-      </button>
-    @endif
   </div>
-
-  {{-- Thumbnail Navigator --}}
-  @if($product->media->count() > 1)
-    <div class="d-flex gap-2 flex-wrap justify-content-center">
-      @foreach($product->media as $i => $media)
-        @if($media->type === 'video')
-          <div class="thumb video-thumb @if($i===0) border-success @endif"
-               data-bs-target="#productCarousel"
-               data-bs-slide-to="{{ $i }}"
-               style="width:74px;height:74px;cursor:pointer;overflow:hidden;border-radius:.5rem;border:1px solid rgba(0,0,0,.08)">
-            <video
-              src="{{ media_url($media->url) }}"
-              class="w-100 h-100"
-              style="object-fit: cover"
-              muted
-            ></video>
-          </div>
-        @else
-          <img
-            src="{{ media_url($media->url) }}"
-            srcset="{{ $srcsetFor($media->url) }}"
-            sizes="74px"
-            class="img-thumbnail thumb @if($i === 0) border-success @endif"
-            style="width:74px;height:74px;object-fit:cover;cursor:pointer;border-radius:.5rem"
-            data-bs-target="#productCarousel"
-            data-bs-slide-to="{{ $i }}"
-            alt="Thumbnail {{ $i + 1 }}"
-            loading="lazy"
-            decoding="async"
-          >
-        @endif
-      @endforeach
-    </div>
-  @endif
 </div>
 
 {{-- Full-screen Lightbox (manual only) --}}
