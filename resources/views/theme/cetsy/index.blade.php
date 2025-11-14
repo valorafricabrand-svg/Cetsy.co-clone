@@ -53,6 +53,79 @@
     50% { transform: translateY(-10px); }
   }
 
+  /* Hero search (Argos-style inspiration) */
+  .hero-search-form {
+    max-width: 640px;
+    margin-bottom: 0.75rem;
+  }
+  .hero-search-shell {
+    display: flex;
+    align-items: stretch;
+    gap: .5rem;
+    background: #fff;
+    border-radius: 999px;
+    border: 1px solid rgba(15,23,42,.12);
+    box-shadow: 0 10px 30px rgba(15,23,42,.10);
+    padding: .25rem .5rem .25rem .75rem;
+  }
+  .hero-search-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 1.1rem;
+  }
+  .hero-search-input.form-control {
+    border: 0;
+    box-shadow: none;
+    padding-left: .5rem;
+    padding-right: .5rem;
+  }
+  .hero-search-input.form-control:focus {
+    outline: 0;
+    box-shadow: none;
+  }
+  .hero-search-submit {
+    border-radius: 999px;
+    padding-inline: 1.5rem;
+    white-space: nowrap;
+  }
+  .hero-quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+  }
+  .hero-quick-links-label {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #6b7280;
+    font-weight: 700;
+  }
+  .hero-category-chip {
+    border-radius: 999px;
+    border: 1px solid rgba(25,135,84,.25);
+    background: rgba(25,135,84,.04);
+    color: #065f46;
+    font-size: .85rem;
+    padding: .25rem .9rem;
+    text-decoration: none;
+  }
+  .hero-category-chip:hover {
+    background: rgba(25,135,84,.10);
+    color: #064e3b;
+  }
+  @media (max-width: 575.98px) {
+    .hero-search-shell {
+      padding-inline: .5rem;
+    }
+    .hero-search-submit {
+      padding-inline: 1.1rem;
+      font-size: .9rem;
+    }
+  }
+
   /* Cards & grids */
   .card-flat {
     border: 1px solid rgba(0,0,0,.06);
@@ -158,6 +231,48 @@
           Your global marketplace where you&rsquo;ll find almost anything&mdash;from anyone, anywhere.
         </p>
 
+        {{-- Large, Argos-inspired search bar --}}
+        <form class="hero-search-form mx-auto mx-lg-0" method="GET" action="{{ route('search') }}" role="search">
+          <div class="hero-search-shell">
+            <span class="hero-search-icon">
+              <i class="fas fa-search"></i>
+            </span>
+            <label for="heroSearch" class="visually-hidden">Search for products</label>
+            <input
+              id="heroSearch"
+              type="search"
+              name="q"
+              class="form-control hero-search-input"
+              placeholder="Search for products, brands and shops"
+              aria-label="Search for products, brands and shops"
+              value="{{ request('q') }}"
+              autocomplete="on"
+            >
+            <button class="btn btn-success hero-search-submit" type="submit">
+              Search
+            </button>
+          </div>
+        </form>
+
+        @php
+          $topCategories = ($categories instanceof \Illuminate\Support\Collection)
+              ? $categories->take(6)
+              : collect($categories ?? [])->take(6);
+        @endphp
+        @if($topCategories->isNotEmpty())
+          <div class="hero-quick-links mt-1 mb-3 justify-content-center justify-content-lg-start">
+            <span class="hero-quick-links-label">Shop by category</span>
+            @foreach($topCategories as $cat)
+              <a
+                href="{{ route('category.show', $cat->slug) }}"
+                class="hero-category-chip"
+              >
+                {{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
+              </a>
+            @endforeach
+          </div>
+        @endif
+
         <div class="cta-group d-flex justify-content-center justify-content-lg-start gap-3">
           <a href="{{ route('listings') }}" class="btn btn-success btn-lg btn-pill shadow px-4">
             <i class="fas fa-shopping-bag me-2"></i> Shop Now
@@ -225,11 +340,11 @@
     <div class="section-head d-flex align-items-center justify-content-between mb-4">
       <div>
         <span class="eyebrow"><i class="fas fa-th-large"></i> Categories</span>
-        <h2 class="h3 fw-bold mb-0 mt-2">Trending Categories</h2>
+        <h2 class="h3 fw-bold mb-0 mt-2">Shop by Category</h2>
       </div>
     </div>
 
-    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5 g-3">
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
       @foreach($categories as $cat)
         <div class="col reveal">
           <a href="{{ route('category.show', $cat->slug) }}" class="text-decoration-none">
@@ -461,4 +576,3 @@
 </section>
 
 @endsection
-
