@@ -27,7 +27,8 @@
   <div class="d-flex gap-3 align-items-start">
     {{-- Vertical Thumbnail Navigator --}}
     @if($product->media->count() > 1)
-      <div class="d-none d-md-flex flex-column gap-2 me-1" style="max-height:420px;overflow-y:auto;">
+      <div class="d-none d-md-flex flex-column gap-2 me-2 p-2"
+           style="max-height:420px;overflow-y:auto;background:#f8fafb;border-radius:.75rem;border:1px solid rgba(0,0,0,.06);">
         @foreach($product->media as $i => $media)
           @if($media->type === 'video')
             <div class="thumb video-thumb @if($i===0) border-success @endif"
@@ -60,7 +61,7 @@
     @endif
 
     {{-- Main Carousel (NO AUTO-SLIDE) --}}
-    <div class="flex-grow-1">
+    <div class="flex-grow-1" style="max-width:580px;">
       <div id="productCarousel"
            class="carousel slide shadow-sm rounded-4 overflow-hidden mb-3"
            data-bs-interval="false"
