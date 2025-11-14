@@ -2,13 +2,9 @@ DirectoryIndex index.php
 
 RewriteEngine On 
 
-# Force canonical host (redirect www.awasam.com -> awasam.com)
-RewriteCond %{HTTP_HOST} ^www\.awasam\.com$ [NC]
-RewriteRule ^(.*)$ https://awasam.com/$1 [L,R=301]
-
-# Allow WordPress installed at project root in /blog
-# If server DocumentRoot is the repo root, prevent /blog from being rewritten into /public
-RewriteRule ^blog(/.*)?$ - [L,NC]
+# Force non-www canonical domain
+RewriteCond %{HTTP_HOST} ^www\.cetsy\.co$ [NC]
+RewriteRule ^(.*)$ https://cetsy.co/$1 [L,R=301]
 
 RewriteRule ^$ public/index.php [L]
-RewriteRule ^((?!public/|blog/).*)$ public/$1 [L,NC]
+RewriteRule ^((?!public/).*)$ public/$1 [L,NC]
