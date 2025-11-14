@@ -241,6 +241,46 @@ $product->shippingProfiles->firstWhere('pivot.is_default', true)
         }
         } catch (\Throwable $e) { /* ignore */ }
         @endphp
+
+        {{-- Slim reassurance row (delivery / click & collect / payments) --}}
+        <div class="bg-white rounded-4 shadow-sm mb-4 px-3 px-lg-4 py-3 listing-benefit-row">
+            <div class="row text-muted small text-center text-md-start g-3">
+                <div class="col-md-4 d-flex justify-content-center justify-content-md-start align-items-center gap-2">
+                    <i class="fas fa-truck-fast text-success fs-5"></i>
+                    <div>
+                        <div class="fw-semibold text-dark">Delivery</div>
+                        <div class="text-muted">
+                            @if(!empty($etaLabel))
+                                Estimated {{ $etaLabel }}
+                            @else
+                                Delivery dates shown at checkout
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex justify-content-center justify-content-md-start align-items-center gap-2">
+                    <i class="fas fa-store {{ $pickupAvailable ? 'text-primary' : 'text-muted' }} fs-5"></i>
+                    <div>
+                        <div class="fw-semibold text-dark">Click &amp; collect</div>
+                        <div class="text-muted">
+                            @if($pickupAvailable)
+                                Click &amp; collect available for this item.
+                            @else
+                                Click &amp; collect not available for this item.
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex justify-content-center justify-content-md-start align-items-center gap-2">
+                    <i class="fas fa-wallet text-warning fs-5"></i>
+                    <div>
+                        <div class="fw-semibold text-dark">Flexible payments</div>
+                        <div class="text-muted">Pay with wallet, cards, and more.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         @include('theme.'.theme().'.partials._tabs_nav')
         <div class="tab-content bg-white p-4 border-bottom border-start border-end rounded-bottom-4 shadow-sm">
             @include('theme.'.theme().'.partials._tab_description')
@@ -268,6 +308,9 @@ $product->shippingProfiles->firstWhere('pivot.is_default', true)
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"
     integrity="sha384-PU0QFv1kXlz9BM/UX5EwyV/ivxVMolZTUsjoeetfYxNdUswzqnMHipjInu6bcVCc" crossorigin="anonymous">
 <style>
+.listing-benefit-row {
+    font-size: .9rem;
+}
 .thumb.active,
 .thumb:hover {
     border: 2px solid #198754 !important;
