@@ -1099,8 +1099,6 @@
               if (sub) sub.setAttribute('data-bs-popper','static');
             });
           });
-          headerStrip.addEventListener('mouseleave', clearHover);
-          navBarCats.addEventListener('mouseleave', clearHover);
         }
       });
       </script>
