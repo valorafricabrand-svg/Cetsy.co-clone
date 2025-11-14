@@ -102,6 +102,55 @@
     border-radius: 1rem;
     box-shadow: 0 24px 48px rgba(15,23,42,.35);
   }
+  .hero-slider {
+    position: relative;
+  }
+  .hero-slide {
+    display: none;
+  }
+  .hero-slide.is-active {
+    display: block;
+  }
+  .hero-slider-dots {
+    display: flex;
+    justify-content: center;
+    gap: .4rem;
+    margin-top: .75rem;
+  }
+  .hero-slider-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    border: 0;
+    padding: 0;
+    background: rgba(255,255,255,.5);
+    cursor: pointer;
+  }
+  .hero-slider-dot.is-active {
+    width: 20px;
+    background: #ffffff;
+  }
+  .hero-slider-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.9);
+    color: #e60012;
+    box-shadow: 0 12px 24px rgba(0,0,0,.25);
+    cursor: pointer;
+  }
+  .hero-slider-arrow-prev { left: 1.25rem; }
+  .hero-slider-arrow-next { right: 1.25rem; }
+  @media (max-width: 991.98px) {
+    .hero-slider-arrow { display: none; }
+  }
   @media (max-width: 991.98px) {
     .hero-promo-card {
       border-radius: 1.5rem;
@@ -252,89 +301,145 @@
     $topCategories = ($categories instanceof \Illuminate\Support\Collection)
         ? $categories->take(6)
         : collect($categories ?? [])->take(6);
-    $primaryDeal = (isset($activeDeals) && $activeDeals instanceof \Illuminate\Support\Collection)
-        ? $activeDeals->first()
-        : null;
-    $heroImage = asset('assets/images/illustrator.webp');
+    $heroImageFallback = asset('assets/images/illustrator.webp');
+    $slides = isset($heroSlides) && $heroSlides instanceof \Illuminate\Support\Collection
+        ? $heroSlides
+        : collect();
   @endphp
 
   <div class="container position-relative">
-    <div class="hero-promo-card reveal">
-      <div class="row g-4 align-items-center">
-        <!-- Left: copy -->
-        <div class="col-lg-5 col-md-6">
-          <div class="hero-promo-copy text-center text-md-start">
-            <span class="hero-promo-tag">Save</span>
+    @if($slides->isNotEmpty())
+      <div class="hero-slider" data-hero-slider>
+        @foreach($slides as $index => $slide)
+          @php
+            $tag   = $slide->tag ?: 'Save';
+            $title = $slide->title;
+            $sub   = $slide->subtitle ?: 'Discover limited-time offers across the Cetsy marketplace.';
+            $btnLabel = $slide->button_label ?: 'Shop deals';
+            $btnUrl   = $slide->resolved_button_url;
+            $img      = $slide->image_path ? asset('storage/'.$slide->image_path) : $heroImageFallback;
+          @endphp
+          <div class="hero-promo-card hero-slide reveal {{ $index === 0 ? 'is-active' : '' }}" data-slide-index="{{ $index }}">
+            <div class="row g-4 align-items-center">
+              <!-- Left: copy -->
+              <div class="col-lg-5 col-md-6">
+                <div class="hero-promo-copy text-center text-md-start">
+                  @if($tag)
+                    <span class="hero-promo-tag">{{ $tag }}</span>
+                  @endif
 
-            <h1 class="hero-promo-heading mb-2">
-              @if($primaryDeal)
-                Shop our best prices on {{ strtolower($primaryDeal->name) }}
-              @else
-                Shop our lowest prices on selected items
-              @endif
-            </h1>
+                  <h1 class="hero-promo-heading mb-2">{{ $title }}</h1>
 
-            <p class="hero-promo-sub mb-0">
-              Discover limited-time offers across electronics, services, and more – all from trusted Cetsy sellers.
-            </p>
+                  <p class="hero-promo-sub mb-0">{{ $sub }}</p>
 
-            <div class="hero-promo-cta d-flex flex-column flex-sm-row gap-2 justify-content-center justify-content-md-start">
-              <a href="{{ route('listings', ['sort' => 'popular']) }}" class="btn btn-light text-danger fw-semibold">
-                <i class="fas fa-tags me-1"></i> Shop deals
-              </a>
-              <a href="{{ route('listings') }}" class="btn btn-outline-light fw-semibold">
-                Browse marketplace
-              </a>
+                  <div class="hero-promo-cta d-flex flex-column flex-sm-row gap-2 justify-content-center justify-content-md-start">
+                    <a href="{{ $btnUrl }}" class="btn btn-light text-danger fw-semibold">
+                      <i class="fas fa-tags me-1"></i> {{ $btnLabel }}
+                    </a>
+                    <a href="{{ route('listings') }}" class="btn btn-outline-light fw-semibold">
+                      Browse marketplace
+                    </a>
+                  </div>
+
+                  {{-- Mobile search under promo (desktop uses header search) --}}
+                  <form class="hero-search-form mx-auto mt-3 d-md-none" method="GET" action="{{ route('search') }}" role="search">
+                    <div class="hero-search-shell">
+                      <span class="hero-search-icon">
+                        <i class="fas fa-search"></i>
+                      </span>
+                      <label for="heroSearch" class="visually-hidden">Search for products</label>
+                      <input
+                        id="heroSearch"
+                        type="search"
+                        name="q"
+                        class="form-control hero-search-input"
+                        placeholder="Search for products, brands and shops"
+                        aria-label="Search for products, brands and shops"
+                        value="{{ request('q') }}"
+                        autocomplete="on"
+                      >
+                      <button class="btn btn-success hero-search-submit" type="submit">
+                        Search
+                      </button>
+                    </div>
+                  </form>
+
+                  @if($topCategories->isNotEmpty())
+                    <div class="hero-quick-links mt-3 justify-content-center justify-content-md-start">
+                      <span class="hero-quick-links-label">Popular on Cetsy</span>
+                      @foreach($topCategories as $cat)
+                        <a href="{{ route('category.show', $cat->slug) }}" class="hero-category-chip">
+                          {{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
+                        </a>
+                      @endforeach
+                    </div>
+                  @endif
+                </div>
+              </div>
+
+              <!-- Right: promo artwork -->
+              <div class="col-lg-7 col-md-6">
+                <div class="hero-promo-media text-center">
+                  <img
+                    src="{{ $img }}"
+                    alt="{{ $title }}"
+                    class="img-fluid"
+                    onerror="this.onerror=null;this.src=@json($heroImageFallback);">
+                </div>
+              </div>
             </div>
-
-            {{-- Mobile search under promo (desktop uses header search) --}}
-            <form class="hero-search-form mx-auto mt-3 d-md-none" method="GET" action="{{ route('search') }}" role="search">
-              <div class="hero-search-shell">
-                <span class="hero-search-icon">
-                  <i class="fas fa-search"></i>
-                </span>
-                <label for="heroSearch" class="visually-hidden">Search for products</label>
-                <input
-                  id="heroSearch"
-                  type="search"
-                  name="q"
-                  class="form-control hero-search-input"
-                  placeholder="Search for products, brands and shops"
-                  aria-label="Search for products, brands and shops"
-                  value="{{ request('q') }}"
-                  autocomplete="on"
-                >
-                <button class="btn btn-success hero-search-submit" type="submit">
-                  Search
-                </button>
-              </div>
-            </form>
-
-            @if($topCategories->isNotEmpty())
-              <div class="hero-quick-links mt-3 justify-content-center justify-content-md-start">
-                <span class="hero-quick-links-label">Popular on Cetsy</span>
-                @foreach($topCategories as $cat)
-                  <a href="{{ route('category.show', $cat->slug) }}" class="hero-category-chip">
-                    {{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
-                  </a>
-                @endforeach
-              </div>
-            @endif
           </div>
-        </div>
+        @endforeach
 
-        <!-- Right: promo artwork -->
-        <div class="col-lg-7 col-md-6">
-          <div class="hero-promo-media text-center">
-            <img
-              src="{{ $heroImage }}"
-              alt="Featured Cetsy deals"
-              class="img-fluid"
-              onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
+        @if($slides->count() > 1)
+          <button class="hero-slider-arrow hero-slider-arrow-prev" type="button" data-hero-prev>
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <button class="hero-slider-arrow hero-slider-arrow-next" type="button" data-hero-next>
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <div class="hero-slider-dots" data-hero-dots>
+            @foreach($slides as $index => $slide)
+              <button type="button" class="hero-slider-dot {{ $index === 0 ? 'is-active' : '' }}" data-hero-dot="{{ $index }}">
+                <span class="visually-hidden">Go to slide {{ $index + 1 }}</span>
+              </button>
+            @endforeach
+          </div>
+        @endif
+      </div>
+    @else
+      {{-- Fallback single hero when no slides are defined --}}
+      <div class="hero-promo-card reveal">
+        <div class="row g-4 align-items-center">
+          <div class="col-lg-5 col-md-6">
+            <div class="hero-promo-copy text-center text-md-start">
+              <span class="hero-promo-tag">Save</span>
+              <h1 class="hero-promo-heading mb-2">Shop our lowest prices on selected items</h1>
+              <p class="hero-promo-sub mb-0">
+                Discover limited-time offers across electronics, services, and more - all from trusted Cetsy sellers.
+              </p>
+              <div class="hero-promo-cta d-flex flex-column flex-sm-row gap-2 justify-content-center justify-content-md-start">
+                <a href="{{ route('listings', ['sort' => 'popular']) }}" class="btn btn-light text-danger fw-semibold">
+                  <i class="fas fa-tags me-1"></i> Shop deals
+                </a>
+                <a href="{{ route('listings') }}" class="btn btn-outline-light fw-semibold">
+                  Browse marketplace
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-7 col-md-6">
+            <div class="hero-promo-media text-center">
+              <img
+                src="{{ $heroImageFallback }}"
+                alt="Featured Cetsy deals"
+                class="img-fluid"
+                onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    @endif
   </div>
 </section>
 
@@ -423,6 +528,81 @@
     </div>
   </div>
 </section>
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const slider = document.querySelector('[data-hero-slider]');
+    if (!slider) return;
+    const slides = Array.from(slider.querySelectorAll('.hero-slide'));
+    if (!slides.length) return;
+    const dotsContainer = slider.querySelector('[data-hero-dots]');
+    const dots = dotsContainer ? Array.from(dotsContainer.querySelectorAll('[data-hero-dot]')) : [];
+    const prevBtn = slider.querySelector('[data-hero-prev]');
+    const nextBtn = slider.querySelector('[data-hero-next]');
+    let current = 0;
+    let timer = null;
+
+    function show(index) {
+      if (!slides[index]) return;
+      slides[current].classList.remove('is-active');
+      if (dots[current]) dots[current].classList.remove('is-active');
+      current = index;
+      slides[current].classList.add('is-active');
+      if (dots[current]) dots[current].classList.add('is-active');
+    }
+
+    function next() {
+      const idx = (current + 1) % slides.length;
+      show(idx);
+    }
+
+    function prev() {
+      const idx = (current - 1 + slides.length) % slides.length;
+      show(idx);
+    }
+
+    function startAuto() {
+      if (timer || slides.length < 2) return;
+      timer = setInterval(next, 8000);
+    }
+
+    function stopAuto() {
+      if (!timer) return;
+      clearInterval(timer);
+      timer = null;
+    }
+
+    dots.forEach(dot => {
+      dot.addEventListener('click', function () {
+        const idx = parseInt(dot.getAttribute('data-hero-dot'), 10);
+        if (!isNaN(idx)) {
+          stopAuto();
+          show(idx);
+          startAuto();
+        }
+      });
+    });
+
+    if (prevBtn) prevBtn.addEventListener('click', function () {
+      stopAuto();
+      prev();
+      startAuto();
+    });
+    if (nextBtn) nextBtn.addEventListener('click', function () {
+      stopAuto();
+      next();
+      startAuto();
+    });
+
+    slider.addEventListener('mouseenter', stopAuto);
+    slider.addEventListener('mouseleave', startAuto);
+
+    show(0);
+    startAuto();
+  });
+</script>
+@endpush
 
 <!-- ===================================== -->
 <!-- Trending Categories -->

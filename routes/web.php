@@ -49,7 +49,8 @@ use App\Http\Controllers\Admin\{
     ReviewController,
     AdminNotificationController,
     BlogPostController as AdminBlogPostController,
-    BlogCategoryController as AdminBlogCategoryController
+    BlogCategoryController as AdminBlogCategoryController,
+    HeroSlideController as AdminHeroSlideController
 };
 use App\Http\Controllers\Webhooks\PayoutWebhookController;
 use App\Http\Controllers\Buyer\BuyerDashboard;
@@ -497,6 +498,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
     Route::resource('blog-posts', AdminBlogPostController::class);
     Route::resource('blog-categories', AdminBlogCategoryController::class)->except(['show']);
+    Route::resource('hero-slides', AdminHeroSlideController::class)->except(['show']);
     Route::post('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     Route::post('products/bulk-status', [\App\Http\Controllers\Admin\ProductController::class, 'bulkStatus'])->name('products.bulk-status');
     // Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class);
