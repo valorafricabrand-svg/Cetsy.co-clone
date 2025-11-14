@@ -300,9 +300,11 @@
 
     /* Invisible desktop category nav (used only for dropdown menus) */
     .invisible-nav {
+      position: relative;
       height: 0;
       overflow: visible;
       background: transparent !important;
+      z-index: 1040;
     }
     .invisible-nav .nav {
       margin: 0;
@@ -310,6 +312,9 @@
     }
     .invisible-nav .nav-link {
       display: none !important;
+    }
+    .invisible-nav .dropdown-menu {
+      margin-top: .25rem;
     }
 
     /* Dropdown menus */
