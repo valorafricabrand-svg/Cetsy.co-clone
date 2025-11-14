@@ -247,6 +247,57 @@
       .navbar-search-form { max-width: 100%; }
     }
 
+    /* Header benefits + category strip (Argos-style) */
+    .header-benefits-row {
+      font-size: .9rem;
+    }
+    .header-benefit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      padding-block: .4rem;
+      color: #4b5563;
+      white-space: nowrap;
+    }
+    .header-benefit i {
+      color: #198754;
+    }
+    .header-category-scroll {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-block: .6rem;
+    }
+    .header-category-tile {
+      flex: 0 0 auto;
+      text-decoration: none;
+      color: inherit;
+      text-align: center;
+      min-width: 84px;
+    }
+    .header-category-thumb {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto .35rem;
+      overflow: hidden;
+    }
+    .header-category-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .header-category-label {
+      font-size: .85rem;
+      color: #111827;
+    }
+
     /* Dropdown menus */
     .dropdown-menu {
       --bs-dropdown-min-width: 230px;
@@ -515,6 +566,59 @@
           </div>
         </div>
       </nav>
+
+      {{-- Header benefits + quick category tiles (desktop, Argos-style) --}}
+      @php
+        try {
+          $headerCategories = \App\Models\Category::whereNull('parent_id')
+              ->orderBy('name')
+              ->take(12)
+              ->get();
+        } catch (\Throwable $e) {
+          $headerCategories = collect();
+        }
+      @endphp
+      <section class="d-none d-lg-block bg-white border-bottom">
+        <div class="container header-benefits-row">
+          <div class="row text-muted text-center">
+            <div class="col-md-4 header-benefit border-end border-light-subtle">
+              <i class="fas fa-truck-fast"></i>
+              <span>Same and next day delivery (where available)</span>
+            </div>
+            <div class="col-md-4 header-benefit border-end border-light-subtle">
+              <i class="fas fa-star"></i>
+              <span>Shop our latest offers</span>
+            </div>
+            <div class="col-md-4 header-benefit">
+              <i class="fas fa-pound-sign"></i>
+              <span>Flexible payments &amp; wallet</span>
+            </div>
+          </div>
+        </div>
+
+        @if($headerCategories->isNotEmpty())
+          <div class="border-top border-light-subtle">
+            <div class="container">
+              <div class="header-category-scroll" aria-label="Featured categories">
+                @foreach($headerCategories as $cat)
+                  <a href="{{ route('category.show', $cat->slug) }}" class="header-category-tile">
+                    <div class="header-category-thumb">
+                      @if($cat->image)
+                        <img src="{{ asset('storage/'.$cat->image) }}" alt="{{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}">
+                      @else
+                        <span class="fw-semibold text-success">{{ mb_substr(html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8'), 0, 2) }}</span>
+                      @endif
+                    </div>
+                    <div class="header-category-label">
+                      {{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
+                    </div>
+                  </a>
+                @endforeach
+              </div>
+            </div>
+          </div>
+        @endif
+      </section>
 
       {{-- OFFCANVAS (now opens from LEFT) --}}
       <div class="offcanvas offcanvas-start" tabindex="-1" id="mainOffcanvas" aria-labelledby="mainOffcanvasLabel">
