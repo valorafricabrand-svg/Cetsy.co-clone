@@ -601,7 +601,7 @@
             <div class="container">
               <div class="header-category-scroll" aria-label="Featured categories">
                 @foreach($headerCategories as $cat)
-                  <a href="{{ route('category.show', $cat->slug) }}" class="header-category-tile">
+                  <a href="{{ route('category.show', $cat->slug) }}" class="header-category-tile" data-cat-id="{{ $cat->id }}">
                     <div class="header-category-thumb">
                       @if($cat->image)
                         <img src="{{ asset('storage/'.$cat->image) }}" alt="{{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}">
@@ -869,7 +869,7 @@
           <div class="container">
             <ul class="nav">
               @foreach($mainCategories as $main)
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown" data-cat-id="{{ $main->id }}">
                   <a class="nav-link text-white py-2 dropdown-toggle"
                      href="#"
                      id="catDD{{ $main->id }}"
@@ -901,6 +901,7 @@
         @media (min-width:992px) {
           .nav-item.dropdown:hover > .dropdown-menu { display:block; }
           .dropdown-submenu:hover  > .dropdown-menu { display:block; }
+          .nav-item.dropdown.header-hover-open > .dropdown-menu { display:block; }
         }
       </style>
       @endpush
@@ -1049,6 +1050,35 @@
           if (!e.target.closest('nav')) closeAll();
         });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+
+        // Link header category tiles to desktop category dropdowns (Argos-style hover)
+        const headerStrip = document.querySelector('.header-category-scroll');
+        const navBarCats  = document.querySelector('nav[aria-label="Category Navigation"]');
+        if (headerStrip && navBarCats && isDesktop()) {
+          const navById = {};
+          navBarCats.querySelectorAll('.nav-item.dropdown[data-cat-id]').forEach(li => {
+            navById[li.getAttribute('data-cat-id')] = li;
+          });
+          let currentLi = null;
+          const clearHover = () => {
+            if (!currentLi) return;
+            currentLi.classList.remove('header-hover-open');
+            currentLi = null;
+          };
+          headerStrip.querySelectorAll('.header-category-tile[data-cat-id]').forEach(tile => {
+            tile.addEventListener('mouseenter', () => {
+              if (!isDesktop()) return;
+              const id = tile.getAttribute('data-cat-id');
+              const li = navById[id];
+              if (!li) return;
+              clearHover();
+              currentLi = li;
+              li.classList.add('header-hover-open');
+            });
+          });
+          headerStrip.addEventListener('mouseleave', clearHover);
+          navBarCats.addEventListener('mouseleave', clearHover);
+        }
       });
       </script>
       @endpush
