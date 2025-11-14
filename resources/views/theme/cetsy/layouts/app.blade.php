@@ -298,6 +298,20 @@
       color: #111827;
     }
 
+    /* Invisible desktop category nav (used only for dropdown menus) */
+    .invisible-nav {
+      height: 0;
+      overflow: visible;
+      background: transparent !important;
+    }
+    .invisible-nav .nav {
+      margin: 0;
+      padding: 0;
+    }
+    .invisible-nav .nav-link {
+      display: none !important;
+    }
+
     /* Dropdown menus */
     .dropdown-menu {
       --bs-dropdown-min-width: 230px;
@@ -865,7 +879,7 @@
           };
         @endphp
 
-        <nav class="bg-success d-none d-lg-block" aria-label="Category Navigation">
+        <nav class="invisible-nav d-none d-lg-block" aria-label="Category Navigation">
           <div class="container">
             <ul class="nav">
               @foreach($mainCategories as $main)
