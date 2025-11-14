@@ -1082,6 +1082,7 @@
           const clearHover = () => {
             if (!currentLi) return;
             currentLi.classList.remove('header-hover-open');
+            closeSub(currentLi);
             currentLi = null;
           };
           headerStrip.querySelectorAll('.header-category-tile[data-cat-id]').forEach(tile => {
@@ -1093,6 +1094,9 @@
               clearHover();
               currentLi = li;
               li.classList.add('header-hover-open');
+              openSub(li);
+              const sub = li.querySelector(':scope > .dropdown-menu');
+              if (sub) sub.setAttribute('data-bs-popper','static');
             });
           });
           headerStrip.addEventListener('mouseleave', clearHover);
