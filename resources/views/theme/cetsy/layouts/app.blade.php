@@ -288,14 +288,16 @@
 
           {{-- Desktop Nav (center grows) --}}
           <div class="collapse navbar-collapse" id="mainNavbar">
-            {{-- Search (desktop) --}}
-            <form class="d-none d-lg-flex ms-3 me-3 flex-grow-1" method="GET" action="{{ route('search') }}" role="search">
-              <label for="navbarSearch" class="visually-hidden">Search</label>
-              <input id="navbarSearch" class="form-control" type="search" name="q" placeholder="Search products, services, shops" aria-label="Search" value="{{ request('q') }}" autocomplete="on">
-              <button class="btn btn-outline-secondary ms-2" type="submit" aria-label="Submit search">
-                <i class="fas fa-search"></i>
-              </button>
-            </form>
+            {{-- Search (desktop) - hidden on homepage in favor of hero search --}}
+            @unless(request()->routeIs('home'))
+              <form class="d-none d-lg-flex ms-3 me-3 flex-grow-1" method="GET" action="{{ route('search') }}" role="search">
+                <label for="navbarSearch" class="visually-hidden">Search</label>
+                <input id="navbarSearch" class="form-control" type="search" name="q" placeholder="Search products, services, shops" aria-label="Search" value="{{ request('q') }}" autocomplete="on">
+                <button class="btn btn-outline-secondary ms-2" type="submit" aria-label="Submit search">
+                  <i class="fas fa-search"></i>
+                </button>
+              </form>
+            @endunless
             {{-- Primary navigation links --}}
             <ul class="navbar-nav ms-3">
               <li class="nav-item"><a class="nav-link" href="{{ route('shops.index') }}">Shops</a></li>
