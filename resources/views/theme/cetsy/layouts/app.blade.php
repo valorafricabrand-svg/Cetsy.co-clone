@@ -248,15 +248,13 @@
     }
 
     /* Header benefits + category strip (Argos-style) */
-    .header-benefits-row {
-      font-size: .9rem;
-    }
+    .header-benefits-row { font-size: .9rem; }
     .header-benefit {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: .5rem;
-      padding-block: .4rem;
+      padding-block: .25rem;
       color: #4b5563;
       white-space: nowrap;
     }
@@ -268,7 +266,7 @@
       gap: 1rem;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
-      padding-block: .6rem;
+      padding-block: .3rem;
     }
     .header-category-tile {
       flex: 0 0 auto;
@@ -285,7 +283,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto .35rem;
+      margin: 0 auto .25rem;
       overflow: hidden;
     }
     .header-category-thumb img {
@@ -597,7 +595,7 @@
           $headerCategories = collect();
         }
       @endphp
-      <section class="d-none d-lg-block bg-white border-bottom">
+      <section class="d-none d-lg-block bg-white border-bottom" style="padding-top:.1rem;padding-bottom:.1rem;">
         <div class="container header-benefits-row">
           <div class="row text-muted text-center">
             <div class="col-md-4 header-benefit border-end border-light-subtle">

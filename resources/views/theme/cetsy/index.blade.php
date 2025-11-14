@@ -33,24 +33,86 @@
     color: #157347;
   }
 
-  /* Hero styling */
+  /* Hero styling (Argos-style promo card) */
   #hero {
-    background:
-      radial-gradient(1200px 600px at -10% -10%, rgba(25,135,84,.10), transparent 60%),
-      radial-gradient(1200px 600px at 110% 0%, rgba(25,135,84,.08), transparent 60%),
-      linear-gradient(180deg, #ffffff, #f8fafb);
+    background: linear-gradient(180deg, #f3f4f6, #ffffff);
   }
-  .hero-bubble {
-    position: absolute; border-radius: 999px; filter: blur(10px); opacity: .55;
-    animation: floatY 7s ease-in-out infinite;
+  .hero-promo-card {
+    border-radius: 1.75rem;
+    background: radial-gradient(140% 180% at 0% 0%, #ffffff 0, #f97373 35%, #e60012 70%);
+    color: #ffffff;
+    padding: 2rem 2.25rem;
+    box-shadow: 0 30px 60px rgba(0,0,0,.18);
+    position: relative;
+    overflow: hidden;
   }
-  .bubble-1 { width: 160px; height: 160px; background: rgba(25,135,84,.18); top: -30px; left: -30px; }
-  .bubble-2 { width: 120px; height: 120px; background: rgba(25,135,84,.12); bottom: -20px; right: 10%; animation-delay: .8s; }
-  .bubble-3 { width: 90px; height: 90px; background: rgba(25,135,84,.10); top: 10%; right: -30px; animation-delay: 1.4s; }
-
-  @keyframes floatY {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+  .hero-promo-card::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(255,255,255,.18);
+    pointer-events: none;
+  }
+  .hero-promo-copy {
+    position: relative;
+    z-index: 1;
+  }
+  .hero-promo-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .25rem .75rem;
+    border-radius: .75rem;
+    background: #ffffff;
+    color: #e60012;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: .8rem;
+    letter-spacing: .08em;
+    margin-bottom: .5rem;
+  }
+  .hero-promo-heading {
+    font-size: clamp(1.9rem, 2.6vw + 1.2rem, 2.7rem);
+    font-weight: 800;
+    line-height: 1.05;
+    margin-bottom: .75rem;
+  }
+  .hero-promo-sub {
+    font-size: 1.05rem;
+    max-width: 26rem;
+    color: rgba(255,255,255,.9);
+  }
+  .hero-promo-cta {
+    margin-top: 1.25rem;
+  }
+  .hero-promo-cta .btn {
+    border-radius: 999px;
+  }
+  .hero-promo-media {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .hero-promo-media img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 1rem;
+    box-shadow: 0 24px 48px rgba(15,23,42,.35);
+  }
+  @media (max-width: 991.98px) {
+    .hero-promo-card {
+      border-radius: 1.5rem;
+      padding: 1.5rem 1.25rem 1.75rem;
+    }
+    .hero-promo-heading {
+      font-size: 1.9rem;
+    }
+    .hero-promo-media {
+      margin-top: 1.25rem;
+    }
   }
 
   /* Hero search (Argos-style inspiration) */
@@ -185,122 +247,92 @@
 <!-- ===================================== -->
 <!-- Hero Section -->
 <!-- ===================================== -->
-<section id="hero" class="hero-compact py-4 py-lg-5 position-relative overflow-hidden bg-light bg-gradient">
-  <style>
-    /* Compact hero spacing */
-    #hero.hero-compact { padding-top: 1.25rem; padding-bottom: 1.25rem; }
-    @media (min-width: 992px) {
-      #hero.hero-compact { padding-top: 2rem; padding-bottom: 2rem; }
-    }
-
-    /* Illustration: limit overall size & height */
-    .hero-img {
-      width: 100%;
-      height: auto;
-      max-width: 460px;   /* cap width on large screens */
-      max-height: 320px;  /* cap height on large screens */
-    }
-    @media (max-width: 991.98px) {
-      .hero-img {
-        max-width: 360px;   /* smaller on tablets/phones */
-        max-height: 260px;  /* shorter on tablets/phones */
-      }
-    }
-
-    /* Tighten vertical spacing inside hero */
-    #hero .display-4 { margin-bottom: .5rem !important; }
-    #hero .lead { margin-bottom: 1rem !important; }
-    #hero .cta-group { gap: .75rem !important; margin-bottom: 1rem !important; }
-    #hero .trust-badges { gap: 1rem !important; }
-  </style>
-
-  <!-- Floating bubbles -->
-  <span class="hero-bubble bubble-1"></span>
-  <span class="hero-bubble bubble-2"></span>
-  <span class="hero-bubble bubble-3"></span>
+<section id="hero" class="hero-compact py-4 py-lg-5 position-relative overflow-hidden">
+  @php
+    $topCategories = ($categories instanceof \Illuminate\Support\Collection)
+        ? $categories->take(6)
+        : collect($categories ?? [])->take(6);
+    $primaryDeal = (isset($activeDeals) && $activeDeals instanceof \Illuminate\Support\Collection)
+        ? $activeDeals->first()
+        : null;
+    $heroImage = asset('assets/images/illustrator.webp');
+  @endphp
 
   <div class="container position-relative">
-    <div class="row align-items-center g-4">
-      <!-- Hero Text -->
-      <div class="col-lg-6 text-center text-lg-start reveal">
-        <h1 class="display-4 fw-bold text-success mb-2">
-          Cetsy &mdash; Your Global Marketplace
-        </h1>
+    <div class="hero-promo-card reveal">
+      <div class="row g-4 align-items-center">
+        <!-- Left: copy -->
+        <div class="col-lg-5 col-md-6">
+          <div class="hero-promo-copy text-center text-md-start">
+            <span class="hero-promo-tag">Save</span>
 
-        <p class="lead text-muted" style="max-width: 520px;">
-          Your global marketplace where you&rsquo;ll find almost anything&mdash;from anyone, anywhere.
-        </p>
+            <h1 class="hero-promo-heading mb-2">
+              @if($primaryDeal)
+                Shop our best prices on {{ strtolower($primaryDeal->name) }}
+              @else
+                Shop our lowest prices on selected items
+              @endif
+            </h1>
 
-        {{-- Large, Argos-inspired search bar (mobile / tablet; desktop uses header search) --}}
-        <form class="hero-search-form mx-auto mx-lg-0 d-lg-none" method="GET" action="{{ route('search') }}" role="search">
-          <div class="hero-search-shell">
-            <span class="hero-search-icon">
-              <i class="fas fa-search"></i>
-            </span>
-            <label for="heroSearch" class="visually-hidden">Search for products</label>
-            <input
-              id="heroSearch"
-              type="search"
-              name="q"
-              class="form-control hero-search-input"
-              placeholder="Search for products, brands and shops"
-              aria-label="Search for products, brands and shops"
-              value="{{ request('q') }}"
-              autocomplete="on"
-            >
-            <button class="btn btn-success hero-search-submit" type="submit">
-              Search
-            </button>
-          </div>
-        </form>
+            <p class="hero-promo-sub mb-0">
+              Discover limited-time offers across electronics, services, and more – all from trusted Cetsy sellers.
+            </p>
 
-        @php
-          $topCategories = ($categories instanceof \Illuminate\Support\Collection)
-              ? $categories->take(6)
-              : collect($categories ?? [])->take(6);
-        @endphp
-        @if($topCategories->isNotEmpty())
-          <div class="hero-quick-links mt-1 mb-3 justify-content-center justify-content-lg-start">
-            <span class="hero-quick-links-label">Shop by category</span>
-            @foreach($topCategories as $cat)
-              <a
-                href="{{ route('category.show', $cat->slug) }}"
-                class="hero-category-chip"
-              >
-                {{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
+            <div class="hero-promo-cta d-flex flex-column flex-sm-row gap-2 justify-content-center justify-content-md-start">
+              <a href="{{ route('listings', ['sort' => 'popular']) }}" class="btn btn-light text-danger fw-semibold">
+                <i class="fas fa-tags me-1"></i> Shop deals
               </a>
-            @endforeach
-          </div>
-        @endif
+              <a href="{{ route('listings') }}" class="btn btn-outline-light fw-semibold">
+                Browse marketplace
+              </a>
+            </div>
 
-        <div class="cta-group d-flex justify-content-center justify-content-lg-start gap-3">
-          <a href="{{ route('listings') }}" class="btn btn-success btn-lg btn-pill shadow px-4">
-            <i class="fas fa-shopping-bag me-2"></i> Shop Now
-          </a>
-          <a href="#features" class="btn btn-outline-success btn-lg btn-pill shadow px-4">
-            <i class="fas fa-info-circle me-2"></i> Learn More
-          </a>
+            {{-- Mobile search under promo (desktop uses header search) --}}
+            <form class="hero-search-form mx-auto mt-3 d-md-none" method="GET" action="{{ route('search') }}" role="search">
+              <div class="hero-search-shell">
+                <span class="hero-search-icon">
+                  <i class="fas fa-search"></i>
+                </span>
+                <label for="heroSearch" class="visually-hidden">Search for products</label>
+                <input
+                  id="heroSearch"
+                  type="search"
+                  name="q"
+                  class="form-control hero-search-input"
+                  placeholder="Search for products, brands and shops"
+                  aria-label="Search for products, brands and shops"
+                  value="{{ request('q') }}"
+                  autocomplete="on"
+                >
+                <button class="btn btn-success hero-search-submit" type="submit">
+                  Search
+                </button>
+              </div>
+            </form>
+
+            @if($topCategories->isNotEmpty())
+              <div class="hero-quick-links mt-3 justify-content-center justify-content-md-start">
+                <span class="hero-quick-links-label">Popular on Cetsy</span>
+                @foreach($topCategories as $cat)
+                  <a href="{{ route('category.show', $cat->slug) }}" class="hero-category-chip">
+                    {{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
+                  </a>
+                @endforeach
+              </div>
+            @endif
+          </div>
         </div>
 
-        <div class="trust-badges d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start small text-secondary">
-          <div class="d-flex align-items-center me-3 mb-2">
-            <i class="fas fa-shield-alt fs-5 me-2 text-success"></i>
-            <span>Secure &amp; Trusted</span>
-          </div>
-          <div class="d-flex align-items-center mb-2">
-            <i class="fas fa-cogs fs-5 me-2 text-success"></i>
-            <span>Custom Orders Available</span>
+        <!-- Right: promo artwork -->
+        <div class="col-lg-7 col-md-6">
+          <div class="hero-promo-media text-center">
+            <img
+              src="{{ $heroImage }}"
+              alt="Featured Cetsy deals"
+              class="img-fluid"
+              onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
           </div>
         </div>
-      </div>
-
-      <!-- Hero Image -->
-      <div class="col-lg-6 text-center reveal reveal-delay-2">
-        <img
-          src="{{ asset('assets/images/illustrator.webp') }}"
-          alt="World map with shopping icons"
-          class="img-fluid hero-img rounded shadow"
-          onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
       </div>
     </div>
   </div>
