@@ -28,11 +28,41 @@
     .empty-spot { border:2px dashed rgba(25,135,84,.35); border-radius:1rem; background:rgba(25,135,84,.03); }
   </style>
 
-  {{-- Hero --}}
+  {{-- Hero (aligned with homepage visual language) --}}
   <section class="py-6 text-white hero-soft">
-    <div class="container text-center">
-      <h1 class="display-5 fw-bold mb-2">All Listings</h1>
-      <p class="lead mb-0">Browse our global marketplace for physical products, professional services, and instant digital downloads.</p>
+    <div class="container">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+          <p class="text-uppercase small fw-bold text-success-emphasis mb-1">
+            <i class="fas fa-store me-1"></i> Marketplace
+          </p>
+          <h1 class="display-5 fw-bold mb-2">All Listings</h1>
+          <p class="lead mb-0">Browse our global marketplace for physical products, professional services, and instant digital downloads.</p>
+        </div>
+        <div class="col-lg-5">
+          <form class="hero-search-form" method="GET" action="{{ url()->current() }}" role="search">
+            <div class="hero-search-shell">
+              <span class="hero-search-icon text-success-emphasis bg-white rounded-circle me-1" style="width:32px;height:32px;">
+                <i class="fas fa-search"></i>
+              </span>
+              <label for="listingsHeroSearch" class="visually-hidden">Search listings</label>
+              <input
+                id="listingsHeroSearch"
+                type="search"
+                name="q"
+                class="form-control hero-search-input"
+                placeholder="Search listings, brands or shops"
+                aria-label="Search listings"
+                value="{{ request('q') }}"
+                autocomplete="on"
+              >
+              <button class="btn btn-light text-success hero-search-submit" type="submit">
+                Search
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </section>
 

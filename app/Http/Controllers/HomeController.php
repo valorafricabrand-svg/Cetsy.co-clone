@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Shop;
+use App\Models\Deal;
 use App\Services\Recommendation\ProductRecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -61,12 +62,21 @@ class HomeController extends Controller
             ->take(8)
             ->get();
 
+        // Highlight a few active deals (for homepage strip)
+        $activeDeals = Deal::active()
+            ->withCount('products')
+            ->orderByDesc('discount_percent')
+            ->orderBy('starts_at')
+            ->take(3)
+            ->get();
+
         return themed_view('index', [
             'categories'        => $categories,
             'featuredProducts'  => $featuredProducts,
             'featuredDigitals'  => $featuredDigitals,
             'services'          => $services,
             'shops'             => $shops,
+            'activeDeals'       => $activeDeals,
         ]);
     }
 }

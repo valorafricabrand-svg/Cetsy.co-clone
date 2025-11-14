@@ -204,8 +204,48 @@
     /* Navbar polish */
     .navbar-brand img { height: 48px; width: auto; }
     .navbar { min-height: var(--nav-height); }
-    .navbar .form-control { min-width: 280px; }
-    @media (max-width: 991.98px) { .navbar .form-control { min-width: 0; } }
+
+    /* Argos-style header search (desktop) */
+    .navbar-search-form {
+      flex: 1 1 auto;
+      max-width: 720px;
+    }
+    .navbar-search-shell {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      background: #f9fafb;
+      border-radius: 999px;
+      border: 1px solid rgba(15,23,42,.12);
+      padding: .25rem .5rem .25rem .75rem;
+      box-shadow: 0 10px 30px rgba(15,23,42,.04);
+    }
+    .navbar-search-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 1.05rem;
+    }
+    .navbar-search-input.form-control {
+      border: 0;
+      box-shadow: none;
+      background: transparent;
+      padding-left: .25rem;
+      padding-right: .25rem;
+    }
+    .navbar-search-input.form-control:focus {
+      outline: 0;
+      box-shadow: none;
+    }
+    .navbar-search-submit {
+      border-radius: 999px;
+      padding-inline: 1.25rem;
+      white-space: nowrap;
+    }
+    @media (max-width: 991.98px) {
+      .navbar-search-form { max-width: 100%; }
+    }
 
     /* Dropdown menus */
     .dropdown-menu {
@@ -286,22 +326,35 @@
             </a>
           </div>
 
-          {{-- Desktop Nav (center grows) --}}
+          {{-- Desktop Nav (center grows, Argos-style header) --}}
           <div class="collapse navbar-collapse" id="mainNavbar">
-            {{-- Search (desktop) - hidden on homepage in favor of hero search --}}
-            @unless(request()->routeIs('home'))
-              <form class="d-none d-lg-flex ms-3 me-3 flex-grow-1" method="GET" action="{{ route('search') }}" role="search">
-                <label for="navbarSearch" class="visually-hidden">Search</label>
-                <input id="navbarSearch" class="form-control" type="search" name="q" placeholder="Search products, services, shops" aria-label="Search" value="{{ request('q') }}" autocomplete="on">
-                <button class="btn btn-outline-secondary ms-2" type="submit" aria-label="Submit search">
-                  <i class="fas fa-search"></i>
-                </button>
-              </form>
-            @endunless
             {{-- Primary navigation links --}}
-            <ul class="navbar-nav ms-3">
+            <ul class="navbar-nav ms-3 me-3">
               <li class="nav-item"><a class="nav-link" href="{{ route('shops.index') }}">Shops</a></li>
             </ul>
+
+            {{-- Desktop search (always visible, Argos-style) --}}
+            <form class="navbar-search-form d-none d-lg-block" method="GET" action="{{ route('search') }}" role="search">
+              <div class="navbar-search-shell">
+                <span class="navbar-search-icon">
+                  <i class="fas fa-search"></i>
+                </span>
+                <label for="navbarSearch" class="visually-hidden">Search products</label>
+                <input
+                  id="navbarSearch"
+                  class="form-control navbar-search-input"
+                  type="search"
+                  name="q"
+                  placeholder="Search products, services, shops"
+                  aria-label="Search products, services, shops"
+                  value="{{ request('q') }}"
+                  autocomplete="on"
+                >
+                <button class="btn btn-success navbar-search-submit" type="submit" aria-label="Submit search">
+                  Search
+                </button>
+              </div>
+            </form>
 
             {{-- Currency + Cart + User (desktop) --}}
             <ul class="navbar-nav ms-auto align-items-center" x-data="cartDropdown()" x-init="fetchCart()">

@@ -231,8 +231,8 @@
           Your global marketplace where you&rsquo;ll find almost anything&mdash;from anyone, anywhere.
         </p>
 
-        {{-- Large, Argos-inspired search bar --}}
-        <form class="hero-search-form mx-auto mx-lg-0" method="GET" action="{{ route('search') }}" role="search">
+        {{-- Large, Argos-inspired search bar (mobile / tablet; desktop uses header search) --}}
+        <form class="hero-search-form mx-auto mx-lg-0 d-lg-none" method="GET" action="{{ route('search') }}" role="search">
           <div class="hero-search-shell">
             <span class="hero-search-icon">
               <i class="fas fa-search"></i>
@@ -327,6 +327,66 @@
         <div class="feature-chip">
           <i class="fas fa-star"></i> Curated Trending Picks Daily
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================== -->
+<!-- Deals & Inspiration Strip (Argos-style, backed by Deal model) -->
+<!-- ===================================== -->
+<section class="py-4 py-md-5 bg-white border-top border-bottom">
+  <div class="container">
+    <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between g-3 gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="rounded-circle bg-success-subtle text-success d-inline-flex align-items-center justify-content-center" style="width:52px;height:52px;">
+          <i class="fas fa-tags fa-lg"></i>
+        </div>
+        <div>
+          <div class="text-uppercase small fw-bold text-success mb-1">
+            @if(isset($activeDeals) && $activeDeals->count())
+              Today&rsquo;s highlighted deals
+            @else
+              Today&rsquo;s highlighted
+            @endif
+          </div>
+          <h2 class="h4 fw-bold mb-0">Deals &amp; Inspiration</h2>
+          <p class="mb-0 text-muted small">
+            @if(isset($activeDeals) && $activeDeals->count())
+              Save on limited‑time offers picked from our marketplace.
+            @else
+              Hand‑picked offers and ideas to get you started.
+            @endif
+          </p>
+        </div>
+      </div>
+
+      <div class="d-flex flex-column flex-md-row flex-wrap gap-2">
+        @if(isset($activeDeals) && $activeDeals->count())
+          @foreach($activeDeals as $deal)
+            <a href="{{ route('listings', ['deal' => $deal->id]) }}" class="btn btn-outline-success btn-pill text-start text-md-center">
+              <span class="d-block fw-semibold">
+                <i class="fas fa-tag me-1"></i>{{ $deal->name }}
+              </span>
+              @if($deal->discount_percent)
+                <span class="small text-muted">{{ $deal->discount_percent }}% off</span>
+              @endif
+            </a>
+          @endforeach
+        @else
+          <a href="{{ route('listings', ['sort' => 'popular']) }}" class="btn btn-outline-success btn-pill">
+            <i class="fas fa-fire me-1"></i> Top picks
+          </a>
+          <a href="{{ route('listings', ['type' => 'digital']) }}" class="btn btn-outline-success btn-pill">
+            <i class="fas fa-download me-1"></i> Digital deals
+          </a>
+          <a href="{{ route('listings', ['type' => 'service']) }}" class="btn btn-outline-success btn-pill">
+            <i class="fas fa-briefcase me-1"></i> Service bundles
+          </a>
+        @endif
+        <a href="{{ route('listings') }}" class="btn btn-success btn-pill">
+          <i class="fas fa-compass me-1"></i> View all deals
+        </a>
       </div>
     </div>
   </div>

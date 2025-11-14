@@ -8,7 +8,7 @@
   <style>
     /* Scoped cosmetics */
     .py-6 { padding-top: 4rem; padding-bottom: 4rem; }
-    .hero-mask { background: linear-gradient(180deg, rgba(15,81,50,.82), rgba(25,135,84,.82)); }
+    .hero-mask { background: linear-gradient(180deg, rgba(15,81,50,.88), rgba(25,135,84,.9)); }
 
     .eyebrow{
       display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .75rem;
@@ -45,24 +45,51 @@
   @endphp
   @section('title', ($category->seo_title ?? $catName) . ' – Marketplace Category')
 
-  <section class="position-relative" style="height: 320px;">
-    <div class="position-absolute top-0 start-0 w-100 h-100 bg-cover bg-center" style="background-image:url('{{ $banner }}');"></div>
-    <div class="position-absolute top-0 start-0 w-100 h-100 hero-mask d-flex align-items-center">
-      <div class="container text-center text-white px-3">
-        <div class="mb-2">
-          <span class="eyebrow"><i class="fas fa-folder-open"></i> Category</span>
-        </div>
-        <h1 class="display-6 fw-bold text-white mb-2">{{ $catName }}</h1>
-        <p class="lead mb-0 text-white-50">{{ $desc }}</p>
+  <section class="position-relative py-6">
+    <div class="position-absolute top-0 start-0 w-100 h-100 bg-cover bg-center" style="background-image:url('{{ $banner }}'); filter: brightness(.65);"></div>
+    <div class="position-absolute top-0 start-0 w-100 h-100 hero-mask"></div>
+    <div class="position-relative container text-white px-3">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+          <div class="mb-2">
+            <span class="eyebrow"><i class="fas fa-folder-open"></i> Category</span>
+          </div>
+          <h1 class="display-5 fw-bold text-white mb-2">{{ $catName }}</h1>
+          <p class="lead mb-3 text-white-50">{{ $desc }}</p>
 
-        {{-- Breadcrumbs (optional) --}}
-        <nav class="mt-3" aria-label="breadcrumb">
-          <ol class="breadcrumb justify-content-center">
-            <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ url('/') }}">Home</a></li>
-            <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ route('listings') }}">Listings</a></li>
-            <li class="breadcrumb-item active text-white-50" aria-current="page">{{ $catName }}</li>
-          </ol>
-        </nav>
+          {{-- Breadcrumbs (optional) --}}
+          <nav class="mt-2" aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-start">
+              <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ url('/') }}">Home</a></li>
+              <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ route('listings') }}">Listings</a></li>
+              <li class="breadcrumb-item active text-white-50" aria-current="page">{{ $catName }}</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-5">
+          {{-- Category-scoped quick search (Argos-style shell) --}}
+          <form class="hero-search-form" method="GET" action="{{ url()->current() }}" role="search">
+            <div class="hero-search-shell">
+              <span class="hero-search-icon text-success-emphasis bg-white rounded-circle me-1" style="width:32px;height:32px;">
+                <i class="fas fa-search"></i>
+              </span>
+              <label for="categoryHeroSearch" class="visually-hidden">Search in {{ $catName }}</label>
+              <input
+                id="categoryHeroSearch"
+                type="search"
+                name="q"
+                class="form-control hero-search-input"
+                placeholder="Search in {{ $catName }}"
+                aria-label="Search in {{ $catName }}"
+                value="{{ request('q') }}"
+                autocomplete="on"
+              >
+              <button class="btn btn-light text-success hero-search-submit" type="submit">
+                Search
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </section>
