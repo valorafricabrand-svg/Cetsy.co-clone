@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\Deal;
+use App\Models\HeroSlide;
 use App\Services\Recommendation\ProductRecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -70,6 +71,12 @@ class HomeController extends Controller
             ->take(3)
             ->get();
 
+        // Homepage hero slides (admin-managed)
+        $heroSlides = HeroSlide::active()
+            ->orderBy('sort_order')
+            ->orderByDesc('id')
+            ->get();
+
         return themed_view('index', [
             'categories'        => $categories,
             'featuredProducts'  => $featuredProducts,
@@ -77,6 +84,7 @@ class HomeController extends Controller
             'services'          => $services,
             'shops'             => $shops,
             'activeDeals'       => $activeDeals,
+            'heroSlides'        => $heroSlides,
         ]);
     }
 }
