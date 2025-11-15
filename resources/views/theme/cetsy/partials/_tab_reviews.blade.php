@@ -10,6 +10,15 @@
       </div>
       <p class="small mb-0">{{ $review->comment }}</p>
       <div class="small text-muted mt-1">{{ $review->user->name }}</div>
+      @if(!empty($review->image_path))
+        <div class="mt-2">
+          <a href="{{ asset('storage/'.ltrim($review->image_path,'/')) }}" target="_blank">
+            <img src="{{ asset('storage/'.ltrim($review->image_path,'/')) }}"
+                 alt="Review photo"
+                 style="max-width:160px;max-height:160px;border-radius:8px;">
+          </a>
+        </div>
+      @endif
     </div>
   @empty
     <p class="text-muted small mb-0">No reviews yet.</p>
