@@ -352,10 +352,17 @@
                                                 @endif
                                             </div>
                                         @else
-                                            <div class="small text-muted">Awaiting payment confirmation</div>
+                                            @php
+                                                $method = strtolower((string)($transaction->method ?? $transaction->type ?? ''));
+                                            @endphp
+                                            @if($method === 'mpesa_stk')
+                                                <div class="small text-muted">Awaiting M-Pesa confirmation</div>
+                                            @else
+                                                <div class="small text-muted">On hold (pending processing)</div>
+                                            @endif
                                         @endif
                                     @else
-                                        <span class="text-muted">—</span>
+                                        <span class="text-muted">-</span>
                                     @endif
                                 </td>
                                 <td class="text-end text-success">
