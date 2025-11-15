@@ -43,7 +43,7 @@
     @if($cart === [])
       <div class="text-center py-5">
         <h3>Your cart is empty</h3>
-        <a href="{{ url()->previous() }}" class="btn btn-primary mt-3">Continue Shopping</a>
+        <a href="{{ route('listings') }}" class="btn btn-primary mt-3">Continue Shopping</a>
       </div>
     @else
       <div class="table-responsive mb-4 d-none d-md-block">
@@ -351,7 +351,7 @@
         @csrf
       </form>
       <div class="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-2">
-        <a href="{{ url()->previous() }}" class="btn btn-outline-secondary w-100 w-md-auto">Continue Shopping</a>
+        <a href="{{ route('listings') }}" class="btn btn-outline-secondary w-100 w-md-auto">Continue Shopping</a>
         <a href="{{ route('cart.checkout') }}" class="btn btn-primary w-100 w-md-auto">Proceed to Checkout</a>
       </div>
 

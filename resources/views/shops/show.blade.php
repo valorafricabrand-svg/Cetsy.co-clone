@@ -81,10 +81,6 @@
         <i class="fas fa-credit-card me-2"></i>Payment Methods
       </a>
 
-      <a href="{{ route('seller.products.pricing.bulk') }}" class="btn btn-outline-primary">
-        <i class="bi bi-cash-coin me-2"></i>Bulk Edit Prices
-      </a>
-
       @if(Auth::id() === $shop->user_id)
         <a href="{{ route('seller.shops.edit', $shop) }}" class="btn btn-primary">
           <i class="fas fa-edit me-2"></i>Edit Shop
