@@ -339,16 +339,37 @@
                                             @endphp
                                             <div class="small">
                                                 <span class="badge bg-light text-dark">Order {{ $status }}</span>
-                                                @if($eta)
-                                                    <div class="text-muted">ETA: {{ $eta->format('d M Y') }} (auto-release {{ $autoReleaseDays }} days after shipped)</div>
-                                                @else
-                                                    @if($status === 'processing' || $status === 'pending')
-                                                        <div class="text-muted">Waiting for shipment</div>
-                                                    @elseif($status === 'delivered' || $status === 'completed')
-                                                        <div class="text-muted">Releasing shortly</div>
-                                                    @else
-                                                        <div class="text-muted">Release after shipment/delivery</div>
-                                                    @endif
+                                                @php
+                                                    $message = null;
+                                                    if ($status === 'pending') {
+                                                        $message = 'Awaiting buyer payment';
+                                                    } elseif ($status === 'processing') {
+                                                        $message = 'Paid – waiting for shipment';
+                                                    } elseif ($status === 'shipped') {
+                                                        if ($eta) {
+                                                            $message = 'Shipped – auto-release '.$autoReleaseDays.' days after shipment';
+                                                        } else {
+                                                            $message = 'Shipped – awaiting buyer confirmation';
+                                                        }
+                                                    } elseif ($status === 'delivered') {
+                                                        $message = 'Delivered – releasing shortly';
+                                                    } elseif ($status === 'completed') {
+                                                        $message = 'Funds released for this order';
+                                                    } elseif ($status === 'refunded') {
+                                                        $message = 'Order refunded – payout reversed';
+                                                    } elseif ($status === 'cancelled') {
+                                                        $message = 'Order cancelled – no payout due';
+                                                    } elseif ($status === 'returned') {
+                                                        $message = 'Order returned – resolving payout';
+                                                    }
+                                                @endphp
+                                                @if($eta && $status === 'shipped')
+                                                    <div class="text-muted">
+                                                        ETA: {{ $eta->format('d M Y') }} (auto-release {{ $autoReleaseDays }} days after shipped)
+                                                    </div>
+                                                @endif
+                                                @if($message)
+                                                    <div class="text-muted">{{ $message }}</div>
                                                 @endif
                                             </div>
                                         @else
