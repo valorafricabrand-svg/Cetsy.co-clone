@@ -77,12 +77,15 @@
                 @if(empty($product->listing_paid_at))
                   <div class="mt-1">
                     <span>Pay the listing fee to activate.</span>
-                    <form class="d-inline" method="POST" action="{{ route('products.pay-fee', $product) }}">
-                      @csrf
-                      @php $freq = (int) ($product->category?->listing_frequency ?? 4); $planKey = $freq === 1 ? 'monthly' : '4months'; @endphp
-                      <input type="hidden" name="plan" value="{{ $planKey }}">
-                      <button class="btn btn-link p-0 align-baseline">Pay to activate</button>
-                    </form>
+                    @php
+                      $freq    = (int) ($product->category?->listing_frequency ?? 4);
+                      $planKey = $freq === 1 ? 'monthly' : '4months';
+                    @endphp
+                    <button type="button"
+                            class="btn btn-link p-0 align-baseline"
+                            onclick="document.getElementById('payFeeForm-{{ $product->id }}').submit();">
+                      Pay to activate
+                    </button>
                   </div>
                 @else
                   <div class="mt-1">Renew your listing to activate.</div>
@@ -132,6 +135,16 @@
           <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save</button>
           <a href="{{ route('products.show', $product) }}" class="btn btn-outline-secondary">Cancel</a>
         </div>
+      </form>
+
+      {{-- Hidden standalone form for paying listing fee (avoids nesting forms) --}}
+      <form id="payFeeForm-{{ $product->id }}" class="d-none" method="POST" action="{{ route('products.pay-fee', $product) }}">
+        @csrf
+        @php
+          $freqHidden    = (int) ($product->category?->listing_frequency ?? 4);
+          $planKeyHidden = $freqHidden === 1 ? 'monthly' : '4months';
+        @endphp
+        <input type="hidden" name="plan" value="{{ $planKeyHidden }}">
       </form>
     </div>
   </div>
