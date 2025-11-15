@@ -318,7 +318,7 @@
                       @if($thumbUrl)
                         <img src="{{ $thumbUrl }}" alt="{{ $product->name }} thumbnail" class="me-2" style="width:56px;height:56px;object-fit:cover;border-radius:6px;">
                       @endif
-                      <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="small text-decoration-none">{{ $product->name }}</a>
+                      <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" class="small text-decoration-none">{{ $product->name }}</a>
                     </div>
                   @endif
 

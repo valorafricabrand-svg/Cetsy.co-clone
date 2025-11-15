@@ -81,12 +81,35 @@
                   </div>
                   
                   @if($review->orderItem && $review->orderItem->product)
-                    <div class="text-end">
-                      <small class="text-muted">Reviewed:</small><br>
-                      <a href="{{ route('products.show', $review->orderItem->product) }}" 
-                         class="text-decoration-none text-success small">
-                        {{ $review->orderItem->product->name }}
-                      </a>
+                    @php
+                      $product = $review->orderItem->product;
+                      $thumbUrl = null;
+                      if (!empty($product->featured_image)) {
+                        $thumbUrl = str_starts_with($product->featured_image, 'http')
+                          ? $product->featured_image
+                          : asset('storage/' . ltrim($product->featured_image, '/'));
+                      } elseif (method_exists($product, 'media')) {
+                        try {
+                          $firstImage = $product->media()->where('type','image')->first();
+                          if ($firstImage) {
+                            $thumbUrl = asset('storage/' . ltrim($firstImage->url,'/'));
+                          }
+                        } catch (\Throwable $e) {}
+                      }
+                    @endphp
+                    <div class="text-end d-flex flex-column align-items-end">
+                      <small class="text-muted">Reviewed item</small>
+                      <div class="d-flex align-items-center mt-1">
+                        @if($thumbUrl)
+                          <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" class="me-2">
+                            <img src="{{ $thumbUrl }}" alt="{{ $product->name }} thumbnail" style="width:56px;height:56px;object-fit:cover;border-radius:6px;">
+                          </a>
+                        @endif
+                        <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" 
+                           class="text-decoration-none text-success small">
+                          {{ $product->name }}
+                        </a>
+                      </div>
                     </div>
                   @endif
                 </div>
