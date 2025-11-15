@@ -1142,78 +1142,79 @@
     {{-- Page Content --}}
     @yield('main')
 
-    {{-- Footer --}}
+    {{-- Footer (Argos-style multi-column) --}}
     @php $settings = \App\Models\Setting::first(); @endphp
-    <footer class="site-footer bg-dark text-white py-5 mt-5">
+    <footer class="site-footer bg-dark text-white pt-5 mt-5">
       <div class="container px-3 px-sm-5">
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 gx-4 gy-5">
-          <!-- About (blurb) -->
-          <div class="col">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">About</h4>
-            <p class="text-white-50 footer-text mb-0">
-              Cetsy is a global marketplace connecting buyers and sellers worldwide, empowering entrepreneurs to list legal products and services with payments, tools, and a community built on trust, discovery, and growth.
+        <div class="row gy-4">
+          <div class="col-12 col-md-3">
+            <h4 class="text-uppercase mb-3 footer-heading text-white">Help &amp; Support</h4>
+            <ul class="list-unstyled mb-0 footer-text">
+              <li class="mb-2"><a href="{{ url('/help') }}" class="footer-link text-white-50 text-decoration-none">Help &amp; FAQs</a></li>
+              <li class="mb-2"><a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">Contact us</a></li>
+              <li class="mb-2"><a href="{{ url('/user-agreement') }}" class="footer-link text-white-50 text-decoration-none">Terms &amp; conditions</a></li>
+              <li class="mb-2"><a href="{{ url('/privacy') }}" class="footer-link text-white-50 text-decoration-none">Privacy policy</a></li>
+            </ul>
+          </div>
+          <div class="col-12 col-md-3">
+            <h4 class="text-uppercase mb-3 footer-heading text-white">Shopping with {{ config('app.name','Cetsy') }}</h4>
+            <ul class="list-unstyled mb-0 footer-text">
+              <li class="mb-2"><a href="{{ route('listings') }}" class="footer-link text-white-50 text-decoration-none">Browse all listings</a></li>
+              <li class="mb-2"><a href="{{ route('shops.index') }}" class="footer-link text-white-50 text-decoration-none">Find a shop</a></li>
+              <li class="mb-2"><a href="{{ url('/become-seller') }}" class="footer-link text-white-50 text-decoration-none">Sell on {{ config('app.name','Cetsy') }}</a></li>
+              <li class="mb-2"><a href="{{ url('/buyer-tips') }}" class="footer-link text-white-50 text-decoration-none">Buyer tips</a></li>
+            </ul>
+          </div>
+          <div class="col-12 col-md-3">
+            <h4 class="text-uppercase mb-3 footer-heading text-white">Our services</h4>
+            <ul class="list-unstyled mb-0 footer-text">
+              <li class="mb-2"><span class="text-white-50">Delivery &amp; shipping options</span></li>
+              <li class="mb-2"><span class="text-white-50">Click &amp; collect (where available)</span></li>
+              <li class="mb-2"><span class="text-white-50">Flexible payments &amp; wallet</span></li>
+              <li class="mb-2"><a href="{{ url('/seller-tips') }}" class="footer-link text-white-50 text-decoration-none">Seller resources</a></li>
+            </ul>
+          </div>
+          <div class="col-12 col-md-3">
+            <h4 class="text-uppercase mb-3 footer-heading text-white">Stay in touch</h4>
+            <p class="text-white-50 footer-text mb-2">
+              Sign up for updates on new deals, categories and features.
             </p>
-          </div>
-
-          <!-- Quick Links -->
-          <div class="col">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Quick Links</h4>
-            <ul class="list-unstyled mb-0">
-              @foreach([
-                'User Agreement'              => url('/user-agreement'),
-                'About Cetsy'                 => url('/about'),
-                'Blog'                        => route('blog.index'),
-              ] as $label => $link)
-                <li class="mb-2"><a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">{{ $label }}</a></li>
-              @endforeach
-            </ul>
-          </div>
-
-          <!-- Accounts -->
-          <div class="col">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Accounts</h4>
-            <ul class="list-unstyled mb-0">
-              <li class="mb-2"><a href="{{ route('shops.index') }}" class="footer-link text-white-50 text-decoration-none">Shops</a></li>
-              <li class="mb-2"><a href="{{ route('login') }}" class="footer-link text-white-50 text-decoration-none">Login</a></li>
-              <li class="mb-2"><a href="{{ route('register') }}" class="footer-link text-white-50 text-decoration-none">Register</a></li>
-            </ul>
-          </div>
-
-          <!-- Support -->
-          <div class="col">
-            <h4 class="text-uppercase mb-3 border-bottom border-secondary pb-2 footer-heading text-white">Support</h4>
-            <ul class="list-unstyled mb-4">
-              <li class="mb-2"><a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">Reach Us</a></li>
-              <li class="text-white-50 mb-1 footer-text">
-                <strong>Email:</strong> <a href="mailto:{{ support_email() }}" class="text-white">{{ support_email() }}</a>
-              </li>
-            </ul>
-
-            <!-- Social Icons -->
+            <form class="d-flex mb-3" action="{{ url('/newsletter/subscribe') }}" method="POST">
+              @csrf
+              <input type="email" name="email" class="form-control form-control-sm me-2" placeholder="Email address">
+              <button class="btn btn-success btn-sm" type="submit">Join</button>
+            </form>
             @if($settings)
-            <div class="d-flex gap-4">
-              @foreach([
-                'facebook_url'  => 'fab fa-facebook-f',
-                'instagram_url' => 'fab fa-instagram',
-                'x_url'         => 'fab fa-x-twitter',
-                'linkedin_url'  => 'fab fa-linkedin-in',
-                'tiktok_url'    => 'fab fa-tiktok',
-              ] as $key => $icon)
-                @if(!empty($settings->{$key}))
-                  <a href="{{ $settings->{$key} }}" target="_blank" rel="noopener" aria-label="{{ ucfirst(str_replace('_url','',$key)) }}" class="footer-link social-icon">
-                    <i class="{{ $icon }}"></i>
-                  </a>
-                @endif
-              @endforeach
-            </div>
+              <div class="d-flex gap-3 mb-2">
+                @foreach([
+                  'facebook_url'  => 'fab fa-facebook-f',
+                  'instagram_url' => 'fab fa-instagram',
+                  'x_url'         => 'fab fa-x-twitter',
+                  'linkedin_url'  => 'fab fa-linkedin-in',
+                  'tiktok_url'    => 'fab fa-tiktok',
+                ] as $key => $icon)
+                  @if(!empty($settings->{$key}))
+                    <a href="{{ $settings->{$key} }}" target="_blank" rel="noopener" aria-label="{{ ucfirst(str_replace('_url','',$key)) }}" class="footer-link social-icon">
+                      <i class="{{ $icon }}"></i>
+                    </a>
+                  @endif
+                @endforeach
+              </div>
             @endif
+            <div class="text-white-50 small footer-text">
+              <strong>Email:</strong>
+              <a href="mailto:{{ support_email() }}" class="text-white ms-1">{{ support_email() }}</a>
+            </div>
           </div>
         </div>
-
-        <div class="mt-5 pt-4 border-top border-secondary-subtle text-center">
-          <p class="mb-0 text-white-50 footer-text">
-            &copy; {{ date('Y') }} {{ config('app.name', 'Cetsy') }} All rights reserved.
-          </p>
+        <div class="mt-4 pt-3 border-top border-secondary-subtle d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+          <p class="mb-0 text-white-50 footer-text">&copy; {{ date('Y') }} {{ config('app.name', 'Cetsy') }}. All rights reserved.</p>
+          <div class="d-flex align-items-center gap-3 text-white-50 small footer-text">
+            <span>We accept</span>
+            <i class="fab fa-cc-visa fa-lg"></i>
+            <i class="fab fa-cc-mastercard fa-lg"></i>
+            <i class="fab fa-cc-paypal fa-lg"></i>
+          </div>
         </div>
       </div>
     </footer>
@@ -1331,4 +1332,3 @@ s0.parentNode.insertBefore(s1,s0);
 <!--End of Tawk.to Script-->
 </body>
 </html>
-
