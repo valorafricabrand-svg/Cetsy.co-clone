@@ -1150,10 +1150,10 @@
           <div class="col-12 col-md-3">
             <h4 class="text-uppercase mb-3 footer-heading text-white">Help &amp; Support</h4>
             <ul class="list-unstyled mb-0 footer-text">
-              <li class="mb-2"><a href="{{ url('/help') }}" class="footer-link text-white-50 text-decoration-none">Help &amp; FAQs</a></li>
+              <li class="mb-2"><a href="{{ url('/user-agreement#house-rules') }}" class="footer-link text-white-50 text-decoration-none">Help &amp; FAQs</a></li>
               <li class="mb-2"><a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">Contact us</a></li>
-              <li class="mb-2"><a href="{{ url('/user-agreement') }}" class="footer-link text-white-50 text-decoration-none">Terms &amp; conditions</a></li>
-              <li class="mb-2"><a href="{{ url('/privacy') }}" class="footer-link text-white-50 text-decoration-none">Privacy policy</a></li>
+              <li class="mb-2"><a href="{{ url('/user-agreement#terms') }}" class="footer-link text-white-50 text-decoration-none">Terms &amp; conditions</a></li>
+              <li class="mb-2"><a href="{{ url('/user-agreement#privacy') }}" class="footer-link text-white-50 text-decoration-none">Privacy policy</a></li>
             </ul>
           </div>
           <div class="col-12 col-md-3">
@@ -1162,7 +1162,7 @@
               <li class="mb-2"><a href="{{ route('listings') }}" class="footer-link text-white-50 text-decoration-none">Browse all listings</a></li>
               <li class="mb-2"><a href="{{ route('shops.index') }}" class="footer-link text-white-50 text-decoration-none">Find a shop</a></li>
               <li class="mb-2"><a href="{{ url('/become-seller') }}" class="footer-link text-white-50 text-decoration-none">Sell on {{ config('app.name','Cetsy') }}</a></li>
-              <li class="mb-2"><a href="{{ url('/buyer-tips') }}" class="footer-link text-white-50 text-decoration-none">Buyer tips</a></li>
+              <li class="mb-2"><a href="{{ url('/user-agreement#buyer-tips') }}" class="footer-link text-white-50 text-decoration-none">Buyer tips</a></li>
             </ul>
           </div>
           <div class="col-12 col-md-3">
@@ -1171,7 +1171,7 @@
               <li class="mb-2"><span class="text-white-50">Delivery &amp; shipping options</span></li>
               <li class="mb-2"><span class="text-white-50">Click &amp; collect (where available)</span></li>
               <li class="mb-2"><span class="text-white-50">Flexible payments &amp; wallet</span></li>
-              <li class="mb-2"><a href="{{ url('/seller-tips') }}" class="footer-link text-white-50 text-decoration-none">Seller resources</a></li>
+              <li class="mb-2"><a href="{{ url('/user-agreement#seller-tips') }}" class="footer-link text-white-50 text-decoration-none">Seller resources</a></li>
             </ul>
           </div>
           <div class="col-12 col-md-3">
