@@ -870,7 +870,14 @@ public function listing(string $slug)
     // Show shop-wide reviews (qualify user columns to avoid ambiguous select)
     $reviews = $product->shop
         ? $product->shop->reviews()
-            ->with(['user' => function ($q) { $q->select('users.id', 'users.name'); }])
+            ->with([
+                'user' => function ($q) {
+                    $q->select('users.id', 'users.name');
+                },
+                'orderItem.product' => function ($q) {
+                    $q->select('id', 'name', 'slug', 'featured_image', 'shop_id');
+                },
+            ])
             ->latest()
             ->take(20)
             ->get()
@@ -1857,5 +1864,4 @@ public function shipping(Product $product, Request $request)
     }
 
 }
-
 
