@@ -308,6 +308,12 @@
       margin: 0;
       padding: 0;
     }
+    .invisible-nav .container {
+      position: relative;
+    }
+    .invisible-nav .dropdown {
+      position: static;
+    }
     .invisible-nav .nav-link {
       display: none !important;
     }
@@ -931,6 +937,11 @@
         // Utility: flip submenu left if overflowing
         const positionSubmenu = (menu) => {
           if (!menu) return;
+          const parent = menu.parentElement;
+          if (!parent || !parent.classList.contains('dropdown-submenu')) {
+            // Top-level menus are handled separately
+            return;
+          }
           // Reset to default
           menu.style.left = '100%';
           menu.style.right = 'auto';
@@ -940,6 +951,27 @@
             menu.style.left = 'auto';
             menu.style.right = '100%';
           }
+        };
+
+        // Position a top-level dropdown so it appears under its header tile
+        const alignTopLevelMenuToTile = (menu, tile) => {
+          if (!menu || !tile) return;
+          const nav = menu.closest('nav');
+          const container = nav ? (nav.querySelector('.container') || nav) : document.body;
+          const containerRect = container.getBoundingClientRect();
+          const tileRect = tile.getBoundingClientRect();
+          const menuRect = menu.getBoundingClientRect();
+          const pad = 8;
+          let left = tileRect.left + tileRect.width / 2 - menuRect.width / 2;
+          const minLeft = containerRect.left + pad;
+          const maxLeft = containerRect.right - pad - menuRect.width;
+          if (maxLeft <= minLeft) {
+            left = minLeft;
+          } else {
+            left = Math.max(minLeft, Math.min(left, maxLeft));
+          }
+          menu.style.left = (left - containerRect.left) + 'px';
+          menu.style.right = 'auto';
         };
 
         // Open/close helpers for submenus
@@ -1094,7 +1126,10 @@
               li.classList.add('header-hover-open');
               openSub(li);
               const sub = li.querySelector(':scope > .dropdown-menu');
-              if (sub) sub.setAttribute('data-bs-popper','static');
+              if (sub) {
+                sub.setAttribute('data-bs-popper','static');
+                alignTopLevelMenuToTile(sub, tile);
+              }
             });
           });
         }
