@@ -8,9 +8,14 @@
     </style>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">My Listings</h2>
-        <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
-            <i class="fas fa-plus me-1"></i> Add New Listing
-        </a>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{{ route('seller.products.pricing.bulk') }}" class="btn btn-outline-primary rounded-pill">
+              <i class="bi bi-cash-coin me-1"></i> Bulk Edit Prices
+          </a>
+          <a href="{{ route('products.create') }}" class="btn btn-primary rounded-pill">
+              <i class="fas fa-plus me-1"></i> Add New Listing
+          </a>
+        </div>
     </div>
 
     {{-- Success message --}}

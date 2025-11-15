@@ -244,10 +244,18 @@ public function variations() {
         return $price;
     }
 
-    /** Final price after either product % or active deal % */
+    /** Final price after either explicit sale price, product %, or active deal % */
     public function getDiscountedPriceAttribute()
     {
-        return $this->applyDiscount($this->price);
+        $price = (float) ($this->price ?? 0);
+
+        // If an explicit sale/discount price is set and lower than base, prefer it
+        if (!is_null($this->discount_price) && (float) $this->discount_price > 0 && (float) $this->discount_price < $price) {
+            return (float) $this->discount_price;
+        }
+
+        // Otherwise, apply dynamic discount_percent or active deal to base price
+        return $this->applyDiscount($price);
     }
 
 
