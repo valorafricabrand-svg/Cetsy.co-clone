@@ -793,6 +793,19 @@ public function update(Request $request, Product $product)
 
     public function show(Product $product)
     {
+        $user = auth()->user();
+
+        if (! $user) {
+            return redirect()->route('listing.show', $product->slug ?? $product->getRouteKey());
+        }
+
+        $shop = $user->shop ?? null;
+        $ownsProduct = $shop && ((int) $product->shop_id === (int) $shop->id);
+
+        if (! $ownsProduct && ! ($user->is_admin ?? false)) {
+            return redirect()->route('listing.show', $product->slug ?? $product->getRouteKey());
+        }
+
         $product->load('media');
         return view('products.show', compact('product'));
     }
@@ -1844,6 +1857,5 @@ public function shipping(Product $product, Request $request)
     }
 
 }
-
 
 
