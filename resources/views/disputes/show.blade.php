@@ -45,6 +45,146 @@
         </div>
     </div>
 
+    @php
+        // Show banner if any admin message exists in this dispute
+        try {
+            $adminIntervened = ($dispute->messages ?? collect())->contains(function($m){
+                return ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_ADMIN_MESSAGE;
+            });
+        } catch (\Throwable $e) { $adminIntervened = false; }
+    @endphp
+    @if($adminIntervened)
+        <div class="alert alert-info d-flex align-items-center" role="alert">
+            <i class="bi bi-shield-check me-2"></i>
+            <div>Customer Support is now intervening in this dispute. Please continue communication here.</div>
+        </div>
+    @endif
+
+    {{-- Seller notice: buyer requested return/exchange and order reset to processing --}}
+    @php
+        $isSellerUser = auth()->check() && (($dispute->seller_id ?? null) === auth()->id() || optional($dispute->order?->shop)->user_id === auth()->id());
+        $exchangeRequested = false;
+        try {
+            $msgs = $dispute->messages ?? collect();
+            $exchangeRequested = $msgs->contains(function($m){
+                $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+                $text   = strtolower((string)($m->message ?? ''));
+                return $typeOk && (str_contains($text,'return/exchange') || str_contains($text,'reset to processing') || str_contains($text,'exchange'));
+            });
+        } catch (\Throwable $e) { $exchangeRequested = false; }
+    @endphp
+    @if($isSellerUser && $exchangeRequested)
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>
+                The buyer has requested a order refund and your order has been restored to processing state, please ship that product again.
+            </div>
+        </div>
+    @endif
+
+    {{-- Pending refund proposal notice and actions --}}
+    @php
+        $pendingRefund = method_exists($dispute, 'getPendingRefund') ? $dispute->getPendingRefund() : null;
+        $isBuyerUser = auth()->check() && $dispute->buyer_id === auth()->id();
+    @endphp
+    @if($pendingRefund)
+        <div class="alert alert-warning" role="alert">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <strong>Pending Refund Proposal:</strong>
+                    Seller proposed a {{ rtrim(rtrim(number_format($pendingRefund['percent'] ?? 0, 2), '0'), '.') }}% refund
+                    ({{ get_currency() }} {{ number_format($pendingRefund['amount'] ?? 0, 2) }}).
+                </div>
+                @if($isBuyerUser)
+                    <div class="d-flex gap-2">
+                        <form method="POST" action="{{ route('disputes.refund-proposal.accept', $dispute->id) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <i class="bi bi-check-circle"></i> Accept
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('disputes.refund-proposal.decline', $dispute->id) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-x-circle"></i> Decline
+                            </button>
+                        </form>
+                    </div>
+                @else
+                    <span class="badge bg-warning text-dark">Awaiting buyer response</span>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    {{-- Contact Support (buyer & seller) and Admin Request Evidence --}}
+    @php $isResolvedOrClosed = $dispute->isResolved() || $dispute->isClosed(); @endphp
+    @if(!$isResolvedOrClosed)
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-life-preserver me-1"></i> Need Help?</span>
+                @if(auth()->check() && (auth()->id() === $dispute->buyer_id || auth()->id() === $dispute->seller_id) && !$adminIntervened)
+                    <form method="POST" action="{{ route('disputes.contact-support', $dispute->id) }}" class="m-0">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-dark">
+                            <i class="bi bi-headset"></i> Contact Support
+                        </button>
+                    </form>
+                @endif
+            </div>
+            @if(auth()->check() && method_exists(auth()->user(), 'isAdmin') && auth()->user()->isAdmin())
+                <div class="card-body">
+                    <div class="mb-0 small text-muted">
+                        Assigned Admin: <strong>{{ $dispute->assignedAdmin->name ?? 'None' }}</strong>
+                        @if(empty($dispute->assignedAdmin))
+                            <form method="POST" action="{{ route('disputes.assign-admin', $dispute->id) }}" class="d-inline ms-2">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-info">Assign to Me</button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    {{-- Pending evidence requests for current user --}}
+    @if(isset($evidenceRequests) && auth()->check())
+        @php $myPendingReqs = $evidenceRequests->where('requested_from', auth()->id())->where('status','pending'); @endphp
+        @foreach($myPendingReqs as $req)
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Additional Information Requested:</strong>
+                    {{ $req->message }}
+                    @if($req->deadline)
+                        <span class="ms-2 small text-muted">Deadline: {{ $req->deadline->format('M d, Y') }}</span>
+                    @endif
+                </div>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#evidenceRespond-{{ $req->id }}">
+                    Provide Info
+                </button>
+            </div>
+            <div id="evidenceRespond-{{ $req->id }}" class="collapse mb-3">
+                <form action="{{ route('disputes.evidence-requests.respond', $req->id) }}" method="POST" enctype="multipart/form-data" class="border rounded p-3">
+                    @csrf
+                    <div class="mb-2">
+                        <label class="form-label">Notes</label>
+                        <textarea name="response_notes" class="form-control" rows="3" placeholder="Add any explanation or notes..." required></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Attachments</label>
+                        <input type="file" name="submitted_evidence[]" class="form-control" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" required>
+                        <div class="form-text">Max 10MB per file. Supported: JPG, PNG, PDF, DOC, DOCX</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Submit Response
+                    </button>
+                </form>
+            </div>
+        @endforeach
+    @endif
+
     {{-- Dispute Statistics --}}
     <div class="row mb-4">
         <div class="col-md-3 col-sm-6 mb-3">
@@ -183,7 +323,17 @@
                                 This dispute is related to Order #{{ $order->id }} from {{ $order->shop->name ?? 'the shop' }}
                             </small>
                         </div>
-                        <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-sm btn-outline-primary">
+                        @php
+                            $authUser  = auth()->user();
+                            $sellerId  = optional($order->shop)->user_id;
+                            $asSeller  = $authUser && ((int)$authUser->id === (int)$sellerId || (method_exists($authUser,'isSeller') ? $authUser->isSeller() : false));
+                            $orderHref = $asSeller && \Illuminate\Support\Facades\Route::has('seller.orders.show')
+                                ? route('seller.orders.show', $order->id)
+                                : (\Illuminate\Support\Facades\Route::has('buyer.orders.show')
+                                    ? route('buyer.orders.show', $order->id)
+                                    : route('orders.show', $order->id));
+                        @endphp
+                        <a href="{{ $orderHref }}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-eye"></i> View Full Order
                         </a>
                     </div>
@@ -253,7 +403,7 @@
                                     <strong>Initial Dispute Description</strong>
                                     <small class="text-muted ms-2">by {{ $dispute->buyer_id === auth()->id() ? 'You' : $dispute->buyer->name }}</small>
                                 </h6>
-                                <p class="mb-3 fs-6">{{ $dispute->description }}</p>
+                                <p class="mb-3 fs-6">{!! $dispute->description !!}</p>
                                 
                                 {{-- Initial Evidence Display --}}
                                 @if($dispute->evidence && count($dispute->evidence) > 0)
@@ -310,7 +460,15 @@
                             
                             <h6>Order</h6>
                             <p class="mb-3">
-                                <a href="{{ route('buyer.orders.show', $dispute->order->id) }}" class="text-decoration-none">
+                                @php
+                                    $o = $dispute->order; $sellerId2 = optional($o->shop)->user_id; $asSeller2 = $authUser && (int)$authUser->id === (int)$sellerId2;
+                                    $orderHref2 = $asSeller2 && \Illuminate\Support\Facades\Route::has('seller.orders.show')
+                                        ? route('seller.orders.show', $o->id)
+                                        : (\Illuminate\Support\Facades\Route::has('buyer.orders.show')
+                                            ? route('buyer.orders.show', $o->id)
+                                            : route('orders.show', $o->id));
+                                @endphp
+                                <a href="{{ $orderHref2 }}" class="text-decoration-none">
                                     Order #{{ $dispute->order->id }}
                                 </a>
                             </p>
@@ -347,8 +505,124 @@
 
             
 
-            {{-- Mutual Resolution Section --}}
-            @if($dispute->canBeMutuallyResolved())
+            {{-- Seller Refund Action --}}
+            @php
+                $isSeller = auth()->check() && (($dispute->seller_id ?? null) === auth()->id() || optional($dispute->order->shop)->user_id === auth()->id());
+                $isAdmin  = auth()->check() && (method_exists(auth()->user(), 'isAdmin') ? auth()->user()->isAdmin() : false);
+                $canRefund = $isSeller || $isAdmin;
+            @endphp
+            @if($canRefund && !$dispute->isResolved() && !$dispute->isClosed())
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h6 class="mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-cash-coin"></i> Issue Refund to Buyer
+                        </h6>
+                        <div class="d-flex align-items-center gap-2">
+                          @php
+                              $fullRefundLabel = $isAdmin ? 'Issue Full Refund (100%)' : 'Accept Full Refund (100%)';
+                              $partialRefundLabel = $isAdmin ? 'Propose Partial Refund' : 'Offer Partial Refund';
+                          @endphp
+                          <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#fullRefundModal-{{ $dispute->id }}">
+                            <i class="bi bi-check2-circle"></i> {{ $fullRefundLabel }}
+                          </button>
+                          <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#refundModal-{{ $dispute->id }}">
+                            <i class="bi bi-sliders"></i> {{ $partialRefundLabel }}
+                          </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">You can resolve this dispute by issuing a partial or full refund to the buyer's wallet.</p>
+                        <ul class="mb-0 small text-muted">
+                            <li>Refund is credited to the buyer and debited from the seller's wallet.</li>
+                            <li>For non-delivery, consider a full (100%) refund.</li>
+                            <li>For damaged or not as described, you may agree on a partial refund.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Refund Modal -->
+                <div class="modal fade" id="refundModal-{{ $dispute->id }}" tabindex="-1" aria-labelledby="refundModalLabel-{{ $dispute->id }}" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <form method="POST" action="{{ route('disputes.refund', $dispute) }}" class="modal-content">
+                      @csrf
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="refundModalLabel-{{ $dispute->id }}">Confirm Refund</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        @php $orderTotal = (float)($dispute->order->total_amount ?? 0); @endphp
+                        <div class="mb-3">
+                          <label for="refund-percent-{{ $dispute->id }}" class="form-label">Refund Percentage (%)</label>
+                          <input type="number" name="refund_percent" id="refund-percent-{{ $dispute->id }}" class="form-control" value="50" min="1" max="100" step="0.01" required>
+                          <div class="form-text">Order Total: {{ get_currency() }} {{ number_format($orderTotal, 2) }}. Set the percentage to refund to the buyer.</div>
+                        </div>
+                        <div class="alert alert-info" id="refund-amount-box-{{ $dispute->id }}">
+                          <i class="bi bi-calculator"></i>
+                          <strong>Refund Amount:</strong>
+                          <span id="refund-amount-{{ $dispute->id }}">{{ get_currency() }} {{ number_format($orderTotal, 2) }}</span>
+                        </div>
+                        <p class="small text-muted mb-0">This will credit the buyer's wallet and debit the seller's wallet. This action cannot be undone.</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">
+                          <i class="bi bi-check2-circle"></i> Confirm Refund
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                <!-- Full Refund Confirm Modal -->
+                <div class="modal fade" id="fullRefundModal-{{ $dispute->id }}" tabindex="-1" aria-labelledby="fullRefundModalLabel-{{ $dispute->id }}" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <form method="POST" action="{{ route('disputes.refund', $dispute) }}" class="modal-content">
+                      @csrf
+                      <input type="hidden" name="refund_percent" value="100">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="fullRefundModalLabel-{{ $dispute->id }}">Confirm Full Refund</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        @php $fullVerb = $isAdmin ? 'issue' : 'accept'; @endphp
+                        Are you sure you want to {{ $fullVerb }} a full refund (100%)? This will credit the buyer and debit the seller's wallet.
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">
+                          <i class="bi bi-check2-circle"></i> Confirm Full Refund
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                @push('scripts')
+                <script>
+                (function(){
+                  document.addEventListener('DOMContentLoaded', function(){
+                    var input = document.getElementById('refund-percent-{{ $dispute->id }}');
+                    var amountEl = document.getElementById('refund-amount-{{ $dispute->id }}');
+                    var total = {{ $orderTotal }};
+                    var currency = @json(get_currency());
+                    function fmt(n){ try { return n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); } catch(e){ return (Math.round(n*100)/100).toFixed(2); } }
+                    function recalc(){
+                      var p = parseFloat(input.value || '0');
+                      if (isNaN(p) || p < 0) p = 0;
+                      if (p > 100) p = 100;
+                      var amt = total * (p/100);
+                      amountEl.textContent = currency + ' ' + fmt(amt);
+                    }
+                    input.addEventListener('input', recalc);
+                    recalc();
+                  });
+                })();
+                </script>
+                @endpush
+            @endif
+
+            {{-- Mutual Resolution Section (disabled via config) --}}
+            @if(config('disputes.enable_mutual_resolution') && $dispute->canBeMutuallyResolved())
                 <div class="card mb-4 border-success">
                     <div class="card-header bg-success text-white">
                         <h6 class="mb-0">
@@ -449,8 +723,8 @@
                 </div>
             @endif
 
-            {{-- Show mutual resolution status if already resolved --}}
-            @if($dispute->isMutuallyResolved())
+            {{-- Show mutual resolution status if already resolved (respect config) --}}
+            @if(config('disputes.enable_mutual_resolution') && $dispute->isMutuallyResolved())
                 <div class="alert alert-success mb-4">
                     <h6 class="alert-heading">
                         <i class="bi bi-handshake"></i> Mutually Resolved
@@ -784,7 +1058,7 @@
                                 {{-- Message Content --}}
                                 <div class="message-content p-3 rounded">
                                     <p class="mb-3">
-                                        {{ $messageContent }}
+                                        {!! $messageContent !!}
                                     </p>
                                     
                                     {{-- Attachments Display --}}
@@ -927,6 +1201,22 @@
                         <a href="{{ route('orders.chat.show', $order->id) }}" class="btn btn-outline-info">
                             <i class="bi bi-chat"></i> Order Chat
                         </a>
+
+                        @php
+                            $viewerIsBuyer = auth()->check() && auth()->id() === ($dispute->buyer_id ?? null);
+                            $orderIsShipped = $order && ($order->status === \App\Models\Order::STATUS_SHIPPED);
+                            $disputeClosedOrResolved = $dispute->isClosed() || $dispute->isResolved() || $dispute->isMutuallyResolved();
+                        @endphp
+                        @if($viewerIsBuyer && $orderIsShipped && $disputeClosedOrResolved)
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#deliverModal-{{ $order->id }}">
+                                <i class="bi bi-check2-circle"></i> Mark Delivered
+                            </button>
+                        @endif
+                        @if($viewerIsBuyer && $order && $order->status === \App\Models\Order::STATUS_DELIVERED)
+                            <a href="{{ route('buyer.orders.show', $order->id) }}#reviews" class="btn btn-outline-warning">
+                                <i class="bi bi-star"></i> Leave a Review
+                            </a>
+                        @endif
                         @endif
                         
                         @if($dispute->status !== 'resolved' && $dispute->status !== 'closed' && $dispute->status !== 'final' && (auth()->id() === $dispute->created_by || auth()->user()->isAdmin()))
@@ -1923,6 +2213,20 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     @endif
 @endif
+
+    {{-- Buyer Post-Dispute Action: Mark Delivered (when dispute closed/resolved and order is shipped) --}}
+    @php
+        $viewerIsBuyer = auth()->check() && auth()->id() === ($dispute->buyer_id ?? null);
+        $orderForAction = isset($order) && $order ? $order : $dispute->order;
+        $orderIsShipped = $orderForAction && ($orderForAction->status === \App\Models\Order::STATUS_SHIPPED);
+        $disputeClosedOrResolved = $dispute->isClosed() || $dispute->isResolved() || $dispute->isMutuallyResolved();
+    @endphp
+    @if($viewerIsBuyer && $orderForAction && $orderIsShipped && $disputeClosedOrResolved)
+        @once
+            {{-- Include the buyer deliver modal once for this page --}}
+            @include('seller.orders.modals.delivered', ['order' => $orderForAction])
+        @endonce
+    @endif
 
 {{-- Close Dispute Modal --}}
 <div class="modal fade" id="closeDisputeModal" tabindex="-1" aria-labelledby="closeDisputeModalLabel" aria-hidden="true">

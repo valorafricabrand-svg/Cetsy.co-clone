@@ -20,6 +20,19 @@
     $resolvedDispute = $disputes->where('status', 'resolved')->first();
   }
 
+  // Detect if the active dispute contains a system message indicating an exchange was requested
+  $exchangeRequested = false;
+  if ($activeDispute && method_exists($activeDispute, 'messages')) {
+    try {
+      $msgs = $activeDispute->messages ?? collect();
+      $exchangeRequested = $msgs->contains(function($m){
+        $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+        $text   = strtolower((string)($m->message ?? ''));
+        return $typeOk && (str_contains($text, 'return/exchange') || str_contains($text, 'exchange'));
+      });
+    } catch (\Throwable $e) { $exchangeRequested = false; }
+  }
+
   // Compute safe totals in case DB totals are null/missing
   $computedSubtotal = ($order->items ?? collect())->sum(function($it){
     return (float)($it->price ?? 0) * (int)($it->quantity ?? 1);
@@ -30,6 +43,10 @@
   $subtotalVal = isset($order->subtotal) ? (float)$order->subtotal : (float)$computedSubtotal;
   $shippingVal = isset($order->shipping_cost) ? (float)$order->shipping_cost : (float)$computedShipping;
   $totalVal    = isset($order->total_amount) ? (float)$order->total_amount : (float)($subtotalVal + $shippingVal);
+  // Determine if this order contains only digital items
+  $digitalOnly = ($order->items ?? collect())->every(function($it){
+    return optional($it->product)->type === 'digital';
+  });
 @endphp
 
 <div class="content">
@@ -41,6 +58,12 @@
     </h2>
 
     <div class="btn-toolbar gap-2 flex-wrap">
+      @if($activeDispute && $exchangeRequested)
+        <span class="badge bg-warning text-dark d-flex align-items-center gap-2" title="Buyer requested a return/exchange via dispute">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          The buyer has requested a order refund and your order has been restored to processing state, please ship that product again.
+        </span>
+      @endif
       <a href="{{ route('orders.chat.show', $order->id) }}"
          class="btn btn-outline-info btn-sm d-flex align-items-center gap-1">
         <i class="fa-solid fa-comments"></i> Messages
@@ -64,11 +87,17 @@
 
         {{-- Cancel moved into kebab menu --}}
       @elseif($order->status === \App\Models\Order::STATUS_PROCESSING)
-        <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1"
-                data-bs-toggle="modal"
-                data-bs-target="#shipModal">
-          <i class="fa-solid fa-truck"></i> Ship
-        </button>
+        @if($digitalOnly)
+          <span class="badge bg-secondary d-flex align-items-center gap-2" title="Digital order - no shipping required">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Digital order
+          </span>
+        @else
+          <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1"
+                  data-bs-toggle="modal"
+                  data-bs-target="#shipModal">
+            <i class="fa-solid fa-truck"></i> Ship
+          </button>
+        @endif
 
         {{-- Cancel moved into kebab menu --}}
       @elseif($order->status === \App\Models\Order::STATUS_SHIPPED)
@@ -150,6 +179,15 @@
               <span>{{ $value }}</span>
             </div>
           @endforeach
+
+          @if(!empty($order->tracking_url))
+            <div class="d-flex justify-content-between mb-2">
+              <span class="fw-semibold">Tracking Link:</span>
+              <span>
+                <a href="{{ $order->tracking_url }}" target="_blank" rel="noopener" class="link-primary">Open tracking</a>
+              </span>
+            </div>
+          @endif
 
           <div class="d-flex justify-content-between mb-2">
             <span class="fw-semibold">Shipping Fee:</span>
@@ -620,6 +658,13 @@
 
             <div class="col-md-6">
               <div class="form-floating">
+                <input type="url" class="form-control" id="editTrackingUrlInput" name="tracking_url" value="{{ old('tracking_url', $order->tracking_url) }}" placeholder="https://carrier.example/track/ABC123">
+                <label for="editTrackingUrlInput">Tracking URL (optional)</label>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-floating">
                 <input type="date" class="form-control" id="editShipDateInput" name="shipped_at" value="{{ old('shipped_at', optional($order->shipped_at)->toDateString() ?? now()->toDateString()) }}">
                 <label for="editShipDateInput">Shipping date</label>
               </div>
@@ -729,6 +774,15 @@
 
             <div class="col-md-6">
               <div class="form-floating">
+                <input type="url" class="form-control" id="trackingUrlInput" name="tracking_url" placeholder="https://carrier.example/track/ABC123" required>
+                <label for="trackingUrlInput">Tracking URL *</label>
+                <div class="invalid-feedback">Tracking URL is required.</div>
+                <div class="form-text">Paste a direct tracking link from the courier.</div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-floating">
                 <input type="date" class="form-control" id="shipDateInput" name="shipped_at" value="{{ old('shipped_at', now()->toDateString()) }}">
                 <label for="shipDateInput">Shipping date</label>
               </div>
@@ -760,9 +814,12 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Auto-show ship modal if URL contains ?ship=1
+  // Auto-show ship modal if URL contains ?ship=1 OR after server-side errors
   const params = new URLSearchParams(window.location.search);
-  if (params.get('ship') === '1') {
+  const shouldShowByQuery = params.get('ship') === '1';
+  const shouldShowByErrors = Boolean(@json(optional($errors->getBag('ship'))->any()));
+  const shouldShowByFlag = Boolean(@json(session('show_ship_modal', false)));
+  if (shouldShowByQuery || shouldShowByErrors || shouldShowByFlag) {
     const modalEl = document.getElementById('shipModal');
     modalEl && new bootstrap.Modal(modalEl).show();
   }
@@ -802,7 +859,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
-
-
-
-

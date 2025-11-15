@@ -25,7 +25,13 @@
         <h6 class="mb-3">Product Information</h6>
         <div class="d-flex align-items-center mb-3">
             @if($offer->product->media && $offer->product->media->count() > 0)
-                @php($thumb = function_exists('product_thumb_url') ? product_thumb_url($offer->product) : (optional($offer->product->media->first())->url ? asset('storage/'.$offer->product->media->first()->url) : null))
+                @php
+                    $thumb = function_exists('product_thumb_url')
+                        ? product_thumb_url($offer->product)
+                        : (optional($offer->product->media->first())->url
+                            ? asset('storage/'.$offer->product->media->first()->url)
+                            : null);
+                @endphp
                 <img src="{{ $thumb }}" 
                      alt="{{ $offer->product->name }}" 
                      class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;">

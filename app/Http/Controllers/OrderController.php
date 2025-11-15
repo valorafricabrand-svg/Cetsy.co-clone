@@ -133,7 +133,8 @@ public function index(Request $request)
             'items.shippingProfile.processingTime',
             'shop.user',
             'user',
-            'disputes'
+            'disputes',
+            'disputes.messages'
         );
         // Mark order notifications as read for the seller
         try {
@@ -700,33 +701,65 @@ public function storeOrder(Request $request)
     {
         $this->authorizeSeller($order);
 
-        $data = $request->validate([
-            'courier'        => 'required|string|max:100',
-            'courier_other'  => 'nullable|string|max:100',
-            'tracking_no'    => 'required|string|max:120',
-            'shipped_at'     => 'nullable|date',
-            'ship_notes'     => 'nullable|string|max:1000',
+        // Log the attempt with sanitized inputs
+        \Log::info('order.ship.attempt', [
+            'order_id'  => $order->id,
+            'seller_id' => auth()->id(),
+            'input'     => $request->except(['_token'])
         ]);
+
+        try {
+            $data = $request->validate([
+                'courier'        => 'required|string|max:100',
+                'courier_other'  => 'nullable|string|max:100',
+                'tracking_no'    => 'required|string|max:120',
+                'tracking_url'   => 'required|url|max:255',
+                'shipped_at'     => 'nullable|date',
+                'ship_notes'     => 'nullable|string|max:1000',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            \Log::warning('order.ship.validation_failed', [
+                'order_id'  => $order->id,
+                'seller_id' => auth()->id(),
+                'errors'    => $ve->errors(),
+            ]);
+            return back()->withErrors($ve->errors(), 'ship')->withInput()->with('show_ship_modal', true);
+        }
 
         // If 'Manual'/'Other' selected, require a typed courier name
         $selected = strtolower((string)($data['courier'] ?? ''));
         $typed    = trim((string)($request->input('courier_other', '')));
         if (in_array($selected, ['other','manual'], true)) {
             if ($typed === '') {
-                return back()->withErrors(['courier_other' => 'Please enter a courier name.'])->withInput();
+                \Log::warning('order.ship.courier_missing_manual_name', [
+                    'order_id' => $order->id,
+                    'seller_id'=> auth()->id(),
+                ]);
+                return back()->withErrors(['courier_other' => 'Please enter a courier name.'], 'ship')->withInput()->with('show_ship_modal', true);
             }
             $data['courier'] = mb_substr($typed, 0, 100);
         }
 
-        DB::transaction(function () use ($order, $data) {
-            $order->update([
-                'status'      => Order::STATUS_SHIPPED,
-                'courier'     => $data['courier'],
-                'tracking_no' => $data['tracking_no'],
-                'shipped_at'  => $data['shipped_at'] ?? now(),
-                'ship_notes'  => $data['ship_notes'] ?? null,
+        try {
+            DB::transaction(function () use ($order, $data) {
+                $order->update([
+                    'status'      => Order::STATUS_SHIPPED,
+                    'courier'     => $data['courier'],
+                    'tracking_no' => $data['tracking_no'],
+                    'tracking_url'=> $data['tracking_url'] ?? null,
+                    'shipped_at'  => $data['shipped_at'] ?? now(),
+                    'ship_notes'  => $data['ship_notes'] ?? null,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            \Log::error('order.ship.update_failed', [
+                'order_id'  => $order->id,
+                'seller_id' => auth()->id(),
+                'error'     => $e->getMessage(),
+                'trace'     => $e->getTraceAsString(),
             ]);
-        });
+            return back()->withErrors(['error' => 'Failed to mark order as shipped. Please try again.'], 'ship')->withInput()->with('show_ship_modal', true);
+        }
 
         try {
             $order->load(['items.product', 'shop.user', 'user']);
@@ -736,6 +769,7 @@ public function storeOrder(Request $request)
             $shippingData = [
                 'courier'     => $data['courier'],
                 'tracking_no' => $data['tracking_no'],
+                'tracking_url'=> $data['tracking_url'] ?? null,
                 'ship_notes'  => $data['ship_notes'] ?? null,
             ];
 
@@ -745,12 +779,18 @@ public function storeOrder(Request $request)
             \Mail::to($buyer->email)->send(
                 new \App\Mail\OrderShippedBuyerMail($order, $buyer, $order->shop, $shippingData)
             );
-        } catch (\Exception $e) {
-            Log::error('Failed to send shipping emails: '.$e->getMessage(), [
-                'order_id' => $order->id,
+        } catch (\Throwable $e) {
+            \Log::error('order.ship.email_failed', [
+                'order_id'  => $order->id,
+                'seller_id' => auth()->id(),
+                'error'     => $e->getMessage(),
             ]);
         }
 
+        \Log::info('order.ship.success', [
+            'order_id'  => $order->id,
+            'seller_id' => auth()->id(),
+        ]);
         return back()->with('success', 'Order marked as shipped.');
     }
 
@@ -766,6 +806,7 @@ public function storeOrder(Request $request)
             'courier'        => 'required|string|max:100',
             'courier_other'  => 'nullable|string|max:100',
             'tracking_no'    => 'required|string|max:120',
+            'tracking_url'   => 'nullable|url|max:255',
             'shipped_at'     => 'nullable|date',
             'ship_notes'     => 'nullable|string|max:1000',
         ]);
@@ -783,6 +824,7 @@ public function storeOrder(Request $request)
         $original = [
             'courier'     => (string)($order->courier ?? ''),
             'tracking_no' => (string)($order->tracking_no ?? ''),
+            'tracking_url'=> (string)($order->tracking_url ?? ''),
             'shipped_at'  => $order->shipped_at,
             'ship_notes'  => (string)($order->ship_notes ?? ''),
         ];
@@ -790,6 +832,7 @@ public function storeOrder(Request $request)
         $newValues = [
             'courier'     => (string)$data['courier'],
             'tracking_no' => (string)$data['tracking_no'],
+            'tracking_url'=> (string)($data['tracking_url'] ?? $order->tracking_url),
             'shipped_at'  => $data['shipped_at'] ?? $order->shipped_at,
             'ship_notes'  => $data['ship_notes'] ?? $order->ship_notes,
         ];
@@ -804,7 +847,7 @@ public function storeOrder(Request $request)
         };
 
         $changed = [];
-        foreach (['courier','tracking_no','ship_notes'] as $f) {
+        foreach (['courier','tracking_no','tracking_url','ship_notes'] as $f) {
             if ((string)($original[$f] ?? '') !== (string)($newValues[$f] ?? '')) {
                 $changed[$f] = [
                     'old' => (string)($original[$f] ?? ''),
@@ -825,6 +868,7 @@ public function storeOrder(Request $request)
                 // keep existing status; just update fields
                 'courier'     => $newValues['courier'],
                 'tracking_no' => $newValues['tracking_no'],
+                'tracking_url'=> $newValues['tracking_url'],
                 'shipped_at'  => $newValues['shipped_at'],
                 'ship_notes'  => $newValues['ship_notes'],
             ]);
@@ -840,6 +884,7 @@ public function storeOrder(Request $request)
                 $shippingData = [
                     'courier'     => $order->courier,
                     'tracking_no' => $order->tracking_no,
+                    'tracking_url'=> $order->tracking_url,
                     'shipped_at'  => $order->shipped_at,
                     'ship_notes'  => $order->ship_notes,
                 ];
@@ -884,9 +929,9 @@ public function storeOrder(Request $request)
         abort_unless($order->status === Order::STATUS_SHIPPED, 422, 'Only shipped orders can be marked as delivered.');
 
         DB::transaction(function () use ($order) {
-            // 1) Mark order as completed and set delivered_at timestamp
+            // 1) Mark order as delivered and set delivered_at timestamp
             $order->update([
-                'status'       => Order::STATUS_COMPLETED,
+                'status'       => Order::STATUS_DELIVERED,
                 'delivered_at' => now(),
             ]);
 
@@ -1008,14 +1053,21 @@ public function storeOrder(Request $request)
                     'description'=> 'Order refund',
                 ]);
 
-                // Debit seller to reverse the payment
+                // Debit seller to reverse the payment (on-hold if funds are still on hold)
+                $sellerId = $order->shop->user_id;
+                $hasOnHold = \App\Models\Wallet::where('user_id', $sellerId)
+                    ->where('status', 'on_hold')
+                    ->where('meta->order_id', $order->id)
+                    ->exists();
                 Wallet::create([
-                    'user_id'    => $order->shop->user_id,
+                    'user_id'    => $sellerId,
                     'credit'     => 0,
                     'debit'      => $order->total_amount,
                     'balance'    => 0,
                     'reference'  => 'seller_debit_'.$order->id,
                     'description'=> 'Order cancellation - payment reversed',
+                    'status'     => $hasOnHold ? 'on_hold' : 'completed',
+                    'meta'       => ['order_id' => $order->id],
                 ]);
 
                 // Restock inventory for physical products
@@ -1098,14 +1150,21 @@ public function storeOrder(Request $request)
                     'description'=> 'Order cancelled by seller - refund',
                 ]);
 
-                // Debit seller to reverse the payment
+                // Debit seller to reverse the payment (on-hold if funds are still on hold)
+                $sellerId = $order->shop->user_id;
+                $hasOnHold = \App\Models\Wallet::where('user_id', $sellerId)
+                    ->where('status', 'on_hold')
+                    ->where('meta->order_id', $order->id)
+                    ->exists();
                 Wallet::create([
-                    'user_id'    => $order->shop->user_id,
+                    'user_id'    => $sellerId,
                     'credit'     => 0,
                     'debit'      => $order->total_amount,
                     'balance'    => 0,
                     'reference'  => 'seller_cancellation_debit_'.$order->id,
                     'description'=> 'Order cancelled by seller - payment reversed',
+                    'status'     => $hasOnHold ? 'on_hold' : 'completed',
+                    'meta'       => ['order_id' => $order->id],
                 ]);
 
                 // Restock inventory for physical products

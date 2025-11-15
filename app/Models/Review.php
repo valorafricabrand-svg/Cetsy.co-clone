@@ -11,6 +11,9 @@ class Review extends Model
         'order_item_id',
         'rating',
         'comment',
+        'image_path',
+        'seller_response',
+        'seller_responded_at',
         'approved_at',
         'approved_by',
         'rejected_at',
@@ -21,6 +24,10 @@ class Review extends Model
         'updated_at',
         'shop_id',
 
+    ];
+
+    protected $casts = [
+        'seller_responded_at' => 'datetime',
     ];
 
     /* ---------- relationships ---------- */

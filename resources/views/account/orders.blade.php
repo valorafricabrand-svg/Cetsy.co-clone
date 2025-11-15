@@ -134,11 +134,15 @@
                         : 'Shipped';
                     } elseif ($dispatchBy) {
                       $progressMessage = 'Dispatch by '.$dispatchBy;
-                    } else {
+                    } elseif (in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING])) {
                       $progressMessage = 'Dispatch soon';
+                    } else {
+                      $progressMessage = null; // no progress text for cancelled/refunded and others
                     }
                   @endphp
-                  <div class="small text-muted mt-1">{{ $progressMessage }}</div>
+                  @if(!empty($progressMessage))
+                    <div class="small text-muted mt-1">{{ $progressMessage }}</div>
+                  @endif
                 </td>
                 <td>{{ money((float) ($order->total_amount ?? 0)) }}</td>
                 <td class="text-nowrap">
@@ -197,8 +201,10 @@
                   : 'Shipped';
               } elseif ($dispatchBy) {
                 $progressMessage = 'Dispatch by '.$dispatchBy;
-              } else {
+              } elseif (in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING])) {
                 $progressMessage = 'Dispatch soon';
+              } else {
+                $progressMessage = null; // no progress text for cancelled/refunded and others
               }
             @endphp
 
@@ -216,7 +222,9 @@
                   <small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
                 @endif
               </div>
-              <div class="small text-muted mb-2">{{ $progressMessage }}</div>
+              @if(!empty($progressMessage))
+                <div class="small text-muted mb-2">{{ $progressMessage }}</div>
+              @endif
               <div class="d-flex justify-content-between align-items-center">
                 <div class="text-truncate">
                   <span class="text-muted small">Shop:</span>
@@ -263,5 +271,4 @@
   </div>
 </div>
 @endsection
-
 

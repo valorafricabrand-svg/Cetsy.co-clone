@@ -594,7 +594,7 @@
                     Notifications
                 </h1>
                 @if($notifications->where('is_read', false)->count() > 0)
-                    <form method="POST" action="{{ route('notifications.mark-all-read') }}" class="d-inline">
+                    <form method="POST" action="{{ route('notifications.mark-all-read') }}" class="d-inline mark-all-form">
                         @csrf
                         <button type="submit" class="btn mark-all-btn">
                             <i class="fas fa-check-double me-1"></i>
@@ -626,9 +626,21 @@
                                 @endif
                                 
                                 <div class="notification-content">
-                                    <p class="notification-text {{ !$notification->is_read ? 'unread' : '' }}">
-                                        {{ $notification->description }}
-                                    </p>
+                                    @php
+                                        $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, auth()->user());
+                                        $linkText = \App\Services\NotificationRouteService::getLinkText($notification, auth()->user());
+                                        $hasOpen = \Illuminate\Support\Facades\Route::has('notifications.open');
+                                        $href = $hasOpen ? route('notifications.open', $notification->id) : $route;
+                                    @endphp
+                                    @if($route && $route !== route('notifications.index'))
+                                        <a href="{{ $href }}" class="notification-text {{ !$notification->is_read ? 'unread' : '' }} text-decoration-none d-block">
+                                            {{ $notification->description }}
+                                        </a>
+                                    @else
+                                        <p class="notification-text {{ !$notification->is_read ? 'unread' : '' }}">
+                                            {{ $notification->description }}
+                                        </p>
+                                    @endif
                                     
                                     <div class="notification-meta">
                                         <div class="notification-date">
@@ -640,23 +652,11 @@
                                     </div>
 
                                     <div class="notification-actions">
-                                        @php
-                                            $route = \App\Services\NotificationRouteService::getRouteForNotification($notification, auth()->user());
-                                            $linkText = \App\Services\NotificationRouteService::getLinkText($notification, auth()->user());
-                                            $hasOpen = \Illuminate\Support\Facades\Route::has('notifications.open');
-                                        @endphp
                                         @if($route && $route !== route('notifications.index'))
-                                            @if($hasOpen)
-                                                <a href="{{ route('notifications.open', $notification->id) }}" class="btn-view" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
-                                                    <i class="fas fa-eye"></i>
-                                                    {{ $linkText }}
-                                                </a>
-                                            @else
-                                                <a href="{{ $route }}" class="btn-view" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
-                                                    <i class="fas fa-eye"></i>
-                                                    {{ $linkText }}
-                                                </a>
-                                            @endif
+                                            <a href="{{ $href }}" class="btn-view" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
+                                                <i class="fas fa-eye"></i>
+                                                {{ $linkText }}
+                                            </a>
                                         @endif
                                         
                                         @if(!$notification->is_read)
@@ -772,7 +772,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentListItem = document.getElementById(`notification-${currentNotificationId}`);
             
             document.getElementById('notificationDescription').textContent = this.dataset.notificationDescription;
-            document.getElementById('markReadForm').action = `/notifications/${currentNotificationId}/mark-read`;
+            document.getElementById('markReadForm').action = `{{ url('/notifications') }}/${currentNotificationId}/mark-read`;
             
             const modal = new bootstrap.Modal(document.getElementById('markReadModal'));
             modal.show();

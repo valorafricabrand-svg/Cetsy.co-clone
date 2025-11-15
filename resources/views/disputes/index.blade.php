@@ -16,10 +16,17 @@
             <!-- Status Filter Tabs -->
             <div class="card mb-4">
                 <div class="card-body">
+                    @php
+                        // Show only these statuses in the UI
+                        $visibleStatuses = ['pending','under_review','closed'];
+                        $allVisibleCount = collect($visibleStatuses)->sum(function($s) use ($statusCounts) {
+                            return $statusCounts[$s] ?? 0;
+                        });
+                    @endphp
                     <ul class="nav nav-tabs" id="disputeTabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
-                                All <span class="badge bg-secondary">{{ array_sum($statusCounts) }}</span>
+                                All <span class="badge bg-secondary">{{ $allVisibleCount }}</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -28,28 +35,13 @@
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="under-review-tab" data-bs-toggle="tab" data-bs-target="#under-review" type="button" role="tab">
+                            <button class="nav-link" id="under-review-tab" data-bs-toggle="tab" data-bs-target="#under_review" type="button" role="tab">
                                 Under Review <span class="badge bg-info">{{ $statusCounts['under_review'] ?? 0 }}</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="resolved-tab" data-bs-toggle="tab" data-bs-target="#resolved" type="button" role="tab">
-                                Resolved <span class="badge bg-success">{{ $statusCounts['resolved'] ?? 0 }}</span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="appealed-tab" data-bs-toggle="tab" data-bs-target="#appealed" type="button" role="tab">
-                                Appealed <span class="badge bg-warning">{{ $statusCounts['appealed'] ?? 0 }}</span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="final-tab" data-bs-toggle="tab" data-bs-target="#final" type="button" role="tab">
-                                Final <span class="badge bg-secondary">{{ $statusCounts['final'] ?? 0 }}</span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="mutually_resolved-tab" data-bs-toggle="tab" data-bs-target="#mutually_resolved" type="button" role="tab">
-                                Mutually Resolved <span class="badge bg-success">{{ $statusCounts['mutually_resolved'] ?? 0 }}</span>
+                            <button class="nav-link" id="closed-tab" data-bs-toggle="tab" data-bs-target="#closed" type="button" role="tab">
+                                Closed <span class="badge bg-secondary">{{ $statusCounts['closed'] ?? 0 }}</span>
                             </button>
                         </li>
                     </ul>
@@ -83,7 +75,7 @@
                 </div>
 
                 <!-- Individual status tabs -->
-                @foreach(['pending', 'under_review', 'resolved', 'appealed', 'final', 'mutually_resolved'] as $status)
+                @foreach(['pending', 'under_review', 'closed'] as $status)
                     <div class="tab-pane fade" id="{{ $status }}" role="tabpanel">
                         @php
                             $filteredDisputes = $disputes->where('status', $status);

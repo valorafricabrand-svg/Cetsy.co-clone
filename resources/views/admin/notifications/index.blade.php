@@ -305,7 +305,10 @@
                 @if($notifications->count() > 0)
                     <div class="list-group list-group-flush">
                         @foreach($notifications as $notification)
-                            <a href="{{ $notification->link ?? '#' }}" class="list-group-item list-group-item-action notification-item {{ !$notification->is_read ? 'unread' : '' }} p-3">
+                            @php
+                                $route = $notification->link ?? \App\Services\NotificationRouteService::getRouteForNotification($notification, auth()->user());
+                            @endphp
+                            <a href="{{ $route ?? '#' }}" class="list-group-item list-group-item-action notification-item {{ !$notification->is_read ? 'unread' : '' }} p-3">
                                 <div class="d-flex justify-content-between align-items-start mb-1">
                                     <h5 class="mb-1 fw-bold d-flex align-items-center">
                                         <span class="status-indicator {{ !$notification->is_read ? 'unread' : 'read' }}"></span>

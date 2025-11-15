@@ -89,6 +89,7 @@
                         <th>Product</th>
                         <th>Customer</th>
                         <th>Latest Message</th>
+                        <th class="text-center">Status</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -157,6 +158,13 @@
                                     </span>
                                 </div>
                             </td>
+                            <td class="text-center">
+                                @if($conversation['unread_count'] > 0)
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-dot"></i> Unread</span>
+                                @else
+                                    <span class="badge bg-success"><i class="bi bi-check2"></i> Read</span>
+                                @endif
+                            </td>
                             <td class="text-end">
                                 <div class="d-flex gap-2 justify-content-end">
                                     @if($conversation['unread_count'] > 0)
@@ -164,6 +172,13 @@
                                             @csrf
                                             <button type="submit" class="btn btn-warning btn-sm px-3 shadow-sm mark-read-btn" title="Mark as Read">
                                                 <i class="bi bi-check-circle me-1"></i> Mark Read
+                                            </button>
+                                        </form>
+                                    @elseif(!empty($conversation['last_received_message_id']))
+                                        <form method="POST" action="{{ route('seller.messages.mark-unread', $conversation['last_received_message_id']) }}" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm px-3 shadow-sm" title="Mark as Unread">
+                                                <i class="bi bi-dot"></i> Mark Unread
                                             </button>
                                         </form>
                                     @endif
@@ -175,7 +190,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">
+                            <td colspan="6" class="text-center py-4 text-muted">
                                 <i class="bi bi-inbox me-2"></i> No conversations found for your products.
                             </td>
                         </tr>

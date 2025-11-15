@@ -102,6 +102,7 @@ public function orderDetails(Order $order)
 
     $order->loadMissing([
         'items.product',
+        'items.product.digitalFiles',
         'items.shippingProfile.processingTime',
         'shop',
         'payments' => fn($query) => $query->orderBy('created_at'),
@@ -152,9 +153,14 @@ public function orderDetails(Order $order)
                     'description'=> 'Order refund',
                 ]);
 
-                // Debit seller
+                // Debit seller (on-hold if seller funds are still on hold for this order)
                 $shopUserId = optional($order->shop)->user_id;
                 if ($shopUserId) {
+                    $hasOnHold = Wallet::where('user_id', $shopUserId)
+                        ->where('status', 'on_hold')
+                        ->where('meta->order_id', $order->id)
+                        ->exists();
+
                     Wallet::create([
                         'user_id'    => $shopUserId,
                         'credit'     => 0,
@@ -162,6 +168,8 @@ public function orderDetails(Order $order)
                         'balance'    => 0,
                         'reference'  => 'seller_debit_'.$order->id,
                         'description'=> 'Order cancellation - payment reversed',
+                        'status'     => $hasOnHold ? 'on_hold' : 'completed',
+                        'meta'       => ['order_id' => $order->id],
                     ]);
                 }
 

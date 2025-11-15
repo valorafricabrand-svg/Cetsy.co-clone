@@ -88,6 +88,42 @@
 
         {{-- Action buttons --}}
         <div class="btn-toolbar flex-wrap gap-2">
+          @php
+            // Collect all downloadable files across digital items in this order
+            $__digitalFiles = [];
+            foreach (($order->items ?? []) as $__it) {
+              $p = optional($__it->product);
+              if ($p && ($p->type === 'digital')) {
+                foreach (($p->digitalFiles ?? collect()) as $__df) {
+                  $__digitalFiles[] = $__df;
+                }
+              }
+            }
+            $__canDownloadAll = in_array(
+              $order->status,
+              [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED]
+            ) && count($__digitalFiles) > 0;
+          @endphp
+
+          @if($__canDownloadAll)
+            @if(count($__digitalFiles) === 1)
+              <a href="{{ route('digital-files.download', $__digitalFiles[0]) }}"
+                 class="btn btn-success btn-lg d-flex align-items-center gap-2 px-4 py-2"
+                 data-bs-toggle="tooltip" data-bs-placement="bottom"
+                 title="Download your digital file">
+                <i class="bi bi-cloud-download fs-5"></i>
+                <span>Download</span>
+              </a>
+            @else
+              <button type="button"
+                      class="btn btn-success btn-lg d-flex align-items-center gap-2 px-4 py-2"
+                      data-bs-toggle="modal" data-bs-target="#downloadAllModal"
+                      title="Download your digital files">
+                <i class="bi bi-cloud-download fs-5"></i>
+                <span>Download Files</span>
+              </button>
+            @endif
+          @endif
 
           @if($order->status === \App\Models\Order::STATUS_PENDING)
             <a href="{{ route('pay_now', $order->id) }}"
@@ -145,7 +181,7 @@
                     data-bs-toggle="modal"
                     data-bs-target="#assessModal-{{ $order->id }}">
               <i class="bi bi-clipboard-check fs-5"></i>
-              <span>Assess&nbsp;Delivery</span>
+              <span>Asses&nbsp;Delivery</span>
             </button>
           @endif
 
@@ -421,6 +457,17 @@
       </div>
 
       @php
+        $isPending = ($order->status === \App\Models\Order::STATUS_PENDING);
+        $hasDigitalPending = $order->items->contains(function($it){ return optional($it->product)->type === 'digital'; });
+      @endphp
+      @if($hasDigitalPending && $isPending)
+        <div class="alert alert-warning mt-3 mb-0" role="alert">
+          <i class="bi bi-lock me-2"></i>
+          This order includes digital items. Downloads unlock after payment is completed.
+        </div>
+      @endif
+
+      @php
         $hasDigital = $order->items->contains(function($it){ return optional($it->product)->type === 'digital'; });
         $needsDownload = $order->items->contains(function($it){ return optional($it->product)->type === 'digital' && empty($it->downloaded_at); });
       @endphp
@@ -463,7 +510,7 @@
               <div class="small">Share feedback with the seller by leaving a quick review.</div>
             </div>
           </div>
-          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{{ $pendingReviewModalId }}">
+          <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#{{ $pendingReviewModalId }}">
             <i class="bi bi-pencil-square"></i> Leave a Review
           </button>
         </div>
@@ -508,6 +555,14 @@
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Courier:</span><span>{{ $order->courier ?? 'N/A' }}</span>
               </li>
+              @if(!empty($order->tracking_url))
+              <li class="list-group-item px-0 d-flex justify-content-between">
+                <span class="fw-semibold">Tracking Link:</span>
+                <span>
+                  <a href="{{ $order->tracking_url }}" target="_blank" rel="noopener" class="link-primary">Track package</a>
+                </span>
+              </li>
+              @endif
               <li class="list-group-item px-0 d-flex justify-content-between">
                 <span class="fw-semibold">Quantity:</span><span>{{ $order->items->sum('quantity') }}</span>
               </li>
@@ -702,16 +757,22 @@
                     {{-- Review (only after delivery) --}}
                     <td class="text-center">
                       @if($reviewed)
-                        <span class="badge bg-success d-inline-flex align-items-center gap-1">
-                          <i class="bi bi-check-circle"></i>
-                          {{ $item->review->rating }} &#9733;
-                        </span>
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                          <span class="badge bg-success d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-check-circle"></i>
+                            {{ $item->review->rating }} &#9733;
+                          </span>
+                          @php $editModalId = 'editReview_'.$item->id; @endphp
+                          <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $editModalId }}">
+                            <i class="bi bi-pencil"></i> Edit
+                          </button>
+                        </div>
                       @elseif($canReviewDelivered || ($product && $product->type === 'digital' && $canReviewDigitalIfCompleted))
                         @php $downloaded = !empty($item->downloaded_at); @endphp
                         @if($product && $product->type === 'digital' && ! $downloaded)
                           <span class="text-muted small">Download required to review</span>
                         @else
-                          <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
+                          <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
                             <i class="bi bi-star"></i> Review
                           </button>
                         @endif
@@ -947,8 +1008,53 @@
       </div>
     @endif
 
-  </div>
 </div>
+</div>
+
+@php
+  // Prepare a modal listing when multiple digital files exist
+  $__dlFiles = [];
+  foreach (($order->items ?? []) as $__it) {
+    $p = optional($__it->product);
+    if ($p && ($p->type === 'digital')) {
+      foreach (($p->digitalFiles ?? collect()) as $__df) {
+        $__dlFiles[] = $__df;
+      }
+    }
+  }
+  $__showDownloadModal = in_array($order->status, [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED])
+                        && count($__dlFiles) > 1;
+@endphp
+@if($__showDownloadModal)
+  <div class="modal fade" id="downloadAllModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Your Downloads</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <ul class="list-group list-group-flush">
+            @foreach($__dlFiles as $__file)
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="me-3 text-truncate">
+                  <i class="bi bi-file-earmark-arrow-down me-2"></i>
+                  <span class="text-truncate d-inline-block" style="max-width: 18rem;" title="{{ $__file->filename }}">{{ $__file->filename }}</span>
+                </div>
+                <a href="{{ route('digital-files.download', $__file) }}" class="btn btn-sm btn-success">
+                  <i class="bi bi-download"></i> Download
+                </a>
+              </li>
+            @endforeach
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+@endif
 
 {{-- ===== REVIEW MODALS (Delivered for physical; Completed/Delivered + download for digital) ===== --}}
 @foreach($order->items as $item)
@@ -959,10 +1065,10 @@
       : $canReviewDelivered;
   @endphp
   @if($allowReviewModal && !$item->review)
-    @php($modalId = 'reviewModal_'.$item->id)
+    @php $modalId = 'reviewModal_'.$item->id; @endphp
     <div class="modal fade" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg">
-        <form method="POST" action="{{ route('orders.items.reviews.store',[$item->order_id,$item->id]) }}" class="modal-content">
+        <form method="POST" enctype="multipart/form-data" action="{{ route('orders.items.reviews.store',[$item->order_id,$item->id]) }}" class="modal-content">
           @csrf
           <div class="modal-header">
             <h5 class="modal-title">Review &mdash; {{ optional($item->product)->name }}</h5>
@@ -983,6 +1089,11 @@
               <label class="form-label fw-semibold">Comment <span class="text-muted">&mdash;</span></label>
               <textarea name="comment" rows="4" class="form-control" placeholder="Share details of your experience"></textarea>
             </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Add a photo (optional)</label>
+              <input type="file" name="photo" accept="image/*" class="form-control">
+              <div class="form-text">JPEG, PNG, GIF, or WebP up to 5MB.</div>
+            </div>
           </div>
 
           <div class="modal-footer">
@@ -994,10 +1105,62 @@
       </div>
     </div>
   @endif
+  @if($item->review)
+    @php($editModalId = 'editReview_'.$item->id)
+    <div class="modal fade" id="{{ $editModalId }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <form method="POST" enctype="multipart/form-data" action="{{ route('orders.items.reviews.update',[$item->order_id,$item->id,$item->review->id]) }}" class="modal-content">
+          @csrf
+          @method('PATCH')
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Review — {{ optional($item->product)->name }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-warning small">
+              You can only increase your original rating. Lower ratings are disabled.
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Rating</label>
+              <select name="rating" class="form-select" required>
+                @for($i=5;$i>=1;$i--)
+                  <option value="{{ $i }}" {{ $i == $item->review->rating ? 'selected' : '' }} {{ $i < $item->review->rating ? 'disabled' : '' }}>
+                    {{ $i }} &#9733; {{ $i < $item->review->rating ? '(locked)' : '' }}
+                  </option>
+                @endfor
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Comment</label>
+              <textarea name="comment" rows="4" class="form-control" placeholder="Update your feedback if needed">{{ $item->review->comment }}</textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Update photo (optional)</label>
+              <input type="file" name="photo" accept="image/*" class="form-control">
+              <div class="form-text">JPEG, PNG, GIF, or WebP up to 5MB. Uploading a new image replaces the existing one.</div>
+              @if(!empty($item->review->image_path))
+                <div class="mt-2">
+                  <a href="{{ asset('storage/'.ltrim($item->review->image_path,'/')) }}" target="_blank">
+                    <img src="{{ asset('storage/'.ltrim($item->review->image_path,'/')) }}" alt="Current review image" style="max-width: 120px; max-height: 120px; border-radius: 6px;"/>
+                  </a>
+                </div>
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" value="1" id="remove_photo_{{ $item->id }}" name="remove_photo">
+                  <label class="form-check-label" for="remove_photo_{{ $item->id }}">
+                    Remove current photo
+                  </label>
+                </div>
+              @endif
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary">
+              <i class="bi bi-save"></i> Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  @endif
 @endforeach
 @endsection
-
-
-
-
-

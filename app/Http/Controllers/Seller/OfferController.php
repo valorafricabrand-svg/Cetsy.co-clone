@@ -170,20 +170,31 @@ class OfferController extends Controller
                 ]);
             }
 
-            // Create activity record for the buyer (outside of email try-catch)
+            // Create activity records for both buyer and seller
             try {
+                // Notify buyer
                 Activity::create([
                     'user_id' => $offer->buyer->id,
                     'is_read' => false,
-                    'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' has been accepted by ' . $user->name,
+                    'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' was accepted by ' . ($user->name ?? 'seller'),
+                    'type' => \App\Models\Activity::TYPE_OFFER,
+                    'related_id' => $offer->id,
+                    'related_type' => 'offer'
+                ]);
+                // Record on seller timeline as well
+                Activity::create([
+                    'user_id' => $user->id,
+                    'is_read' => false,
+                    'description' => 'You accepted an offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . ($offer->buyer->name ?? 'buyer'),
                     'type' => \App\Models\Activity::TYPE_OFFER,
                     'related_id' => $offer->id,
                     'related_type' => 'offer'
                 ]);
             } catch (\Exception $e) {
-                \Log::error('Failed to create activity record for offer acceptance', [
+                \Log::error('Failed to create activity record(s) for offer acceptance', [
                     'offer_id' => $offer->id,
                     'buyer_id' => $offer->buyer->id,
+                    'seller_id' => $user->id,
                     'error' => $e->getMessage()
                 ]);
             }
@@ -339,11 +350,19 @@ class OfferController extends Controller
                 'seller_id' => $user->id
             ]);
 
-            // Create activity record for the buyer
+            // Create activity records for both buyer and seller
             Activity::create([
                 'user_id' => $offer->buyer->id,
                 'is_read' => false,
-                'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' has been declined',
+                'description' => 'Your offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' was declined by ' . ($user->name ?? 'seller'),
+                'type' => \App\Models\Activity::TYPE_OFFER,
+                'related_id' => $offer->id,
+                'related_type' => 'offer'
+            ]);
+            Activity::create([
+                'user_id' => $user->id,
+                'is_read' => false,
+                'description' => 'You declined an offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . ($offer->buyer->name ?? 'buyer'),
                 'type' => \App\Models\Activity::TYPE_OFFER,
                 'related_id' => $offer->id,
                 'related_type' => 'offer'
@@ -419,11 +438,19 @@ class OfferController extends Controller
                 'counter_price' => $data['counter_price']
             ]);
 
-            // Create activity record for the buyer
+            // Activity for buyer (notification) and seller (timeline)
             Activity::create([
                 'user_id' => $offer->buyer->id,
                 'is_read' => false,
-                'description' => 'You received a new offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . $offer->buyer->name,
+                'description' => 'You received a counter offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' from ' . ($user->name ?? 'seller'),
+                'type' => \App\Models\Activity::TYPE_OFFER,
+                'related_id' => $offer->id,
+                'related_type' => 'offer'
+            ]);
+            Activity::create([
+                'user_id' => $user->id,
+                'is_read' => false,
+                'description' => 'You sent a counter offer of $' . number_format($offer->offer_price, 2) . ' for ' . $offer->product->name . ' to ' . ($offer->buyer->name ?? 'buyer'),
                 'type' => \App\Models\Activity::TYPE_OFFER,
                 'related_id' => $offer->id,
                 'related_type' => 'offer'

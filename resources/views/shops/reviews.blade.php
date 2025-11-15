@@ -20,11 +20,11 @@
           <div class="d-flex align-items-center">
             @for($i = 1; $i <= 5; $i++)
               @if($i <= $averageRating)
-                <i class="fas fa-star text-warning" style="font-size: 18px;"></i>
+                <i class="fas fa-star" style="font-size: 18px; color:#e5780b;"></i>
               @elseif($i - $averageRating < 1 && $i - $averageRating > 0)
-                <i class="fas fa-star-half-alt text-warning" style="font-size: 18px;"></i>
+                <i class="fas fa-star-half-alt" style="font-size: 18px; color:#e5780b;"></i>
               @else
-                <i class="far fa-star text-muted" style="font-size: 18px;"></i>
+                <i class="far fa-star" style="font-size: 18px; color:#000;"></i>
               @endif
             @endfor
           </div>
@@ -68,9 +68,9 @@
                     <div class="d-flex align-items-center">
                       @for($i = 1; $i <= 5; $i++)
                         @if($i <= $review->rating)
-                          <i class="fas fa-star text-warning" style="font-size: 14px;"></i>
+                          <i class="fas fa-star" style="font-size: 14px; color:#e5780b;"></i>
                         @else
-                          <i class="far fa-star text-muted" style="font-size: 14px;"></i>
+                          <i class="far fa-star" style="font-size: 14px; color:#000;"></i>
                         @endif
                       @endfor
                     </div>
@@ -92,9 +92,15 @@
                 </div>
                 
                 @if($review->comment)
-                  <p class="mb-0">{{ $review->comment }}</p>
+                  <p class="mb-2">{{ $review->comment }}</p>
                 @else
-                  <p class="text-muted mb-0"><em>No comment provided</em></p>
+                  <p class="text-muted mb-2"><em>No comment provided</em></p>
+                @endif
+
+                @if(!empty($review->image_path))
+                  <a href="{{ asset('storage/'.ltrim($review->image_path,'/')) }}" target="_blank">
+                    <img src="{{ asset('storage/'.ltrim($review->image_path,'/')) }}" alt="Review image" style="max-width: 160px;max-height:160px;border-radius:8px;"/>
+                  </a>
                 @endif
               </div>
             </div>

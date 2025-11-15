@@ -186,7 +186,7 @@
                                             <td>{{ $dispute->created_at->format('M d, Y') }}</td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('admin.admin-disputes.show', $dispute->id) }}" 
+                                                    <a href="{{ route('disputes.show', $dispute->id) }}" 
                                                        class="btn btn-sm btn-outline-primary">
                                                         <i class="fas fa-eye"></i>
                                                     </a>

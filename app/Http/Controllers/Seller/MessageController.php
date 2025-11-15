@@ -49,6 +49,8 @@ class MessageController extends Controller
                 $latestMessage = $messages->first();
                 $otherUserId = $latestMessage->sender_id == $user->id ? $latestMessage->receiver_id : $latestMessage->sender_id;
                 $otherUser = $latestMessage->sender_id == $user->id ? $latestMessage->receiver : $latestMessage->sender;
+                // Find the most recent message where current seller is the receiver
+                $lastReceived = $messages->where('receiver_id', $user->id)->sortByDesc('created_at')->first();
                 
                 return [
                     'latest_message' => $latestMessage,
@@ -56,7 +58,8 @@ class MessageController extends Controller
                     'product' => $latestMessage->product,
                     'unread_count' => $messages->where('receiver_id', $user->id)->where('is_read', false)->count(),
                     'total_messages' => $messages->count(),
-                    'conversation_id' => (($latestMessage->product_id ?? 0)) . '-' . $otherUserId
+                    'conversation_id' => (($latestMessage->product_id ?? 0)) . '-' . $otherUserId,
+                    'last_received_message_id' => optional($lastReceived)->id,
                 ];
             })
             ->sortByDesc('latest_message.created_at');
@@ -202,6 +205,32 @@ class MessageController extends Controller
         ]);
 
         return back()->with('success', 'Message marked as read.');
+    }
+
+    public function markAsUnread($id)
+    {
+        $message = Message::findOrFail($id);
+        $currentUser = auth()->user();
+
+        // Only allow toggling unread for messages where the seller is the receiver
+        if ($message->receiver_id !== $currentUser->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $shop = $currentUser->shop;
+        if (!$shop) {
+            abort(403, 'Shop not found.');
+        }
+
+        $productIds = $shop->products()->pluck('id');
+        if (!is_null($message->product_id) && !in_array($message->product_id, $productIds->toArray())) {
+            abort(403, 'Message does not belong to your products.');
+        }
+
+        $message->is_read = false;
+        $message->save();
+
+        return back()->with('success', 'Message marked as unread.');
     }
 
     public function bulkMarkAsRead()

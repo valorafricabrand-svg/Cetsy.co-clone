@@ -7,6 +7,10 @@ use App\Models\Order;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\BuyerReviewResponseMail;
+use App\Models\Activity;
+use App\Models\User;
 
 class ReviewController extends Controller
 {
@@ -80,5 +84,70 @@ class ReviewController extends Controller
             'ratingFilter' => $ratingFilter,
             'perPage'      => $perPage,
         ]);
+    }
+
+    public function respond(Request $request, Review $review)
+    {
+        $seller = Auth::user();
+        $shop = $seller->shop;
+
+        if (! $shop) {
+            abort(403, 'No shop assigned to your account.');
+        }
+
+        if ((int) $review->shop_id !== (int) $shop->id) {
+            abort(403, 'You are not authorized to respond to this review.');
+        }
+
+        $data = $request->validate([
+            'seller_response' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $review->seller_response = $data['seller_response'] ?? null;
+        $review->seller_responded_at = $data['seller_response'] ? now() : null;
+        $review->save();
+
+        // Email the buyer about the seller's response
+        try {
+            $order = $review->order()->with('user')->first();
+            $buyer = optional($order)->user;
+            if ($buyer && !empty($buyer->email) && !empty($review->seller_response)) {
+                Mail::to($buyer->email)->send(new BuyerReviewResponseMail($review, $buyer));
+            }
+        } catch (\Throwable $e) {}
+
+        // Create Activity notification for the buyer (bell icon)
+        try {
+            $order = $order ?? $review->order; // reuse if already loaded
+            $buyerId = (int) optional($order)->user_id;
+            if ($buyerId > 0 && !empty($review->seller_response)) {
+                // Prefer deep link to buyer's order details if route exists
+                $link = route('notifications.index');
+                try {
+                    if (\Illuminate\Support\Facades\Route::has('buyer.orders.show')) {
+                        $link = route('buyer.orders.show', $order->id);
+                    }
+                } catch (\Throwable $e) {}
+
+                Activity::create([
+                    'user_id'      => $buyerId,
+                    'is_read'      => false,
+                    'type'         => Activity::TYPE_PRODUCT,
+                    'related_id'   => $review->id,
+                    'related_type' => Review::class,
+                    'description'  => 'Seller responded to your review',
+                    'link'         => $link,
+                    'causer_id'    => (int) $seller->id,
+                    'causer_type'  => User::class,
+                    'properties'   => [
+                        'order_id'     => (int) optional($order)->id,
+                        'product_id'   => (int) optional($review->orderItem->product)->id,
+                        'shop_id'      => (int) optional($review->shop)->id,
+                    ],
+                ]);
+            }
+        } catch (\Throwable $e) {}
+
+        return back()->with('status', 'Response saved.');
     }
 }

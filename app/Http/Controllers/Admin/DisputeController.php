@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AdminDisputeActionMail;
 use Carbon\Carbon;
 use App\Models\EvidenceRequest;
 
@@ -69,42 +71,7 @@ class DisputeController extends Controller
      */
     public function show(Dispute $dispute)
     {
-        $dispute->load(['order.shop', 'buyer', 'seller', 'messages.user', 'appeal', 'resolvedBy']);
-
-        // Get dispute messages
-        $disputeMessages = $dispute->messages()
-            ->with('user')
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        // Get order messages (if they exist) - ONLY from the specific order involved in this dispute
-        $orderMessages = collect();
-        $order = $dispute->order;
-        $orderItems = collect();
-        
-        if ($order && method_exists($order, 'messages')) {
-            $orderMessages = $order->messages()
-                ->with('user')
-                ->orderBy('created_at', 'asc')
-                ->get();
-                
-            // Get order items
-            if (method_exists($order, 'items')) {
-                $orderItems = $order->items()->with('product')->get();
-            }
-        }
-
-        // Combine all messages for unified display
-        $allMessages = $disputeMessages->concat($orderMessages)->sortBy('created_at');
-
-        return view('admin.disputes.show', compact(
-            'dispute', 
-            'allMessages', 
-            'disputeMessages', 
-            'orderMessages', 
-            'order', 
-            'orderItems'
-        ));
+        return redirect()->route('disputes.show', $dispute->id);
     }
 
     /**
@@ -146,13 +113,25 @@ class DisputeController extends Controller
             DisputeMessage::create([
                 'dispute_id'   => $dispute->id,
                 'user_id'      => 1, // System user ID
-                'message'      => 'Dispute closed by admin.',
+                'message'      => 'Dispute closed by admin. No action taken.',
                 'type'         => DisputeMessage::TYPE_SYSTEM_MESSAGE,
                 'is_internal'  => false,
             ]);
         });
 
-        return redirect()->route('admin.admin-disputes.show', $dispute->id)
+        // Notify both parties via email
+        try {
+            $dispute->loadMissing(['buyer','seller']);
+            $admin = Auth::user();
+            foreach (['buyer','seller'] as $role) {
+                $user = $dispute->{$role};
+                if ($user && $user->email) {
+                    Mail::to($user->email)->send(new AdminDisputeActionMail($dispute, $user, $admin, 'closed'));
+                }
+            }
+        } catch (\Throwable $e) { \Log::error('admin.dispute.mail_failed', ['id'=>$dispute->id, 'error'=>$e->getMessage()]); }
+
+        return redirect()->route('disputes.show', $dispute->id)
             ->with('success', 'Dispute resolved and closed successfully.');
     }
 
@@ -211,7 +190,7 @@ class DisputeController extends Controller
             DisputeMessage::create([
                 'dispute_id' => $dispute->id,
                 'user_id' => 1, // System user ID
-                'message' => "Dispute resolved. {$dispute->getDecisionLabel()}",
+                'message' => "Dispute resolved. {$dispute->getDecisionLabel()} — {$dispute->getFavorOutcomeLabel()}",
                 'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
                 'is_internal' => false
             ]);
@@ -225,7 +204,19 @@ class DisputeController extends Controller
             ]);
         });
 
-        return redirect()->route('admin.admin-disputes.show', $dispute->id)
+        // Notify both parties via email
+        try {
+            $dispute->loadMissing(['buyer','seller']);
+            $admin = Auth::user();
+            foreach (['buyer','seller'] as $role) {
+                $user = $dispute->{$role};
+                if ($user && $user->email) {
+                    Mail::to($user->email)->send(new AdminDisputeActionMail($dispute, $user, $admin, 'closed'));
+                }
+            }
+        } catch (\Throwable $e) { \Log::error('admin.dispute.mail_failed', ['id'=>$dispute->id, 'error'=>$e->getMessage()]); }
+
+        return redirect()->route('disputes.show', $dispute->id)
             ->with('success', 'Dispute resolved and closed successfully.');
     }
 
@@ -449,11 +440,23 @@ class DisputeController extends Controller
             DisputeMessage::create([
                 'dispute_id' => $dispute->id,
                 'user_id' => 1, // System user ID
-                'message' => "Dispute finalized. {$dispute->getDecisionLabel()}",
+                'message' => "Dispute finalized. {$dispute->getDecisionLabel()} — {$dispute->getFavorOutcomeLabel()}",
                 'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
                 'is_internal' => false
             ]);
         });
+
+        // Notify both parties via email (finalized)
+        try {
+            $dispute->loadMissing(['buyer','seller']);
+            $admin = Auth::user();
+            foreach (['buyer','seller'] as $role) {
+                $user = $dispute->{$role};
+                if ($user && $user->email) {
+                    Mail::to($user->email)->send(new AdminDisputeActionMail($dispute, $user, $admin, 'finalized'));
+                }
+            }
+        } catch (\Throwable $e) { \Log::error('admin.dispute.mail_failed', ['id'=>$dispute->id, 'error'=>$e->getMessage()]); }
 
         return redirect()->route('admin.admin-disputes.show', $dispute->id)
             ->with('success', 'Dispute finalized successfully.');

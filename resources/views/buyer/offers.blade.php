@@ -112,7 +112,13 @@
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center">
                                 @if($offerData['product']->media && $offerData['product']->media->count() > 0)
-                                    @php($thumb = function_exists('product_thumb_url') ? product_thumb_url($offerData['product']) : (optional($offerData['product']->media->first())->url ? asset('storage/'.$offerData['product']->media->first()->url) : null))
+                                    @php
+                                        $thumb = function_exists('product_thumb_url')
+                                            ? product_thumb_url($offerData['product'])
+                                            : (optional($offerData['product']->media->first())->url
+                                                ? asset('storage/'.$offerData['product']->media->first()->url)
+                                                : null);
+                                    @endphp
                                     <img src="{{ $thumb }}" 
                                          alt="{{ $offerData['product']->name }}" 
                                          class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
@@ -202,28 +208,40 @@
                                 </h6>
                                 <div class="timeline">
                                     @foreach($offerData['offer_history'] as $index => $offer)
+                                        @php
+                                            $isCounter = isset($offer->is_counter_offer) ? (bool) $offer->is_counter_offer : false;
+                                            $isOriginal = isset($offer->is_original) ? (bool) $offer->is_original : false;
+                                            $statusBadge = $offer->status_badge_class ?? 'bg-secondary';
+                                            $statusLabel = $offer->status_label ?? ($isOriginal ? 'Original Offer' : (isset($offer->status) ? ucfirst((string)$offer->status) : ''));
+                                            $formattedPrice = $offer->formatted_price ?? (isset($offer->offer_price) ? (get_currency().' '.number_format((float)$offer->offer_price, 2)) : '');
+                                            try {
+                                                $createdLabel = isset($offer->created_at) ? ( ($offer->created_at instanceof \Carbon\Carbon) ? $offer->created_at->format('M d, H:i') : (\Carbon\Carbon::parse($offer->created_at))->format('M d, H:i') ) : '';
+                                            } catch (\Throwable $e) { $createdLabel = ''; }
+                                        @endphp
+                                        @php
+                                            $labelText = $isCounter ? 'Counter Offer' : ($isOriginal ? 'Original Offer' : 'Your Offer');
+                                            $iconClass = $isCounter ? 'bi-arrow-left-right text-info' : ($isOriginal ? 'bi-flag text-secondary' : 'bi-arrow-up text-primary');
+                                        @endphp
                                         <div class="timeline-item">
-                                            <div class="timeline-marker {{ $offer->is_counter_offer ? 'bg-info' : 'bg-primary' }}"></div>
+                                            <div class="timeline-marker {{ $isCounter ? 'bg-info' : 'bg-primary' }}"></div>
                                             <div class="timeline-content">
                                                 <div class="d-flex justify-content-between align-items-start">
                                                     <div>
                                                         <strong>
-                                                            @if($offer->is_counter_offer)
-                                                                <i class="bi bi-arrow-left-right text-info me-1"></i>Counter Offer
-                                                            @else
-                                                                <i class="bi bi-arrow-up text-primary me-1"></i>Your Offer
-                                                            @endif
+                                                            <i class="bi {{ $iconClass }} me-1"></i>{{ $labelText }}
                                                         </strong>
-                                                        <div class="text-muted small">{{ $offer->formatted_price }}</div>
-                                                        @if($offer->buyer_notes)
+                                                        @if($formattedPrice)
+                                                            <div class="text-muted small">{{ $formattedPrice }}</div>
+                                                        @endif
+                                                        @if(!empty($offer->buyer_notes))
                                                             <div class="text-muted small mt-1">{{ $offer->buyer_notes }}</div>
                                                         @endif
                                                     </div>
                                                     <div class="text-end">
-                                                        <span class="badge {{ $offer->status_badge_class ?? 'bg-secondary' }} small">
-                                                            {{ $offer->status_label ?? ucfirst($offer->status) }}
-                                                        </span>
-                                                        <div class="text-muted small">{{ $offer->created_at ? $offer->created_at->format('M d, H:i') : '' }}</div>
+                                                        <span class="badge {{ $statusBadge }} small">{{ $statusLabel }}</span>
+                                                        @if($createdLabel)
+                                                            <div class="text-muted small">{{ $createdLabel }}</div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>
