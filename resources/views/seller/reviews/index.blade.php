@@ -142,7 +142,7 @@
                 $status = $order?->status;
                 $statusBadge = method_exists($order, 'getStatusBadgeClass') ? $order->getStatusBadgeClass() : 'bg-secondary';
             @endphp
-            <tr>
+            <tr id="review-{{ $review->id }}">
               <td>
                 <div class="fw-semibold">{{ $orderNumber }}</div>
                 @if($status)

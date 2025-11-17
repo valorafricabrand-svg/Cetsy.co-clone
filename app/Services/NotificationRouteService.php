@@ -13,7 +13,13 @@ class NotificationRouteService
      */
     public static function getRouteForNotification(Activity $notification, User $user): ?string
     {
-        // 1) If explicit link stored on activity, prefer it
+        // Reviews: always deep-link to the specific review context,
+        // regardless of any generic link stored on the activity.
+        if (($notification->related_type ?? null) === Review::class) {
+            return self::getReviewRoute($notification, $user);
+        }
+
+        // For all other notifications, prefer an explicit link when present.
         if (!empty($notification->link)) {
             return $notification->link;
         }
@@ -48,11 +54,60 @@ class NotificationRouteService
                 return self::getPayoutRoute($user);
                 
             case Activity::TYPE_PRODUCT:
-                return self::getProductRoute($user);
+                return self::getProductRoute($user, $notification);
                 
             default:
                 return route('notifications.index');
         }
+    }
+
+    /**
+     * Deep-link routing for review-related notifications.
+     *
+     * Sellers: jump to the specific review row on the reviews index.
+     * Buyers: jump to the associated order details (where the review is shown).
+     */
+    private static function getReviewRoute(Activity $notification, User $user): string
+    {
+        $reviewId = (int) ($notification->related_id ?? 0);
+
+        // Seller: link into their reviews dashboard, anchored to this review
+        if (method_exists($user, 'isSeller') && $user->isSeller()) {
+            if (\Illuminate\Support\Facades\Route::has('seller.reviews.index')) {
+                $base = route('seller.reviews.index');
+                return $reviewId > 0 ? $base . '#review-' . $reviewId : $base;
+            }
+            return route('notifications.index');
+        }
+
+        // Buyer: prefer order details page if we know the order
+        if (method_exists($user, 'isBuyer') && $user->isBuyer()) {
+            $orderId = 0;
+            $props = $notification->properties ?? [];
+            if (is_array($props) && isset($props['order_id'])) {
+                $orderId = (int) $props['order_id'];
+            }
+
+            if ($orderId > 0 && \Illuminate\Support\Facades\Route::has('buyer.orders.show')) {
+                $base = route('buyer.orders.show', $orderId);
+                return $reviewId > 0 ? $base . '#review-' . $reviewId : $base;
+            }
+
+            // Fall back to any explicit link, then generic orders list
+            if (!empty($notification->link)) {
+                return $notification->link;
+            }
+            if (\Illuminate\Support\Facades\Route::has('account.orders')) {
+                return route('account.orders');
+            }
+        }
+
+        // Admin or unknown role: fall back to stored link or notifications index
+        if (!empty($notification->link)) {
+            return $notification->link;
+        }
+
+        return route('notifications.index');
     }
 
     /**
@@ -242,17 +297,73 @@ class NotificationRouteService
     }
 
     /**
-     * Get product route based on user role
+     * Get product route based on user role and product context.
+     *
+     * When a notification is tied to a specific product (via related_id or
+     * properties.product_id), we deep-link to that listing instead of the
+     * generic products index.
      */
-    private static function getProductRoute(User $user): string
+    private static function getProductRoute(User $user, ?Activity $notification = null): string
     {
-        if ($user->isSeller()) {
-            return route('products.index');
-        } elseif ($user->isAdmin()) {
-            return route('admin.products.index');
-        } else {
+        $product = null;
+
+        if ($notification) {
+            $productId = (int) ($notification->related_id ?? 0);
+
+            // Some activities store product_id inside the JSON properties bag.
+            if ($productId <= 0 && is_array($notification->properties ?? null)) {
+                $productId = (int) ($notification->properties['product_id'] ?? 0);
+            }
+
+            if ($productId > 0) {
+                try {
+                    $product = \App\Models\Product::find($productId);
+                } catch (\Throwable $e) {
+                    $product = null;
+                }
+            }
+        }
+
+        // Admins: go to admin product detail when possible
+        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+            if ($product && \Illuminate\Support\Facades\Route::has('admin.products.show')) {
+                return route('admin.products.show', $product->id);
+            }
+            if (\Illuminate\Support\Facades\Route::has('admin.products.index')) {
+                return route('admin.products.index');
+            }
+            return route('admin.notifications.index');
+        }
+
+        // Sellers / buyers: prefer specific listing when we know the product
+        if ($product) {
+            // Sellers usually work with the internal product detail page
+            if (method_exists($user, 'isSeller') && $user->isSeller()) {
+                if (\Illuminate\Support\Facades\Route::has('products.show')) {
+                    return route('products.show', $product);
+                }
+            }
+
+            // Buyers and others: prefer the public listing page if available
+            if (!empty($product->slug) && \Illuminate\Support\Facades\Route::has('listing.show')) {
+                return route('listing.show', $product->slug);
+            }
+
+            if (\Illuminate\Support\Facades\Route::has('products.show')) {
+                return route('products.show', $product);
+            }
+        }
+
+        // Fallbacks when we could not resolve a specific product
+        if (method_exists($user, 'isSeller') && $user->isSeller()) {
             return route('products.index');
         }
+
+        if (method_exists($user, 'isBuyer') && $user->isBuyer()) {
+            return route('wishlist');
+        }
+
+        return route('products.index');
     }
 
     /**
@@ -263,7 +374,7 @@ class NotificationRouteService
         $type = $notification->type ?? 'general';
         // If this notification is about a Review, prefer a review-specific label
         if (($notification->related_type ?? null) === Review::class) {
-            return 'View Reviews';
+            return 'View Review';
         }
         
         switch ($type) {
@@ -286,7 +397,11 @@ class NotificationRouteService
             case Activity::TYPE_PAYOUT:
                 return 'View Payouts';
             case Activity::TYPE_PRODUCT:
-                return 'View Products';
+                // Product-related activities: show more human wording
+                if (method_exists($user, 'isSeller') && $user->isSeller()) {
+                    return 'View Listing';
+                }
+                return 'View Product';
             default:
                 return '';
         }
