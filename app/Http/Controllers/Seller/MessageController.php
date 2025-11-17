@@ -117,10 +117,13 @@ class MessageController extends Controller
         // If productId is 0, this is a direct (non-product) conversation
         $product = null;
         if ((int)$productId !== 0) {
-            // Validate that the product belongs to the seller's shop
+            // Best-effort fetch of the product to display context.
+            // Authorization is enforced via the Message conversation check below,
+            // so we don't block just because the product was deleted or moved.
             $product = Product::find($productId);
-            if (!$product || $product->shop_id !== $shop->id) {
-                abort(403, 'You are not authorized to view this conversation.');
+            if ($product && $product->shop_id !== $shop->id) {
+                // Product no longer belongs to this shop; hide the listing context.
+                $product = null;
             }
         }
         
