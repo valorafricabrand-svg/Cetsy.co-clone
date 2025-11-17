@@ -171,7 +171,7 @@
                                                     </div>
                                                 </div>
                                                 @if(!empty($favorite->user))
-                                                <div class="mt-2">
+                                                <div class="mt-2 d-flex flex-wrap gap-2">
                                                     <button
                                                         type="button"
                                                         class="btn btn-sm btn-outline-primary"
@@ -182,6 +182,12 @@
                                                     >
                                                         <i class="bi bi-chat-dots me-1"></i> Message buyer
                                                     </button>
+                                                    <a
+                                                        href="{{ route('seller.messages.show', $product->id . '-' . $favorite->user->id) }}?prefill={{ urlencode('Hi '.($favorite->user->name ?? 'there').', thanks for favoriting \"'.$product->name.'\". Can I answer any questions or offer help?') }}"
+                                                        class="btn btn-sm btn-outline-secondary"
+                                                    >
+                                                        <i class="bi bi-chat-square-text me-1"></i> View conversation
+                                                    </a>
                                                     <div class="collapse mt-2" id="msg-{{ $product->id }}-{{ $favorite->user->id }}">
                                                         <form action="{{ route('messages.store') }}" method="POST">
                                                             @csrf
