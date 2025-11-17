@@ -137,26 +137,33 @@ class MessageController extends Controller
                 });
             })
             ->exists();
-            
-        if (!$conversationExists) {
+
+        // Allow a new conversation (no existing messages yet) when the URL
+        // includes a prefilled message (e.g. from wishlist "Message Buyer")
+        $allowNewConversation = !$conversationExists && !empty($otherUserId) && request()->has('prefill');
+        if (!$conversationExists && !$allowNewConversation) {
             abort(403, 'You are not authorized to view this conversation.');
         }
 
-        // Get all messages for this conversation
-        $messages = Message::where(function($q) use ($productId){
-                if ((int)$productId === 0) { $q->whereNull('product_id'); }
-                else { $q->where('product_id', $productId); }
-            })
-            ->where(function($query) use ($user, $otherUserId) {
-                $query->where(function($q) use ($user, $otherUserId) {
-                    $q->where('sender_id', $user->id)->where('receiver_id', $otherUserId);
-                })->orWhere(function($q) use ($user, $otherUserId) {
-                    $q->where('sender_id', $otherUserId)->where('receiver_id', $user->id);
-                });
-            })
-            ->with(['sender:id,name', 'receiver:id,name', 'product'])
-            ->orderBy('created_at', 'asc')
-            ->get();
+        // Get all messages for this conversation (may be empty for a new convo)
+        if ($conversationExists) {
+            $messages = Message::where(function($q) use ($productId){
+                    if ((int)$productId === 0) { $q->whereNull('product_id'); }
+                    else { $q->where('product_id', $productId); }
+                })
+                ->where(function($query) use ($user, $otherUserId) {
+                    $query->where(function($q) use ($user, $otherUserId) {
+                        $q->where('sender_id', $user->id)->where('receiver_id', $otherUserId);
+                    })->orWhere(function($q) use ($user, $otherUserId) {
+                        $q->where('sender_id', $otherUserId)->where('receiver_id', $user->id);
+                    });
+                })
+                ->with(['sender:id,name', 'receiver:id,name', 'product'])
+                ->orderBy('created_at', 'asc')
+                ->get();
+        } else {
+            $messages = collect();
+        }
 
         // Mark messages as read where current user is receiver
         $messages->where('receiver_id', $user->id)->each(function($message) {
