@@ -706,7 +706,7 @@
                                    ) && $product && $product->type === 'digital';
                   @endphp
 
-                  <tr>
+                  <tr @if($reviewed && $item->review) id="review-{{ $item->review->id }}" @endif>
                     <td>{{ $loop->iteration }}</td>
 
                     {{-- Image --}}
@@ -839,7 +839,7 @@
                                 ) && $product && $product->type === 'digital';
               @endphp
 
-              <div class="card order-item-card shadow-sm mb-3">
+              <div class="card order-item-card shadow-sm mb-3" @if($reviewed && $item->review) id="review-{{ $item->review->id }}" @endif>
                 <div class="card-body">
                   <div class="d-flex align-items-start gap-3">
                     @if($thumbUrl)

@@ -868,10 +868,18 @@ public function payListing(Request $request, $id)
             'description' => "Listing fee ({$planDetails['plan']})",
         ]);
 
+        // Notification: listing fee paid for a specific product
         Activity::create([
-            'user_id' => Auth::id(),
-            'is_read' => false,
-            'description' => 'You paid for a listing fee of $' . number_format($fee, 2)
+            'user_id'      => Auth::id(),
+            'is_read'      => false,
+            'type'         => Activity::TYPE_PRODUCT,
+            'related_id'   => $product->id,
+            'related_type' => 'product',
+            'description'  => 'You paid for a listing fee of $' . number_format($fee, 2),
+            'properties'   => [
+                'product_id' => $product->id,
+                'plan'       => $planDetails['plan'],
+            ],
         ]);
     }
 
@@ -946,10 +954,18 @@ public function payListing2(Request $request, $id)
             'description' => "Listing fee ({$planDetails['plan']})",
         ]);
 
+        // Notification: listing fee paid for a specific product
         Activity::create([
-            'user_id'     => Auth::id(),
-            'is_read'     => false,
-            'description' => 'You paid for a listing fee of $' . number_format($fee, 2),
+            'user_id'      => Auth::id(),
+            'is_read'      => false,
+            'type'         => Activity::TYPE_PRODUCT,
+            'related_id'   => $product->id,
+            'related_type' => 'product',
+            'description'  => 'You paid for a listing fee of $' . number_format($fee, 2),
+            'properties'   => [
+                'product_id' => $product->id,
+                'plan'       => $planDetails['plan'],
+            ],
         ]);
     }
 
@@ -1117,7 +1133,6 @@ public function payOrder(Request $request, $id)
     }
 
 }
-
 
 
 

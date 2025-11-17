@@ -45,7 +45,7 @@ The system automatically determines the appropriate route based on user role:
 - KYC: `route('admin.kyc.index')`
 - Wallets: `route('admin.wallets.index')`
 - Payouts: `route('admin.payouts.index')`
-- Products: `route('admin.products.index')`
+- Products: deep-link to `route('admin.products.show', $productId)` when the notification is tied to a specific product, otherwise fall back to `route('admin.products.index')`.
 
 ### 3. Implementation
 
@@ -64,6 +64,7 @@ protected $fillable = [
 #### NotificationRouteService
 The service class `App\Services\NotificationRouteService` handles:
 - Route determination based on notification type and user role
+- Deep-linking to specific entities (orders, disputes, products, etc.) when `related_id` / `related_type` or `properties` contain the target
 - Link text generation for UI display
 - Fallback to general notifications page
 
