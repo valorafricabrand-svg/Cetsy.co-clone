@@ -245,11 +245,10 @@ Route::get('/pay-now-invoice/{total}', [OrderController::class, 'payNowInvoice']
 Route::get('/success-deposit/{id}', [OrderController::class, 'successDeposit'])->name('success_deposit');
 Route::post('/success-deposit-fee/{id}', [ProductController::class, 'successDeposit'])->name('success_deposit_fee');
 Route::get('/success-deposit-invoice/{id}', [OrderController::class, 'successDepositInvoice'])->name('success_deposit_invoice');
-Route::resource('shipping-profiles', ShippingProfileController::class)
-    ->only(['store']);
-Route::get('reviews/create', [ReviewController::class, 'create'])->name('reviews.create');
-Route::post('reviews', [ReviewController::class, 'store'])->name('reviews.store');
-Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+Route::middleware(['auth','seller'])->group(function () {
+    Route::resource('shipping-profiles', ShippingProfileController::class)
+        ->only(['store']);
+});
 // routes/web.php
 
 /*
@@ -461,7 +460,7 @@ Route::middleware(['auth','verified'])->group(function () {
 });
 
 // Admin routes for user management additions
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // Resend email verification for a specific user
     Route::post('/users/{user}/resend-verification', [UserController::class, 'resendVerification'])
         ->name('users.resend-verification');
@@ -787,7 +786,7 @@ Route::middleware(['auth','verified'])->prefix('buyer')->name('buyer.')->group(f
 | Settings (Admin Only)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->resource('settings', AdminSetting::class)
+Route::middleware(['auth','admin'])->resource('settings', AdminSetting::class)
     ->only(['index', 'edit', 'update']);
 
 // Webhooks (public endpoints)
@@ -805,7 +804,7 @@ Route::post('/daraja/b2c/timeout', [PayoutWebhookController::class, 'darajaB2CTi
 
 
 // Fallback OTP routes (ensure named routes exist even if group middleware changes)
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth','seller'])->group(function () {
     Route::get('/seller/payouts/{payout}/verify', [\App\Http\Controllers\Seller\PayoutRequestController::class, 'verifyForm'])->name('seller.payouts.otp.verify');
     Route::post('/seller/payouts/{payout}/verify', [\App\Http\Controllers\Seller\PayoutRequestController::class, 'verifyOtp'])->name('seller.payouts.otp.submit');
     Route::post('/seller/payouts/{payout}/resend-otp', [\App\Http\Controllers\Seller\PayoutRequestController::class, 'resendOtp'])->name('seller.payouts.otp.resend');
@@ -833,7 +832,7 @@ require __DIR__ . '/auth.php';
    
 
 // Admin utilities for managing users' email verification
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::post('/users/{user}/resend-verification', [UserController::class, 'resendVerification'])->name('users.resend-verification');
     Route::post('/users/{user}/mark-verified', [UserController::class, 'markEmailVerified'])->name('users.mark-verified');
     Route::post('/users/{user}/mark-unverified', [UserController::class, 'markEmailUnverified'])->name('users.mark-unverified');

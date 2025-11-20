@@ -164,6 +164,33 @@
     }
   }
 
+  /* Compact hero height (Argos-like) */
+  .hero-compact {
+    padding-top: clamp(1.25rem, 3vw, 2.25rem) !important;
+    padding-bottom: clamp(1.25rem, 3vw, 2.25rem) !important;
+  }
+  .hero-compact .hero-promo-card {
+    padding: 1.5rem 1.75rem;
+  }
+  @media (min-width: 992px) {
+    .hero-compact {
+      padding-top: clamp(1.5rem, 2.5vw, 2.5rem) !important;
+      padding-bottom: clamp(1.5rem, 2.5vw, 2.5rem) !important;
+    }
+    .hero-compact .hero-promo-card {
+      padding: 1.75rem 2rem;
+    }
+    .hero-compact .hero-promo-media img {
+      max-height: 380px;
+      width: auto;
+    }
+  }
+  @media (max-width: 991.98px) {
+    .hero-compact .hero-promo-card {
+      padding: 1.25rem 1.25rem 1.5rem;
+    }
+  }
+
   /* Hero search (Argos-style inspiration) */
   .hero-search-form {
     max-width: 640px;
