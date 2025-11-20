@@ -653,19 +653,25 @@ use Illuminate\Support\Str;
     <div class="container">
         <div class="row g-3 justify-content-center">
             <div class="col-12 col-md-6 col-lg-4 reveal">
-                <div class="feature-chip">
-                    <i class="fas fa-lock"></i> Buyer Protection & Secure Payments
-                </div>
+                <a href="{{ url('/user-agreement#privacy') }}" class="text-decoration-none d-block">
+                    <div class="feature-chip">
+                        <i class="fas fa-lock"></i> Buyer Protection &amp; Secure Payments
+                    </div>
+                </a>
             </div>
             <div class="col-12 col-md-6 col-lg-4 reveal reveal-delay-1">
-                <div class="feature-chip">
-                    <i class="fas fa-truck"></i> Global Shipping & Local Sellers
-                </div>
+                <a href="{{ url('/user-agreement#buyer-tips') }}" class="text-decoration-none d-block">
+                    <div class="feature-chip">
+                        <i class="fas fa-truck"></i> Global Shipping &amp; Local Sellers
+                    </div>
+                </a>
             </div>
             <div class="col-12 col-md-6 col-lg-4 reveal reveal-delay-2">
-                <div class="feature-chip">
-                    <i class="fas fa-star"></i> Curated Trending Picks Daily
-                </div>
+                <a href="{{ route('listings', ['sort' => 'popular']) }}" class="text-decoration-none d-block">
+                    <div class="feature-chip">
+                        <i class="fas fa-star"></i> Curated Trending Picks Daily
+                    </div>
+                </a>
             </div>
         </div>
     </div>
