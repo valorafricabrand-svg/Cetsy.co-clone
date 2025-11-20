@@ -20,7 +20,13 @@
           Digital products ("intangible items") are also welcome: original music, e-books, recipes, and other downloads.
         </p>
         <p class="lead">
-          Not sure if your item qualifies? <a href="{{ url('/contact') }}" class="text-decoration-underline">Contact us via live chat</a> and we'll help.
+          Not sure if your item qualifies?
+          <a
+            href="#live-chat"
+            class="text-decoration-underline"
+            onclick="if(window.Tawk_API && typeof Tawk_API.toggle === 'function'){Tawk_API.toggle();} return false;"
+          >Contact us via live chat</a>
+          and we'll help.
         </p>
         <p class="lead mb-2">
           Ready to get started? <a href="{{ url('/user-agreement#seller-tips') }}" class="fw-bold text-danger text-decoration-none">Review our Seller Agreement</a> to see both our expectations and your benefits as a Seller.
