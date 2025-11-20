@@ -62,9 +62,27 @@
                         const prev = container.querySelector('[data-carousel-prev]');
                         const next = container.querySelector('[data-carousel-next]');
                         const scrollAmount = () => Math.max(track.clientWidth * 0.8, 220);
+                        const tolerance = 6;
 
-                        prev?.addEventListener('click', () => track.scrollBy({ left: -scrollAmount(), behavior: 'smooth' }));
-                        next?.addEventListener('click', () => track.scrollBy({ left:  scrollAmount(), behavior: 'smooth' }));
+                        const scrollPrev = () => {
+                            const maxScroll = track.scrollWidth - track.clientWidth;
+                            if (track.scrollLeft <= tolerance) {
+                                track.scrollTo({ left: maxScroll, behavior: 'smooth' });
+                            } else {
+                                track.scrollBy({ left: -scrollAmount(), behavior: 'smooth' });
+                            }
+                        };
+                        const scrollNext = () => {
+                            const maxScroll = track.scrollWidth - track.clientWidth;
+                            if (track.scrollLeft >= maxScroll - tolerance) {
+                                track.scrollTo({ left: 0, behavior: 'smooth' });
+                            } else {
+                                track.scrollBy({ left: scrollAmount(), behavior: 'smooth' });
+                            }
+                        };
+
+                        prev?.addEventListener('click', scrollPrev);
+                        next?.addEventListener('click', scrollNext);
 
                         const observer = () => update(track, prev, next);
                         track.addEventListener('scroll', observer, { passive: true });
@@ -73,7 +91,7 @@
 
                         // Auto slide every 5s
                         let autoTimer = null;
-                        const autoNext = () => track.scrollBy({ left: scrollAmount(), behavior: 'smooth' });
+                        const autoNext = () => scrollNext();
                         const startAuto = () => { if (!autoTimer) autoTimer = setInterval(autoNext, 5000); };
                         const stopAuto = () => { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } };
                         container.addEventListener('mouseenter', stopAuto);

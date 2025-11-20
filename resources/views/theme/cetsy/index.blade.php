@@ -662,7 +662,17 @@
 
     function slide(offset) {
       const step = Math.max(track.clientWidth * 0.8, 240);
-      track.scrollBy({ left: offset * step, behavior: 'smooth' });
+      const tolerance = 6;
+      const maxScroll = track.scrollWidth - track.clientWidth;
+      const atEnd = track.scrollLeft >= maxScroll - tolerance;
+      const atStart = track.scrollLeft <= tolerance;
+      if (offset > 0 && atEnd) {
+        track.scrollTo({ left: 0, behavior: 'smooth' });
+      } else if (offset < 0 && atStart) {
+        track.scrollTo({ left: maxScroll, behavior: 'smooth' });
+      } else {
+        track.scrollBy({ left: offset * step, behavior: 'smooth' });
+      }
     }
 
     if (prevBtn) prevBtn.addEventListener('click', () => { stopAuto(); slide(-1); startAuto(); });
