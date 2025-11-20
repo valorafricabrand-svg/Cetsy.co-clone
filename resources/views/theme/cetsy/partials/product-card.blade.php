@@ -27,14 +27,19 @@
   $salePrice  = (float) ($item->discounted_price ?? $basePrice);
   $isService  = (strtolower((string)($item->type ?? '')) === 'service');
 
-  // Lowest variation price (only consider variants that actually have a price)
-  // Make sure controller eager-loads: with('variations.options', 'media', 'shop', ...)
+  // Lowest variation price (only consider variants that actually have a numeric price)
+  // Controllers should ideally eager-load: with('variations.options', 'media', 'shop', ...)
   $lowestVariantPrice = null;
-  if ($item->relationLoaded('variations')) {
-      $lowestVariantPrice = optional($item->variations)->whereNotNull('price')->min('price');
+  if ($item->relationLoaded('variations') && $item->variations) {
+      $lowestVariantPrice = $item->variations
+          ->pluck('price')
+          ->filter(fn ($v) => $v !== null)
+          ->min();
   } else {
-      // still works without eager load (will lazy load)
-      $lowestVariantPrice = optional($item->variations)->whereNotNull('price')->min('price');
+      // Fallback lazy-load, still only for variants that have a price set
+      $lowestVariantPrice = $item->variations()
+          ->whereNotNull('price')
+          ->min('price');
   }
 
   // The price to display on listing:
