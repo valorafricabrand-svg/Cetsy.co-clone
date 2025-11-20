@@ -1,6 +1,9 @@
 ﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('main')
+@php
+  use Illuminate\Support\Str;
+@endphp
 
 <!-- ====== Page Styles (scoped) ====== -->
 <style>
@@ -632,41 +635,64 @@
 @endpush
 
 <!-- ===================================== -->
-<!-- Trending Categories -->
+<!-- Top Sellers -->
 <!-- ===================================== -->
-<section class="py-5">
-  <div class="container">
-    <div class="section-head d-flex align-items-center justify-content-between mb-4">
-      <div>
-        <span class="eyebrow"><i class="fas fa-th-large"></i> Categories</span>
-        <h2 class="h3 fw-bold mb-0 mt-2">Shop by Category</h2>
+@php
+  $topShops = ($shops instanceof \Illuminate\Support\Collection)
+    ? $shops->take(6)
+    : collect($shops ?? [])->take(6);
+@endphp
+@if($topShops->isNotEmpty())
+  <section class="py-5">
+    <div class="container">
+      <div class="section-head d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <span class="eyebrow"><i class="fas fa-store"></i> Top Sellers</span>
+          <h2 class="h3 fw-bold mb-0 mt-2">Featured Shops</h2>
+          <p class="text-muted mb-0">Discover trusted sellers and explore their latest drops.</p>
+        </div>
+        <a href="{{ route('shops.index') }}" class="btn btn-outline-success btn-pill">View all shops</a>
+      </div>
+
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+        @foreach($topShops as $shop)
+          <div class="col reveal">
+            <a href="{{ route('shop.show', $shop->slug) }}" class="text-decoration-none">
+              <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                  <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width:56px;height:56px;">
+                      <img
+                        src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . ltrim($shop->logo, '/'))) : (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg')) }}"
+                        alt="{{ $shop->name }} logo"
+                        class="img-fluid rounded-circle"
+                        style="max-height:56px; max-width:56px;"
+                        onerror="this.onerror=null;this.src=@json(setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'));"
+                      >
+                    </div>
+                    <div>
+                      <h5 class="mb-0 text-dark">{{ $shop->name }}</h5>
+                      <span class="text-muted small">Trusted seller</span>
+                    </div>
+                  </div>
+
+                  <p class="text-muted small mb-3 flex-grow-1">
+                    {{ Str::limit(strip_tags($shop->description ?? 'Explore curated items from this shop.'), 110) }}
+                  </p>
+
+                  <div class="d-flex align-items-center justify-content-between">
+                    <span class="badge bg-success bg-opacity-10 text-success">Top rated</span>
+                    <span class="text-success fw-semibold small">View shop <i class="fas fa-arrow-right ms-1"></i></span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        @endforeach
       </div>
     </div>
-
-    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
-      @foreach($categories as $cat)
-        <div class="col reveal">
-          <a href="{{ route('category.show', $cat->slug) }}" class="text-decoration-none">
-            <div class="card-flat h-100">
-              <div class="ratio ratio-1x1 overflow-hidden rounded-top ratio-cover">
-                @if($cat->image)
-                  <img src="{{ asset('storage/'.$cat->image) }}" alt="{{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}" class="w-100 h-100">
-                @else
-                  <div class="d-flex align-items-center justify-content-center h-100 bg-secondary text-white fw-semibold">
-                    {{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
-                  </div>
-                @endif
-              </div>
-              <div class="card-body p-2">
-                <p class="text-center text-dark small fw-semibold mb-0">{{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}</p>
-              </div>
-            </div>
-          </a>
-        </div>
-      @endforeach
-    </div>
-  </div>
-</section>
+  </section>
+@endif
 
 <!-- ===================================== -->
 <!-- Featured Products -->
