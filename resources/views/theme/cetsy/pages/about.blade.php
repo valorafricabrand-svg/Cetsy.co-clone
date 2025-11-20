@@ -121,12 +121,12 @@
         </span>
 
         <h2 class="fw-bold mb-3">
-          Your Global Marketplace — find almost everything from everyone, everywhere
+          Your Global Marketplace - find almost everything from everyone, everywhere
         </h2>
 
         <p class="lead text-muted mb-4">
           Cetsy is a global e-commerce marketplace, founded in 2021 to better connect world markets.
-          Privately held and based in Ohio, USA, we enable sellers to list nearly any item they can legally sell in their region—safely and simply.
+          As a privately held company, we enable sellers to list nearly any item they can legally sell in their region - safely and simply.
         </p>
 
         <div class="row g-3 mb-4">
@@ -144,7 +144,7 @@
 
         <h5 class="fw-semibold mb-2">What we do</h5>
         <p class="mb-4">
-          We connect buyers and sellers across the globe, offering secure, flexible payment solutions to meet diverse needs—while empowering creators with minimal limits on creativity inside the Cetsy Marketplace.
+          We connect buyers and sellers across the globe, offering secure, flexible payment solutions to meet diverse needs - while empowering creators with minimal limits on creativity inside the Cetsy Marketplace.
         </p>
 
         <div class="callout p-3 p-md-4 mb-4">
@@ -160,7 +160,7 @@
 
         <p class="mb-3">
           Examples of <strong>tangible items</strong> include (but are not limited to): household goods, collectibles, jewelry, artwork, livestock, vehicles, handmade crafts, real estate/property, and outdoor equipment.
-          All listings can include photos; video with audio.
+          All listings can include photos and video with audio.
         </p>
 
         <p class="mb-3">
@@ -174,7 +174,7 @@
         </ul>
 
         <p class="mb-4">
-          To become a Cetsy seller in just a few steps, please review the Seller Agreement—what we expect from sellers and what you can expect from Cetsy. Questions? Email us or use LIVE CHAT anytime.
+          To become a Cetsy seller in just a few steps, please review the Seller Agreement - what we expect from sellers and what you can expect from Cetsy. Questions? Use our 24/7 chat anytime.
         </p>
 
         <div class="d-flex flex-wrap gap-2">
