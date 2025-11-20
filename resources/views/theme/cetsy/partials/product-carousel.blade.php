@@ -21,53 +21,24 @@
     @once
         @push('styles')
             <style>
-                .product-carousel { position: relative; }
+                .product-carousel { position: relative; overflow: hidden; }
                 .product-carousel-track {
                     overflow-x: auto;
                     scroll-snap-type: x mandatory;
                     -webkit-overflow-scrolling: touch;
-                    padding: 0.75rem 1rem;
-                }
-                .product-carousel-track::-webkit-scrollbar { height: 8px; }
-                .product-carousel-track::-webkit-scrollbar-thumb {
-                    background: rgba(25,135,84,.35);
-                    border-radius: 12px;
-                }
-                .product-carousel-item {
-                    flex: 0 0 auto;
-                    width: 260px;
-                    scroll-snap-align: start;
-                }
-                .carousel-control {
-                    position: absolute;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    z-index: 5;
-                    border-radius: 999px;
-                    width: 36px;
-                    height: 36px;
+                    padding: 0.75rem 0.25rem;
                     display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: rgba(255,255,255,.95);
-                    border: 1px solid rgba(25,135,84,.25);
-                    color: #198754;
-                    box-shadow: 0 8px 16px rgba(25,135,84,.15);
+                    gap: 1rem;
+                    scrollbar-width: none;
                 }
-                .carousel-control:hover {
-                    background: #198754;
-                    color: #fff;
+                .product-carousel-track::-webkit-scrollbar { display: none; }
+                .product-carousel-item { flex: 0 0 auto; width: 260px; scroll-snap-align: start; }
+                .product-carousel-nav .btn {
+                    width: 36px; height: 36px; border-radius: 999px; padding: 0;
+                    display: inline-flex; align-items: center; justify-content: center;
                 }
-                .carousel-control.is-disabled {
-                    opacity: .35;
-                    pointer-events: none;
-                }
-                [data-carousel-prev] { left: -18px; }
-                [data-carousel-next] { right: -18px; }
-                @media (max-width: 992px) {
-                    .carousel-control { display: none; }
-                    .product-carousel-track { padding: 0.75rem 0; }
-                }
+                .product-carousel-nav .btn:focus { box-shadow: 0 0 0 0.2rem rgba(25,135,84,.25); }
+                @media (max-width: 992px) { .product-carousel-track { padding: 0.75rem 0; } }
             </style>
         @endpush
 
@@ -119,7 +90,7 @@
     @endif
         <div class="{{ $containerClass }}">
             @if($showHeader)
-                <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-3 gap-3">
                     <div>
                         @if($eyebrow)
                             <span class="eyebrow text-success"><i class="fas {{ $eyebrowIcon }}"></i> {{ $eyebrow }}</span>
@@ -129,30 +100,30 @@
                             <p class="text-muted mb-0">{{ $subtitle }}</p>
                         @endif
                     </div>
-                    @if($seeMoreUrl)
-                        <a href="{{ $seeMoreUrl }}" class="btn btn-outline-success btn-sm">{{ $seeMoreLabel }}</a>
-                    @endif
+                    <div class="d-flex align-items-center gap-2 ms-auto">
+                        <div class="product-carousel-nav d-flex gap-2">
+                            <button type="button" class="btn btn-outline-success btn-sm" data-carousel-prev aria-label="Previous products">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-success btn-sm" data-carousel-next aria-label="Next products">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        @if($seeMoreUrl)
+                            <a href="{{ $seeMoreUrl }}" class="btn btn-outline-success btn-sm">{{ $seeMoreLabel }}</a>
+                        @endif
+                    </div>
                 </div>
             @endif
 
             <div class="product-carousel">
-                <button type="button" class="carousel-control" data-carousel-prev>
-                    <i class="fas fa-chevron-left"></i>
-                    <span class="visually-hidden">Previous</span>
-                </button>
-
-                <div class="product-carousel-track d-flex flex-nowrap gap-3">
+                <div class="product-carousel-track d-flex flex-nowrap">
                     @foreach($collection as $item)
                         <div class="product-carousel-item">
                             @include('theme.'.theme().'.partials.product-card', ['item' => $item])
                         </div>
                     @endforeach
                 </div>
-
-                <button type="button" class="carousel-control" data-carousel-next>
-                    <i class="fas fa-chevron-right"></i>
-                    <span class="visually-hidden">Next</span>
-                </button>
             </div>
         </div>
     @if($wrapperTag === 'div')
@@ -161,4 +132,3 @@
         </section>
     @endif
 @endif
-
