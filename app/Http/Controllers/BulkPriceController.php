@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\BulkPriceLog;
+use App\Models\Variant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class BulkPriceController extends Controller
 {
@@ -23,7 +26,12 @@ class BulkPriceController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('products.pricing.bulk', compact('products', 'shopId'));
+        $history = BulkPriceLog::where('shop_id', $shopId)
+            ->orderByDesc('created_at')
+            ->take(10)
+            ->get();
+
+        return view('products.pricing.bulk', compact('products', 'shopId', 'history'));
     }
 
     /**
@@ -80,20 +88,48 @@ class BulkPriceController extends Controller
             $query->whereIn('id', $ids);
         }
 
+        // Determine affected product IDs up front (for logs + variants)
+        $productIds = $query->pluck('id')->all();
+        $productCount = count($productIds);
+
         // Dry run? ------------------------------------------------------------
         if ($dryRun) {
-            $count = $query->count();
-            return back()->with('success', "Dry run: {$count} product(s) would be updated. No changes made.")
+            return back()->with('success', "Dry run: {$productCount} product(s) would be updated. No changes made.")
                          ->withInput();
         }
 
         // ---- Update in one SQL ---------------------------------------------
-        DB::transaction(function () use ($query, $column, $factor, $roundTo) {
+        $variantCount = 0;
+        DB::transaction(function () use ($query, $column, $factor, $roundTo, $productIds, &$variantCount) {
             $query->update([
                 $column => DB::raw("ROUND($column * {$factor}, {$roundTo})"),
-                // with flat add: DB::raw("ROUND(($column * {$factor}) + ({$flat} * {$sign}), {$roundTo})")
             ]);
+
+            // Apply to variants when updating base price
+            if ($column === 'price' && !empty($productIds)) {
+                $variantQuery = Variant::whereIn('product_id', $productIds);
+                $variantCount = (int) $variantQuery->count();
+                if ($variantCount > 0) {
+                    $variantQuery->update([
+                        'price' => DB::raw("ROUND(price * {$factor}, {$roundTo})"),
+                    ]);
+                }
+            }
         });
+
+        // Log the change ------------------------------------------------------
+        BulkPriceLog::create([
+            'shop_id'           => $shopId,
+            'user_id'           => Auth::id(),
+            'direction'         => $direction,
+            'percent'           => $percent,
+            'column'            => $column,
+            'round_to'          => $roundTo,
+            'apply_all'         => $applyAll,
+            'selection_count'   => $applyAll ? null : count($ids),
+            'affected_products' => $productCount,
+            'affected_variants' => $variantCount,
+        ]);
 
         return back()->with('success', 'Prices updated successfully!');
     }

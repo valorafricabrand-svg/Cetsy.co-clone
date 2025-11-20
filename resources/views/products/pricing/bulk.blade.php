@@ -174,11 +174,57 @@
             {{-- No pagination footer: all filtered products are listed above --}}
         </div>
 
-        <div class="mt-3 text-end">
-            <button class="btn btn-primary">
-                <i class="bi bi-check2-circle me-1"></i> Apply Update
-            </button>
-            <div id="selected-hidden-container"></div>
+        <div class="mt-3 d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
+            @isset($history)
+                <div class="flex-grow-1">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-light fw-semibold">Recent Bulk Updates</div>
+                        <div class="card-body p-0">
+                            @if($history->isEmpty())
+                                <p class="small text-muted m-3">No bulk edits recorded yet.</p>
+                            @else
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0 align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>When</th>
+                                                <th>Direction</th>
+                                                <th>Percent</th>
+                                                <th>Column</th>
+                                                <th>Scope</th>
+                                                <th class="text-end">Products</th>
+                                                <th class="text-end">Variants</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($history as $log)
+                                                <tr>
+                                                    <td class="small text-muted">{{ $log->created_at->format('d M Y H:i') }}</td>
+                                                    <td>{{ ucfirst($log->direction) }}</td>
+                                                    <td>{{ rtrim(rtrim(number_format($log->percent,2), '0'), '.') }}%</td>
+                                                    <td>{{ $log->column }}</td>
+                                                    <td class="small">
+                                                        {{ $log->apply_all ? 'All filtered' : ($log->selection_count . ' selected') }}
+                                                    </td>
+                                                    <td class="text-end small">{{ $log->affected_products }}</td>
+                                                    <td class="text-end small">{{ $log->affected_variants }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endisset
+
+            <div class="text-end">
+                <button class="btn btn-primary">
+                    <i class="bi bi-check2-circle me-1"></i> Apply Update
+                </button>
+                <div id="selected-hidden-container"></div>
+            </div>
         </div>
     </form>
 </div>
