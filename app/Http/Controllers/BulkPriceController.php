@@ -21,6 +21,7 @@ class BulkPriceController extends Controller
         $products = Product::query()
             ->with(['media','shop'])
             ->where('shop_id', $shopId)
+            ->where('is_active', 1)
             ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->q.'%'))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->category_id))
             ->orderBy('name')
@@ -77,6 +78,7 @@ class BulkPriceController extends Controller
         if (! $applyAll && $ids) {
             // Re-scope ids to ensure they belong to this shop
             $ids = Product::where('shop_id', $shopId)
+                ->where('is_active', 1)
                 ->whereIn('id', $ids)
                 ->pluck('id')
                 ->all();
@@ -139,6 +141,8 @@ class BulkPriceController extends Controller
      */
     private function baseShopQuery(int $shopId)
     {
-        return Product::query()->where('shop_id', $shopId);
+        return Product::query()
+            ->where('shop_id', $shopId)
+            ->where('is_active', 1);
     }
 }

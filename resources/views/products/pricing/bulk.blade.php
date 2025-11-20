@@ -105,8 +105,8 @@
         {{-- Products list --}}
         <div class="card">
             <div class="card-header bg-light fw-semibold d-flex justify-content-between">
-                <span>Products ({{ $products->count() }})</span>
-                <span class="small text-muted">Showing 1–{{ $products->count() }}</span>
+                <span>Active Products ({{ $products->count() }})</span>
+                <span class="small text-muted">Showing 1–{{ $products->count() }} (only active listings are included)</span>
             </div>
             <div class="table-responsive" style="max-height:60vh;overflow:auto;">
                 <table class="table table-hover align-middle mb-0">
