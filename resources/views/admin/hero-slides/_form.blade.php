@@ -15,7 +15,7 @@
   <div class="col-md-6">
     <label class="form-label">Link to Deal (optional)</label>
     <select name="deal_id" class="form-select">
-      <option value="">— None —</option>
+      <option value="">-- None --</option>
       @foreach($deals as $deal)
         <option value="{{ $deal->id }}" @selected((int) old('deal_id', $slide->deal_id) === $deal->id)>{{ $deal->name }}</option>
       @endforeach
@@ -25,12 +25,12 @@
   <div class="col-md-6">
     <label class="form-label">Link to Category (optional)</label>
     <select name="category_id" class="form-select">
-      <option value="">— None —</option>
+      <option value="">-- None --</option>
       @foreach($categories as $cat)
         <option value="{{ $cat->id }}" @selected((int) old('category_id', $slide->category_id) === $cat->id)>{{ $cat->name }}</option>
       @endforeach
     </select>
-    <div class="form-text">Used when no deal is chosen – button goes to this category page.</div>
+    <div class="form-text">Used when no deal is chosen - button goes to this category page.</div>
   </div>
 </div>
 
@@ -68,7 +68,7 @@
 <div class="mb-3">
   <label class="form-label">Hero image</label>
   <input type="file" name="image" class="form-control">
-  <div class="form-text">Recommended: wide image (e.g. 1600×600), max 4MB.</div>
+  <div class="form-text">Recommended: wide image (e.g. 1600x600), max 4MB.</div>
   @if($slide->image_path)
     <div class="mt-2">
       <img src="{{ asset('storage/'.$slide->image_path) }}" alt="Current hero image" class="img-fluid rounded" style="max-height:160px;object-fit:cover;">
