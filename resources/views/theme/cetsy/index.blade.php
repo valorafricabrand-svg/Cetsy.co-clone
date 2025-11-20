@@ -391,16 +391,6 @@
                     </div>
                   </form>
 
-                  @if($topCategories->isNotEmpty())
-                    <div class="hero-quick-links mt-3 justify-content-center justify-content-md-start">
-                      <span class="hero-quick-links-label">Popular on Cetsy</span>
-                      @foreach($topCategories as $cat)
-                        <a href="{{ route('category.show', $cat->slug) }}" class="hero-category-chip">
-                          {{ html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') }}
-                        </a>
-                      @endforeach
-                    </div>
-                  @endif
                 </div>
               </div>
 
