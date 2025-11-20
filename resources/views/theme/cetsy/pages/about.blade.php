@@ -228,7 +228,7 @@
                     <div class="d-flex flex-wrap align-items-center gap-2">
                         <span class="stat-chip"><i class="fas fa-users"></i> 50k+ Buyers</span>
                         <span class="stat-chip"><i class="fas fa-store"></i> 10k+ Sellers</span>
-                        <span class="stat-chip"><i class="fas fa-box-open"></i> Tangible & Digital</span>
+                        <span class="stat-chip"><i class="fas fa-box-open"></i> Physical & Digital</span>
                     </div>
                 </div>
 
