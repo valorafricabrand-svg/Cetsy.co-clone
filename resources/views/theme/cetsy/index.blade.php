@@ -655,7 +655,7 @@ use Illuminate\Support\Str;
             <div class="col-12 col-md-6 col-lg-4 reveal">
                 <a href="{{ url('/user-agreement#privacy') }}" class="text-decoration-none d-block">
                     <div class="feature-chip">
-                        <i class="fas fa-lock"></i> Buyer Protection &amp; Secure Payments
+                        <i class="fas fa-lock"></i> Buyer/Seller Protection &amp; Secure Payments
                     </div>
                 </a>
             </div>
