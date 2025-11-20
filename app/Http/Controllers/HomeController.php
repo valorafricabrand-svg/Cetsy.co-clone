@@ -11,6 +11,7 @@ use App\Models\Order;
 use App\Services\Recommendation\ProductRecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
@@ -60,21 +61,28 @@ class HomeController extends Controller
             ->get();
 
         // Top sellers (shops with completed/delivered orders)
-        $shops = Shop::withCount([
-                'orders as completed_orders_count' => function ($q) {
-                    $q->whereIn('status', [Order::STATUS_COMPLETED, Order::STATUS_DELIVERED]);
-                },
-            ])
-            ->whereHas('orders', function ($q) {
-                $q->whereIn('status', [Order::STATUS_COMPLETED, Order::STATUS_DELIVERED]);
-            })
+        $topShopCounts = Order::select('shop_id', DB::raw('COUNT(*) as completed_orders_count'))
+            ->whereNotNull('shop_id')
+            ->whereIn('status', [Order::STATUS_COMPLETED, Order::STATUS_DELIVERED])
+            ->groupBy('shop_id')
             ->orderByDesc('completed_orders_count')
-            ->orderByDesc('id')
             ->take(8)
             ->get();
 
-        // If no shops have completed/delivered orders yet, fallback to latest shops
-        if ($shops->isEmpty()) {
+        $shopIdOrder = $topShopCounts->pluck('shop_id')->filter()->all();
+        if (!empty($shopIdOrder)) {
+            $countsMap = $topShopCounts->pluck('completed_orders_count', 'shop_id');
+            $shops = Shop::whereIn('id', $shopIdOrder)->get()
+                ->sortBy(function ($shop) use ($shopIdOrder) {
+                    return array_search($shop->id, $shopIdOrder);
+                })
+                ->values();
+            // attach computed counts
+            $shops->each(function ($shop) use ($countsMap) {
+                $shop->completed_orders_count = $countsMap[$shop->id] ?? 0;
+            });
+        } else {
+            // Fallback: latest shops if no completed/delivered orders yet
             $shops = Shop::latest()->take(8)->get();
         }
 
