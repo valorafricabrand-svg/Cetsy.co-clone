@@ -1178,26 +1178,15 @@
             </ul>
           </div>
           <div class="col-12 col-md-3">
-            <h4 class="text-uppercase mb-3 footer-heading text-white">Stay in touch</h4>
-            <p class="text-white-50 footer-text mb-2">
-              Sign up for updates on new deals, categories and features.
-            </p>
-            <form class="d-flex mb-3" action="{{ url('/newsletter/subscribe') }}" method="POST">
-              @csrf
-              <input type="email" name="email" class="form-control form-control-sm me-2" placeholder="Email address">
-              <button class="btn btn-success btn-sm" type="submit">Join</button>
-            </form>
-            <div class="d-flex flex-wrap gap-2 mb-2">
-              <a href="{{ url('/register') }}" class="footer-link text-white-50 text-decoration-none">Register</a>
-              <span class="text-white-50">•</span>
-              <a href="{{ url('/login') }}" class="footer-link text-white-50 text-decoration-none">Login</a>
-              <span class="text-white-50">•</span>
-              <a href="{{ url('/blog') }}" class="footer-link text-white-50 text-decoration-none">Blog</a>
-              <span class="text-white-50">•</span>
-              <a href="{{ url('/cart') }}" class="footer-link text-white-50 text-decoration-none">Cart</a>
-            </div>
+            <h4 class="text-uppercase mb-3 footer-heading text-white">Quick links</h4>
+            <ul class="list-unstyled mb-0 footer-text">
+              <li class="mb-2"><a href="{{ url('/register') }}" class="footer-link text-white-50 text-decoration-none">Register</a></li>
+              <li class="mb-2"><a href="{{ url('/login') }}" class="footer-link text-white-50 text-decoration-none">Login</a></li>
+              <li class="mb-2"><a href="{{ url('/blog') }}" class="footer-link text-white-50 text-decoration-none">Blog</a></li>
+              <li class="mb-2"><a href="{{ url('/cart') }}" class="footer-link text-white-50 text-decoration-none">Cart</a></li>
+            </ul>
             @if($settings)
-              <div class="d-flex gap-3 mb-2">
+              <div class="d-flex gap-3 mt-3">
                 @foreach([
                   'facebook_url'  => 'fab fa-facebook-f',
                   'instagram_url' => 'fab fa-instagram',
