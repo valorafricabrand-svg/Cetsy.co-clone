@@ -52,6 +52,7 @@
         'items' => [
           ['label' => 'Blog Posts',      'icon' => 'fas fa-newspaper', 'url' => route('admin.blog-posts.index'),      'match' => ['admin.blog-posts.*'],      'count' => $draftPosts],
           ['label' => 'Blog Categories', 'icon' => 'fas fa-folder',    'url' => route('admin.blog-categories.index'), 'match' => ['admin.blog-categories.*']],
+          ['label' => 'Hero Slides',     'icon' => 'fas fa-images',    'url' => route('admin.hero-slides.index'),     'match' => ['admin.hero-slides.*']],
           ['label' => 'User Agreement', 'icon' => 'fas fa-file-contract', 'url' => route('admin.policies.index'), 'match' => ['admin.policies.*']],
           ['label' => 'About Page', 'icon' => 'fas fa-circle-info', 'url' => route('admin.policies.edit', 'about-cetsy'), 'match' => ['admin.policies.edit']],
         ],
@@ -115,5 +116,4 @@
     </div>
   </div>
 @endif
-
 

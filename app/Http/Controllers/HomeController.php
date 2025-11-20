@@ -73,6 +73,10 @@ class HomeController extends Controller
 
         // Homepage hero slides (admin-managed)
         $heroSlides = HeroSlide::active()
+            ->with([
+                'deal:id,name,discount_percent',
+                'category:id,name,slug',
+            ])
             ->orderBy('sort_order')
             ->orderByDesc('id')
             ->get();
