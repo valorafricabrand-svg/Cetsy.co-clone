@@ -7,7 +7,62 @@
 @endsection
 
 @section('content')
-<div class="content">
+<div class="content buyer-dashboard">
+    <style>
+        .buyer-dashboard {
+            background:
+                radial-gradient(1200px 600px at -10% -10%, rgba(59,130,246,.06), transparent 60%),
+                radial-gradient(1200px 600px at 110% 0%, rgba(16,185,129,.06), transparent 60%),
+                linear-gradient(180deg, #f9fafb, #f3f4ff);
+        }
+        .buyer-dashboard-hero {
+            border-radius: 1rem;
+            background: linear-gradient(135deg, #ffffff, #e0f2fe);
+            padding: 1.5rem 1.75rem;
+            box-shadow: 0 18px 45px rgba(15,23,42,.08);
+        }
+        .buyer-dashboard-hero h3 { font-weight: 700; }
+        .buyer-hero-chip {
+            font-size: .8rem;
+            padding: .35rem .75rem;
+            border-radius: 999px;
+            border: 1px solid rgba(34,197,94,.28);
+            background: rgba(34,197,94,.06);
+            color: #166534;
+        }
+        .buyer-hero-chip i { margin-right: .35rem; }
+        .buyer-stat-card {
+            border-radius: 1rem;
+            border: 1px solid rgba(148,163,184,.22) !important;
+            box-shadow: 0 18px 40px rgba(15,23,42,.04);
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        }
+        .buyer-stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 24px 60px rgba(15,23,42,.12);
+            border-color: rgba(34,197,94,.55) !important;
+        }
+        .buyer-stat-card i {
+            filter: drop-shadow(0 12px 30px rgba(15,23,42,.18));
+        }
+        .buyer-section-card {
+            border-radius: 1rem;
+            border: 1px solid rgba(148,163,184,.18);
+            box-shadow: 0 18px 40px rgba(15,23,42,.04);
+        }
+        .buyer-section-card .card-header {
+            border-bottom: 0;
+            background: transparent;
+            padding-bottom: .35rem;
+        }
+        .buyer-section-card .card-header i { font-size: 1.1rem; }
+        .buyer-section-card table thead {
+            background: #f9fafb;
+        }
+        .buyer-section-card table tbody tr:hover {
+            background: #f9fafb;
+        }
+    </style>
     <div class="container-xxl">
 
         @if (session('status') === 'verification-link-sent')
@@ -28,11 +83,30 @@
         @endif
 
         {{-- ========== WELCOME ==========' --}}
-        <div class="mb-4">
-            <h3 class="text-dark mb-1">Dashboard</h3>
-            <p class="text-muted">
-                Welcome back, <strong>{{ Auth::user()->name }}</strong>!
-            </p>
+        <div class="buyer-dashboard-hero mb-4 d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
+            <div>
+                <div class="text-uppercase small text-success fw-semibold mb-1">
+                    <i class="fas fa-user-check me-1"></i> Buyer overview
+                </div>
+                <h3 class="text-dark mb-1">Welcome back, {{ Auth::user()->name }}</h3>
+                <p class="text-muted mb-0">
+                    Track your orders, favourites and offers at a glance.
+                </p>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-3 mt-lg-0">
+                <span class="buyer-hero-chip">
+                    <i class="fas fa-shopping-bag"></i>
+                    {{ $ordersCount }} {{ Str::plural('Order', $ordersCount) }}
+                </span>
+                <span class="buyer-hero-chip">
+                    <i class="fas fa-heart"></i>
+                    {{ $wishlistCount }} {{ Str::plural('Favourite', $wishlistCount) }}
+                </span>
+                <span class="buyer-hero-chip">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                    {{ $total_offers }} {{ Str::plural('Offer', $total_offers) }}
+                </span>
+            </div>
         </div>
 
         {{-- ========== ACCOUNT OVERVIEW ==========' --}}
@@ -40,7 +114,7 @@
 
             {{-- ORDERS --}}
             <div class="col-md-3">
-                <a href="{{ route('account.orders') }}" class="card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
+                <a href="{{ route('account.orders') }}" class="card buyer-stat-card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
                     <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
                         <div class="mb-3">
                             <i class="fas fa-shopping-cart fa-3x text-primary"></i>
@@ -55,7 +129,7 @@
 
             {{-- WISHLIST --}}
             <div class="col-md-3">
-                <a href="{{ route('wishlist') }}" class="card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
+                <a href="{{ route('wishlist') }}" class="card buyer-stat-card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
                     <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
                         <div class="mb-3">
                             <i class="fas fa-heart fa-3x text-success"></i>
@@ -70,7 +144,7 @@
 
             {{-- OFFERS --}}
             <div class="col-md-3">
-                <a href="{{ route('buyer.offers') }}" class="card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
+                <a href="{{ route('buyer.offers') }}" class="card buyer-stat-card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
                     <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
                         <div class="mb-3">
                             <i class="fas fa-hand-holding-dollar fa-3x text-info"></i>
@@ -85,7 +159,7 @@
 
             {{-- WALLET --}}
             <div class="col-md-3">
-                <a href="{{ url('wallet') }}" class="card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
+                <a href="{{ url('wallet') }}" class="card buyer-stat-card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
                     <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
                         <div class="mb-3">
                             <i class="fas fa-wallet fa-3x text-warning"></i>
@@ -100,7 +174,7 @@
         </div>
 
         {{-- ========== RECENT ORDERS ==========' --}}
-        <div class="card shadow-sm border-0 mt-4">
+        <div class="card buyer-section-card shadow-sm border-0 mt-4">
             <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
                 <i class="bi bi-clock-history text-primary"></i> Recent&nbsp;Orders
             </div>
@@ -164,7 +238,7 @@
                 </div>
             @endif
         @if(isset($recommendedProducts) && $recommendedProducts->isNotEmpty())
-            <div class="card shadow-sm border-0 mt-4">
+            <div class="card buyer-section-card shadow-sm border-0 mt-4">
                 <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
                     <i class="bi bi-stars text-warning"></i> Recommended For You
                 </div>
@@ -183,7 +257,7 @@
         </div>
 
         {{-- ========== YOUR RECENT REVIEWS ==========' --}}
-        <div class="card shadow-sm border-0 mt-4">
+        <div class="card buyer-section-card shadow-sm border-0 mt-4">
             <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
                 <i class="bi bi-star-fill text-warning"></i> Your Recent Reviews
             </div>
