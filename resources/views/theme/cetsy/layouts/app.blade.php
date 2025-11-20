@@ -1194,7 +1194,7 @@
               <span class="text-white-50">•</span>
               <a href="{{ url('/blog') }}" class="footer-link text-white-50 text-decoration-none">Blog</a>
               <span class="text-white-50">•</span>
-              <a href="{{ route('cart.index') }}" class="footer-link text-white-50 text-decoration-none">Cart</a>
+              <a href="{{ url('/cart') }}" class="footer-link text-white-50 text-decoration-none">Cart</a>
             </div>
             @if($settings)
               <div class="d-flex gap-3 mb-2">
