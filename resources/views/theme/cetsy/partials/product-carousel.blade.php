@@ -38,6 +38,7 @@
                     display: inline-flex; align-items: center; justify-content: center;
                 }
                 .product-carousel-nav .btn:focus { box-shadow: 0 0 0 0.2rem rgba(25,135,84,.25); }
+                .product-carousel-nav .btn.is-disabled { opacity: .35; pointer-events: none; }
                 @media (max-width: 992px) { .product-carousel-track { padding: 0.75rem 0; } }
             </style>
         @endpush
@@ -51,9 +52,8 @@
                         const maxScroll = track.scrollWidth - track.clientWidth;
                         const tolerance = 6;
                         const isOverflowing = maxScroll > tolerance;
-                        prev.style.display = next.style.display = isOverflowing ? '' : 'none';
-                        prev.classList.toggle('is-disabled', track.scrollLeft <= tolerance);
-                        next.classList.toggle('is-disabled', track.scrollLeft >= maxScroll - tolerance);
+                        prev.classList.toggle('is-disabled', track.scrollLeft <= tolerance || !isOverflowing);
+                        next.classList.toggle('is-disabled', track.scrollLeft >= maxScroll - tolerance || !isOverflowing);
                     };
 
                     containers.forEach(container => {
