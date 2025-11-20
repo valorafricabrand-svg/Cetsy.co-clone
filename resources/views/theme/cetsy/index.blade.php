@@ -812,72 +812,27 @@
 @endif
 
 <!-- ===================================== -->
-<!-- Most Trending Services -->
-<!-- ===================================== -->
-<section class="py-5 bg-white">
-  <div class="container max-w-7xl mx-auto px-4">
-    <header class="mb-4 text-center">
-      <span class="eyebrow"><i class="fas fa-bolt"></i> Services</span>
-      <h2 class="display-6 fw-bold text-dark mt-2">Most Trending Services</h2>
-      <p class="text-muted mt-2">Recently viewed &amp; more</p>
-    </header>
+<!-- Most Trending Services (carousel) -->
+@include('theme.'.theme().'.partials.product-carousel', [
+    'items' => $services,
+    'title' => 'Most Trending Services',
+    'subtitle' => 'Recently viewed and in-demand service providers.',
+    'eyebrow' => 'Services',
+    'eyebrowIcon' => 'fa-bolt',
+    'seeMoreUrl' => route('listings', ['type' => 'service']),
+    'seeMoreLabel' => 'View all services'
+])
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-      @forelse($services as $item)
-        <div class="col-6 col-md-3 col-lg-3 reveal">
-              @include('theme.'.theme().'.partials.product-card', ['item' => $item])
-              @if(($item->type ?? '') === 'physical' && (int)($item->stock ?? 0) === 1 && ($item->is_reserved ?? false))
-                <div class="mt-2 small text-danger">Reserved in another pending order</div>
-              @endif
-        </div>
-      @empty
-        <p class="col-12 text-center text-muted fs-5 fw-medium">No services available.</p>
-      @endforelse
-    </div>
-
-    @if($services->count() > 0)
-      <div class="text-center mt-4 reveal reveal-delay-2">
-        <a href="{{ route('listings', ['type' => 'service']) }}" class="btn btn-success btn-lg btn-pill px-4">
-          <i class="fas fa-briefcase me-2"></i> View All Services
-        </a>
-      </div>
-    @endif
-  </div>
-</section>
-
-<!-- ===================================== -->
-<!-- Featured Digital Downloads -->
-<!-- ===================================== -->
-<section class="bg-light py-5">
-  <div class="container">
-    <div class="section-head d-flex align-items-center justify-content-between mb-4">
-      <div>
-        <span class="eyebrow"><i class="fas fa-download"></i> Digital</span>
-        <h2 class="h3 fw-bold mb-0 mt-2">Featured Digital Downloads for You</h2>
-      </div>
-    </div>
-
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-      @forelse($featuredDigitals as $item)
-        <div class="col-6 col-md-3 col-lg-3 reveal">
-          @include('theme.'.theme().'.partials.product-card', ['item' => $item])
-        </div>
-      @empty
-        <div class="col-12 text-center text-muted">
-          No featured products at this time.
-        </div>
-      @endforelse
-    </div>
-
-    @if($featuredDigitals->count() > 0)
-      <div class="text-center mt-4 reveal reveal-delay-2">
-        <a href="{{ route('listings', ['type' => 'digital']) }}" class="btn btn-success btn-lg btn-pill px-4">
-          <i class="fas fa-cloud-download-alt me-2"></i> View All Digital Downloads
-        </a>
-      </div>
-    @endif
-  </div>
-</section>
+<!-- Featured Digital Downloads (carousel) -->
+@include('theme.'.theme().'.partials.product-carousel', [
+    'items' => $featuredDigitals,
+    'title' => 'Featured Digital Downloads for You',
+    'subtitle' => 'Original music, e-books, templates, recipes, and more.',
+    'eyebrow' => 'Digital',
+    'eyebrowIcon' => 'fa-download',
+    'seeMoreUrl' => route('listings', ['type' => 'digital']),
+    'seeMoreLabel' => 'View all digitals'
+])
 
 <!-- ===================================== -->
 <!-- About the company section (Enhanced with Font Awesome icons) -->
