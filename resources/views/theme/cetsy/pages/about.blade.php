@@ -238,7 +238,7 @@
                 </p>
 
                 <p class="mb-3">
-                    Examples of <strong>tangible items</strong> include (but are not limited to): household goods,
+                    Examples of <strong>physical items</strong> include (but are not limited to): household goods,
                     collectibles, jewelry, artwork, livestock, vehicles, handmade crafts, real estate/property, and
                     outdoor equipment.
                     All listings can include photos and video with audio.
