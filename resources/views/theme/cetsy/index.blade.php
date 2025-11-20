@@ -335,7 +335,15 @@
   /* Top sellers slider */
   .top-sellers-section { background: #f8fafc; }
   .top-sellers-slider { position: relative; overflow: hidden; }
-  .top-sellers-track { display: flex; gap: 1rem; scroll-behavior: smooth; }
+  .top-sellers-track {
+    display: flex;
+    gap: 1rem;
+    scroll-behavior: smooth;
+    overflow-x: auto;
+    padding: .25rem;
+    scrollbar-width: none;
+  }
+  .top-sellers-track::-webkit-scrollbar { display: none; }
   .top-seller-card { min-width: 260px; max-width: 320px; flex: 0 0 auto; }
   .top-seller-meta { font-size: .875rem; }
   .top-seller-actions { color: #198754; font-weight: 600; }
@@ -653,7 +661,7 @@
     if (!slider || !track) return;
 
     function slide(offset) {
-      const step = Math.max(slider.clientWidth * 0.7, 240);
+      const step = Math.max(track.clientWidth * 0.8, 240);
       track.scrollBy({ left: offset * step, behavior: 'smooth' });
     }
 
