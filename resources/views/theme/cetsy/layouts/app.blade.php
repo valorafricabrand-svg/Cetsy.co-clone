@@ -1187,6 +1187,15 @@
               <input type="email" name="email" class="form-control form-control-sm me-2" placeholder="Email address">
               <button class="btn btn-success btn-sm" type="submit">Join</button>
             </form>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <a href="{{ url('/register') }}" class="footer-link text-white-50 text-decoration-none">Register</a>
+              <span class="text-white-50">•</span>
+              <a href="{{ url('/login') }}" class="footer-link text-white-50 text-decoration-none">Login</a>
+              <span class="text-white-50">•</span>
+              <a href="{{ url('/blog') }}" class="footer-link text-white-50 text-decoration-none">Blog</a>
+              <span class="text-white-50">•</span>
+              <a href="{{ route('cart.index') }}" class="footer-link text-white-50 text-decoration-none">Cart</a>
+            </div>
             @if($settings)
               <div class="d-flex gap-3 mb-2">
                 @foreach([
