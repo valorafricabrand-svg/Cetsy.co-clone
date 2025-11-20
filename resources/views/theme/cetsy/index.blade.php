@@ -146,8 +146,18 @@
     box-shadow: 0 12px 24px rgba(0,0,0,.25);
     cursor: pointer;
   }
-  .hero-slider-arrow-prev { left: 1.25rem; }
-  .hero-slider-arrow-next { right: 1.25rem; }
+  .hero-slider-arrow-prev {
+    left: 0.75rem;
+  }
+  .hero-slider-arrow-next {
+    right: 0.75rem;
+  }
+  @media (min-width: 992px) {
+    .hero-slider {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
   @media (max-width: 991.98px) {
     .hero-slider-arrow { display: none; }
   }
