@@ -937,7 +937,7 @@
           </div>
           <p class="text-muted mb-3">
             Become a Cetsy Seller in a few steps. Review the Seller Agreement to see what we expect and what
-            you can expect from us. Questions? Email us or use LIVE CHAT anytime.
+            you can expect from us. Questions? Use our LIVE CHAT anytime.
           </p>
           <div class="d-flex flex-wrap gap-2">
             <a href="{{ url('/login') }}" class="btn btn-success btn-pill">
