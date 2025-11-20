@@ -1,14 +1,19 @@
 @extends('layouts.app')
 
-@section('header')
-  <div class="d-flex align-items-center justify-content-between">
-    <h2 class="h4 mb-0">Create Hero Slide</h2>
-    <a href="{{ route('admin.hero-slides.index') }}" class="btn btn-outline-secondary">Back</a>
-  </div>
-@endsection
-
 @section('content')
   <div class="content">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+      <div>
+        <h1 class="h3 mb-1">Create Hero Slide</h1>
+        <p class="text-muted mb-0">Add a new slide to the homepage hero carousel.</p>
+      </div>
+      <div>
+        <a href="{{ route('admin.hero-slides.index') }}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-1"></i> Back to Slides
+        </a>
+      </div>
+    </div>
+
     @if($errors->any())
       <div class="alert alert-danger">
         <ul class="mb-0">
