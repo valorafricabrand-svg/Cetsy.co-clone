@@ -105,8 +105,8 @@
         {{-- Products list --}}
         <div class="card">
             <div class="card-header bg-light fw-semibold d-flex justify-content-between">
-                <span>Products ({{ $products->total() }})</span>
-                <span class="small text-muted">Showing {{ $products->firstItem() }}–{{ $products->lastItem() }}</span>
+                <span>Products ({{ $products->count() }})</span>
+                <span class="small text-muted">Showing 1–{{ $products->count() }}</span>
             </div>
             <div class="table-responsive" style="max-height:60vh;overflow:auto;">
                 <table class="table table-hover align-middle mb-0">
@@ -171,12 +171,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="card-footer">
-
-
-
-                   {{ $products->appends(request()->query())->links('pagination::bootstrap-5') }}
-            </div>
+            {{-- No pagination footer: all filtered products are listed above --}}
         </div>
 
         <div class="mt-3 text-end">

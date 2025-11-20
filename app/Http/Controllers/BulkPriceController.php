@@ -21,8 +21,7 @@ class BulkPriceController extends Controller
             ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->q.'%'))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->category_id))
             ->orderBy('name')
-            ->paginate(30)
-            ->withQueryString();
+            ->get();
 
         return view('products.pricing.bulk', compact('products', 'shopId'));
     }
