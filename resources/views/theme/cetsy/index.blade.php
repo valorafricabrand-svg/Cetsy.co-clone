@@ -647,11 +647,10 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const slider = document.querySelector('[data-top-seller-slider]');
-    if (!slider) return;
-    const track = slider.querySelector('[data-top-seller-track]');
-    const prevBtn = slider.querySelector('[data-top-seller-prev]');
-    const nextBtn = slider.querySelector('[data-top-seller-next]');
-    if (!track) return;
+    const track = document.querySelector('[data-top-seller-track]');
+    const prevBtn = document.querySelector('[data-top-seller-prev]');
+    const nextBtn = document.querySelector('[data-top-seller-next]');
+    if (!slider || !track) return;
 
     function slide(offset) {
       const step = Math.max(slider.clientWidth * 0.7, 240);
