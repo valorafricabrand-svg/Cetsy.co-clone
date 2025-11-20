@@ -614,7 +614,7 @@
 
     function startAuto() {
       if (timer || slides.length < 2) return;
-      timer = setInterval(next, 8000);
+      timer = setInterval(next, 5000);
     }
 
     function stopAuto() {
@@ -665,8 +665,16 @@
       track.scrollBy({ left: offset * step, behavior: 'smooth' });
     }
 
-    if (prevBtn) prevBtn.addEventListener('click', () => slide(-1));
-    if (nextBtn) nextBtn.addEventListener('click', () => slide(1));
+    if (prevBtn) prevBtn.addEventListener('click', () => { stopAuto(); slide(-1); startAuto(); });
+    if (nextBtn) nextBtn.addEventListener('click', () => { stopAuto(); slide(1); startAuto(); });
+
+    let autoTimer = null;
+    const startAuto = () => { if (!autoTimer) autoTimer = setInterval(() => slide(1), 5000); };
+    const stopAuto = () => { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } };
+
+    slider.addEventListener('mouseenter', stopAuto);
+    slider.addEventListener('mouseleave', startAuto);
+    startAuto();
   });
 </script>
 @endpush

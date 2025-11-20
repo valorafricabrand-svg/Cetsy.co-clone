@@ -70,6 +70,15 @@
                         track.addEventListener('scroll', observer, { passive: true });
                         window.addEventListener('resize', observer);
                         observer();
+
+                        // Auto slide every 5s
+                        let autoTimer = null;
+                        const autoNext = () => track.scrollBy({ left: scrollAmount(), behavior: 'smooth' });
+                        const startAuto = () => { if (!autoTimer) autoTimer = setInterval(autoNext, 5000); };
+                        const stopAuto = () => { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } };
+                        container.addEventListener('mouseenter', stopAuto);
+                        container.addEventListener('mouseleave', startAuto);
+                        startAuto();
                     });
                 });
             </script>
