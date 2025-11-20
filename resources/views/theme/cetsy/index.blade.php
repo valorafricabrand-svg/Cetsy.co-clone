@@ -665,16 +665,31 @@
 @endpush
 
 <!-- ===================================== -->
-<!-- Popular Products (slider) -->
+<!-- Popular Items (slider) -->
 <!-- ===================================== -->
 @include('theme.'.theme().'.partials.product-carousel', [
     'items' => $featuredProducts,
-    'title' => 'Popular Products',
+    'title' => 'Popular Items',
     'subtitle' => 'Trending picks from trusted sellers across the marketplace.',
     'eyebrow' => 'Hot right now',
     'eyebrowIcon' => 'fa-fire',
     'seeMoreUrl' => route('listings', ['sort' => 'popular']),
     'seeMoreLabel' => 'Browse all products'
+])
+
+<!-- ===================================== -->
+<!-- Just for You -->
+<!-- ===================================== -->
+@include('theme.'.theme().'.partials.product-carousel', [
+    'items' => $featuredProducts,
+    'title' => 'Just for You',
+    'subtitle' => Auth::check()
+        ? 'Curated from your favorites, orders, and recent views.'
+        : 'Sign in to personalize picks from your favorites and recent views.',
+    'eyebrow' => 'Recommended',
+    'eyebrowIcon' => 'fa-wand-magic-sparkles',
+    'seeMoreUrl' => route('listings', ['sort' => 'popular']),
+    'seeMoreLabel' => 'See more picks'
 ])
 
 <!-- ===================================== -->
@@ -740,6 +755,50 @@
             </div>
           @endforeach
         </div>
+      </div>
+    </div>
+  </section>
+@endif
+
+@if($topShops->isNotEmpty())
+  <section class="py-4">
+    <div class="container">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+          <span class="eyebrow"><i class="fas fa-gem"></i> Featured Shops</span>
+          <h3 class="h4 fw-bold mb-0 mt-2">Curated sellers to explore</h3>
+        </div>
+        <a href="{{ route('shops.index') }}" class="btn btn-outline-success btn-pill">Browse shops</a>
+      </div>
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+        @foreach($topShops->take(4) as $shop)
+          <div class="col">
+            <a href="{{ route('shop.show', $shop->slug) }}" class="text-decoration-none">
+              <div class="card h-100 shadow-sm border-0">
+                <div class="card-body d-flex flex-column">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width:52px;height:52px;">
+                      <img
+                        src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . ltrim($shop->logo, '/'))) : (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg')) }}"
+                        alt="{{ $shop->name }} logo"
+                        class="img-fluid rounded-circle"
+                        style="max-height:52px; max-width:52px;"
+                        onerror="this.onerror=null;this.src=@json(setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'));"
+                      >
+                    </div>
+                    <div>
+                      <h5 class="mb-0 text-dark">{{ $shop->name }}</h5>
+                      <span class="text-muted small">{{ $shop->completed_orders_count ?? 0 }} completed orders</span>
+                    </div>
+                  </div>
+                  <p class="text-muted small mb-0">
+                    {{ Str::limit(strip_tags($shop->description ?? 'Discover unique finds from this shop.'), 90) }}
+                  </p>
+                </div>
+              </div>
+            </a>
+          </div>
+        @endforeach
       </div>
     </div>
   </section>
