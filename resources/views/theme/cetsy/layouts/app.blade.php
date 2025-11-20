@@ -1204,10 +1204,6 @@
                 @endforeach
               </div>
             @endif
-            <div class="text-white-50 small footer-text">
-              <strong>Contact us:</strong>
-              <a href="https://docs.google.com/forms/d/1uOyZN2ysRSZBOpYneYQKwlZdish465UMxfil8cEv5vE/viewform?edit_requested=true" class="text-white ms-1" target="_blank" rel="noopener">Open form</a>
-            </div>
           </div>
         </div>
         <div class="mt-4 pt-3 border-top border-secondary-subtle d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
