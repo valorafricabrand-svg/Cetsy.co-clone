@@ -331,6 +331,18 @@
     background: linear-gradient(180deg, rgba(25,135,84,.08), rgba(25,135,84,.06));
     border: 1px solid rgba(25,135,84,.15);
   }
+
+  /* Top sellers slider */
+  .top-sellers-section { background: #f8fafc; }
+  .top-sellers-slider { position: relative; overflow: hidden; }
+  .top-sellers-track { display: flex; gap: 1rem; scroll-behavior: smooth; }
+  .top-seller-card { min-width: 260px; max-width: 320px; flex: 0 0 auto; }
+  .top-seller-meta { font-size: .875rem; }
+  .top-seller-actions { color: #198754; font-weight: 600; }
+  .top-seller-nav .btn { width: 36px; height: 36px; border-radius: 999px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  @media (max-width: 767.98px) {
+    .top-seller-card { min-width: 240px; }
+  }
 </style>
 
 <!-- ===================================== -->
@@ -632,7 +644,38 @@
     startAuto();
   });
 </script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const slider = document.querySelector('[data-top-seller-slider]');
+    if (!slider) return;
+    const track = slider.querySelector('[data-top-seller-track]');
+    const prevBtn = slider.querySelector('[data-top-seller-prev]');
+    const nextBtn = slider.querySelector('[data-top-seller-next]');
+    if (!track) return;
+
+    function slide(offset) {
+      const step = Math.max(slider.clientWidth * 0.7, 240);
+      track.scrollBy({ left: offset * step, behavior: 'smooth' });
+    }
+
+    if (prevBtn) prevBtn.addEventListener('click', () => slide(-1));
+    if (nextBtn) nextBtn.addEventListener('click', () => slide(1));
+  });
+</script>
 @endpush
+
+<!-- ===================================== -->
+<!-- Popular Products (slider) -->
+<!-- ===================================== -->
+@include('theme.'.theme().'.partials.product-carousel', [
+    'items' => $featuredProducts,
+    'title' => 'Popular Products',
+    'subtitle' => 'Trending picks from trusted sellers across the marketplace.',
+    'eyebrow' => 'Hot right now',
+    'eyebrowIcon' => 'fa-fire',
+    'seeMoreUrl' => route('listings', ['sort' => 'popular']),
+    'seeMoreLabel' => 'Browse all products'
+])
 
 <!-- ===================================== -->
 <!-- Top Sellers -->
@@ -643,22 +686,30 @@
     : collect($shops ?? [])->take(6);
 @endphp
 @if($topShops->isNotEmpty())
-  <section class="py-5">
+  <section class="py-5 top-sellers-section">
     <div class="container">
-      <div class="section-head d-flex align-items-center justify-content-between mb-4">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
         <div>
           <span class="eyebrow"><i class="fas fa-store"></i> Top Sellers</span>
-          <h2 class="h3 fw-bold mb-0 mt-2">Featured Shops</h2>
+          <h2 class="h3 fw-bold mb-1 mt-2">Featured Shops</h2>
           <p class="text-muted mb-0">Discover trusted sellers and explore their latest drops.</p>
         </div>
-        <a href="{{ route('shops.index') }}" class="btn btn-outline-success btn-pill">View all shops</a>
+        <div class="top-seller-nav d-flex gap-2">
+          <button class="btn btn-outline-success" type="button" aria-label="Previous shops" data-top-seller-prev>
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <button class="btn btn-outline-success" type="button" aria-label="Next shops" data-top-seller-next>
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <a href="{{ route('shops.index') }}" class="btn btn-success btn-pill ms-1">View all shops</a>
+        </div>
       </div>
 
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-        @foreach($topShops as $shop)
-          <div class="col reveal">
-            <a href="{{ route('shop.show', $shop->slug) }}" class="text-decoration-none">
-              <div class="card h-100 border-0 shadow-sm">
+      <div class="top-sellers-slider" data-top-seller-slider>
+        <div class="top-sellers-track" data-top-seller-track>
+          @foreach($topShops as $shop)
+            <div class="top-seller-card card border-0 shadow-sm reveal">
+              <a href="{{ route('shop.show', $shop->slug) }}" class="text-decoration-none h-100 d-flex">
                 <div class="card-body d-flex flex-column">
                   <div class="d-flex align-items-center gap-2 mb-3">
                     <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width:56px;height:56px;">
@@ -672,40 +723,27 @@
                     </div>
                     <div>
                       <h5 class="mb-0 text-dark">{{ $shop->name }}</h5>
-                      <span class="text-muted small">Trusted seller</span>
+                      <span class="text-muted small">{{ $shop->completed_orders_count ?? 0 }} completed orders</span>
                     </div>
                   </div>
 
-                  <p class="text-muted small mb-3 flex-grow-1">
+                  <p class="text-muted small mb-3 flex-grow-1 top-seller-meta">
                     {{ Str::limit(strip_tags($shop->description ?? 'Explore curated items from this shop.'), 110) }}
                   </p>
 
-                  <div class="d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center justify-content-between top-seller-actions mt-auto">
                     <span class="badge bg-success bg-opacity-10 text-success">Top rated</span>
-                    <span class="text-success fw-semibold small">View shop <i class="fas fa-arrow-right ms-1"></i></span>
+                    <span>View shop <i class="fas fa-arrow-right ms-1"></i></span>
                   </div>
                 </div>
-              </div>
-            </a>
-          </div>
-        @endforeach
+              </a>
+            </div>
+          @endforeach
+        </div>
       </div>
     </div>
   </section>
 @endif
-
-<!-- ===================================== -->
-<!-- Featured Products -->
-<!-- ===================================== -->
-@include('theme.'.theme().'.partials.product-carousel', [
-    'items' => $featuredProducts,
-    'title' => Auth::check() ? 'Just for You' : 'Discover What\'s Hot',
-    'subtitle' => Auth::check() ? 'Curated from your orders, favorites, and recent views.' : 'Sign in to personalize your picks and get recommendations tailored to you.',
-    'eyebrow' => Auth::check() ? 'Tailored Picks' : 'Trending Now',
-    'eyebrowIcon' => Auth::check() ? 'fa-wand-magic-sparkles' : 'fa-fire',
-    'seeMoreUrl' => route('listings', ['type' => 'physical']),
-    'seeMoreLabel' => 'Browse all products'
-])
 
 <!-- ===================================== -->
 <!-- Most Trending Services -->
