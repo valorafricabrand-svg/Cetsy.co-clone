@@ -8,7 +8,6 @@
   <style>
     /* Scoped cosmetics */
     .py-6 { padding-top: 4rem; padding-bottom: 4rem; }
-    .hero-mask { background: linear-gradient(180deg, rgba(15,81,50,.88), rgba(25,135,84,.9)); }
 
     .eyebrow{
       display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .75rem;
@@ -16,10 +15,8 @@
       font-weight:600; font-size:.85rem;
     }
 
-    /* ✅ Keep toolbar below nav dropdown/collapse */
+    /* Toolbar behaviour */
     .toolbar { position: sticky; top: 0; z-index: 900; background:#fff; border-bottom:1px solid rgba(0,0,0,.06); }
-
-    /* ✅ Force navbar menus above everything on this page */
     nav.navbar { z-index: 1100; }
     .navbar .dropdown-menu { z-index: 1101; }
     .navbar-collapse { position: relative; z-index: 1102; }
@@ -30,6 +27,90 @@
     }
     .view-toggle .btn { border-radius:.5rem; }
     .empty-spot { border:2px dashed rgba(25,135,84,.35); border-radius:1rem; background:rgba(25,135,84,.03); }
+
+    /* Hero styling (match homepage promo card) */
+    .category-hero { background: linear-gradient(180deg, #f3f4f6, #ffffff); }
+    .category-hero-card {
+      border-radius: 1.75rem;
+      background: radial-gradient(140% 180% at 0% 0%, #ffffff 0, #f97373 35%, #e60012 70%);
+      color: #ffffff;
+      padding: 2rem 2.25rem;
+      box-shadow: 0 30px 60px rgba(0,0,0,.18);
+      position: relative;
+      overflow: hidden;
+    }
+    .category-hero-card::before {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border-radius: 1.5rem;
+      border: 1px solid rgba(255,255,255,.18);
+      pointer-events: none;
+    }
+    .category-hero-copy { position: relative; z-index: 1; }
+    .category-hero-heading {
+      font-size: clamp(1.9rem, 2.3vw + 1.2rem, 2.7rem);
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    .category-hero-sub {
+      font-size: 1.02rem;
+      max-width: 30rem;
+      color: rgba(255,255,255,.92);
+    }
+    .category-hero-media {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .category-hero-media img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 1.25rem;
+      box-shadow: 0 24px 48px rgba(15,23,42,.35);
+      object-fit: cover;
+    }
+
+    /* Hero search */
+    .hero-search-form { max-width: 640px; margin-bottom: 0.75rem; }
+    .hero-search-shell {
+      display: flex;
+      align-items: stretch;
+      gap: .5rem;
+      background: #fff;
+      border-radius: 999px;
+      border: 1px solid rgba(15,23,42,.12);
+      box-shadow: 0 10px 30px rgba(15,23,42,.10);
+      padding: .25rem .5rem .25rem .75rem;
+    }
+    .hero-search-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 1.1rem;
+    }
+    .hero-search-input.form-control {
+      border: 0;
+      box-shadow: none;
+      padding-left: .5rem;
+      padding-right: .5rem;
+    }
+    .hero-search-input.form-control:focus {
+      outline: 0;
+      box-shadow: none;
+    }
+    .hero-search-submit {
+      border-radius: 999px;
+      padding-inline: 1.5rem;
+      white-space: nowrap;
+    }
+    @media (max-width: 991.98px) {
+      .category-hero-card { padding: 1.5rem 1.5rem 1.75rem; }
+      .category-hero-media { margin-top: 1.25rem; }
+    }
   </style>
 
   {{-- =========== Category Banner =========== --}}
@@ -45,50 +126,53 @@
   @endphp
   @section('title', ($category->seo_title ?? $catName) . ' – Marketplace Category')
 
-  <section class="position-relative py-6">
-    <div class="position-absolute top-0 start-0 w-100 h-100 bg-cover bg-center" style="background-image:url('{{ $banner }}'); filter: brightness(.65);"></div>
-    <div class="position-absolute top-0 start-0 w-100 h-100 hero-mask"></div>
-    <div class="position-relative container text-white px-3">
-      <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-          <div class="mb-2">
-            <span class="eyebrow"><i class="fas fa-folder-open"></i> Category</span>
-          </div>
-          <h1 class="display-5 fw-bold text-white mb-2">{{ $catName }}</h1>
-          <p class="lead mb-3 text-white-50">{{ $desc }}</p>
+  <section class="py-6 category-hero">
+    <div class="container">
+      <div class="category-hero-card text-white">
+        <div class="row g-4 align-items-center">
+          <div class="col-lg-6">
+            <div class="category-hero-copy">
+              <span class="eyebrow mb-2"><i class="fas fa-folder-open"></i> Category</span>
+              <h1 class="category-hero-heading mb-2">{{ $catName }}</h1>
+              <p class="category-hero-sub mb-3">{{ $desc }}</p>
 
-          {{-- Breadcrumbs (optional) --}}
-          <nav class="mt-2" aria-label="breadcrumb">
-            <ol class="breadcrumb justify-content-start">
-              <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ url('/') }}">Home</a></li>
-              <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ route('listings') }}">Listings</a></li>
-              <li class="breadcrumb-item active text-white-50" aria-current="page">{{ $catName }}</li>
-            </ol>
-          </nav>
-        </div>
-        <div class="col-lg-5">
-          {{-- Category-scoped quick search (Argos-style shell) --}}
-          <form class="hero-search-form" method="GET" action="{{ url()->current() }}" role="search">
-            <div class="hero-search-shell">
-              <span class="hero-search-icon text-success-emphasis bg-white rounded-circle me-1" style="width:32px;height:32px;">
-                <i class="fas fa-search"></i>
-              </span>
-              <label for="categoryHeroSearch" class="visually-hidden">Search in {{ $catName }}</label>
-              <input
-                id="categoryHeroSearch"
-                type="search"
-                name="q"
-                class="form-control hero-search-input"
-                placeholder="Search in {{ $catName }}"
-                aria-label="Search in {{ $catName }}"
-                value="{{ request('q') }}"
-                autocomplete="on"
-              >
-              <button class="btn btn-light text-success hero-search-submit" type="submit">
-                Search
-              </button>
+              {{-- Breadcrumbs --}}
+              <nav class="mt-2" aria-label="breadcrumb">
+                <ol class="breadcrumb justify-content-start mb-0">
+                  <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ url('/') }}">Home</a></li>
+                  <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ route('listings') }}">Listings</a></li>
+                  <li class="breadcrumb-item active text-white-50" aria-current="page">{{ $catName }}</li>
+                </ol>
+              </nav>
             </div>
-          </form>
+          </div>
+          <div class="col-lg-6">
+            <div class="category-hero-media mb-3 mb-lg-4">
+              <img src="{{ $banner }}" alt="{{ $catName }} banner" class="img-fluid">
+            </div>
+            {{-- Category-scoped quick search --}}
+            <form class="hero-search-form" method="GET" action="{{ url()->current() }}" role="search">
+              <div class="hero-search-shell">
+                <span class="hero-search-icon text-success-emphasis bg-white rounded-circle me-1" style="width:32px;height:32px;">
+                  <i class="fas fa-search"></i>
+                </span>
+                <label for="categoryHeroSearch" class="visually-hidden">Search in {{ $catName }}</label>
+                <input
+                  id="categoryHeroSearch"
+                  type="search"
+                  name="q"
+                  class="form-control hero-search-input"
+                  placeholder="Search in {{ $catName }}"
+                  aria-label="Search in {{ $catName }}"
+                  value="{{ request('q') }}"
+                  autocomplete="on"
+                >
+                <button class="btn btn-light text-success hero-search-submit" type="submit">
+                  Search
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -435,4 +519,3 @@
   </script>
   @endpush
 @endsection
-
