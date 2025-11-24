@@ -10,6 +10,7 @@ use App\Mail\MessageReceivedMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use App\Models\Activity;
+use App\Models\Wishlist;
 
 class MessageController extends Controller
 {
@@ -267,6 +268,7 @@ class MessageController extends Controller
     public function sellerShow(Request $request, $conversationId)
     {
         $user = auth()->user();
+        $shop = $user->shop;
         
         // Parse conversation ID (format: product_id-user_id)
         $parts = explode('-', $conversationId);
@@ -315,6 +317,22 @@ class MessageController extends Controller
         $otherUser = User::find($otherUserId);
         $product = Product::find($productId);
 
-        return view('seller.messages.show', compact('messages', 'otherUser', 'product', 'conversationId'));
+        $buyerFavorites = collect();
+        if ($shop && $otherUser) {
+            $buyerFavorites = Wishlist::with(['product.media'])
+                ->where('user_id', $otherUser->id)
+                ->whereHas('product', function($query) use ($shop) {
+                    $query->where('shop_id', $shop->id);
+                })
+                ->latest()
+                ->get()
+                ->filter(function ($favorite) {
+                    return $favorite->product !== null;
+                })
+                ->unique('product_id')
+                ->values();
+        }
+
+        return view('seller.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'buyerFavorites'));
     }
 }

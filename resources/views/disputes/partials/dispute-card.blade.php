@@ -1,7 +1,24 @@
+@php
+    $statusClass = match($dispute->status) {
+        \App\Models\Dispute::STATUS_PENDING => 'bg-warning text-dark',
+        \App\Models\Dispute::STATUS_UNDER_REVIEW => 'bg-info text-dark',
+        \App\Models\Dispute::STATUS_RESOLVED,
+        \App\Models\Dispute::STATUS_MUTUALLY_RESOLVED,
+        \App\Models\Dispute::STATUS_APPEAL_APPROVED => 'bg-success text-white',
+        \App\Models\Dispute::STATUS_APPEALED,
+        \App\Models\Dispute::STATUS_APPEAL_UNDER_REVIEW => 'bg-primary text-white',
+        \App\Models\Dispute::STATUS_APPEAL_REJECTED => 'bg-danger text-white',
+        \App\Models\Dispute::STATUS_FINAL,
+        \App\Models\Dispute::STATUS_CLOSED => 'bg-secondary text-white',
+        default => 'bg-light text-dark'
+    };
+    $statusLabel = ucfirst(str_replace('_', ' ', $dispute->status));
+@endphp
+
 <div class="card h-100 dispute-card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="badge {{ $dispute->getStatusBadgeClass() }}">
-            {{ ucfirst(str_replace('_', ' ', $dispute->status)) }}
+        <span class="badge rounded-pill px-3 py-2 {{ $statusClass }}">
+            {{ $statusLabel }}
         </span>
         <small class="text-muted">{{ $dispute->created_at->diffForHumans() }}</small>
     </div>

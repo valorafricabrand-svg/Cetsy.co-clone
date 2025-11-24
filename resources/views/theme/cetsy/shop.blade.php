@@ -326,6 +326,20 @@
                     <p class="mb-0 text-secondary">{{ $review->comment }}</p>
                   @endif
 
+                  @if(!empty($review->seller_response))
+                    <div class="mt-3 p-3 rounded bg-white border-start border-3 border-success">
+                      <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-success-subtle text-success fw-semibold">
+                          <i class="fa fa-reply me-1"></i> Seller reply
+                        </span>
+                        @if($review->seller_responded_at)
+                          <small class="text-muted ms-2">{{ $review->seller_responded_at->diffForHumans() }}</small>
+                        @endif
+                      </div>
+                      <div class="text-secondary small">{{ $review->seller_response }}</div>
+                    </div>
+                  @endif
+
                   @if(!empty($review->image_path))
                     <div class="mt-2">
                       <a href="{{ asset('storage/' . ltrim($review->image_path,'/')) }}" target="_blank">
