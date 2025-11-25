@@ -82,7 +82,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             @if($product->media && $product->media->count() > 0)
-                                @php($thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null))
+                                @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null); @endphp
                                 <img src="{{ $thumb }}" alt="{{ $product->name }}" 
                                      class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
                             @else
@@ -120,14 +120,16 @@
                                 <span>This buyer has not favorited any of your products yet.</span>
                             </div>
                         @else
-                            @php($currencySymbol = function_exists('shop_currency') ? shop_currency() : (function_exists('get_currency') ? get_currency() : '$'))
+                            @php
+                                $currencySymbol = function_exists('shop_currency') ? shop_currency() : (function_exists('get_currency') ? get_currency() : '$');
+                            @endphp
                             <div class="row g-3">
                                 @foreach($buyerFavorites as $favorite)
-                                    @php($favProduct = $favorite->product)
+                                    @php $favProduct = $favorite->product; @endphp
                                     <div class="col-md-6">
                                         <div class="border rounded p-3 d-flex align-items-center gap-3 buyer-favorite-card h-100">
                                             <div class="favorite-thumb flex-shrink-0">
-                                                @php($thumb = function_exists('product_thumb_url') ? product_thumb_url($favProduct) : (optional($favProduct->media->first())->url ? asset('storage/'.$favProduct->media->first()->url) : null))
+                                                @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($favProduct) : (optional($favProduct->media->first())->url ? asset('storage/'.$favProduct->media->first()->url) : null); @endphp
                                                 @if($thumb)
                                                     <img src="{{ $thumb }}" alt="{{ $favProduct->name }}" class="rounded favorite-thumb-img">
                                                 @else
@@ -192,6 +194,23 @@
                                                     <span class="text-muted small">{{ $message->created_at->format('M j, Y g:i A') }}</span>
                                                 </div>
                                                 <div class="message-content">{{ $message->body }}</div>
+                                                @if(!empty($message->attachment_path))
+                                                    @php
+                                                        $isImage = \Illuminate\Support\Str::endsWith(strtolower($message->attachment_path), ['.jpg','.jpeg','.png','.gif','.webp']);
+                                                        $attachmentUrl = asset('storage/' . ltrim($message->attachment_path, '/'));
+                                                    @endphp
+                                                    <div class="mt-2">
+                                                        @if($isImage)
+                                                            <a href="{{ $attachmentUrl }}" target="_blank">
+                                                                <img src="{{ $attachmentUrl }}" alt="Attachment" class="img-fluid rounded" style="max-width: 260px;">
+                                                            </a>
+                                                        @else
+                                                            <a href="{{ $attachmentUrl }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                                <i class="bi bi-paperclip me-1"></i>View attachment
+                                                            </a>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -220,7 +239,7 @@
                         </div>
                     </div>
                     <div class="card-body p-4">
-                        <form method="POST" action="{{ route('seller.messages.reply', $conversationId) }}" id="replyForm">
+                        <form method="POST" action="{{ route('seller.messages.reply', $conversationId) }}" id="replyForm" enctype="multipart/form-data">
                             @csrf
                             <div class="mb-3">
                                 <label for="message" class="form-label fw-bold">
@@ -236,6 +255,11 @@
                                     required
                                     maxlength="2000"
                                 >{{ old('message', request('prefill')) }}</textarea>
+                                <div class="mt-3">
+                                    <label for="attachment" class="form-label">Attachment (optional)</label>
+                                    <input type="file" name="attachment" id="attachment" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
+                                    <div class="form-text">Images or PDF, max 5MB.</div>
+                                </div>
                                 <div class="form-text d-flex justify-content-between">
                                     <span>Be professional and helpful in your response</span>
                                     <span id="charCount">0/2000</span>
