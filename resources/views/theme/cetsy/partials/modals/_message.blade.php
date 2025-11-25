@@ -2,7 +2,7 @@
 
 <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form class="modal-content" method="POST" action="{{ route('messages.store') }}">
+    <form class="modal-content" method="POST" action="{{ route('messages.store') }}" enctype="multipart/form-data">
       @csrf
       <input type="hidden" name="receiver_id" value="{{ $product->shop->user_id }}">
       <input type="hidden" name="product_id" value="{{ $product->id }}">
@@ -21,6 +21,11 @@
           class="form-control"
           required
         ></textarea>
+        <div class="mt-3">
+          <label for="messageAttachment" class="form-label">Attachment (optional)</label>
+          <input type="file" name="attachment" id="messageAttachment" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
+          <small class="text-muted">Images or PDF, max 5MB.</small>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="submit" class="btn btn-primary">Send Message</button>

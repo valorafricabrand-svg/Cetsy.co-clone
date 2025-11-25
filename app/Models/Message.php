@@ -12,6 +12,7 @@ class Message extends Model
         'product_id',
         'body',
         'is_read',
+        'attachment_path',
     ];
 
     public function sender()   { return $this->belongsTo(User::class, 'sender_id'); }

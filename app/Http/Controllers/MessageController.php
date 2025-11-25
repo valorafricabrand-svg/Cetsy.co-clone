@@ -25,13 +25,20 @@ class MessageController extends Controller
             'receiver_id' => ['required', 'exists:users,id'],
             'product_id'  => ['nullable', 'exists:products,id'],
             'message'     => ['required', 'string', 'max:2000'],
+            'attachment'  => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,webp,pdf', 'max:5120'],
         ]);
+
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('messages', 'public');
+        }
 
         $message = Message::create([
             'sender_id'   => $request->user()->id,
             'receiver_id' => $data['receiver_id'],
             'product_id'  => $data['product_id'] ?? null,
             'body'        => $data['message'],
+            'attachment_path' => $attachmentPath,
         ]);
 
         // Get receiver and product info

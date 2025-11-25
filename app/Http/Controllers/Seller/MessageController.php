@@ -320,7 +320,13 @@ class MessageController extends Controller
         
         $data = $request->validate([
             'message' => ['required', 'string', 'max:2000'],
+            'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,webp,pdf', 'max:5120'],
         ]);
+
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('messages', 'public');
+        }
 
         // Create the reply message
         $replyMessage = Message::create([
@@ -328,6 +334,7 @@ class MessageController extends Controller
             'receiver_id' => $otherUserId, // Buyer is the receiver
             'product_id' => (int)$productId === 0 ? null : $productId,
             'body' => $data['message'],
+            'attachment_path' => $attachmentPath,
         ]);
 
         // Send email notification to the buyer

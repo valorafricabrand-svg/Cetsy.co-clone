@@ -442,17 +442,22 @@
 {{-- Message Modal --}}
 <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form class="modal-content" action="{{ route('messages.store') }}" method="POST">
+    <form class="modal-content" action="{{ route('messages.store') }}" method="POST" enctype="multipart/form-data">
       @csrf
       <input type="hidden" name="receiver_id" value="{{ $shop->user_id }}">
       <input type="hidden" name="product_id" value="">
       <div class="modal-header">
-        <h5 class="modal-title" id="messageModalLabel">Message Seller â“ {{ $shop->name }}</h5>
+        <h5 class="modal-title" id="messageModalLabel">Message Seller – {{ $shop->name }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <label for="messageBody" class="form-label">Your message</label>
         <textarea id="messageBody" name="message" class="form-control" rows="4" required></textarea>
+        <div class="mt-3">
+          <label for="messageAttachment" class="form-label">Attachment (optional)</label>
+          <input type="file" name="attachment" id="messageAttachment" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
+          <small class="text-muted">Images or PDF, max 5MB.</small>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="submit" class="btn btn-primary">Send Message</button>
