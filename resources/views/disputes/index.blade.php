@@ -52,8 +52,8 @@
             <div class="tab-content" id="disputeTabsContent">
                 <div class="tab-pane fade show active" id="all" role="tabpanel">
                     @php
-                        // Ensure cards render in newest-first order even after pagination chunk
-                        $orderedDisputes = $disputes->sortByDesc('updated_at');
+                        // Ensure cards render newest ID first even within the current page
+                        $orderedDisputes = $disputes->sortByDesc('id');
                     @endphp
                     @if($orderedDisputes->count() > 0)
                         <div class="row">
@@ -85,7 +85,7 @@
                             // Keep per-status tabs ordered by latest updates
                             $filteredDisputes = $orderedDisputes
                                 ->where('status', $status)
-                                ->sortByDesc('updated_at');
+                                ->sortByDesc('id');
                         @endphp
                         
                         @if($filteredDisputes->count() > 0)
