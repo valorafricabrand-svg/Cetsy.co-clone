@@ -355,20 +355,35 @@
                             <h6>Order Items</h6>
                             @if($orderItems->isNotEmpty())
                                 @foreach($orderItems->take(3) as $item)
+                                    @php
+                                        $product = $item->product ?? null;
+                                        $thumb = null;
+                                        if ($product) {
+                                            $thumb = function_exists('product_thumb_url')
+                                                ? product_thumb_url($product)
+                                                : ($product->featured_image
+                                                    ? (str_starts_with($product->featured_image, 'http')
+                                                        ? $product->featured_image
+                                                        : asset('storage/' . ltrim($product->featured_image, '/')))
+                                                    : null);
+                                        }
+                                    @endphp
                                     <div class="d-flex align-items-center mb-2">
-                                        @if($item->product && $item->product->featured_image)
-                                            <img src="{{ Storage::url($item->product->featured_image) }}" 
-                                                 alt="{{ $item->product->name }}" 
-                                                 class="rounded me-2" 
-                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                        @if($thumb)
+                                            <img src="{{ $thumb }}"
+                                                 alt="{{ $product->name ?? 'Product image' }}"
+                                                 class="rounded me-2"
+                                                 style="width: 40px; height: 40px; object-fit: cover;"
+                                                 loading="lazy"
+                                                 onerror="this.src='{{ asset('storage/placeholder.jpg') }}';">
                                         @else
-                                            <div class="bg-light rounded me-2 d-flex align-items-center justify-content-center" 
+                                            <div class="bg-light rounded me-2 d-flex align-items-center justify-content-center"
                                                  style="width: 40px; height: 40px;">
                                                 <i class="bi bi-image text-muted"></i>
                                             </div>
                                         @endif
                                         <div>
-                                            <small class="d-block">{{ Str::limit($item->product->name ?? 'Product', 30) }}</small>
+                                            <small class="d-block">{{ Str::limit($product->name ?? 'Product', 30) }}</small>
                                             <small class="text-muted">Qty: {{ $item->quantity }}</small>
                                         </div>
                                     </div>
