@@ -78,7 +78,10 @@
                 @foreach(['pending', 'under_review', 'closed'] as $status)
                     <div class="tab-pane fade" id="{{ $status }}" role="tabpanel">
                         @php
-                            $filteredDisputes = $disputes->where('status', $status);
+                            // Keep per-status tabs ordered by latest updates
+                            $filteredDisputes = $disputes
+                                ->where('status', $status)
+                                ->sortByDesc('updated_at');
                         @endphp
                         
                         @if($filteredDisputes->count() > 0)
