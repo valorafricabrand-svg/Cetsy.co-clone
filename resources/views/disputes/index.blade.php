@@ -66,7 +66,7 @@
                         
                         <!-- Pagination -->
                         <div class="d-flex justify-content-center">
-                            {{ $disputes->links() }}
+                            {{ $disputes->links('pagination::bootstrap-5') }}
                         </div>
                     @else
                         <div class="text-center py-5">
