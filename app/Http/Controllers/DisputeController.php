@@ -50,8 +50,11 @@ class DisputeController extends Controller
             $query->where('type', $type);
         }
 
-        // Always show the most recently updated disputes first
-        $disputes = $query->latest('updated_at')->paginate(15);
+        // Always show the most recently updated disputes first (stable on id)
+        $disputes = $query
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->paginate(15);
 
         // Get status counts for disputes where user is involved
         $statusCounts = Dispute::where(function ($q) use ($user) {
