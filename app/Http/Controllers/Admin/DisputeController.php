@@ -29,7 +29,8 @@ class DisputeController extends Controller
         $priority = $request->get('priority');
 
         $query = Dispute::with(['order', 'buyer', 'seller', 'appeal'])
-            ->latest('updated_at');
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id');
 
         if ($status) {
             $query->where('status', $status);
@@ -48,7 +49,8 @@ class DisputeController extends Controller
                     WHEN status = 'pending' THEN 3
                     ELSE 4
                 END
-            ")->orderBy('updated_at', 'desc');
+            ")->orderBy('updated_at', 'desc')
+             ->orderBy('id', 'desc');
         }
 
         $disputes = $query->paginate(20);

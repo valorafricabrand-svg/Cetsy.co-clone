@@ -51,9 +51,13 @@
             <!-- Disputes List -->
             <div class="tab-content" id="disputeTabsContent">
                 <div class="tab-pane fade show active" id="all" role="tabpanel">
-                    @if($disputes->count() > 0)
+                    @php
+                        // Ensure cards render in newest-first order even after pagination chunk
+                        $orderedDisputes = $disputes->sortByDesc('updated_at');
+                    @endphp
+                    @if($orderedDisputes->count() > 0)
                         <div class="row">
-                            @foreach($disputes as $dispute)
+                            @foreach($orderedDisputes as $dispute)
                                 <div class="col-md-6 col-lg-4 mb-4">
                                     @include('disputes.partials.dispute-card', ['dispute' => $dispute])
                                 </div>
@@ -79,7 +83,7 @@
                     <div class="tab-pane fade" id="{{ $status }}" role="tabpanel">
                         @php
                             // Keep per-status tabs ordered by latest updates
-                            $filteredDisputes = $disputes
+                            $filteredDisputes = $orderedDisputes
                                 ->where('status', $status)
                                 ->sortByDesc('updated_at');
                         @endphp
