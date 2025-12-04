@@ -214,17 +214,41 @@ class CartController extends Controller
             ->orderBy('name')
             ->get();
         return $profiles->map(function ($p) {
+            $procMin = $p->processing_custom_min ?? optional($p->processingTime)->start_day;
+            $procMax = $p->processing_custom_max ?? optional($p->processingTime)->end_day;
+
+            $service   = trim((string) ($p->service ?? ''));
+            $destLabel = ($p->dest_location_type === ShippingProfile::DEST_EVERYWHERE_ELSE)
+                ? 'Worldwide'
+                : (optional($p->destCountry)->name ?? null);
+
+            // Human-friendly label for dropdowns
+            if ($service && $destLabel) {
+                $label = "{$service} to {$destLabel}";
+            } elseif ($service) {
+                $label = $service;
+            } elseif ($destLabel) {
+                $label = "Ship to {$destLabel}";
+            } else {
+                $label = $p->name ?? 'Shipping';
+            }
+
             return [
                 'id'                 => (int)$p->id,
                 'name'               => $p->name,
+                'service'            => $service,
+                'label'              => $label,
                 'base_rate'          => (float)$p->base_rate,
                 'additional_rate'    => (float)$p->additional_rate,
                 'is_default'         => (bool)$p->is_default,
                 'dest_location_type' => $p->dest_location_type,               // e.g. 'everywhere_else'
                 'dest_country_name'  => optional($p->destCountry)->name,      // safe string or null
-                // Processing days for ship-by hints
-                'proc_min'           => $p->processing_custom_min ?? optional($p->processingTime)->start_day,
-                'proc_max'           => $p->processing_custom_max ?? optional($p->processingTime)->end_day,
+                // Processing days for ship-by hints (both legacy + new keys)
+                'proc_min'           => $procMin,
+                'proc_max'           => $procMax,
+                'processing_min_days'=> $procMin,
+                'processing_max_days'=> $procMax,
+                'pickup_available'   => (bool) ($p->pickup_available ?? false),
             ];
         })->values()->all();
     }

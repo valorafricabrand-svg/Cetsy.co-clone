@@ -138,6 +138,31 @@
       </div>
     </div>
 
+    {{-- Pickup availability for this listing --}}
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body d-flex align-items-center justify-content-between">
+          <div>
+            <h6 class="mb-1">Pickup available</h6>
+            <p class="mb-0 text-muted small">
+              Let buyers know they can collect this item in person for this specific listing.
+            </p>
+          </div>
+          <div class="form-check form-switch ms-3">
+            <input type="hidden" name="pickup_available" value="0">
+            <input
+              class="form-check-input @error('pickup_available') is-invalid @enderror"
+              type="checkbox"
+              id="pickup_available"
+              name="pickup_available"
+              value="1"
+              {{ old('pickup_available', $product->pickup_available) ? 'checked' : '' }}>
+          </div>
+        </div>
+      </div>
+      @error('pickup_available')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+    </div>
+
     <div class="col-12 text-end">
       <button class="btn btn-primary">
         <i class="fa-regular fa-floppy-disk me-1"></i> Save Info
@@ -152,6 +177,9 @@
       <i class="fa-solid fa-plus me-1"></i> Add row
     </button>
   </div>
+  <p class="text-muted small mb-3">
+    Tip: add separate rows for local and international services (and a free row for pickup, if you offer it) so buyers can choose the option that fits them best in the cart.
+  </p>
 
   @if(($shippingProfiles ?? collect())->isEmpty())
     <div class="border rounded p-4 mb-4 text-center">

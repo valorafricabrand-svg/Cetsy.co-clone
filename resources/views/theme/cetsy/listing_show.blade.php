@@ -83,7 +83,9 @@ $product->shippingProfiles->firstWhere('pivot.is_default', true)
                     // New: prefer per-product shipping rows (shipping_profiles table)
                     $rows = \App\Models\ShippingProfile::where('product_id', $product->id)->get();
                     $shipCost = null;
-                    $pickupAvailable = false;
+                    // Prefer explicit per-listing pickup flag, but also
+                    // respect any existing pickup-enabled shipping rows.
+                    $pickupAvailable = (bool) ($product->pickup_available ?? false);
 
                     if ($rows->isNotEmpty()) {
                     $defaultGroup = optional($rows->firstWhere('is_default', true))->profile_name
@@ -104,7 +106,7 @@ $product->shippingProfiles->firstWhere('pivot.is_default', true)
                         }
                         }
                         }
-                        $pickupAvailable = $rows->contains(function ($r) {
+                        $pickupAvailable = $pickupAvailable || $rows->contains(function ($r) {
                         return (bool)($r->pickup_available ?? false);
                         });
                         }

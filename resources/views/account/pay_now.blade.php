@@ -189,7 +189,7 @@
 
 @if($shortfallBase > 0)
   {{-- Load PayPal only when we actually need to charge --}}
-  <script src="https://www.paypal.com/sdk/js?client-id={{ setting('paypal_client_id') }}&currency={{ $currency }}"></script>
+  <script src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.client_id') ?: 'sb' }}&currency={{ $currency }}"></script>
 @endif
 
 <script>

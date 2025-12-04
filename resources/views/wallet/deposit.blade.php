@@ -103,7 +103,7 @@
 
 @section('scripts')
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<script src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.client_id','sb') }}&currency=USD"></script>
+<script src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.client_id') ?: 'sb' }}&currency=USD"></script>
 <script>
 (function(){
     const $paypalSection = $('#paypal-section');

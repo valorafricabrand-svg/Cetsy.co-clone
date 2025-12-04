@@ -53,6 +53,7 @@ class Product extends Model
         'shipping_type_other_other',
         'shipping_type_other_other_other',
         'shipping_type_other_other_other_other',
+        'pickup_available',
         'item_return',
         'item_exchange',
         'total_return_days',
@@ -68,6 +69,10 @@ class Product extends Model
         'country_id',
         'renewal_type',
         'tags'
+    ];
+
+    protected $casts = [
+        'pickup_available' => 'boolean',
     ];
 
     /**

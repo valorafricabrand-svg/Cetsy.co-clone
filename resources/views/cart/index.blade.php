@@ -278,8 +278,13 @@
                         <select name="shipping_profile_ids[{{ $rowId }}]" class="form-select form-select-sm js-shipping-select">
                           @foreach($profilesC as $p)
                             @php
-                              $minD = (int)($p['processing_min_days'] ?? 0);
-                              $maxD = (int)($p['processing_max_days'] ?? 0);
+                              $minD = (int)($p['processing_min_days'] ?? $p['proc_min'] ?? 0);
+                              $maxD = (int)($p['processing_max_days'] ?? $p['proc_max'] ?? 0);
+                              $base  = (float)($p['base_rate'] ?? 0);
+                              $label = $p['label'] ?? ($p['name'] ?? 'Shipping');
+                              if (!empty($p['pickup_available']) && $base <= 0) {
+                                  $label = 'Pickup / Collect in person';
+                              }
                             @endphp
                               <option value="{{ $p['id'] }}"
                                      data-base-rate="{{ (float)($p['base_rate'] ?? 0) }}"
@@ -287,7 +292,7 @@
                                      data-proc-min="{{ $minD }}"
                                      data-proc-max="{{ $maxD }}"
                                      @selected($selectedId === (int)$p['id'])>
-                              {{ $p['name'] ?? 'Shipping' }} ({{ $currency }} {{ number_format((float)($p['base_rate'] ?? 0),2) }})
+                              {{ $label }} ({{ $currency }} {{ number_format($base,2) }})
                             </option>
                           @endforeach
                         </select>

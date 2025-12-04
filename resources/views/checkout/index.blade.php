@@ -298,11 +298,23 @@
                   if ($isDigital) {
                       $label = 'No shipping (digital)';
                   } else {
-                      $label = ($prof['dest_location_type'] ?? null) === 'everywhere_else'
-                               ? 'Everywhere'
-                               : (!empty($prof['dest_country_name'])
-                                    ? 'Ship to '.$prof['dest_country_name']
-                                    : ($prof['name'] ?? 'Shipping'));
+                      $service = $prof['service'] ?? null;
+                      $dest    = $prof['dest_country_name'] ?? null;
+                      if (!empty($prof['pickup_available']) && $baseRate <= 0) {
+                          $label = 'Pickup / Collect in person';
+                      } elseif ($service && $dest) {
+                          $label = $service.' to '.$dest;
+                      } elseif ($service && ($prof['dest_location_type'] ?? null) === 'everywhere_else') {
+                          $label = $service.' (Worldwide)';
+                      } elseif ($service) {
+                          $label = $service;
+                      } elseif (($prof['dest_location_type'] ?? null) === 'everywhere_else') {
+                          $label = 'Everywhere';
+                      } elseif ($dest) {
+                          $label = 'Ship to '.$dest;
+                      } else {
+                          $label = $prof['name'] ?? 'Shipping';
+                      }
                   }
                 @endphp
                 <li class="list-group-item d-flex justify-content-between">
@@ -389,7 +401,6 @@
   </div>
 </div>
 @endsection
-
 
 
 

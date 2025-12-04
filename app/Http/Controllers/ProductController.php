@@ -1590,39 +1590,47 @@ public function shipping(Product $product, Request $request)
             ->where('product_id', $product->id)
             ->count();
         $shopId = $product->shop_id ?? optional(auth()->user())->shop_id;
-    if (!$shopId) abort(403, 'Shop not resolved for this product.');
+        if (!$shopId) abort(403, 'Shop not resolved for this product.');
 
-    // Validate top fields
-    $validated = $request->validate([
-        'profile_name'           => ['nullable','string','max:100'],
-        'set_default'            => ['nullable','boolean'],
+        // Track pickup flag changes for activity log
+        $beforePickup = $this->captureOnly($product, ['pickup_available']);
 
-        // Origin
-        'country_id'             => ['required','integer','exists:countries,id'],
-        'origin_postal_code'     => ['required','string','max:50'],
+        // Validate top fields
+        $validated = $request->validate([
+            'profile_name'           => ['nullable','string','max:100'],
+            'set_default'            => ['nullable','boolean'],
+            'pickup_available'       => ['nullable','boolean'],
 
-        // Processing
-        'processing_time_id'     => ['nullable','in:,"",1,2,3,4,5,custom'],
-        'processing_custom_min'  => ['nullable','integer','min:1'],
-        'processing_custom_max'  => ['nullable','integer','min:1'],
+            // Origin
+            'country_id'             => ['required','integer','exists:countries,id'],
+            'origin_postal_code'     => ['required','string','max:50'],
 
-        // Rows JSON from UI
-        'shipping_rules_json'    => ['nullable','string'],
-    ]);
+            // Processing
+            'processing_time_id'     => ['nullable','in:,"",1,2,3,4,5,custom'],
+            'processing_custom_min'  => ['nullable','integer','min:1'],
+            'processing_custom_max'  => ['nullable','integer','min:1'],
 
-    $profileName = trim($validated['profile_name'] ?? '') ?: 'Standard shipping';
+            // Rows JSON from UI
+            'shipping_rules_json'    => ['nullable','string'],
+        ]);
 
-    // Normalize processing
-    $processingTimeId = $validated['processing_time_id'] ?? null;
-    $procMin = null; $procMax = null;
-    if ($processingTimeId === 'custom') {
-        $processingTimeId = null;
-        $procMin = $validated['processing_custom_min'] ?? null;
-        $procMax = $validated['processing_custom_max'] ?? null;
-        if (!$procMin || !$procMax) {
-            return back()->withErrors(['processing_time_id' => 'Provide both min and max days for custom processing time.'])->withInput();
+        // Persist pickup availability at listing level
+        $product->pickup_available = $request->boolean('pickup_available');
+        $product->save();
+
+        $profileName = trim($validated['profile_name'] ?? '') ?: 'Standard shipping';
+
+        // Normalize processing
+        $processingTimeId = $validated['processing_time_id'] ?? null;
+        $procMin = null; $procMax = null;
+        if ($processingTimeId === 'custom') {
+            $processingTimeId = null;
+            $procMin = $validated['processing_custom_min'] ?? null;
+            $procMax = $validated['processing_custom_max'] ?? null;
+            if (!$procMin || !$procMax) {
+                return back()->withErrors(['processing_time_id' => 'Provide both min and max days for custom processing time.'])->withInput();
+            }
         }
-    }
 
     // Money normalizer: handles "", " 7.50 ", "7,50"
     $money = static function ($v): float {
@@ -1780,7 +1788,10 @@ public function shipping(Product $product, Request $request)
         ->where('product_id', $product->id)
         ->count();
 
-    $this->recordProductActivity($product, 'shipping', [], [
+    $afterPickup   = $this->captureOnly($product, ['pickup_available']);
+    $pickupChanges = $this->computeChanges($beforePickup, $afterPickup);
+
+    $this->recordProductActivity($product, 'shipping', $pickupChanges, [
         'counters' => [
             'profiles' => ['from' => $beforeProfiles, 'to' => $afterProfiles]
         ],
@@ -1864,4 +1875,3 @@ public function shipping(Product $product, Request $request)
     }
 
 }
-

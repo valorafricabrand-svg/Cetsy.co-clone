@@ -157,8 +157,8 @@ class WalletController extends Controller
         $user = $request->user();
         if (! $user) return response()->json(['message' => 'Unauthorized'], 401);
 
-        // Prefer settings() helper if available, otherwise env fallback
-        $clientId = function_exists('setting') ? (setting('paypal_client_id') ?? '') : (env('PAYPAL_CLIENT_ID', ''));
+        // Prefer .env / config; fall back to settings only if not set
+        $clientId = config('services.paypal.client_id') ?: (function_exists('setting') ? (setting('paypal_client_id') ?? '') : '');
         return response()->json(['client_id' => $clientId]);
     }
 

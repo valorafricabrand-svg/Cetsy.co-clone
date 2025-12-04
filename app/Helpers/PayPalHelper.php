@@ -12,9 +12,12 @@ class PayPalHelper
      */
     public static function getAccessToken(): ?string
     {
-        $client = env('PAYPAL_CLIENT_ID') ?: (function_exists('setting') ? setting('paypal_client_id') : null);
-        $secret = env('PAYPAL_SECRET');
-        $mode   = env('PAYPAL_MODE', 'sandbox');
+        $client = config('services.paypal.client_id');
+        if (!$client && function_exists('setting')) {
+            $client = setting('paypal_client_id');
+        }
+        $secret = config('services.paypal.secret');
+        $mode   = config('services.paypal.mode', 'sandbox');
 
         if (!$client || !$secret) {
             Log::error('PayPal credentials missing. Ensure PAYPAL_CLIENT_ID and PAYPAL_SECRET are configured.');
@@ -48,7 +51,7 @@ class PayPalHelper
      */
     public static function createPayout(string $receiverEmail, float $amount, string $note, string $senderItemId): array
     {
-        $mode = env('PAYPAL_MODE', 'sandbox');
+        $mode = config('services.paypal.mode', 'sandbox');
         $base = $mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
         $token = self::getAccessToken();
         if (!$token) {
@@ -99,10 +102,10 @@ class PayPalHelper
      */
     public static function verifyWebhook(array $headers, string $rawBody): bool
     {
-        $mode = env('PAYPAL_MODE', 'sandbox');
+        $mode = config('services.paypal.mode', 'sandbox');
         $base = $mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
         $token = self::getAccessToken();
-        $webhookId = env('PAYPAL_WEBHOOK_ID');
+        $webhookId = config('services.paypal.webhook_id');
         if (!$token || !$webhookId) {
             Log::warning('PayPal webhook verification skipped (missing token or webhook id).');
             return false;
