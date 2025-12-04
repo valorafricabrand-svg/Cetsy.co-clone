@@ -50,7 +50,8 @@ class DisputeController extends Controller
             $query->where('type', $type);
         }
 
-        $disputes = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Order strictly by newest ID
+        $disputes = $query->orderByDesc('id')->paginate(15);
 
         // Get status counts for disputes where user is involved
         $statusCounts = Dispute::where(function ($q) use ($user) {
@@ -1946,4 +1947,3 @@ class DisputeController extends Controller
         }
     }
 }
-

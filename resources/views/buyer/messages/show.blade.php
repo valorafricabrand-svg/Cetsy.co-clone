@@ -20,7 +20,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             @if($product->media && $product->media->count() > 0)
-                                @php($thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null))
+                                @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null); @endphp
                                 <img src="{{ $thumb }}" alt="{{ $product->name }}" 
                                      class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
                             @else
@@ -62,34 +62,53 @@
                     </div>
                     
                     <div class="card-body" style="max-height: 500px; overflow-y: auto;">
-                        @forelse($messages as $message)
-                            <div class="mb-3 {{ $message->sender_id == auth()->id() ? 'text-end' : 'text-start' }}">
-                                <div class="d-inline-block p-3 rounded {{ $message->sender_id == auth()->id() ? 'bg-success text-white' : 'bg-light' }}" 
-                                     style="max-width: 75%;">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <strong class="me-2">{{ $message->sender->shop->name ?? $message->sender->name }}</strong>
-                                        <small class="{{ $message->sender_id == auth()->id() ? 'text-white-50' : 'text-muted' }}">
-                                            {{ $message->created_at->format('M d, H:i') }}
-                                        </small>
-                                    </div>
-                                    <div class="message-content">
-                                        {{ $message->body }}
+                        @if($messages->count())
+                            @foreach($messages as $message)
+                                <div class="mb-3 {{ $message->sender_id == auth()->id() ? 'text-end' : 'text-start' }}">
+                                    <div class="d-inline-block p-3 rounded {{ $message->sender_id == auth()->id() ? 'bg-success text-white' : 'bg-light' }}" 
+                                         style="max-width: 75%;">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <strong class="me-2">{{ $message->sender->shop->name ?? $message->sender->name }}</strong>
+                                            <small class="{{ $message->sender_id == auth()->id() ? 'text-white-50' : 'text-muted' }}">
+                                                {{ $message->created_at->format('M d, H:i') }}
+                                            </small>
+                                        </div>
+                                        <div class="message-content">
+                                            {{ $message->body }}
+                                        </div>
+                                        @if(!empty($message->attachment_path))
+                                            @php
+                                                $isImage = \Illuminate\Support\Str::endsWith(strtolower($message->attachment_path), ['.jpg','.jpeg','.png','.gif','.webp']);
+                                                $attachmentUrl = asset('storage/' . ltrim($message->attachment_path, '/'));
+                                            @endphp
+                                            <div class="mt-2">
+                                                @if($isImage)
+                                                    <a href="{{ $attachmentUrl }}" target="_blank">
+                                                        <img src="{{ $attachmentUrl }}" alt="Attachment" class="img-fluid rounded" style="max-width: 240px;">
+                                                    </a>
+                                                @else
+                                                    <a href="{{ $attachmentUrl }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                        <i class="bi bi-paperclip me-1"></i>View attachment
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
-                            </div>
-                        @empty
+                            @endforeach
+                        @else
                             <div class="alert alert-info text-center">
                                 <i class="bi bi-chat-dots mb-2" style="font-size: 2rem;"></i>
                                 <div>No messages yet. Start the conversation!</div>
                             </div>
-                        @endforelse
+                        @endif
                     </div>
                 </div>
 
                 <!-- Message Form -->
                 <div class="card shadow">
                     <div class="card-body">
-                        <form method="POST" action="{{ route('messages.store') }}">
+                        <form method="POST" action="{{ route('messages.store') }}" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" name="receiver_id" value="{{ $otherUser->id }}">
                             <input type="hidden" name="product_id" value="{{ $product->id ?? '' }}">
@@ -98,6 +117,11 @@
                                 <textarea name="message" class="form-control" rows="3" 
                                           placeholder="Type your message..." required 
                                           style="resize: none;"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="buyerAttachment" class="form-label">Attachment (optional)</label>
+                                <input type="file" name="attachment" id="buyerAttachment" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
+                                <small class="text-muted">Images or PDF, max 5MB.</small>
                             </div>
                             
                             <div class="d-flex justify-content-between align-items-center">

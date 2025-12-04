@@ -326,6 +326,20 @@
                     <p class="mb-0 text-secondary">{{ $review->comment }}</p>
                   @endif
 
+                  @if(!empty($review->seller_response))
+                    <div class="mt-3 p-3 rounded bg-white border-start border-3 border-success">
+                      <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-success-subtle text-success fw-semibold">
+                          <i class="fa fa-reply me-1"></i> Seller reply
+                        </span>
+                        @if($review->seller_responded_at)
+                          <small class="text-muted ms-2">{{ $review->seller_responded_at->diffForHumans() }}</small>
+                        @endif
+                      </div>
+                      <div class="text-secondary small">{{ $review->seller_response }}</div>
+                    </div>
+                  @endif
+
                   @if(!empty($review->image_path))
                     <div class="mt-2">
                       <a href="{{ asset('storage/' . ltrim($review->image_path,'/')) }}" target="_blank">
@@ -428,17 +442,22 @@
 {{-- Message Modal --}}
 <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form class="modal-content" action="{{ route('messages.store') }}" method="POST">
+    <form class="modal-content" action="{{ route('messages.store') }}" method="POST" enctype="multipart/form-data">
       @csrf
       <input type="hidden" name="receiver_id" value="{{ $shop->user_id }}">
       <input type="hidden" name="product_id" value="">
       <div class="modal-header">
-        <h5 class="modal-title" id="messageModalLabel">Message Seller â“ {{ $shop->name }}</h5>
+        <h5 class="modal-title" id="messageModalLabel">Message Seller – {{ $shop->name }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <label for="messageBody" class="form-label">Your message</label>
         <textarea id="messageBody" name="message" class="form-control" rows="4" required></textarea>
+        <div class="mt-3">
+          <label for="messageAttachment" class="form-label">Attachment (optional)</label>
+          <input type="file" name="attachment" id="messageAttachment" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
+          <small class="text-muted">Images or PDF, max 5MB.</small>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="submit" class="btn btn-primary">Send Message</button>

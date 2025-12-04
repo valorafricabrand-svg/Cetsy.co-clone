@@ -51,9 +51,13 @@
             <!-- Disputes List -->
             <div class="tab-content" id="disputeTabsContent">
                 <div class="tab-pane fade show active" id="all" role="tabpanel">
-                    @if($disputes->count() > 0)
+                    @php
+                        // Ensure cards render newest ID first even within the current page
+                        $orderedDisputes = $disputes->sortByDesc('id');
+                    @endphp
+                    @if($orderedDisputes->count() > 0)
                         <div class="row">
-                            @foreach($disputes as $dispute)
+                            @foreach($orderedDisputes as $dispute)
                                 <div class="col-md-6 col-lg-4 mb-4">
                                     @include('disputes.partials.dispute-card', ['dispute' => $dispute])
                                 </div>
@@ -62,7 +66,7 @@
                         
                         <!-- Pagination -->
                         <div class="d-flex justify-content-center">
-                            {{ $disputes->links() }}
+                            {{ $disputes->links('pagination::bootstrap-5') }}
                         </div>
                     @else
                         <div class="text-center py-5">
@@ -78,7 +82,10 @@
                 @foreach(['pending', 'under_review', 'closed'] as $status)
                     <div class="tab-pane fade" id="{{ $status }}" role="tabpanel">
                         @php
-                            $filteredDisputes = $disputes->where('status', $status);
+                            // Keep per-status tabs ordered by latest updates
+                            $filteredDisputes = $orderedDisputes
+                                ->where('status', $status)
+                                ->sortByDesc('id');
                         @endphp
                         
                         @if($filteredDisputes->count() > 0)

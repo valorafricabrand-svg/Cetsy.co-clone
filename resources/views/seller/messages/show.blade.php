@@ -82,7 +82,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             @if($product->media && $product->media->count() > 0)
-                                @php($thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null))
+                                @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null); @endphp
                                 <img src="{{ $thumb }}" alt="{{ $product->name }}" 
                                      class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
                             @else
@@ -99,6 +99,67 @@
                                 <span class="badge bg-primary">{{ $product->price_formatted }}</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Buyer Favorites --}}
+                @if($otherUser)
+                <div class="card shadow-sm border-0 mb-4 buyer-favorites-card">
+                    <div class="card-header bg-white border-bottom">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-heart-fill me-2 text-danger"></i>
+                            <h5 class="mb-0">Items {{ $otherUser?->name ?? 'this buyer' }} favorited</h5>
+                            <span class="badge bg-light text-dark ms-auto">{{ $buyerFavorites->count() }} item{{ $buyerFavorites->count() === 1 ? '' : 's' }}</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @if($buyerFavorites->isEmpty())
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="bi bi-emoji-neutral me-2"></i>
+                                <span>This buyer has not favorited any of your products yet.</span>
+                            </div>
+                        @else
+                            @php
+                                $currencySymbol = function_exists('shop_currency') ? shop_currency() : (function_exists('get_currency') ? get_currency() : '$');
+                            @endphp
+                            <div class="row g-3">
+                                @foreach($buyerFavorites as $favorite)
+                                    @php $favProduct = $favorite->product; @endphp
+                                    <div class="col-md-6">
+                                        <div class="border rounded p-3 d-flex align-items-center gap-3 buyer-favorite-card h-100">
+                                            <div class="favorite-thumb flex-shrink-0">
+                                                @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($favProduct) : (optional($favProduct->media->first())->url ? asset('storage/'.$favProduct->media->first()->url) : null); @endphp
+                                                @if($thumb)
+                                                    <img src="{{ $thumb }}" alt="{{ $favProduct->name }}" class="rounded favorite-thumb-img">
+                                                @else
+                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center favorite-thumb-img">
+                                                        <i class="bi bi-image text-muted"></i>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-start justify-content-between gap-2">
+                                                    <div>
+                                                        <h6 class="mb-1">{{ $favProduct->name }}</h6>
+                                                        <div class="text-muted small mb-1">Favorited {{ $favorite->created_at->diffForHumans() }}</div>
+                                                        <span class="badge bg-primary">{{ $currencySymbol }} {{ number_format($favProduct->price ?? 0, 2) }}</span>
+                                                    </div>
+                                                    <div class="text-end d-flex flex-column gap-2 align-items-end">
+                                                        <a href="{{ route('products.show', $favProduct->slug ?? $favProduct->id) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-eye me-1"></i>View
+                                                        </a>
+                                                        <a href="{{ route('seller.messages.show', $favProduct->id . '-' . $otherUser->id) }}?prefill={{ urlencode('Hi '.($otherUser->name ?? 'there').', thanks for favoriting \"'.$favProduct->name.'\". Do you have any questions?') }}" class="btn btn-sm btn-outline-success">
+                                                            <i class="bi bi-chat-dots me-1"></i>Message
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 </div>
                 @endif
@@ -133,6 +194,23 @@
                                                     <span class="text-muted small">{{ $message->created_at->format('M j, Y g:i A') }}</span>
                                                 </div>
                                                 <div class="message-content">{{ $message->body }}</div>
+                                                @if(!empty($message->attachment_path))
+                                                    @php
+                                                        $isImage = \Illuminate\Support\Str::endsWith(strtolower($message->attachment_path), ['.jpg','.jpeg','.png','.gif','.webp']);
+                                                        $attachmentUrl = asset('storage/' . ltrim($message->attachment_path, '/'));
+                                                    @endphp
+                                                    <div class="mt-2">
+                                                        @if($isImage)
+                                                            <a href="{{ $attachmentUrl }}" target="_blank">
+                                                                <img src="{{ $attachmentUrl }}" alt="Attachment" class="img-fluid rounded" style="max-width: 260px;">
+                                                            </a>
+                                                        @else
+                                                            <a href="{{ $attachmentUrl }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                                <i class="bi bi-paperclip me-1"></i>View attachment
+                                                            </a>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -161,7 +239,7 @@
                         </div>
                     </div>
                     <div class="card-body p-4">
-                        <form method="POST" action="{{ route('seller.messages.reply', $conversationId) }}" id="replyForm">
+                        <form method="POST" action="{{ route('seller.messages.reply', $conversationId) }}" id="replyForm" enctype="multipart/form-data">
                             @csrf
                             <div class="mb-3">
                                 <label for="message" class="form-label fw-bold">
@@ -177,6 +255,11 @@
                                     required
                                     maxlength="2000"
                                 >{{ old('message', request('prefill')) }}</textarea>
+                                <div class="mt-3">
+                                    <label for="attachment" class="form-label">Attachment (optional)</label>
+                                    <input type="file" name="attachment" id="attachment" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
+                                    <div class="form-text">Images or PDF, max 5MB.</div>
+                                </div>
                                 <div class="form-text d-flex justify-content-between">
                                     <span>Be professional and helpful in your response</span>
                                     <span id="charCount">0/2000</span>
@@ -329,6 +412,18 @@
     .conversation-container::-webkit-scrollbar-thumb:hover {
         background: #a8a8a8;
     }
+    .buyer-favorite-card {
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .buyer-favorite-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+    }
+    .favorite-thumb-img {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+    }
     @media (max-width: 768px) {
         .reply-actions {
             flex-direction: column;
@@ -336,6 +431,10 @@
         }
         .reply-actions .btn {
             width: 100%;
+        }
+        .favorite-thumb-img {
+            width: 56px;
+            height: 56px;
         }
     }
 </style>

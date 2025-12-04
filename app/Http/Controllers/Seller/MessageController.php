@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Mail\MessageReceivedMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\Activity;
+use App\Models\Wishlist;
 
 class MessageController extends Controller
 {
@@ -177,7 +178,23 @@ class MessageController extends Controller
 
         $otherUser = User::find($otherUserId);
 
-        return view('seller.messages.show', compact('messages', 'otherUser', 'product', 'conversationId'));
+        $buyerFavorites = collect();
+        if ($otherUser && $shop) {
+            $buyerFavorites = Wishlist::with(['product.media'])
+                ->where('user_id', $otherUser->id)
+                ->whereHas('product', function($query) use ($shop) {
+                    $query->where('shop_id', $shop->id);
+                })
+                ->latest()
+                ->get()
+                ->filter(function ($favorite) {
+                    return $favorite->product !== null;
+                })
+                ->unique('product_id')
+                ->values();
+        }
+
+        return view('seller.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'buyerFavorites'));
     }
 
     public function markAsRead($id)
@@ -303,7 +320,13 @@ class MessageController extends Controller
         
         $data = $request->validate([
             'message' => ['required', 'string', 'max:2000'],
+            'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,webp,pdf', 'max:5120'],
         ]);
+
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('messages', 'public');
+        }
 
         // Create the reply message
         $replyMessage = Message::create([
@@ -311,6 +334,7 @@ class MessageController extends Controller
             'receiver_id' => $otherUserId, // Buyer is the receiver
             'product_id' => (int)$productId === 0 ? null : $productId,
             'body' => $data['message'],
+            'attachment_path' => $attachmentPath,
         ]);
 
         // Send email notification to the buyer
