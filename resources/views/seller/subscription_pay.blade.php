@@ -145,8 +145,8 @@
 @section('scripts')
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
-{{-- Sandbox key "sb" for dev; replace with real in .env / config --}}
-<script src="https://www.paypal.com/sdk/js?client-id=sb&currency={{ $currency }}"></script>
+{{-- Use project PayPal credentials (fall back to sandbox key locally) --}}
+<script src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.client_id') ?: 'sb' }}&currency={{ $currency }}"></script>
 
 <script>
 $(function () {
