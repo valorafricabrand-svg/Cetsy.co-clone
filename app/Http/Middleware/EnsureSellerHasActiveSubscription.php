@@ -13,10 +13,10 @@ class EnsureSellerHasActiveSubscription
         $user = auth()->user();
         
         if ($user && $user->isSeller()) {
-            $shop = $user->shop;
-            $grace = function_exists('subscription_grace_days') ? (int) subscription_grace_days() : (int) setting('subscription_grace_days', 5);
-            $active = $user->hasActiveShopSubscription();
-            // Sync shop is_active with subscription state when possible
+            $shop   = $user->shop;
+            $active = $user->hasActiveSubscription();
+
+            // Keep shop state synced to overall subscription status when a shop exists
             if ($shop && $shop->is_active !== $active) {
                 $shop->is_active = $active;
                 $shop->save();
@@ -30,4 +30,4 @@ class EnsureSellerHasActiveSubscription
 
         return $next($request);
     }
-} 
+}
