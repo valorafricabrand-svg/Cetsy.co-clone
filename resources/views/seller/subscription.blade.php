@@ -80,6 +80,26 @@
               </p>
             </div>
 
+            @if($canStartTrial ?? false)
+              <div class="card border-success mb-4">
+                <div class="card-body text-center">
+                  <h4 class="h5 text-success mb-2">New seller? Try it free for a month</h4>
+                  <p class="text-muted mb-3">
+                    Activate a complimentary 30-day trial to unlock every seller feature while you set up shop.
+                  </p>
+                  <form action="{{ route('seller.subscription.trial') }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-success px-4">
+                      <i class="fas fa-rocket me-2"></i>Try for a Month
+                    </button>
+                  </form>
+                  <p class="small text-muted mt-2 mb-0">
+                    Trial expires automatically after 30 days. Upgrade anytime to keep selling.
+                  </p>
+                </div>
+              </div>
+            @endif
+
             <div class="row">
               <!-- Monthly Plan -->
               <div class="col-md-6 mb-4">
