@@ -19,7 +19,7 @@ class SendSubscriptionExpiryReminders extends Command
         $configured = config('subscription.reminder_days', [30, 7, 1]);
         $offsets = collect($this->option('days'))
             ->map(fn($d) => (int)$d)
-            ->filter(fn($d) => $d > 0)
+            ->filter(fn($d) => $d >= 0)
             ->values();
         if ($offsets->isEmpty()) {
             $offsets = collect($configured);
@@ -41,6 +41,24 @@ class SendSubscriptionExpiryReminders extends Command
                     $fail++; continue;
                 }
 
+                $description = 'Your subscription will expire in ' . $days . ' day' . ($days === 1 ? '' : 's') . ' on ' . $sub->end_date->format('M d, Y');
+
+                $alreadySent = Activity::where('user_id', $user->id)
+                    ->where('type', Activity::TYPE_SUBSCRIPTION)
+                    ->where('related_id', $sub->id)
+                    ->where('related_type', 'subscription')
+                    ->where(function ($query) use ($days, $description) {
+                        $query->where('properties->reminder_day', $days)
+                              ->orWhere(function ($q) use ($description) {
+                                  $q->whereNull('properties')->where('description', $description);
+                              });
+                    })
+                    ->exists();
+
+                if ($alreadySent) {
+                    continue;
+                }
+
                 try {
                     Mail::to($user->email)->send(new SubscriptionExpiryReminderMail($sub, $days));
                     $count++;
@@ -49,11 +67,15 @@ class SendSubscriptionExpiryReminders extends Command
                     Activity::create([
                         'user_id' => $user->id,
                         'is_read' => false,
-                        'description' => 'Your subscription will expire in ' . $days . ' day' . ($days === 1 ? '' : 's') . ' on ' . $sub->end_date->format('M d, Y'),
+                        'description' => $description,
                         'type' => Activity::TYPE_SUBSCRIPTION,
                         'related_id' => $sub->id,
                         'related_type' => 'subscription',
                         'link' => route('seller.subscription'),
+                        'properties' => [
+                            'reminder_day' => $days,
+                            'reminder_target_date' => $sub->end_date?->toDateString(),
+                        ],
                     ]);
                 } catch (\Throwable $e) {
                     $fail++;
@@ -66,4 +88,3 @@ class SendSubscriptionExpiryReminders extends Command
         return self::SUCCESS;
     }
 }
-

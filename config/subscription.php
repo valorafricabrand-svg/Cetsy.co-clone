@@ -59,5 +59,5 @@ return [
     | these offsets; you can override via --days option.
     |
     */
-    'reminder_days' => [30, 7, 1],
-]; 
+    'reminder_days' => [5, 2, 0],
+];
