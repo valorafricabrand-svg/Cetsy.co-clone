@@ -1,7 +1,11 @@
 {{-- resources/views/listings/index.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
-@section('title', 'Marketplace – Products, Services & Digital Goods')
+@section('title', 'Marketplace - Products, Services and Digital Goods | Cetsy')
+@section('meta_description', 'Browse marketplace listings for handmade products, services, and digital goods on Cetsy.')
+@section('canonical_url', route('listings'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
+@section('meta_robots', 'index, follow')
 
 @section('main')
   <style>

@@ -1,50 +1,59 @@
 ﻿<!DOCTYPE html>
 <html lang="en" dir="ltr" data-bs-theme="light">
 <head>
+  @php
+    $siteName = config('app.name', 'Cetsy');
+    $siteUrl = config('app.url', url('/'));
+    $defaultTitle = $siteName . ' | All-in-one Platform to Showcase Your Handmade Products Globally';
+    $metaTitle = trim($__env->yieldContent('title', $defaultTitle));
+    $metaDescription = trim($__env->yieldContent('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.'));
+    $canonicalUrl = trim($__env->yieldContent('canonical_url', url()->current()));
+    $metaImage = trim($__env->yieldContent('meta_image', asset('assets/images/default-og-image-cetsy.jpg')));
+    $metaRobots = trim($__env->yieldContent('meta_robots', 'index, follow'));
+    $favicon = setting('favicon_url') ?: asset('assets/img/favicons/favicon-32x32.png');
+  @endphp
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="application-name" content="{{ config('app.name', 'Cetsy') }}">
-  <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Cetsy') }}">
+  <meta name="application-name" content="{{ $siteName }}">
+  <meta name="apple-mobile-web-app-title" content="{{ $siteName }}">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="robots" content="index, follow">
+  <meta name="robots" content="{{ $metaRobots }}">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="currency-set-url" content="{{ \Illuminate\Support\Facades\Route::has('currency.set') ? route('currency.set') : url('/set-currency') }}">
   <meta name="default-currency" content="{{ setting('default_currency','USD') }}">
 
   <!-- Dynamic Title -->
-  <title>@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')</title>
+  <title>{{ $metaTitle }}</title>
 
   <!-- Primary Description -->
-  <meta name="description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
+  <meta name="description" content="{{ $metaDescription }}">
 
   <!-- Canonical -->
-  <link rel="canonical" href="@yield('canonical_url', url()->current())">
+  <link rel="canonical" href="{{ $canonicalUrl }}">
 
   <!-- Social -->
   @section('social-meta')
-    <meta property="og:title" content="@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')">
-    <meta property="og:description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
+    <meta property="og:title" content="{{ $metaTitle }}">
+    <meta property="og:description" content="{{ $metaDescription }}">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="@yield('canonical_url', url()->current())">
-    <meta property="og:image" content="@yield('meta_image', asset('assets/images/default-og-image-cetsy.jpg'))">
-    <meta property="og:image:alt" content="Cetsy  Handmade Products Marketplace">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $metaImage }}">
+    <meta property="og:image:alt" content="Cetsy Handmade Products Marketplace">
     <meta property="og:locale" content="en_US">
-    <meta property="og:site_name" content="{{ config('app.name', 'Cetsy') }}">
+    <meta property="og:site_name" content="{{ $siteName }}">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="@yield('title', 'Cetsy | All-in-one Platform to Showcase Your Handmade Products Globally')">
-    <meta name="twitter:description" content="@yield('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.')">
-    <meta name="twitter:image" content="@yield('meta_image', asset('assets/images/default-twitter-image-cetsy.jpg'))">
-    <meta name="twitter:image:alt" content="Cetsy  Handmade Products Marketplace">
+    <meta name="twitter:title" content="{{ $metaTitle }}">
+    <meta name="twitter:description" content="{{ $metaDescription }}">
+    <meta name="twitter:image" content="{{ $metaImage }}">
+    <meta name="twitter:image:alt" content="Cetsy Handmade Products Marketplace">
   @show
 
   <!-- Favicons -->
-  @php
-    $favicon = setting('favicon_url') ?: asset('assets/img/favicons/favicon-32x32.png');
-  @endphp
   <link rel="apple-touch-icon" sizes="180x180" href="{{ $favicon }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ $favicon }}">
   <link rel="icon" type="image/png" sizes="16x16" href="{{ $favicon }}">
@@ -116,6 +125,36 @@
     @media (max-width: 767.98px) { body.has-mobile-nav { padding-bottom: 72px; } }
     @media (max-width: 767.98px) { footer { display: none !important; } }
   </style>
+
+  <!-- Structured data -->
+  @php
+    $organizationSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Organization',
+        'name' => $siteName,
+        'url' => $siteUrl,
+        'logo' => $metaImage ?: $favicon,
+    ];
+
+    $websiteSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'WebSite',
+        'name' => $siteName,
+        'url' => $siteUrl,
+        'potentialAction' => [
+            '@type' => 'SearchAction',
+            'target' => url('/search') . '?q={search_term_string}',
+            'query-input' => 'required name=search_term_string',
+        ],
+    ];
+  @endphp
+  <script type="application/ld+json">
+    {!! json_encode($organizationSchema, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT) !!}
+  </script>
+  <script type="application/ld+json">
+    {!! json_encode($websiteSchema, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT) !!}
+  </script>
+  @stack('structured-data')
 
   <!-- Config -->
   <script src="{{ asset('assets/js/config.js') }}" defer></script>

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CurrencySelectionController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\{
     HomeController,
     ProfileController,
@@ -75,6 +76,7 @@ use App\Http\Controllers\Seller\{
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 // Currency selector (accept GET or POST; CSRF not required for this benign action)
 Route::match(['GET','POST'], '/set-currency', [CurrencySelectionController::class, 'set'])
     ->name('currency.set')

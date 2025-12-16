@@ -1,8 +1,26 @@
 {{-- resources/views/categories/show.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
+@php
+  use Illuminate\Support\Str;
+
+  $banner = $category->image
+    ? asset('storage/' . $category->image)
+    : asset('assets/img/default-category.jpg');
+
+  // Decode once to avoid showing "&amp;" literally when names are stored HTML-encoded
+  $catName = html_entity_decode($category->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+  $desc = $category->description
+    ?: ('Explore a wide range of ' . $catName . ($category->listing_type ? ' ' . $category->listing_type : ' listings'));
+  $metaDescription = Str::limit(strip_tags($desc), 155);
+@endphp
+
 {{-- SEO-friendly title (overrideable) --}}
-@section('title', ($category->seo_title ?? $category->name) . ' – Marketplace Category')
+@section('title', ($category->seo_title ?? $catName) . ' - Marketplace Category')
+@section('meta_description', $metaDescription)
+@section('canonical_url', route('category.show', $category->slug))
+@section('meta_image', $banner)
+@section('meta_robots', 'index, follow')
 
 @section('main')
   <style>
@@ -114,18 +132,6 @@
   </style>
 
   {{-- =========== Category Banner =========== --}}
-  @php
-    $banner = $category->image
-      ? asset('storage/' . $category->image)
-      : asset('assets/img/default-category.jpg');
-
-    // Decode once to avoid showing "&amp;" literally when names are stored HTML-encoded
-    $catName = html_entity_decode($category->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    $desc = $category->description
-      ?: ('Explore a wide range of ' . $catName . ($category->listing_type ? ' ' . $category->listing_type : ' listings'));
-  @endphp
-  @section('title', ($category->seo_title ?? $catName) . ' – Marketplace Category')
-
   <section class="py-6 category-hero">
     <div class="container">
       <div class="category-hero-card text-white">

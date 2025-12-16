@@ -1,5 +1,20 @@
 ﻿@extends('theme.'.theme().'.layouts.app')
 
+@php
+  use Illuminate\Support\Str;
+  $shopImage = $shop->featured_image_url
+    ?? $shop->logo_url
+    ?? (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'));
+  $shopDescription = Str::limit(strip_tags($shop->bio ?? $shop->announcement ?? ($shop->name . ' shop on Cetsy')), 155);
+  $shopRouteParam = $shop->slug ?: $shop->id;
+@endphp
+
+@section('title', $shop->name . ' | Shop on Cetsy')
+@section('meta_description', $shopDescription)
+@section('canonical_url', route('shop.show', $shopRouteParam))
+@section('meta_image', $shopImage)
+@section('meta_robots', 'index, follow')
+
 @section('main')
 <!-- Shop Hero Section -->
 <section class="py-5 bg-white border-bottom">

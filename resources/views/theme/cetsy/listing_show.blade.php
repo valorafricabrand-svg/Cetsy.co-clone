@@ -1,21 +1,32 @@
 {{-- resources/views/items/show.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
-@section('title', $product->name . ' – Item Details')
+@php
+use Illuminate\Support\Str;
+
+$product->loadMissing(
+    'variationTypes.options',
+    'variations.options.variationType',
+    'shippingProfiles',
+    'media',
+    'shop',
+    'category',
+    'country'
+);
+
+$primaryMedia = $product->media->firstWhere('type', 'image') ?? $product->media->first();
+$metaImage = $primaryMedia && $primaryMedia->url ? media_url($primaryMedia->url) : asset('assets/images/default-og-image-cetsy.jpg');
+$metaDescription = Str::limit(strip_tags($product->description ?? $product->name), 155);
+@endphp
+
+@section('title', $product->name . ' - Item Details | Cetsy')
+@section('meta_description', $metaDescription)
+@section('canonical_url', route('listing.show', $product->slug))
+@section('meta_image', $metaImage)
+@section('meta_robots', 'index, follow')
 
 @section('main')
 @php
-// Ensure all relations are loaded
-$product->loadMissing(
-'variationTypes.options',
-'variations.options.variationType',
-'shippingProfiles',
-'media',
-'shop',
-'category',
-'country'
-);
-
 // Price calculations
 $basePrice = (float) ($product->price ?? 0);
 $finalPrice = (float) ($product->discounted_price ?? $basePrice);
@@ -23,8 +34,8 @@ $finalPrice = (float) ($product->discounted_price ?? $basePrice);
 // Default shipping profile
 $defaultShipId = ($defaultProfileId ?? null)
 ?? optional(
-$product->shippingProfiles->firstWhere('pivot.is_default', true)
-?? $product->shippingProfiles->first()
+    $product->shippingProfiles->firstWhere('pivot.is_default', true)
+    ?? $product->shippingProfiles->first()
 )->id;
 @endphp
 

@@ -1,6 +1,10 @@
 @extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'All Shops')
+@section('meta_description', 'Browse shops on Cetsy and discover creators offering handmade products, services, and digital goods.')
+@section('canonical_url', route('shops.index'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
+@section('meta_robots', 'index, follow')
 
 @section('main')
   <style>
@@ -160,4 +164,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
-

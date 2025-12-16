@@ -1,2 +1,8 @@
 User-agent: *
-Disallow:
+Disallow: /admin
+Disallow: /seller
+Disallow: /buyer
+Disallow: /cart
+Disallow: /checkout
+
+Sitemap: https://cetsy.co/sitemap.xml
