@@ -157,9 +157,13 @@ class WalletController extends Controller
         $user = $request->user();
         if (! $user) return response()->json(['message' => 'Unauthorized'], 401);
 
+        if (function_exists('payment_gateway_enabled') && !payment_gateway_enabled('paypal')) {
+            return response()->json(['enabled' => false, 'client_id' => '']);
+        }
+
         // Prefer .env / config; fall back to settings only if not set
         $clientId = config('services.paypal.client_id') ?: (function_exists('setting') ? (setting('paypal_client_id') ?? '') : '');
-        return response()->json(['client_id' => $clientId]);
+        return response()->json(['enabled' => true, 'client_id' => $clientId]);
     }
 
     /**

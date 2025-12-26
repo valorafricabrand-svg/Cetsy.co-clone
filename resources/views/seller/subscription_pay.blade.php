@@ -47,6 +47,8 @@
     $walletBalance = wallet();
     $canPayWithWallet = $walletBalance >= $rawAmount;
     $topUpNeeded = max(0, (float)$rawAmount - (float)$walletBalance);
+
+    $paypalAvailable = function_exists('payment_gateway_available') ? payment_gateway_available('paypal') : true;
 @endphp
 
 {{-- -------------------------------------------------------------------
@@ -125,7 +127,13 @@
                         @endif
 
                         {{-- ── 2️⃣  PayPal / Card button ─────────────────── --}}
-                        <div id="paypal-button-container" class="text-center mb-3"></div>
+                        @if($paypalAvailable)
+                          <div id="paypal-button-container" class="text-center mb-3"></div>
+                        @else
+                          <div class="alert alert-warning text-center mb-3">
+                            PayPal is currently disabled. Please use your wallet or contact support.
+                          </div>
+                        @endif
 
                         {{-- Result / error placeholder --}}
                         <div id="generic-result" class="text-center mt-3 fw-semibold text-danger"></div>
@@ -146,11 +154,15 @@
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
 {{-- Use project PayPal credentials (fall back to sandbox key locally) --}}
-<script src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.client_id') ?: 'sb' }}&currency={{ $currency }}"></script>
+@if($paypalAvailable)
+@php $ppClient = config('services.paypal.client_id') ?: (function_exists('setting') ? (setting('paypal_client_id') ?: 'sb') : 'sb'); @endphp
+<script src="https://www.paypal.com/sdk/js?client-id={{ $ppClient }}&currency={{ $currency }}"></script>
+@endif
 
 <script>
 $(function () {
 
+@if($paypalAvailable)
     paypal.Buttons({
 
         style:{
@@ -184,6 +196,7 @@ $(function () {
         }
 
     }).render('#paypal-button-container');
+@endif
 
 });
 </script>

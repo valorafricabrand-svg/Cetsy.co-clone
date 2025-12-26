@@ -75,6 +75,13 @@
 
   // If wallet fully covers, allow wallet button; otherwise hide wallet UI but we still auto-use wallet in background
   $canPayWithWalletOnly = $walletApplied >= $orderTotal;
+
+  // Payment gateway availability (admin-configurable)
+  $paypalAvailable = function_exists('payment_gateway_available') ? payment_gateway_available('paypal') : true;
+  $stripeAvailable = function_exists('payment_gateway_available')
+      ? payment_gateway_available('stripe')
+      : (!empty(config('services.stripe.secret')) || (function_exists('setting') && !empty(setting('stripe_secret'))));
+  $mpesaAvailable  = function_exists('payment_gateway_available') ? payment_gateway_available('mpesa') : true;
 @endphp
 
 {{-- ──────────────────────────────────────────────
@@ -130,7 +137,7 @@
             </form>
 
             {{-- ── M-Pesa STK deposit (top-up shortfall, then auto-finish via wallet) ─ --}}
-            @if($shortfallBase > 0)
+            @if($shortfallBase > 0 && $mpesaAvailable)
               <div id="mpesa-section" class="mb-4">
                 <div class="alert alert-success small d-flex align-items-center mb-3">
                   <i class="fa fa-mobile me-2"></i>
@@ -163,7 +170,7 @@
             @endif
 
             {{-- ── PayPal / Card (charges only amountDueNow) ───────────── --}}
-            @if($shortfallBase > 0)
+            @if($shortfallBase > 0 && $paypalAvailable)
               <div class="text-center small text-muted mb-2">
                 Paying with PayPal adds an online fee of {{ $currency }} {{ number_format($paypalFeeShort, 2) }} ({{ number_format($transactionFeePercentDisplay, 2) }}%).
               </div>
@@ -171,10 +178,7 @@
             @endif
 
             {{-- Stripe (hosted checkout) --}}
-            @php
-              $stripeEnabled = !empty(config('services.stripe.secret')) || (function_exists('setting') && !empty(setting('stripe_secret')));
-            @endphp
-            @if($shortfallBase > 0 && $stripeEnabled)
+            @if($shortfallBase > 0 && $stripeAvailable)
               <div class="text-center small text-muted mb-2">
                 Prefer card? Pay securely with Stripe.
               </div>
@@ -201,9 +205,10 @@
 @section('scripts')
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
-@if($shortfallBase > 0)
+@if($shortfallBase > 0 && $paypalAvailable)
   {{-- Load PayPal only when we actually need to charge --}}
-  <script src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.client_id') ?: 'sb' }}&currency={{ $currency }}"></script>
+  @php $ppClient = config('services.paypal.client_id') ?: (function_exists('setting') ? (setting('paypal_client_id') ?: 'sb') : 'sb'); @endphp
+  <script src="https://www.paypal.com/sdk/js?client-id={{ $ppClient }}&currency={{ $currency }}"></script>
 @endif
 
 <script>
@@ -222,7 +227,7 @@ $(function () {
     }
 
     // ========= PayPal (only if shortfall exists) =========
-    @if($shortfallBase > 0)
+    @if($shortfallBase > 0 && $paypalAvailable)
     const PAYPAL_AMOUNT_STR = @json($paypalAmountStr);  // exact "Amount Due Now" (includes fee)
     const SHORTFALL_BASE    = Number(@json((float) $shortfallBase)); // credit to wallet (excludes fee)
     const PAYPAL_FEE        = Number(@json((float) $paypalFeeShort)); // fee component (PayPal only)
@@ -274,7 +279,7 @@ $(function () {
     @endif
 
     // ========= M-Pesa STK (shortfall top-up, then wallet auto-finish) =========
-    @if($shortfallBase > 0)
+    @if($shortfallBase > 0 && $mpesaAvailable)
     const USD_TO_KES = Number(@json((float) env('USD_TO_KES', 130)));
     const DEPOSIT_USD = Number(@json((float) $shortfallBase)); // deposit base only
 
@@ -378,7 +383,7 @@ $(function () {
     @endif
 
     // ========= Stripe Checkout (hosted) =========
-    @if($shortfallBase > 0 && $stripeEnabled)
+    @if($shortfallBase > 0 && $stripeAvailable)
     const $stripeBtn = $('#btn-stripe');
     $stripeBtn.on('click', function(){
         $stripeBtn.prop('disabled', true).addClass('disabled');

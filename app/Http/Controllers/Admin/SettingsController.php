@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;   // ← add this
 use Illuminate\Support\Str;
 
@@ -16,7 +18,15 @@ class SettingsController extends Controller
     public function index()
     {
         // Retrieve all settings (or paginate if many)
-        $settings = Setting::first();
+        $settings = null;
+        try {
+            if (Schema::hasColumn('settings', 'option_key')) {
+                $settings = Setting::whereNull('option_key')->first();
+            }
+        } catch (\Throwable $e) {
+            // ignore (DB might not be ready during install)
+        }
+        $settings = $settings ?: Setting::first();
         return view('admin.settings.index', compact('settings'));
     }
 
@@ -83,6 +93,13 @@ class SettingsController extends Controller
         'duplicate_sku_random_len'  => 'nullable|integer|min:1|max:12',
     ]);
 
+    $gatewayValidated = $request->validate([
+        'payments_mpesa_enabled'   => 'nullable|boolean',
+        'payments_paypal_enabled'  => 'nullable|boolean',
+        'payments_stripe_enabled'  => 'nullable|boolean',
+        'payments_default_gateway' => 'nullable|in:mpesa,paypal,stripe',
+    ]);
+
     /* ----------------------------------------------------------
      | 2. Handle file uploads                                    |
      ---------------------------------------------------------- */
@@ -110,26 +127,57 @@ class SettingsController extends Controller
 
     $setting->update($validated);
 
-    // Persist duplication settings either as columns (if present) or key-value rows
+    // Persist settings that may be stored either as columns or key-value rows
     try {
-        $dupKeys = ['duplicate_sku_strategy','duplicate_sku_suffix','duplicate_sku_random_len','release_fee_percent'];
-        foreach ($dupKeys as $k) {
-            $val = $request->input($k, null);
-            if ($val === null) continue;
-            if (\Illuminate\Support\Facades\Schema::hasColumn('settings', $k)) {
-                // Store on the single settings row
-                $setting->setAttribute($k, $val);
-            } elseif (\Illuminate\Support\Facades\Schema::hasColumn('settings', 'option_key')) {
-                // Key-value storage
-                Setting::updateOrCreate(['option_key' => $k], ['option_value' => (string) $val]);
+        $putSetting = function (string $key, $value) use ($setting): void {
+            if (Schema::hasColumn('settings', $key)) {
+                $setting->setAttribute($key, $value);
+                return;
+            }
+            if (Schema::hasColumn('settings', 'option_key') && Schema::hasColumn('settings', 'option_value')) {
+                DB::table('settings')->updateOrInsert(
+                    ['option_key' => $key],
+                    ['option_value' => is_bool($value) ? ($value ? '1' : '0') : (string) $value]
+                );
+            }
+        };
+
+        // Duplication settings
+        foreach (['duplicate_sku_strategy','duplicate_sku_suffix','duplicate_sku_random_len','release_fee_percent'] as $k) {
+            if (! $request->has($k)) continue;
+            $putSetting($k, $request->input($k));
+        }
+
+        // Payment gateways (enable/disable + default)
+        $mpesaEnabled  = $request->boolean('payments_mpesa_enabled');
+        $paypalEnabled = $request->boolean('payments_paypal_enabled');
+        $stripeEnabled = $request->boolean('payments_stripe_enabled');
+
+        if (! ($mpesaEnabled || $paypalEnabled || $stripeEnabled)) {
+            return back()
+                ->withErrors(['payments_gateways' => 'Enable at least one payment gateway.'])
+                ->withInput();
+        }
+
+        $defaultGateway = (string) ($gatewayValidated['payments_default_gateway'] ?? 'paypal');
+        $enabledMap = ['mpesa' => $mpesaEnabled, 'paypal' => $paypalEnabled, 'stripe' => $stripeEnabled];
+        if (! ($enabledMap[$defaultGateway] ?? false)) {
+            foreach (['paypal', 'stripe', 'mpesa'] as $candidate) {
+                if ($enabledMap[$candidate]) {
+                    $defaultGateway = $candidate;
+                    break;
+                }
             }
         }
-        // Save if any attributes were set
-        if ($setting->isDirty()) {
-            $setting->save();
-        }
+
+        $putSetting('payments_mpesa_enabled', $mpesaEnabled);
+        $putSetting('payments_paypal_enabled', $paypalEnabled);
+        $putSetting('payments_stripe_enabled', $stripeEnabled);
+        $putSetting('payments_default_gateway', $defaultGateway);
+
+        if ($setting->isDirty()) $setting->save();
     } catch (\Throwable $e) {
-        // swallow — settings table shape varies by install
+        // swallow - settings table shape varies by install
     }
 
     /* ----------------------------------------------------------

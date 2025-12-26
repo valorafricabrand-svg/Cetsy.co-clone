@@ -425,6 +425,69 @@ if (! function_exists('setting')) {
     }
 }
 
+if (! function_exists('payment_gateway_enabled')) {
+    function payment_gateway_enabled(string $gateway): bool
+    {
+        $gateway = strtolower(trim($gateway));
+        $key = match ($gateway) {
+            'mpesa'  => 'payments_mpesa_enabled',
+            'paypal' => 'payments_paypal_enabled',
+            'stripe' => 'payments_stripe_enabled',
+            default  => null,
+        };
+        if (! $key) return false;
+
+        $raw = function_exists('setting') ? setting($key, null) : null;
+        if ($raw === null || $raw === '') return true; // default on
+
+        $rawStr = strtolower(trim((string) $raw));
+        if (in_array($rawStr, ['1','true','yes','on','enabled','active'], true)) return true;
+        if (in_array($rawStr, ['0','false','no','off','disabled','inactive'], true)) return false;
+        return (bool) $raw;
+    }
+}
+
+if (! function_exists('payment_default_gateway')) {
+    function payment_default_gateway(): string
+    {
+        $raw = function_exists('setting') ? (string) setting('payments_default_gateway', 'paypal') : 'paypal';
+        $gw = strtolower(trim($raw));
+        return in_array($gw, ['paypal', 'stripe', 'mpesa'], true) ? $gw : 'paypal';
+    }
+}
+
+if (! function_exists('payment_gateway_configured')) {
+    function payment_gateway_configured(string $gateway): bool
+    {
+        $gateway = strtolower(trim($gateway));
+
+        if ($gateway === 'paypal') {
+            return !empty(config('services.paypal.client_id'))
+                || (function_exists('setting') && !empty(setting('paypal_client_id')));
+        }
+
+        if ($gateway === 'stripe') {
+            return !empty(config('services.stripe.secret'))
+                || (function_exists('setting') && !empty(setting('stripe_secret')));
+        }
+
+        if ($gateway === 'mpesa') {
+            return !empty(env('SAFARICOM_DARAJA_BASE_URL'))
+                && !empty(env('SAFARICOM_SHORTCODE'))
+                && !empty(env('SAFARICOM_PASSKEY'));
+        }
+
+        return false;
+    }
+}
+
+if (! function_exists('payment_gateway_available')) {
+    function payment_gateway_available(string $gateway): bool
+    {
+        return payment_gateway_enabled($gateway) && payment_gateway_configured($gateway);
+    }
+}
+
 if (! function_exists('theme')) {
     /**
      * Shortcut for 'theme' setting.

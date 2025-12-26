@@ -39,43 +39,71 @@
                         <div class="form-text">Your wallet is in USD. For M-Pesa we’ll auto-convert to KES using our configured rate.</div>
                     </div>
 
+                    @php
+                      $paypalAvailable = function_exists('payment_gateway_available') ? payment_gateway_available('paypal') : true;
+                      $stripeAvailable = function_exists('payment_gateway_available')
+                          ? payment_gateway_available('stripe')
+                          : (!empty(config('services.stripe.secret')) || (function_exists('setting') && !empty(setting('stripe_secret'))));
+                      $mpesaAvailable  = function_exists('payment_gateway_available') ? payment_gateway_available('mpesa') : true;
+
+                      $availableMethods = [];
+                      if ($paypalAvailable) $availableMethods[] = 'paypal';
+                      if ($stripeAvailable) $availableMethods[] = 'stripe';
+                      if ($mpesaAvailable)  $availableMethods[] = 'mpesa';
+
+                      $defaultGateway = function_exists('payment_default_gateway') ? payment_default_gateway() : 'paypal';
+                      if (!in_array($defaultGateway, $availableMethods, true)) {
+                        $defaultGateway = $availableMethods[0] ?? '';
+                      }
+                    @endphp
+
                     {{-- Payment Method Toggle --}}
-                    <div class="payment-toggle">
-                        <button type="button" id="btn-paypal" class="btn btn-outline-primary">Pay with PayPal / Card</button>
-                        @php
-                          $stripeEnabled = !empty(config('services.stripe.secret')) || (function_exists('setting') && !empty(setting('stripe_secret')));
-                        @endphp
-                        @if($stripeEnabled)
-                          <button type="button" id="btn-stripe" class="btn btn-outline-dark">Pay with Stripe</button>
-                        @endif
-                        <button type="button" id="btn-mpesa"  class="btn btn-outline-success">Pay with M-Pesa (STK)</button>
-                    </div>
+                    @if(empty($availableMethods))
+                      <div class="alert alert-warning text-center">
+                        No payment gateways are enabled/configured. Please contact support.
+                      </div>
+                    @else
+                      <div class="payment-toggle">
+                          @if($paypalAvailable)
+                            <button type="button" id="btn-paypal" class="btn btn-outline-primary">Pay with PayPal / Card</button>
+                          @endif
+                          @if($stripeAvailable)
+                            <button type="button" id="btn-stripe" class="btn btn-outline-dark">Pay with Stripe</button>
+                          @endif
+                          @if($mpesaAvailable)
+                            <button type="button" id="btn-mpesa"  class="btn btn-outline-success">Pay with M-Pesa (STK)</button>
+                          @endif
+                      </div>
+                    @endif
 
                     {{-- PayPal Section --}}
-                    <div id="paypal-section" class="mb-3 d-none">
-                        <p class="text-muted text-center">Proceed securely using PayPal or card.</p>
-                        <div id="paypal-button-container" class="text-center"></div>
-                    </div>
+                    @if($paypalAvailable)
+                      <div id="paypal-section" class="mb-3 d-none">
+                          <p class="text-muted text-center">Proceed securely using PayPal or card.</p>
+                          <div id="paypal-button-container" class="text-center"></div>
+                      </div>
+                    @endif
 
                     {{-- Stripe Section --}}
-                    @if($stripeEnabled)
-                    <div id="stripe-section" class="mb-3 d-none">
-                        <p class="text-muted text-center">Pay securely by card using Stripe checkout.</p>
-                        <div class="d-grid">
-                            <button type="button" id="btn-stripe-checkout" class="btn btn-dark">
-                                Continue to Stripe
-                            </button>
-                        </div>
-                    </div>
+                    @if($stripeAvailable)
+                      <div id="stripe-section" class="mb-3 d-none">
+                          <p class="text-muted text-center">Pay securely by card using Stripe checkout.</p>
+                          <div class="d-grid">
+                              <button type="button" id="btn-stripe-checkout" class="btn btn-dark">
+                                  Continue to Stripe
+                              </button>
+                          </div>
+                      </div>
                     @endif
 
                     {{-- M-Pesa Section --}}
+                    @if($mpesaAvailable)
                     <div id="mpesa-section" class="mb-3 d-none">
                         <div class="alert alert-success">
                             <div class="d-flex align-items-center">
                                 <i class="fa fa-mobile me-2"></i>
                                 <div>
-                                    <strong>M-Pesa STK Push:</strong> We’ll send a prompt to your phone. Enter your PIN to approve.
+                                    <strong>M-Pesa STK Push:</strong> We'll send a prompt to your phone. Enter your PIN to approve.
                                 </div>
                             </div>
                         </div>
@@ -107,6 +135,7 @@
                         {{-- Live status area when polling --}}
                         <div style="color: #000000;" id="stk-live-status" class="alert alert-light border mt-3 d-none"></div>
                     </div>
+                    @endif
 
                     {{-- Result Message --}}
                     <div style="color: #000000;" id="generic-result" class="text-center mt-3 fw-semibold"></div>
@@ -121,7 +150,10 @@
 
 @section('scripts')
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<script src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.client_id') ?: 'sb' }}&currency=USD"></script>
+@if(!empty($availableMethods) && $paypalAvailable)
+@php $ppClient = config('services.paypal.client_id') ?: (function_exists('setting') ? (setting('paypal_client_id') ?: 'sb') : 'sb'); @endphp
+<script src="https://www.paypal.com/sdk/js?client-id={{ $ppClient }}&currency=USD"></script>
+@endif
 <script>
 (function(){
     const $paypalSection = $('#paypal-section');
@@ -138,7 +170,19 @@
     const USD_TO_KES = {{ (float) (env('USD_TO_KES', 130)) }}; // configure in .env
     const REDIRECT_URL = "{{ route('wallet.index') }}";
 
+    const AVAILABLE_METHODS = @json($availableMethods);
+    const DEFAULT_METHOD = @json($defaultGateway);
+
+    function resolveDefault(){
+        if (AVAILABLE_METHODS.includes(DEFAULT_METHOD)) return DEFAULT_METHOD;
+        return AVAILABLE_METHODS[0] || null;
+    }
+
     function show(method){
+        if (!AVAILABLE_METHODS.includes(method)) {
+            method = resolveDefault();
+        }
+        if (!method) return;
         $result.removeClass('text-danger text-success').text('');
         $paypalSection.addClass('d-none');
         $mpesaSection.addClass('d-none');
@@ -176,7 +220,7 @@
     $('#btn-mpesa').on('click', () => show('mpesa'));
 
     // Default view
-    show('paypal');
+    show(resolveDefault());
 
     // Stripe checkout (hosted)
     const $stripeCheckoutBtn = $('#btn-stripe-checkout');
@@ -211,6 +255,7 @@
     $amount.on('input', updateKesPreview);
 
     // PayPal buttons (unchanged)
+    @if(!empty($availableMethods) && $paypalAvailable)
     paypal.Buttons({
         createOrder: function(data, actions) {
             const amount = $amount.val();
@@ -245,6 +290,7 @@
             $result.addClass('text-danger').text('PayPal error: ' + (err?.message || 'Unknown error'));
         }
     }).render('#paypal-button-container');
+    @endif
 
     // === M-Pesa STK push with live polling & redirect ===
     let pollTimer = null;

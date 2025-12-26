@@ -175,6 +175,61 @@
         @error('paypal_client_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
 
+      {{-- Payment Gateways --}}
+      @php
+        $mpesaEnabled  = (bool) (int) old('payments_mpesa_enabled', $settings->payments_mpesa_enabled ?? (function_exists('setting') ? setting('payments_mpesa_enabled', 1) : 1));
+        $paypalEnabled = (bool) (int) old('payments_paypal_enabled', $settings->payments_paypal_enabled ?? (function_exists('setting') ? setting('payments_paypal_enabled', 1) : 1));
+        $stripeEnabled = (bool) (int) old('payments_stripe_enabled', $settings->payments_stripe_enabled ?? (function_exists('setting') ? setting('payments_stripe_enabled', 1) : 1));
+        $defaultGateway = (string) old('payments_default_gateway', $settings->payments_default_gateway ?? (function_exists('setting') ? setting('payments_default_gateway', 'paypal') : 'paypal'));
+
+        // Config presence (for admin visibility only)
+        $paypalConfigured = !empty(config('services.paypal.client_id')) || !empty($settings->paypal_client_id) || (function_exists('setting') && !empty(setting('paypal_client_id')));
+        $stripeConfigured = !empty(config('services.stripe.secret')) || (function_exists('setting') && !empty(setting('stripe_secret')));
+        $mpesaConfigured  = !empty(env('SAFARICOM_DARAJA_BASE_URL')) && !empty(env('SAFARICOM_SHORTCODE')) && !empty(env('SAFARICOM_PASSKEY'));
+      @endphp
+      <div class="col-12">
+        <div class="border rounded p-3 bg-light">
+          <div class="fw-semibold mb-2">Checkout Payment Gateways</div>
+          @if($errors->has('payments_gateways'))
+            <div class="text-danger small mb-2">{{ $errors->first('payments_gateways') }}</div>
+          @endif
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="gw-mpesa" name="payments_mpesa_enabled" value="1" {{ $mpesaEnabled ? 'checked' : '' }}>
+                <label class="form-check-label" for="gw-mpesa">Enable M-Pesa (STK)</label>
+              </div>
+              <div class="form-text">Configured: {{ $mpesaConfigured ? 'Yes' : 'No' }}</div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="gw-paypal" name="payments_paypal_enabled" value="1" {{ $paypalEnabled ? 'checked' : '' }}>
+                <label class="form-check-label" for="gw-paypal">Enable PayPal</label>
+              </div>
+              <div class="form-text">Configured: {{ $paypalConfigured ? 'Yes' : 'No' }}</div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="gw-stripe" name="payments_stripe_enabled" value="1" {{ $stripeEnabled ? 'checked' : '' }}>
+                <label class="form-check-label" for="gw-stripe">Enable Stripe</label>
+              </div>
+              <div class="form-text">Configured: {{ $stripeConfigured ? 'Yes' : 'No' }}</div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Default Gateway</label>
+              <select name="payments_default_gateway" class="form-select @error('payments_default_gateway') is-invalid @enderror">
+                <option value="paypal" {{ $defaultGateway === 'paypal' ? 'selected' : '' }}>PayPal</option>
+                <option value="stripe" {{ $defaultGateway === 'stripe' ? 'selected' : '' }}>Stripe</option>
+                <option value="mpesa"  {{ $defaultGateway === 'mpesa' ? 'selected' : '' }}>M-Pesa</option>
+              </select>
+              @error('payments_default_gateway') <div class="invalid-feedback">{{ $message }}</div> @enderror
+              <div class="form-text">Controls the pre-selected method on Deposit/Pay Now screens.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {{-- Default Currency --}}
       <div class="col-md-4">
         <label class="form-label">Default&nbsp;Currency</label>
@@ -349,4 +404,3 @@
 </script>
 @endpush
 @endsection
-

@@ -488,6 +488,9 @@ class WalletController extends Controller
         ]);
         return response()->json(['success' => false, 'error' => 'Two-factor verification required.'], 403);
     }
+    if (function_exists('payment_gateway_enabled') && !payment_gateway_enabled('paypal')) {
+        return response()->json(['success' => false, 'error' => 'PayPal payments are currently disabled.'], 403);
+    }
         $request->validate([
             'amount'   => 'required|numeric|min:1',
             'fee'      => 'nullable|numeric|min:0',
@@ -576,6 +579,9 @@ class WalletController extends Controller
                 'ip'      => $request->ip(),
             ]);
             return response()->json(['success' => false, 'error' => 'Two-factor verification required.'], 403);
+        }
+        if (function_exists('payment_gateway_enabled') && !payment_gateway_enabled('stripe')) {
+            return response()->json(['success' => false, 'message' => 'Stripe payments are currently disabled.'], 403);
         }
 
         $data = $request->validate([
@@ -779,6 +785,9 @@ class WalletController extends Controller
         if ($order->isPaid()) {
             return response()->json(['success' => false, 'message' => 'This order has already been paid.'], 422);
         }
+        if (function_exists('payment_gateway_enabled') && !payment_gateway_enabled('stripe')) {
+            return response()->json(['success' => false, 'message' => 'Stripe payments are currently disabled.'], 403);
+        }
 
         $cfg = $this->stripeConfig();
         if (empty($cfg['secret'])) {
@@ -978,6 +987,9 @@ class WalletController extends Controller
                 'ip'      => $request->ip(),
             ]);
             return response()->json(['success' => false, 'message' => 'Two-factor verification required.'], 403);
+        }
+        if (function_exists('payment_gateway_enabled') && !payment_gateway_enabled('mpesa')) {
+            return response()->json(['success' => false, 'message' => 'M-Pesa payments are currently disabled.'], 403);
         }
         $request->validate([
             'usd_amount' => ['required', 'numeric', 'min:1'],
@@ -1558,10 +1570,6 @@ public function payOrder(Request $request, $id)
     }
 
 }
-
-
-
-
 
 
 
