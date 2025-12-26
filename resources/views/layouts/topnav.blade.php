@@ -100,9 +100,9 @@
             <a class="navbar-brand me-1 me-sm-3" href="{{ url('/') }}">
                 <div class="d-flex align-items-center">
                     @php
-                      $__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg');
+                      $__logo = logo_url();
                     @endphp
-                    <img src="{{ $__logo }}" style="height: 50px;" onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
+                    <img src="{{ $__logo }}" style="height: 50px;" onerror="this.onerror=null;this.src=@json(asset('assets/images/cetsylogmain.png'));">
                 </div>
             </a>
         </div>

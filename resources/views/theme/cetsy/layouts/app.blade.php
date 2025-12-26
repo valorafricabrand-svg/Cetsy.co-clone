@@ -8,9 +8,9 @@
     $metaTitle = trim($__env->yieldContent('title', $defaultTitle));
     $metaDescription = trim($__env->yieldContent('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.'));
     $canonicalUrl = trim($__env->yieldContent('canonical_url', url()->current()));
-    $metaImage = trim($__env->yieldContent('meta_image', asset('assets/images/default-og-image-cetsy.jpg')));
+    $metaImage = trim($__env->yieldContent('meta_image', asset('assets/images/cetsylogmain.png')));
     $metaRobots = trim($__env->yieldContent('meta_robots', 'index, follow'));
-    $favicon = setting('favicon_url') ?: asset('assets/img/favicons/favicon-32x32.png');
+    $favicon = favicon_url();
   @endphp
 
   <meta charset="UTF-8">
@@ -432,10 +432,10 @@
 
             <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url('/') }}">
               @php
-                $__logo = setting('logo_url') ?: setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg');
+                $__logo = logo_url();
               @endphp
               <img src="{{ $__logo }}" alt="{{ config('app.name', 'Cetsy') }} logo" height="48" width="auto" loading="lazy"
-                   onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
+                   onerror="this.onerror=null;this.src=@json(asset('assets/images/cetsylogmain.png'));">
             </a>
           </div>
 

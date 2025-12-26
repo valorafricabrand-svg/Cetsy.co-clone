@@ -6,9 +6,14 @@ use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 
 function favicon_url(){
+    try {
+        $val = function_exists('setting') ? (string) setting('favicon_url', '') : '';
+        if (trim($val) !== '') return $val;
+    } catch (\Throwable $e) {
+        // ignore
+    }
 
-    
-    return '';
+    return asset('assets/img/favicons/favicon-32x32.png');
 }
 
 if (! function_exists('storage_rel_path')) {
@@ -50,10 +55,17 @@ if (! function_exists('media_url')) {
 }
 
 function logo_url(){
+    try {
+        $logo = function_exists('setting') ? (string) setting('logo_url', '') : '';
+        if (trim($logo) !== '') return $logo;
 
-    
-    // Return an empty string if domain or logo is not set
-    return '';
+        $fav = function_exists('setting') ? (string) setting('favicon_url', '') : '';
+        if (trim($fav) !== '') return $fav;
+    } catch (\Throwable $e) {
+        // ignore
+    }
+
+    return asset('assets/images/cetsylogmain.png');
 }
 
 
@@ -410,6 +422,13 @@ if (! function_exists('setting')) {
                 // Prefer a row without option_key if the column exists
                 if (\Illuminate\Support\Facades\Schema::hasColumn('settings', 'option_key')) {
                     $cachedRow = Setting::whereNull('option_key')->orderByDesc('id')->first();
+                    if (! $cachedRow) {
+                        // Some installs have option_key non-nullable; treat empty key row or a row with null option_value as the "main" settings row.
+                        $cachedRow = Setting::where('option_key', '')->orderByDesc('id')->first();
+                    }
+                    if (! $cachedRow && \Illuminate\Support\Facades\Schema::hasColumn('settings', 'option_value')) {
+                        $cachedRow = Setting::whereNull('option_value')->orderByDesc('id')->first();
+                    }
                     // If none, fallback to any row
                     if (! $cachedRow) $cachedRow = Setting::orderByDesc('id')->first();
                 } else {
