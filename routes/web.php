@@ -277,6 +277,14 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::post('/order/{order}/wallet', [WalletController::class, 'payOrder'])
         ->name('order.wallet.pay');
 
+    // Stripe Checkout (wallet top-up + pay order)
+    Route::post('/order/{order}/stripe/session', [WalletController::class, 'createStripeOrderSession'])
+        ->name('order.stripe.session');
+    Route::get('/order/{order}/stripe/success', [WalletController::class, 'stripeOrderSuccess'])
+        ->name('order.stripe.success');
+    Route::get('/order/{order}/stripe/cancel', [WalletController::class, 'stripeOrderCancel'])
+        ->name('order.stripe.cancel');
+
     Route::post('/products/{product}/status', [ProductController::class, 'changeStatus'])
         ->name('products.changeStatus');
 
@@ -390,6 +398,9 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/deposit', [WalletController::class, 'depositForm'])->name('deposit.form');
         Route::post('/deposit', [WalletController::class, 'storeDeposit'])->name('deposit.store');
         Route::post('/deposit/paypal', [WalletController::class, 'handlePayPalDeposit'])->name('deposit.paypal');
+        Route::post('/deposit/stripe/session', [WalletController::class, 'createStripeDepositSession'])->name('deposit.stripe.session');
+        Route::get('/deposit/stripe/success', [WalletController::class, 'stripeDepositSuccess'])->name('deposit.stripe.success');
+        Route::get('/deposit/stripe/cancel', [WalletController::class, 'stripeDepositCancel'])->name('deposit.stripe.cancel');
 
         // Payout OTP gate (pre-modal)
         Route::get('/payout/verify', [WalletController::class, 'payoutOtpForm'])->name('payout.otp.form');

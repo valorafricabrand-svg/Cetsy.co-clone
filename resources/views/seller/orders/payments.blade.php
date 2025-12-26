@@ -31,6 +31,7 @@
                     <option value="">All</option>
                     <option value="mpesa"  {{ request('method')=='mpesa' ?'selected':'' }}>M-Pesa</option>
                     <option value="paypal" {{ request('method')=='paypal'?'selected':'' }}>PayPal</option>
+                    <option value="stripe" {{ request('method')=='stripe'?'selected':'' }}>Stripe</option>
                     <option value="cash"   {{ request('method')=='cash'  ?'selected':'' }}>Cash</option>
                     <option value="card"   {{ request('method')=='card'  ?'selected':'' }}>Card</option>
                 </select>
@@ -110,6 +111,7 @@
                                     @switch($payment->payment_method)
                                         @case('mpesa')   <i class="bi bi-phone"></i> @break
                                         @case('paypal')  <i class="bi bi-paypal"></i> @break
+                                        @case('stripe')  <i class="bi bi-credit-card-2-front"></i> @break
                                         @case('card')    <i class="bi bi-credit-card-2-front"></i> @break
                                         @default         <i class="bi bi-cash-stack"></i>
                                     @endswitch
@@ -139,6 +141,5 @@
     @endif
 </div>
 @endsection
-
 
 

@@ -42,6 +42,12 @@
                     {{-- Payment Method Toggle --}}
                     <div class="payment-toggle">
                         <button type="button" id="btn-paypal" class="btn btn-outline-primary">Pay with PayPal / Card</button>
+                        @php
+                          $stripeEnabled = !empty(config('services.stripe.secret')) || (function_exists('setting') && !empty(setting('stripe_secret')));
+                        @endphp
+                        @if($stripeEnabled)
+                          <button type="button" id="btn-stripe" class="btn btn-outline-dark">Pay with Stripe</button>
+                        @endif
                         <button type="button" id="btn-mpesa"  class="btn btn-outline-success">Pay with M-Pesa (STK)</button>
                     </div>
 
@@ -50,6 +56,18 @@
                         <p class="text-muted text-center">Proceed securely using PayPal or card.</p>
                         <div id="paypal-button-container" class="text-center"></div>
                     </div>
+
+                    {{-- Stripe Section --}}
+                    @if($stripeEnabled)
+                    <div id="stripe-section" class="mb-3 d-none">
+                        <p class="text-muted text-center">Pay securely by card using Stripe checkout.</p>
+                        <div class="d-grid">
+                            <button type="button" id="btn-stripe-checkout" class="btn btn-dark">
+                                Continue to Stripe
+                            </button>
+                        </div>
+                    </div>
+                    @endif
 
                     {{-- M-Pesa Section --}}
                     <div id="mpesa-section" class="mb-3 d-none">
@@ -108,6 +126,7 @@
 (function(){
     const $paypalSection = $('#paypal-section');
     const $mpesaSection  = $('#mpesa-section');
+    const $stripeSection = $('#stripe-section');
     const $result        = $('#generic-result');
     const $amount        = $('#deposit_amount');
     const $phoneInput    = $('#mpesa_phone');
@@ -121,13 +140,17 @@
 
     function show(method){
         $result.removeClass('text-danger text-success').text('');
+        $paypalSection.addClass('d-none');
+        $mpesaSection.addClass('d-none');
+        if ($stripeSection.length) { $stripeSection.addClass('d-none'); }
+
         if(method === 'paypal'){
             $paypalSection.removeClass('d-none');
-            $mpesaSection.addClass('d-none');
-        }else{
+        } else if (method === 'mpesa') {
             $mpesaSection.removeClass('d-none');
-            $paypalSection.addClass('d-none');
             updateKesPreview();
+        } else if (method === 'stripe' && $stripeSection.length) {
+            $stripeSection.removeClass('d-none');
         }
     }
 
@@ -149,10 +172,40 @@
 
     // Toggle buttons
     $('#btn-paypal').on('click', () => show('paypal'));
+    $('#btn-stripe').on('click', () => show('stripe'));
     $('#btn-mpesa').on('click', () => show('mpesa'));
 
     // Default view
     show('paypal');
+
+    // Stripe checkout (hosted)
+    const $stripeCheckoutBtn = $('#btn-stripe-checkout');
+    if ($stripeCheckoutBtn.length) {
+        $stripeCheckoutBtn.on('click', function(){
+            const amount = $amount.val();
+            if (!amount || parseFloat(amount) <= 0) {
+                $result.addClass('text-danger').text('Please enter a valid USD amount before proceeding.');
+                return;
+            }
+            $stripeCheckoutBtn.prop('disabled', true).addClass('disabled');
+            $result.removeClass('text-danger text-success').text('Redirecting to Stripe...');
+            $.post(@json(route('wallet.deposit.stripe.session')), {
+                _token: @json(csrf_token()),
+                amount: amount,
+                currency: 'USD'
+            }, function(resp){
+                if (resp?.success && resp?.url) {
+                    window.location = resp.url;
+                } else {
+                    $stripeCheckoutBtn.prop('disabled', false).removeClass('disabled');
+                    $result.addClass('text-danger').text(resp?.message || 'Unable to start Stripe checkout.');
+                }
+            }).fail(function(xhr){
+                $stripeCheckoutBtn.prop('disabled', false).removeClass('disabled');
+                $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
+            });
+        });
+    }
 
     // Keep KES preview in sync
     $amount.on('input', updateKesPreview);

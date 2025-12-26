@@ -122,6 +122,7 @@
                   method="POST"
                   class="d-grid gap-2 mb-3 {{ $canPayWithWalletOnly ? '' : 'd-none' }}">
               @csrf
+              <input type="hidden" name="method" id="pay-method" value="wallet">
               <button type="submit" id="wallet-pay-btn" class="btn btn-primary">
                 Pay via Wallet
                 <small class="fw-normal">(Balance: {{ $currency }} {{ number_format($walletBalance,2) }})</small>
@@ -169,6 +170,19 @@
               <div id="paypal-button-container" class="text-center mb-3"></div>
             @endif
 
+            {{-- Stripe (hosted checkout) --}}
+            @php
+              $stripeEnabled = !empty(config('services.stripe.secret')) || (function_exists('setting') && !empty(setting('stripe_secret')));
+            @endphp
+            @if($shortfallBase > 0 && $stripeEnabled)
+              <div class="text-center small text-muted mb-2">
+                Prefer card? Pay securely with Stripe.
+              </div>
+              <div class="d-grid mb-3">
+                <button id="btn-stripe" type="button" class="btn btn-dark">Pay with Stripe</button>
+              </div>
+            @endif
+
             {{-- Error / result placeholder --}}
             <div id="generic-result" class="text-center mt-3 fw-semibold"></div>
 
@@ -197,6 +211,15 @@ $(function () {
     const $result       = $('#generic-result');
     const $walletForm   = $('#wallet-pay-form');
     const $walletBtn    = $('#wallet-pay-btn');
+    const $methodInput  = $('#pay-method');
+
+    // Auto-pay after returning from Stripe success route (flash session)
+    const AUTO_PAY = @json(session('autopay') ?? null);
+    if (AUTO_PAY && $walletForm.length && $walletForm.is(':visible')) {
+        $methodInput.val(String(AUTO_PAY));
+        $walletBtn.prop('disabled', true).addClass('disabled');
+        setTimeout(() => $walletForm.trigger('submit'), 350);
+    }
 
     // ========= PayPal (only if shortfall exists) =========
     @if($shortfallBase > 0)
@@ -228,6 +251,7 @@ $(function () {
                   if (resp?.success) {
                       // Auto-finish via wallet (hidden form)
                       if ($walletForm.length) {
+                          $methodInput.val('paypal');
                           $walletBtn.prop('disabled', true).addClass('disabled');
                           setTimeout(() => $walletForm.trigger('submit'), 500);
                       } else {
@@ -295,6 +319,7 @@ $(function () {
                        .html(`<i class="fa fa-check-circle me-2"></i> Payment confirmed! Finalizing your order...`);
             if(!autoPayInProgress && $walletForm.length){
               autoPayInProgress = true;
+              $methodInput.val('mpesa');
               $walletBtn.prop('disabled', true).addClass('disabled');
               setTimeout(()=> $walletForm.trigger('submit'), 600);
             }
@@ -349,6 +374,26 @@ $(function () {
         $stkBtn.prop('disabled', false);
         $stkSpinner.addClass('d-none');
       });
+    });
+    @endif
+
+    // ========= Stripe Checkout (hosted) =========
+    @if($shortfallBase > 0 && $stripeEnabled)
+    const $stripeBtn = $('#btn-stripe');
+    $stripeBtn.on('click', function(){
+        $stripeBtn.prop('disabled', true).addClass('disabled');
+        $result.removeClass('text-danger text-success').text('Redirecting to Stripe...');
+        $.post(@json(route('order.stripe.session', $order->id)), { _token: @json(csrf_token()) }, function(resp){
+            if (resp?.success && resp?.url) {
+                window.location = resp.url;
+            } else {
+                $stripeBtn.prop('disabled', false).removeClass('disabled');
+                $result.addClass('text-danger').text(resp?.message || 'Unable to start Stripe checkout.');
+            }
+        }).fail(function(xhr){
+            $stripeBtn.prop('disabled', false).removeClass('disabled');
+            $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
+        });
     });
     @endif
 });

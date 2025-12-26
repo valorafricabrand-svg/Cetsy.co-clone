@@ -15,6 +15,7 @@ use App\Models\PayoutRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -130,6 +131,32 @@ class WalletController extends Controller
         }
 
         return preg_match('/^2547\d{8}$/', $p) ? $p : null;
+    }
+
+    /**
+     * Stripe configuration resolution.
+     *
+     * @return array{key:string,secret:string}
+     */
+    private function stripeConfig(): array
+    {
+        $key = (string) (config('services.stripe.key') ?: (function_exists('setting') ? (setting('stripe_key') ?? '') : ''));
+        $secret = (string) (config('services.stripe.secret') ?: (function_exists('setting') ? (setting('stripe_secret') ?? '') : ''));
+        return ['key' => $key, 'secret' => $secret];
+    }
+
+    /**
+     * Convert a decimal amount into Stripe "unit_amount" integer (minor units),
+     * respecting zero-decimal currencies.
+     */
+    private function stripeUnitAmount(float $amount, string $currency): int
+    {
+        $zeroDecimal = ['BIF','CLP','DJF','GNF','JPY','KMF','KRW','MGA','PYG','RWF','UGX','VND','VUV','XAF','XOF','XPF'];
+        $cur = strtoupper(trim($currency ?: 'USD'));
+        if (in_array($cur, $zeroDecimal, true)) {
+            return (int) max(1, (int) round($amount));
+        }
+        return (int) max(1, (int) round($amount * 100));
     }
     /**
      * Return the available listing plan labels.
@@ -424,7 +451,7 @@ class WalletController extends Controller
         }
         $request->validate([
             'amount' => 'required|numeric|min:1',
-            'method' => 'required|in:mpesa,card,paypal',
+            'method' => 'required|in:mpesa,card,paypal,stripe',
         ]);
 
         // Stub: In production, integrate your payment gateway logic here
@@ -535,6 +562,400 @@ class WalletController extends Controller
         ], 500);
     }
 }
+
+    /* -------------------------------------------------------------
+     | Stripe Checkout (wallet deposits + order top-ups)
+     |-------------------------------------------------------------- */
+
+    public function createStripeDepositSession(Request $request)
+    {
+        if (!$this->isDepositOtpVerified()) {
+            \Log::warning('wallet.deposit.action_blocked_missing_otp', [
+                'user_id' => Auth::id(),
+                'action'  => 'createStripeDepositSession',
+                'ip'      => $request->ip(),
+            ]);
+            return response()->json(['success' => false, 'error' => 'Two-factor verification required.'], 403);
+        }
+
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:1',
+            'currency' => 'nullable|string|size:3',
+        ]);
+
+        $cfg = $this->stripeConfig();
+        if (empty($cfg['secret'])) {
+            return response()->json(['success' => false, 'message' => 'Stripe is not configured.'], 422);
+        }
+
+        $currency = strtoupper((string) ($data['currency'] ?? 'USD'));
+        $amount = (float) $data['amount'];
+        $unitAmount = $this->stripeUnitAmount($amount, $currency);
+
+        $successUrl = route('wallet.deposit.stripe.success') . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancelUrl  = route('wallet.deposit.stripe.cancel');
+
+        $resp = Http::asForm()
+            ->withToken($cfg['secret'])
+            ->post('https://api.stripe.com/v1/checkout/sessions', [
+                'mode' => 'payment',
+                'success_url' => $successUrl,
+                'cancel_url'  => $cancelUrl,
+                'customer_email' => Auth::user()?->email,
+                'client_reference_id' => (string) Auth::id(),
+                'metadata' => [
+                    'purpose' => 'wallet_deposit',
+                    'user_id' => (string) Auth::id(),
+                ],
+                'line_items' => [
+                    [
+                        'price_data' => [
+                            'currency' => strtolower($currency),
+                            'product_data' => [
+                                'name' => 'Wallet deposit',
+                            ],
+                            'unit_amount' => $unitAmount,
+                        ],
+                        'quantity' => 1,
+                    ],
+                ],
+            ]);
+
+        if (!$resp->successful()) {
+            Log::error('stripe.checkout.create_failed', ['status' => $resp->status(), 'body' => $resp->body()]);
+            return response()->json(['success' => false, 'message' => 'Unable to start Stripe checkout.'], 500);
+        }
+
+        $session = $resp->json();
+        $sessionId = (string) ($session['id'] ?? '');
+        $sessionUrl = (string) ($session['url'] ?? '');
+        if ($sessionId === '' || $sessionUrl === '') {
+            Log::error('stripe.checkout.create_missing_fields', ['data' => $session]);
+            return response()->json(['success' => false, 'message' => 'Unable to start Stripe checkout.'], 500);
+        }
+
+        Wallet::create([
+            'user_id'     => Auth::id(),
+            'credit'      => 0,
+            'debit'       => 0,
+            'balance'     => $this->currentBalance(Auth::id()),
+            'reference'   => 'STRIPE-' . Str::upper(Str::random(12)),
+            'method'      => 'stripe',
+            'status'      => 'pending',
+            'external_id' => $sessionId,
+            'description' => 'Stripe checkout initiated',
+            'meta'        => [
+                'purpose'      => 'wallet_deposit',
+                'currency'     => $currency,
+                'credit'       => $amount,
+                'amount_total' => $unitAmount,
+            ],
+        ]);
+
+        return response()->json(['success' => true, 'url' => $sessionUrl]);
+    }
+
+    public function stripeDepositSuccess(Request $request)
+    {
+        if (!$this->isDepositOtpVerified()) {
+            return redirect()->route('wallet.deposit.form')->withErrors('Two-factor verification required.');
+        }
+
+        $sessionId = (string) $request->query('session_id', '');
+        if ($sessionId === '') {
+            return redirect()->route('wallet.deposit.form')->withErrors('Missing Stripe session id.');
+        }
+
+        $cfg = $this->stripeConfig();
+        if (empty($cfg['secret'])) {
+            return redirect()->route('wallet.deposit.form')->withErrors('Stripe is not configured.');
+        }
+
+        $marker = Wallet::where('user_id', Auth::id())
+            ->where('method', 'stripe')
+            ->where('external_id', $sessionId)
+            ->latest('id')
+            ->first();
+
+        if (!$marker) {
+            return redirect()->route('wallet.deposit.form')->withErrors('Stripe payment session not found.');
+        }
+
+        // Idempotency: if we already credited this session, just redirect.
+        $alreadyCredited = Wallet::where('user_id', Auth::id())
+            ->where('method', 'stripe')
+            ->where('external_id', $sessionId)
+            ->where('credit', '>', 0)
+            ->exists();
+        if ($alreadyCredited || $marker->status === 'completed') {
+            return redirect()->route('wallet.index')->with('success', 'Deposit confirmed.');
+        }
+
+        $sresp = Http::withToken($cfg['secret'])
+            ->get("https://api.stripe.com/v1/checkout/sessions/{$sessionId}");
+
+        if (!$sresp->successful()) {
+            Log::error('stripe.checkout.fetch_failed', ['status' => $sresp->status(), 'body' => $sresp->body(), 'session_id' => $sessionId]);
+            return redirect()->route('wallet.deposit.form')->withErrors('Unable to verify Stripe payment. Try again.');
+        }
+
+        $session = $sresp->json();
+        $paymentStatus = (string) data_get($session, 'payment_status', '');
+        if ($paymentStatus !== 'paid') {
+            return redirect()->route('wallet.deposit.form')->withErrors('Stripe payment not completed.');
+        }
+
+        $currency = strtoupper((string) data_get($session, 'currency', 'USD'));
+        $amountTotal = (int) data_get($session, 'amount_total', 0);
+
+        $expectedCurrency = strtoupper((string) data_get($marker->meta, 'currency', $currency));
+        $expectedTotal = (int) data_get($marker->meta, 'amount_total', $amountTotal);
+        $credit = (float) data_get($marker->meta, 'credit', 0);
+
+        if ($expectedCurrency !== $currency || $expectedTotal !== $amountTotal) {
+            Log::warning('stripe.checkout.amount_mismatch', [
+                'user_id' => Auth::id(),
+                'session_id' => $sessionId,
+                'expected' => ['currency' => $expectedCurrency, 'amount_total' => $expectedTotal],
+                'actual' => ['currency' => $currency, 'amount_total' => $amountTotal],
+            ]);
+            return redirect()->route('wallet.deposit.form')->withErrors('Stripe amount verification failed.');
+        }
+
+        try {
+            $walletRow = null;
+            DB::transaction(function () use ($marker, $sessionId, $credit, $currency, $session, &$walletRow) {
+                $walletRow = $this->appendWalletRow((int) $marker->user_id, (float) $credit, 0, [
+                    'method'      => 'stripe',
+                    'description' => 'Deposit via Stripe',
+                    'external_id' => $sessionId,
+                    'status'      => 'completed',
+                    'meta'        => ['stripe' => $session],
+                ]);
+
+                $marker->status = 'completed';
+                $marker->description = trim(($marker->description ?? '') . ' | Success');
+                $marker->save();
+
+                Activity::create([
+                    'user_id'     => (int) $marker->user_id,
+                    'is_read'     => false,
+                    'description' => 'You made a deposit of $' . number_format((float) $credit, 2),
+                ]);
+            });
+
+            // Email (fail-soft)
+            try {
+                $user = Auth::user();
+                if ($user && $walletRow) {
+                    \Mail::to($user->email)->send(new \App\Mail\WalletDepositSuccessMail(
+                        $user,
+                        $walletRow,
+                        (float) $credit,
+                        $walletRow->reference
+                    ));
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('stripe.deposit.email_failed', ['user_id' => Auth::id(), 'error' => $e->getMessage()]);
+            }
+
+            return redirect()->route('wallet.index')->with('success', 'Deposit confirmed.');
+        } catch (\Throwable $e) {
+            Log::error('stripe.deposit.finalize_failed', ['user_id' => Auth::id(), 'session_id' => $sessionId, 'error' => $e->getMessage()]);
+            return redirect()->route('wallet.deposit.form')->withErrors('Unable to finalize Stripe deposit.');
+        }
+    }
+
+    public function stripeDepositCancel()
+    {
+        return redirect()->route('wallet.deposit.form')->withErrors('Stripe checkout was cancelled.');
+    }
+
+    public function createStripeOrderSession(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+        if ($order->isPaid()) {
+            return response()->json(['success' => false, 'message' => 'This order has already been paid.'], 422);
+        }
+
+        $cfg = $this->stripeConfig();
+        if (empty($cfg['secret'])) {
+            return response()->json(['success' => false, 'message' => 'Stripe is not configured.'], 422);
+        }
+
+        $orderTotal = (float) ($order->total_amount ?? 0);
+        $walletBalance = (float) $this->currentBalance(Auth::id());
+        $walletApplied = min($walletBalance, $orderTotal);
+        $shortfallBase = max(0, $orderTotal - $walletApplied);
+
+        if ($shortfallBase <= 0) {
+            return response()->json(['success' => false, 'message' => 'Wallet already covers this order.'], 422);
+        }
+
+        $currency = strtoupper((string) ($order->currency ?? 'USD'));
+        $unitAmount = $this->stripeUnitAmount($shortfallBase, $currency);
+
+        $successUrl = route('order.stripe.success', $order->id) . '?session_id={CHECKOUT_SESSION_ID}';
+        $cancelUrl  = route('order.stripe.cancel', $order->id);
+
+        $resp = Http::asForm()
+            ->withToken($cfg['secret'])
+            ->post('https://api.stripe.com/v1/checkout/sessions', [
+                'mode' => 'payment',
+                'success_url' => $successUrl,
+                'cancel_url'  => $cancelUrl,
+                'customer_email' => Auth::user()?->email,
+                'client_reference_id' => (string) $order->id,
+                'metadata' => [
+                    'purpose'  => 'order_topup',
+                    'order_id' => (string) $order->id,
+                    'user_id'  => (string) Auth::id(),
+                ],
+                'line_items' => [
+                    [
+                        'price_data' => [
+                            'currency' => strtolower($currency),
+                            'product_data' => [
+                                'name' => 'Order #' . $order->id . ' payment',
+                            ],
+                            'unit_amount' => $unitAmount,
+                        ],
+                        'quantity' => 1,
+                    ],
+                ],
+            ]);
+
+        if (!$resp->successful()) {
+            Log::error('stripe.order.checkout.create_failed', ['order_id' => $order->id, 'status' => $resp->status(), 'body' => $resp->body()]);
+            return response()->json(['success' => false, 'message' => 'Unable to start Stripe checkout.'], 500);
+        }
+
+        $session = $resp->json();
+        $sessionId = (string) ($session['id'] ?? '');
+        $sessionUrl = (string) ($session['url'] ?? '');
+        if ($sessionId === '' || $sessionUrl === '') {
+            Log::error('stripe.order.checkout.create_missing_fields', ['order_id' => $order->id, 'data' => $session]);
+            return response()->json(['success' => false, 'message' => 'Unable to start Stripe checkout.'], 500);
+        }
+
+        Wallet::create([
+            'user_id'     => Auth::id(),
+            'credit'      => 0,
+            'debit'       => 0,
+            'balance'     => $this->currentBalance(Auth::id()),
+            'reference'   => 'STRIPE-' . Str::upper(Str::random(12)),
+            'method'      => 'stripe',
+            'status'      => 'pending',
+            'external_id' => $sessionId,
+            'description' => 'Stripe order top-up initiated',
+            'meta'        => [
+                'purpose'      => 'order_topup',
+                'order_id'     => (int) $order->id,
+                'currency'     => $currency,
+                'credit'       => (float) $shortfallBase,
+                'amount_total' => $unitAmount,
+            ],
+        ]);
+
+        return response()->json(['success' => true, 'url' => $sessionUrl]);
+    }
+
+    public function stripeOrderSuccess(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+        if ($order->isPaid()) {
+            return redirect()->route('buyer.orders.show', $order->id);
+        }
+
+        $sessionId = (string) $request->query('session_id', '');
+        if ($sessionId === '') {
+            return redirect()->route('pay_now', $order->id)->withErrors('Missing Stripe session id.');
+        }
+
+        $cfg = $this->stripeConfig();
+        if (empty($cfg['secret'])) {
+            return redirect()->route('pay_now', $order->id)->withErrors('Stripe is not configured.');
+        }
+
+        $marker = Wallet::where('user_id', Auth::id())
+            ->where('method', 'stripe')
+            ->where('external_id', $sessionId)
+            ->latest('id')
+            ->first();
+
+        if (!$marker || (int) data_get($marker->meta, 'order_id', 0) !== (int) $order->id) {
+            return redirect()->route('pay_now', $order->id)->withErrors('Stripe payment session not found.');
+        }
+
+        // Idempotency: if already credited, jump back to pay-now for wallet finalize.
+        $alreadyCredited = Wallet::where('user_id', Auth::id())
+            ->where('method', 'stripe')
+            ->where('external_id', $sessionId)
+            ->where('credit', '>', 0)
+            ->exists();
+
+        if (!$alreadyCredited && $marker->status !== 'completed') {
+            $sresp = Http::withToken($cfg['secret'])
+                ->get("https://api.stripe.com/v1/checkout/sessions/{$sessionId}");
+
+            if (!$sresp->successful()) {
+                Log::error('stripe.order.checkout.fetch_failed', ['order_id' => $order->id, 'status' => $sresp->status(), 'body' => $sresp->body()]);
+                return redirect()->route('pay_now', $order->id)->withErrors('Unable to verify Stripe payment. Try again.');
+            }
+
+            $session = $sresp->json();
+            $paymentStatus = (string) data_get($session, 'payment_status', '');
+            if ($paymentStatus !== 'paid') {
+                return redirect()->route('pay_now', $order->id)->withErrors('Stripe payment not completed.');
+            }
+
+            $currency = strtoupper((string) data_get($session, 'currency', 'USD'));
+            $amountTotal = (int) data_get($session, 'amount_total', 0);
+            $expectedCurrency = strtoupper((string) data_get($marker->meta, 'currency', $currency));
+            $expectedTotal = (int) data_get($marker->meta, 'amount_total', $amountTotal);
+            $credit = (float) data_get($marker->meta, 'credit', 0);
+
+            if ($expectedCurrency !== $currency || $expectedTotal !== $amountTotal) {
+                Log::warning('stripe.order.amount_mismatch', [
+                    'user_id' => Auth::id(),
+                    'order_id' => $order->id,
+                    'session_id' => $sessionId,
+                    'expected' => ['currency' => $expectedCurrency, 'amount_total' => $expectedTotal],
+                    'actual' => ['currency' => $currency, 'amount_total' => $amountTotal],
+                ]);
+                return redirect()->route('pay_now', $order->id)->withErrors('Stripe amount verification failed.');
+            }
+
+            DB::transaction(function () use ($marker, $sessionId, $credit, $session) {
+                $this->appendWalletRow((int) $marker->user_id, (float) $credit, 0, [
+                    'method'      => 'stripe',
+                    'description' => 'Order top-up via Stripe',
+                    'external_id' => $sessionId,
+                    'status'      => 'completed',
+                    'meta'        => ['stripe' => $session, 'order_id' => (int) data_get($marker->meta, 'order_id')],
+                ]);
+
+                $marker->status = 'completed';
+                $marker->description = trim(($marker->description ?? '') . ' | Success');
+                $marker->save();
+            });
+        }
+
+        // Redirect back to Pay Now and auto-submit wallet payment.
+        return redirect()->route('pay_now', $order->id)->with('success', 'Stripe payment confirmed.')->with('autopay', 'stripe');
+    }
+
+    public function stripeOrderCancel(Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+        return redirect()->route('pay_now', $order->id)->withErrors('Stripe checkout was cancelled.');
+    }
 
 
     /* -------------------------------------------------------------
@@ -999,8 +1420,12 @@ public function payOrder(Request $request, $id)
                 ->with('error', 'This order has already been paid.');
         }
 
-        // Determine payment method: default to 'paypal'
-        $method = $request->get('method', 'wallet');
+        // Determine payment method: default to 'wallet' (wallet covers fully, or we top-up then pay)
+        $method = strtolower((string) $request->get('method', 'wallet'));
+        $allowedMethods = ['wallet', 'paypal', 'mpesa', 'stripe', 'card', 'cash'];
+        if (!in_array($method, $allowedMethods, true)) {
+            $method = 'wallet';
+        }
 
         // Prepare a unique local transaction ID if not provided
         // (e.g., PayPal flow might not send one; MPESA flow might include its own)
@@ -1057,7 +1482,7 @@ public function payOrder(Request $request, $id)
             'balance'    => 0, // Optional: recalculate after insert
             'reference'  => strtoupper(uniqid('TXN-')),
             'method'     => 'wallet',
-            'description'=> 'Paid via wallet ' . ucfirst($request->method),
+            'description'=> 'Paid via wallet ' . ucfirst($method),
         ]);
 
 
@@ -1133,7 +1558,6 @@ public function payOrder(Request $request, $id)
     }
 
 }
-
 
 
 
