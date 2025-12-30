@@ -559,7 +559,7 @@ if (! function_exists('support_phone')) {
             if ($value !== '') return $value;
         }
 
-        return '';
+        return '+12342883361';
     }
 }
 
