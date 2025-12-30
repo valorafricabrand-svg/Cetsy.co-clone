@@ -540,6 +540,99 @@ if (! function_exists('support_email')) {
     }
 }
 
+if (! function_exists('support_phone')) {
+    /**
+     * Resolve the public support phone number.
+     * Priority: settings table (support_phone) -> settings table (phone) -> env SUPPORT_PHONE.
+     */
+    function support_phone(): string
+    {
+        $candidates = [];
+
+        try { $candidates[] = setting('support_phone'); } catch (\Throwable $e) {}
+        try { $candidates[] = setting('phone'); } catch (\Throwable $e) {}
+        $candidates[] = env('SUPPORT_PHONE');
+
+        foreach ($candidates as $candidate) {
+            if (! is_string($candidate)) continue;
+            $value = trim($candidate);
+            if ($value !== '') return $value;
+        }
+
+        return '';
+    }
+}
+
+if (! function_exists('support_address')) {
+    /**
+     * Resolve the public support address.
+     * Priority: settings table (support_address) -> settings table (address) -> env SUPPORT_ADDRESS.
+     */
+    function support_address(): string
+    {
+        $candidates = [];
+
+        try { $candidates[] = setting('support_address'); } catch (\Throwable $e) {}
+        try { $candidates[] = setting('address'); } catch (\Throwable $e) {}
+        $candidates[] = env('SUPPORT_ADDRESS');
+
+        foreach ($candidates as $candidate) {
+            if (! is_string($candidate)) continue;
+            $value = trim($candidate);
+            if ($value !== '') return $value;
+        }
+
+        return '';
+    }
+}
+
+if (! function_exists('operating_region')) {
+    /**
+     * Resolve the country/region of operation shown on policy pages.
+     * Priority: settings table (operating_region / region) -> env OPERATING_COUNTRY.
+     */
+    function operating_region(): string
+    {
+        $candidates = [];
+
+        try { $candidates[] = setting('operating_region'); } catch (\Throwable $e) {}
+        try { $candidates[] = setting('region'); } catch (\Throwable $e) {}
+        $candidates[] = env('OPERATING_COUNTRY');
+
+        foreach ($candidates as $candidate) {
+            if (! is_string($candidate)) continue;
+            $value = trim($candidate);
+            if ($value === '' || strtolower($value) === 'country') continue;
+            return $value;
+        }
+
+        // Last-resort fallback: must be explicit for payment reviewers.
+        return 'Kenya';
+    }
+}
+
+if (! function_exists('legal_jurisdiction')) {
+    /**
+     * Resolve governing law / jurisdiction shown in Terms.
+     * Priority: settings table (legal_jurisdiction) -> env LEGAL_JURISDICTION -> operating_region().
+     */
+    function legal_jurisdiction(): string
+    {
+        $candidates = [];
+
+        try { $candidates[] = setting('legal_jurisdiction'); } catch (\Throwable $e) {}
+        $candidates[] = env('LEGAL_JURISDICTION');
+
+        foreach ($candidates as $candidate) {
+            if (! is_string($candidate)) continue;
+            $value = trim($candidate);
+            if ($value !== '') return $value;
+        }
+
+        return operating_region();
+    }
+}
+
 if (! function_exists('product_thumb_url')) {
     /**
      * Build a product thumbnail URL with fallbacks:

@@ -1,107 +1,77 @@
 @extends('theme.'.theme().'.layouts.app')
 
-@section('title', 'Cetsy Policies & Privacy')
+@section('title', 'Privacy Policy')
 
 @section('main')
-  <!-- ====== Policies & Privacy (Overview) ====== -->
   <section class="py-5">
     <div class="container">
-      <div class="mx-auto" style="max-width: 800px;">
-        <h1 class="fw-bold mb-2">Cetsy Policies & Privacy</h1>
-        <p class="text-muted mb-4">Effective: {{ now()->format('F j, Y') }}</p>
-        <p class="mb-3">
-          This hub brings together our key policies: marketplace rules, seller and buyer guidelines, and how we
-          manage your data and privacy. Use the quick links below to jump to the section you need.
-        </p>
-        <div class="d-flex flex-wrap gap-2 mb-2">
-          <a class="btn btn-sm btn-outline-primary" href="#privacy">Privacy Policy</a>
-          <a class="btn btn-sm btn-outline-primary" href="#cookies">Cookie Notice</a>
-          <a class="btn btn-sm btn-outline-primary" href="#rights">Your Data Rights</a>
-          <a class="btn btn-sm btn-outline-primary" href="#security">Security</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ====== Related Policies (Cards) ====== -->
-  <section class="pb-5 bg-light">
-    <div class="container">
-      <div class="row g-4 justify-content-center">
-        @php
-          $cards = [
-            ['title'=>'Cookie Notice',             'text'=>'Learn how and why we use cookies and similar technologies.','url'=>url('/privacy#cookies'),'color'=>'primary'],
-            ['title'=>'Data Requests',             'text'=>'Request access, correction, or deletion of your personal data.','url'=>url('/privacy#rights'),'color'=>'success'],
-            ['title'=>'Security',                  'text'=>'Overview of how we protect your data.','url'=>url('/privacy#security'),'color'=>'warning'],
-            ['title'=>'House Rules & Policy',      'text'=>'Community standards for using Cetsy services.','url'=>url('/house-policy'),'color'=>'info'],
-            ['title'=>'Fees & Payments',           'text'=>'How fees and payments work on Cetsy.','url'=>url('/payment_policy'),'color'=>'danger'],
-            ['title'=>'Restricted / Prohibited Items','text'=>'What cannot be listed or is restricted on Cetsy.','url'=>url('/restricted_for_sale'),'color'=>'secondary'],
-          ];
-        @endphp
-
-        @foreach($cards as $card)
-          <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ $card['url'] }}" class="text-decoration-none">
-              <div class="card h-100 border-0 shadow-sm card-hover">
-                <div class="card-header bg-{{ $card['color'] }} text-white">
-                  <h4 class="card-title mb-0 text-white">{{ $card['title'] }}</h4>
-                </div>
-                <div class="card-body d-flex flex-column">
-                  <p class="card-text flex-grow-1 text-dark">{{ $card['text'] }}</p>
-                  <span class="mt-3 btn btn-outline-{{ $card['color'] }}">View More</span>
-                </div>
-              </div>
-            </a>
-          </div>
-        @endforeach
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ====== Privacy Policy (Detailed) ====== -->
-  <section id="privacy" class="py-5">
-    <div class="container">
       <div class="mx-auto" style="max-width: 900px;">
-        <h2 class="fw-semibold mb-3">Privacy Policy</h2>
+        <h1 class="fw-bold mb-2">Privacy Policy</h1>
+        <p class="text-muted mb-4">Effective: {{ now()->format('F j, Y') }}</p>
+
+        <p class="mb-4">
+          This Privacy Policy explains how {{ config('app.name','Cetsy') }} (“we”, “us”, “our”) collects, uses, and
+          shares personal information when you use our website, create an account, open a shop, make a purchase, or
+          otherwise interact with our services.
+        </p>
+
+        <h2 class="h5 fw-semibold mt-4">1) Information We Collect</h2>
+        <ul class="mb-4">
+          <li><strong>Account data:</strong> name, email, phone number, login and profile details.</li>
+          <li><strong>Order data:</strong> items purchased, shipping address, messages between buyers and sellers, order status.</li>
+          <li><strong>Payment data:</strong> payment confirmations and transaction identifiers. Card details are processed by our payment processors and are not stored on our servers.</li>
+          <li><strong>Seller/shop data:</strong> shop profile, listings, payout details, and verification information where required.</li>
+          <li><strong>Device/usage data:</strong> IP address, browser/device information, logs, cookies and similar technologies.</li>
+        </ul>
+
+        <h2 class="h5 fw-semibold mt-4">2) How We Use Information</h2>
+        <ul class="mb-4">
+          <li>Provide the Platform (accounts, listings, orders, and customer support).</li>
+          <li>Process payments, refunds, and dispute resolution.</li>
+          <li>Prevent fraud, detect abuse, and secure the Platform.</li>
+          <li>Comply with legal and regulatory obligations.</li>
+          <li>Improve features and user experience.</li>
+        </ul>
+
+        <h2 class="h5 fw-semibold mt-4">3) Sharing &amp; Disclosure</h2>
         <p class="mb-3">
-          This Privacy Policy explains how Cetsy (“we”, “us”, “our”) collects, uses, and shares information when
-          you use our website, create an account, open a shop, make a purchase, or otherwise interact with our
-          services.
+          We may share information with:
         </p>
         <ul class="mb-4">
-          <li><strong>Information we collect:</strong> account details, contact information, shop and listing data, order and payment details, device and usage data (cookies and similar technologies).</li>
-          <li><strong>How we use it:</strong> provide and improve the service, process orders and payments, personalize content, prevent fraud and abuse, and comply with legal obligations.</li>
-          <li><strong>Sharing:</strong> with payment processors, logistics partners, service providers, and when required by law. We do not sell your personal data.</li>
+          <li><strong>Payment processors (including Stripe):</strong> to process card payments, refunds, and fraud prevention.</li>
+          <li><strong>Other payment providers (where available):</strong> such as PayPal and M‑Pesa.</li>
+          <li><strong>Service providers:</strong> hosting, email delivery, analytics, and support tools.</li>
+          <li><strong>Logistics/carriers:</strong> where needed for shipping and delivery support.</li>
+          <li><strong>Legal:</strong> if required by law, court order, or to protect users, the Platform, or our rights.</li>
         </ul>
-        <h3 id="cookies" class="h5 mt-4">Cookie Notice</h3>
-        <p class="mb-3">We use cookies to keep you signed in, remember preferences, understand site usage, and personalize content. You can control cookies in your browser settings.</p>
-        <h3 id="rights" class="h5 mt-4">Your Data Rights</h3>
-        <p class="mb-3">Where applicable, you may request access, correction, deletion, or portability of your data, and object to or restrict certain processing.</p>
-        <h3 id="security" class="h5 mt-4">Security</h3>
-        <p class="mb-0">We use industry-standard safeguards. No method is 100% secure. For questions, contact <a href="mailto:{{ support_email() }}">{{ support_email() }}</a>.</p>
+        <p class="mb-4">We do not sell your personal data.</p>
+
+        <h2 id="cookies" class="h5 fw-semibold mt-4">4) Cookies &amp; Analytics</h2>
+        <p class="mb-4">
+          We use cookies and similar technologies to keep you signed in, remember preferences, understand site usage,
+          and improve the Platform. You can control cookies through your browser settings.
+        </p>
+
+        <h2 id="rights" class="h5 fw-semibold mt-4">5) Your Rights</h2>
+        <p class="mb-4">
+          Depending on your location, you may request access, correction, deletion, or portability of your data, and
+          object to or restrict certain processing.
+        </p>
+
+        <h2 class="h5 fw-semibold mt-4">6) Security &amp; Retention</h2>
+        <p class="mb-4">
+          We use reasonable safeguards to protect your information. No method of transmission or storage is 100%
+          secure. We retain information as needed to provide the service, comply with legal obligations, resolve
+          disputes, and enforce agreements.
+        </p>
+
+        <h2 class="h5 fw-semibold mt-4">7) Contact</h2>
+        <p class="mb-0">
+          Questions or requests? Email <a href="mailto:{{ support_email() }}">{{ support_email() }}</a> or visit our
+          <a href="{{ url('/contact') }}">Contact</a> page.
+        </p>
       </div>
     </div>
   </section>
 @endsection
 
-@push('styles')
-<style>
-  .card-hover {
-    transition: transform .2s ease, box-shadow .2s ease;
-  }
-  .card-hover:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.75rem 1.5rem rgba(0,0,0,.1);
-  }
-  .card-header h4 {
-    font-size: 1.25rem;
-  }
-  .card-body p {
-    font-size: 0.95rem;
-  }
-  .card-body .btn {
-    font-size: 0.9rem;
-    padding: 0.4rem 0.75rem;
-  }
-</style>
-@endpush

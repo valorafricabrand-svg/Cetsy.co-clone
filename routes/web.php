@@ -109,6 +109,21 @@ Route::get('/privacy', function () {
 Route::get('/terms', function () {
     return themed_view('pages.terms');
 })->name('terms');
+Route::get('/refunds-returns', function () {
+    return themed_view('pages.refunds-returns');
+})->name('refunds-returns');
+Route::get('/shipping-delivery', function () {
+    return themed_view('pages.shipping-delivery');
+})->name('shipping-delivery');
+Route::get('/seller-policy', function () {
+    return themed_view('pages.seller-policy');
+})->name('seller-policy');
+Route::get('/prohibited-items', function () {
+    return themed_view('pages.prohibited-items');
+})->name('prohibited-items');
+Route::get('/contact', function () {
+    return themed_view('pages.contact');
+})->name('contact');
 // Aliases for legacy links
 Route::get('/privacy-policy', function () {
     return themed_view('pages.privacy');
@@ -116,6 +131,12 @@ Route::get('/privacy-policy', function () {
 Route::get('/terms-of-service', function () {
     return themed_view('pages.terms');
 })->name('terms.of.service');
+Route::get('/returns', function () {
+    return redirect()->to('/refunds-returns');
+})->name('returns.alias');
+Route::get('/shipping', function () {
+    return redirect()->to('/shipping-delivery');
+})->name('shipping.alias');
 Route::get('/intro', function () {
     // Direct to About as an intro/overview
     return themed_view('pages.about');

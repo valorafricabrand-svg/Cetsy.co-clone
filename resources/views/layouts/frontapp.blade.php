@@ -559,13 +559,38 @@ document.addEventListener('DOMContentLoaded',()=>{
               Reach Us
             </a>
           </li>
+          <li class="mb-2">
+            <a href="{{ url('/refunds-returns') }}" class="footer-link text-white-50 text-decoration-none">
+              Refund &amp; Returns
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="{{ url('/shipping-delivery') }}" class="footer-link text-white-50 text-decoration-none">
+              Shipping &amp; Delivery
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="{{ url('/terms') }}" class="footer-link text-white-50 text-decoration-none">
+              Terms &amp; Conditions
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="{{ url('/privacy') }}" class="footer-link text-white-50 text-decoration-none">
+              Privacy Policy
+            </a>
+          </li>
           <li class="text-white-50 mb-1 footer-text">
             <strong>Email:</strong>
             <a href="mailto:{{ support_email() }}" class="text-white">{{ support_email() }}</a>
           </li>
           <li class="text-white-50 footer-text">
             <strong>Phone:</strong>
-            <a href="tel:{{ $settings->phone }}" class="text-white">{{ $settings->phone }}</a>
+            @php($phone = support_phone())
+            @if($phone !== '')
+              <a href="tel:{{ $phone }}" class="text-white">{{ $phone }}</a>
+            @else
+              <span class="text-white">Please set `SUPPORT_PHONE`</span>
+            @endif
           </li>
         </ul>
 

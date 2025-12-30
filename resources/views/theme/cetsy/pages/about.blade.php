@@ -195,13 +195,13 @@
                 </span>
 
                 <h2 class="fw-bold mb-3">
-                    Your Global Marketplace - find almost everything from everyone, everywhere
+                    About {{ config('app.name','Cetsy') }}: an online marketplace
                 </h2>
 
                 <p class="lead text-muted mb-4">
-                    Cetsy is a global e-commerce marketplace, founded in 2021 to better connect world markets.
-                    As a privately held company, we enable sellers to list nearly any item they can legally sell in
-                    their region - safely and simply.
+                    {{ config('app.name','Cetsy') }} is an online marketplace platform that connects independent sellers
+                    with buyers. We provide the website, listing tools, and checkout to help facilitate transactions,
+                    but sellers are responsible for their own products, fulfillment, and customer service.
                 </p>
 
                 <div class="row g-3 mb-4">
@@ -219,9 +219,9 @@
 
                 <h5 class="fw-semibold mb-2">What we do</h5>
                 <p class="mb-4">
-                    We connect buyers and sellers across the globe, offering secure, flexible payment solutions to meet
-                    diverse needs - while empowering creators with minimal limits on creativity inside the Cetsy
-                    Marketplace.
+                    We help buyers discover unique products from independent sellers, and we help sellers run their
+                    shops with tools for listings, orders, and payments. {{ config('app.name','Cetsy') }} is operated
+                    from <strong>{{ operating_region() }}</strong>.
                 </p>
 
                 <div class="callout p-3 p-md-4 mb-4">
@@ -233,32 +233,39 @@
                 </div>
 
                 <h6 class="fst-italic text-secondary mb-1">Sellers</h6>
-                <p class="mb-3">If you can legally sell an item or service in your country, you can probably list it on
-                    Cetsy.
+                <p class="mb-3">
+                    Sellers on {{ config('app.name','Cetsy') }} are independent businesses. They set prices, create
+                    listings, ship orders, and handle returns/refunds in line with our policies.
                 </p>
 
-                <p class="mb-3">
-                    Examples of <strong>physical items</strong> include (but are not limited to): household goods,
-                    collectibles, jewelry, artwork, livestock, vehicles, handmade crafts, real estate/property, and
-                    outdoor equipment.
-                    All listings can include photos and video with audio.
+                <h6 class="fw-semibold mb-2">Allowed product types (clear &amp; limited)</h6>
+                <p class="mb-2">
+                  Sellers may list products that fit within these categories and comply with our rules:
                 </p>
-
+                <ul class="mb-3">
+                  <li>Handmade goods and artisan products</li>
+                  <li>Craft supplies and materials</li>
+                  <li>Art, prints, and stationery</li>
+                  <li>Home décor and accessories</li>
+                  <li>Fashion accessories and jewelry</li>
+                  <li>Vintage items (where permitted)</li>
+                  <li>Digital downloads (where offered and permitted)</li>
+                </ul>
                 <p class="mb-3">
-                    <strong>Digital downloads</strong> can also be listed, such as original music, e-books, recipes, and
-                    more.
+                  Prohibited and restricted items are not allowed. See our
+                  <a href="{{ url('/prohibited-items') }}" class="link-primary">Prohibited / Restricted Items</a> list.
                 </p>
 
                 <ul class="list-unstyled list-icon mb-4">
                     <li><i class="fas fa-check-circle"></i> Verify local legality before posting a listing.</li>
-                    <li><i class="fas fa-check-circle"></i> Follow our Seller Agreement for a smooth experience.</li>
-                    <li><i class="fas fa-check-circle"></i> Reach support anytime via 24/7 Live Chat.</li>
+                    <li><i class="fas fa-check-circle"></i> Follow our <a href="{{ url('/seller-policy') }}">Seller Policy</a> for a smooth experience.</li>
+                    <li><i class="fas fa-check-circle"></i> Reach support via <a href="{{ url('/contact') }}">Contact</a>.</li>
                 </ul>
 
                 <p class="mb-4">
-                    To become a Cetsy seller in just a few steps, please review the Seller Agreement to view - what we
-                    expect
-                    from sellers and what you can expect from Cetsy. Questions? Use our 24/7 chat anytime.
+                    To become a seller, review our <a href="{{ url('/seller-policy') }}">Seller Policy</a> and our
+                    <a href="{{ url('/terms') }}">Terms &amp; Conditions</a>. Questions? Visit our
+                    <a href="{{ url('/contact') }}">Contact</a> page.
                 </p>
 
                 <div class="d-flex flex-wrap gap-2">

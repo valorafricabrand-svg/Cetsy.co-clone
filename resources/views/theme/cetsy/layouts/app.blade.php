@@ -1189,13 +1189,14 @@
           <div class="col-12 col-md-3">
             <h4 class="text-uppercase mb-3 footer-heading text-white">Help &amp; Support</h4>
             <ul class="list-unstyled mb-0 footer-text">
-              <li class="mb-2"><a href="{{ url('/user-agreement#house-rules') }}" class="footer-link text-white-50 text-decoration-none">Help &amp; FAQs</a></li>
-              <li class="mb-2"><a href="{{ url('/about') }}" class="footer-link text-white-50 text-decoration-none">About Cetsy</a></li>
-              <li class="mb-2">
-                <a href="https://docs.google.com/forms/d/1uOyZN2ysRSZBOpYneYQKwlZdish465UMxfil8cEv5vE/viewform?edit_requested=true" class="footer-link text-white-50 text-decoration-none" target="_blank" rel="noopener">Contact us</a>
-              </li>
-              <li class="mb-2"><a href="{{ url('/user-agreement#terms') }}" class="footer-link text-white-50 text-decoration-none">Terms &amp; conditions</a></li>
-              <li class="mb-2"><a href="{{ url('/user-agreement#privacy') }}" class="footer-link text-white-50 text-decoration-none">Privacy policy</a></li>
+              <li class="mb-2"><a href="{{ url('/about') }}" class="footer-link text-white-50 text-decoration-none">About Us</a></li>
+              <li class="mb-2"><a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">Contact Us</a></li>
+              <li class="mb-2"><a href="{{ url('/refunds-returns') }}" class="footer-link text-white-50 text-decoration-none">Refund &amp; Returns</a></li>
+              <li class="mb-2"><a href="{{ url('/shipping-delivery') }}" class="footer-link text-white-50 text-decoration-none">Shipping &amp; Delivery</a></li>
+              <li class="mb-2"><a href="{{ url('/terms') }}" class="footer-link text-white-50 text-decoration-none">Terms &amp; Conditions</a></li>
+              <li class="mb-2"><a href="{{ url('/privacy') }}" class="footer-link text-white-50 text-decoration-none">Privacy Policy</a></li>
+              <li class="mb-2"><a href="{{ url('/seller-policy') }}" class="footer-link text-white-50 text-decoration-none">Seller Policy</a></li>
+              <li class="mb-2"><a href="{{ url('/prohibited-items') }}" class="footer-link text-white-50 text-decoration-none">Prohibited Items</a></li>
             </ul>
           </div>
           <div class="col-12 col-md-3">
