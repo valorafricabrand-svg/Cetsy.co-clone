@@ -543,15 +543,15 @@ if (! function_exists('support_email')) {
 if (! function_exists('support_phone')) {
     /**
      * Resolve the public support phone number.
-     * Priority: settings table (support_phone) -> settings table (phone) -> env SUPPORT_PHONE.
+     * Priority: settings table (support_phone) -> env SUPPORT_PHONE -> settings table (phone).
      */
     function support_phone(): string
     {
         $candidates = [];
 
         try { $candidates[] = setting('support_phone'); } catch (\Throwable $e) {}
-        try { $candidates[] = setting('phone'); } catch (\Throwable $e) {}
         $candidates[] = env('SUPPORT_PHONE');
+        try { $candidates[] = setting('phone'); } catch (\Throwable $e) {}
 
         foreach ($candidates as $candidate) {
             if (! is_string($candidate)) continue;
