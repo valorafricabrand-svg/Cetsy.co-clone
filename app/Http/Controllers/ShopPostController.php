@@ -53,7 +53,7 @@ class ShopPostController extends Controller
                 $data['image'] = $request->file('image')->store('shop_posts', 'public');
             }
 
-            ShopPost::create($data);
+            $shopPost = ShopPost::create($data);
 
             // Create activity record for the seller
             Activity::create([

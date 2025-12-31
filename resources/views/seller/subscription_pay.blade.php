@@ -207,7 +207,7 @@ $(function () {
         return;
     }
 
-    const topUpNeeded = parseFloat(@json(number_format((float) $topUpNeeded, 2, '.', '')));
+    const topUpNeeded = Number(@json($topUpNeeded));
     const redirectToAfterTopup = @json($redirectToAfterTopup);
 
     @if($stripeAvailable)

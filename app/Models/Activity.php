@@ -57,6 +57,8 @@ class Activity extends Model
     const TYPE_SUBSCRIPTION = 'subscription';
     const TYPE_PAYOUT = 'payout';
     const TYPE_PRODUCT = 'product';
+    const TYPE_SHOP = 'shop';
+    const TYPE_SHOP_POST = 'shop_post';
     const TYPE_GENERAL = 'general';
     const TYPE_DISPUTE = 'dispute';
     const TYPE_WISHLIST = 'wishlist';
