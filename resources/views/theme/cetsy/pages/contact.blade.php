@@ -20,7 +20,9 @@
 
               <li class="mb-2">
                 <strong>Phone:</strong>
-                @php($phone = support_phone())
+                @php
+                  $phone = support_phone();
+                @endphp
                 @if($phone !== '')
                   <a href="tel:{{ $phone }}">{{ $phone }}</a>
                 @else
@@ -28,7 +30,9 @@
                 @endif
               </li>
 
-              @php($address = support_address())
+              @php
+                $address = support_address();
+              @endphp
               @if($address !== '')
                 <li class="mb-2">
                   <strong>Address:</strong> {{ $address }}
@@ -49,4 +53,3 @@
     </div>
   </section>
 @endsection
-

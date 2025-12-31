@@ -24,7 +24,9 @@
             </div>
           @endif
 
-          @php($isActive = $subscription && $subscription->isActive())
+          @php
+            $isActive = $subscription && $subscription->isActive();
+          @endphp
 
           @if($isActive)
             @php

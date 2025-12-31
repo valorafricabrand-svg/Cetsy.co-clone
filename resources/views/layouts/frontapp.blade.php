@@ -585,7 +585,9 @@ document.addEventListener('DOMContentLoaded',()=>{
           </li>
           <li class="text-white-50 footer-text">
             <strong>Phone:</strong>
-            @php($phone = support_phone())
+            @php
+              $phone = support_phone();
+            @endphp
             @if($phone !== '')
               <a href="tel:{{ $phone }}" class="text-white">{{ $phone }}</a>
             @else

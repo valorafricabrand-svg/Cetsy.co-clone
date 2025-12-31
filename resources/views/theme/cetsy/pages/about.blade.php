@@ -1,7 +1,9 @@
 @extends('theme.'.theme().'.layouts.app')
 
 @section('main')
-@php($__about = App\Models\PolicySection::where('slug','about-cetsy')->first())
+@php
+  $__about = App\Models\PolicySection::where('slug','about-cetsy')->first();
+@endphp
 @if($__about && trim((string)$__about->content) !== '')
 {!! $__about->content !!}
 @else
