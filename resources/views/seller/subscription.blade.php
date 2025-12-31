@@ -91,6 +91,14 @@
   .sub-card-header{
     border-bottom: 1px solid rgba(15, 23, 42, .08);
   }
+  .sub-method-badge{
+    border-radius: 999px;
+    border: 1px solid rgba(2, 115, 51, .18);
+    background: rgba(2, 115, 51, .08);
+    color: #0f172a;
+    padding: .35rem .6rem;
+    font-weight: 600;
+  }
 </style>
 @endsection
 
@@ -371,7 +379,7 @@
                         <div class="fw-semibold">${{ number_format($payment->total_amount, 2) }}</div>
                         <div class="small text-muted">{{ $payment->currency }}</div>
                       </td>
-                      <td><span class="badge bg-info-subtle text-dark border">{{ ucfirst($payment->payment_method) }}</span></td>
+                      <td><span class="sub-method-badge">{{ ucfirst($payment->payment_method) }}</span></td>
                       <td>
                         @if($payment->payment_status == 'successful')
                           <span class="badge bg-success">Successful</span>
@@ -400,4 +408,3 @@
   </div>
 </div>
 @endsection
-
