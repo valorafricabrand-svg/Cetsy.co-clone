@@ -108,19 +108,37 @@ class SubscriptionController extends Controller
         ]);
 
         // Create new subscription
-        $subscription = new Subscription([
-            'user_id' => $user->id,
-            'shop_id' => $shop?->id,
-            'status' => 'active',
-            'start_date' => now(),
-            'end_date' => now()->addDays($duration),
-            'amount' => $subscriptionFee,
-            'payment_method' => 'wallet',
-            'transaction_id' => $localTxId,
-            'notes' => ucfirst($plan) . ' subscription plan'
-        ]);
+        $subscription = Subscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->orderByDesc('end_date')
+            ->first();
 
-        $subscription->save();
+        if ($subscription && $subscription->end_date && $subscription->end_date->isFuture()) {
+            // Renew early: extend from current end date so no days are lost
+            if ($shop && empty($subscription->shop_id)) {
+                $subscription->shop_id = $shop->id;
+            }
+            $subscription->end_date = $subscription->end_date->copy()->addDays($duration);
+            $subscription->amount = $subscriptionFee;
+            $subscription->payment_method = 'wallet';
+            $subscription->transaction_id = $localTxId;
+            $subscription->notes = ucfirst($plan) . ' subscription plan';
+            $subscription->save();
+        } else {
+            $subscription = new Subscription([
+                'user_id' => $user->id,
+                'shop_id' => $shop?->id,
+                'status' => 'active',
+                'start_date' => now(),
+                'end_date' => now()->addDays($duration),
+                'amount' => $subscriptionFee,
+                'payment_method' => 'wallet',
+                'transaction_id' => $localTxId,
+                'notes' => ucfirst($plan) . ' subscription plan'
+            ]);
+
+            $subscription->save();
+        }
         if ($shop) { $shop->is_active = true; $shop->save(); }
 
         // Clear the session
@@ -201,28 +219,12 @@ class SubscriptionController extends Controller
         
         // Calculate subscription fee and duration based on plan
         if ($plan === 'yearly') {
-            $subscriptionFee = config('subscription.yearly_fee', 100);
+            $subscriptionFee = config('subscription.yearly_fee', 50);
             $duration = 365; // days
         } else {
-            $subscriptionFee = config('subscription.monthly_fee', 10);
+            $subscriptionFee = config('subscription.monthly_fee', 5);
             $duration = 30; // days
         }
-
-        // Create new subscription
-        $subscription = new Subscription([
-            'user_id' => $user->id,
-            'shop_id' => $shop?->id,
-            'status' => 'active',
-            'start_date' => now(),
-            'end_date' => now()->addDays($duration),
-            'amount' => $subscriptionFee,
-            'payment_method' => $request->get('method', 'paypal'),
-            'transaction_id' => $request->get('transaction_id', uniqid()),
-            'notes' => ucfirst($plan) . ' subscription plan'
-        ]);
-
-        $subscription->save();
-        if ($shop) { $shop->is_active = true; $shop->save(); }
 
         // Determine payment method: default to 'paypal'
         $method = $request->get('method', 'paypal');
@@ -234,6 +236,39 @@ class SubscriptionController extends Controller
                 $localTxId = 'SUB_' . time() . Str::upper(Str::random(6));
             } while (Payment::where('local_transaction_id', $localTxId)->exists());
         }
+
+        // Renew/extend existing active subscription when possible
+        $subscription = Subscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->orderByDesc('end_date')
+            ->first();
+
+        if ($subscription && $subscription->end_date && $subscription->end_date->isFuture()) {
+            if ($shop && empty($subscription->shop_id)) {
+                $subscription->shop_id = $shop->id;
+            }
+            $subscription->end_date = $subscription->end_date->copy()->addDays($duration);
+            $subscription->amount = $subscriptionFee;
+            $subscription->payment_method = $method;
+            $subscription->transaction_id = $localTxId;
+            $subscription->notes = ucfirst($plan) . ' subscription plan';
+            $subscription->save();
+        } else {
+            $subscription = new Subscription([
+                'user_id' => $user->id,
+                'shop_id' => $shop?->id,
+                'status' => 'active',
+                'start_date' => now(),
+                'end_date' => now()->addDays($duration),
+                'amount' => $subscriptionFee,
+                'payment_method' => $method,
+                'transaction_id' => $localTxId,
+                'notes' => ucfirst($plan) . ' subscription plan'
+            ]);
+
+            $subscription->save();
+        }
+        if ($shop) { $shop->is_active = true; $shop->save(); }
 
         // Build the payment data array
         $paymentData = [
@@ -258,7 +293,7 @@ class SubscriptionController extends Controller
         Activity::create([
             'user_id' => $user->id,
             'is_read' => false,
-            'description' => 'You activated a new ' . ucfirst($plan) . ' subscription',
+            'description' => ($subscription && $subscription->wasRecentlyCreated ? 'You activated a new ' : 'You renewed your ') . ucfirst($plan) . ' subscription',
             'type' => \App\Models\Activity::TYPE_SUBSCRIPTION,
             'related_id' => $subscription->id,
             'related_type' => 'subscription'
