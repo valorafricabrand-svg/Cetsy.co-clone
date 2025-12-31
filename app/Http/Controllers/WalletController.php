@@ -317,10 +317,33 @@ class WalletController extends Controller
         );
     }
 
-    public function depositForm()
+    public function depositForm(Request $request)
     {
         $balance = $this->currentBalance(auth()->id());
-        return view('wallet.deposit', compact('balance'));
+        $redirectTo = $this->sanitizeRedirectTo($request->query('redirect_to'));
+        $defaultAmount = null;
+        if ($request->filled('amount')) {
+            $candidate = (float) $request->query('amount');
+            if ($candidate >= 1) {
+                $defaultAmount = $candidate;
+            }
+        }
+        $preferredMethod = $request->query('method');
+
+        return view('wallet.deposit', compact('balance', 'redirectTo', 'defaultAmount', 'preferredMethod'));
+    }
+
+    private function sanitizeRedirectTo(?string $redirectTo): ?string
+    {
+        if (!is_string($redirectTo)) return null;
+        $redirectTo = trim($redirectTo);
+        if ($redirectTo === '') return null;
+
+        // Allow only internal relative paths to prevent open redirects.
+        if (!str_starts_with($redirectTo, '/')) return null;
+        if (str_starts_with($redirectTo, '//')) return null;
+
+        return $redirectTo;
     }
 
     private function isDepositOtpVerified(): bool
@@ -587,6 +610,7 @@ class WalletController extends Controller
         $data = $request->validate([
             'amount' => 'required|numeric|min:1',
             'currency' => 'nullable|string|size:3',
+            'redirect_to' => 'nullable|string|max:2048',
         ]);
 
         $cfg = $this->stripeConfig();
@@ -597,9 +621,10 @@ class WalletController extends Controller
         $currency = strtoupper((string) ($data['currency'] ?? 'USD'));
         $amount = (float) $data['amount'];
         $unitAmount = $this->stripeUnitAmount($amount, $currency);
+        $redirectTo = $this->sanitizeRedirectTo($data['redirect_to'] ?? null);
 
         $successUrl = route('wallet.deposit.stripe.success') . '?session_id={CHECKOUT_SESSION_ID}';
-        $cancelUrl  = route('wallet.deposit.stripe.cancel');
+        $cancelUrl  = route('wallet.deposit.stripe.cancel') . ($redirectTo ? ('?redirect_to=' . urlencode($redirectTo)) : '');
 
         $resp = Http::asForm()
             ->withToken($cfg['secret'])
@@ -655,6 +680,7 @@ class WalletController extends Controller
                 'currency'     => $currency,
                 'credit'       => $amount,
                 'amount_total' => $unitAmount,
+                'redirect_to'  => $redirectTo,
             ],
         ]);
 
@@ -694,6 +720,10 @@ class WalletController extends Controller
             ->where('credit', '>', 0)
             ->exists();
         if ($alreadyCredited || $marker->status === 'completed') {
+            $redirectTo = $this->sanitizeRedirectTo(data_get($marker->meta, 'redirect_to'));
+            if ($redirectTo) {
+                return redirect()->to($redirectTo)->with('success', 'Deposit confirmed.');
+            }
             return redirect()->route('wallet.index')->with('success', 'Deposit confirmed.');
         }
 
@@ -765,6 +795,10 @@ class WalletController extends Controller
                 \Log::warning('stripe.deposit.email_failed', ['user_id' => Auth::id(), 'error' => $e->getMessage()]);
             }
 
+            $redirectTo = $this->sanitizeRedirectTo(data_get($marker->meta, 'redirect_to'));
+            if ($redirectTo) {
+                return redirect()->to($redirectTo)->with('success', 'Deposit confirmed.');
+            }
             return redirect()->route('wallet.index')->with('success', 'Deposit confirmed.');
         } catch (\Throwable $e) {
             Log::error('stripe.deposit.finalize_failed', ['user_id' => Auth::id(), 'session_id' => $sessionId, 'error' => $e->getMessage()]);
@@ -774,6 +808,10 @@ class WalletController extends Controller
 
     public function stripeDepositCancel()
     {
+        $redirectTo = $this->sanitizeRedirectTo(request()->query('redirect_to'));
+        if ($redirectTo) {
+            return redirect()->to($redirectTo)->withErrors('Stripe checkout was cancelled.');
+        }
         return redirect()->route('wallet.deposit.form')->withErrors('Stripe checkout was cancelled.');
     }
 
@@ -1570,7 +1608,6 @@ public function payOrder(Request $request, $id)
     }
 
 }
-
 
 
 

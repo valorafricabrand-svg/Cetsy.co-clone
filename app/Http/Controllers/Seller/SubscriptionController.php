@@ -47,7 +47,15 @@ class SubscriptionController extends Controller
         // Store the selected plan in session for payment processing
         session(['selected_subscription_plan' => $plan]);
         
-        // Redirect to payment processing page instead of direct subscription creation
+        // Redirect to a GET route so external gateways can return here
+        return redirect()->route('seller.subscription.pay', ['plan' => $plan]);
+    }
+
+    public function pay(Request $request)
+    {
+        $plan = $request->query('plan', session('selected_subscription_plan', 'monthly'));
+        session(['selected_subscription_plan' => $plan]);
+
         return view('seller.subscription_pay', compact('plan'));
     }
 

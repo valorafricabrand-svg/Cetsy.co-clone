@@ -668,6 +668,7 @@ Route::middleware(['auth', 'verified', 'seller'])->prefix('seller')->name('selle
         return view('seller.billing');
     })->name('billing.index');
     Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription');
+    Route::get('subscription/pay', [SubscriptionController::class, 'pay'])->name('subscription.pay');
     Route::post('subscription', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
     Route::post('subscription/wallet', [SubscriptionController::class, 'walletPay'])->name('subscription.wallet.pay');
     Route::get('subscription/success/{id}', [SubscriptionController::class, 'successDeposit'])->name('subscription.success');

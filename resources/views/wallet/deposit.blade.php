@@ -35,7 +35,8 @@
                     {{-- Deposit Amount (USD for wallet) --}}
                     <div class="mb-3">
                         <label for="deposit_amount" class="form-label">Deposit Amount (USD)</label>
-                        <input type="number" id="deposit_amount" class="form-control" min="1" step="0.01" required placeholder="Enter amount e.g. 25.00">
+                        <input type="number" id="deposit_amount" class="form-control" min="1" step="0.01" required placeholder="Enter amount e.g. 25.00"
+                               value="{{ isset($defaultAmount) && $defaultAmount ? number_format((float)$defaultAmount, 2, '.', '') : '' }}">
                         <div class="form-text">Your wallet is in USD. For M-Pesa we’ll auto-convert to KES using our configured rate.</div>
                     </div>
 
@@ -52,6 +53,9 @@
                       if ($mpesaAvailable)  $availableMethods[] = 'mpesa';
 
                       $defaultGateway = function_exists('payment_default_gateway') ? payment_default_gateway() : 'paypal';
+                      if (!empty($preferredMethod) && in_array($preferredMethod, $availableMethods, true)) {
+                        $defaultGateway = $preferredMethod;
+                      }
                       if (!in_array($defaultGateway, $availableMethods, true)) {
                         $defaultGateway = $availableMethods[0] ?? '';
                       }
@@ -168,7 +172,19 @@
     const $liveStatus    = $('#stk-live-status');
 
     const USD_TO_KES = {{ (float) (env('USD_TO_KES', 130)) }}; // configure in .env
-    const REDIRECT_URL = "{{ route('wallet.index') }}";
+    const REDIRECT_URL = @json(($redirectTo ?? null) ?: route('wallet.index'));
+
+    function redirectSuccess() {
+        try {
+            const u = new URL(REDIRECT_URL, window.location.origin);
+            u.searchParams.set('success', '1');
+            window.location.href = u.toString();
+        } catch (e) {
+            // Fallback: best-effort append
+            const sep = REDIRECT_URL.includes('?') ? '&' : '?';
+            window.location.href = REDIRECT_URL + sep + 'success=1';
+        }
+    }
 
     const AVAILABLE_METHODS = @json($availableMethods);
     const DEFAULT_METHOD = @json($defaultGateway);
@@ -236,7 +252,8 @@
             $.post(@json(route('wallet.deposit.stripe.session')), {
                 _token: @json(csrf_token()),
                 amount: amount,
-                currency: 'USD'
+                currency: 'USD',
+                redirect_to: REDIRECT_URL
             }, function(resp){
                 if (resp?.success && resp?.url) {
                     window.location = resp.url;
@@ -277,7 +294,7 @@
                     order_id: details.id || null
                 }, function(resp) {
                     if (resp.success) {
-                        window.location.href = REDIRECT_URL + '?success=1';
+                        redirectSuccess();
                     } else {
                         $result.addClass('text-danger').text(resp.message || 'Deposit failed. Please try again later.');
                     }
@@ -316,7 +333,7 @@
                         <i class="fa fa-check-circle me-2"></i>
                         Payment successful! Redirecting to your wallet...
                     `);
-                    setTimeout(() => window.location.href = REDIRECT_URL + '?success=1', 1200);
+                    setTimeout(() => redirectSuccess(), 1200);
                     return;
                 }
                 if (resp?.status === 'failed') {
