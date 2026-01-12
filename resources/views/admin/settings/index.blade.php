@@ -306,15 +306,43 @@
       </div>
 
       {{-- Subscription Grace Period (days) --}}
+      @php
+        $graceDaysSetting = function_exists('setting') ? setting('subscription_grace_days', 5) : 5;
+        $trialEnabledSetting = function_exists('setting') ? setting('subscription_trial_enabled', 1) : 1;
+        $trialDaysSetting = function_exists('setting') ? setting('subscription_trial_days', 30) : 30;
+        $trialEnabledValue = (bool) (int) old('subscription_trial_enabled', $trialEnabledSetting);
+      @endphp
       <div class="col-md-4">
         <label class="form-label">Subscription Grace Period (days)</label>
         <input type="number"
                name="subscription_grace_days"
                class="form-control @error('subscription_grace_days') is-invalid @enderror"
-               value="{{ old('subscription_grace_days', $settings->subscription_grace_days ?? 5) }}"
+               value="{{ old('subscription_grace_days', $graceDaysSetting) }}"
                step="1" min="0" max="60" placeholder="5">
         <div class="form-text">Number of days after end date that a shop remains active.</div>
         @error('subscription_grace_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Enable Free Seller Trial</label>
+        <input type="hidden" name="subscription_trial_enabled" value="0">
+        <div class="form-check form-switch mt-1">
+          <input class="form-check-input" type="checkbox" role="switch" id="subscription-trial-enabled"
+                 name="subscription_trial_enabled" value="1" {{ $trialEnabledValue ? 'checked' : '' }}>
+          <label class="form-check-label" for="subscription-trial-enabled">Enabled</label>
+        </div>
+        <div class="form-text">Applies to new sellers only.</div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Trial Length (days)</label>
+        <input type="number"
+               name="subscription_trial_days"
+               class="form-control @error('subscription_trial_days') is-invalid @enderror"
+               value="{{ old('subscription_trial_days', $trialDaysSetting) }}"
+               step="1" min="1" max="365" placeholder="30">
+        <div class="form-text">Used when a new seller starts a trial.</div>
+        @error('subscription_trial_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
 
     </div>

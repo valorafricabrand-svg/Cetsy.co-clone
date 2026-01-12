@@ -74,7 +74,7 @@ class RegisteredUserController extends Controller
             $trial = SubscriptionService::startTrialIfEligible($user);
             if ($trial) {
                 return redirect()->route('seller.dashboard')
-                    ->with('success', 'Your free 30-day seller trial is active until ' . $trial->end_date->format('F j, Y') . '.');
+                    ->with('success', 'Your free seller trial is active until ' . $trial->end_date->format('F j, Y') . '.');
             }
             if ($user->hasActiveSubscription()) {
                 return redirect()->route('seller.dashboard');

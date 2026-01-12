@@ -36,9 +36,11 @@ class SubscriptionController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
         
-        $canStartTrial = !$subscription;
+        $trialEnabled = SubscriptionService::trialEnabled();
+        $trialDays = SubscriptionService::trialDays();
+        $canStartTrial = $trialEnabled && !$subscription;
 
-        return view('seller.subscription', compact('subscription', 'subscriptionPayments', 'canStartTrial'));
+        return view('seller.subscription', compact('subscription', 'subscriptionPayments', 'canStartTrial', 'trialDays'));
     }
 
     public function subscribe(Request $request)
@@ -161,6 +163,10 @@ class SubscriptionController extends Controller
     public function startTrial(Request $request)
     {
         $user = Auth::user();
+        if (!SubscriptionService::trialEnabled()) {
+            return redirect()->route('seller.subscription')
+                ->with('error', 'Free trial is currently unavailable. Please choose a plan to continue.');
+        }
         $subscription = SubscriptionService::startTrialIfEligible($user);
         if (!$subscription) {
             return redirect()->route('seller.subscription')
@@ -169,7 +175,7 @@ class SubscriptionController extends Controller
 
         return redirect()
             ->route('seller.dashboard')
-            ->with('success', 'Your free 30-day seller trial is active until ' . $subscription->end_date->format('F j, Y') . '.');
+            ->with('success', 'Your free seller trial is active until ' . $subscription->end_date->format('F j, Y') . '.');
     }
 
     public function successDeposit(Request $request, $id)

@@ -83,6 +83,9 @@ class SettingsController extends Controller
         'auto_release_days' => 'nullable|integer|min:1|max:365',
         // Subscription grace period (days)
         'subscription_grace_days' => 'nullable|integer|min:0|max:60',
+        // Subscription trial
+        'subscription_trial_enabled' => 'nullable|boolean',
+        'subscription_trial_days' => 'nullable|integer|min:1|max:365',
 
         // Shipping defaults
         'couriers'          => 'nullable|string',
@@ -146,6 +149,17 @@ class SettingsController extends Controller
         foreach (['duplicate_sku_strategy','duplicate_sku_suffix','duplicate_sku_random_len','release_fee_percent'] as $k) {
             if (! $request->has($k)) continue;
             $putSetting($k, $request->input($k));
+        }
+
+        // Subscription settings
+        if ($request->has('subscription_grace_days')) {
+            $putSetting('subscription_grace_days', $request->input('subscription_grace_days'));
+        }
+        if ($request->has('subscription_trial_enabled')) {
+            $putSetting('subscription_trial_enabled', $request->boolean('subscription_trial_enabled'));
+        }
+        if ($request->filled('subscription_trial_days')) {
+            $putSetting('subscription_trial_days', $request->input('subscription_trial_days'));
         }
 
         // Payment gateways (enable/disable + default)

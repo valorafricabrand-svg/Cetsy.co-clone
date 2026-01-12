@@ -11,9 +11,56 @@ use Illuminate\Support\Str;
 
 class SubscriptionService
 {
-    public static function startTrialIfEligible(User $user, int $days = 30): ?Subscription
+    public static function trialEnabled(): bool
+    {
+        $default = (bool) env('SUBSCRIPTION_TRIAL_ENABLED', true);
+        if (!function_exists('setting')) {
+            return $default;
+        }
+
+        $raw = setting('subscription_trial_enabled', $default);
+        if (is_bool($raw)) {
+            return $raw;
+        }
+        if (is_numeric($raw)) {
+            return ((int) $raw) === 1;
+        }
+
+        $raw = strtolower(trim((string) $raw));
+        if ($raw === '') {
+            return $default;
+        }
+
+        return in_array($raw, ['1', 'true', 'yes', 'on', 'enabled', 'active'], true);
+    }
+
+    public static function trialDays(): int
+    {
+        $default = (int) env('SUBSCRIPTION_TRIAL_DAYS', 30);
+        $raw = function_exists('setting')
+            ? setting('subscription_trial_days', $default)
+            : $default;
+
+        $days = (int) $raw;
+        if ($days <= 0) {
+            $days = $default > 0 ? $default : 30;
+        }
+
+        return min(365, $days);
+    }
+
+    public static function startTrialIfEligible(User $user): ?Subscription
     {
         if (!method_exists($user, 'isSeller') || !$user->isSeller()) {
+            return null;
+        }
+
+        if (!self::trialEnabled()) {
+            return null;
+        }
+
+        $days = self::trialDays();
+        if ($days <= 0) {
             return null;
         }
 
@@ -36,7 +83,7 @@ class SubscriptionService
             'amount'         => 0,
             'payment_method' => 'trial',
             'transaction_id' => $transactionId,
-            'notes'          => 'Free 30-day trial',
+            'notes'          => 'Free ' . $days . '-day trial',
         ]);
 
         if ($shop) {
@@ -59,7 +106,7 @@ class SubscriptionService
         Activity::create([
             'user_id'      => $user->id,
             'is_read'      => false,
-            'description'  => 'You started your free 30-day seller trial',
+            'description'  => 'You started your free ' . $days . '-day seller trial',
             'type'         => Activity::TYPE_SUBSCRIPTION,
             'related_id'   => $subscription->id,
             'related_type' => 'subscription',

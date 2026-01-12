@@ -35,12 +35,15 @@ class AuthenticatedSessionController extends Controller
         if ($user->isSeller() && !$user->hasActiveSubscription()) {
             $trial = SubscriptionService::startTrialIfEligible($user);
             if (!$trial) {
+                $message = $user->subscription
+                    ? 'Your subscription has expired. Please renew to continue using seller features.'
+                    : 'Please choose a plan to start selling on our platform.';
                 return redirect()->route('seller.subscription')
-                    ->with('error', 'Your subscription has expired. Please renew to continue using seller features.');
+                    ->with('error', $message);
             }
             $request->session()->flash(
                 'success',
-                'Your free 30-day seller trial is active until ' . $trial->end_date->format('F j, Y') . '.'
+                'Your free seller trial is active until ' . $trial->end_date->format('F j, Y') . '.'
             );
         }
 

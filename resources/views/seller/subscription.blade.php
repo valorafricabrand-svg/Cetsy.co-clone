@@ -237,7 +237,7 @@
                   <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                     <div>
                       <div class="pricing-badge mb-2"><i class="bi bi-stars"></i> Free trial</div>
-                      <div class="h5 mb-1">New seller? Try it free for 30 days</div>
+                      <div class="h5 mb-1">New seller? Try it free for {{ number_format($trialDays ?? 30, 0) }} {{ Str::plural('day', $trialDays ?? 30) }}</div>
                       <div class="pricing-muted">Unlock seller features while you set up your shop. Upgrade anytime to keep selling.</div>
                     </div>
                     <form action="{{ route('seller.subscription.trial') }}" method="POST" class="m-0">
