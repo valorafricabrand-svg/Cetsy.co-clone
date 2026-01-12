@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Services\SubscriptionService;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -30,10 +31,17 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        // If seller and no active subscription, redirect to subscription page
+        // If seller and no active subscription, start trial or redirect to subscription
         if ($user->isSeller() && !$user->hasActiveSubscription()) {
-            return redirect()->route('seller.subscription')
-                ->with('error', 'Your subscription has expired. Please renew to continue using seller features.');
+            $trial = SubscriptionService::startTrialIfEligible($user);
+            if (!$trial) {
+                return redirect()->route('seller.subscription')
+                    ->with('error', 'Your subscription has expired. Please renew to continue using seller features.');
+            }
+            $request->session()->flash(
+                'success',
+                'Your free 30-day seller trial is active until ' . $trial->end_date->format('F j, Y') . '.'
+            );
         }
 
         return redirect()->intended(route('dashboard', absolute: false));

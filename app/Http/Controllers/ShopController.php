@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use App\Models\PaymentMethod;
 use App\Models\Country;
 use App\Models\Activity;
+use App\Models\Subscription;
 
 class ShopController extends Controller
 {
@@ -86,6 +87,15 @@ class ShopController extends Controller
 
         // Create the shop via the one-to-one relationship
         $shop = Auth::user()->shop()->create($data);
+
+        $subscription = Subscription::where('user_id', Auth::id())
+            ->where('status', 'active')
+            ->orderByDesc('end_date')
+            ->first();
+        if ($subscription && empty($subscription->shop_id)) {
+            $subscription->shop_id = $shop->id;
+            $subscription->save();
+        }
 
         // Create activity record for the seller
         Activity::create([

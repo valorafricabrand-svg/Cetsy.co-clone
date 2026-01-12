@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\SubscriptionService;
 
 class EnsureSellerHasActiveSubscription
 {
@@ -15,6 +16,12 @@ class EnsureSellerHasActiveSubscription
         if ($user && $user->isSeller()) {
             $shop   = $user->shop;
             $active = $user->hasActiveSubscription();
+            if (!$active) {
+                $trial = SubscriptionService::startTrialIfEligible($user);
+                if ($trial) {
+                    $active = true;
+                }
+            }
 
             // Keep shop state synced to overall subscription status when a shop exists
             if ($shop && $shop->is_active !== $active) {

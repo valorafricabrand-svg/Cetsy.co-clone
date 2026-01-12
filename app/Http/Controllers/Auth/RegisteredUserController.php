@@ -15,6 +15,7 @@ use App\Models\Country;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeBuyerMail;
 use App\Mail\WelcomeSellerMail;
+use App\Services\SubscriptionService;
 
 class RegisteredUserController extends Controller
 {
@@ -68,10 +69,18 @@ class RegisteredUserController extends Controller
             \Log::warning('Welcome email failed: ' . $e->getMessage());
         }
 
-        // If seller, redirect to subscription page
+        // If seller, start the free trial and continue onboarding
         if ($user->user_type === 'seller') {
+            $trial = SubscriptionService::startTrialIfEligible($user);
+            if ($trial) {
+                return redirect()->route('seller.dashboard')
+                    ->with('success', 'Your free 30-day seller trial is active until ' . $trial->end_date->format('F j, Y') . '.');
+            }
+            if ($user->hasActiveSubscription()) {
+                return redirect()->route('seller.dashboard');
+            }
             return redirect()->route('seller.subscription')
-                ->with('info', 'Please subscribe to start selling on our platform.');
+                ->with('info', 'Please choose a plan to start selling on our platform.');
         }
 
         return redirect()->route('dashboard');

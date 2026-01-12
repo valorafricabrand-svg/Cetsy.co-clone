@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Models\Activity;
+use App\Services\SubscriptionService;
 
 class SubscriptionController extends Controller
 {
@@ -160,60 +161,15 @@ class SubscriptionController extends Controller
     public function startTrial(Request $request)
     {
         $user = Auth::user();
-        $shop = Shop::where('user_id', $user->id)->first();
-
-        // Only allow trial if the seller has never had a subscription before
-        $hasAnySubscription = Subscription::where('user_id', $user->id)->exists();
-        if ($hasAnySubscription) {
+        $subscription = SubscriptionService::startTrialIfEligible($user);
+        if (!$subscription) {
             return redirect()->route('seller.subscription')
                 ->with('error', 'The free trial is only available for new sellers.');
         }
 
-        $start = now();
-        $end = (clone $start)->addDays(30);
-        $transactionId = 'TRIAL-' . strtoupper(Str::random(10));
-
-        $subscription = Subscription::create([
-            'user_id'        => $user->id,
-            'shop_id'        => $shop?->id,
-            'status'         => 'active',
-            'start_date'     => $start,
-            'end_date'       => $end,
-            'amount'         => 0,
-            'payment_method' => 'trial',
-            'transaction_id' => $transactionId,
-            'notes'          => 'Free 30-day trial',
-        ]);
-
-        if ($shop) {
-            $shop->is_active = true;
-            $shop->save();
-        }
-
-        Payment::create([
-            'user_id'              => $user->id,
-            'shop_id'              => $shop?->id,
-            'total_amount'         => 0,
-            'payment_method'       => 'trial',
-            'payment_status'       => 'successful',
-            'paymentStatus'        => 3,
-            'currency'             => 'USD',
-            'local_transaction_id' => $transactionId,
-            'payment_name'         => 'subscription_fee',
-        ]);
-
-        Activity::create([
-            'user_id'     => $user->id,
-            'is_read'     => false,
-            'description' => 'You started your free 30-day seller trial',
-            'type'        => Activity::TYPE_SUBSCRIPTION,
-            'related_id'  => $subscription->id,
-            'related_type'=> 'subscription',
-        ]);
-
         return redirect()
             ->route('seller.dashboard')
-            ->with('success', 'Your free 30-day seller trial is active until ' . $end->format('F j, Y') . '.');
+            ->with('success', 'Your free 30-day seller trial is active until ' . $subscription->end_date->format('F j, Y') . '.');
     }
 
     public function successDeposit(Request $request, $id)
