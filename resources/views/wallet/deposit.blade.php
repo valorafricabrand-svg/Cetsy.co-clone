@@ -267,7 +267,7 @@
 @section('content')
 <div class="content wallet-deposit">
     <div class="row justify-content-center deposit-shell">
-        <div class="col-md-8 col-lg-7 col-xl-6">
+        <div class="col-md-9 col-lg-9 col-xl-8">
 
             <div class="card border-0 wallet-deposit__card mt-3">
                 <div class="card-body p-4 p-md-5">
