@@ -4,9 +4,164 @@
 
 @section('styles')
 <style>
-    .payment-toggle { margin-bottom: 1.25rem; text-align: center; }
-    .payment-toggle .btn { min-width: 180px; }
-    .payment-toggle .btn:not(:last-child) { margin-right: .5rem; }
+    @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+    .wallet-deposit {
+        --ink: #0b1220;
+        --muted: #64748b;
+        --brand: #0ea5a4;
+        --brand-strong: #0f766e;
+        --accent: #f59e0b;
+        --panel: #ffffff;
+        --panel-soft: #f8fafc;
+        --line: rgba(15, 23, 42, 0.10);
+        --shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+        font-family: "Instrument Sans", "Space Grotesk", sans-serif;
+        color: var(--ink);
+        position: relative;
+        padding: 2.5rem 0 3rem;
+        background:
+            radial-gradient(900px 460px at 5% -10%, rgba(14, 165, 164, 0.16), transparent 55%),
+            radial-gradient(700px 360px at 95% -5%, rgba(37, 99, 235, 0.18), transparent 52%);
+    }
+    .wallet-deposit::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+        background-size: 18px 18px;
+        opacity: 0.35;
+    }
+    .wallet-deposit .deposit-shell {
+        position: relative;
+        z-index: 1;
+    }
+    .wallet-deposit__card {
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+        background: var(--panel);
+        overflow: hidden;
+        animation: liftIn 0.5s ease both;
+    }
+    .wallet-deposit__header {
+        text-align: center;
+        margin-bottom: 1.25rem;
+        animation: fadeIn 0.6s ease both;
+    }
+    .wallet-deposit__eyebrow {
+        font-size: 0.72rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .wallet-deposit__title {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+    }
+    .wallet-deposit__subtitle {
+        color: var(--muted);
+        margin-bottom: 0;
+    }
+    .wallet-balance {
+        background: linear-gradient(135deg, #0f766e, #2563eb);
+        color: #fff;
+        border-radius: 14px;
+        padding: 1rem 1.2rem;
+        display: grid;
+        gap: 0.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 18px 30px rgba(37, 99, 235, 0.25);
+        animation: liftIn 0.6s ease both;
+    }
+    .wallet-balance__label {
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        font-size: 0.7rem;
+        opacity: 0.85;
+    }
+    .wallet-balance__value {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+    .wallet-balance__meta {
+        font-size: 0.85rem;
+        opacity: 0.85;
+    }
+    .deposit-amount {
+        background: var(--panel-soft);
+        border-radius: 14px;
+        padding: 1rem;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        margin-bottom: 1.25rem;
+        animation: fadeIn 0.65s ease both;
+    }
+    .deposit-amount .form-control {
+        border-radius: 10px;
+        border: 1px solid rgba(15, 23, 42, 0.18);
+        padding: 0.75rem 0.9rem;
+        font-weight: 600;
+    }
+    .deposit-amount .form-text {
+        color: var(--muted);
+    }
+    .payment-toggle {
+        margin-bottom: 1.25rem;
+        display: grid;
+        gap: 0.6rem;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        animation: fadeIn 0.7s ease both;
+    }
+    .payment-toggle .btn {
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+        font-weight: 600;
+        padding: 0.55rem 0.9rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .payment-toggle .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+    }
+    .payment-toggle .btn.is-active {
+        background: var(--ink);
+        color: #fff;
+        border-color: var(--ink);
+    }
+    .payment-panel {
+        background: var(--panel-soft);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        animation: fadeIn 0.5s ease both;
+    }
+    .payment-panel .text-muted {
+        color: var(--muted) !important;
+    }
+    .payment-panel .btn {
+        border-radius: 12px;
+        font-weight: 600;
+        padding: 0.7rem 1rem;
+    }
+    .mpesa-callout {
+        border-radius: 14px;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        background: rgba(16, 185, 129, 0.08);
+    }
+    .wallet-result {
+        min-height: 1.4rem;
+        color: var(--ink);
+    }
     .d-none { display: none !important; }
     .opacity-50 { opacity: .5; }
     .spinner {
@@ -14,30 +169,51 @@
         border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; margin-right:.5rem;
     }
     @keyframes spin { to { transform: rotate(360deg);} }
+    @keyframes liftIn { from { opacity: 0; transform: translateY(12px);} to { opacity: 1; transform: translateY(0);} }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+    @media (max-width: 575px) {
+        .wallet-deposit { padding: 2rem 0; }
+        .wallet-deposit__card .card-body { padding: 1.25rem !important; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .wallet-deposit__card,
+        .wallet-deposit__header,
+        .wallet-balance,
+        .deposit-amount,
+        .payment-toggle,
+        .payment-panel { animation: none; }
+        .payment-toggle .btn { transition: none; }
+    }
 </style>
 @endsection
 
 @section('content')
-<div class="content">
-    <div class="row justify-content-center">
-        <div class="col-md-7 col-lg-6">
+<div class="content wallet-deposit">
+    <div class="row justify-content-center deposit-shell">
+        <div class="col-md-8 col-lg-7 col-xl-6">
 
-            <div class="card shadow-sm border-0 mt-5">
-                <div class="card-body p-4">
+            <div class="card border-0 wallet-deposit__card mt-3">
+                <div class="card-body p-4 p-md-5">
 
-                    <h2 class="h5 fw-semibold mb-4 text-center">Deposit Funds to Wallet</h2>
+                    <div class="wallet-deposit__header">
+                        <div class="wallet-deposit__eyebrow">Wallet top-up</div>
+                        <h2 class="wallet-deposit__title">Deposit funds to wallet</h2>
+                        <p class="wallet-deposit__subtitle">Top up securely with card or mobile money in seconds.</p>
+                    </div>
 
                     {{-- Wallet Balance --}}
-                    <div class="alert alert-info text-center">
-                        Current Wallet Balance: <strong>USD {{ number_format($balance, 2) }}</strong>
+                    <div class="wallet-balance">
+                        <div class="wallet-balance__label">Current balance</div>
+                        <div class="wallet-balance__value">USD {{ number_format($balance, 2) }}</div>
+                        <div class="wallet-balance__meta">Funds are instantly available for purchases.</div>
                     </div>
 
                     {{-- Deposit Amount (USD for wallet) --}}
-                    <div class="mb-3">
+                    <div class="deposit-amount">
                         <label for="deposit_amount" class="form-label">Deposit Amount (USD)</label>
                         <input type="number" id="deposit_amount" class="form-control" min="1" step="0.01" required placeholder="Enter amount e.g. 25.00"
                                value="{{ isset($defaultAmount) && $defaultAmount ? number_format((float)$defaultAmount, 2, '.', '') : '' }}">
-                        <div class="form-text">Your wallet is in USD. For M-Pesa we’ll auto-convert to KES using our configured rate.</div>
+                        <div class="form-text">Your wallet is in USD. For M-Pesa we'll auto-convert to KES using our configured rate.</div>
                     </div>
 
                     @php
@@ -73,23 +249,23 @@
                     @else
                       <div class="payment-toggle">
                           @if($paypalAvailable)
-                            <button type="button" id="btn-paypal" class="btn btn-outline-primary">Pay with PayPal / Card</button>
+                            <button type="button" id="btn-paypal" class="btn" data-method-toggle="paypal" aria-pressed="false">Pay with PayPal / Card</button>
                           @endif
                           @if($stripeAvailable)
-                            <button type="button" id="btn-stripe" class="btn btn-outline-dark">Pay with Stripe</button>
+                            <button type="button" id="btn-stripe" class="btn" data-method-toggle="stripe" aria-pressed="false">Pay with Stripe</button>
                           @endif
                           @if($paystackAvailable)
-                            <button type="button" id="btn-paystack" class="btn btn-outline-success">Pay with Paystack</button>
+                            <button type="button" id="btn-paystack" class="btn" data-method-toggle="paystack" aria-pressed="false">Pay with Paystack</button>
                           @endif
                           @if($mpesaAvailable)
-                            <button type="button" id="btn-mpesa"  class="btn btn-outline-success">Pay with M-Pesa (STK)</button>
+                            <button type="button" id="btn-mpesa"  class="btn" data-method-toggle="mpesa" aria-pressed="false">Pay with M-Pesa (STK)</button>
                           @endif
                       </div>
                     @endif
 
                     {{-- PayPal Section --}}
                     @if($paypalAvailable)
-                      <div id="paypal-section" class="mb-3 d-none">
+                      <div id="paypal-section" class="payment-panel d-none">
                           <p class="text-muted text-center">Proceed securely using PayPal or card.</p>
                           <div id="paypal-button-container" class="text-center"></div>
                       </div>
@@ -97,7 +273,7 @@
 
                     {{-- Stripe Section --}}
                     @if($stripeAvailable)
-                      <div id="stripe-section" class="mb-3 d-none">
+                      <div id="stripe-section" class="payment-panel d-none">
                           <p class="text-muted text-center">Pay securely by card using Stripe checkout.</p>
                           <div class="d-grid">
                               <button type="button" id="btn-stripe-checkout" class="btn btn-dark">
@@ -109,7 +285,7 @@
 
                     {{-- Paystack Section --}}
                     @if($paystackAvailable)
-                      <div id="paystack-section" class="mb-3 d-none">
+                      <div id="paystack-section" class="payment-panel d-none">
                           <p class="text-muted text-center">Pay securely via Paystack checkout.</p>
                           <div class="d-grid">
                               <button type="button" id="btn-paystack-checkout" class="btn btn-success">
@@ -121,8 +297,8 @@
 
                     {{-- M-Pesa Section --}}
                     @if($mpesaAvailable)
-                    <div id="mpesa-section" class="mb-3 d-none">
-                        <div class="alert alert-success">
+                    <div id="mpesa-section" class="payment-panel d-none">
+                        <div class="alert mpesa-callout">
                             <div class="d-flex align-items-center">
                                 <i class="fa fa-mobile me-2"></i>
                                 <div>
@@ -135,12 +311,12 @@
                             <div class="col-md-7">
                                 <label for="mpesa_phone" class="form-label">M-Pesa Phone (Safaricom)</label>
                                 <input type="text" id="mpesa_phone" class="form-control" placeholder="e.g. 07XXXXXXXX, 7XXXXXXXX, or 2547XXXXXXXX" maxlength="13">
-                                <div class="form-text">We’ll normalize to <code>2547XXXXXXXX</code>.</div>
+                                <div class="form-text">We'll normalize to <code>2547XXXXXXXX</code>.</div>
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label">KES Amount (auto)</label>
                                 <input type="text" id="mpesa_kes_preview" class="form-control" disabled value="KES 0.00">
-                                <div class="form-text">Calculated from USD amount × rate.</div>
+                                <div class="form-text">Calculated from USD amount x rate.</div>
                             </div>
                         </div>
 
@@ -156,12 +332,12 @@
                         </div>
 
                         {{-- Live status area when polling --}}
-                        <div style="color: #000000;" id="stk-live-status" class="alert alert-light border mt-3 d-none"></div>
+                        <div id="stk-live-status" class="alert alert-light border mt-3 d-none"></div>
                     </div>
                     @endif
 
                     {{-- Result Message --}}
-                    <div style="color: #000000;" id="generic-result" class="text-center mt-3 fw-semibold"></div>
+                    <div id="generic-result" class="wallet-result text-center mt-3 fw-semibold" role="status" aria-live="polite"></div>
 
                 </div>
             </div>
@@ -183,6 +359,7 @@
     const $mpesaSection  = $('#mpesa-section');
     const $stripeSection = $('#stripe-section');
     const $paystackSection = $('#paystack-section');
+    const $methodButtons = $('[data-method-toggle]');
     const $result        = $('#generic-result');
     const $amount        = $('#deposit_amount');
     const $phoneInput    = $('#mpesa_phone');
@@ -214,11 +391,18 @@
         return AVAILABLE_METHODS[0] || null;
     }
 
+    function setActive(method){
+        if (!$methodButtons.length) return;
+        $methodButtons.removeClass('is-active').attr('aria-pressed', 'false');
+        $methodButtons.filter(`[data-method-toggle="${method}"]`).addClass('is-active').attr('aria-pressed', 'true');
+    }
+
     function show(method){
         if (!AVAILABLE_METHODS.includes(method)) {
             method = resolveDefault();
         }
         if (!method) return;
+        setActive(method);
         $result.removeClass('text-danger text-success').text('');
         $paypalSection.addClass('d-none');
         $mpesaSection.addClass('d-none');
