@@ -153,6 +153,70 @@
         font-weight: 600;
         padding: 0.7rem 1rem;
     }
+    .payment-layout {
+        display: flex;
+        border-radius: 16px;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        overflow: hidden;
+        background: var(--panel);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+    .payment-menu {
+        width: 200px;
+        background: #f1f5f9;
+        border-right: 1px solid rgba(15, 23, 42, 0.08);
+        padding: 1rem;
+    }
+    .payment-menu__title {
+        font-size: 0.7rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+    .payment-option {
+        width: 100%;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--ink);
+        padding: 0.65rem 0.75rem;
+        border-radius: 12px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        position: relative;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+    .payment-option i { width: 18px; text-align: center; }
+    .payment-option + .payment-option { margin-top: 0.5rem; }
+    .payment-option:hover { background: #e2e8f0; }
+    .payment-option.is-active {
+        background: #ffffff;
+        border-color: rgba(15, 23, 42, 0.12);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+        color: var(--brand-strong);
+    }
+    .payment-option.is-active::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.4rem;
+        bottom: 0.4rem;
+        width: 3px;
+        background: var(--brand);
+        border-radius: 4px;
+    }
+    .payment-content {
+        flex: 1;
+        padding: 1.25rem 1.5rem;
+        background: var(--panel);
+    }
+    .method-panel { display: none; }
+    .method-panel.is-active { display: block; }
+    .payment-content .payment-panel { margin-bottom: 0; }
     .mpesa-callout {
         border-radius: 14px;
         border: 1px solid rgba(16, 185, 129, 0.25);
@@ -174,6 +238,19 @@
     @media (max-width: 575px) {
         .wallet-deposit { padding: 2rem 0; }
         .wallet-deposit__card .card-body { padding: 1.25rem !important; }
+    }
+    @media (max-width: 768px) {
+        .payment-layout { flex-direction: column; }
+        .payment-menu {
+            width: 100%;
+            border-right: 0;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.5rem;
+        }
+        .payment-menu__title { grid-column: 1 / -1; margin-bottom: 0.25rem; }
+        .payment-option + .payment-option { margin-top: 0; }
     }
     @media (prefers-reduced-motion: reduce) {
         .wallet-deposit__card,
@@ -241,103 +318,115 @@
                       }
                     @endphp
 
-                    {{-- Payment Method Toggle --}}
+                    {{-- Payment Methods --}}
                     @if(empty($availableMethods))
                       <div class="alert alert-warning text-center">
                         No payment gateways are enabled/configured. Please contact support.
                       </div>
                     @else
-                      <div class="payment-toggle">
+                      <div class="payment-layout">
+                        <aside class="payment-menu">
+                          <div class="payment-menu__title">Pay with</div>
                           @if($paypalAvailable)
-                            <button type="button" id="btn-paypal" class="btn" data-method-toggle="paypal" aria-pressed="false">Pay with PayPal / Card</button>
+                            <button type="button" class="payment-option {{ $defaultGateway === 'paypal' ? 'is-active' : '' }}" data-method="paypal" aria-pressed="{{ $defaultGateway === 'paypal' ? 'true' : 'false' }}">
+                              <i class="fab fa-paypal"></i>
+                              <span>PayPal</span>
+                            </button>
                           @endif
                           @if($stripeAvailable)
-                            <button type="button" id="btn-stripe" class="btn" data-method-toggle="stripe" aria-pressed="false">Pay with Stripe</button>
+                            <button type="button" class="payment-option {{ $defaultGateway === 'stripe' ? 'is-active' : '' }}" data-method="stripe" aria-pressed="{{ $defaultGateway === 'stripe' ? 'true' : 'false' }}">
+                              <i class="fa fa-credit-card"></i>
+                              <span>Card (Stripe)</span>
+                            </button>
                           @endif
                           @if($paystackAvailable)
-                            <button type="button" id="btn-paystack" class="btn" data-method-toggle="paystack" aria-pressed="false">Pay with Paystack</button>
+                            <button type="button" class="payment-option {{ $defaultGateway === 'paystack' ? 'is-active' : '' }}" data-method="paystack" aria-pressed="{{ $defaultGateway === 'paystack' ? 'true' : 'false' }}">
+                              <i class="fa fa-check-circle"></i>
+                              <span>Paystack</span>
+                            </button>
                           @endif
                           @if($mpesaAvailable)
-                            <button type="button" id="btn-mpesa"  class="btn" data-method-toggle="mpesa" aria-pressed="false">Pay with M-Pesa (STK)</button>
-                          @endif
-                      </div>
-                    @endif
-
-                    {{-- PayPal Section --}}
-                    @if($paypalAvailable)
-                      <div id="paypal-section" class="payment-panel d-none">
-                          <p class="text-muted text-center">Proceed securely using PayPal or card.</p>
-                          <div id="paypal-button-container" class="text-center"></div>
-                      </div>
-                    @endif
-
-                    {{-- Stripe Section --}}
-                    @if($stripeAvailable)
-                      <div id="stripe-section" class="payment-panel d-none">
-                          <p class="text-muted text-center">Pay securely by card using Stripe checkout.</p>
-                          <div class="d-grid">
-                              <button type="button" id="btn-stripe-checkout" class="btn btn-dark">
-                                  Continue to Stripe
-                              </button>
-                          </div>
-                      </div>
-                    @endif
-
-                    {{-- Paystack Section --}}
-                    @if($paystackAvailable)
-                      <div id="paystack-section" class="payment-panel d-none">
-                          <p class="text-muted text-center">Pay securely via Paystack checkout.</p>
-                          <div class="d-grid">
-                              <button type="button" id="btn-paystack-checkout" class="btn btn-success">
-                                  Continue to Paystack
-                              </button>
-                          </div>
-                      </div>
-                    @endif
-
-                    {{-- M-Pesa Section --}}
-                    @if($mpesaAvailable)
-                    <div id="mpesa-section" class="payment-panel d-none">
-                        <div class="alert mpesa-callout">
-                            <div class="d-flex align-items-center">
-                                <i class="fa fa-mobile me-2"></i>
-                                <div>
-                                    <strong>M-Pesa STK Push:</strong> We'll send a prompt to your phone. Enter your PIN to approve.
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row g-3">
-                            <div class="col-md-7">
-                                <label for="mpesa_phone" class="form-label">M-Pesa Phone (Safaricom)</label>
-                                <input type="text" id="mpesa_phone" class="form-control" placeholder="e.g. 07XXXXXXXX, 7XXXXXXXX, or 2547XXXXXXXX" maxlength="13">
-                                <div class="form-text">We'll normalize to <code>2547XXXXXXXX</code>.</div>
-                            </div>
-                            <div class="col-md-5">
-                                <label class="form-label">KES Amount (auto)</label>
-                                <input type="text" id="mpesa_kes_preview" class="form-control" disabled value="KES 0.00">
-                                <div class="form-text">Calculated from USD amount x rate.</div>
-                            </div>
-                        </div>
-
-                        <div class="d-grid mt-3">
-                            <button id="btn-start-stk" class="btn btn-success">
-                                <span class="spinner d-none" id="stk-spinner"></span>
-                                Send STK Push
+                            <button type="button" class="payment-option {{ $defaultGateway === 'mpesa' ? 'is-active' : '' }}" data-method="mpesa" aria-pressed="{{ $defaultGateway === 'mpesa' ? 'true' : 'false' }}">
+                              <i class="fa fa-mobile"></i>
+                              <span>M-Pesa</span>
                             </button>
-                        </div>
+                          @endif
+                        </aside>
 
-                        <div class="small text-muted mt-2">
-                            By continuing you agree that M-Pesa transaction charges (if any) are borne by you.
-                        </div>
+                        <div class="payment-content">
+                          @if($paypalAvailable)
+                            <div id="paypal-section" class="payment-panel method-panel {{ $defaultGateway === 'paypal' ? 'is-active' : '' }}" data-method="paypal">
+                              <p class="text-muted text-center">Proceed securely using PayPal or card.</p>
+                              <div id="paypal-button-container" class="text-center"></div>
+                            </div>
+                          @endif
 
-                        {{-- Live status area when polling --}}
-                        <div id="stk-live-status" class="alert alert-light border mt-3 d-none"></div>
-                    </div>
+                          @if($stripeAvailable)
+                            <div id="stripe-section" class="payment-panel method-panel {{ $defaultGateway === 'stripe' ? 'is-active' : '' }}" data-method="stripe">
+                              <p class="text-muted text-center">Pay securely by card using Stripe checkout.</p>
+                              <div class="d-grid">
+                                  <button type="button" id="btn-stripe-checkout" class="btn btn-dark">
+                                      Continue to Stripe
+                                  </button>
+                              </div>
+                            </div>
+                          @endif
+
+                          @if($paystackAvailable)
+                            <div id="paystack-section" class="payment-panel method-panel {{ $defaultGateway === 'paystack' ? 'is-active' : '' }}" data-method="paystack">
+                              <p class="text-muted text-center">Pay securely via Paystack checkout.</p>
+                              <div class="d-grid">
+                                  <button type="button" id="btn-paystack-checkout" class="btn btn-success">
+                                      Continue to Paystack
+                                  </button>
+                              </div>
+                            </div>
+                          @endif
+
+                          @if($mpesaAvailable)
+                          <div id="mpesa-section" class="payment-panel method-panel {{ $defaultGateway === 'mpesa' ? 'is-active' : '' }}" data-method="mpesa">
+                              <div class="alert mpesa-callout">
+                                  <div class="d-flex align-items-center">
+                                      <i class="fa fa-mobile me-2"></i>
+                                      <div>
+                                          <strong>M-Pesa STK Push:</strong> We'll send a prompt to your phone. Enter your PIN to approve.
+                                      </div>
+                                  </div>
+                              </div>
+
+                              <div class="row g-3">
+                                  <div class="col-md-7">
+                                      <label for="mpesa_phone" class="form-label">M-Pesa Phone (Safaricom)</label>
+                                      <input type="text" id="mpesa_phone" class="form-control" placeholder="e.g. 07XXXXXXXX, 7XXXXXXXX, or 2547XXXXXXXX" maxlength="13">
+                                      <div class="form-text">We'll normalize to <code>2547XXXXXXXX</code>.</div>
+                                  </div>
+                                  <div class="col-md-5">
+                                      <label class="form-label">KES Amount (auto)</label>
+                                      <input type="text" id="mpesa_kes_preview" class="form-control" disabled value="KES 0.00">
+                                      <div class="form-text">Calculated from USD amount x rate.</div>
+                                  </div>
+                              </div>
+
+                              <div class="d-grid mt-3">
+                                  <button id="btn-start-stk" class="btn btn-success">
+                                      <span class="spinner d-none" id="stk-spinner"></span>
+                                      Send STK Push
+                                  </button>
+                              </div>
+
+                              <div class="small text-muted mt-2">
+                                  By continuing you agree that M-Pesa transaction charges (if any) are borne by you.
+                              </div>
+
+                              {{-- Live status area when polling --}}
+                              <div id="stk-live-status" class="alert alert-light border mt-3 d-none"></div>
+                          </div>
+                          @endif
+
+                          <div id="generic-result" class="wallet-result text-center mt-3 fw-semibold" role="status" aria-live="polite"></div>
+                        </div>
+                      </div>
                     @endif
-
-                    {{-- Result Message --}}
-                    <div id="generic-result" class="wallet-result text-center mt-3 fw-semibold" role="status" aria-live="polite"></div>
 
                 </div>
             </div>
@@ -355,11 +444,8 @@
 @endif
 <script>
 (function(){
-    const $paypalSection = $('#paypal-section');
-    const $mpesaSection  = $('#mpesa-section');
-    const $stripeSection = $('#stripe-section');
-    const $paystackSection = $('#paystack-section');
-    const $methodButtons = $('[data-method-toggle]');
+    const $methodButtons = $('.payment-option');
+    const $methodPanels  = $('.method-panel');
     const $result        = $('#generic-result');
     const $amount        = $('#deposit_amount');
     const $phoneInput    = $('#mpesa_phone');
@@ -367,6 +453,7 @@
     const $stkBtn        = $('#btn-start-stk');
     const $stkSpinner    = $('#stk-spinner');
     const $liveStatus    = $('#stk-live-status');
+    let renderPaypalButtons = function () {};
 
     const USD_TO_KES = {{ (float) (env('USD_TO_KES', 130)) }}; // configure in .env
     const REDIRECT_URL = @json(($redirectTo ?? null) ?: route('wallet.index'));
@@ -394,7 +481,7 @@
     function setActive(method){
         if (!$methodButtons.length) return;
         $methodButtons.removeClass('is-active').attr('aria-pressed', 'false');
-        $methodButtons.filter(`[data-method-toggle="${method}"]`).addClass('is-active').attr('aria-pressed', 'true');
+        $methodButtons.filter('[data-method="' + method + '"]').addClass('is-active').attr('aria-pressed', 'true');
     }
 
     function show(method){
@@ -404,20 +491,16 @@
         if (!method) return;
         setActive(method);
         $result.removeClass('text-danger text-success').text('');
-        $paypalSection.addClass('d-none');
-        $mpesaSection.addClass('d-none');
-        if ($stripeSection.length) { $stripeSection.addClass('d-none'); }
-        if ($paystackSection.length) { $paystackSection.addClass('d-none'); }
-
-        if(method === 'paypal'){
-            $paypalSection.removeClass('d-none');
-        } else if (method === 'mpesa') {
-            $mpesaSection.removeClass('d-none');
+        $methodPanels.removeClass('is-active');
+        const $panel = $methodPanels.filter('[data-method="' + method + '"]');
+        if ($panel.length) {
+            $panel.addClass('is-active');
+        }
+        if (method === 'mpesa') {
             updateKesPreview();
-        } else if (method === 'stripe' && $stripeSection.length) {
-            $stripeSection.removeClass('d-none');
-        } else if (method === 'paystack' && $paystackSection.length) {
-            $paystackSection.removeClass('d-none');
+        }
+        if (method === 'paypal') {
+            renderPaypalButtons();
         }
     }
 
@@ -437,11 +520,51 @@
         return null;
     }
 
-    // Toggle buttons
-    $('#btn-paypal').on('click', () => show('paypal'));
-    $('#btn-stripe').on('click', () => show('stripe'));
-    $('#btn-paystack').on('click', () => show('paystack'));
-    $('#btn-mpesa').on('click', () => show('mpesa'));
+    @if(!empty($availableMethods) && $paypalAvailable)
+    let paypalRendered = false;
+    renderPaypalButtons = function () {
+        if (paypalRendered || typeof paypal === 'undefined') return;
+        paypalRendered = true;
+        paypal.Buttons({
+            createOrder: function(data, actions) {
+                const amount = $amount.val();
+                if (!amount || parseFloat(amount) <= 0) {
+                    $result.addClass('text-danger').text('Please enter a valid USD amount before proceeding.');
+                    return;
+                }
+                return actions.order.create({
+                    purchase_units: [{ amount: { value: amount } }]
+                });
+            },
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(function(details) {
+                    const amount = $amount.val();
+                    $.post("{{ route('wallet.deposit.paypal') }}", {
+                        _token: '{{ csrf_token() }}',
+                        amount: amount,
+                        method: 'paypal',
+                        order_id: details.id || null
+                    }, function(resp) {
+                        if (resp.success) {
+                            redirectSuccess();
+                        } else {
+                            $result.addClass('text-danger').text(resp.message || 'Deposit failed. Please try again later.');
+                        }
+                    }).fail(function(xhr) {
+                        $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.error ?? 'Unknown error'));
+                    });
+                });
+            },
+            onError: function(err) {
+                $result.addClass('text-danger').text('PayPal error: ' + (err?.message || 'Unknown error'));
+            }
+        }).render('#paypal-button-container');
+    };
+    @endif
+
+    $methodButtons.on('click', function(){
+        show($(this).data('method'));
+    });
 
     // Default view
     show(resolveDefault());
@@ -508,44 +631,6 @@
 
     // Keep KES preview in sync
     $amount.on('input', updateKesPreview);
-
-    // PayPal buttons (unchanged)
-    @if(!empty($availableMethods) && $paypalAvailable)
-    paypal.Buttons({
-        createOrder: function(data, actions) {
-            const amount = $amount.val();
-            if (!amount || parseFloat(amount) <= 0) {
-                $result.addClass('text-danger').text('Please enter a valid USD amount before proceeding.');
-                return;
-            }
-            return actions.order.create({
-                purchase_units: [{ amount: { value: amount } }]
-            });
-        },
-        onApprove: function(data, actions) {
-            return actions.order.capture().then(function(details) {
-                const amount = $amount.val();
-                $.post("{{ route('wallet.deposit.paypal') }}", {
-                    _token: '{{ csrf_token() }}',
-                    amount: amount,
-                    method: 'paypal',
-                    order_id: details.id || null
-                }, function(resp) {
-                    if (resp.success) {
-                        redirectSuccess();
-                    } else {
-                        $result.addClass('text-danger').text(resp.message || 'Deposit failed. Please try again later.');
-                    }
-                }).fail(function(xhr) {
-                    $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.error ?? 'Unknown error'));
-                });
-            });
-        },
-        onError: function(err) {
-            $result.addClass('text-danger').text('PayPal error: ' + (err?.message || 'Unknown error'));
-        }
-    }).render('#paypal-button-container');
-    @endif
 
     // === M-Pesa STK push with live polling & redirect ===
     let pollTimer = null;
