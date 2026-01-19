@@ -45,11 +45,15 @@
                       $stripeAvailable = function_exists('payment_gateway_available')
                           ? payment_gateway_available('stripe')
                           : (!empty(config('services.stripe.secret')) || (function_exists('setting') && !empty(setting('stripe_secret'))));
+                      $paystackAvailable = function_exists('payment_gateway_available')
+                          ? payment_gateway_available('paystack')
+                          : (!empty(config('services.paystack.secret')) || (function_exists('setting') && !empty(setting('paystack_secret'))));
                       $mpesaAvailable  = function_exists('payment_gateway_available') ? payment_gateway_available('mpesa') : true;
 
                       $availableMethods = [];
                       if ($paypalAvailable) $availableMethods[] = 'paypal';
                       if ($stripeAvailable) $availableMethods[] = 'stripe';
+                      if ($paystackAvailable) $availableMethods[] = 'paystack';
                       if ($mpesaAvailable)  $availableMethods[] = 'mpesa';
 
                       $defaultGateway = function_exists('payment_default_gateway') ? payment_default_gateway() : 'paypal';
@@ -74,6 +78,9 @@
                           @if($stripeAvailable)
                             <button type="button" id="btn-stripe" class="btn btn-outline-dark">Pay with Stripe</button>
                           @endif
+                          @if($paystackAvailable)
+                            <button type="button" id="btn-paystack" class="btn btn-outline-success">Pay with Paystack</button>
+                          @endif
                           @if($mpesaAvailable)
                             <button type="button" id="btn-mpesa"  class="btn btn-outline-success">Pay with M-Pesa (STK)</button>
                           @endif
@@ -95,6 +102,18 @@
                           <div class="d-grid">
                               <button type="button" id="btn-stripe-checkout" class="btn btn-dark">
                                   Continue to Stripe
+                              </button>
+                          </div>
+                      </div>
+                    @endif
+
+                    {{-- Paystack Section --}}
+                    @if($paystackAvailable)
+                      <div id="paystack-section" class="mb-3 d-none">
+                          <p class="text-muted text-center">Pay securely via Paystack checkout.</p>
+                          <div class="d-grid">
+                              <button type="button" id="btn-paystack-checkout" class="btn btn-success">
+                                  Continue to Paystack
                               </button>
                           </div>
                       </div>
@@ -163,6 +182,7 @@
     const $paypalSection = $('#paypal-section');
     const $mpesaSection  = $('#mpesa-section');
     const $stripeSection = $('#stripe-section');
+    const $paystackSection = $('#paystack-section');
     const $result        = $('#generic-result');
     const $amount        = $('#deposit_amount');
     const $phoneInput    = $('#mpesa_phone');
@@ -203,6 +223,7 @@
         $paypalSection.addClass('d-none');
         $mpesaSection.addClass('d-none');
         if ($stripeSection.length) { $stripeSection.addClass('d-none'); }
+        if ($paystackSection.length) { $paystackSection.addClass('d-none'); }
 
         if(method === 'paypal'){
             $paypalSection.removeClass('d-none');
@@ -211,6 +232,8 @@
             updateKesPreview();
         } else if (method === 'stripe' && $stripeSection.length) {
             $stripeSection.removeClass('d-none');
+        } else if (method === 'paystack' && $paystackSection.length) {
+            $paystackSection.removeClass('d-none');
         }
     }
 
@@ -233,6 +256,7 @@
     // Toggle buttons
     $('#btn-paypal').on('click', () => show('paypal'));
     $('#btn-stripe').on('click', () => show('stripe'));
+    $('#btn-paystack').on('click', () => show('paystack'));
     $('#btn-mpesa').on('click', () => show('mpesa'));
 
     // Default view
@@ -263,6 +287,36 @@
                 }
             }).fail(function(xhr){
                 $stripeCheckoutBtn.prop('disabled', false).removeClass('disabled');
+                $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
+            });
+        });
+    }
+
+    // Paystack checkout (hosted)
+    const $paystackCheckoutBtn = $('#btn-paystack-checkout');
+    if ($paystackCheckoutBtn.length) {
+        $paystackCheckoutBtn.on('click', function(){
+            const amount = $amount.val();
+            if (!amount || parseFloat(amount) <= 0) {
+                $result.addClass('text-danger').text('Please enter a valid USD amount before proceeding.');
+                return;
+            }
+            $paystackCheckoutBtn.prop('disabled', true).addClass('disabled');
+            $result.removeClass('text-danger text-success').text('Redirecting to Paystack...');
+            $.post(@json(route('wallet.deposit.paystack.session')), {
+                _token: @json(csrf_token()),
+                amount: amount,
+                currency: 'USD',
+                redirect_to: REDIRECT_URL
+            }, function(resp){
+                if (resp?.success && resp?.url) {
+                    window.location = resp.url;
+                } else {
+                    $paystackCheckoutBtn.prop('disabled', false).removeClass('disabled');
+                    $result.addClass('text-danger').text(resp?.message || 'Unable to start Paystack checkout.');
+                }
+            }).fail(function(xhr){
+                $paystackCheckoutBtn.prop('disabled', false).removeClass('disabled');
                 $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
             });
         });

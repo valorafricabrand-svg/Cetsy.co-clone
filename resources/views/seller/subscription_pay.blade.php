@@ -71,6 +71,7 @@
 
     $paypalAvailable = function_exists('payment_gateway_available') ? payment_gateway_available('paypal') : true;
     $stripeAvailable = function_exists('payment_gateway_available') ? payment_gateway_available('stripe') : true;
+    $paystackAvailable = function_exists('payment_gateway_available') ? payment_gateway_available('paystack') : true;
     $mpesaAvailable  = function_exists('payment_gateway_available') ? payment_gateway_available('mpesa') : true;
 
     $redirectToAfterTopup = route('seller.subscription.pay', ['plan' => $plan, 'autopay' => 1], false);
@@ -88,7 +89,7 @@
               <i class="bi bi-shield-lock-fill"></i> Secure checkout
             </div>
             <h1 class="h3 mb-1" style="color: var(--sub-text)">Pay for {{ $planName }} plan</h1>
-            <div class="subpay-muted">Complete payment using wallet, Stripe, M‑Pesa, or PayPal (when enabled).</div>
+            <div class="subpay-muted">Complete payment using wallet, Stripe, Paystack, M‑Pesa, or PayPal (when enabled).</div>
           </div>
           <div class="d-flex gap-2">
             <a href="{{ route('seller.subscription') }}" class="btn btn-outline-secondary">
@@ -169,6 +170,11 @@
                       <i class="bi bi-credit-card-2-front me-1"></i> Pay with Stripe
                     </button>
                   @endif
+                  @if($paystackAvailable)
+                    <button type="button" id="btn-sub-paystack" class="btn btn-success py-2">
+                      <i class="bi bi-credit-card-2-front me-1"></i> Pay with Paystack
+                    </button>
+                  @endif
                   @if($mpesaAvailable)
                     <button type="button" id="btn-sub-mpesa-toggle" class="btn btn-outline-success py-2">
                       <i class="bi bi-phone-vibrate me-1"></i> Pay with M‑Pesa (STK)
@@ -213,7 +219,7 @@
                 </div>
               @else
                 <div class="alert alert-warning mt-3 mb-0">
-                  PayPal is currently disabled. Please use wallet, Stripe, or M‑Pesa.
+                  PayPal is currently disabled. Please use wallet, Stripe, Paystack, or M‑Pesa.
                 </div>
               @endif
 
@@ -270,6 +276,32 @@ $(function () {
             }
         }).fail(function(xhr){
             $btn.prop('disabled', false).removeClass('disabled').text('Pay with Stripe');
+            $('#generic-result').addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
+        });
+    });
+    @endif
+
+    @if($paystackAvailable)
+    $('#btn-sub-paystack').on('click', function(){
+        if (!topUpNeeded || topUpNeeded <= 0) return;
+        const $btn = $(this);
+        $btn.prop('disabled', true).addClass('disabled').text('Redirecting to Paystack...');
+        $('#generic-result').removeClass('text-danger text-success').text('');
+
+        $.post(@json(route('wallet.deposit.paystack.session')), {
+            _token: @json(csrf_token()),
+            amount: topUpNeeded,
+            currency: 'USD',
+            redirect_to: redirectToAfterTopup
+        }, function(resp){
+            if (resp?.success && resp?.url) {
+                window.location = resp.url;
+            } else {
+                $btn.prop('disabled', false).removeClass('disabled').text('Pay with Paystack');
+                $('#generic-result').addClass('text-danger').text(resp?.message || 'Unable to start Paystack checkout.');
+            }
+        }).fail(function(xhr){
+            $btn.prop('disabled', false).removeClass('disabled').text('Pay with Paystack');
             $('#generic-result').addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
         });
     });
@@ -385,4 +417,3 @@ $(function () {
 });
 </script>
 @endsection
-

@@ -158,6 +158,31 @@ class WalletController extends Controller
         }
         return (int) max(1, (int) round($amount * 100));
     }
+
+    /**
+     * Paystack configuration resolution.
+     *
+     * @return array{public:string,secret:string}
+     */
+    private function paystackConfig(): array
+    {
+        $public = (string) (config('services.paystack.public') ?: (function_exists('setting') ? (setting('paystack_public') ?? '') : ''));
+        $secret = (string) (config('services.paystack.secret') ?: (function_exists('setting') ? (setting('paystack_secret') ?? '') : ''));
+        return ['public' => $public, 'secret' => $secret];
+    }
+
+    /**
+     * Convert a decimal amount into Paystack "amount" integer (minor units).
+     */
+    private function paystackUnitAmount(float $amount, string $currency): int
+    {
+        $zeroDecimal = ['BIF','CLP','DJF','GNF','JPY','KMF','KRW','MGA','PYG','RWF','UGX','VND','VUV','XAF','XOF','XPF'];
+        $cur = strtoupper(trim($currency ?: 'USD'));
+        if (in_array($cur, $zeroDecimal, true)) {
+            return (int) max(1, (int) round($amount));
+        }
+        return (int) max(1, (int) round($amount * 100));
+    }
     /**
      * Return the available listing plan labels.
      *
@@ -474,7 +499,7 @@ class WalletController extends Controller
         }
         $request->validate([
             'amount' => 'required|numeric|min:1',
-            'method' => 'required|in:mpesa,card,paypal,stripe',
+            'method' => 'required|in:mpesa,card,paypal,stripe,paystack',
         ]);
 
         // Stub: In production, integrate your payment gateway logic here
@@ -1004,6 +1029,389 @@ class WalletController extends Controller
         return redirect()->route('pay_now', $order->id)->withErrors('Stripe checkout was cancelled.');
     }
 
+    /* -------------------------------------------------------------
+     | Paystack Checkout (wallet deposits + order top-ups)
+     |-------------------------------------------------------------- */
+
+    public function createPaystackDepositSession(Request $request)
+    {
+        if (!$this->isDepositOtpVerified()) {
+            \Log::warning('wallet.deposit.action_blocked_missing_otp', [
+                'user_id' => Auth::id(),
+                'action'  => 'createPaystackDepositSession',
+                'ip'      => $request->ip(),
+            ]);
+            return response()->json(['success' => false, 'error' => 'Two-factor verification required.'], 403);
+        }
+        if (function_exists('payment_gateway_enabled') && !payment_gateway_enabled('paystack')) {
+            return response()->json(['success' => false, 'message' => 'Paystack payments are currently disabled.'], 403);
+        }
+
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:1',
+            'currency' => 'nullable|string|size:3',
+            'redirect_to' => 'nullable|string|max:2048',
+        ]);
+
+        $cfg = $this->paystackConfig();
+        if (empty($cfg['secret'])) {
+            return response()->json(['success' => false, 'message' => 'Paystack is not configured.'], 422);
+        }
+
+        $currency = strtoupper((string) ($data['currency'] ?? 'USD'));
+        $amount = (float) $data['amount'];
+        $unitAmount = $this->paystackUnitAmount($amount, $currency);
+        $redirectTo = $this->sanitizeRedirectTo($data['redirect_to'] ?? null);
+        $reference = 'PSTK-' . Str::upper(Str::random(12));
+        $callbackUrl = route('wallet.deposit.paystack.success');
+
+        $resp = Http::withToken($cfg['secret'])
+            ->post('https://api.paystack.co/transaction/initialize', [
+                'email' => Auth::user()?->email,
+                'amount' => $unitAmount,
+                'currency' => $currency,
+                'reference' => $reference,
+                'callback_url' => $callbackUrl,
+                'metadata' => [
+                    'purpose' => 'wallet_deposit',
+                    'user_id' => (string) Auth::id(),
+                ],
+            ]);
+
+        if (!$resp->successful() || !($resp->json('status') ?? false)) {
+            Log::error('paystack.checkout.create_failed', ['status' => $resp->status(), 'body' => $resp->body()]);
+            return response()->json(['success' => false, 'message' => 'Unable to start Paystack checkout.'], 500);
+        }
+
+        $payload = $resp->json('data') ?? [];
+        $authUrl = (string) ($payload['authorization_url'] ?? '');
+        $ref = (string) ($payload['reference'] ?? $reference);
+        if ($authUrl === '' || $ref === '') {
+            Log::error('paystack.checkout.create_missing_fields', ['data' => $payload]);
+            return response()->json(['success' => false, 'message' => 'Unable to start Paystack checkout.'], 500);
+        }
+
+        Wallet::create([
+            'user_id'     => Auth::id(),
+            'credit'      => 0,
+            'debit'       => 0,
+            'balance'     => $this->currentBalance(Auth::id()),
+            'reference'   => 'PAYSTACK-' . Str::upper(Str::random(12)),
+            'method'      => 'paystack',
+            'status'      => 'pending',
+            'external_id' => $ref,
+            'description' => 'Paystack checkout initiated',
+            'meta'        => [
+                'purpose'      => 'wallet_deposit',
+                'currency'     => $currency,
+                'credit'       => $amount,
+                'amount_total' => $unitAmount,
+                'redirect_to'  => $redirectTo,
+            ],
+        ]);
+
+        return response()->json(['success' => true, 'url' => $authUrl]);
+    }
+
+    public function paystackDepositSuccess(Request $request)
+    {
+        if (!$this->isDepositOtpVerified()) {
+            return redirect()->route('wallet.deposit.form')->withErrors('Two-factor verification required.');
+        }
+
+        $reference = (string) ($request->query('reference') ?: $request->query('trxref') ?: '');
+        if ($reference === '') {
+            return redirect()->route('wallet.deposit.form')->withErrors('Missing Paystack reference.');
+        }
+
+        $cfg = $this->paystackConfig();
+        if (empty($cfg['secret'])) {
+            return redirect()->route('wallet.deposit.form')->withErrors('Paystack is not configured.');
+        }
+
+        $marker = Wallet::where('user_id', Auth::id())
+            ->where('method', 'paystack')
+            ->where('external_id', $reference)
+            ->latest('id')
+            ->first();
+
+        if (!$marker) {
+            return redirect()->route('wallet.deposit.form')->withErrors('Paystack payment session not found.');
+        }
+
+        $alreadyCredited = Wallet::where('user_id', Auth::id())
+            ->where('method', 'paystack')
+            ->where('external_id', $reference)
+            ->where('credit', '>', 0)
+            ->exists();
+        if ($alreadyCredited || $marker->status === 'completed') {
+            $redirectTo = $this->sanitizeRedirectTo(data_get($marker->meta, 'redirect_to'));
+            if ($redirectTo) {
+                return redirect()->to($redirectTo)->with('success', 'Deposit confirmed.');
+            }
+            return redirect()->route('wallet.index')->with('success', 'Deposit confirmed.');
+        }
+
+        $vresp = Http::withToken($cfg['secret'])
+            ->get("https://api.paystack.co/transaction/verify/{$reference}");
+
+        if (!$vresp->successful() || !($vresp->json('status') ?? false)) {
+            Log::error('paystack.checkout.fetch_failed', ['status' => $vresp->status(), 'body' => $vresp->body(), 'reference' => $reference]);
+            return redirect()->route('wallet.deposit.form')->withErrors('Unable to verify Paystack payment. Try again.');
+        }
+
+        $session = $vresp->json('data') ?? [];
+        $paymentStatus = (string) data_get($session, 'status', '');
+        if ($paymentStatus !== 'success') {
+            return redirect()->route('wallet.deposit.form')->withErrors('Paystack payment not completed.');
+        }
+
+        $currency = strtoupper((string) data_get($session, 'currency', 'USD'));
+        $amountTotal = (int) data_get($session, 'amount', 0);
+
+        $expectedCurrency = strtoupper((string) data_get($marker->meta, 'currency', $currency));
+        $expectedTotal = (int) data_get($marker->meta, 'amount_total', $amountTotal);
+        $credit = (float) data_get($marker->meta, 'credit', 0);
+
+        if ($expectedCurrency !== $currency || $expectedTotal !== $amountTotal) {
+            Log::warning('paystack.checkout.amount_mismatch', [
+                'user_id' => Auth::id(),
+                'reference' => $reference,
+                'expected' => ['currency' => $expectedCurrency, 'amount_total' => $expectedTotal],
+                'actual' => ['currency' => $currency, 'amount_total' => $amountTotal],
+            ]);
+            return redirect()->route('wallet.deposit.form')->withErrors('Paystack amount verification failed.');
+        }
+
+        try {
+            $walletRow = null;
+            DB::transaction(function () use ($marker, $reference, $credit, $session, &$walletRow) {
+                $walletRow = $this->appendWalletRow((int) $marker->user_id, (float) $credit, 0, [
+                    'method'      => 'paystack',
+                    'description' => 'Deposit via Paystack',
+                    'external_id' => $reference,
+                    'status'      => 'completed',
+                    'meta'        => ['paystack' => $session],
+                ]);
+
+                $marker->status = 'completed';
+                $marker->description = trim(($marker->description ?? '') . ' | Success');
+                $marker->save();
+
+                Activity::create([
+                    'user_id'     => (int) $marker->user_id,
+                    'is_read'     => false,
+                    'description' => 'You made a deposit of $' . number_format((float) $credit, 2),
+                ]);
+            });
+
+            try {
+                $user = Auth::user();
+                if ($user && $walletRow) {
+                    \Mail::to($user->email)->send(new \App\Mail\WalletDepositSuccessMail(
+                        $user,
+                        $walletRow,
+                        (float) $credit,
+                        $walletRow->reference
+                    ));
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('paystack.deposit.email_failed', ['user_id' => Auth::id(), 'error' => $e->getMessage()]);
+            }
+
+            $redirectTo = $this->sanitizeRedirectTo(data_get($marker->meta, 'redirect_to'));
+            if ($redirectTo) {
+                return redirect()->to($redirectTo)->with('success', 'Deposit confirmed.');
+            }
+            return redirect()->route('wallet.index')->with('success', 'Deposit confirmed.');
+        } catch (\Throwable $e) {
+            Log::error('paystack.deposit.finalize_failed', ['user_id' => Auth::id(), 'reference' => $reference, 'error' => $e->getMessage()]);
+            return redirect()->route('wallet.deposit.form')->withErrors('Unable to finalize Paystack deposit.');
+        }
+    }
+
+    public function paystackDepositCancel()
+    {
+        $redirectTo = $this->sanitizeRedirectTo(request()->query('redirect_to'));
+        if ($redirectTo) {
+            return redirect()->to($redirectTo)->withErrors('Paystack checkout was cancelled.');
+        }
+        return redirect()->route('wallet.deposit.form')->withErrors('Paystack checkout was cancelled.');
+    }
+
+    public function createPaystackOrderSession(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+        if ($order->isPaid()) {
+            return response()->json(['success' => false, 'message' => 'This order has already been paid.'], 422);
+        }
+        if (function_exists('payment_gateway_enabled') && !payment_gateway_enabled('paystack')) {
+            return response()->json(['success' => false, 'message' => 'Paystack payments are currently disabled.'], 403);
+        }
+
+        $cfg = $this->paystackConfig();
+        if (empty($cfg['secret'])) {
+            return response()->json(['success' => false, 'message' => 'Paystack is not configured.'], 422);
+        }
+
+        $orderTotal = (float) ($order->total_amount ?? 0);
+        $walletBalance = (float) $this->currentBalance(Auth::id());
+        $walletApplied = min($walletBalance, $orderTotal);
+        $shortfallBase = max(0, $orderTotal - $walletApplied);
+
+        if ($shortfallBase <= 0) {
+            return response()->json(['success' => false, 'message' => 'Wallet already covers this order.'], 422);
+        }
+
+        $currency = strtoupper((string) ($order->currency ?? 'USD'));
+        $unitAmount = $this->paystackUnitAmount($shortfallBase, $currency);
+        $reference = 'PSTK-' . Str::upper(Str::random(12));
+        $callbackUrl = route('order.paystack.success', $order->id);
+
+        $resp = Http::withToken($cfg['secret'])
+            ->post('https://api.paystack.co/transaction/initialize', [
+                'email' => Auth::user()?->email,
+                'amount' => $unitAmount,
+                'currency' => $currency,
+                'reference' => $reference,
+                'callback_url' => $callbackUrl,
+                'metadata' => [
+                    'purpose'  => 'order_topup',
+                    'order_id' => (string) $order->id,
+                    'user_id'  => (string) Auth::id(),
+                ],
+            ]);
+
+        if (!$resp->successful() || !($resp->json('status') ?? false)) {
+            Log::error('paystack.order.checkout.create_failed', ['order_id' => $order->id, 'status' => $resp->status(), 'body' => $resp->body()]);
+            return response()->json(['success' => false, 'message' => 'Unable to start Paystack checkout.'], 500);
+        }
+
+        $payload = $resp->json('data') ?? [];
+        $authUrl = (string) ($payload['authorization_url'] ?? '');
+        $ref = (string) ($payload['reference'] ?? $reference);
+        if ($authUrl === '' || $ref === '') {
+            Log::error('paystack.order.checkout.create_missing_fields', ['order_id' => $order->id, 'data' => $payload]);
+            return response()->json(['success' => false, 'message' => 'Unable to start Paystack checkout.'], 500);
+        }
+
+        Wallet::create([
+            'user_id'     => Auth::id(),
+            'credit'      => 0,
+            'debit'       => 0,
+            'balance'     => $this->currentBalance(Auth::id()),
+            'reference'   => 'PAYSTACK-' . Str::upper(Str::random(12)),
+            'method'      => 'paystack',
+            'status'      => 'pending',
+            'external_id' => $ref,
+            'description' => 'Paystack order top-up initiated',
+            'meta'        => [
+                'purpose'      => 'order_topup',
+                'order_id'     => (int) $order->id,
+                'currency'     => $currency,
+                'credit'       => (float) $shortfallBase,
+                'amount_total' => $unitAmount,
+            ],
+        ]);
+
+        return response()->json(['success' => true, 'url' => $authUrl]);
+    }
+
+    public function paystackOrderSuccess(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+        if ($order->isPaid()) {
+            return redirect()->route('buyer.orders.show', $order->id);
+        }
+
+        $reference = (string) ($request->query('reference') ?: $request->query('trxref') ?: '');
+        if ($reference === '') {
+            return redirect()->route('pay_now', $order->id)->withErrors('Missing Paystack reference.');
+        }
+
+        $cfg = $this->paystackConfig();
+        if (empty($cfg['secret'])) {
+            return redirect()->route('pay_now', $order->id)->withErrors('Paystack is not configured.');
+        }
+
+        $marker = Wallet::where('user_id', Auth::id())
+            ->where('method', 'paystack')
+            ->where('external_id', $reference)
+            ->latest('id')
+            ->first();
+
+        if (!$marker || (int) data_get($marker->meta, 'order_id', 0) !== (int) $order->id) {
+            return redirect()->route('pay_now', $order->id)->withErrors('Paystack payment session not found.');
+        }
+
+        $alreadyCredited = Wallet::where('user_id', Auth::id())
+            ->where('method', 'paystack')
+            ->where('external_id', $reference)
+            ->where('credit', '>', 0)
+            ->exists();
+
+        if (!$alreadyCredited && $marker->status !== 'completed') {
+            $vresp = Http::withToken($cfg['secret'])
+                ->get("https://api.paystack.co/transaction/verify/{$reference}");
+
+            if (!$vresp->successful() || !($vresp->json('status') ?? false)) {
+                Log::error('paystack.order.checkout.fetch_failed', ['order_id' => $order->id, 'status' => $vresp->status(), 'body' => $vresp->body()]);
+                return redirect()->route('pay_now', $order->id)->withErrors('Unable to verify Paystack payment. Try again.');
+            }
+
+            $session = $vresp->json('data') ?? [];
+            $paymentStatus = (string) data_get($session, 'status', '');
+            if ($paymentStatus !== 'success') {
+                return redirect()->route('pay_now', $order->id)->withErrors('Paystack payment not completed.');
+            }
+
+            $currency = strtoupper((string) data_get($session, 'currency', 'USD'));
+            $amountTotal = (int) data_get($session, 'amount', 0);
+            $expectedCurrency = strtoupper((string) data_get($marker->meta, 'currency', $currency));
+            $expectedTotal = (int) data_get($marker->meta, 'amount_total', $amountTotal);
+            $credit = (float) data_get($marker->meta, 'credit', 0);
+
+            if ($expectedCurrency !== $currency || $expectedTotal !== $amountTotal) {
+                Log::warning('paystack.order.amount_mismatch', [
+                    'user_id' => Auth::id(),
+                    'order_id' => $order->id,
+                    'reference' => $reference,
+                    'expected' => ['currency' => $expectedCurrency, 'amount_total' => $expectedTotal],
+                    'actual' => ['currency' => $currency, 'amount_total' => $amountTotal],
+                ]);
+                return redirect()->route('pay_now', $order->id)->withErrors('Paystack amount verification failed.');
+            }
+
+            DB::transaction(function () use ($marker, $reference, $credit, $session) {
+                $this->appendWalletRow((int) $marker->user_id, (float) $credit, 0, [
+                    'method'      => 'paystack',
+                    'description' => 'Order top-up via Paystack',
+                    'external_id' => $reference,
+                    'status'      => 'completed',
+                    'meta'        => ['paystack' => $session, 'order_id' => (int) data_get($marker->meta, 'order_id')],
+                ]);
+
+                $marker->status = 'completed';
+                $marker->description = trim(($marker->description ?? '') . ' | Success');
+                $marker->save();
+            });
+        }
+
+        return redirect()->route('pay_now', $order->id)->with('success', 'Paystack payment confirmed.')->with('autopay', 'paystack');
+    }
+
+    public function paystackOrderCancel(Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+        return redirect()->route('pay_now', $order->id)->withErrors('Paystack checkout was cancelled.');
+    }
+
 
     /* -------------------------------------------------------------
      | M-Pesa C2B (STK Push) deposit with polling “listener”
@@ -1472,7 +1880,7 @@ public function payOrder(Request $request, $id)
 
         // Determine payment method: default to 'wallet' (wallet covers fully, or we top-up then pay)
         $method = strtolower((string) $request->get('method', 'wallet'));
-        $allowedMethods = ['wallet', 'paypal', 'mpesa', 'stripe', 'card', 'cash'];
+        $allowedMethods = ['wallet', 'paypal', 'mpesa', 'stripe', 'paystack', 'card', 'cash'];
         if (!in_array($method, $allowedMethods, true)) {
             $method = 'wallet';
         }
@@ -1608,7 +2016,3 @@ public function payOrder(Request $request, $id)
     }
 
 }
-
-
-
-

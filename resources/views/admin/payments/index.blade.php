@@ -20,7 +20,7 @@
         {{-- method --}}
         <select name="payment_method" class="form-select form-select-sm" style="width:140px" onchange="this.form.submit()">
           <option value="">All methods</option>
-          @foreach($methods ?? ['mpesa','paypal','card','wallet'] as $m)
+          @foreach($methods ?? ['mpesa','paypal','stripe','paystack','card','wallet'] as $m)
             <option value="{{ $m }}" @selected(request('payment_method')===$m)>{{ strtoupper($m) }}</option>
           @endforeach
         </select>
@@ -136,5 +136,4 @@
   </div>
 </div>
 @endsection
-
 

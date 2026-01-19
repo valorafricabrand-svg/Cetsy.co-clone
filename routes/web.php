@@ -305,6 +305,13 @@ Route::middleware(['auth','verified'])->group(function () {
         ->name('order.stripe.success');
     Route::get('/order/{order}/stripe/cancel', [WalletController::class, 'stripeOrderCancel'])
         ->name('order.stripe.cancel');
+    // Paystack Checkout (wallet top-up + pay order)
+    Route::post('/order/{order}/paystack/session', [WalletController::class, 'createPaystackOrderSession'])
+        ->name('order.paystack.session');
+    Route::get('/order/{order}/paystack/success', [WalletController::class, 'paystackOrderSuccess'])
+        ->name('order.paystack.success');
+    Route::get('/order/{order}/paystack/cancel', [WalletController::class, 'paystackOrderCancel'])
+        ->name('order.paystack.cancel');
 
     Route::post('/products/{product}/status', [ProductController::class, 'changeStatus'])
         ->name('products.changeStatus');
@@ -422,6 +429,9 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::post('/deposit/stripe/session', [WalletController::class, 'createStripeDepositSession'])->name('deposit.stripe.session');
         Route::get('/deposit/stripe/success', [WalletController::class, 'stripeDepositSuccess'])->name('deposit.stripe.success');
         Route::get('/deposit/stripe/cancel', [WalletController::class, 'stripeDepositCancel'])->name('deposit.stripe.cancel');
+        Route::post('/deposit/paystack/session', [WalletController::class, 'createPaystackDepositSession'])->name('deposit.paystack.session');
+        Route::get('/deposit/paystack/success', [WalletController::class, 'paystackDepositSuccess'])->name('deposit.paystack.success');
+        Route::get('/deposit/paystack/cancel', [WalletController::class, 'paystackDepositCancel'])->name('deposit.paystack.cancel');
 
         // Payout OTP gate (pre-modal)
         Route::get('/payout/verify', [WalletController::class, 'payoutOtpForm'])->name('payout.otp.form');

@@ -45,7 +45,7 @@ class OrderController extends Controller
      *     full_name, email, phone,
      *     country_id, address_1, address_2?, city, state?, postal_code?
      *   },
-     *   payment_method: "cod" | "mpesa" | "paypal" | "stripe"
+     *   payment_method: "cod" | "mpesa" | "paypal" | "stripe" | "paystack"
      * }
      */
     public function store(Request $request)
@@ -72,7 +72,7 @@ class OrderController extends Controller
             'shipping.state' => 'nullable|string|max:120',
             'shipping.postal_code' => 'nullable|string|max:30',
 
-            'payment_method' => 'required|string|in:cod,mpesa,paypal,stripe',
+            'payment_method' => 'required|string|in:cod,mpesa,paypal,stripe,paystack',
         ]);
 
         if ($validator->fails()) {

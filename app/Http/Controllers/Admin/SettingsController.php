@@ -100,7 +100,8 @@ class SettingsController extends Controller
         'payments_mpesa_enabled'   => 'nullable|boolean',
         'payments_paypal_enabled'  => 'nullable|boolean',
         'payments_stripe_enabled'  => 'nullable|boolean',
-        'payments_default_gateway' => 'nullable|in:mpesa,paypal,stripe',
+        'payments_paystack_enabled' => 'nullable|boolean',
+        'payments_default_gateway' => 'nullable|in:mpesa,paypal,stripe,paystack',
     ]);
 
     /* ----------------------------------------------------------
@@ -166,17 +167,23 @@ class SettingsController extends Controller
         $mpesaEnabled  = $request->boolean('payments_mpesa_enabled');
         $paypalEnabled = $request->boolean('payments_paypal_enabled');
         $stripeEnabled = $request->boolean('payments_stripe_enabled');
+        $paystackEnabled = $request->boolean('payments_paystack_enabled');
 
-        if (! ($mpesaEnabled || $paypalEnabled || $stripeEnabled)) {
+        if (! ($mpesaEnabled || $paypalEnabled || $stripeEnabled || $paystackEnabled)) {
             return back()
                 ->withErrors(['payments_gateways' => 'Enable at least one payment gateway.'])
                 ->withInput();
         }
 
         $defaultGateway = (string) ($gatewayValidated['payments_default_gateway'] ?? 'paypal');
-        $enabledMap = ['mpesa' => $mpesaEnabled, 'paypal' => $paypalEnabled, 'stripe' => $stripeEnabled];
+        $enabledMap = [
+            'mpesa' => $mpesaEnabled,
+            'paypal' => $paypalEnabled,
+            'stripe' => $stripeEnabled,
+            'paystack' => $paystackEnabled,
+        ];
         if (! ($enabledMap[$defaultGateway] ?? false)) {
-            foreach (['paypal', 'stripe', 'mpesa'] as $candidate) {
+            foreach (['paypal', 'stripe', 'paystack', 'mpesa'] as $candidate) {
                 if ($enabledMap[$candidate]) {
                     $defaultGateway = $candidate;
                     break;
@@ -187,6 +194,7 @@ class SettingsController extends Controller
         $putSetting('payments_mpesa_enabled', $mpesaEnabled);
         $putSetting('payments_paypal_enabled', $paypalEnabled);
         $putSetting('payments_stripe_enabled', $stripeEnabled);
+        $putSetting('payments_paystack_enabled', $paystackEnabled);
         $putSetting('payments_default_gateway', $defaultGateway);
 
         if ($setting->isDirty()) $setting->save();

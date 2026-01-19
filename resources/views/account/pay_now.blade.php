@@ -81,6 +81,9 @@
   $stripeAvailable = function_exists('payment_gateway_available')
       ? payment_gateway_available('stripe')
       : (!empty(config('services.stripe.secret')) || (function_exists('setting') && !empty(setting('stripe_secret'))));
+  $paystackAvailable = function_exists('payment_gateway_available')
+      ? payment_gateway_available('paystack')
+      : (!empty(config('services.paystack.secret')) || (function_exists('setting') && !empty(setting('paystack_secret'))));
   $mpesaAvailable  = function_exists('payment_gateway_available') ? payment_gateway_available('mpesa') : true;
 @endphp
 
@@ -184,6 +187,16 @@
               </div>
               <div class="d-grid mb-3">
                 <button id="btn-stripe" type="button" class="btn btn-dark">Pay with Stripe</button>
+              </div>
+            @endif
+
+            {{-- Paystack (hosted checkout) --}}
+            @if($shortfallBase > 0 && $paystackAvailable)
+              <div class="text-center small text-muted mb-2">
+                Pay securely with Paystack.
+              </div>
+              <div class="d-grid mb-3">
+                <button id="btn-paystack" type="button" class="btn btn-success">Pay with Paystack</button>
               </div>
             @endif
 
@@ -397,6 +410,26 @@ $(function () {
             }
         }).fail(function(xhr){
             $stripeBtn.prop('disabled', false).removeClass('disabled');
+            $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
+        });
+    });
+    @endif
+
+    // ========= Paystack Checkout (hosted) =========
+    @if($shortfallBase > 0 && $paystackAvailable)
+    const $paystackBtn = $('#btn-paystack');
+    $paystackBtn.on('click', function(){
+        $paystackBtn.prop('disabled', true).addClass('disabled');
+        $result.removeClass('text-danger text-success').text('Redirecting to Paystack...');
+        $.post(@json(route('order.paystack.session', $order->id)), { _token: @json(csrf_token()) }, function(resp){
+            if (resp?.success && resp?.url) {
+                window.location = resp.url;
+            } else {
+                $paystackBtn.prop('disabled', false).removeClass('disabled');
+                $result.addClass('text-danger').text(resp?.message || 'Unable to start Paystack checkout.');
+            }
+        }).fail(function(xhr){
+            $paystackBtn.prop('disabled', false).removeClass('disabled');
             $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
         });
     });

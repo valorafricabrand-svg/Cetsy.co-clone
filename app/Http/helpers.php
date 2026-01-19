@@ -452,6 +452,7 @@ if (! function_exists('payment_gateway_enabled')) {
             'mpesa'  => 'payments_mpesa_enabled',
             'paypal' => 'payments_paypal_enabled',
             'stripe' => 'payments_stripe_enabled',
+            'paystack' => 'payments_paystack_enabled',
             default  => null,
         };
         if (! $key) return false;
@@ -471,7 +472,7 @@ if (! function_exists('payment_default_gateway')) {
     {
         $raw = function_exists('setting') ? (string) setting('payments_default_gateway', 'paypal') : 'paypal';
         $gw = strtolower(trim($raw));
-        return in_array($gw, ['paypal', 'stripe', 'mpesa'], true) ? $gw : 'paypal';
+        return in_array($gw, ['paypal', 'stripe', 'mpesa', 'paystack'], true) ? $gw : 'paypal';
     }
 }
 
@@ -488,6 +489,11 @@ if (! function_exists('payment_gateway_configured')) {
         if ($gateway === 'stripe') {
             return !empty(config('services.stripe.secret'))
                 || (function_exists('setting') && !empty(setting('stripe_secret')));
+        }
+
+        if ($gateway === 'paystack') {
+            return !empty(config('services.paystack.secret'))
+                || (function_exists('setting') && !empty(setting('paystack_secret')));
         }
 
         if ($gateway === 'mpesa') {
