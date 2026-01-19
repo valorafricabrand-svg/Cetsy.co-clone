@@ -2,25 +2,143 @@
 @extends('layouts.app')
 @section('title','Process Payment')
 
-{{-- ──────────────────────────────────────────────
+{{-- ----------------------------------------------
 |  INLINE STYLES
-└───────────────────────────────────────────── --}}
+---------------------------------------------- --}}
 @section('styles')
 <style>
-  .checkout-page{background:#f8f9fa;min-height:100vh}
-  .card.glass   {backdrop-filter:blur(6px);background:rgba(255,255,255,.85);border-radius:12px}
-  @media (prefers-color-scheme:dark){.card.glass{background:rgba(35,35,35,.55)}}
-  .btn-primary  {background:#0275d8;border-color:#0275d8}
-  .btn-primary:hover{background:#025aa5;border-color:#025aa5}
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+  .checkout-page{
+    --ink:#0f172a;
+    --muted:#64748b;
+    --brand:#0ea5a4;
+    --brand-strong:#0f766e;
+    --accent:#f59e0b;
+    --card:#ffffff;
+    --card-soft:#f8fafc;
+    --line:rgba(15,23,42,.12);
+    --shadow:0 22px 60px rgba(15,23,42,.12);
+    font-family:"Instrument Sans","Space Grotesk",sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    position:relative;
+    padding:2.5rem 0 3rem;
+    background:
+      radial-gradient(900px 500px at 10% -20%, rgba(14,165,164,.18), transparent 55%),
+      radial-gradient(700px 420px at 90% -15%, rgba(59,130,246,.18), transparent 55%);
+  }
+  .checkout-page::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background-image:radial-gradient(rgba(15,23,42,.05) 1px, transparent 1px);
+    background-size:18px 18px;
+    opacity:.35;
+  }
+  .checkout-page .paynow-shell{position:relative;z-index:1;}
+  .paynow-card{
+    border-radius:18px;
+    border:1px solid var(--line);
+    box-shadow:var(--shadow);
+    background:var(--card);
+    overflow:hidden;
+    animation:liftIn .5s ease both;
+  }
+  .paynow-header{text-align:center;margin-bottom:1.5rem;animation:fadeIn .6s ease both;}
+  .paynow-eyebrow{
+    font-size:.72rem;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:600;
+    margin-bottom:.5rem;
+  }
+  .paynow-title{
+    font-family:"Space Grotesk",sans-serif;
+    font-size:1.6rem;
+    font-weight:700;
+    margin-bottom:.35rem;
+  }
+  .paynow-subtitle{color:var(--muted);margin-bottom:0;}
+  .summary-list{
+    border-radius:14px;
+    border:1px solid rgba(15,23,42,.08);
+    overflow:hidden;
+    background:var(--card-soft);
+    animation:fadeIn .65s ease both;
+  }
+  .summary-list .list-group-item{
+    border-color:rgba(15,23,42,.08);
+    background:transparent;
+    font-weight:500;
+    padding:.75rem 1rem;
+  }
+  .summary-list .summary-row--total{
+    background:rgba(14,165,164,.10);
+    font-weight:700;
+  }
+  .wallet-pay .btn-primary{
+    background:var(--brand);
+    border-color:var(--brand);
+    border-radius:12px;
+    padding:.75rem 1rem;
+    font-weight:600;
+  }
+  .wallet-pay .btn-primary:hover{background:var(--brand-strong);border-color:var(--brand-strong);}
+  .method-card{
+    background:var(--card-soft);
+    border:1px solid rgba(15,23,42,.08);
+    border-radius:16px;
+    padding:1rem;
+    margin-bottom:1rem;
+    box-shadow:0 12px 26px rgba(15,23,42,.08);
+    animation:fadeIn .7s ease both;
+  }
+  .method-title{
+    font-weight:600;
+    margin-bottom:.25rem;
+  }
+  .method-copy{color:var(--muted);margin-bottom:.75rem;}
+  .method-alert{
+    border-radius:12px;
+    border:1px solid rgba(16,185,129,.25);
+    background:rgba(16,185,129,.10);
+    padding:.5rem .75rem;
+  }
+  .fee-note{
+    background:rgba(245,158,11,.12);
+    border:1px solid rgba(245,158,11,.25);
+    color:#92400e;
+    border-radius:12px;
+    padding:.5rem .75rem;
+    margin-bottom:.75rem;
+  }
+  .method-card .btn{
+    border-radius:12px;
+    font-weight:600;
+    padding:.7rem 1rem;
+  }
+  .paynow-result{min-height:1.4rem;}
   .spinner{display:inline-block;width:1.25rem;height:1.25rem;border:2px solid #ddd;border-top-color:#000;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:.5rem}
   @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes liftIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
   .d-none{display:none!important}
+  @media (max-width: 576px){
+    .checkout-page{padding:2rem 0;}
+    .paynow-card .card-body{padding:1.5rem!important;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .paynow-card,.paynow-header,.summary-list,.method-card{animation:none;}
+  }
 </style>
 @endsection
 
-{{-- ──────────────────────────────────────────────
-|  PHP HELPERS – numeric-safe amounts & previews
-└───────────────────────────────────────────── --}}
+{{-- ----------------------------------------------
+|  PHP HELPERS - numeric-safe amounts & previews
+---------------------------------------------- --}}
 @php
   $currency    = $order->currency ?? 'USD';
 
@@ -87,32 +205,33 @@
   $mpesaAvailable  = function_exists('payment_gateway_available') ? payment_gateway_available('mpesa') : true;
 @endphp
 
-{{-- ──────────────────────────────────────────────
+{{-- ----------------------------------------------
 |  MAIN CONTENT
-└───────────────────────────────────────────── --}}
+---------------------------------------------- --}}
 @section('content')
 <div class="content checkout-page d-flex align-items-center">
-  <div class="container">
+  <div class="container paynow-shell">
     <div class="row justify-content-center">
-      <div class="col-lg-6">
+      <div class="col-lg-7 col-xl-6">
 
-        <div class="card shadow-sm border-0 glass">
-          <div class="card-body p-5">
+        <div class="card border-0 paynow-card">
+          <div class="card-body p-4 p-md-5">
 
-            <h2 class="text-center fw-semibold mb-3">Process Your Payment</h2>
-            <p class="text-muted text-center mb-4">
-              We’ll automatically use your wallet first, then charge only the remainder.
-            </p>
+            <div class="paynow-header">
+              <div class="paynow-eyebrow">Order payment</div>
+              <h2 class="paynow-title">Process your payment</h2>
+              <p class="paynow-subtitle">We'll automatically use your wallet first, then charge only the remainder.</p>
+            </div>
 
-            {{-- ── Amount breakdown ───────────────────────────── --}}
-            <ul class="list-group mb-4">
-              <li class="list-group-item d-flex justify-content-between">
+            {{-- -- Amount breakdown ----------------------------- --}}
+            <ul class="list-group mb-4 summary-list">
+              <li class="list-group-item d-flex justify-content-between summary-row">
                 <span>Order&nbsp;Total</span>
                 <span>{{ $currency }} {{ number_format($orderTotal, 2) }}</span>
               </li>
 
               @if($walletApplied > 0)
-                <li class="list-group-item d-flex justify-content-between">
+                <li class="list-group-item d-flex justify-content-between summary-row">
                   <span>Wallet&nbsp;Applied</span>
                   <span>- {{ $currency }} {{ number_format($walletApplied, 2) }}</span>
                 </li>
@@ -120,17 +239,17 @@
 
               {{-- No fee shown here; PayPal fee shown near PayPal button only --}}
 
-              <li class="list-group-item d-flex justify-content-between fw-bold">
+              <li class="list-group-item d-flex justify-content-between summary-row summary-row--total">
                 <span>Amount&nbsp;Due&nbsp;Now</span>
                 <span>{{ $currency }} {{ $amountDueNowDisplay }}</span>
               </li>
             </ul>
 
-            {{-- ── WALLET OPTION (visible only if wallet fully covers) ───────── --}}
+            {{-- -- WALLET OPTION (visible only if wallet fully covers) --------- --}}
             <form id="wallet-pay-form"
                   action="{{ route('order.wallet.pay', $order->id) }}"
                   method="POST"
-                  class="d-grid gap-2 mb-3 {{ $canPayWithWalletOnly ? '' : 'd-none' }}">
+                  class="d-grid gap-2 mb-3 wallet-pay {{ $canPayWithWalletOnly ? '' : 'd-none' }}">
               @csrf
               <input type="hidden" name="method" id="pay-method" value="wallet">
               <button type="submit" id="wallet-pay-btn" class="btn btn-primary">
@@ -139,19 +258,20 @@
               </button>
             </form>
 
-            {{-- ── M-Pesa STK deposit (top-up shortfall, then auto-finish via wallet) ─ --}}
+            {{-- M-Pesa STK deposit (top-up shortfall, then auto-finish via wallet) --}}
             @if($shortfallBase > 0 && $mpesaAvailable)
-              <div id="mpesa-section" class="mb-4">
-                <div class="alert alert-success small d-flex align-items-center mb-3">
+              <div id="mpesa-section" class="method-card method-card--mpesa">
+                <div class="method-title">M-Pesa STK Push</div>
+                <div class="method-alert small d-flex align-items-center mb-3">
                   <i class="fa fa-mobile me-2"></i>
-                  <span><strong>M-Pesa STK Push:</strong> We’ll send a prompt to your phone. Approve with your M-Pesa PIN.</span>
+                  <span>We'll send a prompt to your phone. Approve with your M-Pesa PIN.</span>
                 </div>
 
                 <div class="row g-3 mb-2">
                   <div class="col-md-7">
                     <label for="mpesa_phone" class="form-label">M-Pesa Phone (Safaricom)</label>
                     <input type="text" id="mpesa_phone" class="form-control" placeholder="07XXXXXXXX / 7XXXXXXXX / 2547XXXXXXXX" maxlength="13" autocomplete="tel">
-                    <div class="form-text">We’ll normalize to <code>2547XXXXXXXX</code>.</div>
+                    <div class="form-text">We'll normalize to <code>2547XXXXXXXX</code>.</div>
                   </div>
                   <div class="col-md-5">
                     <label class="form-label">KES Amount (auto)</label>
@@ -172,36 +292,42 @@
               </div>
             @endif
 
-            {{-- ── PayPal / Card (charges only amountDueNow) ───────────── --}}
+            {{-- PayPal / Card (charges only amountDueNow) --}}
             @if($shortfallBase > 0 && $paypalAvailable)
-              <div class="text-center small text-muted mb-2">
-                Paying with PayPal adds an online fee of {{ $currency }} {{ number_format($paypalFeeShort, 2) }} ({{ number_format($transactionFeePercentDisplay, 2) }}%).
+              <div class="method-card">
+                <div class="method-title">PayPal</div>
+                <p class="method-copy">Pay with your PayPal balance or card.</p>
+                <div class="fee-note small">
+                  Paying with PayPal adds an online fee of {{ $currency }} {{ number_format($paypalFeeShort, 2) }} ({{ number_format($transactionFeePercentDisplay, 2) }}%).
+                </div>
+                <div id="paypal-button-container" class="text-center"></div>
               </div>
-              <div id="paypal-button-container" class="text-center mb-3"></div>
             @endif
 
             {{-- Stripe (hosted checkout) --}}
             @if($shortfallBase > 0 && $stripeAvailable)
-              <div class="text-center small text-muted mb-2">
-                Prefer card? Pay securely with Stripe.
-              </div>
-              <div class="d-grid mb-3">
-                <button id="btn-stripe" type="button" class="btn btn-dark">Pay with Stripe</button>
+              <div class="method-card">
+                <div class="method-title">Card via Stripe</div>
+                <p class="method-copy">Pay securely with Stripe Checkout.</p>
+                <div class="d-grid">
+                  <button id="btn-stripe" type="button" class="btn btn-dark">Pay with Stripe</button>
+                </div>
               </div>
             @endif
 
             {{-- Paystack (hosted checkout) --}}
             @if($shortfallBase > 0 && $paystackAvailable)
-              <div class="text-center small text-muted mb-2">
-                Pay securely with Paystack.
-              </div>
-              <div class="d-grid mb-3">
-                <button id="btn-paystack" type="button" class="btn btn-success">Pay with Paystack</button>
+              <div class="method-card">
+                <div class="method-title">Paystack</div>
+                <p class="method-copy">Pay securely with Paystack checkout.</p>
+                <div class="d-grid">
+                  <button id="btn-paystack" type="button" class="btn btn-success">Pay with Paystack</button>
+                </div>
               </div>
             @endif
 
             {{-- Error / result placeholder --}}
-            <div id="generic-result" class="text-center mt-3 fw-semibold"></div>
+            <div id="generic-result" class="paynow-result text-center mt-3 fw-semibold" role="status" aria-live="polite"></div>
 
           </div>
         </div>
@@ -212,9 +338,9 @@
 </div>
 @endsection
 
-{{-- ──────────────────────────────────────────────
-|  SCRIPTS – jQuery + PayPal SDK + STK listener
-└───────────────────────────────────────────── --}}
+{{-- ----------------------------------------------
+|  SCRIPTS - jQuery + PayPal SDK + STK listener
+---------------------------------------------- --}}
 @section('scripts')
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
