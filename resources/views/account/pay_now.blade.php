@@ -298,7 +298,7 @@
 <div class="content checkout-page d-flex align-items-center">
   <div class="container paynow-shell">
     <div class="row justify-content-center">
-      <div class="col-lg-8 col-xl-7">
+      <div class="col-lg-9 col-xl-8">
 
         <div class="card border-0 paynow-card">
           <div class="card-body p-4 p-md-5">
