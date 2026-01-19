@@ -120,6 +120,70 @@
     font-weight:600;
     padding:.7rem 1rem;
   }
+  .payment-layout{
+    display:flex;
+    border-radius:16px;
+    border:1px solid rgba(15,23,42,.12);
+    overflow:hidden;
+    background:var(--card);
+    box-shadow:0 12px 30px rgba(15,23,42,.08);
+  }
+  .payment-menu{
+    width:200px;
+    background:#f1f5f9;
+    border-right:1px solid rgba(15,23,42,.08);
+    padding:1rem;
+  }
+  .payment-menu__title{
+    font-size:.7rem;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:600;
+    margin-bottom:.75rem;
+  }
+  .payment-option{
+    width:100%;
+    border:1px solid transparent;
+    background:transparent;
+    color:var(--ink);
+    padding:.65rem .75rem;
+    border-radius:12px;
+    text-align:left;
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    font-weight:600;
+    position:relative;
+    transition:background .2s ease, border-color .2s ease, color .2s ease;
+  }
+  .payment-option i{width:18px;text-align:center;}
+  .payment-option + .payment-option{margin-top:.5rem;}
+  .payment-option:hover{background:#e2e8f0;}
+  .payment-option.is-active{
+    background:#ffffff;
+    border-color:rgba(15,23,42,.12);
+    box-shadow:0 8px 20px rgba(15,23,42,.08);
+    color:var(--brand-strong);
+  }
+  .payment-option.is-active::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:.4rem;
+    bottom:.4rem;
+    width:3px;
+    background:var(--brand);
+    border-radius:4px;
+  }
+  .payment-content{
+    flex:1;
+    padding:1.25rem 1.5rem;
+    background:var(--card);
+  }
+  .method-panel{display:none;}
+  .method-panel.is-active{display:block;}
+  .payment-content .method-card{margin-bottom:0;}
   .paynow-result{min-height:1.4rem;}
   .spinner{display:inline-block;width:1.25rem;height:1.25rem;border:2px solid #ddd;border-top-color:#000;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:.5rem}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -129,6 +193,19 @@
   @media (max-width: 576px){
     .checkout-page{padding:2rem 0;}
     .paynow-card .card-body{padding:1.5rem!important;}
+  }
+  @media (max-width: 768px){
+    .payment-layout{flex-direction:column;}
+    .payment-menu{
+      width:100%;
+      border-right:0;
+      border-bottom:1px solid rgba(15,23,42,.08);
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+      gap:.5rem;
+    }
+    .payment-menu__title{grid-column:1 / -1;margin-bottom:.25rem;}
+    .payment-option + .payment-option{margin-top:0;}
   }
   @media (prefers-reduced-motion: reduce){
     .paynow-card,.paynow-header,.summary-list,.method-card{animation:none;}
@@ -203,6 +280,15 @@
       ? payment_gateway_available('paystack')
       : (!empty(config('services.paystack.secret')) || (function_exists('setting') && !empty(setting('paystack_secret'))));
   $mpesaAvailable  = function_exists('payment_gateway_available') ? payment_gateway_available('mpesa') : true;
+
+  $availableMethods = [];
+  if ($shortfallBase > 0) {
+      if ($mpesaAvailable) $availableMethods[] = 'mpesa';
+      if ($paypalAvailable) $availableMethods[] = 'paypal';
+      if ($stripeAvailable) $availableMethods[] = 'stripe';
+      if ($paystackAvailable) $availableMethods[] = 'paystack';
+  }
+  $defaultMethod = $availableMethods[0] ?? null;
 @endphp
 
 {{-- ----------------------------------------------
@@ -258,76 +344,119 @@
               </button>
             </form>
 
-            {{-- M-Pesa STK deposit (top-up shortfall, then auto-finish via wallet) --}}
-            @if($shortfallBase > 0 && $mpesaAvailable)
-              <div id="mpesa-section" class="method-card method-card--mpesa">
-                <div class="method-title">M-Pesa STK Push</div>
-                <div class="method-alert small d-flex align-items-center mb-3">
-                  <i class="fa fa-mobile me-2"></i>
-                  <span>We'll send a prompt to your phone. Approve with your M-Pesa PIN.</span>
-                </div>
+            @if($shortfallBase > 0)
+              @if(count($availableMethods))
+                <div class="payment-layout">
+                  <aside class="payment-menu">
+                    <div class="payment-menu__title">Pay with</div>
+                    @if($mpesaAvailable)
+                      <button type="button" class="payment-option {{ $defaultMethod === 'mpesa' ? 'is-active' : '' }}" data-method="mpesa" aria-pressed="{{ $defaultMethod === 'mpesa' ? 'true' : 'false' }}">
+                        <i class="fa fa-mobile"></i>
+                        <span>M-Pesa</span>
+                      </button>
+                    @endif
+                    @if($paypalAvailable)
+                      <button type="button" class="payment-option {{ $defaultMethod === 'paypal' ? 'is-active' : '' }}" data-method="paypal" aria-pressed="{{ $defaultMethod === 'paypal' ? 'true' : 'false' }}">
+                        <i class="fab fa-paypal"></i>
+                        <span>PayPal</span>
+                      </button>
+                    @endif
+                    @if($stripeAvailable)
+                      <button type="button" class="payment-option {{ $defaultMethod === 'stripe' ? 'is-active' : '' }}" data-method="stripe" aria-pressed="{{ $defaultMethod === 'stripe' ? 'true' : 'false' }}">
+                        <i class="fa fa-credit-card"></i>
+                        <span>Card (Stripe)</span>
+                      </button>
+                    @endif
+                    @if($paystackAvailable)
+                      <button type="button" class="payment-option {{ $defaultMethod === 'paystack' ? 'is-active' : '' }}" data-method="paystack" aria-pressed="{{ $defaultMethod === 'paystack' ? 'true' : 'false' }}">
+                        <i class="fa fa-check-circle"></i>
+                        <span>Paystack</span>
+                      </button>
+                    @endif
+                  </aside>
 
-                <div class="row g-3 mb-2">
-                  <div class="col-md-7">
-                    <label for="mpesa_phone" class="form-label">M-Pesa Phone (Safaricom)</label>
-                    <input type="text" id="mpesa_phone" class="form-control" placeholder="07XXXXXXXX / 7XXXXXXXX / 2547XXXXXXXX" maxlength="13" autocomplete="tel">
-                    <div class="form-text">We'll normalize to <code>2547XXXXXXXX</code>.</div>
+                  <div class="payment-content">
+                    @if($mpesaAvailable)
+                      <div class="method-panel {{ $defaultMethod === 'mpesa' ? 'is-active' : '' }}" data-method="mpesa">
+                        <div id="mpesa-section" class="method-card method-card--mpesa">
+                          <div class="method-title">M-Pesa STK Push</div>
+                          <div class="method-alert small d-flex align-items-center mb-3">
+                            <i class="fa fa-mobile me-2"></i>
+                            <span>We'll send a prompt to your phone. Approve with your M-Pesa PIN.</span>
+                          </div>
+
+                          <div class="row g-3 mb-2">
+                            <div class="col-md-7">
+                              <label for="mpesa_phone" class="form-label">M-Pesa Phone (Safaricom)</label>
+                              <input type="text" id="mpesa_phone" class="form-control" placeholder="07XXXXXXXX / 7XXXXXXXX / 2547XXXXXXXX" maxlength="13" autocomplete="tel">
+                              <div class="form-text">We'll normalize to <code>2547XXXXXXXX</code>.</div>
+                            </div>
+                            <div class="col-md-5">
+                              <label class="form-label">KES Amount (auto)</label>
+                              <input type="text" id="mpesa_kes_preview" class="form-control" disabled
+                                     value="KES {{ number_format($previewKes, 2) }}">
+                              <div class="form-text">Rate used: {{ number_format($usdToKesRate, 2) }} KES / USD</div>
+                            </div>
+                          </div>
+
+                          <div class="d-grid">
+                            <button id="btn-start-stk" class="btn btn-success">
+                              <span class="spinner d-none" id="stk-spinner"></span>
+                              Pay with M-Pesa
+                            </button>
+                          </div>
+
+                          <div id="stk-live-status" class="alert alert-light border mt-3 d-none" aria-live="polite"></div>
+                        </div>
+                      </div>
+                    @endif
+
+                    @if($paypalAvailable)
+                      <div class="method-panel {{ $defaultMethod === 'paypal' ? 'is-active' : '' }}" data-method="paypal">
+                        <div class="method-card">
+                          <div class="method-title">PayPal</div>
+                          <p class="method-copy">Pay with your PayPal balance or card.</p>
+                          <div class="fee-note small">
+                            Paying with PayPal adds an online fee of {{ $currency }} {{ number_format($paypalFeeShort, 2) }} ({{ number_format($transactionFeePercentDisplay, 2) }}%).
+                          </div>
+                          <div id="paypal-button-container" class="text-center"></div>
+                        </div>
+                      </div>
+                    @endif
+
+                    @if($stripeAvailable)
+                      <div class="method-panel {{ $defaultMethod === 'stripe' ? 'is-active' : '' }}" data-method="stripe">
+                        <div class="method-card">
+                          <div class="method-title">Card via Stripe</div>
+                          <p class="method-copy">Pay securely with Stripe Checkout.</p>
+                          <div class="d-grid">
+                            <button id="btn-stripe" type="button" class="btn btn-dark">Pay with Stripe</button>
+                          </div>
+                        </div>
+                      </div>
+                    @endif
+
+                    @if($paystackAvailable)
+                      <div class="method-panel {{ $defaultMethod === 'paystack' ? 'is-active' : '' }}" data-method="paystack">
+                        <div class="method-card">
+                          <div class="method-title">Paystack</div>
+                          <p class="method-copy">Pay securely with Paystack checkout.</p>
+                          <div class="d-grid">
+                            <button id="btn-paystack" type="button" class="btn btn-success">Pay with Paystack</button>
+                          </div>
+                        </div>
+                      </div>
+                    @endif
+
+                    <div id="generic-result" class="paynow-result text-center mt-3 fw-semibold" role="status" aria-live="polite"></div>
                   </div>
-                  <div class="col-md-5">
-                    <label class="form-label">KES Amount (auto)</label>
-                    <input type="text" id="mpesa_kes_preview" class="form-control" disabled
-                           value="KES {{ number_format($previewKes, 2) }}">
-                    <div class="form-text">Rate used: {{ number_format($usdToKesRate, 2) }} KES / USD</div>
-                  </div>
                 </div>
-
-                <div class="d-grid">
-                  <button id="btn-start-stk" class="btn btn-success">
-                    <span class="spinner d-none" id="stk-spinner"></span>
-                    Pay with M-Pesa
-                  </button>
+              @else
+                <div class="alert alert-warning mb-0">
+                  No payment methods are currently available. Please contact support.
                 </div>
-
-                <div id="stk-live-status" class="alert alert-light border mt-3 d-none" aria-live="polite"></div>
-              </div>
+              @endif
             @endif
-
-            {{-- PayPal / Card (charges only amountDueNow) --}}
-            @if($shortfallBase > 0 && $paypalAvailable)
-              <div class="method-card">
-                <div class="method-title">PayPal</div>
-                <p class="method-copy">Pay with your PayPal balance or card.</p>
-                <div class="fee-note small">
-                  Paying with PayPal adds an online fee of {{ $currency }} {{ number_format($paypalFeeShort, 2) }} ({{ number_format($transactionFeePercentDisplay, 2) }}%).
-                </div>
-                <div id="paypal-button-container" class="text-center"></div>
-              </div>
-            @endif
-
-            {{-- Stripe (hosted checkout) --}}
-            @if($shortfallBase > 0 && $stripeAvailable)
-              <div class="method-card">
-                <div class="method-title">Card via Stripe</div>
-                <p class="method-copy">Pay securely with Stripe Checkout.</p>
-                <div class="d-grid">
-                  <button id="btn-stripe" type="button" class="btn btn-dark">Pay with Stripe</button>
-                </div>
-              </div>
-            @endif
-
-            {{-- Paystack (hosted checkout) --}}
-            @if($shortfallBase > 0 && $paystackAvailable)
-              <div class="method-card">
-                <div class="method-title">Paystack</div>
-                <p class="method-copy">Pay securely with Paystack checkout.</p>
-                <div class="d-grid">
-                  <button id="btn-paystack" type="button" class="btn btn-success">Pay with Paystack</button>
-                </div>
-              </div>
-            @endif
-
-            {{-- Error / result placeholder --}}
-            <div id="generic-result" class="paynow-result text-center mt-3 fw-semibold" role="status" aria-live="polite"></div>
 
           </div>
         </div>
@@ -356,6 +485,9 @@ $(function () {
     const $walletForm   = $('#wallet-pay-form');
     const $walletBtn    = $('#wallet-pay-btn');
     const $methodInput  = $('#pay-method');
+    const $methodButtons = $('.payment-option');
+    const $methodPanels  = $('.method-panel');
+    let renderPaypalButtons = function () {};
 
     // Auto-pay after returning from Stripe success route (flash session)
     const AUTO_PAY = @json(session('autopay') ?? null);
@@ -371,51 +503,81 @@ $(function () {
     const SHORTFALL_BASE    = Number(@json((float) $shortfallBase)); // credit to wallet (excludes fee)
     const PAYPAL_FEE        = Number(@json((float) $paypalFeeShort)); // fee component (PayPal only)
     const CURRENCY          = @json($currency);
+    let paypalRendered = false;
 
-    paypal.Buttons({
-      style:{ layout:'vertical', color:'blue', shape:'rect', label:'paypal' },
+    renderPaypalButtons = function () {
+      if (paypalRendered || typeof paypal === 'undefined') return;
+      paypalRendered = true;
 
-      createOrder: (_, actions) => actions.order.create({
-          purchase_units:[{ amount:{ value: PAYPAL_AMOUNT_STR } }]
-      }),
+      paypal.Buttons({
+        style:{ layout:'vertical', color:'blue', shape:'rect', label:'paypal' },
 
-      onApprove: (_, actions) => {
-          $result.removeClass('text-danger text-success').text('');
-          return actions.order.capture().then((details) => {
-              // Credit wallet with the shortfall base (fee is NOT credited)
-              $.post("{{ route('wallet.deposit.paypal') }}", {
-                  _token : '{{ csrf_token() }}',
-                  amount : SHORTFALL_BASE,
-                  fee    : PAYPAL_FEE,
-                  gross  : PAYPAL_AMOUNT_STR,
-                  currency: CURRENCY,
-                  method : 'paypal',
-                  order_id: details?.id || null
-              }, function(resp){
-                  if (resp?.success) {
-                      // Auto-finish via wallet (hidden form)
-                      if ($walletForm.length) {
-                          $methodInput.val('paypal');
-                          $walletBtn.prop('disabled', true).addClass('disabled');
-                          setTimeout(() => $walletForm.trigger('submit'), 500);
-                      } else {
-                          window.location = @json(route('buyer.orders.show', $order->id));
-                      }
-                  } else {
-                      $result.addClass('text-danger').text(resp?.message || 'Unable to credit wallet. Please contact support.');
-                  }
-              }).fail(function(xhr){
-                  $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.error ?? 'Unknown error'));
-              });
-          });
-      },
+        createOrder: (_, actions) => actions.order.create({
+            purchase_units:[{ amount:{ value: PAYPAL_AMOUNT_STR } }]
+        }),
 
-      onError: err => {
-          console.error(err);
-          $result.addClass('text-danger').text('PayPal error: ' + (err?.message || 'Unexpected error'));
-      }
-    }).render('#paypal-button-container');
+        onApprove: (_, actions) => {
+            $result.removeClass('text-danger text-success').text('');
+            return actions.order.capture().then((details) => {
+                // Credit wallet with the shortfall base (fee is NOT credited)
+                $.post("{{ route('wallet.deposit.paypal') }}", {
+                    _token : '{{ csrf_token() }}',
+                    amount : SHORTFALL_BASE,
+                    fee    : PAYPAL_FEE,
+                    gross  : PAYPAL_AMOUNT_STR,
+                    currency: CURRENCY,
+                    method : 'paypal',
+                    order_id: details?.id || null
+                }, function(resp){
+                    if (resp?.success) {
+                        // Auto-finish via wallet (hidden form)
+                        if ($walletForm.length) {
+                            $methodInput.val('paypal');
+                            $walletBtn.prop('disabled', true).addClass('disabled');
+                            setTimeout(() => $walletForm.trigger('submit'), 500);
+                        } else {
+                            window.location = @json(route('buyer.orders.show', $order->id));
+                        }
+                    } else {
+                        $result.addClass('text-danger').text(resp?.message || 'Unable to credit wallet. Please contact support.');
+                    }
+                }).fail(function(xhr){
+                    $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.error ?? 'Unknown error'));
+                });
+            });
+        },
+
+        onError: err => {
+            console.error(err);
+            $result.addClass('text-danger').text('PayPal error: ' + (err?.message || 'Unexpected error'));
+        }
+      }).render('#paypal-button-container');
+    };
     @endif
+
+    function setActiveMethod(method) {
+      if (!method || !$methodButtons.length) return;
+      $methodButtons.removeClass('is-active').attr('aria-pressed', 'false');
+      $methodPanels.removeClass('is-active');
+      const $button = $methodButtons.filter('[data-method="' + method + '"]');
+      const $panel  = $methodPanels.filter('[data-method="' + method + '"]');
+      if (!$button.length || !$panel.length) return;
+      $button.addClass('is-active').attr('aria-pressed', 'true');
+      $panel.addClass('is-active');
+      $result.removeClass('text-danger text-success');
+      if (method === 'paypal') {
+        renderPaypalButtons();
+      }
+    }
+
+    const DEFAULT_METHOD = @json($defaultMethod);
+    if ($methodButtons.length) {
+      setActiveMethod(DEFAULT_METHOD || $methodButtons.first().data('method'));
+    }
+
+    $methodButtons.on('click', function(){
+      setActiveMethod($(this).data('method'));
+    });
 
     // ========= M-Pesa STK (shortfall top-up, then wallet auto-finish) =========
     @if($shortfallBase > 0 && $mpesaAvailable)
