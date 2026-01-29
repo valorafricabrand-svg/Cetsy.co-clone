@@ -11,6 +11,15 @@ use Illuminate\Support\Facades\Mail;
 
 class PaystackWebhookController extends Controller
 {
+    public function health()
+    {
+        return response()->json([
+            'ok' => true,
+            'service' => 'paystack-webhook',
+            'time' => now()->toIso8601String(),
+        ]);
+    }
+
     public function handle(Request $request)
     {
         $raw = $request->getContent();

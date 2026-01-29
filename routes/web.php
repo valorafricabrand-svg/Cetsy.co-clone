@@ -843,6 +843,8 @@ Route::post('/webhooks/paypal', [PayoutWebhookController::class, 'paypal'])
 Route::post('/webhooks/paystack', [PaystackWebhookController::class, 'handle'])
     ->name('webhooks.paystack')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+Route::get('/webhooks/paystack/health', [PaystackWebhookController::class, 'health'])
+    ->name('webhooks.paystack.health');
 Route::post('/daraja/b2c/result', [PayoutWebhookController::class, 'darajaB2CResult'])
     ->name('webhooks.daraja.b2c.result')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);

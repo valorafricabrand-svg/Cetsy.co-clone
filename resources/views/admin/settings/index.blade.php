@@ -236,6 +236,14 @@
               @error('payments_default_gateway') <div class="invalid-feedback">{{ $message }}</div> @enderror
               <div class="form-text">Controls the pre-selected method on Deposit/Pay Now screens.</div>
             </div>
+            <div class="col-12">
+              <div class="small text-muted">
+                Paystack webhook health check:
+                <a href="{{ url('/webhooks/paystack/health') }}" target="_blank" rel="noopener">
+                  {{ url('/webhooks/paystack/health') }}
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
