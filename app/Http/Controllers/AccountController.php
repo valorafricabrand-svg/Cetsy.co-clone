@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
 use App\Services\Recommendation\ProductRecommendationService;
+use App\Services\CommissionService;
 
 class AccountController extends Controller
 {
@@ -171,6 +172,14 @@ public function orderDetails(Order $order)
                         'status'     => $hasOnHold ? 'on_hold' : 'completed',
                         'meta'       => ['order_id' => $order->id],
                     ]);
+
+                    CommissionService::refundCommission(
+                        (int) $shopUserId,
+                        (int) $order->id,
+                        (float) $order->total_amount,
+                        (float) $order->total_amount,
+                        $hasOnHold ? 'on_hold' : 'completed'
+                    );
                 }
 
                 // Restock inventory (physical items only)

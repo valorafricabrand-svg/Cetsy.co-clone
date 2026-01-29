@@ -70,6 +70,32 @@
                                 <code class="fs-6">{{ $paymentMethod->account_number }}</code>
                             </dd>
 
+                            @if($paymentMethod->bank_name || $paymentMethod->bank_country || $paymentMethod->bank_currency || $paymentMethod->bank_routing_number || $paymentMethod->swift_bic || $paymentMethod->iban || $paymentMethod->bank_address)
+                                <dt class="col-sm-3">Bank Details</dt>
+                                <dd class="col-sm-9">
+                                    <div class="small text-muted">
+                                        @if($paymentMethod->bank_name)<div><strong>Bank:</strong> {{ $paymentMethod->bank_name }}</div>@endif
+                                        @if($paymentMethod->bank_country)<div><strong>Country:</strong> {{ $paymentMethod->bank_country }}</div>@endif
+                                        @if($paymentMethod->bank_currency)<div><strong>Currency:</strong> {{ $paymentMethod->bank_currency }}</div>@endif
+                                        @if($paymentMethod->bank_routing_number)<div><strong>Routing/Sort:</strong> {{ $paymentMethod->bank_routing_number }}</div>@endif
+                                        @if($paymentMethod->swift_bic)<div><strong>SWIFT/BIC:</strong> {{ $paymentMethod->swift_bic }}</div>@endif
+                                        @if($paymentMethod->iban)<div><strong>IBAN:</strong> {{ $paymentMethod->iban }}</div>@endif
+                                        @if($paymentMethod->bank_address)<div><strong>Bank Address:</strong> {{ $paymentMethod->bank_address }}</div>@endif
+                                    </div>
+                                </dd>
+                            @endif
+
+                            @if($paymentMethod->wise_email || $paymentMethod->wise_recipient_id || $paymentMethod->wise_profile_id)
+                                <dt class="col-sm-3">Wise Details</dt>
+                                <dd class="col-sm-9">
+                                    <div class="small text-muted">
+                                        @if($paymentMethod->wise_email)<div><strong>Email:</strong> {{ $paymentMethod->wise_email }}</div>@endif
+                                        @if($paymentMethod->wise_recipient_id)<div><strong>Recipient ID:</strong> {{ $paymentMethod->wise_recipient_id }}</div>@endif
+                                        @if($paymentMethod->wise_profile_id)<div><strong>Profile ID:</strong> {{ $paymentMethod->wise_profile_id }}</div>@endif
+                                    </div>
+                                </dd>
+                            @endif
+
                             <dt class="col-sm-3">Status</dt>
                             <dd class="col-sm-9">
                                 <span class="badge bg-success">Active</span>

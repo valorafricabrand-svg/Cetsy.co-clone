@@ -54,6 +54,7 @@ use App\Http\Controllers\Admin\{
     HeroSlideController as AdminHeroSlideController
 };
 use App\Http\Controllers\Webhooks\PayoutWebhookController;
+use App\Http\Controllers\Webhooks\PaystackWebhookController;
 use App\Http\Controllers\Buyer\BuyerDashboard;
 use App\Http\Controllers\Seller\{
     DashboardController as SellerDashboard,
@@ -838,6 +839,9 @@ Route::middleware(['auth','admin'])->resource('settings', AdminSetting::class)
 // Webhooks (public endpoints)
 Route::post('/webhooks/paypal', [PayoutWebhookController::class, 'paypal'])
     ->name('webhooks.paypal')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+Route::post('/webhooks/paystack', [PaystackWebhookController::class, 'handle'])
+    ->name('webhooks.paystack')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 Route::post('/daraja/b2c/result', [PayoutWebhookController::class, 'darajaB2CResult'])
     ->name('webhooks.daraja.b2c.result')

@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use App\Models\Address;
 use App\Models\Country;
+use App\Services\CommissionService;
 
 class OrderController extends Controller
 {
@@ -647,6 +648,9 @@ public function storeOrder(Request $request)
             'meta'       => ['order_id' => $order->id],
         ]);
 
+        // Apply platform commission as on-hold debit (once per order)
+        CommissionService::createCommissionRow((int) $shop->user_id, (int) $order->id, (float) $order->total_amount, 'on_hold');
+
         // Emails
         try {
             $order->load(['items.product', 'shop.user', 'user']);
@@ -952,11 +956,12 @@ public function storeOrder(Request $request)
                 ->get();
 
             if ($toRelease->isNotEmpty()) {
-                $percent = (float) (function_exists('setting') ? setting('release_fee_percent', env('HOLD_RELEASE_FEE_PERCENT', 5.5)) : env('HOLD_RELEASE_FEE_PERCENT', 5.5));
+                $hasFee = CommissionService::commissionExists($sellerId, (int) $order->id);
+                $percent = CommissionService::percent();
                 foreach ($toRelease as $row) {
                     $amount = (float) (($row->credit ?? 0) - ($row->debit ?? 0));
                     $fee = round(max(0, $amount) * max(0, $percent) / 100, 2);
-                    if ($fee > 0.0) {
+                    if (!$hasFee && $fee > 0.0) {
                         Wallet::create([
                             'user_id'     => $sellerId,
                             'credit'      => 0,
@@ -1070,6 +1075,15 @@ public function storeOrder(Request $request)
                     'meta'       => ['order_id' => $order->id],
                 ]);
 
+                // Reverse platform commission for refunded order (full amount)
+                CommissionService::refundCommission(
+                    (int) $sellerId,
+                    (int) $order->id,
+                    (float) $order->total_amount,
+                    (float) $order->total_amount,
+                    $hasOnHold ? 'on_hold' : 'completed'
+                );
+
                 // Restock inventory for physical products
                 try {
                     $order->loadMissing('items.product');
@@ -1166,6 +1180,15 @@ public function storeOrder(Request $request)
                     'status'     => $hasOnHold ? 'on_hold' : 'completed',
                     'meta'       => ['order_id' => $order->id],
                 ]);
+
+                // Reverse platform commission for refunded order (full amount)
+                CommissionService::refundCommission(
+                    (int) $sellerId,
+                    (int) $order->id,
+                    (float) $order->total_amount,
+                    (float) $order->total_amount,
+                    $hasOnHold ? 'on_hold' : 'completed'
+                );
 
                 // Restock inventory for physical products
                 try {

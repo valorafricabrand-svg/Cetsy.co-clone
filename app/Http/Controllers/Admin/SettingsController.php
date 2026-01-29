@@ -81,6 +81,12 @@ class SettingsController extends Controller
         'fee_rate'          => 'nullable|numeric|min:0|max:100',
         'min_amount'        => 'nullable|numeric|min:0',
         'auto_release_days' => 'nullable|integer|min:1|max:365',
+        // Payout schedule
+        'payout_schedule'   => 'nullable|in:manual,weekly,biweekly,monthly',
+        'payout_weekday'    => 'nullable|integer|min:0|max:6',
+        'payout_month_day'  => 'nullable|integer|min:1|max:28',
+        'payout_auto_approve'  => 'nullable|boolean',
+        'payout_auto_disburse' => 'nullable|boolean',
         // Subscription grace period (days)
         'subscription_grace_days' => 'nullable|integer|min:0|max:60',
         // Subscription trial
@@ -161,6 +167,19 @@ class SettingsController extends Controller
         }
         if ($request->filled('subscription_trial_days')) {
             $putSetting('subscription_trial_days', $request->input('subscription_trial_days'));
+        }
+
+        // Payout scheduling
+        foreach (['payout_schedule','payout_weekday','payout_month_day'] as $k) {
+            if ($request->has($k)) {
+                $putSetting($k, $request->input($k));
+            }
+        }
+        if ($request->has('payout_auto_approve')) {
+            $putSetting('payout_auto_approve', $request->boolean('payout_auto_approve'));
+        }
+        if ($request->has('payout_auto_disburse')) {
+            $putSetting('payout_auto_disburse', $request->boolean('payout_auto_disburse'));
         }
 
         // Payment gateways (enable/disable + default)

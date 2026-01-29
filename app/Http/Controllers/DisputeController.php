@@ -22,6 +22,7 @@ use App\Models\EvidenceRequest;
 use App\Models\Wallet;
 use App\Models\User;
 use App\Mail\AdminDisputeActionMail;
+use App\Services\CommissionService;
 
 
 class DisputeController extends Controller
@@ -1481,6 +1482,14 @@ class DisputeController extends Controller
                     'status'     => $hasOnHold ? 'on_hold' : 'completed',
                     'meta'       => ['order_id' => $order->id, 'dispute_id' => $dispute->id, 'percent' => $percent],
                 ]);
+
+                CommissionService::refundCommission(
+                    (int) $sellerId,
+                    (int) $order->id,
+                    (float) $amount,
+                    (float) $order->total_amount,
+                    $hasOnHold ? 'on_hold' : 'completed'
+                );
             }
 
             $decision = Dispute::DECISION_BUYER_WINS;
@@ -1587,6 +1596,14 @@ class DisputeController extends Controller
                         'status'     => $hasOnHold ? 'on_hold' : 'completed',
                         'meta'       => ['order_id' => $order->id, 'dispute_id' => $dispute->id, 'percent' => $percent],
                     ]);
+
+                    CommissionService::refundCommission(
+                        (int) $sellerId,
+                        (int) $order->id,
+                        (float) $amount,
+                        (float) $order->total_amount,
+                        $hasOnHold ? 'on_hold' : 'completed'
+                    );
                 }
 
                 $decision   = Dispute::DECISION_PARTIAL_REFUND;

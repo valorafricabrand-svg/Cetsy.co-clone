@@ -59,6 +59,16 @@ class PaymentMethodController extends Controller
             ],
             'account_number' => 'required|string|max:255',
             'account_name' => 'required|string|max:255',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_country' => 'nullable|string|max:3',
+            'bank_currency' => 'nullable|string|max:3',
+            'bank_routing_number' => 'nullable|string|max:255',
+            'swift_bic' => 'nullable|string|max:32',
+            'iban' => 'nullable|string|max:64',
+            'bank_address' => 'nullable|string|max:255',
+            'wise_email' => 'nullable|email|max:255',
+            'wise_recipient_id' => 'nullable|string|max:255',
+            'wise_profile_id' => 'nullable|string|max:255',
         ]);
 
         $validated['shop_id'] = $shop->id;
@@ -130,6 +140,16 @@ class PaymentMethodController extends Controller
             ],
             'account_number' => 'required|string|max:255',
             'account_name' => 'required|string|max:255',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_country' => 'nullable|string|max:3',
+            'bank_currency' => 'nullable|string|max:3',
+            'bank_routing_number' => 'nullable|string|max:255',
+            'swift_bic' => 'nullable|string|max:32',
+            'iban' => 'nullable|string|max:64',
+            'bank_address' => 'nullable|string|max:255',
+            'wise_email' => 'nullable|email|max:255',
+            'wise_recipient_id' => 'nullable|string|max:255',
+            'wise_profile_id' => 'nullable|string|max:255',
         ]);
 
         $paymentMethod->update($validated);

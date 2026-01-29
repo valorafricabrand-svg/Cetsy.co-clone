@@ -53,4 +53,9 @@ return [
         'secret' => env('PAYSTACK_SECRET_KEY'),
     ],
 
+    'wise' => [
+        'token' => env('WISE_API_TOKEN'),
+        'profile_id' => env('WISE_PROFILE_ID'),
+    ],
+
 ];

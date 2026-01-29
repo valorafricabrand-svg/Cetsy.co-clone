@@ -44,6 +44,12 @@ class Setting extends Model
         'fee_rate',        // percent, e.g. 1.5
         'min_amount',      // minimum payout amount
         'auto_release_days', // days before auto-releasing on-hold funds
+        // Payout scheduling
+        'payout_schedule',      // manual|weekly|biweekly|monthly
+        'payout_weekday',       // 0=Sun .. 6=Sat
+        'payout_month_day',     // 1..28
+        'payout_auto_approve',  // auto-approve pending payouts on schedule
+        'payout_auto_disburse', // auto-send for supported methods
 
         // Shipping defaults
         'couriers_json',
@@ -77,6 +83,11 @@ class Setting extends Model
         'min_amount'       => 1.0,
         'auto_release_days'=> 3,
         'default_currency' => 'USD',
+        'payout_schedule'  => 'manual',
+        'payout_weekday'   => 5,   // Friday
+        'payout_month_day' => 15,  // 15th
+        'payout_auto_approve'  => false,
+        'payout_auto_disburse' => false,
     ];
 
     /**

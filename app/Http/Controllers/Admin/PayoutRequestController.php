@@ -11,6 +11,7 @@ use App\Models\Activity;
 use Illuminate\Support\Facades\Log;
 use App\Helpers\SafaricomDarajaHelper;
 use App\Helpers\PayPalHelper;
+use App\Helpers\WiseHelper;
 
 class PayoutRequestController extends Controller
 {
@@ -153,6 +154,18 @@ class PayoutRequestController extends Controller
                     $meta['paypal'] = $data;
                     $meta['txn_reference'] = $meta['txn_reference'] ?? ($data['batch_header']['payout_batch_id'] ?? null);
                     $autoSent = true;
+                } elseif (str_contains($typeName, 'wise')) {
+                    $recipientId = (string) ($payout->paymentMethod->wise_recipient_id ?? '');
+                    $profileId = $payout->paymentMethod->wise_profile_id ?? null;
+                    $currency = (string) ($payout->paymentMethod->bank_currency ?? (function_exists('setting') ? setting('default_currency', 'USD') : 'USD'));
+                    $resp = WiseHelper::createPayout($recipientId, $amount, $currency, $note, 'payout_'.$payout->id, $profileId);
+                    if (($resp['status'] ?? 'error') !== 'success') {
+                        return back()->withErrors(['paid' => 'Wise payout failed: '.($resp['message'] ?? 'Unknown error')]);
+                    }
+                    $data = $resp['data'] ?? [];
+                    $meta['wise'] = $data;
+                    $meta['txn_reference'] = $meta['txn_reference'] ?? ($data['transfer']['id'] ?? null);
+                    $autoSent = true;
                 } elseif (str_contains($typeName, 'mpesa') || str_contains($typeName, 'm-pesa')) {
                     // Normalize MSISDN to 2547XXXXXXXX
                     $msisdn = preg_replace('/\D+/', '', $account);
@@ -237,8 +250,8 @@ class PayoutRequestController extends Controller
         $amount   = (float) $payout->amount;
         $note     = 'Seller payout #'.$payout->id.' (resend)';
 
-        // Only proceed if method is PayPal or M-Pesa
-        abort_unless(str_contains($typeName, 'paypal') || str_contains($typeName, 'mpesa') || str_contains($typeName, 'm-pesa'), 400, 'Method not supported for auto resend');
+        // Only proceed if method is PayPal, M-Pesa, or Wise
+        abort_unless(str_contains($typeName, 'paypal') || str_contains($typeName, 'mpesa') || str_contains($typeName, 'm-pesa') || str_contains($typeName, 'wise'), 400, 'Method not supported for auto resend');
 
         $meta = $payout->meta ?? [];
 
@@ -251,6 +264,17 @@ class PayoutRequestController extends Controller
                 $data = $resp['data'] ?? [];
                 $meta['paypal'] = $data;
                 $meta['txn_reference'] = $meta['txn_reference'] ?? ($data['batch_header']['payout_batch_id'] ?? null);
+            } elseif (str_contains($typeName, 'wise')) {
+                $recipientId = (string) ($payout->paymentMethod->wise_recipient_id ?? '');
+                $profileId = $payout->paymentMethod->wise_profile_id ?? null;
+                $currency = (string) ($payout->paymentMethod->bank_currency ?? (function_exists('setting') ? setting('default_currency', 'USD') : 'USD'));
+                $resp = \App\Helpers\WiseHelper::createPayout($recipientId, $amount, $currency, $note, 'payout_'.$payout->id.'-RS', $profileId);
+                if (($resp['status'] ?? 'error') !== 'success') {
+                    return back()->withErrors(['resend' => 'Wise payout failed: '.($resp['message'] ?? 'Unknown error')]);
+                }
+                $data = $resp['data'] ?? [];
+                $meta['wise'] = $data;
+                $meta['txn_reference'] = $meta['txn_reference'] ?? ($data['transfer']['id'] ?? null);
             } else {
                 // Normalize M-Pesa MSISDN
                 $msisdn = preg_replace('/\D+/', '', $account);

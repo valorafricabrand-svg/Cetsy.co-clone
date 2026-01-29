@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Wallet;
 use App\Models\Payment;
+use App\Services\CommissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -129,11 +130,12 @@ class DigitalFileController extends Controller
                                 })
                                 ->get();
                             if ($rows->isNotEmpty()) {
-                                $percent = (float) (function_exists('setting') ? setting('release_fee_percent', env('HOLD_RELEASE_FEE_PERCENT', 5.5)) : env('HOLD_RELEASE_FEE_PERCENT', 5.5));
+                                $hasFee = CommissionService::commissionExists($sellerId, (int) $order->id);
+                                $percent = CommissionService::percent();
                                 foreach ($rows as $row) {
                                     $amount = (float) (($row->credit ?? 0) - ($row->debit ?? 0));
                                     $fee = round(max(0, $amount) * max(0, $percent) / 100, 2);
-                                    if ($fee > 0.0) {
+                                    if (!$hasFee && $fee > 0.0) {
                                         Wallet::create([
                                             'user_id'     => $sellerId,
                                             'credit'      => 0,

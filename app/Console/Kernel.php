@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         \App\Console\Commands\ReleaseOnHoldFunds::class,
+        \App\Console\Commands\RunScheduledPayouts::class,
         // Legacy: ProcessApprovedPayouts removed from schedule and command list
     ];
 
@@ -35,6 +36,9 @@ class Kernel extends ConsoleKernel
 
         // Auto-cancel orders that stay pending beyond 24 hours (runs hourly)
         $schedule->command('orders:auto-cancel')->hourly();
+
+        // Scheduled payouts (checks schedule internally)
+        $schedule->command('payouts:run-schedule')->hourly();
 
         // Subscription expiry reminders are scheduled in bootstrap/app.php
     }

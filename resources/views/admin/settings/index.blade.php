@@ -315,6 +315,71 @@
         @error('auto_release_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
 
+      {{-- Payout Schedule --}}
+      @php
+        $payoutSchedule = old('payout_schedule', $settings->payout_schedule ?? (function_exists('setting') ? setting('payout_schedule', 'manual') : 'manual'));
+        $payoutWeekday = (int) old('payout_weekday', $settings->payout_weekday ?? (function_exists('setting') ? setting('payout_weekday', 5) : 5));
+        $payoutMonthDay = (int) old('payout_month_day', $settings->payout_month_day ?? (function_exists('setting') ? setting('payout_month_day', 15) : 15));
+        $payoutAutoApprove = (bool) (int) old('payout_auto_approve', $settings->payout_auto_approve ?? (function_exists('setting') ? setting('payout_auto_approve', 0) : 0));
+        $payoutAutoDisburse = (bool) (int) old('payout_auto_disburse', $settings->payout_auto_disburse ?? (function_exists('setting') ? setting('payout_auto_disburse', 0) : 0));
+        $weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      @endphp
+      <div class="col-md-4">
+        <label class="form-label">Payout Schedule</label>
+        <select name="payout_schedule" class="form-select @error('payout_schedule') is-invalid @enderror">
+          <option value="manual" {{ $payoutSchedule === 'manual' ? 'selected' : '' }}>Manual</option>
+          <option value="weekly" {{ $payoutSchedule === 'weekly' ? 'selected' : '' }}>Weekly</option>
+          <option value="biweekly" {{ $payoutSchedule === 'biweekly' ? 'selected' : '' }}>Bi-weekly</option>
+          <option value="monthly" {{ $payoutSchedule === 'monthly' ? 'selected' : '' }}>Monthly</option>
+        </select>
+        <div class="form-text">Controls when pending payouts are processed automatically.</div>
+        @error('payout_schedule') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Payout Weekday</label>
+        <select name="payout_weekday" class="form-select @error('payout_weekday') is-invalid @enderror">
+          @foreach($weekdays as $idx => $label)
+            <option value="{{ $idx }}" {{ $payoutWeekday === $idx ? 'selected' : '' }}>{{ $label }}</option>
+          @endforeach
+        </select>
+        <div class="form-text">Used for weekly/bi-weekly schedules.</div>
+        @error('payout_weekday') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Payout Day of Month</label>
+        <input type="number"
+               name="payout_month_day"
+               class="form-control @error('payout_month_day') is-invalid @enderror"
+               value="{{ $payoutMonthDay }}"
+               step="1" min="1" max="28" placeholder="15">
+        <div class="form-text">Used for monthly schedules (1-28).</div>
+        @error('payout_month_day') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Auto-approve Payouts</label>
+        <input type="hidden" name="payout_auto_approve" value="0">
+        <div class="form-check form-switch mt-1">
+          <input class="form-check-input" type="checkbox" role="switch" id="payout-auto-approve"
+                 name="payout_auto_approve" value="1" {{ $payoutAutoApprove ? 'checked' : '' }}>
+          <label class="form-check-label" for="payout-auto-approve">Enabled</label>
+        </div>
+        <div class="form-text">Automatically approve eligible payout requests on schedule.</div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Auto-disburse Payouts</label>
+        <input type="hidden" name="payout_auto_disburse" value="0">
+        <div class="form-check form-switch mt-1">
+          <input class="form-check-input" type="checkbox" role="switch" id="payout-auto-disburse"
+                 name="payout_auto_disburse" value="1" {{ $payoutAutoDisburse ? 'checked' : '' }}>
+          <label class="form-check-label" for="payout-auto-disburse">Enabled</label>
+        </div>
+        <div class="form-text">Auto-send for supported methods (PayPal/M-Pesa/Wise).</div>
+      </div>
+
       {{-- Subscription Grace Period (days) --}}
       @php
         $graceDaysSetting = function_exists('setting') ? setting('subscription_grace_days', 5) : 5;

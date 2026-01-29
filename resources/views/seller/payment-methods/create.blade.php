@@ -84,6 +84,66 @@
                                 </small>
                             </div>
 
+                            <hr class="my-4">
+                            <h6 class="mb-3">Bank Transfer / SWIFT (Optional)</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="bank_name">Bank Name</label>
+                                    <input type="text" class="form-control @error('bank_name') is-invalid @enderror" id="bank_name" name="bank_name" value="{{ old('bank_name') }}">
+                                    @error('bank_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label" for="bank_country">Bank Country</label>
+                                    <input type="text" class="form-control @error('bank_country') is-invalid @enderror" id="bank_country" name="bank_country" value="{{ old('bank_country') }}" placeholder="e.g. US">
+                                    @error('bank_country')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label" for="bank_currency">Currency</label>
+                                    <input type="text" class="form-control @error('bank_currency') is-invalid @enderror" id="bank_currency" name="bank_currency" value="{{ old('bank_currency') }}" placeholder="e.g. USD">
+                                    @error('bank_currency')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="bank_routing_number">Routing/Sort Code</label>
+                                    <input type="text" class="form-control @error('bank_routing_number') is-invalid @enderror" id="bank_routing_number" name="bank_routing_number" value="{{ old('bank_routing_number') }}">
+                                    @error('bank_routing_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="swift_bic">SWIFT/BIC</label>
+                                    <input type="text" class="form-control @error('swift_bic') is-invalid @enderror" id="swift_bic" name="swift_bic" value="{{ old('swift_bic') }}">
+                                    @error('swift_bic')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="iban">IBAN</label>
+                                    <input type="text" class="form-control @error('iban') is-invalid @enderror" id="iban" name="iban" value="{{ old('iban') }}">
+                                    @error('iban')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="bank_address">Bank Address</label>
+                                    <input type="text" class="form-control @error('bank_address') is-invalid @enderror" id="bank_address" name="bank_address" value="{{ old('bank_address') }}">
+                                    @error('bank_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+                            <h6 class="mb-3">Wise (Optional)</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="wise_email">Wise Email</label>
+                                    <input type="email" class="form-control @error('wise_email') is-invalid @enderror" id="wise_email" name="wise_email" value="{{ old('wise_email') }}">
+                                    @error('wise_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="wise_recipient_id">Wise Recipient ID</label>
+                                    <input type="text" class="form-control @error('wise_recipient_id') is-invalid @enderror" id="wise_recipient_id" name="wise_recipient_id" value="{{ old('wise_recipient_id') }}">
+                                    @error('wise_recipient_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="wise_profile_id">Wise Profile ID</label>
+                                    <input type="text" class="form-control @error('wise_profile_id') is-invalid @enderror" id="wise_profile_id" name="wise_profile_id" value="{{ old('wise_profile_id') }}">
+                                    @error('wise_profile_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                            </div>
+
                             <!-- Submit Buttons -->
                             <div class="d-flex justify-content-end gap-2">
                                 <a href="{{ route('seller.payment-methods.index') }}" class="btn btn-outline-secondary">

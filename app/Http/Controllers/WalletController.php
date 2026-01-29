@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use App\Services\CommissionService;
 
 class WalletController extends Controller
 {
@@ -1959,6 +1960,9 @@ public function payOrder(Request $request, $id)
             'description'=> 'Order payment',
             'status'     => 'on_hold',
         ]);
+
+        // Apply platform commission as an on-hold debit (once per order)
+        CommissionService::createCommissionRow((int) $shop->user_id, (int) $order->id, (float) $order->total_amount, 'on_hold');
 
         // Send email notifications for successful payment
         try {
