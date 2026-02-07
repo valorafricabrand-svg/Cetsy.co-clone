@@ -77,7 +77,9 @@ use App\Http\Controllers\Seller\{
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::view('/landing', 'landing.index')->name('landing');
+Route::get('/landing', function () {
+    return themed_view('pages.landing');
+})->name('landing');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 // Currency selector (accept GET or POST; CSRF not required for this benign action)
 Route::match(['GET','POST'], '/set-currency', [CurrencySelectionController::class, 'set'])
