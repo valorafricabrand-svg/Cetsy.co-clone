@@ -1,11 +1,7 @@
-@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.landing')
 
 @section('title', config('app.name', 'Cetsy') . ' | Tailwind Landing')
 @section('meta_description', 'Tailwind-powered landing page starter for Cetsy theme.')
-
-@push('styles')
-    @vite(['resources/css/landing.css', 'resources/js/landing.js'])
-@endpush
 
 @section('main')
 <div class="landing-shell relative">
