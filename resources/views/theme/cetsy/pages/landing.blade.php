@@ -1,4 +1,4 @@
-@extends('theme.'.theme().'.layouts.landing')
+@extends('theme.cetsy.layouts.landing')
 
 @section('title', config('app.name', 'Cetsy') . ' | Tailwind Landing')
 @section('meta_description', 'Tailwind-powered landing page starter for Cetsy theme.')
