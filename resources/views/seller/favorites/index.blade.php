@@ -1,11 +1,11 @@
 @extends('layouts.app')
-@section('title', 'Product Favorites')
+@section('title', 'Shop Favorites')
 
 @section('content')
 <div class="content">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h4 mb-1">Product Favorites</h1>
+            <h1 class="h4 mb-1">Shop Favorites</h1>
             <p class="text-muted mb-0">See which customers have added your products to their favorites</p>
         </div>
         <div class="d-flex align-items-center gap-2">
@@ -27,7 +27,7 @@
             <div class="card-body text-center py-5">
                 <div class="empty-state">
                     <i class="bi bi-heart text-muted" style="font-size: 4rem;"></i>
-                    <h4 class="mt-3 text-muted">No favorites yet</h4>
+                    <h4 class="mt-3 text-muted">No shop favorites yet</h4>
                     <p class="text-muted mb-0">When customers add your products to their favorites, they'll appear here.</p>
                 </div>
             </div>

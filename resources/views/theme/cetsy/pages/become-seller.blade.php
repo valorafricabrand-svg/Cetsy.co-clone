@@ -22,10 +22,9 @@
         <p class="lead">
           Not sure if your item qualifies?
           <a
-            href="#live-chat"
+            href="{{ url('/contact') }}"
             class="text-decoration-underline"
-            onclick="if(window.Tawk_API && typeof Tawk_API.toggle === 'function'){Tawk_API.toggle();} return false;"
-          >Contact us via live chat</a>
+          >Contact us via the Contact Us form</a>
           and we'll help.
         </p>
         <p class="lead mb-2">

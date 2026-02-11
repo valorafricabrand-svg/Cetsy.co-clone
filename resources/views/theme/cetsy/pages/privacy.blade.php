@@ -7,7 +7,7 @@
     <div class="container">
       <div class="mx-auto" style="max-width: 900px;">
         <h1 class="fw-bold mb-2">Privacy Policy</h1>
-        <p class="text-muted mb-4">Effective: {{ now()->format('F j, Y') }}</p>
+        <p class="text-muted mb-4">Effective: {{ policy_effective_label() }}</p>
 
         <p class="mb-4">
           This Privacy Policy explains how {{ config('app.name','Cetsy') }} (“we”, “us”, “our”) collects, uses, and
@@ -74,4 +74,3 @@
     </div>
   </section>
 @endsection
-

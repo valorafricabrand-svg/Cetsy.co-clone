@@ -11,15 +11,13 @@
     }
 
     $productIds     = $shop?->products()->pluck('id')->toArray() ?? [];
+    $myFavoritesCount = \App\Models\Wishlist::where('user_id', Auth::id())->count();
     $unreadMessages = \App\Models\Message::whereIn('product_id', $productIds)
                          ->where('receiver_id', Auth::id())
                          ->where('is_read', false)
                          ->count();
-    // Unread favorites: based on Activity entries (wishlist type)
-    $favoritesCount = \App\Models\Activity::where('user_id', Auth::id())
-                        ->where('type', \App\Models\Activity::TYPE_WISHLIST)
-                        ->where('is_read', false)
-                        ->count();
+    // Favorites on this seller's products (shop favorites).
+    $shopFavoritesCount = \App\Models\Wishlist::whereIn('product_id', $productIds)->count();
     $pendingOffers  = \App\Models\Offer::whereIn('product_id', $productIds)
                          ->where('status', 'pending')->count();
     // Pending disputes count for this seller (sidebar badge)
@@ -46,7 +44,8 @@
         'Engagement' => [
             ['route'=>'seller.messages.index','icon'=>'fas fa-comments','label'=>'Messages','badge'=>$unreadMessages],
             ['route'=>'seller.offers.index','icon'=>'fas fa-hand-holding-usd','label'=>'Offers','badge'=>$pendingOffers],
-            ['route'=>'seller.favorites.index','icon'=>'fas fa-heart','label'=>'Favorites','badge'=>$favoritesCount],
+            ['route'=>'buyer.favorites','icon'=>'fas fa-heart','label'=>'Favorites','badge'=>$myFavoritesCount],
+            ['route'=>'seller.favorites.index','icon'=>'fas fa-store','label'=>'Shop Favorites','badge'=>$shopFavoritesCount],
             ['route'=>'seller.notifications.index','icon'=>'fas fa-bell','label'=>'Notifications','badge'=>(\App\Models\Activity::where('user_id', Auth::id())->where('is_read', false)->count())],
         ],
          'Dispute' => [

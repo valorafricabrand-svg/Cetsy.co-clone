@@ -6,7 +6,7 @@
   <section class="py-5">
     <div class="container">
       <h1 class="fw-bold mb-3">Cetsy User Agreement</h1>
-      <p class="text-muted">Effective: June 2025 (and as noted per section)</p>
+      <p class="text-muted">Effective: {{ policy_effective_label() }} (and as noted per section)</p>
 
       <div class="row g-4">
         <!-- TOC Sidebar -->

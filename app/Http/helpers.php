@@ -639,6 +639,28 @@ if (! function_exists('legal_jurisdiction')) {
     }
 }
 
+if (! function_exists('policy_effective_label')) {
+    /**
+     * Resolve the shared effective date label shown on policy pages.
+     * Priority: settings table (policy_effective_date) -> env POLICY_EFFECTIVE_DATE -> default fallback.
+     */
+    function policy_effective_label(): string
+    {
+        $candidates = [];
+
+        try { $candidates[] = setting('policy_effective_date'); } catch (\Throwable $e) {}
+        $candidates[] = env('POLICY_EFFECTIVE_DATE');
+
+        foreach ($candidates as $candidate) {
+            if (! is_string($candidate)) continue;
+            $value = trim($candidate);
+            if ($value !== '') return $value;
+        }
+
+        return 'August 2025';
+    }
+}
+
 if (! function_exists('product_thumb_url')) {
     /**
      * Build a product thumbnail URL with fallbacks:

@@ -30,7 +30,8 @@ use App\Http\Controllers\{
     BulkPriceController,
     ProductReportController,
     ProductShippingController,
-    ProductVariationController
+    ProductVariationController,
+    ContactController
 };
 
 use App\Http\Controllers\Admin\{
@@ -128,6 +129,9 @@ Route::get('/prohibited-items', function () {
 Route::get('/contact', function () {
     return themed_view('pages.contact');
 })->name('contact');
+Route::post('/contact', [ContactController::class, 'submit'])
+    ->name('contact.submit')
+    ->middleware('throttle:8,1');
 // Aliases for legacy links
 Route::get('/privacy-policy', function () {
     return themed_view('pages.privacy');
