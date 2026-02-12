@@ -11,6 +11,11 @@
 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="application-name" content="{{ $siteName }}">
+    <meta name="apple-mobile-web-app-title" content="{{ $siteName }}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="{{ $metaDescription }}">
@@ -19,6 +24,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ $favicon }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ $favicon }}">
     <link rel="shortcut icon" type="image/x-icon" href="{{ $favicon }}">
+    <link rel="manifest" href="{{ asset('assets/img/favicons/manifest.json') }}">
     <meta name="theme-color" content="#ffffff">
     <title>{{ $metaTitle }}</title>
 
@@ -32,6 +38,7 @@
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
     @yield('main')
 
+    <script src="{{ asset('assets/js/pwa-install.js') }}" defer></script>
     @stack('scripts')
 </body>
 </html>

@@ -15,6 +15,11 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="application-name" content="{{ $siteName }}">
+    <meta name="apple-mobile-web-app-title" content="{{ $siteName }}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="robots" content="{{ $metaRobots }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -684,6 +689,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="{{ asset('') }}vendors/countup/countUp.umd.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDbaQGvhe7Af-uOMJz68NWHnO34UjjE7Lo&amp;callback=initMap" async></script>
 <script src="{{ asset('') }}/{{ asset('') }}/../smtpjs.com/v3/smtp.js"></script>
+<script src="{{ asset('assets/js/pwa-install.js') }}" defer></script>
 
 
   @yield('scripts')

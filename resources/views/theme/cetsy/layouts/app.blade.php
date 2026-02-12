@@ -1286,18 +1286,7 @@
   @yield('scripts')
   @stack('scripts')
 
-  <!-- PWA: Service Worker Registration -->
-  <script>
-    (function(){
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function(){
-          navigator.serviceWorker.register('/service-worker.js').catch(function(err){
-            console.warn('SW registration failed:', err);
-          });
-        });
-      }
-    })();
-  </script>
+  <script src="{{ asset('assets/js/pwa-install.js') }}" defer></script>
 
   {{-- Mobile bottom navigation (front theme) --}}
   @include('theme.'.theme().'.partials._mobile_nav')

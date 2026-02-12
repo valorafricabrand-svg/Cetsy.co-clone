@@ -414,18 +414,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- before </body> -->
 <script src="https://cdn.jsdelivr.net/npm/intro.js/minified/intro.min.js"></script>
-<script>
-  // Register Service Worker for PWA support
-  (function(){
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function(){
-        navigator.serviceWorker.register('/service-worker.js').catch(function(err){
-          console.warn('SW registration failed:', err);
-        });
-      });
-    }
-  })();
-</script>
+<script src="{{ asset('assets/js/pwa-install.js') }}" defer></script>
 {{-- Mobile bottom navigation (front theme) --}}
 @include('theme.'.theme().'.partials._mobile_nav')
 </body>
