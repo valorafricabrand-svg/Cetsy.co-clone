@@ -111,21 +111,23 @@
                         $product = $productFavorites->first()->product;
                         $favoriteCount = $productFavorites->count();
                         $uniqueBuyers = $productFavorites->unique('user_id')->count();
+                        $productUrl = route('products.show', $product->slug ?? $product->id);
                     @endphp
                     <div class="product-favorites-section border-bottom">
                         <div class="p-4">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="product-info d-flex align-items-center flex-grow-1">
                                     @if($product->media->first())
-                                        <img src="{{ asset('storage/' . $product->media->first()->url) }}" 
-                                             alt="{{ $product->name }}" 
-                                             class="rounded me-3" 
-                                             style="width:60px;height:60px;object-fit:cover;">
+                                        <a href="{{ $productUrl }}" class="product-thumb-link rounded me-3" aria-label="Open {{ $product->name }}">
+                                            <img src="{{ asset('storage/' . $product->media->first()->url) }}" 
+                                                 alt="{{ $product->name }}" 
+                                                 class="rounded" 
+                                                 style="width:60px;height:60px;object-fit:cover;">
+                                        </a>
                                     @else
-                                        <div class="bg-light border rounded me-3 d-flex align-items-center justify-content-center" 
-                                             style="width:60px;height:60px;">
+                                        <a href="{{ $productUrl }}" class="product-thumb-link bg-light border rounded me-3 d-flex align-items-center justify-content-center" aria-label="Open {{ $product->name }}" style="width:60px;height:60px;">
                                             <i class="bi bi-box text-secondary"></i>
-                                        </div>
+                                        </a>
                                     @endif
                                     <div class="flex-grow-1">
                                         <h6 class="mb-1 fw-bold">{{ $product->name }}</h6>
@@ -137,7 +139,7 @@
                                     </div>
                                 </div>
                                 <div class="product-actions">
-                                    <a href="{{ route('products.show', $product->slug ?? $product->id) }}" 
+                                    <a href="{{ $productUrl }}" 
                                        class="btn btn-outline-primary btn-sm">
                                         <i class="bi bi-eye me-1"></i>View Product
                                     </a>
@@ -288,6 +290,15 @@
     .buyer-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .product-thumb-link {
+        display: inline-flex;
+        text-decoration: none;
+        transition: transform 0.2s, opacity 0.2s;
+    }
+    .product-thumb-link:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
     }
     .timeline-item {
         transition: background-color 0.2s;
