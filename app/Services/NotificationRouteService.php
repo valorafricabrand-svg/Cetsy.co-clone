@@ -117,12 +117,24 @@ class NotificationRouteService
     {
         try {
             if ($notification && $notification->related_id) {
-                $msg = \App\Models\Message::find((int) $notification->related_id);
+                $msg = \App\Models\Message::with('product.shop')->find((int) $notification->related_id);
                 if ($msg) {
                     $otherId = $user->id === $msg->sender_id ? $msg->receiver_id : $msg->sender_id;
                     $pid = (int) ($msg->product_id ?? 0);
                     $convId  = $pid . '-' . (int) $otherId;
-                    if ($user->isSeller()) { return route('seller.messages.show', $convId); }
+
+                    if ($user->isSeller()) {
+                        $isOwnShopProductMessage = $pid > 0
+                            && (int) optional(optional($msg->product)->shop)->user_id === (int) $user->id;
+                        $isInboundGeneralInquiry = $pid === 0 && (int) $msg->receiver_id === (int) $user->id;
+
+                        // Seller accounts can also act as buyers. Route based on message context.
+                        if ($isOwnShopProductMessage || $isInboundGeneralInquiry) {
+                            return route('seller.messages.show', $convId);
+                        }
+                        return route('buyer.messages.show', $convId);
+                    }
+
                     if ($user->isAdmin()) { return route('admin.messages.index'); }
                     return route('buyer.messages.show', $convId);
                 }

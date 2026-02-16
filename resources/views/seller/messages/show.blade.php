@@ -104,7 +104,7 @@
                 @endif
 
                 {{-- Buyer Favorites --}}
-                @if($otherUser)
+                @if(($showBuyerFavorites ?? false) && $otherUser)
                 <div class="card shadow-sm border-0 mb-4 buyer-favorites-card">
                     <div class="card-header bg-white border-bottom">
                         <div class="d-flex align-items-center">
@@ -175,7 +175,11 @@
                         <div class="mt-2">
                             <small class="text-muted">
                                 <i class="bi bi-info-circle me-1"></i>
-                                This conversation is between you and {{ $otherUser?->name ?? 'the customer' }} about this specific product.
+                                @if($product)
+                                    This conversation is between you and {{ $otherUser?->name ?? 'the customer' }} about this specific product.
+                                @else
+                                    This conversation is between you and {{ $otherUser?->name ?? 'the customer' }}.
+                                @endif
                             </small>
                         </div>
                     </div>

@@ -25,19 +25,15 @@ class MessageController extends Controller
                 ->with('warning', 'Please create a shop to view messages.');
         }
 
-        // Get all product IDs for this shop
-        $productIds = $shop->products()->pluck('id');
-
-        // Get conversations where the seller is either sender or receiver
-        $conversations = Message::where(function($q) use ($productIds){
-                $q->whereIn('product_id', $productIds)
-                  ->orWhere(function($qq){ $qq->whereNull('product_id'); });
-            })
-            ->where(function($query) use ($user) {
+        // Get all conversations where the current user is either sender or receiver.
+        // This includes:
+        // - seller-side conversations about own listings
+        // - buyer-side conversations for users who also have seller accounts
+        $conversations = Message::where(function($query) use ($user) {
                 $query->where('sender_id', $user->id)
                       ->orWhere('receiver_id', $user->id);
             })
-            ->with(['product', 'sender', 'receiver'])
+            ->with(['product.shop', 'sender', 'receiver'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->groupBy(function($message) use ($user) {
@@ -115,17 +111,11 @@ class MessageController extends Controller
         $productId = $parts[0];
         $otherUserId = $parts[1];
         
-        // If productId is 0, this is a direct (non-product) conversation
+        // If productId is 0, this is a direct (non-product) conversation.
         $product = null;
         if ((int)$productId !== 0) {
-            // Best-effort fetch of the product to display context.
-            // Authorization is enforced via the Message conversation check below,
-            // so we don't block just because the product was deleted or moved.
+            // Keep product context even when this user is participating as a buyer.
             $product = Product::find($productId);
-            if ($product && $product->shop_id !== $shop->id) {
-                // Product no longer belongs to this shop; hide the listing context.
-                $product = null;
-            }
         }
         
         // Validate that the user is part of this conversation
@@ -179,7 +169,13 @@ class MessageController extends Controller
         $otherUser = User::find($otherUserId);
 
         $buyerFavorites = collect();
-        if ($otherUser && $shop) {
+        $showBuyerFavorites = (bool) (
+            $otherUser
+            && $shop
+            && $product
+            && (int) $product->shop_id === (int) $shop->id
+        );
+        if ($showBuyerFavorites) {
             $buyerFavorites = Wishlist::with(['product.media'])
                 ->where('user_id', $otherUser->id)
                 ->whereHas('product', function($query) use ($shop) {
@@ -194,7 +190,7 @@ class MessageController extends Controller
                 ->values();
         }
 
-        return view('seller.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'buyerFavorites'));
+        return view('seller.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'buyerFavorites', 'showBuyerFavorites'));
     }
 
     public function markAsRead($id)
@@ -207,29 +203,8 @@ class MessageController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        // Also ensure the message belongs to one of the seller's products
-        $shop = $currentUser->shop;
-        if (!$shop) {
-            abort(403, 'Shop not found.');
-        }
-
-        $productIds = $shop->products()->pluck('id');
-        if (!in_array($message->product_id, $productIds->toArray())) {
-            abort(403, 'Message does not belong to your products.');
-        }
-
         $message->is_read = true;
         $message->save();
-
-        // Create activity record for the buyer
-        Activity::create([
-            'user_id' => $message->receiver_id,
-            'is_read' => false,
-            'description' => 'You received a new message from ' . $message->sender->name,
-            'type' => \App\Models\Activity::TYPE_MESSAGE,
-            'related_id' => $message->id,
-            'related_type' => 'message'
-        ]);
 
         return back()->with('success', 'Message marked as read.');
     }
@@ -244,16 +219,6 @@ class MessageController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $shop = $currentUser->shop;
-        if (!$shop) {
-            abort(403, 'Shop not found.');
-        }
-
-        $productIds = $shop->products()->pluck('id');
-        if (!is_null($message->product_id) && !in_array($message->product_id, $productIds->toArray())) {
-            abort(403, 'Message does not belong to your products.');
-        }
-
         $message->is_read = false;
         $message->save();
 
@@ -263,19 +228,9 @@ class MessageController extends Controller
     public function bulkMarkAsRead()
     {
         $user = auth()->user();
-        $shop = $user->shop;
 
-        if (!$shop) {
-            return redirect()->route('seller.shop.create')
-                ->with('warning', 'Please create a shop to manage messages.');
-        }
-
-        // Get all product IDs for this shop
-        $productIds = $shop->products()->pluck('id');
-
-        // Mark all unread messages as read (only for messages where seller is receiver)
-        $updatedCount = Message::whereIn('product_id', $productIds)
-            ->where('receiver_id', $user->id) // Only messages where seller is the receiver
+        // Mark all unread messages as read where this user is the receiver.
+        $updatedCount = Message::where('receiver_id', $user->id)
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
@@ -305,17 +260,39 @@ class MessageController extends Controller
         // If productId is 0, this is a non-product conversation (allowed)
         $product = null;
         if ((int)$productId !== 0) {
-            // Validate that the product belongs to the seller's shop
             $product = Product::find($productId);
             if (!$product) {
                 return back()->withErrors([
                     'message' => 'Cannot reply to this conversation. The product associated with this conversation no longer exists.'
                 ])->withInput();
             }
-            
-            if ($product->shop_id !== $shop->id) {
-                abort(403, 'You are not authorized to reply to this conversation.');
-            }
+        }
+
+        // Allow reply when:
+        // 1) conversation already exists between these users for this product context; OR
+        // 2) this is a new seller-originated conversation about one of seller's own products.
+        $conversationExists = Message::where(function($q) use ($productId){
+                if ((int)$productId === 0) { $q->whereNull('product_id'); }
+                else { $q->where('product_id', $productId); }
+            })
+            ->where(function($query) use ($user, $otherUserId) {
+                $query->where(function($q) use ($user, $otherUserId) {
+                    $q->where('sender_id', $user->id)->where('receiver_id', $otherUserId);
+                })->orWhere(function($q) use ($user, $otherUserId) {
+                    $q->where('sender_id', $otherUserId)->where('receiver_id', $user->id);
+                });
+            })
+            ->exists();
+
+        $isNewOwnListingConversation = (
+            !$conversationExists
+            && $product
+            && $shop
+            && (int) $product->shop_id === (int) $shop->id
+        );
+
+        if (!$conversationExists && !$isNewOwnListingConversation) {
+            abort(403, 'You are not authorized to reply to this conversation.');
         }
         
         $data = $request->validate([
