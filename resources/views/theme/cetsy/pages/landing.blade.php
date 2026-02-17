@@ -1,166 +1,233 @@
 @extends('theme.cetsy.layouts.landing')
 
-@section('title', config('app.name', 'Cetsy') . ' | Mobile-First Marketplace')
-@section('meta_description', 'Cetsy mobile-first landing experience built with Tailwind CSS.')
+@section('title', 'Cetsy | Handmade products, services, and digital goods')
+@section('meta_description', 'Discover handmade products, services, and digital goods from creators across Africa on Cetsy.')
+@section('canonical_url', route('home'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
 
 @section('main')
-<div class="landing-shell pb-28 md:pb-14">
+<div class="landing-shell pb-28 md:pb-10">
     <div class="landing-orb landing-orb-one" aria-hidden="true"></div>
     <div class="landing-orb landing-orb-two" aria-hidden="true"></div>
 
-    <div class="mx-auto w-full max-w-md px-4 pt-5 md:max-w-6xl md:px-6 md:pt-8">
-        <div class="app-shell" data-reveal>
-            <header class="app-topbar">
-                <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500">
-                    <span>9:41</span>
-                    <div class="flex items-center gap-1.5">
-                        <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-                        <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-                        <span class="h-2.5 w-5 rounded-sm border border-slate-400"></span>
-                    </div>
+    <div class="mx-auto w-full max-w-6xl px-4 pt-4 md:px-6 md:pt-6">
+        <header class="app-header" data-reveal>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('home') }}" class="flex items-center gap-2">
+                    <img src="{{ logo_url() }}" alt="{{ config('app.name', 'Cetsy') }}" class="h-10 w-10 rounded-xl object-contain"
+                        onerror="this.onerror=null;this.src=@json(asset('assets/images/cetsylogmain.png'));">
+                    <span>
+                        <span class="block text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-700">Marketplace</span>
+                        <span class="block text-lg font-extrabold text-slate-900">{{ config('app.name', 'Cetsy') }}</span>
+                    </span>
+                </a>
+            </div>
+
+            <form action="{{ route('search') }}" method="GET" class="hidden flex-1 md:block">
+                <label for="landingSearch" class="sr-only">Search products</label>
+                <div class="search-shell">
+                    <svg viewBox="0 0 24 24" class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input id="landingSearch" name="q" value="{{ request('q') }}" type="search" placeholder="Search products, services, shops" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
+                    <button type="submit" class="search-btn">Search</button>
+                </div>
+            </form>
+
+            <div class="hidden items-center gap-2 md:flex">
+                <a href="{{ route('listings') }}" class="nav-chip">Explore</a>
+                <a href="{{ route('shops.index') }}" class="nav-chip">Shops</a>
+                <a href="{{ route('become-seller') }}" class="nav-chip">Sell</a>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <a href="{{ route('login') }}" class="nav-btn">Login</a>
+                <a href="{{ route('register') }}" class="nav-btn nav-btn-primary">Create account</a>
+            </div>
+        </header>
+
+        <section class="mt-4" data-reveal>
+            <div class="feature-row">
+                <a href="{{ url('/user-agreement#privacy') }}" class="feature-pill">Buyer/Seller Protection</a>
+                <a href="{{ url('/user-agreement#buyer-tips') }}" class="feature-pill">Global Shipping</a>
+                <a href="{{ route('listings', ['sort' => 'popular']) }}" class="feature-pill">Curated Trending Picks Daily</a>
+            </div>
+        </section>
+
+        <section class="mt-4 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]" data-reveal>
+            <article class="hero-card">
+                <span class="hero-tag">Save</span>
+                <h1 class="mt-2 text-3xl font-extrabold leading-tight text-white md:text-5xl">
+                    Shop our lowest prices on selected items
+                </h1>
+                <p class="mt-3 max-w-xl text-sm text-white/85 md:text-base">
+                    Discover limited-time offers across electronics, services, and digital goods from trusted Cetsy sellers.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-2.5">
+                    <a href="{{ route('listings', ['sort' => 'popular']) }}" class="cta-white">Shop deals</a>
+                    <a href="{{ route('listings') }}" class="cta-outline">Browse marketplace</a>
                 </div>
 
-                <div class="mt-3 flex items-center justify-between">
-                    <a href="{{ route('home') }}" class="inline-flex items-center gap-2">
-                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-600 text-sm font-extrabold text-white">C</span>
-                        <span>
-                            <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">Cetsy</span>
-                            <span class="block text-sm font-bold text-slate-900">Marketplace</span>
-                        </span>
+                <form action="{{ route('search') }}" method="GET" class="mt-5 md:hidden">
+                    <label for="landingSearchMobile" class="sr-only">Search products</label>
+                    <div class="search-shell bg-white/95">
+                        <svg viewBox="0 0 24 24" class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input id="landingSearchMobile" name="q" value="{{ request('q') }}" type="search" placeholder="Search products" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
+                        <button type="submit" class="search-btn">Search</button>
+                    </div>
+                </form>
+            </article>
+
+            <aside class="panel-card">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold uppercase tracking-[0.12em] text-emerald-700">Deals & Inspiration</h2>
+                    <span class="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700">Today</span>
+                </div>
+                <div class="mt-3 space-y-2.5">
+                    <a href="{{ route('listings', ['sort' => 'popular']) }}" class="quick-item">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900">Top picks</p>
+                            <p class="text-xs text-slate-500">Trending products and bundles</p>
+                        </div>
+                        <span class="quick-badge">Explore</span>
                     </a>
-                    <div class="hidden items-center gap-3 md:flex">
-                        <a href="{{ route('listings') }}" class="text-sm font-semibold text-slate-700 transition hover:text-slate-900">Explore</a>
-                        <a href="{{ route('become-seller') }}" class="text-sm font-semibold text-slate-700 transition hover:text-slate-900">Sell</a>
-                        <a href="{{ route('contact') }}" class="text-sm font-semibold text-slate-700 transition hover:text-slate-900">Contact</a>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <a href="{{ route('login') }}" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:border-slate-300" aria-label="Login">
-                            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
-                        </a>
-                        <a href="{{ route('register') }}" class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-700">Get Started</a>
-                    </div>
+                    <a href="{{ route('listings', ['type' => 'digital']) }}" class="quick-item">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900">Digital deals</p>
+                            <p class="text-xs text-slate-500">Templates, e-books, guides</p>
+                        </div>
+                        <span class="quick-badge">Open</span>
+                    </a>
+                    <a href="{{ route('listings', ['type' => 'service']) }}" class="quick-item">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900">Service bundles</p>
+                            <p class="text-xs text-slate-500">High-rated providers near you</p>
+                        </div>
+                        <span class="quick-badge">View</span>
+                    </a>
                 </div>
-            </header>
+            </aside>
+        </section>
 
-            <section class="mt-4 grid gap-4 md:grid-cols-[1.15fr_0.85fr] md:gap-6" data-reveal>
-                <article class="hero-card">
-                    <span class="gradient-chip">Mobile first, conversion focused</span>
-                    <h1 class="mt-3 text-3xl font-bold leading-tight text-slate-950 md:text-5xl">
-                        Shop, chat, and track orders like a real app.
-                    </h1>
-                    <p class="mt-3 text-sm leading-relaxed text-slate-600 md:max-w-xl md:text-base">
-                        We redesigned the landing for touch-first navigation so customers can browse listings, follow shops, and checkout with less friction from any phone.
-                    </p>
-
-                    <div class="mt-5 flex flex-wrap gap-2.5">
-                        <a href="{{ route('listings') }}" class="rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500">Browse Listings</a>
-                        <a href="{{ route('become-seller') }}" class="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Open a Shop</a>
-                    </div>
-
-                    <div class="mt-5 grid grid-cols-3 gap-2.5">
-                        <div class="stat-pill">
-                            <p class="text-lg font-bold text-slate-900">2.4x</p>
-                            <p class="text-[10px] uppercase tracking-wide text-slate-500">Session time</p>
-                        </div>
-                        <div class="stat-pill">
-                            <p class="text-lg font-bold text-slate-900">94%</p>
-                            <p class="text-[10px] uppercase tracking-wide text-slate-500">Mobile traffic</p>
-                        </div>
-                        <div class="stat-pill">
-                            <p class="text-lg font-bold text-slate-900">18k+</p>
-                            <p class="text-[10px] uppercase tracking-wide text-slate-500">Active listings</p>
-                        </div>
-                    </div>
+        <section class="mt-5" data-reveal>
+            <div class="section-head">
+                <div>
+                    <p class="section-kicker">Hot right now</p>
+                    <h2 class="section-title">Popular Items</h2>
+                </div>
+                <a href="{{ route('listings', ['sort' => 'popular']) }}" class="section-link">Browse all</a>
+            </div>
+            <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <article class="product-card">
+                    <div class="product-media media-1"></div>
+                    <h3 class="mt-3 text-sm font-bold text-slate-900">Handmade wall basket set</h3>
+                    <p class="mt-1 text-xs text-slate-500">By Nia Craft Studio</p>
+                    <p class="mt-2 text-sm font-extrabold text-emerald-700">$28</p>
                 </article>
-
-                <aside class="demo-phone" aria-label="Mobile app preview">
-                    <div class="demo-screen">
-                        <div class="mb-3 flex items-center justify-between">
-                            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">For you</p>
-                            <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">Live deals</span>
-                        </div>
-
-                        <div class="preview-card">
-                            <p class="text-xs font-semibold text-slate-500">Trending now</p>
-                            <p class="mt-1 text-base font-bold text-slate-900">Handmade pendant lamps</p>
-                            <p class="mt-1 text-xs text-slate-500">From 42 curated shops this week</p>
-                        </div>
-
-                        <div class="mt-3 space-y-2.5">
-                            <article class="feed-item">
-                                <div class="feed-thumb feed-thumb-1"></div>
-                                <div>
-                                    <p class="text-sm font-semibold text-slate-900">Natural ceramic vase set</p>
-                                    <p class="text-xs text-slate-500">Ships in 2-4 days</p>
-                                </div>
-                                <p class="text-sm font-bold text-slate-900">$32</p>
-                            </article>
-                            <article class="feed-item">
-                                <div class="feed-thumb feed-thumb-2"></div>
-                                <div>
-                                    <p class="text-sm font-semibold text-slate-900">Handwoven table runner</p>
-                                    <p class="text-xs text-slate-500">Free shipping over $49</p>
-                                </div>
-                                <p class="text-sm font-bold text-slate-900">$18</p>
-                            </article>
-                        </div>
-                    </div>
-                </aside>
-            </section>
-
-            <section class="mt-4 grid gap-3 md:mt-6 md:grid-cols-3" data-reveal>
-                <article class="feature-card">
-                    <p class="section-kicker">Smart discovery</p>
-                    <h2 class="mt-2 text-lg font-bold text-slate-900">Category rails made for thumbs</h2>
-                    <p class="mt-2 text-sm text-slate-600">Swipe-friendly content blocks reduce bounce and keep users exploring deep into catalog pages.</p>
+                <article class="product-card">
+                    <div class="product-media media-2"></div>
+                    <h3 class="mt-3 text-sm font-bold text-slate-900">Natural scented candles</h3>
+                    <p class="mt-1 text-xs text-slate-500">By Candle Bloom</p>
+                    <p class="mt-2 text-sm font-extrabold text-emerald-700">$19</p>
                 </article>
-                <article class="feature-card">
-                    <p class="section-kicker">Instant trust</p>
-                    <h2 class="mt-2 text-lg font-bold text-slate-900">Ratings and delivery data up front</h2>
-                    <p class="mt-2 text-sm text-slate-600">Customers see seller reliability before tapping product details, increasing checkout confidence.</p>
+                <article class="product-card">
+                    <div class="product-media media-3"></div>
+                    <h3 class="mt-3 text-sm font-bold text-slate-900">Custom leather notebook</h3>
+                    <p class="mt-1 text-xs text-slate-500">By Kivu Atelier</p>
+                    <p class="mt-2 text-sm font-extrabold text-emerald-700">$36</p>
                 </article>
-                <article class="feature-card">
-                    <p class="section-kicker">Faster checkout</p>
-                    <h2 class="mt-2 text-lg font-bold text-slate-900">One-flow purchase journey</h2>
-                    <p class="mt-2 text-sm text-slate-600">The layout keeps payment progress visible so buyers finish orders without confusion.</p>
+                <article class="product-card">
+                    <div class="product-media media-4"></div>
+                    <h3 class="mt-3 text-sm font-bold text-slate-900">Woven cotton throw</h3>
+                    <p class="mt-1 text-xs text-slate-500">By Loom House</p>
+                    <p class="mt-2 text-sm font-extrabold text-emerald-700">$42</p>
                 </article>
-            </section>
+            </div>
+        </section>
 
-            <section class="mt-4 rounded-3xl bg-slate-900 p-5 text-white md:mt-6 md:p-7" data-reveal>
-                <div class="md:flex md:items-start md:justify-between md:gap-8">
+        <section class="mt-5 grid gap-3 lg:grid-cols-2" data-reveal>
+            <article class="panel-card">
+                <div class="section-head">
                     <div>
-                        <p class="section-kicker text-emerald-300">Built for mobile storefronts</p>
-                        <h3 class="mt-2 text-2xl font-bold md:text-3xl">Your landing now feels native on phones.</h3>
-                        <p class="mt-2 max-w-2xl text-sm text-slate-300">
-                            This foundation is ready for your next blocks: testimonials, featured collections, seller stories, and campaign promos.
-                        </p>
+                        <p class="section-kicker">Services</p>
+                        <h3 class="section-title">Most Trending Services</h3>
                     </div>
-                    <div class="mt-4 flex flex-wrap gap-2.5 md:mt-0">
-                        <a href="{{ route('register') }}" class="rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-400">Create account</a>
-                        <a href="{{ route('contact') }}" class="rounded-xl border border-slate-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-slate-400">Talk to team</a>
-                    </div>
+                    <a href="{{ route('listings', ['type' => 'service']) }}" class="section-link">View all</a>
                 </div>
-            </section>
-        </div>
+                <div class="mt-3 space-y-2.5">
+                    <div class="quick-item"><p class="text-sm font-semibold text-slate-900">Brand Identity Package</p><span class="quick-badge">$120</span></div>
+                    <div class="quick-item"><p class="text-sm font-semibold text-slate-900">Product Photography</p><span class="quick-badge">$90</span></div>
+                    <div class="quick-item"><p class="text-sm font-semibold text-slate-900">Shop Setup Support</p><span class="quick-badge">$65</span></div>
+                </div>
+            </article>
+
+            <article class="panel-card">
+                <div class="section-head">
+                    <div>
+                        <p class="section-kicker">Digital</p>
+                        <h3 class="section-title">Featured Digital Downloads</h3>
+                    </div>
+                    <a href="{{ route('listings', ['type' => 'digital']) }}" class="section-link">View all</a>
+                </div>
+                <div class="mt-3 space-y-2.5">
+                    <div class="quick-item"><p class="text-sm font-semibold text-slate-900">Canva social bundle</p><span class="quick-badge">$14</span></div>
+                    <div class="quick-item"><p class="text-sm font-semibold text-slate-900">Resume template pack</p><span class="quick-badge">$12</span></div>
+                    <div class="quick-item"><p class="text-sm font-semibold text-slate-900">Monthly budget planner</p><span class="quick-badge">$8</span></div>
+                </div>
+            </article>
+        </section>
+
+        <section class="mt-5" data-reveal>
+            <div class="section-head">
+                <div>
+                    <p class="section-kicker">Top sellers</p>
+                    <h2 class="section-title">Featured Shops</h2>
+                </div>
+                <a href="{{ route('shops.index') }}" class="section-link">View all shops</a>
+            </div>
+            <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <article class="shop-card"><p class="text-sm font-bold text-slate-900">Ayo Design House</p><p class="mt-1 text-xs text-slate-500">132 completed orders</p></article>
+                <article class="shop-card"><p class="text-sm font-bold text-slate-900">Mara Craft Market</p><p class="mt-1 text-xs text-slate-500">101 completed orders</p></article>
+                <article class="shop-card"><p class="text-sm font-bold text-slate-900">Nomad Pottery</p><p class="mt-1 text-xs text-slate-500">88 completed orders</p></article>
+                <article class="shop-card"><p class="text-sm font-bold text-slate-900">Sahara Studio</p><p class="mt-1 text-xs text-slate-500">75 completed orders</p></article>
+            </div>
+        </section>
+
+        <section class="mt-5" data-reveal>
+            <div class="about-panel">
+                <p class="section-kicker">Who is {{ config('app.name', 'Cetsy') }}?</p>
+                <h2 class="mt-2 text-2xl font-extrabold text-slate-900 md:text-3xl">Your global marketplace for handmade products, services, and digital goods.</h2>
+                <p class="mt-3 text-sm leading-relaxed text-slate-600 md:text-base">Cetsy helps creators launch shops, reach global buyers, and grow with secure payments and trusted fulfillment flows.</p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="stat-chip">50k+ Buyers</span>
+                    <span class="stat-chip">10k+ Sellers</span>
+                    <span class="stat-chip">80+ Countries</span>
+                </div>
+                <div class="mt-5 flex flex-wrap gap-2.5">
+                    <a href="{{ url('/about') }}" class="nav-btn nav-btn-primary">About Cetsy</a>
+                    <a href="{{ route('become-seller') }}" class="nav-btn">Become a Seller</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-5 rounded-3xl bg-slate-900 p-5 text-white md:p-8" data-reveal>
+            <div class="md:flex md:items-center md:justify-between md:gap-6">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Ready to start?</p>
+                    <h3 class="mt-2 text-2xl font-extrabold md:text-3xl">Join {{ config('app.name', 'Cetsy') }} and grow your shop globally.</h3>
+                    <p class="mt-2 text-sm text-slate-300">Keep the familiar Cetsy experience while running on a modern Tailwind foundation.</p>
+                </div>
+                <div class="mt-4 flex flex-wrap gap-2.5 md:mt-0">
+                    <a href="{{ route('register') }}" class="cta-emerald">Create account</a>
+                    <a href="{{ route('contact') }}" class="cta-outline">Contact us</a>
+                </div>
+            </div>
+        </section>
     </div>
 
-    <nav class="mobile-dock md:hidden" aria-label="Mobile app dock">
-        <a href="{{ route('landing') }}" class="dock-link is-active" data-dock-target>
-            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
-            <span>Home</span>
-        </a>
-        <a href="{{ route('listings') }}" class="dock-link" data-dock-target>
-            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <span>Explore</span>
-        </a>
-        <a href="{{ route('become-seller') }}" class="dock-link" data-dock-target>
-            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18"/><path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/><path d="M5 7h14l-1 12H6z"/></svg>
-            <span>Sell</span>
-        </a>
-        <a href="{{ route('contact') }}" class="dock-link" data-dock-target>
-            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>Support</span>
-        </a>
+    <nav class="mobile-dock md:hidden" aria-label="Mobile navigation">
+        <a href="{{ route('home') }}" class="dock-link is-active"><span>Home</span></a>
+        <a href="{{ route('listings') }}" class="dock-link"><span>Explore</span></a>
+        <a href="{{ route('shops.index') }}" class="dock-link"><span>Shops</span></a>
+        <a href="{{ route('become-seller') }}" class="dock-link"><span>Sell</span></a>
     </nav>
 </div>
 @endsection
