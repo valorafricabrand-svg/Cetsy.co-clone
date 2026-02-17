@@ -1,34 +1,11 @@
-﻿{{-- resources/views/theme/cetsy/partials/product-card.blade.php --}}
-@props(['item'])   {{-- expects a \App\Models\Product in $item --}}
+{{-- resources/views/theme/cetsy/partials/product-card.blade.php --}}
+@props(['item'])
 
-
-@once
-  @push('styles')
-    <style>
-      /* Ratio utility (Bootstrap 5 polyfill) to ensure uniform thumbs */
-      .ratio { position: relative; width: 100%; }
-      .ratio::before { display: block; content: ""; padding-top: var(--bs-aspect-ratio); }
-      .ratio > * { position: absolute; inset: 0; width: 100%; height: 100%; }
-      .ratio-1x1 { --bs-aspect-ratio: 100%; }
-      /* Thumb container background + media fit */
-      .product-thumb { background: #f1f3f5; }
-      .product-thumb img, .product-thumb video { object-fit: contain; }
-      .badge-video { position:absolute; top:.4rem; left:.4rem; background:rgba(0,0,0,.7); color:#fff; font-size:.72rem; border-radius:.5rem; padding:.15rem .4rem; display:inline-flex; align-items:center; gap:.25rem; }
-      .badge-video i{ font-size:.7rem; }
-          .product-card { display:flex; }
-      .product-card .card-body { display:flex; flex-direction:column; }
-      .product-card .title-clamp { display:-webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow:hidden; }
-    </style>
-  @endpush
-@endonce
 @php
-  $currency   = get_currency();
   $basePrice  = (float) ($item->price ?? 0);
   $salePrice  = (float) ($item->discounted_price ?? $basePrice);
-  $isService  = (strtolower((string)($item->type ?? '')) === 'service');
+  $isService  = (strtolower((string) ($item->type ?? '')) === 'service');
 
-  // Lowest variation price (only consider variants that actually have a numeric price)
-  // Controllers should ideally eager-load: with('variations.options', 'media', 'shop', ...)
   $lowestVariantPrice = null;
   if ($item->relationLoaded('variations') && $item->variations) {
       $lowestVariantPrice = $item->variations
@@ -36,161 +13,146 @@
           ->filter(fn ($v) => $v !== null)
           ->min();
   } else {
-      // Fallback lazy-load, still only for variants that have a price set
       $lowestVariantPrice = $item->variations()
           ->whereNotNull('price')
           ->min('price');
   }
 
-  // The price to display on listing:
-  // - If variants exist with prices => "From {lowest variant}"
-  // - Else => product sale/base price (show strike-through if discounted)
-  $formatMoney = fn($n) => money((float)$n, null);
-
-  // Decide how to render:
+  $formatMoney = fn($n) => money((float) $n, null);
   $hasVariantPricing = $lowestVariantPrice !== null;
+
+  $isReserved = (($item->type ?? '') === 'physical')
+      && (int) ($item->stock ?? 0) === 1
+      && (($item->is_reserved ?? false));
+
+  $thumb = product_thumb_url($item);
+  $firstImage = $item->relationLoaded('media')
+      ? $item->media->firstWhere('type', 'image')
+      : optional($item->media)->firstWhere('type', 'image');
+  $firstVideo = $item->relationLoaded('media')
+      ? $item->media->firstWhere('type', 'video')
+      : optional($item->media)->firstWhere('type', 'video');
+  $hasVideo = (bool) ($item->relationLoaded('media')
+      ? optional($item->media)->firstWhere('type', 'video')
+      : optional($item->media)->firstWhere('type', 'video'));
+
+  $dataVideoSrc = (isset($firstVideo) && $firstVideo && empty($firstImage) && empty($item->featured_image))
+      ? media_url($firstVideo->url)
+      : null;
+
+  $shop = $item->shop;
+  $shopAvg = $shop ? ($shop->reviews_avg_rating ?? $shop->reviews()->avg('rating')) : null;
+  $shopCount = $shop ? ($shop->reviews_count ?? $shop->reviews()->count()) : null;
+  $avg = max(0, min(5, (int) round((float) ($shopAvg ?? ($item->reviews_avg_rating ?? 0)))));
+  $reviewsCnt = (int) ($shopCount ?? ($item->reviews_count ?? 0));
 @endphp
 
 <a href="{{ route('listing.show', $item->slug) }}"
-   class="card text-decoration-none border-0 shadow-sm h-100 product-card">
+   class="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg">
 
-  {{-- Thumbnail --}}
-  <div class="ratio ratio-1x1 rounded-top overflow-hidden product-thumb">
-    @php
-      $isReserved = (($item->type ?? '') === 'physical') && (int)($item->stock ?? 0) === 1 && (($item->is_reserved ?? false));
-    @endphp
+  <div class="relative aspect-square overflow-hidden bg-slate-100">
     @if($isReserved)
-      <span class="position-absolute top-0 end-0 m-1 badge bg-danger">Reserved</span>
+      <span class="absolute right-2 top-2 z-10 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold text-white">Reserved</span>
     @endif
-    
-@php
-      // Build a safe thumbnail: prefer featured image, else first image media, else shop logo/placeholder.
-      $thumb = null; $mediaType = 'image';
-      // Use centralized helper with normalization + fallbacks
-      $thumb = product_thumb_url($item);
-      $firstImage = $item->relationLoaded('media') ? $item->media->firstWhere('type','image') : optional($item->media)->firstWhere('type','image');
-      $firstVideo = $item->relationLoaded('media') ? $item->media->firstWhere('type','video') : optional($item->media)->firstWhere('type','video');
-      $mediaType = 'image';
-      // Mark if product has any video media (to show a badge)
-      $hasVideo = $item->relationLoaded('media') ? (bool) optional($item->media)->firstWhere('type','video') : (bool) optional($item->media)->firstWhere('type','video');
-    @endphp
 
     @if($hasVideo)
-      <span class="badge-video"><i class="fas fa-play"></i> Video</span>
+      <span class="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-md bg-slate-900/80 px-2 py-0.5 text-[10px] font-semibold text-white">
+        <i class="fas fa-play text-[9px]"></i> Video
+      </span>
     @endif
 
-    @php
-      $dataVideoSrc = (isset($firstVideo) && $firstVideo && empty($firstImage) && empty($item->featured_image))
-        ? media_url($firstVideo->url)
-        : null;
-    @endphp
     <img src="{{ $thumb }}"
          alt="{{ $item->name }}"
-         class="img-fluid w-100 h-100"
-         @if($dataVideoSrc) data-video-src="{{ $dataVideoSrc }}" style="opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease;" @endif
+         class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]"
+         @if($dataVideoSrc) data-video-src="{{ $dataVideoSrc }}" style="opacity:.01;filter:blur(8px);transition:opacity .35s ease,filter .35s ease;" @endif
          loading="lazy" decoding="async">
   </div>
 
-  <div class="card-body p-2 d-flex flex-column">
+  <div class="flex flex-1 flex-col p-3">
+    <h3 class="text-sm font-semibold text-slate-900"
+        style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+      {{ $item->name }}
+    </h3>
 
-    {{-- Title --}}
-    <h3 class="h6 mb-1 fw-semibold text-dark title-clamp">{{ $item->name }}</h3>
-
-    {{-- Rating (shop-wide) --}}
-    
-@php
-      // Prefer shop's overall rating/count; fallback to product values if needed
-      $shop        = $item->shop;
-      $shopAvg     = $shop ? ($shop->reviews_avg_rating ?? $shop->reviews()->avg('rating')) : null;
-      $shopCount   = $shop ? ($shop->reviews_count ?? $shop->reviews()->count()) : null;
-      $avg         = round((float) ($shopAvg ?? ($item->reviews_avg_rating ?? 0)));
-      $reviewsCnt  = (int) ($shopCount ?? ($item->reviews_count ?? 0));
-    @endphp
-    <div class="mb-1 small text-warning">
+    <div class="mt-2 flex items-center gap-1 text-[11px] text-amber-500">
       @for($i = 1; $i <= 5; $i++)
-        <i class="fa-star{{ $i <= $avg ? ' fa-solid' : ' fa-regular text-muted' }}"></i>
+        <i class="fa-star {{ $i <= $avg ? 'fa-solid' : 'fa-regular text-slate-300' }}"></i>
       @endfor
       @if($reviewsCnt)
-        <span class="text-muted">({{ $reviewsCnt }})</span>
+        <span class="ml-1 text-slate-400">({{ $reviewsCnt }})</span>
       @endif
     </div>
 
-    {{-- Price --}}
-    @if ($isService)
-      {{-- Services: always show "Priced From" --}}
-      <div class="mb-3">
-        <div class="small text-muted lh-1">Priced From</div>
-        <div class="fw-bold text-success">
+    <div class="mt-3">
+      @if ($isService)
+        <p class="text-[11px] uppercase tracking-[0.12em] text-slate-400">Priced From</p>
+        <p class="text-sm font-bold text-emerald-700">
           {{ $formatMoney($hasVariantPricing ? $lowestVariantPrice : ($salePrice < $basePrice ? $salePrice : $basePrice)) }}
-        </div>
-      </div>
-    @else
-      @if ($hasVariantPricing)
-        {{-- Variant-based listing price: show the lowest as "From" --}}
-        <div class="mb-3">
-          <div class="small text-muted lh-1">From</div>
-          <div class="fw-bold text-success">{{ $formatMoney($lowestVariantPrice) }}</div>
-        </div>
+        </p>
       @else
-        {{-- No variant pricing, use product pricing with discount display if applicable --}}
-        @if ($salePrice < $basePrice)
-          <div class="d-flex align-items-baseline gap-3 mb-3">
-            <span class="fw-bold text-success">{{ $formatMoney($salePrice) }}</span>
-            <span class="text-muted text-decoration-line-through">{{ $formatMoney($basePrice) }}</span>
-          </div>
+        @if ($hasVariantPricing)
+          <p class="text-[11px] uppercase tracking-[0.12em] text-slate-400">From</p>
+          <p class="text-sm font-bold text-emerald-700">{{ $formatMoney($lowestVariantPrice) }}</p>
         @else
-          <p class="fw-bold text-success mb-3">{{ $formatMoney($basePrice) }}</p>
+          @if ($salePrice < $basePrice)
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-bold text-emerald-700">{{ $formatMoney($salePrice) }}</span>
+              <span class="text-xs text-slate-400 line-through">{{ $formatMoney($basePrice) }}</span>
+            </div>
+          @else
+            <p class="text-sm font-bold text-emerald-700">{{ $formatMoney($basePrice) }}</p>
+          @endif
         @endif
       @endif
-    @endif
-
+    </div>
   </div>
 </a>
-  @once
-    @push('scripts')
-      <script>
-      (function(){
-        if (window.__videoThumbInit) return; window.__videoThumbInit = true;
-        function toFirstFrame(img){
-          var src = img.getAttribute('data-video-src');
-          if(!src) return;
-          try{
-            var v = document.createElement('video');
-            v.preload = 'metadata';
-            v.muted = true; v.playsInline = true; v.src = src + '#t=0.1';
-            v.addEventListener('loadeddata', function(){
-              try{
-                var w = v.videoWidth || 480, h = v.videoHeight || 270;
-                var c = document.createElement('canvas'); c.width = w; c.height = h;
-                var ctx = c.getContext('2d'); ctx.drawImage(v,0,0,w,h);
-                img.src = c.toDataURL('image/jpeg', 0.8);
-                img.style.opacity = '1';
-                img.style.filter = 'none';
-                img.removeAttribute('data-video-src');
-              }catch(e){}
-            }, { once: true });
-          }catch(e){}
+
+@once
+  @push('scripts')
+    <script>
+    (function(){
+      if (window.__videoThumbInit) return; window.__videoThumbInit = true;
+      function toFirstFrame(img){
+        var src = img.getAttribute('data-video-src');
+        if(!src) return;
+        try{
+          var v = document.createElement('video');
+          v.preload = 'metadata';
+          v.muted = true; v.playsInline = true; v.src = src + '#t=0.1';
+          v.addEventListener('loadeddata', function(){
+            try{
+              var w = v.videoWidth || 480, h = v.videoHeight || 270;
+              var c = document.createElement('canvas'); c.width = w; c.height = h;
+              var ctx = c.getContext('2d'); ctx.drawImage(v,0,0,w,h);
+              img.src = c.toDataURL('image/jpeg', 0.8);
+              img.style.opacity = '1';
+              img.style.filter = 'none';
+              img.removeAttribute('data-video-src');
+            }catch(e){}
+          }, { once: true });
+        }catch(e){}
+      }
+      function init(){
+        var imgs = document.querySelectorAll('img[data-video-src]');
+        if (!('IntersectionObserver' in window)) {
+          imgs.forEach(toFirstFrame);
+          return;
         }
-        function init(){
-          var imgs = document.querySelectorAll('img[data-video-src]');
-          if (!('IntersectionObserver' in window)) {
-            imgs.forEach(toFirstFrame); // fallback
-            return;
-          }
-          var io = new IntersectionObserver(function(entries){
-            entries.forEach(function(entry){
-              if(entry.isIntersecting){
-                toFirstFrame(entry.target);
-                io.unobserve(entry.target);
-              }
-            });
-          }, { rootMargin: '200px' });
-          imgs.forEach(function(img){ io.observe(img); });
-        }
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', init);
-        } else { init(); }
-      })();
-      </script>
-    @endpush
-  @endonce
+        var io = new IntersectionObserver(function(entries){
+          entries.forEach(function(entry){
+            if(entry.isIntersecting){
+              toFirstFrame(entry.target);
+              io.unobserve(entry.target);
+            }
+          });
+        }, { rootMargin: '200px' });
+        imgs.forEach(function(img){ io.observe(img); });
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else { init(); }
+    })();
+    </script>
+  @endpush
+@endonce
