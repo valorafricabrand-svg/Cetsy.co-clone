@@ -5,6 +5,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CurrencySelectionController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\{
+    HomeController,
     ProfileController,
     ShopController,
     ProductController,
@@ -76,11 +77,9 @@ use App\Http\Controllers\Seller\{
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    return view('theme.cetsy.pages.landing');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/landing', function () {
-    return redirect()->route('home');
+    return view('theme.cetsy.pages.landing');
 })->name('landing');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 // Currency selector (accept GET or POST; CSRF not required for this benign action)
