@@ -1,4 +1,4 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Cetsy | Handmade products, services, and digital goods')
 @section('meta_description', 'Discover handmade products, services, and digital goods from creators across Africa on Cetsy.')
@@ -6,811 +6,418 @@
 @section('meta_image', setting('logo_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
 @section('meta_robots', 'index, follow')
 
+@push('styles')
+<style>
+    .home-hero-slide { display: none; }
+    .home-hero-slide.is-active { display: block; }
+    .hide-scrollbar { scrollbar-width: none; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+</style>
+@endpush
+
 @section('main')
 @php
-use Illuminate\Support\Str;
-@endphp
+    use Illuminate\Support\Str;
 
-<!-- ====== Page Styles (scoped) ====== -->
-<style>
-/* Spacing helpers */
-.py-6 {
-    padding-top: 4rem;
-    padding-bottom: 4rem;
-}
-
-.pt-6 {
-    padding-top: 4rem;
-}
-
-.pb-6 {
-    padding-bottom: 4rem;
-}
-
-/* Smooth fade/slide entrance */
-@keyframes fadeUp {
-    from {
-        opacity: 0;
-        transform: translateY(12px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.reveal {
-    animation: fadeUp .6s ease forwards;
-    opacity: 0;
-}
-
-.reveal-delay-1 {
-    animation-delay: .08s;
-}
-
-.reveal-delay-2 {
-    animation-delay: .16s;
-}
-
-.reveal-delay-3 {
-    animation-delay: .24s;
-}
-
-.reveal-delay-4 {
-    animation-delay: .32s;
-}
-
-/* Buttons */
-.btn-pill {
-    border-radius: 999px;
-}
-
-.btn-soft-success {
-    background: rgba(25, 135, 84, .08);
-    color: #198754;
-    border: 1px solid rgba(25, 135, 84, .25);
-}
-
-.btn-soft-success:hover {
-    background: rgba(25, 135, 84, .12);
-    border-color: rgba(25, 135, 84, .35);
-    color: #157347;
-}
-
-/* Hero styling (Argos-style promo card) */
-#hero {
-    background: linear-gradient(180deg, #f3f4f6, #ffffff);
-}
-
-.hero-promo-card {
-    border-radius: 1.75rem;
-    background: radial-gradient(140% 180% at 0% 0%, #ffffff 0, #f97373 35%, #e60012 70%);
-    color: #ffffff;
-    padding: 2rem 2.25rem;
-    box-shadow: 0 30px 60px rgba(0, 0, 0, .18);
-    position: relative;
-    overflow: hidden;
-}
-
-.hero-promo-card::before {
-    content: '';
-    position: absolute;
-    inset: 12px;
-    border-radius: 1.5rem;
-    border: 1px solid rgba(255, 255, 255, .18);
-    pointer-events: none;
-}
-
-.hero-promo-copy {
-    position: relative;
-    z-index: 1;
-}
-
-.hero-promo-tag {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: .25rem .75rem;
-    border-radius: .75rem;
-    background: #ffffff;
-    color: #e60012;
-    font-weight: 800;
-    text-transform: uppercase;
-    font-size: .8rem;
-    letter-spacing: .08em;
-    margin-bottom: .5rem;
-}
-
-.hero-promo-heading {
-    font-size: clamp(1.9rem, 2.6vw + 1.2rem, 2.7rem);
-    font-weight: 800;
-    line-height: 1.05;
-    margin-bottom: .75rem;
-}
-
-.hero-promo-sub {
-    font-size: 1.05rem;
-    max-width: 26rem;
-    color: rgba(255, 255, 255, .9);
-}
-
-.hero-promo-cta {
-    margin-top: 1.25rem;
-}
-
-.hero-promo-cta .btn {
-    border-radius: 999px;
-}
-
-.hero-promo-media {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.hero-promo-media img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 1rem;
-    box-shadow: 0 24px 48px rgba(15, 23, 42, .35);
-}
-
-.hero-slider {
-    position: relative;
-}
-
-.hero-slide {
-    display: none;
-}
-
-.hero-slide.is-active {
-    display: block;
-}
-
-.hero-slider-dots {
-    display: flex;
-    justify-content: center;
-    gap: .4rem;
-    margin-top: .75rem;
-}
-
-.hero-slider-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    border: 0;
-    padding: 0;
-    background: rgba(255, 255, 255, .5);
-    cursor: pointer;
-}
-
-.hero-slider-dot.is-active {
-    width: 20px;
-    background: #ffffff;
-}
-
-.hero-slider-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
-    border-radius: 999px;
-    border: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, .9);
-    color: #e60012;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, .25);
-    cursor: pointer;
-}
-
-.hero-slider-arrow-prev {
-    left: 0.75rem;
-}
-
-.hero-slider-arrow-next {
-    right: 0.75rem;
-}
-
-@media (min-width: 992px) {
-    .hero-slider {
-        padding-left: 1.5rem;
-        padding-right: 1.5rem;
-    }
-}
-
-@media (max-width: 991.98px) {
-    .hero-slider-arrow {
-        display: none;
-    }
-}
-
-@media (max-width: 991.98px) {
-    .hero-promo-card {
-        border-radius: 1.5rem;
-        padding: 1.5rem 1.25rem 1.75rem;
-    }
-
-    .hero-promo-heading {
-        font-size: 1.9rem;
-    }
-
-    .hero-promo-media {
-        margin-top: 1.25rem;
-    }
-}
-
-/* Compact hero height (Argos-like) */
-.hero-compact {
-    padding-top: clamp(1.25rem, 3vw, 2.25rem) !important;
-    padding-bottom: clamp(1.25rem, 3vw, 2.25rem) !important;
-}
-
-.hero-compact .hero-promo-card {
-    padding: 1.5rem 1.75rem;
-}
-
-@media (min-width: 992px) {
-    .hero-compact {
-        padding-top: clamp(1.5rem, 2.5vw, 2.5rem) !important;
-        padding-bottom: clamp(1.5rem, 2.5vw, 2.5rem) !important;
-    }
-
-    .hero-compact .hero-promo-card {
-        padding: 1.75rem 2rem;
-    }
-
-    .hero-compact .hero-promo-media img {
-        max-height: 380px;
-        width: auto;
-    }
-}
-
-@media (max-width: 991.98px) {
-    .hero-compact .hero-promo-card {
-        padding: 1.25rem 1.25rem 1.5rem;
-    }
-}
-
-/* Hero search (Argos-style inspiration) */
-.hero-search-form {
-    max-width: 640px;
-    margin-bottom: 0.75rem;
-}
-
-.hero-search-shell {
-    display: flex;
-    align-items: stretch;
-    gap: .5rem;
-    background: #fff;
-    border-radius: 999px;
-    border: 1px solid rgba(15, 23, 42, .12);
-    box-shadow: 0 10px 30px rgba(15, 23, 42, .10);
-    padding: .25rem .5rem .25rem .75rem;
-}
-
-.hero-search-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #64748b;
-    font-size: 1.1rem;
-}
-
-.hero-search-input.form-control {
-    border: 0;
-    box-shadow: none;
-    padding-left: .5rem;
-    padding-right: .5rem;
-}
-
-.hero-search-input.form-control:focus {
-    outline: 0;
-    box-shadow: none;
-}
-
-.hero-search-submit {
-    border-radius: 999px;
-    padding-inline: 1.5rem;
-    white-space: nowrap;
-}
-
-.hero-quick-links {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: .5rem;
-}
-
-.hero-quick-links-label {
-    font-size: .8rem;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    color: #6b7280;
-    font-weight: 700;
-}
-
-.hero-category-chip {
-    border-radius: 999px;
-    border: 1px solid rgba(25, 135, 84, .25);
-    background: rgba(25, 135, 84, .04);
-    color: #065f46;
-    font-size: .85rem;
-    padding: .25rem .9rem;
-    text-decoration: none;
-}
-
-.hero-category-chip:hover {
-    background: rgba(25, 135, 84, .10);
-    color: #064e3b;
-}
-
-@media (max-width: 575.98px) {
-    .hero-search-shell {
-        padding-inline: .5rem;
-    }
-
-    .hero-search-submit {
-        padding-inline: 1.1rem;
-        font-size: .9rem;
-    }
-}
-
-/* Cards & grids */
-.card-flat {
-    border: 1px solid rgba(0, 0, 0, .06);
-    border-radius: 1rem;
-    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
-    background: #fff;
-}
-
-.card-flat:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 28px rgba(16, 24, 40, .10);
-    border-color: rgba(25, 135, 84, .25);
-}
-
-.ratio-cover img {
-    object-fit: cover;
-}
-
-/* Section headers */
-.section-head .eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: .5rem;
-    padding: .35rem .75rem;
-    border: 1px solid rgba(25, 135, 84, .25);
-    color: #198754;
-    background: rgba(25, 135, 84, .06);
-    border-radius: 999px;
-    font-weight: 600;
-    font-size: .85rem;
-}
-
-/* Feature band (mini benefits) */
-.feature-chip {
-    display: flex;
-    align-items: center;
-    gap: .6rem;
-    padding: .8rem 1rem;
-    border: 1px solid rgba(0, 0, 0, .06);
-    border-radius: .85rem;
-    background: #fff;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, .04);
-    font-weight: 600;
-    color: #198754;
-}
-
-/* About section premium */
-.about-hero {
-    background: radial-gradient(1200px 600px at 10% -10%, rgba(25, 135, 84, .12), transparent 60%),
-        radial-gradient(1200px 600px at 110% 0%, rgba(25, 135, 84, .08), transparent 60%),
-        linear-gradient(180deg, #ffffff, #f8fafb);
-    border-radius: 1.25rem;
-    border: 1px solid rgba(0, 0, 0, .05);
-}
-
-.stat-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: .5rem;
-    padding: .5rem .75rem;
-    border-radius: 999px;
-    background: #fff;
-    border: 1px solid rgba(0, 0, 0, .06);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, .04);
-    font-weight: 600;
-    color: #198754;
-    white-space: nowrap;
-}
-
-.feature-icon {
-    width: 3rem;
-    height: 3rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: .75rem;
-    background: rgba(25, 135, 84, .10);
-    color: #198754;
-    font-size: 1.2rem;
-}
-
-.link-arrow {
-    display: inline-flex;
-    align-items: center;
-    gap: .5rem;
-    font-weight: 600;
-    color: #198754;
-    text-decoration: none;
-}
-
-.link-arrow:hover {
-    text-decoration: underline;
-}
-
-.cta-bar {
-    border-radius: 1rem;
-    background: linear-gradient(180deg, rgba(25, 135, 84, .08), rgba(25, 135, 84, .06));
-    border: 1px solid rgba(25, 135, 84, .15);
-}
-
-/* Top sellers slider */
-.top-sellers-section {
-    background: #f8fafc;
-}
-
-.top-sellers-slider {
-    position: relative;
-    overflow: hidden;
-}
-
-.top-sellers-track {
-    display: flex;
-    gap: 1rem;
-    scroll-behavior: smooth;
-    overflow-x: auto;
-    padding: .25rem;
-    scrollbar-width: none;
-}
-
-.top-sellers-track::-webkit-scrollbar {
-    display: none;
-}
-
-.top-seller-card {
-    min-width: 260px;
-    max-width: 320px;
-    flex: 0 0 auto;
-}
-
-.top-seller-meta {
-    font-size: .875rem;
-}
-
-.top-seller-actions {
-    color: #198754;
-    font-weight: 600;
-}
-
-.top-seller-nav .btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 999px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-@media (max-width: 767.98px) {
-    .top-seller-card {
-        min-width: 240px;
-    }
-}
-</style>
-
-<!-- ===================================== -->
-<!-- Hero Section -->
-<!-- ===================================== -->
-<section id="hero" class="hero-compact py-4 py-lg-5 position-relative overflow-hidden">
-    @php
     $topCategories = ($categories instanceof \Illuminate\Support\Collection)
-    ? $categories->take(6)
-    : collect($categories ?? [])->take(6);
+        ? $categories->take(6)
+        : collect($categories ?? [])->take(6);
+
     $heroImageFallback = asset('assets/images/illustrator.webp');
     $slides = isset($heroSlides) && $heroSlides instanceof \Illuminate\Support\Collection
-    ? $heroSlides
-    : collect();
+        ? $heroSlides
+        : collect();
+
+    $topShops = ($shops instanceof \Illuminate\Support\Collection)
+        ? $shops->take(8)
+        : collect($shops ?? [])->take(8);
+
+    $renderProductCard = function ($item) {
+        $basePrice = (float) ($item->price ?? 0);
+        $salePrice = (float) ($item->discounted_price ?? $basePrice);
+        $isService = strtolower((string) ($item->type ?? '')) === 'service';
+        $thumb = product_thumb_url($item);
+
+        $shop = $item->shop;
+        $shopAvg = $shop ? ($shop->reviews_avg_rating ?? null) : null;
+        $shopCount = $shop ? ($shop->reviews_count ?? null) : null;
+        $avg = max(0, min(5, (int) round((float) ($shopAvg ?? 0))));
+        $reviewsCnt = (int) ($shopCount ?? 0);
+
+        return compact('basePrice', 'salePrice', 'isService', 'thumb', 'avg', 'reviewsCnt');
+    };
+@endphp
+
+<div class="relative overflow-x-clip pb-10">
+    <div class="pointer-events-none absolute -right-32 -top-40 h-96 w-96 rounded-full bg-emerald-200/40 blur-3xl"></div>
+    <div class="pointer-events-none absolute -left-28 top-[28rem] h-80 w-80 rounded-full bg-rose-200/40 blur-3xl"></div>
+
+    <section class="relative mx-auto w-full max-w-7xl px-4 pb-4 pt-5 sm:px-6 lg:px-8">
+        @if($slides->isNotEmpty())
+            <div class="relative" data-home-hero>
+                @foreach($slides as $index => $slide)
+                    @php
+                        $tag = $slide->tag ?: 'Save';
+                        $title = $slide->title;
+                        $sub = $slide->subtitle ?: 'Discover limited-time offers across the Cetsy marketplace.';
+                        $btnLabel = $slide->button_label ?: 'Shop deals';
+                        $btnUrl = $slide->resolved_button_url;
+                        $img = $slide->image_path ? asset('storage/' . $slide->image_path) : $heroImageFallback;
+                    @endphp
+                    <article class="home-hero-slide {{ $index === 0 ? 'is-active' : '' }} rounded-3xl bg-gradient-to-br from-white via-rose-500 to-red-600 p-4 shadow-2xl sm:p-6 lg:p-8" data-home-hero-slide="{{ $index }}">
+                        <div class="grid items-center gap-6 lg:grid-cols-2">
+                            <div class="text-center lg:text-left">
+                                <span class="inline-flex items-center rounded-xl bg-white px-3 py-1 text-xs font-extrabold uppercase tracking-[0.14em] text-red-600">{{ $tag }}</span>
+                                <h1 class="mt-3 text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">{{ $title }}</h1>
+                                <p class="mt-3 max-w-xl text-sm text-white/90 sm:text-base">{{ $sub }}</p>
+                                <div class="mt-5 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                                    <a href="{{ $btnUrl }}" class="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-red-600 hover:bg-slate-100">
+                                        <i class="fas fa-tags mr-1"></i> {{ $btnLabel }}
+                                    </a>
+                                    <a href="{{ route('listings') }}" class="rounded-full border border-white/50 px-5 py-2.5 text-sm font-semibold text-white hover:border-white hover:bg-white/10">Browse marketplace</a>
+                                </div>
+
+                                <form class="mx-auto mt-4 max-w-xl lg:mx-0 lg:max-w-none lg:hidden" method="GET" action="{{ route('search') }}">
+                                    <label for="heroSearchMobile" class="sr-only">Search products</label>
+                                    <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2 shadow">
+                                        <i class="fas fa-search text-slate-400"></i>
+                                        <input id="heroSearchMobile" type="search" name="q" value="{{ request('q') }}" placeholder="Search products, brands and shops" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
+                                        <button class="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500" type="submit">Search</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="text-center">
+                                <img src="{{ $img }}" alt="{{ $title }}" class="mx-auto max-h-[360px] w-auto rounded-2xl shadow-2xl" onerror="this.onerror=null;this.src=@json($heroImageFallback);">
+                            </div>
+                        </div>
+                    </article>
+                @endforeach
+
+                @if($slides->count() > 1)
+                    <button class="absolute left-4 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-red-600 shadow hover:bg-slate-100 md:flex" data-home-hero-prev type="button" aria-label="Previous slide">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="absolute right-4 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-red-600 shadow hover:bg-slate-100 md:flex" data-home-hero-next type="button" aria-label="Next slide">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <div class="mt-3 flex items-center justify-center gap-2" data-home-hero-dots>
+                        @foreach($slides as $index => $slide)
+                            <button type="button" class="h-2.5 rounded-full transition-all {{ $index === 0 ? 'w-7 bg-slate-900' : 'w-2.5 bg-slate-300' }}" data-home-hero-dot="{{ $index }}" aria-label="Go to slide {{ $index + 1 }}"></button>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        @else
+            <article class="rounded-3xl bg-gradient-to-br from-white via-rose-500 to-red-600 p-4 shadow-2xl sm:p-6 lg:p-8">
+                <div class="grid items-center gap-6 lg:grid-cols-2">
+                    <div class="text-center lg:text-left">
+                        <span class="inline-flex items-center rounded-xl bg-white px-3 py-1 text-xs font-extrabold uppercase tracking-[0.14em] text-red-600">Save</span>
+                        <h1 class="mt-3 text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">Shop our lowest prices on selected items</h1>
+                        <p class="mt-3 max-w-xl text-sm text-white/90 sm:text-base">Discover limited-time offers across electronics, services, and more from trusted Cetsy sellers.</p>
+                        <div class="mt-5 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                            <a href="{{ route('listings', ['sort' => 'popular']) }}" class="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-red-600 hover:bg-slate-100">
+                                <i class="fas fa-tags mr-1"></i> Shop deals
+                            </a>
+                            <a href="{{ route('listings') }}" class="rounded-full border border-white/50 px-5 py-2.5 text-sm font-semibold text-white hover:border-white hover:bg-white/10">Browse marketplace</a>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <img src="{{ $heroImageFallback }}" alt="Featured Cetsy deals" class="mx-auto max-h-[360px] w-auto rounded-2xl shadow-2xl" onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
+                    </div>
+                </div>
+            </article>
+        @endif
+    </section>
+
+    <section class="mx-auto w-full max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+        <div class="grid gap-3 md:grid-cols-3">
+            <a href="{{ url('/user-agreement#privacy') }}" class="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50">
+                <i class="fas fa-lock"></i>
+                Buyer/Seller Protection & Secure Payments
+            </a>
+            <a href="{{ url('/user-agreement#buyer-tips') }}" class="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50">
+                <i class="fas fa-truck"></i>
+                Global Shipping & Local Sellers
+            </a>
+            <a href="{{ route('listings', ['sort' => 'popular']) }}" class="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50">
+                <i class="fas fa-star"></i>
+                Curated Trending Picks Daily
+            </a>
+        </div>
+    </section>
+
+    <section class="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+        <div class="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between md:p-6">
+            <div class="flex items-start gap-3">
+                <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    <i class="fas fa-tags"></i>
+                </span>
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">{{ isset($activeDeals) && $activeDeals->count() ? 'Today\'s highlighted deals' : 'Today\'s highlighted' }}</p>
+                    <h2 class="mt-1 text-2xl font-extrabold text-slate-900">Deals & Inspiration</h2>
+                    <p class="mt-1 text-sm text-slate-500">{{ isset($activeDeals) && $activeDeals->count() ? 'Save on limited-time offers picked from our marketplace.' : 'Hand-picked offers and ideas to get you started.' }}</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                @if(isset($activeDeals) && $activeDeals->count())
+                    @foreach($activeDeals as $deal)
+                        <a href="{{ route('listings', ['deal' => $deal->id]) }}" class="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+                            <span>{{ $deal->name }}</span>
+                            @if($deal->discount_percent)
+                                <span class="text-slate-400">{{ $deal->discount_percent }}% off</span>
+                            @endif
+                        </a>
+                    @endforeach
+                @else
+                    <a href="{{ route('listings', ['sort' => 'popular']) }}" class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">Top picks</a>
+                    <a href="{{ route('listings', ['type' => 'digital']) }}" class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">Digital deals</a>
+                    <a href="{{ route('listings', ['type' => 'service']) }}" class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">Service bundles</a>
+                @endif
+                <a href="{{ route('listings') }}" class="rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500">View all deals</a>
+            </div>
+        </div>
+    </section>
+
+    @php
+        $sections = [
+            [
+                'title' => 'Popular Items',
+                'subtitle' => 'Trending picks from trusted sellers across the marketplace.',
+                'eyebrow' => 'Hot right now',
+                'items' => $featuredProducts,
+                'seeMoreUrl' => route('listings', ['sort' => 'popular']),
+                'seeMoreLabel' => 'Browse all products',
+            ],
+            [
+                'title' => 'Just for You',
+                'subtitle' => auth()->check() ? 'Curated from your favorites, orders, and recent views.' : 'Sign in to personalize picks from your favorites and recent views.',
+                'eyebrow' => 'Recommended',
+                'items' => $featuredProducts,
+                'seeMoreUrl' => route('listings', ['sort' => 'popular']),
+                'seeMoreLabel' => 'See more picks',
+            ],
+            [
+                'title' => 'Most Trending Services',
+                'subtitle' => 'Recently viewed and in-demand service providers.',
+                'eyebrow' => 'Services',
+                'items' => $services,
+                'seeMoreUrl' => route('listings', ['type' => 'service']),
+                'seeMoreLabel' => 'View all services',
+            ],
+            [
+                'title' => 'Featured Digital Downloads for You',
+                'subtitle' => 'Original music, e-books, templates, recipes, and more.',
+                'eyebrow' => 'Digital',
+                'items' => $featuredDigitals,
+                'seeMoreUrl' => route('listings', ['type' => 'digital']),
+                'seeMoreLabel' => 'View all digitals',
+            ],
+        ];
     @endphp
 
-    <div class="container position-relative">
-        @if($slides->isNotEmpty())
-        <div class="hero-slider" data-hero-slider>
-            @foreach($slides as $index => $slide)
-            @php
-            $tag = $slide->tag ?: 'Save';
-            $title = $slide->title;
-            $sub = $slide->subtitle ?: 'Discover limited-time offers across the Cetsy marketplace.';
-            $btnLabel = $slide->button_label ?: 'Shop deals';
-            $btnUrl = $slide->resolved_button_url;
-            $img = $slide->image_path ? asset('storage/'.$slide->image_path) : $heroImageFallback;
-            @endphp
-            <div class="hero-promo-card hero-slide reveal {{ $index === 0 ? 'is-active' : '' }}"
-                data-slide-index="{{ $index }}">
-                <div class="row g-4 align-items-center">
-                    <!-- Left: copy -->
-                    <div class="col-lg-5 col-md-6">
-                        <div class="hero-promo-copy text-center text-md-start">
-                            @if($tag)
-                            <span class="hero-promo-tag">{{ $tag }}</span>
-                            @endif
+    @foreach($sections as $section)
+        @php
+            $itemsCollection = $section['items'] instanceof \Illuminate\Support\Collection
+                ? $section['items']->take(8)
+                : collect($section['items'] ?? [])->take(8);
+        @endphp
+        @if($itemsCollection->isNotEmpty())
+            <section class="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+                <div class="mb-4 flex items-end justify-between gap-3">
+                    <div>
+                        <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">{{ $section['eyebrow'] }}</span>
+                        <h2 class="mt-2 text-2xl font-extrabold text-slate-900">{{ $section['title'] }}</h2>
+                        <p class="mt-1 text-sm text-slate-500">{{ $section['subtitle'] }}</p>
+                    </div>
+                    <a href="{{ $section['seeMoreUrl'] }}" class="hidden rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 md:inline-flex">{{ $section['seeMoreLabel'] }}</a>
+                </div>
 
-                            <h1 class="hero-promo-heading mb-2">{{ $title }}</h1>
-
-                            <p class="hero-promo-sub mb-0">{{ $sub }}</p>
-
-                            <div
-                                class="hero-promo-cta d-flex flex-column flex-sm-row gap-2 justify-content-center justify-content-md-start">
-                                <a href="{{ $btnUrl }}" class="btn btn-light text-danger fw-semibold">
-                                    <i class="fas fa-tags me-1"></i> {{ $btnLabel }}
-                                </a>
-                                <a href="{{ route('listings') }}" class="btn btn-outline-light fw-semibold">
-                                    Browse marketplace
-                                </a>
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    @foreach($itemsCollection as $item)
+                        @php($card = $renderProductCard($item))
+                        <a href="{{ route('listing.show', $item->slug) }}" class="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                            <div class="relative aspect-square overflow-hidden bg-slate-100">
+                                @if((($item->type ?? '') === 'physical') && (int)($item->stock ?? 0) === 1 && (($item->is_reserved ?? false)) )
+                                    <span class="absolute right-2 top-2 z-10 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold text-white">Reserved</span>
+                                @endif
+                                <img src="{{ $card['thumb'] }}" alt="{{ $item->name }}" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async">
                             </div>
+                            <div class="flex flex-1 flex-col p-3">
+                                <h3 class="line-clamp-2 text-sm font-semibold text-slate-900">{{ $item->name }}</h3>
 
-                            {{-- Mobile search under promo (desktop uses header search) --}}
-                            <form class="hero-search-form mx-auto mt-3 d-md-none" method="GET"
-                                action="{{ route('search') }}" role="search">
-                                <div class="hero-search-shell">
-                                    <span class="hero-search-icon">
-                                        <i class="fas fa-search"></i>
-                                    </span>
-                                    <label for="heroSearch" class="visually-hidden">Search for products</label>
-                                    <input id="heroSearch" type="search" name="q" class="form-control hero-search-input"
-                                        placeholder="Search for products, brands and shops"
-                                        aria-label="Search for products, brands and shops" value="{{ request('q') }}"
-                                        autocomplete="on">
-                                    <button class="btn btn-success hero-search-submit" type="submit">
-                                        Search
-                                    </button>
+                                <div class="mt-2 flex items-center gap-1 text-[11px] text-amber-500">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <i class="fa-star {{ $i <= $card['avg'] ? 'fa-solid' : 'fa-regular text-slate-300' }}"></i>
+                                    @endfor
+                                    @if($card['reviewsCnt'])
+                                        <span class="ml-1 text-slate-400">({{ $card['reviewsCnt'] }})</span>
+                                    @endif
                                 </div>
-                            </form>
 
-                        </div>
-                    </div>
+                                <div class="mt-3">
+                                    @if($card['isService'])
+                                        <p class="text-[11px] uppercase tracking-[0.12em] text-slate-400">Priced From</p>
+                                        <p class="text-sm font-bold text-emerald-700">{{ money($card['salePrice']) }}</p>
+                                    @else
+                                        @if($card['salePrice'] < $card['basePrice'])
+                                            <div class="flex items-center gap-2">
+                                                <p class="text-sm font-bold text-emerald-700">{{ money($card['salePrice']) }}</p>
+                                                <p class="text-xs text-slate-400 line-through">{{ money($card['basePrice']) }}</p>
+                                            </div>
+                                        @else
+                                            <p class="text-sm font-bold text-emerald-700">{{ money($card['basePrice']) }}</p>
+                                        @endif
+                                    @endif
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
 
-                    <!-- Right: promo artwork -->
-                    <div class="col-lg-7 col-md-6">
-                        <div class="hero-promo-media text-center">
-                            <img src="{{ $img }}" alt="{{ $title }}" class="img-fluid"
-                                onerror="this.onerror=null;this.src=@json($heroImageFallback);">
-                        </div>
-                    </div>
+                <div class="mt-4 md:hidden">
+                    <a href="{{ $section['seeMoreUrl'] }}" class="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">{{ $section['seeMoreLabel'] }}</a>
                 </div>
-            </div>
-            @endforeach
-
-            @if($slides->count() > 1)
-            <button class="hero-slider-arrow hero-slider-arrow-prev" type="button" data-hero-prev>
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <button class="hero-slider-arrow hero-slider-arrow-next" type="button" data-hero-next>
-                <i class="fas fa-chevron-right"></i>
-            </button>
-            <div class="hero-slider-dots" data-hero-dots>
-                @foreach($slides as $index => $slide)
-                <button type="button" class="hero-slider-dot {{ $index === 0 ? 'is-active' : '' }}"
-                    data-hero-dot="{{ $index }}">
-                    <span class="visually-hidden">Go to slide {{ $index + 1 }}</span>
-                </button>
-                @endforeach
-            </div>
-            @endif
-        </div>
-        @else
-        {{-- Fallback single hero when no slides are defined --}}
-        <div class="hero-promo-card reveal">
-            <div class="row g-4 align-items-center">
-                <div class="col-lg-5 col-md-6">
-                    <div class="hero-promo-copy text-center text-md-start">
-                        <span class="hero-promo-tag">Save</span>
-                        <h1 class="hero-promo-heading mb-2">Shop our lowest prices on selected items</h1>
-                        <p class="hero-promo-sub mb-0">
-                            Discover limited-time offers across electronics, services, and more - all from trusted Cetsy
-                            sellers.
-                        </p>
-                        <div
-                            class="hero-promo-cta d-flex flex-column flex-sm-row gap-2 justify-content-center justify-content-md-start">
-                            <a href="{{ route('listings', ['sort' => 'popular']) }}"
-                                class="btn btn-light text-danger fw-semibold">
-                                <i class="fas fa-tags me-1"></i> Shop deals
-                            </a>
-                            <a href="{{ route('listings') }}" class="btn btn-outline-light fw-semibold">
-                                Browse marketplace
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-7 col-md-6">
-                    <div class="hero-promo-media text-center">
-                        <img src="{{ $heroImageFallback }}" alt="Featured Cetsy deals" class="img-fluid"
-                            onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
-                    </div>
-                </div>
-            </div>
-        </div>
+            </section>
         @endif
-    </div>
-</section>
+    @endforeach
 
-
-<!-- ===================================== -->
-<!-- Mini Feature Band (target for Learn More) -->
-<!-- ===================================== -->
-<section id="features" class="py-4">
-    <div class="container">
-        <div class="row g-3 justify-content-center">
-            <div class="col-12 col-md-6 col-lg-4 reveal">
-                <a href="{{ url('/user-agreement#privacy') }}" class="text-decoration-none d-block">
-                    <div class="feature-chip">
-                        <i class="fas fa-lock"></i> Buyer/Seller Protection &amp; Secure Payments
-                    </div>
-                </a>
-            </div>
-            <div class="col-12 col-md-6 col-lg-4 reveal reveal-delay-1">
-                <a href="{{ url('/user-agreement#buyer-tips') }}" class="text-decoration-none d-block">
-                    <div class="feature-chip">
-                        <i class="fas fa-truck"></i> Global Shipping &amp; Local Sellers
-                    </div>
-                </a>
-            </div>
-            <div class="col-12 col-md-6 col-lg-4 reveal reveal-delay-2">
-                <a href="{{ route('listings', ['sort' => 'popular']) }}" class="text-decoration-none d-block">
-                    <div class="feature-chip">
-                        <i class="fas fa-star"></i> Curated Trending Picks Daily
-                    </div>
-                </a>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ===================================== -->
-<!-- Deals & Inspiration Strip (Argos-style, backed by Deal model) -->
-<!-- ===================================== -->
-<section class="py-4 py-md-5 bg-white border-top border-bottom">
-    <div class="container">
-        <div
-            class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between g-3 gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-success-subtle text-success d-inline-flex align-items-center justify-content-center"
-                    style="width:52px;height:52px;">
-                    <i class="fas fa-tags fa-lg"></i>
-                </div>
+    @if($topShops->isNotEmpty())
+        <section class="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+            <div class="mb-4 flex items-end justify-between gap-3">
                 <div>
-                    <div class="text-uppercase small fw-bold text-success mb-1">
-                        @if(isset($activeDeals) && $activeDeals->count())
-                        Today&rsquo;s highlighted deals
-                        @else
-                        Today&rsquo;s highlighted
-                        @endif
-                    </div>
-                    <h2 class="h4 fw-bold mb-0">Deals &amp; Inspiration</h2>
-                    <p class="mb-0 text-muted small">
-                        @if(isset($activeDeals) && $activeDeals->count())
-                        Save on limited‑time offers picked from our marketplace.
-                        @else
-                        Hand‑picked offers and ideas to get you started.
-                        @endif
-                    </p>
+                    <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Top Sellers</span>
+                    <h2 class="mt-2 text-2xl font-extrabold text-slate-900">Featured Shops</h2>
+                    <p class="mt-1 text-sm text-slate-500">Discover trusted sellers and explore their latest drops.</p>
                 </div>
+                <a href="{{ route('shops.index') }}" class="hidden rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 md:inline-flex">View all shops</a>
             </div>
 
-            <div class="d-flex flex-column flex-md-row flex-wrap gap-2">
-                @if(isset($activeDeals) && $activeDeals->count())
-                @foreach($activeDeals as $deal)
-                <a href="{{ route('listings', ['deal' => $deal->id]) }}"
-                    class="btn btn-outline-success btn-pill text-start text-md-center">
-                    <span class="d-block fw-semibold">
-                        <i class="fas fa-tag me-1"></i>{{ $deal->name }}
-                    </span>
-                    @if($deal->discount_percent)
-                    <span class="small text-muted">{{ $deal->discount_percent }}% off</span>
-                    @endif
-                </a>
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                @foreach($topShops as $shop)
+                    <a href="{{ route('shop.show', $shop->slug) }}" class="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100">
+                                <img src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . ltrim($shop->logo, '/'))) : (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg')) }}"
+                                     alt="{{ $shop->name }} logo"
+                                     class="h-full w-full object-cover"
+                                     onerror="this.onerror=null;this.src=@json(setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'));">
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900">{{ $shop->name }}</h3>
+                                <p class="text-xs text-slate-500">{{ $shop->completed_orders_count ?? 0 }} completed orders</p>
+                            </div>
+                        </div>
+                        <p class="mt-3 text-sm text-slate-600">{{ Str::limit(strip_tags($shop->description ?? 'Explore curated items from this shop.'), 95) }}</p>
+                        <div class="mt-3 flex items-center justify-between text-xs font-semibold text-emerald-700">
+                            <span class="rounded-full bg-emerald-50 px-2 py-0.5">Top rated</span>
+                            <span>View shop <i class="fas fa-arrow-right ml-1"></i></span>
+                        </div>
+                    </a>
                 @endforeach
-                @else
-                <a href="{{ route('listings', ['sort' => 'popular']) }}" class="btn btn-outline-success btn-pill">
-                    <i class="fas fa-fire me-1"></i> Top picks
-                </a>
-                <a href="{{ route('listings', ['type' => 'digital']) }}" class="btn btn-outline-success btn-pill">
-                    <i class="fas fa-download me-1"></i> Digital deals
-                </a>
-                <a href="{{ route('listings', ['type' => 'service']) }}" class="btn btn-outline-success btn-pill">
-                    <i class="fas fa-briefcase me-1"></i> Service bundles
-                </a>
-                @endif
-                <a href="{{ route('listings') }}" class="btn btn-success btn-pill">
-                    <i class="fas fa-compass me-1"></i> View all deals
-                </a>
+            </div>
+
+            <div class="mt-4 md:hidden">
+                <a href="{{ route('shops.index') }}" class="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">View all shops</a>
+            </div>
+        </section>
+    @endif
+
+    <section class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-8">
+            <div class="mx-auto max-w-3xl text-center">
+                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Since 2021 - Global Marketplace</span>
+                <h2 class="mt-3 text-3xl font-extrabold text-slate-900">Who is Cetsy?</h2>
+                <p class="mt-3 text-base text-slate-600"><span class="font-semibold text-emerald-700">"Cetsy"</span> is a Malagasy word that means <em>"that�s it"</em>.</p>
+                <p class="mt-2 text-sm text-slate-500 md:text-base">Your global marketplace where anyone can find almost everything from everyone, everywhere.</p>
+
+                <div class="mt-4 flex flex-wrap justify-center gap-2">
+                    <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-700"><i class="fas fa-users mr-1"></i> 50k+ Buyers</span>
+                    <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-700"><i class="fas fa-store mr-1"></i> 10k+ Sellers</span>
+                    <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-700"><i class="fas fa-globe mr-1"></i> 80+ Countries</span>
+                </div>
+
+                <div class="mt-6 flex flex-wrap justify-center gap-2">
+                    <a href="{{ url('/about') }}" class="rounded-full border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50">About Cetsy</a>
+                    <a href="{{ route('listings') }}" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">Explore Marketplace</a>
+                    <a href="{{ route('register') }}" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">Become a Seller</a>
+                </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
+</div>
+@endsection
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const slider = document.querySelector('[data-hero-slider]');
+    const slider = document.querySelector('[data-home-hero]');
     if (!slider) return;
-    const slides = Array.from(slider.querySelectorAll('.hero-slide'));
+
+    const slides = Array.from(slider.querySelectorAll('[data-home-hero-slide]'));
     if (!slides.length) return;
-    const dotsContainer = slider.querySelector('[data-hero-dots]');
-    const dots = dotsContainer ? Array.from(dotsContainer.querySelectorAll('[data-hero-dot]')) : [];
-    const prevBtn = slider.querySelector('[data-hero-prev]');
-    const nextBtn = slider.querySelector('[data-hero-next]');
+
+    const prevBtn = slider.querySelector('[data-home-hero-prev]');
+    const nextBtn = slider.querySelector('[data-home-hero-next]');
+    const dots = Array.from(slider.querySelectorAll('[data-home-hero-dot]'));
+
     let current = 0;
     let timer = null;
 
-    function show(index) {
+    const show = (index) => {
         if (!slides[index]) return;
         slides[current].classList.remove('is-active');
-        if (dots[current]) dots[current].classList.remove('is-active');
+        if (dots[current]) {
+            dots[current].classList.remove('w-7', 'bg-slate-900');
+            dots[current].classList.add('w-2.5', 'bg-slate-300');
+        }
+
         current = index;
         slides[current].classList.add('is-active');
-        if (dots[current]) dots[current].classList.add('is-active');
-    }
+        if (dots[current]) {
+            dots[current].classList.remove('w-2.5', 'bg-slate-300');
+            dots[current].classList.add('w-7', 'bg-slate-900');
+        }
+    };
 
-    function next() {
-        const idx = (current + 1) % slides.length;
-        show(idx);
-    }
+    const next = () => show((current + 1) % slides.length);
+    const prev = () => show((current - 1 + slides.length) % slides.length);
 
-    function prev() {
-        const idx = (current - 1 + slides.length) % slides.length;
-        show(idx);
-    }
-
-    function startAuto() {
-        if (timer || slides.length < 2) return;
+    const startAuto = () => {
+        if (slides.length < 2 || timer) return;
         timer = setInterval(next, 5000);
-    }
+    };
 
-    function stopAuto() {
+    const stopAuto = () => {
         if (!timer) return;
         clearInterval(timer);
         timer = null;
-    }
+    };
 
-    dots.forEach(dot => {
-        dot.addEventListener('click', function() {
-            const idx = parseInt(dot.getAttribute('data-hero-dot'), 10);
-            if (!isNaN(idx)) {
-                stopAuto();
-                show(idx);
-                startAuto();
-            }
+    dots.forEach((dot) => {
+        dot.addEventListener('click', () => {
+            const idx = parseInt(dot.getAttribute('data-home-hero-dot'), 10);
+            if (Number.isNaN(idx)) return;
+            stopAuto();
+            show(idx);
+            startAuto();
         });
     });
 
-    if (prevBtn) prevBtn.addEventListener('click', function() {
-        stopAuto();
-        prev();
-        startAuto();
-    });
-    if (nextBtn) nextBtn.addEventListener('click', function() {
-        stopAuto();
-        next();
-        startAuto();
-    });
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            stopAuto();
+            prev();
+            startAuto();
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            stopAuto();
+            next();
+            startAuto();
+        });
+    }
 
     slider.addEventListener('mouseenter', stopAuto);
     slider.addEventListener('mouseleave', startAuto);
@@ -819,357 +426,4 @@ document.addEventListener('DOMContentLoaded', function() {
     startAuto();
 });
 </script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const slider = document.querySelector('[data-top-seller-slider]');
-    const track = document.querySelector('[data-top-seller-track]');
-    const prevBtn = document.querySelector('[data-top-seller-prev]');
-    const nextBtn = document.querySelector('[data-top-seller-next]');
-    if (!slider || !track) return;
-
-    function slide(offset) {
-        const step = Math.max(track.clientWidth * 0.8, 240);
-        const tolerance = 6;
-        const maxScroll = track.scrollWidth - track.clientWidth;
-        const atEnd = track.scrollLeft >= maxScroll - tolerance;
-        const atStart = track.scrollLeft <= tolerance;
-        if (offset > 0 && atEnd) {
-            track.scrollTo({
-                left: 0,
-                behavior: 'smooth'
-            });
-        } else if (offset < 0 && atStart) {
-            track.scrollTo({
-                left: maxScroll,
-                behavior: 'smooth'
-            });
-        } else {
-            track.scrollBy({
-                left: offset * step,
-                behavior: 'smooth'
-            });
-        }
-    }
-
-    if (prevBtn) prevBtn.addEventListener('click', () => {
-        stopAuto();
-        slide(-1);
-        startAuto();
-    });
-    if (nextBtn) nextBtn.addEventListener('click', () => {
-        stopAuto();
-        slide(1);
-        startAuto();
-    });
-
-    let autoTimer = null;
-    const startAuto = () => {
-        if (!autoTimer) autoTimer = setInterval(() => slide(1), 5000);
-    };
-    const stopAuto = () => {
-        if (autoTimer) {
-            clearInterval(autoTimer);
-            autoTimer = null;
-        }
-    };
-
-    slider.addEventListener('mouseenter', stopAuto);
-    slider.addEventListener('mouseleave', startAuto);
-    startAuto();
-});
-</script>
 @endpush
-
-<!-- ===================================== -->
-<!-- Popular Items (slider) -->
-<!-- ===================================== -->
-@include('theme.'.theme().'.partials.product-carousel', [
-'items' => $featuredProducts,
-'title' => 'Popular Items',
-'subtitle' => 'Trending picks from trusted sellers across the marketplace.',
-'eyebrow' => 'Hot right now',
-'eyebrowIcon' => 'fa-fire',
-'seeMoreUrl' => route('listings', ['sort' => 'popular']),
-'seeMoreLabel' => 'Browse all products'
-])
-
-<!-- ===================================== -->
-<!-- Just for You -->
-<!-- ===================================== -->
-@include('theme.'.theme().'.partials.product-carousel', [
-'items' => $featuredProducts,
-'title' => 'Just for You',
-'subtitle' => Auth::check()
-? 'Curated from your favorites, orders, and recent views.'
-: 'Sign in to personalize picks from your favorites and recent views.',
-'eyebrow' => 'Recommended',
-'eyebrowIcon' => 'fa-wand-magic-sparkles',
-'seeMoreUrl' => route('listings', ['sort' => 'popular']),
-'seeMoreLabel' => 'See more picks'
-])
-
-<!-- ===================================== -->
-<!-- Top Sellers -->
-<!-- ===================================== -->
-@php
-$topShops = ($shops instanceof \Illuminate\Support\Collection)
-? $shops->take(6)
-: collect($shops ?? [])->take(6);
-@endphp
-@if($topShops->isNotEmpty())
-<section class="py-5 top-sellers-section">
-    <div class="container">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-            <div>
-                <span class="eyebrow"><i class="fas fa-store"></i> Top Sellers</span>
-                <h2 class="h3 fw-bold mb-1 mt-2">Featured Shops</h2>
-                <p class="text-muted mb-0">Discover trusted sellers and explore their latest drops.</p>
-            </div>
-            <div class="top-seller-nav d-flex gap-2">
-                <button class="btn btn-outline-success" type="button" aria-label="Previous shops" data-top-seller-prev>
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <button class="btn btn-outline-success" type="button" aria-label="Next shops" data-top-seller-next>
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-                <a href="{{ route('shops.index') }}" class="btn btn-success btn-pill ms-1">View all shops</a>
-            </div>
-        </div>
-
-        <div class="top-sellers-slider" data-top-seller-slider>
-            <div class="top-sellers-track" data-top-seller-track>
-                @foreach($topShops as $shop)
-                <div class="top-seller-card card border-0 shadow-sm reveal">
-                    <a href="{{ route('shop.show', $shop->slug) }}" class="text-decoration-none h-100 d-flex">
-                        <div class="card-body d-flex flex-column">
-                            <div class="d-flex align-items-center gap-2 mb-3">
-                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
-                                    style="width:56px;height:56px;">
-                                    <img src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . ltrim($shop->logo, '/'))) : (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg')) }}"
-                                        alt="{{ $shop->name }} logo" class="img-fluid rounded-circle"
-                                        style="max-height:56px; max-width:56px;"
-                                        onerror="this.onerror=null;this.src=@json(setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'));">
-                                </div>
-                                <div>
-                                    <h5 class="mb-0 text-dark">{{ $shop->name }}</h5>
-                                    <span class="text-muted small">{{ $shop->completed_orders_count ?? 0 }} completed
-                                        orders</span>
-                                </div>
-                            </div>
-
-                            <p class="text-muted small mb-3 flex-grow-1 top-seller-meta">
-                                {{ Str::limit(strip_tags($shop->description ?? 'Explore curated items from this shop.'), 110) }}
-                            </p>
-
-                            <div class="d-flex align-items-center justify-content-between top-seller-actions mt-auto">
-                                <span class="badge bg-success bg-opacity-10 text-success">Top rated</span>
-                                <span>View shop <i class="fas fa-arrow-right ms-1"></i></span>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-</section>
-@endif
-
-@if($topShops->isNotEmpty())
-<section class="py-4">
-    <div class="container">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <div>
-                <span class="eyebrow"><i class="fas fa-gem"></i> Featured Shops</span>
-                <h3 class="h4 fw-bold mb-0 mt-2">Curated sellers to explore</h3>
-            </div>
-            <a href="{{ route('shops.index') }}" class="btn btn-outline-success btn-pill">Browse shops</a>
-        </div>
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
-            @foreach($topShops->take(4) as $shop)
-            <div class="col">
-                <a href="{{ route('shop.show', $shop->slug) }}" class="text-decoration-none">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="card-body d-flex flex-column">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
-                                    style="width:52px;height:52px;">
-                                    <img src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . ltrim($shop->logo, '/'))) : (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg')) }}"
-                                        alt="{{ $shop->name }} logo" class="img-fluid rounded-circle"
-                                        style="max-height:52px; max-width:52px;"
-                                        onerror="this.onerror=null;this.src=@json(setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'));">
-                                </div>
-                                <div>
-                                    <h5 class="mb-0 text-dark">{{ $shop->name }}</h5>
-                                    <span class="text-muted small">{{ $shop->completed_orders_count ?? 0 }} completed
-                                        orders</span>
-                                </div>
-                            </div>
-                            <p class="text-muted small mb-0">
-                                {{ Str::limit(strip_tags($shop->description ?? 'Discover unique finds from this shop.'), 90) }}
-                            </p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            @endforeach
-        </div>
-    </div>
-</section>
-@endif
-
-<!-- ===================================== -->
-<!-- Most Trending Services (carousel) -->
-@include('theme.'.theme().'.partials.product-carousel', [
-'items' => $services,
-'title' => 'Most Trending Services',
-'subtitle' => 'Recently viewed and in-demand service providers.',
-'eyebrow' => 'Services',
-'eyebrowIcon' => 'fa-bolt',
-'seeMoreUrl' => route('listings', ['type' => 'service']),
-'seeMoreLabel' => 'View all services'
-])
-
-<!-- Featured Digital Downloads (carousel) -->
-@include('theme.'.theme().'.partials.product-carousel', [
-'items' => $featuredDigitals,
-'title' => 'Featured Digital Downloads for You',
-'subtitle' => 'Original music, e-books, templates, recipes, and more.',
-'eyebrow' => 'Digital',
-'eyebrowIcon' => 'fa-download',
-'seeMoreUrl' => route('listings', ['type' => 'digital']),
-'seeMoreLabel' => 'View all digitals'
-])
-
-<!-- ===================================== -->
-<!-- About the company section (Enhanced with Font Awesome icons) -->
-<!-- ===================================== -->
-<section class="about-home position-relative py-6 bg-white">
-    <div class="container">
-        <!-- Hero / Intro -->
-        <div class="about-hero p-4 p-md-5 mb-5 text-center reveal">
-            <div class="mx-auto" style="max-width: 900px;">
-                <span class="stat-chip mb-3">
-                    <i class="fas fa-star"></i>
-                    Since 2021 &bull; Global Marketplace
-                </span>
-
-                <h2 class="display-6 fw-bold text-dark mb-2">Who is Cetsy?</h2>
-                <p class="lead mb-3 text-secondary">
-                    <span class="fw-semibold text-success">&ldquo;Cetsy&rdquo;</span> is a Malagasy word that means
-                    <em>&ldquo;that&rsquo;s it&rdquo;</em>.
-                </p>
-                <p class="fs-5 text-muted mb-4">
-                    Your global marketplace where anyone can find almost everything&mdash;from everyone, everywhere.
-                </p>
-
-                <!-- Quick stats -->
-                <div class="d-flex flex-wrap justify-content-center gap-2">
-                    <span class="stat-chip"><i class="fas fa-users"></i> 50k+ Buyers</span>
-                    <span class="stat-chip"><i class="fas fa-store"></i> 10k+ Sellers</span>
-                    <span class="stat-chip"><i class="fas fa-globe"></i> 80+ Countries</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 3 Feature Cards -->
-        <div class="row g-4">
-            <!-- How we started -->
-            <div class="col-md-6 col-lg-4 reveal">
-                <article class="card-flat p-4 h-100">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="feature-icon">
-                            <i class="fas fa-rocket"></i>
-                        </div>
-                        <h3 class="h4 mb-0">How we started</h3>
-                    </div>
-                    <p class="text-muted mb-3">
-                        Cetsy is a global e-commerce marketplace, founded in 2021 to better connect world markets. As a
-                        privately held company, we enable sellers to list nearly any item they can legally sell in their
-                        region - safely and simply.
-                    </p>
-                    <a class="link-arrow" href="{{ url('/about') }}">
-                        Learn our story <i class="fas fa-arrow-right"></i>
-                    </a>
-                </article>
-            </div>
-
-            <!-- What we do -->
-            <div class="col-md-6 col-lg-4 reveal reveal-delay-1">
-                <article class="card-flat p-4 h-100">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="feature-icon">
-                            <i class="fas fa-project-diagram"></i>
-                        </div>
-                        <h3 class="h4 mb-0">What we do</h3>
-                    </div>
-                    <p class="text-muted mb-3">
-                        We connect buyers and sellers globally with secure, flexible payment options, while empowering
-                        creators to sell with minimal limits on creativity inside the Cetsy Marketplace.
-                        <a href="{{ url('/about') }}" class="fw-semibold text-success text-decoration-none">Read
-                            more</a>.
-                    </p>
-                    <div class="d-flex flex-wrap gap-2">
-                        <span class="badge rounded-pill text-bg-light border"><i class="fas fa-shield-alt"></i>
-                            Secure</span>
-                        <span class="badge rounded-pill text-bg-light border"><i class="fas fa-dollar-sign"></i>
-                            Multiple Payments</span>
-                        <span class="badge rounded-pill text-bg-light border"><i class="fas fa-tachometer-alt"></i>
-                            Scalable</span>
-                    </div>
-                </article>
-            </div>
-
-            <!-- Start Now -->
-            <div class="col-md-6 col-lg-4 reveal reveal-delay-2">
-                <article class="card-flat p-4 h-100">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="feature-icon">
-                            <i class="fas fa-shopping-bag"></i>
-                        </div>
-                        <h3 class="h4 mb-0">Start now</h3>
-                    </div>
-                    <p class="text-muted mb-3">
-                        Become a Cetsy Seller in a few steps. Review the Seller Agreement to see what we expect and what
-                        you can expect from us. Questions? Use our 24/7 CHAT anytime.
-                    </p>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="{{ url('/login') }}" class="btn btn-success btn-pill">
-                            <i class="fas fa-sign-in-alt"></i> Sign in
-                        </a>
-                        <a href="{{ url('/register') }}" class="btn btn-soft-success btn-pill">
-                            <i class="fas fa-user-plus"></i> Create account
-                        </a>
-                    </div>
-                </article>
-            </div>
-        </div>
-
-        <!-- CTA Bar -->
-        <div class="cta-bar mt-5 p-4 p-md-5 text-center reveal reveal-delay-3">
-            <div class="row align-items-center gy-3">
-                <div class="col-lg-7 mx-auto">
-                    <h4 class="fw-bold mb-1 text-dark">Ready to explore the global marketplace?</h4>
-                    <p class="text-muted mb-0">Discover unique items, support creators, and sell to a worldwide
-                        audience.</p>
-                </div>
-                <div class="col-lg-8 mx-auto mt-3">
-                    <div class="d-flex flex-wrap justify-content-center gap-2">
-                        <a href="{{ url('/about') }}" class="btn btn-outline-success btn-pill">
-                            <i class="fas fa-info-circle"></i> About Cetsy
-                        </a>
-                        <a href="{{ url('/listings') }}" class="btn btn-success btn-pill">
-                            <i class="fas fa-compass"></i> Explore Marketplace
-                        </a>
-                        <a href="{{ url('/register') }}" class="btn btn-success btn-pill">
-                            <i class="fas fa-store"></i> Become a Seller
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-</section>
-
-@endsection
