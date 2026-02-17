@@ -37,13 +37,18 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
+  web:
+    generate: true
+    image_path: assets/app_icons/elephant_icon_1024.png
+    background_color: "#111111"
+    theme_color: "#2563EB"
 
   # Provide a base image for BOTH platforms (satisfies the plugin requirement)
-  image_path: assets/app_icons/cetsy_icon_1024.png
+  image_path: assets/app_icons/elephant_icon_1024.png
 
   # Android adaptive icons (Play’s modern shape-masking)
-  adaptive_icon_foreground: assets/app_icons/android_adaptive_foreground_1024.png
-  adaptive_icon_background: assets/app_icons/android_adaptive_background_1024.png
+  adaptive_icon_foreground: assets/app_icons/elephant_icon_1024.png
+  adaptive_icon_background: "#111111"
 
   # Nice-to-haves
   min_sdk_android: 21

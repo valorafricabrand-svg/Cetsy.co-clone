@@ -1,6 +1,6 @@
 // WebView screen with 4-item bottom navigation.
 // Keeps: no AppBar, Safe top margin, pull-to-refresh, tap/transition loader,
-// offline banner, Android file uploads, and web redirect to https://cetsy.co.
+// offline banner and Android file uploads.
 
 import 'dart:async';
 
@@ -9,12 +9,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
-import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import '../config.dart';
+import '../web/web_iframe_hooks.dart';
 
 class CetsyWebViewScreen extends StatefulWidget {
   const CetsyWebViewScreen({super.key, required this.initialUrl});
@@ -27,7 +26,7 @@ class CetsyWebViewScreen extends StatefulWidget {
 // Bottom navigation removed: rely on website's own navigation.
 
 class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
-  WebViewController? _controller; // null on web (we redirect instead)
+  WebViewController? _controller;
 
   // ---- Layout tuning
   static const double _topMargin = 0;
@@ -39,16 +38,16 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   // ---- Offline + errors
   final ValueNotifier<bool> _isOffline = ValueNotifier<bool>(false);
   final ValueNotifier<String?> _lastError = ValueNotifier<String?>(null);
-  late final StreamSubscription<dynamic> _connSub; // supports Result or List<Result>
+  late final StreamSubscription<List<ConnectivityResult>> _connSub;
+  bool _showInstallHint = false;
 
   // ---- Pull-to-refresh (top-edge handle)
   double _dragDistance = 0.0;
   double _pullProgress = 0.0; // 0..1 visual bar
   static const double _pullTrigger = 100; // px to trigger reload
 
-  // ---- Base URL scope and share anchor
+  // ---- Base URL scope
   late final Uri _baseUri;
-  final GlobalKey _shareAnchorKey = GlobalKey();
 
   @override
   void initState() {
@@ -59,19 +58,15 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     final parsedInit = Uri.parse(widget.initialUrl);
     _baseUri = parsedInit.replace(path: '/', query: null, fragment: null);
 
-    // Connectivity banner (compatible with old/new connectivity_plus)
-    _connSub = Connectivity().onConnectivityChanged.listen((event) {
-      bool offline = false;
-      if (event is ConnectivityResult) {
-        offline = event == ConnectivityResult.none;
-      } else if (event is List<ConnectivityResult>) {
-        offline = event.contains(ConnectivityResult.none);
-      }
-      _isOffline.value = offline;
-    });
+    _showInstallHint = kIsWeb;
 
-    // ✅ On Flutter Web: DO NOT instantiate a WebView. Redirect the tab instead.
-    if (kIsWeb) return;
+    // Connectivity banner
+    _connSub = Connectivity().onConnectivityChanged.listen((results) {
+      _isOffline.value = results.contains(ConnectivityResult.none);
+    });
+    Connectivity().checkConnectivity().then((results) {
+      _isOffline.value = results.contains(ConnectivityResult.none);
+    }).catchError((_) {});
 
     // Creation params with iOS inline-media enabled
     PlatformWebViewControllerCreationParams params;
@@ -84,7 +79,29 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
       params = const PlatformWebViewControllerCreationParams();
     }
 
-    final controller = WebViewController.fromPlatformCreationParams(params)
+    final controller = WebViewController.fromPlatformCreationParams(params);
+
+    if (kIsWeb) {
+      _setLoading(true);
+      WebIframeHooks.start(
+        onNavStart: () {
+          if (!mounted) return;
+          _setLoading(true);
+        },
+        onNavDone: () {
+          if (!mounted) return;
+          _setLoading(false);
+        },
+      );
+      controller.loadRequest(Uri.parse(widget.initialUrl)).catchError((_) {});
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && _loadingOverlay) _setLoading(false);
+      });
+      _controller = controller;
+      return;
+    }
+
+    controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.transparent)
       ..setNavigationDelegate(
@@ -113,8 +130,20 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
             final uri = Uri.parse(req.url);
             final isHttp = uri.scheme == 'http' || uri.scheme == 'https';
             final isAppScheme = <String>{
-              'tel', 'mailto', 'sms', 'whatsapp', 'intent', 'maps', 'geo',
-              'tg', 'instagram', 'twitter', 'facebook', 'fb', 'viber', 'skype',
+              'tel',
+              'mailto',
+              'sms',
+              'whatsapp',
+              'intent',
+              'maps',
+              'geo',
+              'tg',
+              'instagram',
+              'twitter',
+              'facebook',
+              'fb',
+              'viber',
+              'skype',
             }.contains(uri.scheme);
 
             if (isAppScheme) {
@@ -127,9 +156,30 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
               // Common downloadable types -> hand off to OS/browser for a native feel
               final p = (uri.path).toLowerCase();
               const dlExts = [
-                '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-                '.zip', '.rar', '.7z', '.csv', '.apk', '.aac', '.mp3', '.m4a',
-                '.mp4', '.mov', '.avi', '.webm', '.jpg', '.jpeg', '.png', '.gif', '.webp'
+                '.pdf',
+                '.doc',
+                '.docx',
+                '.xls',
+                '.xlsx',
+                '.ppt',
+                '.pptx',
+                '.zip',
+                '.rar',
+                '.7z',
+                '.csv',
+                '.apk',
+                '.aac',
+                '.mp3',
+                '.m4a',
+                '.mp4',
+                '.mov',
+                '.avi',
+                '.webm',
+                '.jpg',
+                '.jpeg',
+                '.png',
+                '.gif',
+                '.webp'
               ];
               final isDownload = dlExts.any((ext) => p.endsWith(ext));
               if (isDownload) {
@@ -177,6 +227,7 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
 
   @override
   void dispose() {
+    WebIframeHooks.stop();
     _connSub.cancel();
     _pageProgress.dispose();
     _isOffline.dispose();
@@ -234,35 +285,22 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     if (_controller == null) return;
     HapticFeedback.lightImpact();
     _setLoading(true);
+    if (kIsWeb) {
+      await _controller!.loadRequest(Uri.parse(widget.initialUrl));
+      _setLoading(false);
+      return;
+    }
     await _controller!.reload();
   }
 
-  Future<void> _shareCurrentPage() async {
-    try {
-      String? url = widget.initialUrl;
-      if (_controller != null) {
-        url = await _controller!.currentUrl();
-      }
-      url ??= widget.initialUrl;
-
-      final box = _shareAnchorKey.currentContext?.findRenderObject() as RenderBox?;
-      final origin = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
-      await Share.share(
-        url,
-        subject: 'Check this out on Cetsy',
-        sharePositionOrigin: origin,
-      );
-    } catch (_) {}
-  }
-
   Future<void> _goBackOrExit() async {
-    if (_controller != null && await _controller!.canGoBack()) {
-      await _controller!.goBack();
-    } else {
-      try {
+    try {
+      if (_controller != null && await _controller!.canGoBack()) {
+        await _controller!.goBack();
+      } else {
         await SystemNavigator.pop();
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
   }
 
   // ---- Pull-to-refresh handle at the very top of the web content
@@ -321,6 +359,16 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     );
   }
 
+  Widget _buildGlobalLoadingBar() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 120),
+      height: _loadingOverlay ? 2 : 0,
+      child: _loadingOverlay
+          ? const LinearProgressIndicator()
+          : const SizedBox.shrink(),
+    );
+  }
+
   // Offline banner (under the progress strip)
   Widget _buildOfflineBanner() {
     return ValueListenableBuilder<bool>(
@@ -335,12 +383,63 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
             children: [
               const Icon(Icons.wifi_off, size: 18),
               const SizedBox(width: 8),
-              const Expanded(child: Text('You are offline. Pull down to retry.')),
+              const Expanded(
+                  child: Text('You are offline. Pull down to retry.')),
               TextButton(onPressed: _reload, child: const Text('Retry')),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildInstallHintBanner() {
+    if (!kIsWeb || !_showInstallHint) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      color: Theme.of(context).colorScheme.primaryContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.install_mobile, size: 18),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              'Install Cetsy from your browser menu for a full-screen app experience.',
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              showModalBottomSheet<void>(
+                context: context,
+                showDragHandle: true,
+                builder: (ctx) => Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text('Install Cetsy',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      SizedBox(height: 10),
+                      Text(
+                          'Chrome/Edge: menu (three dots) -> Install app / Add to Home screen.'),
+                      SizedBox(height: 6),
+                      Text('Safari on iPhone: Share -> Add to Home Screen.'),
+                    ],
+                  ),
+                ),
+              );
+            },
+            child: const Text('How'),
+          ),
+          IconButton(
+            onPressed: () => setState(() => _showInstallHint = false),
+            icon: const Icon(Icons.close),
+            tooltip: 'Dismiss',
+          ),
+        ],
+      ),
     );
   }
 
@@ -351,7 +450,7 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
       builder: (_, err, __) {
         if (err == null) return const SizedBox.shrink();
         return Container(
-          color: Theme.of(context).colorScheme.surface.withOpacity(.98),
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: .98),
           alignment: Alignment.center,
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -360,11 +459,17 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
               children: [
                 const Icon(Icons.cloud_off, size: 42),
                 const SizedBox(height: 12),
-                Text('Something went wrong', style: Theme.of(context).textTheme.titleMedium),
+                Text('Something went wrong',
+                    style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                Text(err, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
+                Text(err,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: 16),
-                FilledButton.icon(onPressed: _reload, icon: const Icon(Icons.refresh), label: const Text('Retry')),
+                FilledButton.icon(
+                    onPressed: _reload,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry')),
               ],
             ),
           ),
@@ -382,7 +487,8 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
         // onProgress/onPageStarted will keep it visible until finished.
         _setLoading(true);
         Future.delayed(const Duration(milliseconds: 300), () {
-          if ((_pageProgress.value == 0 || _pageProgress.value == 100) && mounted) {
+          if ((_pageProgress.value == 0 || _pageProgress.value == 100) &&
+              mounted) {
             _setLoading(false);
           }
         });
@@ -392,30 +498,9 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Web fallback: redirect this tab to cetsy.co (no iframe/webview)
-    if (kIsWeb) {
-      final uri = Uri.parse(widget.initialUrl);
-      if (kReleaseMode) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          launchUrl(uri, webOnlyWindowName: '_self');
-        });
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
-      } else {
-        // In debug/profile, don't replace the inspected tab to avoid DWDS detaching.
-        return Scaffold(
-          body: Center(
-            child: FilledButton(
-              onPressed: () => launchUrl(uri, webOnlyWindowName: '_blank'),
-              child: const Text('Open Cetsy'),
-            ),
-          ),
-        );
-      }
-    }
-
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         await _goBackOrExit();
       },
@@ -431,6 +516,8 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
 
               // Offline banner (appears under the margin)
               _buildOfflineBanner(),
+              _buildInstallHintBanner(),
+              _buildGlobalLoadingBar(),
 
               // Main area
               Expanded(
@@ -438,14 +525,15 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
                   padding: const EdgeInsets.only(top: _topMargin),
                   child: Stack(
                     children: [
-                      if (_controller != null) WebViewWidget(controller: _controller!),
+                      if (_controller != null)
+                        WebViewWidget(controller: _controller!),
 
                       // Pull-to-refresh handle + top progress strip
                       _buildPullHandle(),
                       _buildTopProgressStrip(),
 
                       // Tap loader listener (doesn't block touches)
-                      _buildTapLoaderListener(),
+                      if (!kIsWeb) _buildTapLoaderListener(),
 
                       // Error overlay (if any)
                       _buildErrorOverlay(),
@@ -457,7 +545,7 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
                           duration: const Duration(milliseconds: 150),
                           opacity: _loadingOverlay ? 1 : 0,
                           child: Container(
-                            color: Colors.black.withOpacity(0.12),
+                            color: Colors.black.withValues(alpha: 0.12),
                             alignment: Alignment.center,
                             child: const SizedBox(
                               width: 36,
@@ -473,15 +561,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
               ),
             ],
           ),
-        ),
-
-        // Share current page
-        floatingActionButton: FloatingActionButton.small(
-          key: _shareAnchorKey,
-          onPressed: _shareCurrentPage,
-          tooltip: 'Share',
-          heroTag: 'share_fab',
-          child: const Icon(Icons.share),
         ),
       ),
     );

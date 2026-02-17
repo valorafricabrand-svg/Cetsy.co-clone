@@ -1,11 +1,17 @@
 {
-    "name": "cetsy_starter",
-    "short_name": "cetsy_starter",
-    "start_url": ".",
+    "name": "Cetsy",
+    "short_name": "Cetsy",
+    "start_url": "/",
+    "scope": "/",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "display_override": [
+        "standalone",
+        "window-controls-overlay",
+        "browser"
+    ],
+    "background_color": "#111111",
+    "theme_color": "#2563EB",
+    "description": "Cetsy mobile-like web app shell.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
