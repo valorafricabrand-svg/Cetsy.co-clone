@@ -1,4 +1,4 @@
-package com.example.cetsy_starter
+package com.cetsy.co.cetsy_starter
 
 import io.flutter.embedding.android.FlutterActivity
 

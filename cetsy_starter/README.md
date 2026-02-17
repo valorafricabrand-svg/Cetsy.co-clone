@@ -40,6 +40,28 @@ Other domains (not matching your base URL host) also open externally.
 - iOS `Info.plist` adds `LSApplicationQueriesSchemes` and dev ATS exceptions.
 - If you use only HTTPS in production, no further changes are needed.
 
+## Play Store signing (Android)
+
+Release signing is configured via `android/key.properties`.
+
+1. Generate an upload keystore (from project root):
+
+```powershell
+keytool -genkeypair -v -keystore android/keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+2. Create `android/key.properties` from `android/key.properties.example` and set real passwords.
+3. Build signed artifacts:
+
+```powershell
+flutter build appbundle --release
+flutter build apk --release
+```
+
+Output files:
+- `build/app/outputs/bundle/release/app-release.aab` (Play Console upload)
+- `build/app/outputs/flutter-apk/app-release.apk` (direct distribution/testing)
+
 ## Splash screen
 
 This project is set up to use `flutter_native_splash` with brand colors.

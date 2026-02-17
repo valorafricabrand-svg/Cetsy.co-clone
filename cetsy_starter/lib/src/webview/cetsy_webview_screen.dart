@@ -123,6 +123,9 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
             await _injectPagePatches();
           },
           onWebResourceError: (err) {
+            // Only treat top-level navigation failures as fatal.
+            // Subresource failures (ads/CDN pixels/etc.) should not block UI.
+            if (err.isForMainFrame != true) return;
             _lastError.value = '${err.errorCode}: ${err.description}';
             _setLoading(false);
           },
