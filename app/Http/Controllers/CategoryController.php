@@ -213,18 +213,83 @@ public function categoryShow($slug)
         }
     }
 
-    // Paginate products under this category or any of its descendants
-    $products = \App\Models\Product::whereIn('category_id', $ids->unique()->values())
+    $productQuery = \App\Models\Product::whereIn('category_id', $ids->unique()->values())
         ->where('is_active', 1)
         ->with([
             'media',
+            'variations',
             'shop' => function ($q) {
                 $q->withCount('reviews')->withAvg('reviews', 'rating');
             },
-        ])
-        ->latest()
-        ->paginate(12)
-        ->withQueryString();
+        ]);
+
+    // Search query (name/description/tags)
+    $q = trim((string) request('q', ''));
+    if ($q !== '') {
+        $terms = collect(preg_split('/\s+/', $q, -1, PREG_SPLIT_NO_EMPTY))
+            ->map(fn ($t) => trim($t))
+            ->filter()
+            ->values();
+
+        $productQuery->where(function ($qq) use ($terms, $q) {
+            if ($terms->isEmpty()) {
+                $like = "%{$q}%";
+                $qq->where('name', 'like', $like)
+                    ->orWhere('description', 'like', $like)
+                    ->orWhere('tags', 'like', $like);
+                return;
+            }
+            foreach ($terms as $t) {
+                $like = "%{$t}%";
+                $qq->orWhere('name', 'like', $like)
+                    ->orWhere('description', 'like', $like)
+                    ->orWhere('tags', 'like', $like);
+            }
+        });
+    }
+
+    // Optional price range filter
+    $minPrice = request()->filled('min') ? (float) request('min') : null;
+    $maxPrice = request()->filled('max') ? (float) request('max') : null;
+    if (!is_null($minPrice) && !is_null($maxPrice) && $minPrice > $maxPrice) {
+        [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
+    }
+    if (!is_null($minPrice)) {
+        $productQuery->where('price', '>=', $minPrice);
+    }
+    if (!is_null($maxPrice)) {
+        $productQuery->where('price', '<=', $maxPrice);
+    }
+
+    // Sorting
+    $sort = request('sort', 'latest');
+    switch ($sort) {
+        case 'price_asc':
+            $productQuery->orderBy('price', 'asc')->orderByDesc('id');
+            break;
+        case 'price_desc':
+            $productQuery->orderBy('price', 'desc')->orderByDesc('id');
+            break;
+        case 'popular':
+            $productQuery->withCount('views')
+                ->orderByDesc('views_count')
+                ->orderByDesc('id');
+            break;
+        case 'latest':
+        default:
+            $productQuery->latest();
+            break;
+    }
+
+    $perPage = (int) request('per_page', 24);
+    if (!in_array($perPage, [12, 24, 48], true)) {
+        $perPage = 24;
+    }
+
+    // Paginate products under this category or any of its descendants
+    $products = $productQuery
+        ->paginate($perPage)
+        ->appends(request()->query());
 
     return themed_view('show_category', compact('category', 'products'));
 }

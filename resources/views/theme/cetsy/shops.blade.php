@@ -6,126 +6,165 @@
 @section('meta_image', setting('logo_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
 @section('meta_robots', 'index, follow')
 
+@push('styles')
+<style>
+  .shops-toolbar {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+  }
+
+  .shops-empty {
+    border: 2px dashed rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.04);
+  }
+</style>
+@endpush
+
 @section('main')
-  <style>
-    .shops-hero {
-      background:
-        radial-gradient(1200px 600px at -10% -10%, rgba(25,135,84,.10), transparent 60%),
-        radial-gradient(1200px 600px at 110% 0%, rgba(25,135,84,.08), transparent 60%),
-        linear-gradient(180deg, #0f5132, #198754);
-    }
-    .shops-toolbar {
-      position: sticky;
-      top: 0;
-      z-index: 900;
-      background: #fff;
-      border-bottom: 1px solid rgba(0,0,0,.06);
-    }
-  </style>
+@php
+  $q = request('q');
+  $country = request('country');
+@endphp
 
-  @php
-    $q = request('q');
-    $country = request('country');
-  @endphp
+<div class="relative overflow-x-clip pb-10">
+  <div class="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-emerald-200/40 blur-3xl"></div>
+  <div class="pointer-events-none absolute -left-20 top-[26rem] h-72 w-72 rounded-full bg-cyan-200/35 blur-3xl"></div>
 
-  {{-- Hero (Argos-style band) --}}
-  <section class="py-6 text-white shops-hero">
-    <div class="container">
-      <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-          <p class="text-uppercase small fw-bold text-success-emphasis mb-1">
-            <i class="fas fa-store me-1"></i> Shops
+  <section class="relative bg-gradient-to-b from-emerald-900 to-emerald-700 py-12 text-white">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="grid items-center gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-200">
+            <i class="fas fa-store mr-1"></i> Shops
           </p>
-          <h1 class="display-5 fw-bold mb-2">All Shops</h1>
-          <p class="lead mb-0">Discover trusted Cetsy shops from around the world and explore their latest listings.</p>
+          <h1 class="mt-2 text-4xl font-extrabold leading-tight md:text-5xl">All Shops</h1>
+          <p class="mt-3 max-w-2xl text-sm text-emerald-50/95 md:text-base">
+            Discover trusted Cetsy shops from around the world and explore their latest listings.
+          </p>
         </div>
-        <div class="col-lg-5">
-          <form method="GET" action="{{ url()->current() }}" role="search" class="hero-search-form">
-            <input type="hidden" name="country" value="{{ $country }}">
-            <div class="hero-search-shell">
-              <span class="hero-search-icon text-success-emphasis bg-white rounded-circle me-1" style="width:32px;height:32px;">
-                <i class="fas fa-search"></i>
-              </span>
-              <label for="shopsSearch" class="visually-hidden">Search shops</label>
-              <input
-                id="shopsSearch"
-                type="search"
-                name="q"
-                class="form-control hero-search-input"
-                placeholder="Search shops, brands or owners"
-                aria-label="Search shops"
-                value="{{ $q }}"
-                autocomplete="on"
-              >
-              <button class="btn btn-light text-success hero-search-submit" type="submit">
-                Search
-              </button>
-            </div>
-          </form>
-        </div>
+
+        <form method="GET" action="{{ url()->current() }}" role="search" class="rounded-2xl bg-white/95 p-3 shadow-xl">
+          <input type="hidden" name="country" value="{{ $country }}">
+          <label for="shopsSearch" class="sr-only">Search shops</label>
+          <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+              <i class="fas fa-search"></i>
+            </span>
+            <input
+              id="shopsSearch"
+              type="search"
+              name="q"
+              class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+              placeholder="Search shops, brands or owners"
+              aria-label="Search shops"
+              value="{{ $q }}"
+              autocomplete="on"
+            >
+            <button class="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500" type="submit">
+              Search
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </section>
 
-  {{-- Filters toolbar --}}
-  <section class="shops-toolbar py-3">
-    <div class="container">
-      <form method="GET" action="{{ url()->current() }}" class="row g-2 align-items-center">
-        <div class="col-md-6 d-none d-lg-block">
-          <div class="input-group">
-            <span class="input-group-text bg-white"><i class="fas fa-search text-secondary"></i></span>
-            <input type="search" name="q" value="{{ $q }}" class="form-control" placeholder="Search shops…">
+  <section class="shops-toolbar sticky top-0 z-20 border-b border-slate-200 py-3">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <form method="GET" action="{{ url()->current() }}" class="grid gap-2 md:grid-cols-12 md:items-center">
+        <div class="hidden md:col-span-7 md:block">
+          <div class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2">
+            <i class="fas fa-search text-slate-400"></i>
+            <input type="search" name="q" value="{{ $q }}" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none" placeholder="Search shops...">
           </div>
         </div>
-        <div class="col-6 col-md-3">
-          <select name="country" class="form-select" aria-label="Filter shops by country">
+
+        <div class="col-span-7 md:col-span-3">
+          <select name="country" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none" aria-label="Filter shops by country">
             <option value="">All countries</option>
             @foreach($countries as $c)
-              <option value="{{ $c->id }}" {{ (string)$country === (string)$c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+              <option value="{{ $c->id }}" {{ (string) $country === (string) $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
             @endforeach
           </select>
         </div>
-        <div class="col-6 col-md-3">
-          <button type="submit" class="btn btn-success w-100">Apply filters</button>
+
+        <div class="col-span-5 md:col-span-2">
+          <button type="submit" class="w-full rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500">Apply</button>
         </div>
       </form>
+
+      <div class="mt-2 flex flex-wrap items-center gap-2">
+        @if($q)
+          <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+            <i class="fas fa-search text-slate-400"></i> "{{ $q }}"
+            <a href="{{ request()->fullUrlWithQuery(['q' => null, 'page' => null]) }}" class="text-slate-400 hover:text-slate-700" aria-label="Clear search">&times;</a>
+          </span>
+        @endif
+
+        @if($country && $countries->has($country))
+          <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+            <i class="fas fa-globe text-slate-400"></i> {{ $countries->get($country)->name }}
+            <a href="{{ request()->fullUrlWithQuery(['country' => null, 'page' => null]) }}" class="text-slate-400 hover:text-slate-700" aria-label="Clear country">&times;</a>
+          </span>
+        @endif
+
+        @if($q || $country)
+          <a href="{{ url()->current() }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-600">Clear all</a>
+        @endif
+      </div>
     </div>
   </section>
 
-  <section class="py-4 bg-light">
-    <div class="container">
-      <div id="shopsList" class="row g-4">
+  <section class="bg-slate-50 py-5">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <p class="mb-3 text-sm text-slate-500">
+        Showing <strong>{{ $shops->firstItem() ?? 0 }}-{{ $shops->lastItem() ?? 0 }}</strong>
+        of <strong>{{ $shops->total() }}</strong> shops
+      </p>
+
+      <div id="shopsList" class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
         @forelse($shops as $shop)
-          <div class="col-6 col-md-4 col-lg-3">
-            <a href="{{ route('shop.show', $shop->slug) }}" class="text-decoration-none">
-              <div class="card h-100 text-center shadow-sm border-0">
-                <div class="card-body d-flex flex-column align-items-center">
-                  <img src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : setting('favicon_url') }}"
-                       alt="{{ $shop->name }} logo"
-                       class="rounded-circle mb-3"
-                       style="width:80px;height:80px;object-fit:cover;">
-                  <h6 class="mb-1 text-dark">{{ $shop->name }}</h6>
-                  <div class="small text-muted mb-1">
-                    <span class="text-warning"><i class="fas fa-star"></i> {{ number_format($shop->reviews_avg_rating ?? 0, 1) }}</span>
-                    <span>({{ $shop->reviews_count }})</span>
-                  </div>
-                  <p class="text-muted small mb-0">{{ $countries[$shop->country]->name ?? '' }}</p>
-                </div>
-              </div>
+          @php
+            $shopLogo = $shop->logo ? ($shop->logo_url ?? asset('storage/' . ltrim($shop->logo, '/'))) : setting('favicon_url');
+            $countryName = optional($countries->get($shop->country))->name;
+          @endphp
+          <article class="group rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+            <a href="{{ route('shop.show', $shop->slug) }}" class="block">
+              <img
+                src="{{ $shopLogo }}"
+                alt="{{ $shop->name }} logo"
+                class="mx-auto h-20 w-20 rounded-full border border-slate-200 object-cover"
+                loading="lazy"
+                decoding="async"
+              >
+              <h3 class="mt-3 line-clamp-1 text-sm font-semibold text-slate-900 group-hover:text-emerald-700">{{ $shop->name }}</h3>
+              <p class="mt-1 text-xs text-slate-500">
+                <span class="font-semibold text-amber-500"><i class="fas fa-star"></i> {{ number_format($shop->reviews_avg_rating ?? 0, 1) }}</span>
+                <span>({{ $shop->reviews_count }})</span>
+              </p>
+              <p class="mt-1 line-clamp-1 text-xs text-slate-500">{{ $countryName ?: 'Global' }}</p>
+              <span class="mt-3 inline-flex rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-700 transition group-hover:border-emerald-300 group-hover:text-emerald-700">
+                Visit Shop
+              </span>
             </a>
-          </div>
+          </article>
         @empty
-          <div class="col-12 text-center text-muted">No shops found.</div>
+          <div class="shops-empty col-span-full rounded-2xl p-10 text-center text-slate-500">
+            <i class="fas fa-store-slash mb-3 block text-3xl text-slate-400"></i>
+            <p class="mb-1 text-sm">No shops found.</p>
+            <a href="{{ url()->current() }}" class="mt-3 inline-flex rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500">Clear Filters</a>
+          </div>
         @endforelse
       </div>
 
       @if($shops->hasMorePages())
-        <div class="mt-4 text-center">
-          <button id="load-more" class="btn btn-success" data-next-page="{{ $shops->currentPage() + 1 }}">Load More</button>
+        <div class="mt-5 text-center">
+          <button id="load-more" class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-500" data-next-page="{{ $shops->currentPage() + 1 }}">Load More</button>
         </div>
       @endif
     </div>
   </section>
+</div>
 @endsection
 
 @push('scripts')
@@ -145,9 +184,14 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(html => {
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, 'text/html');
-          const newItems = doc.getElementById('shopsList').children;
+          const nextContainer = doc.getElementById('shopsList');
           const container = document.getElementById('shopsList');
-          Array.from(newItems).forEach(el => container.appendChild(el));
+          if (!nextContainer || !container) {
+            loadMoreBtn.remove();
+            return;
+          }
+
+          Array.from(nextContainer.children).forEach(el => container.appendChild(el));
 
           const newBtn = doc.getElementById('load-more');
           if (newBtn) {

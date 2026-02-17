@@ -1,4 +1,3 @@
-{{-- resources/views/categories/show.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @php
@@ -8,174 +7,84 @@
     ? asset('storage/' . $category->image)
     : asset('assets/img/default-category.jpg');
 
-  // Decode once to avoid showing "&amp;" literally when names are stored HTML-encoded
   $catName = html_entity_decode($category->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
   $desc = $category->description
     ?: ('Explore a wide range of ' . $catName . ($category->listing_type ? ' ' . $category->listing_type : ' listings'));
   $metaDescription = Str::limit(strip_tags($desc), 155);
 @endphp
 
-{{-- SEO-friendly title (overrideable) --}}
 @section('title', ($category->seo_title ?? $catName) . ' - Marketplace Category')
 @section('meta_description', $metaDescription)
 @section('canonical_url', route('category.show', $category->slug))
 @section('meta_image', $banner)
 @section('meta_robots', 'index, follow')
 
+@push('styles')
+<style>
+  .category-toolbar {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+  }
+  .category-chip-close {
+    font-size: 13px;
+    line-height: 1;
+  }
+  .category-empty {
+    border: 2px dashed rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.04);
+  }
+</style>
+@endpush
+
 @section('main')
-  <style>
-    /* Scoped cosmetics */
-    .py-6 { padding-top: 4rem; padding-bottom: 4rem; }
+@php
+  $q        = request('q');
+  $sort     = request('sort', 'latest');
+  $perPage  = (int) request('per_page', 24);
+  $view     = request('view', 'grid');
+  $priceMin = request('min');
+  $priceMax = request('max');
+@endphp
 
-    .eyebrow{
-      display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .75rem;
-      border-radius:999px; background: rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.25);
-      font-weight:600; font-size:.85rem;
-    }
+<div class="relative overflow-x-clip pb-10">
+  <div class="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-emerald-200/40 blur-3xl"></div>
+  <div class="pointer-events-none absolute -left-20 top-[24rem] h-72 w-72 rounded-full bg-rose-200/35 blur-3xl"></div>
 
-    /* Toolbar behaviour */
-    .toolbar { position: sticky; top: 0; z-index: 900; background:#fff; border-bottom:1px solid rgba(0,0,0,.06); }
-    nav.navbar { z-index: 1100; }
-    .navbar .dropdown-menu { z-index: 1101; }
-    .navbar-collapse { position: relative; z-index: 1102; }
+  <section class="relative py-10">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="overflow-hidden rounded-3xl bg-gradient-to-br from-white via-rose-500 to-red-600 p-4 shadow-2xl sm:p-6 lg:p-8">
+        <div class="grid items-center gap-6 lg:grid-cols-[1fr_0.9fr]">
+          <div>
+            <span class="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+              <i class="fas fa-folder-open"></i> Category
+            </span>
+            <h1 class="mt-3 text-3xl font-extrabold leading-tight text-white md:text-5xl">{{ $catName }}</h1>
+            <p class="mt-3 max-w-2xl text-sm text-white/90 md:text-base">{{ $desc }}</p>
 
-    .chip{
-      display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem;
-      border-radius:999px; border:1px solid rgba(0,0,0,.12); background:#fff; font-size:.875rem;
-    }
-    .view-toggle .btn { border-radius:.5rem; }
-    .empty-spot { border:2px dashed rgba(25,135,84,.35); border-radius:1rem; background:rgba(25,135,84,.03); }
-
-    /* Hero styling (match homepage promo card) */
-    .category-hero { background: linear-gradient(180deg, #f3f4f6, #ffffff); }
-    .category-hero-card {
-      border-radius: 1.75rem;
-      background: radial-gradient(140% 180% at 0% 0%, #ffffff 0, #f97373 35%, #e60012 70%);
-      color: #ffffff;
-      padding: 2rem 2.25rem;
-      box-shadow: 0 30px 60px rgba(0,0,0,.18);
-      position: relative;
-      overflow: hidden;
-    }
-    .category-hero-card::before {
-      content: '';
-      position: absolute;
-      inset: 12px;
-      border-radius: 1.5rem;
-      border: 1px solid rgba(255,255,255,.18);
-      pointer-events: none;
-    }
-    .category-hero-copy { position: relative; z-index: 1; }
-    .category-hero-heading {
-      font-size: clamp(1.9rem, 2.3vw + 1.2rem, 2.7rem);
-      font-weight: 800;
-      line-height: 1.1;
-    }
-    .category-hero-sub {
-      font-size: 1.02rem;
-      max-width: 30rem;
-      color: rgba(255,255,255,.92);
-    }
-    .category-hero-media {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .category-hero-media img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 1.25rem;
-      box-shadow: 0 24px 48px rgba(15,23,42,.35);
-      object-fit: cover;
-    }
-
-    /* Hero search */
-    .hero-search-form { max-width: 640px; margin-bottom: 0.75rem; }
-    .hero-search-shell {
-      display: flex;
-      align-items: stretch;
-      gap: .5rem;
-      background: #fff;
-      border-radius: 999px;
-      border: 1px solid rgba(15,23,42,.12);
-      box-shadow: 0 10px 30px rgba(15,23,42,.10);
-      padding: .25rem .5rem .25rem .75rem;
-    }
-    .hero-search-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #64748b;
-      font-size: 1.1rem;
-    }
-    .hero-search-input.form-control {
-      border: 0;
-      box-shadow: none;
-      padding-left: .5rem;
-      padding-right: .5rem;
-    }
-    .hero-search-input.form-control:focus {
-      outline: 0;
-      box-shadow: none;
-    }
-    .hero-search-submit {
-      border-radius: 999px;
-      padding-inline: 1.5rem;
-      white-space: nowrap;
-    }
-    @media (max-width: 991.98px) {
-      .category-hero-card { padding: 1.5rem 1.5rem 1.75rem; }
-      .category-hero-media { margin-top: 1.25rem; }
-    }
-  </style>
-
-  {{-- =========== Category Banner =========== --}}
-  <section class="py-6 category-hero">
-    <div class="container">
-      <div class="category-hero-card text-white">
-        <div class="row g-4 align-items-center">
-          <div class="col-lg-6">
-            <div class="category-hero-copy">
-              <span class="eyebrow mb-2"><i class="fas fa-folder-open"></i> Category</span>
-              <h1 class="category-hero-heading mb-2">{{ $catName }}</h1>
-              <p class="category-hero-sub mb-3">{{ $desc }}</p>
-
-              {{-- Breadcrumbs --}}
-              <nav class="mt-2" aria-label="breadcrumb">
-                <ol class="breadcrumb justify-content-start mb-0">
-                  <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ url('/') }}">Home</a></li>
-                  <li class="breadcrumb-item"><a class="link-light text-decoration-none" href="{{ route('listings') }}">Listings</a></li>
-                  <li class="breadcrumb-item active text-white-50" aria-current="page">{{ $catName }}</li>
-                </ol>
-              </nav>
-            </div>
+            <nav class="mt-4 text-xs text-white/80" aria-label="breadcrumb">
+              <ol class="flex flex-wrap items-center gap-2">
+                <li><a class="hover:text-white" href="{{ url('/') }}">Home</a></li>
+                <li>/</li>
+                <li><a class="hover:text-white" href="{{ route('listings') }}">Listings</a></li>
+                <li>/</li>
+                <li class="text-white">{{ $catName }}</li>
+              </ol>
+            </nav>
           </div>
-          <div class="col-lg-6">
-            <div class="category-hero-media mb-3 mb-lg-4">
-              <img src="{{ $banner }}" alt="{{ $catName }} banner" class="img-fluid">
+
+          <div>
+            <div class="overflow-hidden rounded-2xl bg-white/10 p-1 shadow-lg">
+              <img src="{{ $banner }}" alt="{{ $catName }} banner" class="h-56 w-full rounded-xl object-cover md:h-64">
             </div>
-            {{-- Category-scoped quick search --}}
-            <form class="hero-search-form" method="GET" action="{{ url()->current() }}" role="search">
-              <div class="hero-search-shell">
-                <span class="hero-search-icon text-success-emphasis bg-white rounded-circle me-1" style="width:32px;height:32px;">
+
+            <form class="mt-4" method="GET" action="{{ url()->current() }}" role="search">
+              <label for="categoryHeroSearch" class="sr-only">Search in {{ $catName }}</label>
+              <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2 shadow">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
                   <i class="fas fa-search"></i>
                 </span>
-                <label for="categoryHeroSearch" class="visually-hidden">Search in {{ $catName }}</label>
-                <input
-                  id="categoryHeroSearch"
-                  type="search"
-                  name="q"
-                  class="form-control hero-search-input"
-                  placeholder="Search in {{ $catName }}"
-                  aria-label="Search in {{ $catName }}"
-                  value="{{ request('q') }}"
-                  autocomplete="on"
-                >
-                <button class="btn btn-light text-success hero-search-submit" type="submit">
-                  Search
-                </button>
+                <input id="categoryHeroSearch" type="search" name="q" value="{{ request('q') }}" placeholder="Search in {{ $catName }}" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none" autocomplete="on">
+                <button class="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500" type="submit">Search</button>
               </div>
             </form>
           </div>
@@ -184,62 +93,48 @@
     </div>
   </section>
 
-  {{-- =========== Filters / Toolbar =========== --}}
-  @php
-    $q        = request('q');
-    $sort     = request('sort', 'latest');   // latest | price_asc | price_desc | popular
-    $perPage  = (int) request('per_page', 24);
-    $view     = request('view', 'grid');     // grid | list
-    $priceMin = request('min');
-    $priceMax = request('max');
-  @endphp
-
-  <section class="toolbar py-3">
-    <div class="container">
-      <form method="GET" action="{{ url()->current() }}" id="filtersForm">
-        <div class="row g-2 align-items-center">
-          {{-- Search in category --}}
-          <div class="col-12 col-md-4">
-            <div class="input-group">
-              <span class="input-group-text bg-white"><i class="fas fa-search text-secondary"></i></span>
-              <input type="search" name="q" value="{{ $q }}" class="form-control" placeholder="Search in {{ $category->name }}…">
+  <section class="category-toolbar sticky top-0 z-20 border-b border-slate-200 py-3">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <form method="GET" action="{{ url()->current() }}" id="filtersForm" class="space-y-3">
+        <div class="grid gap-2 md:grid-cols-12 md:items-center">
+          <div class="md:col-span-4">
+            <div class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2">
+              <i class="fas fa-search text-slate-400"></i>
+              <input type="search" name="q" value="{{ $q }}" placeholder="Search in {{ $catName }}..." class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
             </div>
           </div>
 
-          {{-- Sort --}}
-          <div class="col-6 col-md-2">
-            <select class="form-select" name="sort" aria-label="Sort by">
+          <div class="md:col-span-2">
+            <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none" name="sort" aria-label="Sort by">
               <option value="latest"     {{ $sort==='latest'?'selected':'' }}>Newest</option>
               <option value="popular"    {{ $sort==='popular'?'selected':'' }}>Popular</option>
-              <option value="price_asc"  {{ $sort==='price_asc'?'selected':'' }}>Price: Low → High</option>
-              <option value="price_desc" {{ $sort==='price_desc'?'selected':'' }}>Price: High → Low</option>
+              <option value="price_asc"  {{ $sort==='price_asc'?'selected':'' }}>Price: Low to High</option>
+              <option value="price_desc" {{ $sort==='price_desc'?'selected':'' }}>Price: High to Low</option>
             </select>
           </div>
 
-          {{-- Price range --}}
-          <div class="col-3 col-md-2">
-            <input type="number" min="0" step="1" name="min" value="{{ $priceMin }}" class="form-control" placeholder="Min">
-          </div>
-          <div class="col-3 col-md-2">
-            <input type="number" min="0" step="1" name="max" value="{{ $priceMax }}" class="form-control" placeholder="Max">
+          <div class="md:col-span-2">
+            <input type="number" min="0" step="1" name="min" value="{{ $priceMin }}" placeholder="Min" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none">
           </div>
 
-          {{-- Per page --}}
-          <div class="col-6 col-md-2">
-            <select class="form-select" name="per_page" aria-label="Items per page">
+          <div class="md:col-span-2">
+            <input type="number" min="0" step="1" name="max" value="{{ $priceMax }}" placeholder="Max" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none">
+          </div>
+
+          <div class="md:col-span-1">
+            <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none" name="per_page" aria-label="Items per page">
               @foreach([12,24,48] as $n)
-                <option value="{{ $n }}" {{ $perPage===$n?'selected':'' }}>{{ $n }} / page</option>
+                <option value="{{ $n }}" {{ $perPage===$n?'selected':'' }}>{{ $n }}</option>
               @endforeach
             </select>
           </div>
 
-          {{-- View toggle --}}
-          <div class="col-6 col-md-2 text-md-end">
-            <div class="btn-group view-toggle" role="group" aria-label="Toggle view">
-              <button type="button" class="btn btn-outline-success {{ $view==='grid'?'active':'' }}" data-view="grid" title="Grid view">
+          <div class="md:col-span-1 md:text-right">
+            <div class="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white p-1">
+              <button type="button" class="view-toggle-btn inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm {{ $view==='grid' ? 'bg-emerald-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" data-view="grid" title="Grid view" aria-label="Grid view">
                 <i class="fas fa-th-large"></i>
               </button>
-              <button type="button" class="btn btn-outline-success {{ $view==='list'?'active':'' }}" data-view="list" title="List view">
+              <button type="button" class="view-toggle-btn inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm {{ $view==='list' ? 'bg-emerald-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" data-view="list" title="List view" aria-label="List view">
                 <i class="fas fa-bars"></i>
               </button>
             </div>
@@ -248,280 +143,261 @@
         </div>
       </form>
 
-      {{-- Active chips --}}
-      <div class="mt-2">
-        <span class="chip me-1"><i class="fas fa-folder"></i> {{ $catName }}</span>
+      <div class="mt-2 flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+          <i class="fas fa-folder text-slate-400"></i> {{ $catName }}
+        </span>
 
         @if($q)
-          <span class="chip me-1">
-            <i class="fas fa-search"></i> "{{ $q }}"
-            <a href="{{ request()->fullUrlWithQuery(['q'=>null,'page'=>null]) }}" class="btn-close" aria-label="Clear search"></a>
+          <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+            <i class="fas fa-search text-slate-400"></i> "{{ $q }}"
+            <a href="{{ request()->fullUrlWithQuery(['q'=>null,'page'=>null]) }}" class="category-chip-close text-slate-400 hover:text-slate-700" aria-label="Clear search">&times;</a>
           </span>
         @endif
 
         @if($priceMin !== null || $priceMax !== null)
-          <span class="chip me-1">
-            <i class="fas fa-dollar-sign"></i>
-            {{ $priceMin !== null ? 'Min '.$priceMin : '' }}{{ ($priceMin !== null && $priceMax !== null) ? ' – ' : '' }}{{ $priceMax !== null ? 'Max '.$priceMax : '' }}
-            <a href="{{ request()->fullUrlWithQuery(['min'=>null,'max'=>null,'page'=>null]) }}" class="btn-close" aria-label="Clear price"></a>
+          <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+            <i class="fas fa-dollar-sign text-slate-400"></i>
+            {{ $priceMin !== null ? 'Min '.$priceMin : '' }}{{ ($priceMin !== null && $priceMax !== null) ? ' - ' : '' }}{{ $priceMax !== null ? 'Max '.$priceMax : '' }}
+            <a href="{{ request()->fullUrlWithQuery(['min'=>null,'max'=>null,'page'=>null]) }}" class="category-chip-close text-slate-400 hover:text-slate-700" aria-label="Clear price">&times;</a>
           </span>
         @endif
 
         @if($sort && $sort!=='latest')
-          <span class="chip me-1">
-            <i class="fas fa-sort-amount-down"></i>
+          <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+            <i class="fas fa-sort-amount-down text-slate-400"></i>
             @switch($sort)
               @case('popular') Popular @break
-              @case('price_asc') Price: Low→High @break
-              @case('price_desc') Price: High→Low @break
+              @case('price_asc') Price: Low to High @break
+              @case('price_desc') Price: High to Low @break
               @default Newest
             @endswitch
-            <a href="{{ request()->fullUrlWithQuery(['sort'=>'latest','page'=>null]) }}" class="btn-close" aria-label="Reset sort"></a>
+            <a href="{{ request()->fullUrlWithQuery(['sort'=>'latest','page'=>null]) }}" class="category-chip-close text-slate-400 hover:text-slate-700" aria-label="Reset sort">&times;</a>
           </span>
         @endif
 
-        {{-- Clear all (but stay in the same category) --}}
         @if($q || $priceMin !== null || $priceMax !== null || ($sort && $sort!=='latest') || $perPage!==24 || $view!=='grid')
-          <a href="{{ url()->current() }}" class="btn btn-sm btn-link text-decoration-none ms-1">
-            <i class="fas fa-times-circle me-1"></i> Clear all
-          </a>
+          <a href="{{ url()->current() }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-600">Clear all</a>
         @endif
 
-        {{-- Browse all link (to global listings) --}}
-        <a href="{{ route('listings') }}" class="btn btn-sm btn-link text-decoration-none ms-2">
-          <i class="fas fa-list-ul me-1"></i> Browse All Listings
-        </a>
+        <a href="{{ route('listings') }}" class="text-xs font-semibold text-slate-600 hover:text-slate-900">Browse All Listings</a>
       </div>
     </div>
   </section>
 
-  @push('scripts')
-  <script>
-  (function(){
-    if (window.__videoThumbInitCat) return; window.__videoThumbInitCat = true;
-    function toFirstFrame(img){
-      var src = img.getAttribute('data-video-src');
-      if(!src) return;
-      try{
-        var v = document.createElement('video');
-        v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.src = src + '#t=0.1';
-        v.addEventListener('loadeddata', function(){
-          try{
-            var w=v.videoWidth||480, h=v.videoHeight||270;
-            var c=document.createElement('canvas'); c.width=w; c.height=h;
-            c.getContext('2d').drawImage(v,0,0,w,h);
-            img.src=c.toDataURL('image/jpeg',0.8);
-            img.style.opacity='1'; img.style.filter='none';
-            img.removeAttribute('data-video-src');
-          }catch(e){}
-        }, {once:true});
-      }catch(e){}
-    }
-    function init(){
-      var imgs = document.querySelectorAll('img[data-video-src]');
-      if (!('IntersectionObserver' in window)) { imgs.forEach(toFirstFrame); return; }
-      var io = new IntersectionObserver(function(entries){
-        entries.forEach(function(entry){
-          if(entry.isIntersecting){ toFirstFrame(entry.target); io.unobserve(entry.target); }
-        });
-      }, { rootMargin:'200px' });
-      imgs.forEach(function(img){ io.observe(img); });
-    }
-    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
-  })();
-  </script>
-  @endpush
-
-  {{-- =========== Listings =========== --}}
-  <section class="py-4 bg-light">
-    <div class="container">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h4 fw-bold mb-0">Listings in {{ $catName }}</h2>
-        <span class="text-muted small">
-          Showing <strong>{{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }}</strong>
+  <section class="bg-slate-50 py-5">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="mb-3 flex items-center justify-between gap-3">
+        <h2 class="text-xl font-extrabold text-slate-900 md:text-2xl">Listings in {{ $catName }}</h2>
+        <span class="text-xs text-slate-500 md:text-sm">
+          Showing <strong>{{ $products->firstItem() ?? 0 }}-{{ $products->lastItem() ?? 0 }}</strong>
           of <strong>{{ $products->total() }}</strong>
         </span>
       </div>
 
-      {{-- GRID VIEW --}}
       @if($view === 'grid')
         @if ($products->count())
-          <div class="row g-4">
+          <div id="listing-items" class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
             @foreach ($products as $item)
-              <div class="col-6 col-md-4 col-lg-3">
+              <div>
                 @include('theme.'.theme().'.partials.product-card', ['item' => $item])
               </div>
             @endforeach
           </div>
 
-          {{-- Pagination (preserve filters) --}}
           @if ($products->hasPages())
-            <div class="mt-4 d-flex justify-content-center">
-              {{ $products->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+            <div class="mt-5 flex justify-center">
+              {{ $products->appends(request()->except('page'))->links() }}
             </div>
           @endif
         @else
-          <div class="alert alert-info text-center empty-spot py-5">
-            <i class="fas fa-box-open fa-2x mb-3 d-block"></i>
+          <div class="category-empty rounded-2xl p-10 text-center text-slate-500">
+            <i class="fas fa-box-open mb-3 block text-3xl text-slate-400"></i>
             No listings found in this category.
           </div>
         @endif
-
-      {{-- LIST VIEW --}}
       @else
         @if ($products->count())
-          <div class="vstack gap-3">
+          <div id="listing-items" class="space-y-3">
             @foreach ($products as $item)
               @php
-                // Prefer a real image for thumbnails; skip video files
                 if (!empty($item->featured_image)) {
                   $thumb = str_starts_with($item->featured_image, 'http')
-                           ? $item->featured_image
-                           : asset('storage/'.ltrim($item->featured_image,'/'));
+                      ? $item->featured_image
+                      : asset('storage/'.ltrim($item->featured_image,'/'));
                 } else {
                   $firstImage = (isset($item->media) && method_exists($item->media, 'firstWhere'))
-                                ? $item->media->firstWhere('type','image')
-                                : null;
+                      ? $item->media->firstWhere('type','image')
+                      : null;
                   if ($firstImage && !empty($firstImage->url)) {
                     $thumb = asset('storage/'.ltrim($firstImage->url,'/'));
                   } else {
-                    $firstVideo = (isset($item->media) && method_exists($item->media,'firstWhere')) ? $item->media->firstWhere('type','video') : null;
+                    $firstVideo = (isset($item->media) && method_exists($item->media,'firstWhere'))
+                        ? $item->media->firstWhere('type','video')
+                        : null;
                     $thumb = ($item->shop && $item->shop->logo)
-                             ? asset('storage/'.ltrim($item->shop->logo,'/'))
-                             : (setting('favicon_url') ?: asset('assets/img/placeholder.svg'));
+                        ? asset('storage/'.ltrim($item->shop->logo,'/'))
+                        : (setting('favicon_url') ?: asset('assets/img/placeholder.svg'));
                   }
                 }
-                // Use shop-wide rating in listings
+
                 $shop = $item->shop ?? null;
                 $avg  = round((float) ($shop?->reviews_avg_rating ?? ($shop ? $shop->reviews()->avg('rating') : 0)));
                 $cnt  = (int) ($shop?->reviews_count ?? ($shop ? $shop->reviews()->count() : 0));
                 $basePrice  = $item->price;
                 $finalPrice = $item->discounted_price;
+                $isService = (strtolower((string)($item->type ?? '')) === 'service');
+                $lowestVariantPrice = optional($item->variations)->whereNotNull('price')->min('price');
+
+                $hasVideo = (isset($item->media) && method_exists($item->media,'firstWhere') && $item->media->firstWhere('type','video'));
+                $vid = null;
+                if ((!isset($firstImage) || !$firstImage) && isset($firstVideo) && $firstVideo && !empty($firstVideo->url)) {
+                  $vid = asset('storage/'.ltrim($firstVideo->url,'/'));
+                }
               @endphp
 
-              <div class="border rounded-3 p-3 bg-white">
-                <div class="row g-3 align-items-center">
-                  <div class="col-4 col-md-3 col-lg-2">
-                    <a href="{{ route('listing.show', $item->slug) }}" class="d-block rounded overflow-hidden">
-                      <div class="ratio ratio-1x1 bg-white position-relative">
-                        @php
-                          $hasVideo = (isset($item->media)
-                                       && method_exists($item->media,'firstWhere')
-                                       && $item->media->firstWhere('type','video'));
-                          // Precompute preview video URL for inline data attribute
-                          $vid = null;
-                          if (!isset($firstImage) || !$firstImage) {
-                            $vid = (isset($firstVideo) && $firstVideo && !empty($firstVideo->url))
-                              ? asset('storage/'.ltrim($firstVideo->url,'/'))
-                              : null;
-                          }
-                          $styleExtra = (isset($firstVideo) && $firstVideo && (!isset($firstImage) || !$firstImage))
-                            ? 'opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease;'
-                            : '';
-                        @endphp
-                        @if($hasVideo)
-                          <span class="position-absolute top-0 start-0 m-2 px-2 py-1 rounded text-white" style="background:rgba(0,0,0,.7); font-size:.72rem;"><i class="fas fa-play me-1"></i>Video</span>
-                        @endif
-                        <img
-                          src="{{ $thumb }}"
-                          alt="{{ $item->name }}"
-                          class="w-100 h-100"
-                          style="object-fit:cover; {{ $styleExtra }}"
-                          @if($vid) data-video-src="{{ $vid }}" @endif>
-                      </div>
-                    </a>
-                  </div>
+              <article class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+                <div class="grid items-center gap-3 sm:grid-cols-[120px_1fr_auto]">
+                  <a href="{{ route('listing.show', $item->slug) }}" class="relative block overflow-hidden rounded-xl bg-slate-100">
+                    @if($hasVideo)
+                      <span class="absolute left-2 top-2 z-10 rounded-md bg-slate-900/75 px-2 py-0.5 text-[10px] font-semibold text-white"><i class="fas fa-play mr-1 text-[9px]"></i>Video</span>
+                    @endif
+                    <img src="{{ $thumb }}"
+                         alt="{{ $item->name }}"
+                         class="aspect-square h-full w-full object-cover"
+                         @if($vid) data-video-src="{{ $vid }}" style="opacity:.01;filter:blur(8px);transition:opacity .35s ease,filter .35s ease;" @endif>
+                  </a>
 
-                  <div class="col-8 col-md-6 col-lg-7">
-                    <h5 class="mb-1">
-                      <a class="text-decoration-none text-dark" href="{{ route('listing.show', $item->slug) }}">
-                        {{ $item->name ?? 'Untitled item' }}
-                      </a>
-                    </h5>
-                    <div class="mb-1 small text-warning">
+                  <div>
+                    <h3 class="text-sm font-semibold text-slate-900">
+                      <a href="{{ route('listing.show', $item->slug) }}" class="hover:text-emerald-700">{{ $item->name ?? 'Untitled item' }}</a>
+                    </h3>
+                    <div class="mt-1 text-xs text-amber-500">
                       @for($i=1; $i<=5; $i++)
-                        <i class="fa-star{{ $i <= $avg ? ' fa-solid' : ' fa-regular text-muted' }}"></i>
+                        <i class="fa-star{{ $i <= $avg ? ' fa-solid' : ' fa-regular text-slate-300' }}"></i>
                       @endfor
-                      @if($cnt) <span class="text-muted">({{ $cnt }})</span>@endif
+                      @if($cnt) <span class="ml-1 text-slate-400">({{ $cnt }})</span>@endif
                     </div>
                     @if(!empty($item->short_description))
-                      <div class="small text-muted">
-                        {{ \Illuminate\Support\Str::limit(strip_tags($item->short_description), 120) }}
-                      </div>
+                      <p class="mt-2 text-sm text-slate-500">{{ \Illuminate\Support\Str::limit(strip_tags($item->short_description), 120) }}</p>
                     @endif
                   </div>
 
-                  <div class="col-12 col-md-3 col-lg-3 text-md-end">
-                    @php
-                      $isService = (strtolower((string)($item->type ?? '')) === 'service');
-                      $lowestVariantPrice = optional($item->variations)->whereNotNull('price')->min('price');
-                    @endphp
+                  <div class="text-left sm:text-right">
                     @if($isService)
-                      <div class="small text-muted">Priced From</div>
+                      <div class="text-[11px] uppercase tracking-[0.12em] text-slate-400">Priced From</div>
                       @php $from = $lowestVariantPrice ?? (is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice ? $finalPrice : $basePrice); @endphp
                       @if(isset($from) && is_numeric($from))
-                        <div class="h5 mb-2 text-success">{{ get_currency() }} {{ number_format($from, 2) }}</div>
+                        <div class="mb-2 text-base font-bold text-emerald-700">{{ money($from) }}</div>
                       @else
-                        <div class="text-muted small mb-2">Contact for price</div>
+                        <div class="mb-2 text-xs text-slate-400">Contact for price</div>
                       @endif
                     @else
                       @if(isset($finalPrice, $basePrice) && is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
-                        <div class="d-flex align-items-baseline gap-2 justify-content-md-end mb-2">
-                          <span class="fw-bold text-success">{{ get_currency() }} {{ number_format($finalPrice, 2) }}</span>
-                          <span class="text-muted text-decoration-line-through">{{ get_currency() }} {{ number_format($basePrice, 2) }}</span>
+                        <div class="mb-2 flex items-baseline gap-2 sm:justify-end">
+                          <span class="text-base font-bold text-emerald-700">{{ money($finalPrice) }}</span>
+                          <span class="text-xs text-slate-400 line-through">{{ money($basePrice) }}</span>
                         </div>
                       @elseif(isset($basePrice))
-                        <div class="h5 mb-2 text-success">{{ get_currency() }} {{ number_format($basePrice, 2) }}</div>
+                        <div class="mb-2 text-base font-bold text-emerald-700">{{ money($basePrice) }}</div>
                       @else
-                        <div class="text-muted small mb-2">Contact for price</div>
+                        <div class="mb-2 text-xs text-slate-400">Contact for price</div>
                       @endif
                     @endif
 
-                    <a href="{{ route('listing.show', $item->slug) }}" class="btn btn-success btn-sm">
-                      <i class="fas fa-eye me-1"></i> View
+                    <a href="{{ route('listing.show', $item->slug) }}" class="inline-flex rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">
+                      <i class="fas fa-eye mr-1"></i> View
                     </a>
                   </div>
                 </div>
-              </div>
+              </article>
             @endforeach
           </div>
 
-          {{-- Pagination (preserve filters) --}}
           @if ($products->hasPages())
-            <div class="mt-4 d-flex justify-content-center">
-              {{ $products->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+            <div class="mt-5 flex justify-center">
+              {{ $products->appends(request()->except('page'))->links() }}
             </div>
           @endif
         @else
-          <div class="alert alert-info text-center empty-spot py-5">
-            <i class="fas fa-box-open fa-2x mb-3 d-block"></i>
+          <div class="category-empty rounded-2xl p-10 text-center text-slate-500">
+            <i class="fas fa-box-open mb-3 block text-3xl text-slate-400"></i>
             No listings found in this category.
           </div>
         @endif
       @endif
     </div>
   </section>
-
-  {{-- View toggle & auto-submit selects --}}
-  @push('scripts')
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('filtersForm');
-      const viewInput = form.querySelector('input[name="view"]');
-      document.querySelectorAll('.view-toggle [data-view]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          viewInput.value = btn.getAttribute('data-view');
-          if (form.querySelector('input[name="page"]')) form.querySelector('input[name="page"]').value = 1;
-          form.submit();
-        });
-      });
-      form.querySelectorAll('select, input[type="number"]').forEach(el => {
-        el.addEventListener('change', () => {
-          if (form.querySelector('input[name="page"]')) form.querySelector('input[name="page"]').value = 1;
-          form.submit();
-        });
-      });
-    });
-  </script>
-  @endpush
+</div>
 @endsection
+
+@push('scripts')
+<script>
+(function(){
+  if (window.__videoThumbInitCat) return;
+  window.__videoThumbInitCat = true;
+
+  function toFirstFrame(img){
+    var src = img.getAttribute('data-video-src');
+    if(!src) return;
+    try{
+      var v = document.createElement('video');
+      v.preload = 'metadata';
+      v.muted = true;
+      v.playsInline = true;
+      v.src = src + '#t=0.1';
+      v.addEventListener('loadeddata', function(){
+        try{
+          var w=v.videoWidth||480, h=v.videoHeight||270;
+          var c=document.createElement('canvas'); c.width=w; c.height=h;
+          c.getContext('2d').drawImage(v,0,0,w,h);
+          img.src=c.toDataURL('image/jpeg',0.8);
+          img.style.opacity='1'; img.style.filter='none';
+          img.removeAttribute('data-video-src');
+        }catch(e){}
+      }, {once:true});
+    }catch(e){}
+  }
+
+  function init(){
+    var imgs = document.querySelectorAll('img[data-video-src]');
+    if (!('IntersectionObserver' in window)) { imgs.forEach(toFirstFrame); return; }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){ toFirstFrame(entry.target); io.unobserve(entry.target); }
+      });
+    }, { rootMargin:'200px' });
+    imgs.forEach(function(img){ io.observe(img); });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('filtersForm');
+  if (!form) return;
+
+  const viewInput = form.querySelector('input[name="view"]');
+
+  document.querySelectorAll('.view-toggle-btn[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      viewInput.value = btn.getAttribute('data-view');
+      const pageInput = form.querySelector('input[name="page"]');
+      if (pageInput) pageInput.value = 1;
+      form.submit();
+    });
+  });
+
+  form.querySelectorAll('select, input[type="number"]').forEach(el => {
+    el.addEventListener('change', () => {
+      const pageInput = form.querySelector('input[name="page"]');
+      if (pageInput) pageInput.value = 1;
+      form.submit();
+    });
+  });
+});
+</script>
+@endpush
