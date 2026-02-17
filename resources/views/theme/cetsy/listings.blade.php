@@ -1,4 +1,3 @@
-{{-- resources/views/listings/index.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Marketplace - Products, Services and Digital Goods | Cetsy')
@@ -7,91 +6,76 @@
 @section('meta_image', setting('logo_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
 @section('meta_robots', 'index, follow')
 
+@push('styles')
+<style>
+  .listings-toolbar {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+  }
+  .listings-chip-close {
+    font-size: 13px;
+    line-height: 1;
+  }
+  .listings-empty {
+    border: 2px dashed rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.04);
+  }
+</style>
+@endpush
+
 @section('main')
-  <style>
-    .py-6 { padding-top: 4rem; padding-bottom: 4rem; }
-    .hero-soft {
-      background:
-        radial-gradient(1200px 600px at -10% -10%, rgba(25,135,84,.10), transparent 60%),
-        radial-gradient(1200px 600px at 110% 0%, rgba(25,135,84,.08), transparent 60%),
-        linear-gradient(180deg, #0f5132, #198754);
-    }
+@php
+  $q       = request('q');
+  $sort    = request('sort', 'latest');
+  $type    = request('type');
+  $perPage = (int) request('per_page', 24);
+  $view    = request('view', 'grid');
+@endphp
 
-    /* ✅ Keep toolbar below nav dropdown/collapse */
-    .toolbar { position: sticky; top: 0; z-index: 900; background: #fff; border-bottom: 1px solid rgba(0,0,0,.06); }
+<div class="relative overflow-x-clip pb-10">
+  <div class="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-emerald-200/40 blur-3xl"></div>
+  <div class="pointer-events-none absolute -left-20 top-[24rem] h-72 w-72 rounded-full bg-rose-200/35 blur-3xl"></div>
 
-    /* ✅ Ensure BOTH navbars (top + category) sit above the toolbar */
-    nav { position: relative; z-index: 1100; }
-    nav .dropdown-menu { z-index: 1101; }
-    .navbar-collapse { position: relative; z-index: 1102; }
-
-    .chip { display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:999px; border:1px solid rgba(0,0,0,.12); background:#fff; font-size:.875rem; }
-    .view-toggle .btn { border-radius:.5rem; }
-    .card-list { border:1px solid rgba(0,0,0,.06); border-radius:1rem; background:#fff; transition:transform .18s ease, box-shadow .18s ease; }
-    .card-list:hover { transform:translateY(-3px); box-shadow:0 10px 22px rgba(16,24,40,.10); }
-    .empty-spot { border:2px dashed rgba(25,135,84,.35); border-radius:1rem; background:rgba(25,135,84,.03); }
-  </style>
-
-  {{-- Hero (aligned with homepage visual language) --}}
-  <section class="py-6 text-white hero-soft">
-    <div class="container">
-      <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-          <p class="text-uppercase small fw-bold text-success-emphasis mb-1">
-            <i class="fas fa-store me-1"></i> Marketplace
+  <section class="relative bg-gradient-to-b from-emerald-900 to-emerald-700 py-12 text-white">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="grid items-center gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-200">
+            <i class="fas fa-store mr-1"></i> Marketplace
           </p>
-          <h1 class="display-5 fw-bold mb-2">All Listings</h1>
-          <p class="lead mb-0">Browse our global marketplace for physical products, professional services, and instant digital downloads.</p>
+          <h1 class="mt-2 text-4xl font-extrabold leading-tight md:text-5xl">All Listings</h1>
+          <p class="mt-3 max-w-2xl text-sm text-emerald-50/95 md:text-base">
+            Browse our global marketplace for physical products, professional services, and instant digital downloads.
+          </p>
         </div>
-        <div class="col-lg-5">
-          <form class="hero-search-form" method="GET" action="{{ url()->current() }}" role="search">
-            <div class="hero-search-shell">
-              <span class="hero-search-icon text-success-emphasis bg-white rounded-circle me-1" style="width:32px;height:32px;">
-                <i class="fas fa-search"></i>
-              </span>
-              <label for="listingsHeroSearch" class="visually-hidden">Search listings</label>
-              <input
-                id="listingsHeroSearch"
-                type="search"
-                name="q"
-                class="form-control hero-search-input"
-                placeholder="Search listings, brands or shops"
-                aria-label="Search listings"
-                value="{{ request('q') }}"
-                autocomplete="on"
-              >
-              <button class="btn btn-light text-success hero-search-submit" type="submit">
-                Search
-              </button>
-            </div>
-          </form>
-        </div>
+
+        <form method="GET" action="{{ url()->current() }}" role="search" class="rounded-2xl bg-white/95 p-3 shadow-xl">
+          <label for="listingsHeroSearch" class="sr-only">Search listings</label>
+          <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+              <i class="fas fa-search"></i>
+            </span>
+            <input id="listingsHeroSearch" type="search" name="q" value="{{ $q }}" placeholder="Search listings, brands or shops" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none" autocomplete="on">
+            <button class="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500" type="submit">Search</button>
+          </div>
+        </form>
       </div>
     </div>
   </section>
 
-  @php
-    $q        = request('q');
-    $sort     = request('sort', 'latest');   // latest | price_asc | price_desc | popular
-    $type     = request('type');             // product | service | digital
-    $perPage  = (int) request('per_page', 24);
-    $view     = request('view', 'grid');     // grid | list
-  @endphp
-
-  {{-- Toolbar --}}
-  <section class="toolbar py-3">
-    <div class="container">
-      <form method="GET" action="{{ url()->current() }}" id="filtersForm">
-        <div class="row g-2 align-items-center">
-          <div class="col-12 col-md-4">
-            <div class="input-group">
-              <span class="input-group-text bg-white"><i class="fas fa-search text-secondary"></i></span>
-              <input type="search" name="q" value="{{ $q }}" class="form-control" placeholder="Search listings…" aria-label="Search listings">
+  <section class="listings-toolbar sticky top-0 z-20 border-b border-slate-200 py-3">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <form method="GET" action="{{ url()->current() }}" id="filtersForm" class="space-y-3">
+        <div class="grid gap-2 md:grid-cols-12 md:items-center">
+          <div class="md:col-span-4">
+            <div class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2">
+              <i class="fas fa-search text-slate-400"></i>
+              <input type="search" name="q" value="{{ $q }}" placeholder="Search listings..." aria-label="Search listings" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
             </div>
           </div>
 
-          <div class="col-6 col-md-2">
-            <select class="form-select" name="type" aria-label="Filter by type">
+          <div class="md:col-span-2">
+            <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none" name="type" aria-label="Filter by type">
               <option value="">All types</option>
               <option value="physical" {{ ($type==='physical' || $type==='product' || $type==='products')?'selected':'' }}>Products</option>
               <option value="service"  {{ ($type==='service'  || $type==='services')?'selected':'' }}>Services</option>
@@ -99,29 +83,29 @@
             </select>
           </div>
 
-          <div class="col-6 col-md-2">
-            <select class="form-select" name="sort" aria-label="Sort by">
+          <div class="md:col-span-2">
+            <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none" name="sort" aria-label="Sort by">
               <option value="latest"     {{ $sort==='latest'?'selected':'' }}>Newest</option>
               <option value="popular"    {{ $sort==='popular'?'selected':'' }}>Popular</option>
-              <option value="price_asc"  {{ $sort==='price_asc'?'selected':'' }}>Price: Low → High</option>
-              <option value="price_desc" {{ $sort==='price_desc'?'selected':'' }}>Price: High → Low</option>
+              <option value="price_asc"  {{ $sort==='price_asc'?'selected':'' }}>Price: Low to High</option>
+              <option value="price_desc" {{ $sort==='price_desc'?'selected':'' }}>Price: High to Low</option>
             </select>
           </div>
 
-          <div class="col-6 col-md-2">
-            <select class="form-select" name="per_page" aria-label="Items per page">
+          <div class="md:col-span-2">
+            <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none" name="per_page" aria-label="Items per page">
               @foreach([12,24,48] as $n)
                 <option value="{{ $n }}" {{ $perPage===$n?'selected':'' }}>{{ $n }} / page</option>
               @endforeach
             </select>
           </div>
 
-          <div class="col-6 col-md-2 text-md-end">
-            <div class="btn-group view-toggle" role="group" aria-label="Toggle view">
-              <button type="button" class="btn btn-outline-success {{ $view==='grid'?'active':'' }}" data-view="grid" title="Grid view">
+          <div class="md:col-span-2 md:text-right">
+            <div class="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white p-1">
+              <button type="button" class="view-toggle-btn inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm {{ $view==='grid' ? 'bg-emerald-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" data-view="grid" title="Grid view" aria-label="Grid view">
                 <i class="fas fa-th-large"></i>
               </button>
-              <button type="button" class="btn btn-outline-success {{ $view==='list'?'active':'' }}" data-view="list" title="List view">
+              <button type="button" class="view-toggle-btn inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm {{ $view==='list' ? 'bg-emerald-600 text-white' : 'text-slate-700 hover:bg-slate-100' }}" data-view="list" title="List view" aria-label="List view">
                 <i class="fas fa-bars"></i>
               </button>
             </div>
@@ -130,229 +114,170 @@
         </div>
       </form>
 
-      {{-- Active chips --}}
-      <div class="mt-2">
+      <div class="mt-2 flex flex-wrap items-center gap-2">
         @if($q)
-          <span class="chip me-1"><i class="fas fa-search"></i> "{{ $q }}"
-            <a href="{{ request()->fullUrlWithQuery(['q'=>null,'page'=>null]) }}" class="btn-close" aria-label="Clear search"></a>
+          <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+            <i class="fas fa-search text-slate-400"></i> "{{ $q }}"
+            <a href="{{ request()->fullUrlWithQuery(['q'=>null,'page'=>null]) }}" class="listings-chip-close text-slate-400 hover:text-slate-700" aria-label="Clear search">&times;</a>
           </span>
         @endif
+
         @if($type)
-          <span class="chip me-1"><i class="fas fa-filter"></i> {{ ucfirst($type) }}
-            <a href="{{ request()->fullUrlWithQuery(['type'=>null,'page'=>null]) }}" class="btn-close" aria-label="Clear type"></a>
+          <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+            <i class="fas fa-filter text-slate-400"></i> {{ ucfirst($type) }}
+            <a href="{{ request()->fullUrlWithQuery(['type'=>null,'page'=>null]) }}" class="listings-chip-close text-slate-400 hover:text-slate-700" aria-label="Clear type">&times;</a>
           </span>
         @endif
+
         @if($sort && $sort!=='latest')
-          <span class="chip me-1"><i class="fas fa-sort-amount-down"></i>
+          <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+            <i class="fas fa-sort-amount-down text-slate-400"></i>
             @switch($sort)
               @case('popular') Popular @break
-              @case('price_asc') Price: Low→High @break
-              @case('price_desc') Price: High→Low @break
+              @case('price_asc') Price: Low to High @break
+              @case('price_desc') Price: High to Low @break
               @default Newest
             @endswitch
-            <a href="{{ request()->fullUrlWithQuery(['sort'=>'latest','page'=>null]) }}" class="btn-close" aria-label="Reset sort"></a>
+            <a href="{{ request()->fullUrlWithQuery(['sort'=>'latest','page'=>null]) }}" class="listings-chip-close text-slate-400 hover:text-slate-700" aria-label="Reset sort">&times;</a>
           </span>
         @endif
 
         @if($q || $type || ($sort && $sort!=='latest') || $perPage!==24 || $view!=='grid')
-          <a href="{{ url()->current() }}" class="btn btn-sm btn-link text-decoration-none ms-1">
-            <i class="fas fa-times-circle me-1"></i> Clear all
-          </a>
+          <a href="{{ url()->current() }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-600">Clear all</a>
         @endif
       </div>
     </div>
   </section>
 
-  @push('scripts')
-  <script>
-  (function(){
-    if (window.__videoThumbInitListings) return; window.__videoThumbInitListings = true;
-    function toFirstFrame(img){
-      var src = img.getAttribute('data-video-src');
-      if(!src) return;
-      try{
-        var v = document.createElement('video');
-        v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.src = src + '#t=0.1';
-        v.addEventListener('loadeddata', function(){
-          try{
-            var w=v.videoWidth||480, h=v.videoHeight||270;
-            var c=document.createElement('canvas'); c.width=w; c.height=h;
-            c.getContext('2d').drawImage(v,0,0,w,h);
-            img.src=c.toDataURL('image/jpeg',0.8);
-            img.style.opacity='1'; img.style.filter='none';
-            img.removeAttribute('data-video-src');
-          }catch(e){}
-        }, {once:true});
-      }catch(e){}
-    }
-    function init(){
-      var imgs = document.querySelectorAll('img[data-video-src]');
-      if (!('IntersectionObserver' in window)) { imgs.forEach(toFirstFrame); return; }
-      var io = new IntersectionObserver(function(entries){
-        entries.forEach(function(entry){
-          if(entry.isIntersecting){ toFirstFrame(entry.target); io.unobserve(entry.target); }
-        });
-      }, { rootMargin:'200px' });
-      imgs.forEach(function(img){ io.observe(img); });
-    }
-    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
-  })();
-  </script>
-  @endpush
-
-  {{-- Results --}}
-  <section class="py-4 bg-light">
-    <div class="container">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <p class="mb-0 text-muted">
-    Showing <strong>{{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }}</strong>
-    of <strong>{{ $products->total() }}</strong> listings
-</p>
+  <section class="bg-slate-50 py-5">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="mb-3 flex items-center justify-between gap-3">
+        <p class="text-sm text-slate-500">
+          Showing <strong>{{ $products->firstItem() ?? 0 }}-{{ $products->lastItem() ?? 0 }}</strong>
+          of <strong>{{ $products->total() }}</strong> listings
+        </p>
         @if($products->total() > 0)
-          <a href="{{ route('listings') }}" class="btn btn-outline-success btn-sm"><i class="fas fa-undo me-1"></i> Reset</a>
+          <a href="{{ route('listings') }}" class="inline-flex items-center rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+            <i class="fas fa-undo mr-1"></i> Reset
+          </a>
         @endif
       </div>
 
-      {{-- GRID VIEW (uses your partial as-is) --}}
       @if($view === 'grid')
-        <div id="listing-items" class="row g-4">
+        <div id="listing-items" class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
           @forelse ($products as $item)
-            <div class="col-6 col-md-4 col-lg-3">
+            <div>
               @include('theme.'.theme().'.partials.product-card', ['item' => $item])
               @if(($item->type ?? '') === 'physical' && (int)($item->stock ?? 0) === 1 && ($item->is_reserved ?? false))
-                <div class="mt-2 small text-danger">Reserved in another pending order</div>
+                <div class="mt-2 text-xs text-red-600">Reserved in another pending order</div>
               @endif
             </div>
           @empty
-            <div class="col-12 text-center text-muted py-5 empty-spot">
-              <i class="fas fa-box-open fa-2x mb-3 d-block"></i>
-              <p class="mb-1">No listings match your filters.</p>
-              <a href="{{ url()->current() }}" class="btn btn-success btn-sm mt-2">Clear Filters</a>
+            <div class="listings-empty col-span-full rounded-2xl p-10 text-center text-slate-500">
+              <i class="fas fa-box-open mb-3 block text-3xl text-slate-400"></i>
+              <p class="mb-1 text-sm">No listings match your filters.</p>
+              <a href="{{ url()->current() }}" class="mt-3 inline-flex rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500">Clear Filters</a>
             </div>
           @endforelse
         </div>
-
-      {{-- LIST VIEW (mirrors the partial’s concepts) --}}
       @else
-        <div id="listing-items" class="vstack gap-3">
+        <div id="listing-items" class="space-y-3">
           @forelse ($products as $item)
             @php
-              // --- Concept parity with product-card ---
-              // Prefer a real image for thumbnails; skip video files
               if (!empty($item->featured_image)) {
                 $thumb = str_starts_with($item->featured_image, 'http')
-                         ? $item->featured_image
-                         : asset('storage/'.ltrim($item->featured_image,'/'));
+                    ? $item->featured_image
+                    : asset('storage/'.ltrim($item->featured_image,'/'));
               } else {
                 $firstImage = (isset($item->media) && method_exists($item->media, 'firstWhere'))
-                              ? $item->media->firstWhere('type','image')
-                              : null;
+                    ? $item->media->firstWhere('type','image')
+                    : null;
                 if ($firstImage && !empty($firstImage->url)) {
                   $thumb = asset('storage/'.ltrim($firstImage->url,'/'));
                 } else {
-                  $firstVideo = (isset($item->media) && method_exists($item->media,'firstWhere')) ? $item->media->firstWhere('type','video') : null;
+                  $firstVideo = (isset($item->media) && method_exists($item->media,'firstWhere'))
+                      ? $item->media->firstWhere('type','video')
+                      : null;
                   $thumb = ($item->shop && $item->shop->logo)
-                           ? asset('storage/'.ltrim($item->shop->logo,'/'))
-                           : (setting('favicon_url') ?: asset('assets/img/placeholder.svg'));
+                      ? asset('storage/'.ltrim($item->shop->logo,'/'))
+                      : (setting('favicon_url') ?: asset('assets/img/placeholder.svg'));
                 }
               }
-              // Use the shop's overall rating on listings
+
               $shop = $item->shop ?? null;
               $avg  = round((float) ($shop?->reviews_avg_rating ?? ($shop ? $shop->reviews()->avg('rating') : 0)));
               $cnt  = (int) ($shop?->reviews_count ?? ($shop ? $shop->reviews()->count() : 0));
               $basePrice  = $item->price;
               $finalPrice = $item->discounted_price;
+
+              $hasVideo = (isset($item->media) && method_exists($item->media,'firstWhere') && $item->media->firstWhere('type','video'));
+              $vid = null;
+              if ((!isset($firstImage) || !$firstImage) && isset($firstVideo) && $firstVideo && !empty($firstVideo->url)) {
+                $vid = asset('storage/'.ltrim($firstVideo->url,'/'));
+              }
             @endphp
 
-            <div class="card-list p-3">
-              <div class="row g-3 align-items-center">
-                <div class="col-4 col-md-3 col-lg-2">
-                  <a href="{{ route('listing.show', $item->slug) }}" class="d-block rounded overflow-hidden">
-                    <div class="ratio ratio-1x1 bg-white position-relative">
-                      @php
-                        $hasVideo = (isset($item->media)
-                                     && method_exists($item->media,'firstWhere')
-                                     && $item->media->firstWhere('type','video'));
-                        $vid = null;
-                        if (!isset($firstImage) || !$firstImage) {
-                          $vid = (isset($firstVideo) && $firstVideo && !empty($firstVideo->url))
-                            ? asset('storage/'.ltrim($firstVideo->url,'/'))
-                            : null;
-                        }
-                        $styleExtra = (isset($firstVideo) && $firstVideo && (!isset($firstImage) || !$firstImage))
-                          ? 'opacity:.01; filter:blur(8px); transition:opacity .35s ease, filter .35s ease;'
-                          : '';
-                      @endphp
-                      @if($hasVideo)
-                        <span class="position-absolute top-0 start-0 m-2 px-2 py-1 rounded text-white" style="background:rgba(0,0,0,.7); font-size:.72rem;"><i class="fas fa-play me-1"></i>Video</span>
-                      @endif
-                      <img
-                        src="{{ $thumb }}"
-                        alt="{{ $item->name }}"
-                        class="img-fluid w-100 h-100"
-                        loading="lazy" decoding="async"
-                        style="object-fit:cover; {{ $styleExtra }}"
-                        @if($vid) data-video-src="{{ $vid }}" @endif>
-                    </div>
-                  </a>
-                </div>
+            <article class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+              <div class="grid items-center gap-3 sm:grid-cols-[120px_1fr_auto]">
+                <a href="{{ route('listing.show', $item->slug) }}" class="relative block overflow-hidden rounded-xl bg-slate-100">
+                  @if($hasVideo)
+                    <span class="absolute left-2 top-2 z-10 rounded-md bg-slate-900/75 px-2 py-0.5 text-[10px] font-semibold text-white"><i class="fas fa-play mr-1 text-[9px]"></i>Video</span>
+                  @endif
+                  <img src="{{ $thumb }}"
+                       alt="{{ $item->name }}"
+                       class="aspect-square h-full w-full object-cover"
+                       loading="lazy" decoding="async"
+                       @if($vid) data-video-src="{{ $vid }}" style="opacity:.01;filter:blur(8px);transition:opacity .35s ease,filter .35s ease;" @endif>
+                </a>
 
-                <div class="col-8 col-md-6 col-lg-7">
-                  <h5 class="mb-1">
-                    <a class="text-decoration-none text-dark" href="{{ route('listing.show', $item->slug) }}">
-                      {{ $item->name ?? 'Untitled item' }}
-                    </a>
-                  </h5>
+                <div>
+                  <h3 class="text-sm font-semibold text-slate-900">
+                    <a href="{{ route('listing.show', $item->slug) }}" class="hover:text-emerald-700">{{ $item->name ?? 'Untitled item' }}</a>
+                  </h3>
 
-                  {{-- Ratings (same style as partial) --}}
-                  <div class="mb-1 small text-warning">
+                  <div class="mt-1 text-xs text-amber-500">
                     @for($i=1; $i<=5; $i++)
-                      <i class="fa-star{{ $i <= $avg ? ' fa-solid' : ' fa-regular text-muted' }}"></i>
+                      <i class="fa-star{{ $i <= $avg ? ' fa-solid' : ' fa-regular text-slate-300' }}"></i>
                     @endfor
-                    @if($cnt) <span class="text-muted">({{ $cnt }})</span>@endif
+                    @if($cnt) <span class="ml-1 text-slate-400">({{ $cnt }})</span>@endif
                   </div>
 
-                  {{-- Short description (optional) --}}
                   @if(!empty($item->short_description))
-                    <div class="small text-muted">
-                      {{ \Illuminate\Support\Str::limit(strip_tags($item->short_description), 120) }}
-                    </div>
+                    <p class="mt-2 text-sm text-slate-500">{{ \Illuminate\Support\Str::limit(strip_tags($item->short_description), 120) }}</p>
                   @endif
                 </div>
 
-                <div class="col-12 col-md-3 col-lg-3 text-md-end">
-                  {{-- Price (exact parity with partial logic) --}}
+                <div class="text-left sm:text-right">
                   @if(isset($finalPrice, $basePrice) && is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
-                    <div class="d-flex align-items-baseline gap-2 justify-content-md-end mb-2">
-                      <span class="fw-bold text-success">{{ money($finalPrice) }}</span>
-                      <span class="text-muted text-decoration-line-through">{{ money($basePrice) }}</span>
+                    <div class="mb-2 flex items-baseline gap-2 sm:justify-end">
+                      <span class="text-base font-bold text-emerald-700">{{ money($finalPrice) }}</span>
+                      <span class="text-xs text-slate-400 line-through">{{ money($basePrice) }}</span>
                     </div>
                   @elseif(isset($basePrice))
-                    <div class="h5 mb-2 text-success">{{ money($basePrice) }}</div>
+                    <p class="mb-2 text-base font-bold text-emerald-700">{{ money($basePrice) }}</p>
                   @else
-                    <div class="text-muted small mb-2">Contact for price</div>
+                    <p class="mb-2 text-xs text-slate-400">Contact for price</p>
                   @endif
 
-                  <a href="{{ route('listing.show', $item->slug) }}" class="btn btn-success btn-sm">
-                    <i class="fas fa-eye me-1"></i> View
+                  <a href="{{ route('listing.show', $item->slug) }}" class="inline-flex rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">
+                    <i class="fas fa-eye mr-1"></i> View
                   </a>
                 </div>
               </div>
-            </div>
+            </article>
           @empty
-            <div class="text-center text-muted py-5 empty-spot">
-              <i class="fas fa-box-open fa-2x mb-3 d-block"></i>
-              <p class="mb-1">No listings match your filters.</p>
-              <a href="{{ url()->current() }}" class="btn btn-success btn-sm mt-2">Clear Filters</a>
+            <div class="listings-empty rounded-2xl p-10 text-center text-slate-500">
+              <i class="fas fa-box-open mb-3 block text-3xl text-slate-400"></i>
+              <p class="mb-1 text-sm">No listings match your filters.</p>
+              <a href="{{ url()->current() }}" class="mt-3 inline-flex rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500">Clear Filters</a>
             </div>
           @endforelse
         </div>
       @endif
 
-      {{-- Load More --}}
       @if ($products->hasMorePages())
-        <div class="mt-4 text-center">
-          <button id="load-more" class="btn btn-success" data-next-page="{{ $products->currentPage() + 1 }}">
+        <div class="mt-5 text-center">
+          <button id="load-more" class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-500" data-next-page="{{ $products->currentPage() + 1 }}">
             Load More
           </button>
         </div>
@@ -360,67 +285,120 @@
     </div>
   </section>
 
-  {{-- View toggle + autosubmit --}}
-@include('theme.'.theme().'.partials.product-carousel', [
-    'items' => $recommendedProducts ?? collect(),
-    'title' => 'Because you viewed similar items',
-    'subtitle' => 'Hand-picked from categories and styles you\'ve been browsing.',
-    'eyebrow' => 'Recommended',
-    'eyebrowIcon' => 'fa-wand-magic-sparkles',
-    'seeMoreUrl' => route('listings'),
-    'seeMoreLabel' => 'Keep exploring'
-])
-
-  @push('scripts')
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('filtersForm');
-      const viewInput = form.querySelector('input[name="view"]');
-
-      document.querySelectorAll('.view-toggle [data-view]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          viewInput.value = btn.getAttribute('data-view');
-          if (form.querySelector('input[name="page"]')) form.querySelector('input[name="page"]').value = 1;
-          form.submit();
-        });
-      });
-
-      form.querySelectorAll('select').forEach(sel => {
-        sel.addEventListener('change', () => {
-          if (form.querySelector('input[name="page"]')) form.querySelector('input[name="page"]').value = 1;
-          form.submit();
-        });
-      });
-
-      const loadMoreBtn = document.getElementById('load-more');
-      if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', () => {
-          const nextPage = loadMoreBtn.dataset.nextPage;
-          const url = new URL(window.location.href);
-          url.searchParams.set('page', nextPage);
-          loadMoreBtn.disabled = true;
-
-          fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(res => res.text())
-            .then(html => {
-              const parser = new DOMParser();
-              const doc = parser.parseFromString(html, 'text/html');
-              const newItems = doc.getElementById('listing-items').children;
-              const container = document.getElementById('listing-items');
-              Array.from(newItems).forEach(el => container.appendChild(el));
-
-              const newBtn = doc.getElementById('load-more');
-              if (newBtn) {
-                loadMoreBtn.dataset.nextPage = newBtn.dataset.nextPage;
-                loadMoreBtn.disabled = false;
-              } else {
-                loadMoreBtn.remove();
-              }
-            })
-            .catch(() => loadMoreBtn.remove());
-        });
-      }
-    });
-  </script>
-  @endpush
+  @include('theme.'.theme().'.partials.product-carousel', [
+      'items' => $recommendedProducts ?? collect(),
+      'title' => 'Because you viewed similar items',
+      'subtitle' => 'Hand-picked from categories and styles you\'ve been browsing.',
+      'eyebrow' => 'Recommended',
+      'eyebrowIcon' => 'fa-wand-magic-sparkles',
+      'seeMoreUrl' => route('listings'),
+      'seeMoreLabel' => 'Keep exploring'
+  ])
+</div>
 @endsection
+
+@push('scripts')
+<script>
+(function(){
+  if (window.__videoThumbInitListings) return;
+  window.__videoThumbInitListings = true;
+
+  function toFirstFrame(img){
+    var src = img.getAttribute('data-video-src');
+    if(!src) return;
+    try{
+      var v = document.createElement('video');
+      v.preload = 'metadata';
+      v.muted = true;
+      v.playsInline = true;
+      v.src = src + '#t=0.1';
+      v.addEventListener('loadeddata', function(){
+        try{
+          var w = v.videoWidth || 480, h = v.videoHeight || 270;
+          var c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d').drawImage(v,0,0,w,h);
+          img.src = c.toDataURL('image/jpeg',0.8);
+          img.style.opacity='1';
+          img.style.filter='none';
+          img.removeAttribute('data-video-src');
+        }catch(e){}
+      }, {once:true});
+    }catch(e){}
+  }
+
+  function init(){
+    var imgs = document.querySelectorAll('img[data-video-src]');
+    if (!('IntersectionObserver' in window)) { imgs.forEach(toFirstFrame); return; }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){ toFirstFrame(entry.target); io.unobserve(entry.target); }
+      });
+    }, { rootMargin:'200px' });
+    imgs.forEach(function(img){ io.observe(img); });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('filtersForm');
+  if (!form) return;
+
+  const viewInput = form.querySelector('input[name="view"]');
+
+  document.querySelectorAll('.view-toggle-btn[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      viewInput.value = btn.getAttribute('data-view');
+      const pageInput = form.querySelector('input[name="page"]');
+      if (pageInput) pageInput.value = 1;
+      form.submit();
+    });
+  });
+
+  form.querySelectorAll('select').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const pageInput = form.querySelector('input[name="page"]');
+      if (pageInput) pageInput.value = 1;
+      form.submit();
+    });
+  });
+
+  const loadMoreBtn = document.getElementById('load-more');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', () => {
+      const nextPage = loadMoreBtn.dataset.nextPage;
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', nextPage);
+      loadMoreBtn.disabled = true;
+
+      fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const newContainer = doc.getElementById('listing-items');
+          const container = document.getElementById('listing-items');
+          if (!newContainer || !container) {
+            loadMoreBtn.remove();
+            return;
+          }
+
+          Array.from(newContainer.children).forEach(el => container.appendChild(el));
+
+          const newBtn = doc.getElementById('load-more');
+          if (newBtn) {
+            loadMoreBtn.dataset.nextPage = newBtn.dataset.nextPage;
+            loadMoreBtn.disabled = false;
+          } else {
+            loadMoreBtn.remove();
+          }
+        })
+        .catch(() => loadMoreBtn.remove());
+    });
+  }
+});
+</script>
+@endpush

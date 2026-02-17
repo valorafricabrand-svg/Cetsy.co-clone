@@ -1025,28 +1025,82 @@ public function listing(string $slug)
 
 public function listings(Request $request)
 {
-    $query = Product::where('is_active', 1)->with([
-        'media',
-        'shop' => function ($q) {
-            $q->withCount('reviews')->withAvg('reviews', 'rating');
-        },
-    ]);
+    $query = Product::where('is_active', 1)
+        ->with([
+            'media',
+            'shop' => function ($q) {
+                $q->withCount('reviews')->withAvg('reviews', 'rating');
+            },
+        ]);
 
+    // Search query (name/description/tags)
+    $q = trim((string) $request->input('q', ''));
+    if ($q !== '') {
+        $terms = collect(preg_split('/\s+/', $q, -1, PREG_SPLIT_NO_EMPTY))
+            ->map(fn ($t) => trim($t))
+            ->filter()
+            ->values();
+
+        $query->where(function ($qq) use ($terms, $q) {
+            if ($terms->isEmpty()) {
+                $like = "%{$q}%";
+                $qq->where('name', 'like', $like)
+                    ->orWhere('description', 'like', $like)
+                    ->orWhere('tags', 'like', $like);
+                return;
+            }
+            foreach ($terms as $t) {
+                $like = "%{$t}%";
+                $qq->orWhere('name', 'like', $like)
+                    ->orWhere('description', 'like', $like)
+                    ->orWhere('tags', 'like', $like);
+            }
+        });
+    }
+
+    // Type filter (accept aliases from UI/links)
     if ($request->filled('type')) {
-        // Accept common aliases from UI/links: product(s) -> physical
         $map = [
             'product'  => 'physical',
             'products' => 'physical',
             'services' => 'service',
         ];
-        $type = $map[$request->type] ?? $request->type;
-        $query->where('type', $type);
+        $type = $map[$request->input('type')] ?? $request->input('type');
+        if (in_array($type, ['physical', 'service', 'digital'], true)) {
+            $query->where('type', $type);
+        }
     }
 
-    $products = $query->latest()->paginate(16);
+    // Sorting
+    $sort = $request->input('sort', 'latest');
+    switch ($sort) {
+        case 'price_asc':
+            $query->orderBy('price', 'asc')->orderByDesc('id');
+            break;
+        case 'price_desc':
+            $query->orderBy('price', 'desc')->orderByDesc('id');
+            break;
+        case 'popular':
+            $query->withCount('views')
+                ->orderByDesc('views_count')
+                ->orderByDesc('id');
+            break;
+        case 'latest':
+        default:
+            $query->latest();
+            break;
+    }
+
+    $perPage = (int) $request->input('per_page', 24);
+    if (!in_array($perPage, [12, 24, 48], true)) {
+        $perPage = 24;
+    }
+
+    $products = $query->paginate($perPage)->appends($request->query());
     $recommendedProducts = $this->recommendations->trendingForUser(Auth::user(), 8);
 
-    return themed_view('listings', compact('products', 'recommendedProducts'));
+    return themed_view('listings', compact('products', 'recommendedProducts'))
+        ->with('q', $q);
 }
 
 
