@@ -1,5 +1,5 @@
 {{-- Seller Cancel Order Modal --}}
-<div class="modal fade"
+<div class="modal"
      id="cancelModal-{{ $order->id }}"
      tabindex="-1"
      aria-labelledby="cancelModalLabel-{{ $order->id }}"

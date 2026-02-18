@@ -1,5 +1,5 @@
 {{-- Process Modal --}}
-<div class="modal fade"
+<div class="modal"
      id="processModal-{{ $order->id }}"
      tabindex="-1"
      aria-labelledby="processModalLabel-{{ $order->id }}"
@@ -23,8 +23,8 @@
                 <p class="mb-3">
                     Are you sure you want to move
                     <strong>Order #{{ $order->id }}</strong>
-                    from <span class="font-semibold text-secondary">Pending</span>
-                    to <span class="font-semibold text-primary">Processing</span>?
+                    from <span class="font-semibold text-slate-600">Pending</span>
+                    to <span class="font-semibold text-emerald-700">Processing</span>?
                 </p>
 
                 {{-- Optional internal note --}}

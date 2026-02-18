@@ -1,5 +1,5 @@
 {{-- Deliver Modal --}}
-<div class="modal fade"
+<div class="modal"
      id="deliverModal-{{ $order->id }}"
      tabindex="-1"
      aria-labelledby="deliverModalLabel-{{ $order->id }}"

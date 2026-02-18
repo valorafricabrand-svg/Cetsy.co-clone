@@ -5,8 +5,79 @@
 
 @push('styles')
 <style>
-  .badge.text-capitalize { text-transform: capitalize; }
+  .text-capitalize { text-transform: capitalize; }
   .order-detail-icon { font-size: 1.25rem; }
+  .dropdown-menu {
+    position: absolute;
+    right: 0;
+    z-index: 50;
+    margin-top: .5rem;
+    display: none;
+    min-width: 15rem;
+    border-radius: .75rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    padding: .35rem;
+    box-shadow: 0 16px 30px rgba(15, 23, 42, .15);
+  }
+  .dropdown-menu.show { display: block; }
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    border-radius: .5rem;
+    padding: .45rem .55rem;
+    font-size: .85rem;
+    color: #1e293b;
+    text-decoration: none;
+  }
+  .dropdown-item:hover { background: #f1f5f9; }
+  .dropdown-divider { margin: .35rem 0; border-color: #e2e8f0; }
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, .55);
+    padding: 1rem;
+  }
+  .modal.is-open { display: flex; }
+  .modal-dialog { width: 100%; max-width: 32rem; }
+  .modal-dialog.modal-lg { max-width: 56rem; }
+  .modal-content {
+    border-radius: 1rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.25);
+  }
+  .modal-header, .modal-footer {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .9rem 1rem;
+  }
+  .modal-header { justify-content: space-between; border-bottom: 1px solid #e2e8f0; }
+  .modal-footer { justify-content: flex-end; border-top: 1px solid #e2e8f0; }
+  .modal-body { padding: 1rem; }
+  .modal-title { margin: 0; font-size: 1rem; font-weight: 600; color: #0f172a; }
+  .btn-close {
+    width: 2rem;
+    height: 2rem;
+    border-radius: .5rem;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+  }
+  .btn-close::before { content: '\00d7'; font-size: 1.1rem; line-height: 1; display: inline-block; }
+  .btn-close:hover { background: #f1f5f9; color: #1e293b; }
+  .form-floating { display: flex; flex-direction: column; gap: .35rem; }
+  .form-floating > label { font-size: .8125rem; color: #64748b; }
+  .form-text { font-size: .75rem; color: #64748b; margin-top: .35rem; }
+  .invalid-feedback { display: none; font-size: .75rem; color: #b91c1c; margin-top: .35rem; }
+  .was-validated :invalid ~ .invalid-feedback { display: block; }
 </style>
 @endpush
 
@@ -56,8 +127,8 @@
       <div class="space-y-4">
 <div class="content">
   {{-- HEADER & ACTIONS --}}
-  <div class="flex flex-col flex-md-row justify-between items-start align-items-md-center mb-4 gap-3">
-    <h2 class="h4 text-emerald-600 mb-0">
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
+    <h2 class="text-2xl font-semibold text-emerald-600">
       <i class="fa-solid fa-receipt order-detail-icon mr-2"></i>
       Order #{{ $order->id }} Details
     </h2>
@@ -117,7 +188,7 @@
       <div class="relative inline-block">
         <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100 px-2.5 py-1.5 text-xs rounded-lg flex"
                 id="moreActions"
-                data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
+                data-dropdown-toggle="true" aria-expanded="false" aria-haspopup="true"
                 title="More actions">
           <i class="fa fa-ellipsis-v"></i>
         </button>
@@ -167,7 +238,7 @@
   {{-- SUMMARY & CUSTOMER --}}
   <div class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-4">
     {{-- Order Summary --}}
-    <div class="-span-6">
+    <div class="md:col-span-6">
       <div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-full">
         <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex items-center gap-2">
           <i class="fa-solid fa-list-check"></i> Order Summary
@@ -189,7 +260,7 @@
             <div class="flex justify-between mb-2">
               <span class="font-semibold">Tracking Link:</span>
               <span>
-                <a href="{{ $order->tracking_url }}" target="_blank" rel="noopener" class="link-primary">Open tracking</a>
+                <a href="{{ $order->tracking_url }}" target="_blank" rel="noopener" class="font-medium text-sky-700 underline hover:text-sky-600">Open tracking</a>
               </span>
             </div>
           @endif
@@ -264,7 +335,7 @@
     </div>
 
     {{-- Customer Info --}}
-    <div class="-span-6">
+    <div class="md:col-span-6">
       <div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-full">
         <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex items-center gap-2">
           <i class="fa-solid fa-user"></i> Customer Info
@@ -296,8 +367,8 @@
         <i class="fa-solid fa-boxes-stacked"></i> Order Items
       </div>
       {{-- Mobile: stacked cards --}}
-      <div class="p-4 block d-md-none p-2">
-        <div class="space-y-2 list-group-flush">
+      <div class="block p-2 md:hidden">
+        <div class="space-y-2">
           @foreach($order->items as $item)
             @php
               $product   = optional($item->product);
@@ -325,11 +396,11 @@
                 @if($thumbUrl)
                   <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" class="rounded" style="width:64px;height:64px;object-fit:cover;">
                 @endif
-                <div class="flex-grow-1">
+                <div class="grow">
                   <div class="flex justify-between items-start">
-                    <div class="font-semibold text-truncate">
+                    <div class="font-semibold truncate">
                       @if($product?->slug)
-                        <a href="{{ route('listing.show', $product->slug) }}" class="text-decoration-none" target="_blank">{{ $product->name ?? 'N/A' }}</a>
+                        <a href="{{ route('listing.show', $product->slug) }}" class="text-slate-900 hover:text-emerald-700" target="_blank">{{ $product->name ?? 'N/A' }}</a>
                       @else
                         {{ $product->name ?? 'N/A' }}
                       @endif
@@ -339,7 +410,7 @@
                     </div>
                     <div class="ml-2 text-nowrap">{{ $symbol }} {{ number_format($unit,2) }}</div>
                   </div>
-                  <div class="text-xs text-slate-500 text-truncate">Listing: {{ $product->id ?? $item->product_id ?? 'N/A' }}</div>
+                  <div class="text-xs text-slate-500 truncate">Listing: {{ $product->id ?? $item->product_id ?? 'N/A' }}</div>
                   @if($item->variation_summary)
                     <div class="text-xs text-slate-500">{{ $item->variation_summary }}</div>
                   @endif
@@ -356,8 +427,8 @@
       </div>
 
       {{-- Desktop/Tablet: table --}}
-      <div class="p-4 overflow-x-auto p-0 hidden d-md-block">
-        <table class="min-w-full divide-y divide-slate-200 text-sm table-hover table-striped align-middle mb-0">
+      <div class="hidden overflow-x-auto p-0 md:block">
+        <table class="min-w-full divide-y divide-slate-200 text-sm align-middle mb-0">
           <thead class="bg-slate-50 text-slate-600 text-nowrap">
             <tr>
               <th>#</th>
@@ -406,7 +477,7 @@
                 </td>
                 <td>
                   @if($product?->slug)
-                    <a href="{{ route('listing.show', $product->slug) }}" class="text-decoration-none" target="_blank">{{ $product->name ?? 'N/A' }}</a>
+                    <a href="{{ route('listing.show', $product->slug) }}" class="text-slate-900 hover:text-emerald-700" target="_blank">{{ $product->name ?? 'N/A' }}</a>
                   @else
                     {{ $product->name ?? 'N/A' }}
                   @endif
@@ -436,18 +507,24 @@
         <i class="fa-solid fa-wallet"></i> Payments
       </div>
       {{-- Mobile: stacked cards --}}
-      <div class="p-4 block d-md-none p-2">
-        <div class="space-y-2 list-group-flush">
+      <div class="block p-2 md:hidden">
+        <div class="space-y-2">
           @foreach($order->payments as $payment)
             @php
               $raw = strtolower((string)$payment->status);
               $isCompleted = ($raw === 'success' || $raw === 'completed' || $raw === 'paid' || (string)$payment->status === '3');
               $statusText  = $isCompleted ? 'Completed' : (is_numeric($payment->status) ? $payment->status : ucfirst((string)$payment->status));
               $statusColor = $isCompleted ? 'success' : match($raw){
-                'pending' => 'secondary',
-                'failed'  => 'danger',
-                default   => 'dark',
-              };
+                  'pending' => 'secondary',
+                  'failed'  => 'danger',
+                  default   => 'dark',
+                };
+                $statusClass = match($statusColor){
+                  'success' => 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                  'secondary' => 'bg-slate-100 text-slate-700 border-slate-200',
+                  'danger' => 'bg-rose-100 text-rose-700 border-rose-200',
+                  default => 'bg-slate-800 text-white border-slate-800',
+                };
             @endphp
             <div class="rounded-xl border border-slate-200 bg-white p-3">
               <div class="flex justify-between items-start mb-1">
@@ -456,7 +533,7 @@
               </div>
               <div class="flex justify-between items-center">
                 <div class="text-xs text-slate-500">{{ ucfirst($payment->payment_method) }}</div>
-                <div><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-{{ $statusColor }} text-capitalize">{{ $statusText }}</span></div>
+                <div><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }} text-capitalize">{{ $statusText }}</span></div>
                 <div class="font-semibold">{{ $symbol }} {{ number_format($payment->total_amount,2) }}</div>
               </div>
             </div>
@@ -465,8 +542,8 @@
       </div>
 
       {{-- Desktop/Tablet: table --}}
-      <div class="p-4 overflow-x-auto p-0 hidden d-md-block">
-        <table class="min-w-full divide-y divide-slate-200 text-sm table-hover table-striped align-middle mb-0">
+      <div class="hidden overflow-x-auto p-0 md:block">
+        <table class="min-w-full divide-y divide-slate-200 text-sm align-middle mb-0">
           <thead class="bg-slate-50 text-slate-600 text-nowrap">
             <tr>
               <th>#</th>
@@ -488,13 +565,19 @@
                   'failed'  => 'danger',
                   default   => 'dark',
                 };
+                $statusClass = match($statusColor){
+                  'success' => 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                  'secondary' => 'bg-slate-100 text-slate-700 border-slate-200',
+                  'danger' => 'bg-rose-100 text-rose-700 border-rose-200',
+                  default => 'bg-slate-800 text-white border-slate-800',
+                };
               @endphp
               <tr>
                 <td>{{ $loop->iteration }}</td>
                 <td>{{ $payment->local_transaction_id ?? 'N/A' }}</td>
                 <td>{{ ucfirst($payment->payment_method) }}</td>
                 <td class="text-right">{{ $symbol }} {{ number_format($payment->total_amount,2) }}</td>
-                <td><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-{{ $statusColor }} text-capitalize">{{ $statusText }}</span></td>
+                <td><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }} text-capitalize">{{ $statusText }}</span></td>
                 <td>{{ $payment->created_at->format('d M Y, h:i A') }}</td>
               </tr>
             @endforeach
@@ -518,7 +601,7 @@
         @if($reviewsOnOrder->isEmpty())
           <div class="text-slate-500 text-xs">No reviews left yet for this order.</div>
         @else
-          <ul class="space-y-2 list-group-flush">
+          <ul class="space-y-2">
             @foreach($order->items as $item)
               @php $rev = $item->review; @endphp
               @if($rev)
@@ -620,7 +703,7 @@
         <div class="modal-header bg-slate-50">
           <h5 class="modal-title" id="editTrackingLabel">
             <i class="fa-solid fa-pen mr-2"></i>
-            Edit Tracking — Order #{{ $order->id }}
+            Edit Tracking - Order #{{ $order->id }}
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
@@ -634,7 +717,7 @@
             $showOther = $isCustomCourier || in_array(strtolower((string)$courierValue), ['manual','other'], true);
           @endphp
           <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 mb-3">
-            <div class="-span-6">
+            <div class="md:col-span-6">
               <div class="form-floating">
                 <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editCourierSelect" name="courier" required>
                   <option value="" disabled {{ $courierValue ? '' : 'selected' }}>Select courier...</option>
@@ -653,7 +736,7 @@
               </div>
             </div>
 
-            <div class="-span-6">
+            <div class="md:col-span-6">
               <div class="form-floating">
                 <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editTrackingInput" name="tracking_no" placeholder="ABC123" value="{{ old('tracking_no', $order->tracking_no) }}" required>
                 <label for="editTrackingInput">Tracking number *</label>
@@ -661,21 +744,21 @@
               </div>
             </div>
 
-            <div class="-span-6">
+            <div class="md:col-span-6">
               <div class="form-floating">
                 <input type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editTrackingUrlInput" name="tracking_url" value="{{ old('tracking_url', $order->tracking_url) }}" placeholder="https://carrier.example/track/ABC123">
                 <label for="editTrackingUrlInput">Tracking URL (optional)</label>
               </div>
             </div>
 
-            <div class="-span-6">
+            <div class="md:col-span-6">
               <div class="form-floating">
                 <input type="date" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editShipDateInput" name="shipped_at" value="{{ old('shipped_at', optional($order->shipped_at)->toDateString() ?? now()->toDateString()) }}">
                 <label for="editShipDateInput">Shipping date</label>
               </div>
             </div>
 
-            <div class="-span-6">
+            <div class="md:col-span-6">
               <div class="form-floating">
                 <textarea class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editShipNotes" name="ship_notes" style="height: 100px;">{{ old('ship_notes', $order->ship_notes) }}</textarea>
                 <label for="editShipNotes">Notes (optional)</label>
@@ -703,7 +786,7 @@
     <div class="p-4 text-center">
       <p class="text-slate-500 mb-2">No disputes have been filed for this order.</p>
       <p class="text-xs text-slate-500 mb-0">
-        Sellers do not initiate disputes. If a buyer opens a dispute, it will appear here and you’ll be notified to respond.
+        Sellers do not initiate disputes. If a buyer opens a dispute, it will appear here and youâ€™ll be notified to respond.
       </p>
     </div>
   </div>
@@ -744,7 +827,7 @@
           @endphp
 
           <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 mb-4">
-            <div class="-span-6">
+            <div class="md:col-span-6">
               <div class="form-floating">
                 <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="courierSelect" name="courier" data-target="#courierOtherWrap" required>
                   <option value="" disabled {{ $courierValue ? '' : 'selected' }}>Select courier...</option>
@@ -769,7 +852,7 @@
               </div>
             </div>
 
-            <div class="-span-6">
+            <div class="md:col-span-6">
               <div class="form-floating">
                 <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="trackingInput" name="tracking_no" placeholder="ABC123" required>
                 <label for="trackingInput">Tracking number *</label>
@@ -777,7 +860,7 @@
               </div>
             </div>
 
-            <div class="-span-6">
+            <div class="md:col-span-6">
               <div class="form-floating">
                 <input type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="trackingUrlInput" name="tracking_url" placeholder="https://carrier.example/track/ABC123" required>
                 <label for="trackingUrlInput">Tracking URL *</label>
@@ -786,14 +869,14 @@
               </div>
             </div>
 
-            <div class="-span-6">
+            <div class="md:col-span-6">
               <div class="form-floating">
                 <input type="date" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="shipDateInput" name="shipped_at" value="{{ old('shipped_at', now()->toDateString()) }}">
                 <label for="shipDateInput">Shipping date</label>
               </div>
             </div>
 
-            <div class="-span-6">
+            <div class="md:col-span-6">
               <div class="form-floating">
                 <textarea class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="shipNotes" name="ship_notes" style="height: 100px;"></textarea>
                 <label for="shipNotes">Notes (optional)</label>
@@ -823,17 +906,80 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Auto-show ship modal if URL contains ?ship=1 OR after server-side errors
+  const body = document.body;
+  const openModal = (selector) => {
+    const modal = document.querySelector(selector);
+    if (!modal) return;
+    modal.classList.add('is-open');
+    body.classList.add('overflow-hidden');
+  };
+  const closeModal = (modal) => {
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    if (!document.querySelector('.modal.is-open')) {
+      body.classList.remove('overflow-hidden');
+    }
+  };
+
+  const dropdownToggle = document.getElementById('moreActions');
+  const dropdownMenu = dropdownToggle ? dropdownToggle.nextElementSibling : null;
+  const closeDropdown = () => {
+    if (!dropdownToggle || !dropdownMenu) return;
+    dropdownMenu.classList.remove('show');
+    dropdownToggle.setAttribute('aria-expanded', 'false');
+  };
+
+  document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target]').forEach((trigger) => {
+    trigger.addEventListener('click', function (event) {
+      event.preventDefault();
+      closeDropdown();
+      openModal(this.getAttribute('data-bs-target'));
+    });
+  });
+
+  document.querySelectorAll('[data-bs-dismiss="modal"]').forEach((button) => {
+    button.addEventListener('click', function () {
+      closeModal(this.closest('.modal'));
+    });
+  });
+
+  document.querySelectorAll('.modal').forEach((modal) => {
+    modal.addEventListener('click', function (event) {
+      if (event.target === modal) closeModal(modal);
+    });
+  });
+
+  if (dropdownToggle && dropdownMenu) {
+    dropdownToggle.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      const open = dropdownMenu.classList.toggle('show');
+      dropdownToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!dropdownMenu.contains(event.target) && !dropdownToggle.contains(event.target)) {
+        closeDropdown();
+      }
+    });
+  }
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      closeDropdown();
+      const topModal = document.querySelector('.modal.is-open');
+      if (topModal) closeModal(topModal);
+    }
+  });
+
   const params = new URLSearchParams(window.location.search);
   const shouldShowByQuery = params.get('ship') === '1';
   const shouldShowByErrors = Boolean(@json(optional($errors->getBag('ship'))->any()));
   const shouldShowByFlag = Boolean(@json(session('show_ship_modal', false)));
   if (shouldShowByQuery || shouldShowByErrors || shouldShowByFlag) {
-    const modalEl = document.getElementById('shipModal');
-    modalEl && new bootstrap.Modal(modalEl).show();
+    openModal('#shipModal');
   }
 
-  // Bootstrap validation
   document.querySelectorAll('.needs-validation').forEach(form => {
     form.addEventListener('submit', e => {
       if (!form.checkValidity()) {
@@ -844,7 +990,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Courier Manual/Other toggle
   const courierSelect = document.getElementById('courierSelect');
   const courierWrap   = document.getElementById('courierOtherWrap');
   const toggleCourier = () => {
@@ -855,7 +1000,6 @@ document.addEventListener('DOMContentLoaded', () => {
   courierSelect && courierSelect.addEventListener('change', toggleCourier);
   toggleCourier();
 
-  // Edit tracking modal toggle for Manual/Other
   const editSel = document.getElementById('editCourierSelect');
   const editWrap= document.getElementById('editCourierOtherWrap');
   function toggleEditCourier(){

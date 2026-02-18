@@ -1,4 +1,4 @@
-@extends('theme.'.theme().'.layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 @section('title','Subscription Payment')
 
 @section('styles')
@@ -38,14 +38,19 @@
   .subpay-kpi .label{ color: var(--sub-muted); font-size: .85rem; }
   .subpay-kpi .value{ font-weight: 800; color: var(--sub-text); }
   .subpay-divider{ height: 1px; background: rgba(15, 23, 42, .08); }
-  .subpay-methods .btn{ border-radius: .85rem; }
+  .subpay-methods button, .subpay-methods a{ border-radius: .85rem; }
   .subpay-result{ min-height: 1.25rem; }
   .subpay-paypal{ border-radius: 1rem; border: 1px solid rgba(0,0,0,.08); padding: 1rem; background: rgba(248,250,252,.9); }
+  .alert{ border-radius:12px; border:1px solid transparent; padding:.6rem .8rem; font-size:.82rem; font-weight:500; }
+  .alert-success{background:#dcfce7;border-color:#86efac;color:#166534;}
+  .alert-warning{background:#fef3c7;border-color:#fcd34d;color:#92400e;}
+  .alert-danger{background:#fee2e2;border-color:#fca5a5;color:#991b1b;}
+  .text-success{color:#15803d;}
+  .text-danger{color:#b91c1c;}
+  .disabled{opacity:.6;pointer-events:none;}
+  .spinner-border{display:inline-block;width:1rem;height:1rem;border:.15rem solid rgba(255,255,255,.45);border-right-color:transparent;border-radius:999px;animation:subSpin .6s linear infinite;}
+  @keyframes subSpin{to{transform:rotate(360deg)}}
 </style>
-      </div>
-    </div>
-  </div>
-</section>
 @endsection
 
 @php
@@ -89,16 +94,16 @@
       <div class="space-y-6">
 <div class="content subpay">
   <div class="grid grid-cols-1 gap-4 md:grid-cols-12 justify-center">
-    <div class="-span-9 -span-10">
+    <div class="md:col-span-9 xl:col-span-10">
 
-      <div class="subpay-hero p-4 p-md-5 mb-4">
-        <div class="flex flex-col flex-md-row align-items-md-start justify-between gap-3">
+      <div class="subpay-hero p-4 md:p-5 mb-4">
+        <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
           <div>
-            <div class="subpay-badge d-inline-flex items-center gap-2 mb-2">
+            <div class="subpay-badge inline-flex items-center gap-2 mb-2">
               <i class="bi bi-shield-lock-fill"></i> Secure checkout
             </div>
-            <h1 class="h3 mb-1" style="color: var(--sub-text)">Pay for {{ $planName }} plan</h1>
-            <div class="subpay-muted">Complete payment using wallet, Stripe, Paystack, M‑Pesa, or PayPal (when enabled).</div>
+            <h1 class="text-2xl font-semibold mb-1" style="color: var(--sub-text)">Pay for {{ $planName }} plan</h1>
+            <div class="subpay-muted">Complete payment using wallet, Stripe, Paystack, M-Pesa, or PayPal (when enabled).</div>
           </div>
           <div class="flex gap-2">
             <a href="{{ route('seller.subscription') }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100">
@@ -108,9 +113,9 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 g-lg-4">
-        <div class="-span-5">
-          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm subpay-card border-0">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 ">
+        <div class="md:col-span-5">
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm subpay-card ">
             <div class="p-4">
               <div class="flex items-start justify-between">
                 <div>
@@ -118,7 +123,7 @@
                   <div class="h5 mb-1">{{ $planName }} subscription</div>
                   <div class="subpay-muted text-xs">Duration: {{ $duration }}</div>
                 </div>
-                <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold rounded-pill text-bg-emerald-100 text-emerald-800 border-emerald-200">{{ $currency }}</span>
+                <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-emerald-100 text-emerald-800 border-emerald-200">{{ $currency }}</span>
               </div>
 
               <div class="subpay-divider my-3"></div>
@@ -135,7 +140,7 @@
 
               <div class="subpay-kpi p-3">
                 <div class="label">Amount due</div>
-                <div class="value {{ $canPayWithWallet ? 'text-success' : 'text-danger' }}">
+                <div class="value {{ $canPayWithWallet ? 'text-emerald-700' : 'text-rose-700' }}">
                   {{ $currency }} {{ number_format($rawAmount, 2) }}
                 </div>
                 @unless($canPayWithWallet)
@@ -146,15 +151,15 @@
           </div>
         </div>
 
-        <div class="-span-7">
-          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm subpay-card border-0">
-            <div class="p-4 p-md-5">
+        <div class="md:col-span-7">
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm subpay-card ">
+            <div class="p-4 md:p-5">
               <div class="flex items-start justify-between gap-2 mb-3">
                 <div>
                   <div class="text-xs text-uppercase font-semibold subpay-muted">Payment</div>
                   <div class="h5 mb-0">Choose a method</div>
                 </div>
-                <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold rounded-pill {{ $canPayWithWallet ? 'text-bg-emerald-100 text-emerald-800 border-emerald-200' : 'text-bg-amber-100 text-amber-800 border-amber-200' }}">
+                <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $canPayWithWallet ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200' }}">
                   {{ $canPayWithWallet ? 'Wallet ready' : 'Top up required' }}
                 </span>
               </div>
@@ -162,18 +167,18 @@
               <form id="wallet-pay-form" action="{{ route('seller.subscription.wallet.pay') }}" method="POST" class="mb-3">
                 @csrf
                 <input type="hidden" name="plan" value="{{ $plan }}">
-                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition btn-success w-100 {{ $canPayWithWallet ? '' : 'disabled' }}" @disabled(!$canPayWithWallet)>
+                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition w-full bg-emerald-600 text-white hover:bg-emerald-700 {{ $canPayWithWallet ? '' : 'disabled' }}" @disabled(!$canPayWithWallet)>
                   <i class="bi bi-wallet2 mr-1"></i> Pay with Wallet
                 </button>
                 @unless($canPayWithWallet)
                   <div class="text-xs subpay-muted mt-2">
-                    Wallet balance is not enough. Top up then this button will auto‑enable.
+                    Wallet balance is not enough. Top up then this button will auto-enable.
                   </div>
                 @endunless
               </form>
 
               @unless($canPayWithWallet)
-                <div class="subpay-methods d-grid gap-2 mb-3">
+                <div class="subpay-methods grid gap-2 mb-3">
                   @if($stripeAvailable)
                     <button type="button" id="btn-sub-stripe" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-900 bg-slate-900 text-white hover:bg-slate-800">
                       <i class="bi bi-credit-card-2-front mr-1"></i> Pay with Stripe
@@ -186,7 +191,7 @@
                   @endif
                   @if($mpesaAvailable)
                     <button type="button" id="btn-sub-mpesa-toggle" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
-                      <i class="bi bi-phone-vibrate mr-1"></i> Pay with M‑Pesa (STK)
+                      <i class="bi bi-phone-vibrate mr-1"></i> Pay with M-Pesa (STK)
                     </button>
                   @endif
                   <a href="{{ route('wallet.deposit.form', ['redirect_to' => $redirectToAfterTopup, 'amount' => $topUpNeeded], false) }}"
@@ -197,21 +202,21 @@
 
                 @if($mpesaAvailable)
                   <div id="mpesa-sub-section" class="subpay-kpi p-3 hidden mb-3">
-                    <div class="font-semibold mb-1">M‑Pesa STK Push</div>
+                    <div class="font-semibold mb-1">M-Pesa STK Push</div>
                     <div class="text-xs subpay-muted mb-2">Enter Safaricom number (07XXXXXXXX / 2547XXXXXXXX).</div>
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-2 items-end">
                       <div class="col-span-12 md:col-span-7">
-                        <label class="form-label mb-1">Phone</label>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">Phone</label>
                         <input type="text" id="mpesa_sub_phone" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" placeholder="07XXXXXXXX">
                       </div>
                       <div class="col-span-12 md:col-span-5">
-                        <label class="form-label mb-1">KES (estimate)</label>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">KES (estimate)</label>
                         <input type="text" id="mpesa_sub_kes_preview" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" readonly>
                       </div>
                     </div>
-                    <div class="d-grid mt-3">
+                    <div class="grid mt-3">
                       <button type="button" id="btn-sub-start-stk" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">
-                        <span id="sub-stk-spinner" class="spinner-border spinner-border-sm mr-2 hidden" role="status" aria-hidden="true"></span>
+                        <span id="sub-stk-spinner" class="spinner-border mr-2 hidden" role="status" aria-hidden="true"></span>
                         Send STK Push
                       </button>
                     </div>
@@ -228,7 +233,7 @@
                 </div>
               @else
                 <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 mt-3 mb-0">
-                  PayPal is currently disabled. Please use wallet, Stripe, Paystack, or M‑Pesa.
+                  PayPal is currently disabled. Please use wallet, Stripe, Paystack, or M-Pesa.
                 </div>
               @endif
 
@@ -322,7 +327,7 @@ $(function () {
 
     @if($mpesaAvailable)
     $('#btn-sub-mpesa-toggle').on('click', function(){
-        $('#mpesa-sub-section').toggleClass('d-none');
+        $('#mpesa-sub-section').toggleClass('hidden');
         updateKesPreview();
     });
 
@@ -347,9 +352,9 @@ $(function () {
         let attempts = 0;
         clearInterval(subPollTimer);
         const $live = $('#sub-stk-live-status');
-        $live.removeClass('d-none alert-danger alert-success alert-warning')
+        $live.removeClass('hidden alert-danger alert-success alert-warning')
              .addClass('alert alert-warning')
-             .html('<i class="fa fa-sync-alt fa-spin mr-2"></i>Waiting for M‑Pesa confirmation... (this can take up to 2 minutes)');
+             .html('<i class="fa fa-sync-alt fa-spin mr-2"></i>Waiting for M-Pesa confirmation... (this can take up to 2 minutes)');
 
         subPollTimer = setInterval(function(){
             attempts++;
@@ -385,7 +390,7 @@ $(function () {
             return;
         }
         const $btn = $(this);
-        $('#sub-stk-spinner').removeClass('d-none');
+        $('#sub-stk-spinner').removeClass('hidden');
         $btn.prop('disabled', true);
         $('#generic-result').removeClass('text-danger text-success').text('');
 
@@ -403,7 +408,7 @@ $(function () {
         }).fail(function(xhr){
             $('#generic-result').addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
         }).always(function(){
-            $('#sub-stk-spinner').addClass('d-none');
+            $('#sub-stk-spinner').addClass('hidden');
             $btn.prop('disabled', false);
         });
     });
@@ -429,11 +434,8 @@ $(function () {
 @endif
 });
 </script>
-      </div>
-    </div>
-  </div>
-</section>
 @endsection
+
 
 
 

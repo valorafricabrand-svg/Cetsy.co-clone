@@ -156,7 +156,7 @@
                                     <div class="font-semibold">{{ optional($r->orderItem?->product)->name ?? 'Product' }}</div>
                                     <div class="text-xs text-slate-500">Order #{{ $r->order_id }} • Rated: {{ $r->rating }} / 5</div>
                                     @if($r->comment)
-                                        <div class="mt-1 text-xs">{{ \\Illuminate\\Support\\Str::limit($r->comment, 140) }}</div>
+                                        <div class="mt-1 text-xs">{{ \Illuminate\Support\Str::limit($r->comment, 140) }}</div>
                                     @endif
                                 </div>
                                 @if($r->orderItem?->product?->slug)
