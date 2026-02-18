@@ -19,16 +19,16 @@
       </div>
       <div class="flex flex-wrap gap-2">
         <button
+          type="button"
           class="rounded-full border border-sky-300 px-3 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100"
-          data-bs-toggle="modal"
-          data-bs-target="#messageModal"
+          data-tw-modal-open="messageModal"
         >
           <i class="fa-regular fa-comments mr-1"></i>Message Seller
         </button>
         <button
+          type="button"
           class="rounded-full bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-500"
-          data-bs-toggle="modal"
-          data-bs-target="#offerModal"
+          data-tw-modal-open="offerModal"
         >
           <i class="fa-solid fa-handshake-simple mr-1"></i>Make an Offer
         </button>

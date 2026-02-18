@@ -10,7 +10,7 @@
   <a href="https://pinterest.com/pin/create/button/?url={{ urlencode(url()->current()) }}&media={{ asset('storage/'.$product->featured_image) }}&description={{ urlencode($product->name) }}" target="_blank" rel="noopener" class="text-rose-600 hover:text-rose-500">
     <i class="fa-brands fa-pinterest fa-lg"></i>
   </a>
-  <button class="inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-rose-300 hover:text-rose-600" data-bs-toggle="modal" data-bs-target="#reportModal" title="Report this listing">
+  <button type="button" class="inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-rose-300 hover:text-rose-600" data-tw-modal-open="reportModal" title="Report this listing">
     <i class="fa-solid fa-flag mr-1"></i>Report
   </button>
 </div>

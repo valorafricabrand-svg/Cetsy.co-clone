@@ -67,12 +67,12 @@ $defaultShipId = ($defaultProfileId ?? null)
       <div class="mb-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:p-6">
         <div class="grid items-start gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <div data-aos="fade-right">
-            @include('theme.'.theme().'.partials._media')
+            @include('theme.'.theme().'.partials._media_tw')
           </div>
 
           <div data-aos="fade-left">
             <div class="lg:sticky lg:top-4">
-              @include('theme.'.theme().'.partials._cart')
+              @include('theme.'.theme().'.partials._cart_tw')
 
               @if(($product->type ?? '') === 'physical' && (int)($product->stock ?? 0) === 1 && ($product->is_reserved ?? false))
                 <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -334,15 +334,6 @@ $defaultShipId = ($defaultProfileId ?? null)
     color: rgb(5 150 105);
     background: rgb(236 253 245);
   }
-
-  .thumb.active,
-  .thumb:hover {
-      border: 2px solid #198754 !important;
-  }
-
-  .carousel-inner img {
-      transition: .4s;
-  }
 </style>
 @endpush
 
@@ -387,6 +378,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const first = tabButtons[0]?.dataset.tabTarget;
     if (first) activateTab(first, false);
   }
+
+  const body = document.body;
+  const modalEls = Array.from(document.querySelectorAll('.tw-modal'));
+  let activeModal = null;
+
+  function closeModal(modal) {
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.setAttribute('aria-hidden', 'true');
+    if (activeModal === modal) {
+      activeModal = null;
+      body.classList.remove('overflow-hidden');
+    }
+  }
+
+  function openModal(modal) {
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modal.setAttribute('aria-hidden', 'false');
+    activeModal = modal;
+    body.classList.add('overflow-hidden');
+  }
+
+  document.querySelectorAll('[data-tw-modal-open]').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      const id = trigger.getAttribute('data-tw-modal-open');
+      const modal = id ? document.getElementById(id) : null;
+      openModal(modal);
+    });
+  });
+
+  document.querySelectorAll('[data-tw-modal-close]').forEach(trigger => {
+    trigger.addEventListener('click', () => closeModal(trigger.closest('.tw-modal')));
+  });
+
+  modalEls.forEach(modal => {
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) closeModal(modal);
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && activeModal) {
+      closeModal(activeModal);
+    }
+  });
 });
 
 // Alpine variant picker stub for forward compatibility
