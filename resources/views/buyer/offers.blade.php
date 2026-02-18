@@ -16,7 +16,7 @@
                     <div class="p-4 sm:p-5">
                         <div class="flex items-center">
                             <div class="shrink-0">
-                                <i class="bi bi-clock-history text-4xl"></i>
+                                <i class="fa-regular fa-clock text-4xl"></i>
                             </div>
                             <div class="ml-3 grow">
                                 <h4 class="mb-0 text-2xl font-bold">{{ $offers->count() }}</h4>
@@ -31,7 +31,7 @@
                     <div class="p-4 sm:p-5">
                         <div class="flex items-center">
                             <div class="shrink-0">
-                                <i class="bi bi-hourglass-split text-4xl"></i>
+                                <i class="fa-solid fa-hourglass-half text-4xl"></i>
                             </div>
                             <div class="ml-3 grow">
                                 <h4 class="mb-0 text-2xl font-bold">{{ $offers->sum('status_summary.pending') }}</h4>
@@ -46,7 +46,7 @@
                     <div class="p-4 sm:p-5">
                         <div class="flex items-center">
                             <div class="shrink-0">
-                                <i class="bi bi-check-circle text-4xl"></i>
+                                <i class="fa-regular fa-circle-check text-4xl"></i>
                             </div>
                             <div class="ml-3 grow">
                                 <h4 class="mb-0 text-2xl font-bold">{{ $offers->sum('status_summary.accepted') }}</h4>
@@ -61,7 +61,7 @@
                     <div class="p-4 sm:p-5">
                         <div class="flex items-center">
                             <div class="shrink-0">
-                                <i class="bi bi-arrow-left-right text-4xl"></i>
+                                <i class="fa-solid fa-right-left text-4xl"></i>
                             </div>
                             <div class="ml-3 grow">
                                 <h4 class="mb-0 text-2xl font-bold">{{ $offers->where('has_counter_offers', true)->count() }}</h4>
@@ -77,7 +77,7 @@
         <div class="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div class="border-b border-slate-200 px-4 py-3 bg-slate-100">
                 <h6 class="mb-0">
-                    <i class="bi bi-plus-circle mr-2"></i>Make New Offer
+                    <i class="fa-regular fa-circle-plus mr-2"></i>Make New Offer
                 </h6>
             </div>
             <div class="p-4 sm:p-5">
@@ -87,7 +87,7 @@
                     </div>
                     <div class="col-span-12 text-left md:col-span-4 md:text-right">
                         <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" onclick="showNewOfferModal()">
-                            <i class="bi bi-plus-circle mr-1"></i>Make New Offer
+                            <i class="fa-regular fa-circle-plus mr-1"></i>Make New Offer
                         </button>
                     </div>
                 </div>
@@ -97,11 +97,11 @@
         @if($offers->isEmpty())
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="p-4 sm:p-5 text-center py-5">
-                    <i class="bi bi-inbox mb-3 text-5xl text-slate-400"></i>
+                    <i class="fa-solid fa-inbox mb-3 text-5xl text-slate-400"></i>
                     <h5 class="text-slate-500">No Offers Yet</h5>
                     <p class="text-slate-500">You haven't made any offers yet. Start browsing products to make your first offer!</p>
                     <a href="{{ route('listings') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
-                        <i class="bi bi-search mr-1"></i>Browse Products
+                        <i class="fa-solid fa-magnifying-glass mr-1"></i>Browse Products
                     </a>
                 </div>
             </div>
@@ -129,17 +129,16 @@
                                     @endphp
                                     <img src="{{ $thumb }}" 
                                          alt="{{ $offerData['product']->name }}" 
-                                         class="rounded mr-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                         class="mr-3 h-[50px] w-[50px] rounded object-cover">
                                 @else
-                                    <div class="bg-slate-100 rounded flex items-center justify-center mr-3" 
-                                         style="width: 50px; height: 50px;">
-                                        <i class="bi bi-image text-slate-500"></i>
+                                    <div class="mr-3 flex h-[50px] w-[50px] items-center justify-center rounded bg-slate-100">
+                                        <i class="fa-regular fa-image text-slate-500"></i>
                                     </div>
                                 @endif
                                 <div>
                                     <h6 class="mb-1">{{ $offerData['product']->name }}</h6>
                                     <small class="text-slate-500">
-                                        <i class="bi bi-shop mr-1"></i>{{ $offerData['product']->shop->name ?? 'Unknown Shop' }}
+                                        <i class="fa-solid fa-store mr-1"></i>{{ $offerData['product']->shop->name ?? 'Unknown Shop' }}
                                     </small>
                                 </div>
                             </div>
@@ -154,8 +153,8 @@
                     <div class="p-4 sm:p-5">
                         @if($offerData['latest_offer']->status === 'accepted')
                             <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 flex items-center mb-4 p-3 shadow-sm accepted-offer-alert">
-                                <i class="bi bi-patch-check-fill mr-3 text-3xl text-emerald-600"></i>
-                                <div class="flex-grow-1">
+                                <i class="fa-solid fa-circle-check mr-3 text-3xl text-emerald-600"></i>
+                                <div class="grow">
                                     <strong class="text-emerald-600">Congratulations!</strong> Your offer was <b>accepted</b> by the seller.<br>
                                     <span class="text-xs text-emerald-600">You can now proceed to checkout or contact the seller for next steps.</span>
                                     
@@ -167,8 +166,8 @@
                                                     <small class="text-slate-500">Total: {{ get_currency() }} {{ number_format($offerData['latest_offer']->order->total_amount, 2) }}</small>
                                                 </div>
                                                 <a href="{{ route('pay_now', $offerData['latest_offer']->order->id) }}" 
-                                                   class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-3 py-1.5 text-xs">
-                                                    <i class="bi bi-credit-card mr-1"></i>Pay Now
+                                                   class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500">
+                                                    <i class="fa-regular fa-credit-card mr-1"></i>Pay Now
                                                 </a>
                                             </div>
                                         </div>
@@ -181,13 +180,13 @@
                             <div class="col-span-12 md:col-span-6">
                                 <div class="flex items-center">
                                     <div class="mr-3">
-                                        <i class="bi bi-currency-dollar text-2xl text-emerald-600"></i>
+                                        <i class="fa-solid fa-dollar-sign text-2xl text-emerald-600"></i>
                                     </div>
                                     <div>
                                         <h6 class="mb-1">Your Latest Offer</h6>
                                         <span class="text-xl font-bold text-emerald-600">{{ $offerData['latest_offer']->formatted_price }}</span>
                                         <div class="text-slate-500 text-xs">
-                                            <i class="bi bi-clock mr-1"></i>{{ $offerData['latest_offer']->time_ago }}
+                                            <i class="fa-regular fa-clock mr-1"></i>{{ $offerData['latest_offer']->time_ago }}
                                         </div>
                                     </div>
                                 </div>
@@ -195,7 +194,7 @@
                             <div class="col-span-12 md:col-span-6">
                                 <div class="flex items-center">
                                     <div class="mr-3">
-                                        <i class="bi bi-tag text-2xl text-sky-600"></i>
+                                        <i class="fa-solid fa-tag text-2xl text-sky-600"></i>
                                     </div>
                                     <div>
                                         <h6 class="mb-1">Original Price</h6>
@@ -212,7 +211,7 @@
                         @if($offerData['offer_history']->count() > 1)
                             <div class="mb-3">
                                 <h6 class="mb-2">
-                                    <i class="bi bi-clock-history mr-1"></i>Offer History
+                                    <i class="fa-regular fa-clock mr-1"></i>Offer History
                                 </h6>
                                 <div class="timeline">
                                     @foreach($offerData['offer_history'] as $index => $offer)
@@ -233,7 +232,7 @@
                                         @endphp
                                         @php
                                             $labelText = $isCounter ? 'Counter Offer' : ($isOriginal ? 'Original Offer' : 'Your Offer');
-                                            $iconClass = $isCounter ? 'bi-arrow-left-right text-indigo-600' : ($isOriginal ? 'bi-flag text-slate-600' : 'bi-arrow-up text-sky-600');
+                                            $iconClass = $isCounter ? 'fa-solid fa-right-left text-indigo-600' : ($isOriginal ? 'fa-regular fa-flag text-slate-600' : 'fa-solid fa-arrow-up text-sky-600');
                                         @endphp
                                         <div class="timeline-item">
                                             <div class="timeline-marker {{ $isCounter ? 'bg-indigo-500' : 'bg-sky-500' }}"></div>
@@ -241,7 +240,7 @@
                                                 <div class="flex justify-between items-start">
                                                     <div>
                                                         <strong>
-                                                            <i class="bi {{ $iconClass }} mr-1"></i>{{ $labelText }}
+                                                            <i class="{{ $iconClass }} mr-1"></i>{{ $labelText }}
                                                         </strong>
                                                         @if($formattedPrice)
                                                             <div class="text-slate-500 text-xs">{{ $formattedPrice }}</div>
@@ -267,7 +266,7 @@
                         <!-- Action Buttons (only View) -->
                         <div class="mt-3">
                             <a href="{{ route('buyer.offers.details', $offerData['latest_offer']->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-3 py-1.5 text-xs">
-                                <i class="bi bi-eye mr-1"></i>View
+                                <i class="fa-regular fa-eye mr-1"></i>View
                             </a>
                         </div>
                     </div>
@@ -283,7 +282,7 @@
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <h5 class="text-base font-semibold text-slate-900">Make New Offer</h5>
             <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" onclick="hideNewOfferModal()">
-                <i class="bi bi-x-lg"></i>
+                <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
         <div class="max-h-[70vh] overflow-y-auto px-4 py-4">
@@ -324,7 +323,7 @@
                         <div class="mt-1 text-xs text-slate-500">Enter your best offer price</div>
                         <div id="savingsInfo" class="mt-2" style="display: none;">
                             <small class="text-emerald-600">
-                                <i class="bi bi-check-circle mr-1"></i>
+                                <i class="fa-regular fa-circle-check mr-1"></i>
                                 You'll save: <span id="savingsAmount"></span> (<span id="savingsPercentage"></span>)
                             </small>
                         </div>

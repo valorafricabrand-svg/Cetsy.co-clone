@@ -16,11 +16,11 @@
         <h2 class="mb-0 text-base font-semibold">Offer Details</h2>
         <div class="flex gap-2">
             <a href="{{ route('buyer.offers') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-                <i class="bi bi-arrow-left mr-1"></i>Back to Offers
+                <i class="fa-solid fa-arrow-left mr-1"></i>Back to Offers
             </a>
             @if(($offer->product->shop->user_id ?? null))
                 <a href="{{ route('buyer.messages.show', $offer->product_id . '-' . $offer->product->shop->user_id) }}" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
-                    <i class="bi bi-chat-dots mr-1"></i>Message Seller
+                    <i class="fa-regular fa-comments mr-1"></i>Message Seller
                 </a>
             @endif
         </div>
@@ -42,11 +42,10 @@
                             @endphp
                             <img src="{{ $thumb }}"
                                  alt="{{ $offer->product->name }}"
-                                 class="mr-3 rounded"
-                                 style="width: 80px; height: 80px; object-fit: cover;">
+                                 class="mr-3 h-20 w-20 rounded object-cover">
                         @else
-                            <div class="mr-3 flex items-center justify-center rounded bg-slate-100" style="width: 80px; height: 80px;">
-                                <i class="bi bi-image text-slate-500"></i>
+                            <div class="mr-3 flex h-20 w-20 items-center justify-center rounded bg-slate-100">
+                                <i class="fa-regular fa-image text-slate-500"></i>
                             </div>
                         @endif
                         <div>
@@ -138,21 +137,21 @@
                 <h6 class="mb-2">Actions</h6>
                 <div class="flex flex-wrap gap-2">
                     <a href="{{ route('listing.show', $offer->product->slug ?? $offer->product->id) }}" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
-                        <i class="bi bi-eye mr-1"></i>View Product
+                        <i class="fa-regular fa-eye mr-1"></i>View Product
                     </a>
 
                     @if($canRespond)
                     <button type="button" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500" onclick="toggleRespondSection()">
-                        <i class="bi bi-check-circle mr-1"></i>Respond to Counter Offer
+                        <i class="fa-regular fa-circle-check mr-1"></i>Respond to Counter Offer
                     </button>
                     @endif
 
                     @if(($offer->status === 'accepted') && $offer->order)
                         <a href="{{ route('pay_now', $offer->order->id) }}" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500">
-                            <i class="bi bi-credit-card mr-1"></i>Pay Now
+                            <i class="fa-regular fa-credit-card mr-1"></i>Pay Now
                         </a>
                         <a href="{{ route('buyer.orders.show', $offer->order->id) }}" class="inline-flex items-center justify-center rounded-xl border border-sky-600 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-50">
-                            <i class="bi bi-receipt mr-1"></i>View Order
+                            <i class="fa-solid fa-receipt mr-1"></i>View Order
                         </a>
                     @endif
                 </div>

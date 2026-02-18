@@ -23,7 +23,7 @@
                                 <img src="{{ $thumb }}" alt="{{ $product->name }}" class="mr-3 h-[60px] w-[60px] rounded object-cover">
                             @else
                                 <div class="mr-3 flex h-[60px] w-[60px] items-center justify-center rounded bg-slate-100">
-                                    <i class="bi bi-image text-slate-500"></i>
+                                    <i class="fa-regular fa-image text-slate-500"></i>
                                 </div>
                             @endif
                             <div class="grow">
@@ -51,7 +51,7 @@
                                 </div>
                             </div>
                             <a href="{{ route('buyer.messages.index') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-                                <i class="bi bi-arrow-left mr-1"></i>Back to Conversations
+                                <i class="fa-solid fa-arrow-left mr-1"></i>Back to Conversations
                             </a>
                         </div>
                     </div>
@@ -80,7 +80,7 @@
                                                     </a>
                                                 @else
                                                     <a href="{{ $attachmentUrl }}" target="_blank" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-                                                        <i class="bi bi-paperclip mr-1"></i>View attachment
+                                                        <i class="fa-solid fa-paperclip mr-1"></i>View attachment
                                                     </a>
                                                 @endif
                                             </div>
@@ -90,7 +90,7 @@
                             @endforeach
                         @else
                             <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-center text-sm text-sky-800">
-                                <i class="bi bi-chat-dots mb-2 text-3xl"></i>
+                                <i class="fa-regular fa-comments mb-2 text-3xl"></i>
                                 <div>No messages yet. Start the conversation!</div>
                             </div>
                         @endif
@@ -116,7 +116,7 @@
                             <div class="flex items-center justify-between">
                                 <small class="text-xs text-slate-500">Press Enter to send, Shift+Enter for new line</small>
                                 <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">
-                                    <i class="bi bi-send mr-1"></i>Send Message
+                                    <i class="fa-regular fa-paper-plane mr-1"></i>Send Message
                                 </button>
                             </div>
                         </form>

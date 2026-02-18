@@ -24,10 +24,10 @@
 
                         <form method="GET" action="" class="mt-3 flex max-w-xl flex-wrap items-center gap-2">
                             <input type="text" name="search" value="{{ request('search') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 sm:flex-1" placeholder="Search user, product, or message...">
-                            <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"><i class="bi bi-search mr-1"></i>Search</button>
+                            <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"><i class="fa-solid fa-magnifying-glass mr-1"></i>Search</button>
                             @if(request('search'))
                                 <a href="{{ request()->fullUrlWithQuery(['search' => '']) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" title="Clear search">
-                                    <i class="bi bi-x mr-1"></i>Clear
+                                    <i class="fa-solid fa-xmark mr-1"></i>Clear
                                 </a>
                             @endif
                         </form>
@@ -40,7 +40,7 @@
                         <div class="mt-3">You have no conversations yet.</div>
                         <div class="mt-2">
                             <a href="{{ route('listings') }}" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500">
-                                <i class="bi bi-search mr-1"></i>Browse Products
+                                <i class="fa-solid fa-magnifying-glass mr-1"></i>Browse Products
                             </a>
                         </div>
                     </div>
@@ -77,7 +77,7 @@
                                                 <img src="{{ $thumb }}" alt="{{ $conversation['product']->name }}" class="mr-2 h-9 w-9 rounded object-cover">
                                             @else
                                                 <div class="mr-2 flex h-9 w-9 items-center justify-center rounded border bg-slate-100">
-                                                    <i class="bi bi-box text-slate-600"></i>
+                                                    <i class="fa-solid fa-box-open text-slate-600"></i>
                                                 </div>
                                             @endif
                                             <span class="product-badge inline-flex max-w-[180px] items-center rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-700" title="{{ $conversation['product']->name }}">
@@ -87,7 +87,7 @@
                                     @else
                                         <div class="mb-2 flex items-center">
                                             <div class="mr-2 flex h-9 w-9 items-center justify-center rounded border bg-slate-100">
-                                                <i class="bi bi-chat-dots text-slate-600"></i>
+                                                <i class="fa-regular fa-comments text-slate-600"></i>
                                             </div>
                                             <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">Direct Message</span>
                                         </div>
@@ -102,7 +102,7 @@
                                             {{ $conversation['total_messages'] }} message{{ $conversation['total_messages'] > 1 ? 's' : '' }}
                                         </small>
                                         <a href="{{ route('buyer.messages.show', $conversation['conversation_id']) }}" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500">
-                                            <i class="bi bi-chat-dots mr-1"></i>View
+                                            <i class="fa-regular fa-comments mr-1"></i>View
                                         </a>
                                     </div>
                                 </div>
