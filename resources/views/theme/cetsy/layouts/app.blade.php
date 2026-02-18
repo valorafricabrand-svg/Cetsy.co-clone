@@ -34,6 +34,7 @@
         }
 
         $settings = \App\Models\Setting::first();
+        $hideMarketplaceCategories = auth()->check() && request()->is('seller*');
     @endphp
 
     <meta charset="utf-8">
@@ -152,7 +153,7 @@
             </div>
 
             <div class="mx-auto hidden w-full max-w-7xl px-4 pb-3 lg:block sm:px-6">
-                @if ($topNavCategories->isNotEmpty())
+                @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
                     <div class="flex flex-wrap items-center gap-2 pb-1">
                         @foreach ($topNavCategories as $cat)
                             @php $children = collect($cat->children ?? []); @endphp
@@ -226,7 +227,7 @@
                         <a href="{{ route('contact') }}" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Support</a>
                     </nav>
 
-                    @if ($topNavCategories->isNotEmpty())
+                    @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
                         <div class="space-y-2">
                             @foreach ($topNavCategories as $cat)
                                 @php $children = collect($cat->children ?? []); @endphp
