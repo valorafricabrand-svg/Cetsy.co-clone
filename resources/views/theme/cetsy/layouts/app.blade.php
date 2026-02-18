@@ -155,8 +155,8 @@
                     <div class="flex flex-wrap items-center gap-2 pb-1">
                         @foreach ($topNavCategories as $cat)
                             @php $children = collect($cat->children ?? []); @endphp
-                            <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @focusin="open = true" @focusout="open = false">
-                                <a href="{{ route('category.show', $cat->slug) }}" class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+                            <div class="relative" x-data="{ open: false, pinned: false }" @mouseenter="open = true" @mouseleave="if (!pinned) open = false" @focusin="open = true" @focusout="if (!pinned) open = false" @click.outside="open = false; pinned = false">
+                                <a href="{{ route('category.show', $cat->slug) }}" class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700" @if ($children->isNotEmpty()) @click.prevent="pinned = !pinned; open = pinned" @endif>
                                     <span>{{ $cat->name }}</span>
                                     @if ($children->isNotEmpty())
                                         <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
@@ -172,8 +172,8 @@
                                         <ul class="space-y-1">
                                             @foreach ($children as $child)
                                                 @php $grandChildren = collect($child->children ?? []); @endphp
-                                                <li class="relative" x-data="{ openChild: false }" @mouseenter="openChild = true" @mouseleave="openChild = false" @focusin="openChild = true" @focusout="openChild = false">
-                                                    <a href="{{ route('category.show', $child->slug) }}" class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+                                                <li class="relative" x-data="{ openChild: false, pinnedChild: false }" @mouseenter="openChild = true" @mouseleave="if (!pinnedChild) openChild = false" @focusin="openChild = true" @focusout="if (!pinnedChild) openChild = false" @click.outside="openChild = false; pinnedChild = false">
+                                                    <a href="{{ route('category.show', $child->slug) }}" class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900" @if ($grandChildren->isNotEmpty()) @click.prevent="pinnedChild = !pinnedChild; openChild = pinnedChild" @endif>
                                                         <span class="truncate">{{ $child->name }}</span>
                                                         @if ($grandChildren->isNotEmpty())
                                                             <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
