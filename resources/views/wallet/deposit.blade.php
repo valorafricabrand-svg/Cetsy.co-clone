@@ -226,8 +226,36 @@
         min-height: 1.4rem;
         color: var(--ink);
     }
-    .d-none { display: none !important; }
-    .opacity-50 { opacity: .5; }
+    .wallet-result--error { color: #dc2626; }
+    .wallet-result--success { color: #059669; }
+    .wallet-result--info { color: #334155; }
+    .wallet-live-status {
+        border-radius: 12px;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+    .wallet-live-status--neutral {
+        background: #f8fafc;
+        border-color: rgba(15, 23, 42, 0.10);
+        color: #334155;
+    }
+    .wallet-live-status--warning {
+        background: #fffbeb;
+        border-color: #fcd34d;
+        color: #92400e;
+    }
+    .wallet-live-status--success {
+        background: #ecfdf5;
+        border-color: #6ee7b7;
+        color: #065f46;
+    }
+    .wallet-live-status--error {
+        background: #fff1f2;
+        border-color: #fda4af;
+        color: #9f1239;
+    }
+    .is-disabled { opacity: .6; pointer-events: none; }
     .spinner {
         display:inline-block; width:1.25rem; height:1.25rem; border:2px solid #ddd; border-top-color:#000;
         border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; margin-right:.5rem;
@@ -269,8 +297,8 @@
     <div class="grid grid-cols-12 gap-4 justify-center deposit-shell">
         <div class="md:col-span-9 lg:col-span-9 xl:col-span-8">
 
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 wallet-deposit__card mt-3">
-                <div class="p-4 sm:p-5 p-5 md:p-5">
+            <div class="mt-3 rounded-2xl border border-slate-200 bg-white shadow-sm wallet-deposit__card">
+                <div class="p-4 sm:p-5">
 
                     <div class="wallet-deposit__header">
                         <div class="wallet-deposit__eyebrow">Wallet top-up</div>
@@ -364,7 +392,7 @@
                           @if($stripeAvailable)
                             <div id="stripe-section" class="payment-panel method-panel {{ $defaultGateway === 'stripe' ? 'is-active' : '' }}" data-method="stripe">
                               <p class="text-slate-500 text-center">Pay securely by card using Stripe checkout.</p>
-                              <div class="d-grid">
+                              <div class="grid">
                                   <button type="button" id="btn-stripe-checkout" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-900 text-white hover:bg-slate-700">
                                       Continue to Stripe
                                   </button>
@@ -375,7 +403,7 @@
                           @if($paystackAvailable)
                             <div id="paystack-section" class="payment-panel method-panel {{ $defaultGateway === 'paystack' ? 'is-active' : '' }}" data-method="paystack">
                               <p class="text-slate-500 text-center">Pay securely via Paystack checkout.</p>
-                              <div class="d-grid">
+                              <div class="grid">
                                   <button type="button" id="btn-paystack-checkout" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                                       Continue to Paystack
                                   </button>
@@ -394,7 +422,7 @@
                                   </div>
                               </div>
 
-                              <div class="grid grid-cols-12 gap-4 gap-3">
+                              <div class="grid grid-cols-12 gap-3">
                                   <div class="md:col-span-7">
                                       <label for="mpesa_phone" class="mb-1 block text-sm font-medium text-slate-700">M-Pesa Phone (Safaricom)</label>
                                       <input type="text" id="mpesa_phone" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="e.g. 07XXXXXXXX, 7XXXXXXXX, or 2547XXXXXXXX" maxlength="13">
@@ -407,7 +435,7 @@
                                   </div>
                               </div>
 
-                              <div class="d-grid mt-3">
+                              <div class="mt-3 grid">
                                   <button id="btn-start-stk" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                                       <span class="spinner hidden" id="stk-spinner"></span>
                                       Send STK Push
@@ -419,7 +447,7 @@
                               </div>
 
                               {{-- Live status area when polling --}}
-                              <div id="stk-live-status" class="rounded-xl border px-4 py-3 text-sm alert-light mt-3 hidden"></div>
+                              <div id="stk-live-status" class="wallet-live-status wallet-live-status--neutral mt-3 hidden"></div>
                           </div>
                           @endif
 
@@ -457,6 +485,7 @@
 
     const USD_TO_KES = {{ (float) (env('USD_TO_KES', 130)) }}; // configure in .env
     const REDIRECT_URL = @json(($redirectTo ?? null) ?: route('wallet.index'));
+    const RESULT_BASE_CLASSES = 'wallet-result--error wallet-result--success wallet-result--info';
 
     function redirectSuccess() {
         try {
@@ -490,7 +519,7 @@
         }
         if (!method) return;
         setActive(method);
-        $result.removeClass('text-danger text-success').text('');
+        $result.removeClass(RESULT_BASE_CLASSES).text('');
         $methodPanels.removeClass('is-active');
         const $panel = $methodPanels.filter('[data-method="' + method + '"]');
         if ($panel.length) {
@@ -520,6 +549,15 @@
         return null;
     }
 
+    function setResult(kind, message) {
+        $result.removeClass(RESULT_BASE_CLASSES).text('');
+        if (!message) return;
+        if (kind === 'success') $result.addClass('wallet-result--success');
+        else if (kind === 'error') $result.addClass('wallet-result--error');
+        else $result.addClass('wallet-result--info');
+        $result.text(message);
+    }
+
     @if(!empty($availableMethods) && $paypalAvailable)
     let paypalRendered = false;
     renderPaypalButtons = function () {
@@ -529,7 +567,7 @@
             createOrder: function(data, actions) {
                 const amount = $amount.val();
                 if (!amount || parseFloat(amount) <= 0) {
-                    $result.addClass('text-danger').text('Please enter a valid USD amount before proceeding.');
+                    setResult('error', 'Please enter a valid USD amount before proceeding.');
                     return;
                 }
                 return actions.order.create({
@@ -548,15 +586,15 @@
                         if (resp.success) {
                             redirectSuccess();
                         } else {
-                            $result.addClass('text-danger').text(resp.message || 'Deposit failed. Please try again later.');
+                            setResult('error', resp.message || 'Deposit failed. Please try again later.');
                         }
                     }).fail(function(xhr) {
-                        $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.error ?? 'Unknown error'));
+                        setResult('error', 'Server error: ' + (xhr.responseJSON?.error ?? 'Unknown error'));
                     });
                 });
             },
             onError: function(err) {
-                $result.addClass('text-danger').text('PayPal error: ' + (err?.message || 'Unknown error'));
+                setResult('error', 'PayPal error: ' + (err?.message || 'Unknown error'));
             }
         }).render('#paypal-button-container');
     };
@@ -575,11 +613,11 @@
         $stripeCheckoutBtn.on('click', function(){
             const amount = $amount.val();
             if (!amount || parseFloat(amount) <= 0) {
-                $result.addClass('text-danger').text('Please enter a valid USD amount before proceeding.');
+                setResult('error', 'Please enter a valid USD amount before proceeding.');
                 return;
             }
-            $stripeCheckoutBtn.prop('disabled', true).addClass('disabled');
-            $result.removeClass('text-danger text-success').text('Redirecting to Stripe...');
+            $stripeCheckoutBtn.prop('disabled', true).addClass('is-disabled');
+            setResult('info', 'Redirecting to Stripe...');
             $.post(@json(route('wallet.deposit.stripe.session')), {
                 _token: @json(csrf_token()),
                 amount: amount,
@@ -589,12 +627,12 @@
                 if (resp?.success && resp?.url) {
                     window.location = resp.url;
                 } else {
-                    $stripeCheckoutBtn.prop('disabled', false).removeClass('disabled');
-                    $result.addClass('text-danger').text(resp?.message || 'Unable to start Stripe checkout.');
+                    $stripeCheckoutBtn.prop('disabled', false).removeClass('is-disabled');
+                    setResult('error', resp?.message || 'Unable to start Stripe checkout.');
                 }
             }).fail(function(xhr){
-                $stripeCheckoutBtn.prop('disabled', false).removeClass('disabled');
-                $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
+                $stripeCheckoutBtn.prop('disabled', false).removeClass('is-disabled');
+                setResult('error', 'Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
             });
         });
     }
@@ -605,11 +643,11 @@
         $paystackCheckoutBtn.on('click', function(){
             const amount = $amount.val();
             if (!amount || parseFloat(amount) <= 0) {
-                $result.addClass('text-danger').text('Please enter a valid USD amount before proceeding.');
+                setResult('error', 'Please enter a valid USD amount before proceeding.');
                 return;
             }
-            $paystackCheckoutBtn.prop('disabled', true).addClass('disabled');
-            $result.removeClass('text-danger text-success').text('Redirecting to Paystack...');
+            $paystackCheckoutBtn.prop('disabled', true).addClass('is-disabled');
+            setResult('info', 'Redirecting to Paystack...');
             $.post(@json(route('wallet.deposit.paystack.session')), {
                 _token: @json(csrf_token()),
                 amount: amount,
@@ -619,12 +657,12 @@
                 if (resp?.success && resp?.url) {
                     window.location = resp.url;
                 } else {
-                    $paystackCheckoutBtn.prop('disabled', false).removeClass('disabled');
-                    $result.addClass('text-danger').text(resp?.message || 'Unable to start Paystack checkout.');
+                    $paystackCheckoutBtn.prop('disabled', false).removeClass('is-disabled');
+                    setResult('error', resp?.message || 'Unable to start Paystack checkout.');
                 }
             }).fail(function(xhr){
-                $paystackCheckoutBtn.prop('disabled', false).removeClass('disabled');
-                $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
+                $paystackCheckoutBtn.prop('disabled', false).removeClass('is-disabled');
+                setResult('error', 'Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
             });
         });
     }
@@ -641,7 +679,10 @@
         let attempts = 0;
         clearInterval(pollTimer);
 
-        $liveStatus.removeClass('d-none alert-danger alert-success alert-warning').addClass('alert').html(`
+        $liveStatus
+            .removeClass('hidden wallet-live-status--error wallet-live-status--success wallet-live-status--warning')
+            .addClass('wallet-live-status--neutral')
+            .html(`
             <i class="fa fa-sync-alt fa-spin mr-2"></i>
             Waiting for M-Pesa confirmation... (this can take up to 2 minutes)
         `);
@@ -652,7 +693,10 @@
                 const msg = resp?.message || '';
                 if (resp?.status === 'success') {
                     clearInterval(pollTimer);
-                    $liveStatus.removeClass('alert-warning alert-danger').addClass('alert-success').html(`
+                    $liveStatus
+                        .removeClass('wallet-live-status--neutral wallet-live-status--warning wallet-live-status--error')
+                        .addClass('wallet-live-status--success')
+                        .html(`
                         <i class="fa fa-check-circle mr-2"></i>
                         Payment successful! Redirecting to your wallet...
                     `);
@@ -661,7 +705,10 @@
                 }
                 if (resp?.status === 'failed') {
                     clearInterval(pollTimer);
-                    $liveStatus.removeClass('alert-warning alert-success').addClass('alert-danger').html(`
+                    $liveStatus
+                        .removeClass('wallet-live-status--neutral wallet-live-status--warning wallet-live-status--success')
+                        .addClass('wallet-live-status--error')
+                        .html(`
                         <i class="fa fa-exclamation-triangle mr-2"></i>
                         Payment failed: ${msg || 'Unknown error'}.
                     `);
@@ -674,7 +721,10 @@
 
             if (attempts >= MAX_POLLS) {
                 clearInterval(pollTimer);
-                $liveStatus.removeClass('alert-success alert-danger').addClass('alert-warning').html(`
+                $liveStatus
+                    .removeClass('wallet-live-status--neutral wallet-live-status--success wallet-live-status--error')
+                    .addClass('wallet-live-status--warning')
+                    .html(`
                     <i class="fa fa-hourglass-half mr-2"></i>
                     It's taking longer than expected to confirm. If you've approved the prompt, please check your wallet shortly.
                 `);
@@ -685,19 +735,19 @@
     $stkBtn.on('click', function(){
         const usd = parseFloat($amount.val() || '0');
         if (!usd || usd <= 0) {
-            $result.addClass('text-danger').text('Please enter a valid USD amount before proceeding.');
+            setResult('error', 'Please enter a valid USD amount before proceeding.');
             return;
         }
         const normalized = normalizeMsisdn($phoneInput.val());
         if (!normalized) {
-            $result.addClass('text-danger').text('Enter a valid Safaricom number (07XXXXXXXX, 7XXXXXXXX, or 2547XXXXXXXX).');
+            setResult('error', 'Enter a valid Safaricom number (07XXXXXXXX, 7XXXXXXXX, or 2547XXXXXXXX).');
             return;
         }
 
         $stkBtn.prop('disabled', true);
-        $stkSpinner.removeClass('d-none');
-        $result.removeClass('text-danger text-success').text('');
-        $liveStatus.addClass('d-none').empty();
+        $stkSpinner.removeClass('hidden');
+        setResult('info', '');
+        $liveStatus.addClass('hidden').empty();
 
         $.post("{{ route('wallet.deposit.mpesa.stk') }}", {
             _token: '{{ csrf_token() }}',
@@ -705,16 +755,16 @@
             usd_amount: usd
         }, function(resp){
             if (resp.success && resp.ref) {
-                $result.addClass('text-success').text('STK Push sent. Check your phone and approve.');
+                setResult('success', 'STK Push sent. Check your phone and approve.');
                 startPolling(resp.ref);
             } else {
-                $result.addClass('text-danger').text(resp.message || 'Failed to start STK Push.');
+                setResult('error', resp.message || 'Failed to start STK Push.');
             }
         }).fail(function(xhr){
-            $result.addClass('text-danger').text('Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
+            setResult('error', 'Server error: ' + (xhr.responseJSON?.message ?? 'Unknown error'));
         }).always(function(){
             $stkBtn.prop('disabled', false);
-            $stkSpinner.addClass('d-none');
+            $stkSpinner.addClass('hidden');
         });
     });
 })();

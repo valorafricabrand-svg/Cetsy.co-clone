@@ -6,19 +6,19 @@
 <div class="content">
   <div class="grid grid-cols-12 gap-4 justify-center">
     <div class="md:col-span-6 lg:col-span-5">
-      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mt-5">
+      <div class="mt-5 rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="p-4 sm:p-5">
-          <h2 class="text-base font-semibold font-semibold mb-3 text-center">Twoâ€‘Step Verification</h2>
-          <p class="text-slate-500 text-center">We sent a code to <strong>{{ auth()->user()->email }}</strong>. Enter it to continue {{ $purpose ?? 'with your deposit' }}.</p>
+          <h2 class="mb-3 text-center text-base font-semibold">Two-Step Verification</h2>
+          <p class="text-center text-slate-500">We sent a code to <strong>{{ auth()->user()->email }}</strong>. Enter it to continue {{ $purpose ?? 'with your deposit' }}.</p>
 
           @if(session('status'))
-            <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">{{ session('status') }}</div>
+            <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('status') }}</div>
           @endif
           @if($errors->any())
-            <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">{{ $errors->first() }}</div>
+            <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{{ $errors->first() }}</div>
           @endif
 
-          <form method="POST" action="{{ $verifyRoute ?? route('wallet.deposit.otp.verify') }}" class="grid grid-cols-12 gap-4 gap-3">
+          <form method="POST" action="{{ $verifyRoute ?? route('wallet.deposit.otp.verify') }}" class="mt-4 grid grid-cols-12 gap-3">
             @csrf
             <div class="col-span-12">
               <label class="mb-1 block text-sm font-medium text-slate-700">Verification Code</label>
