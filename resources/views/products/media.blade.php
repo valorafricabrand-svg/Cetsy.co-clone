@@ -10,7 +10,7 @@
   .dropzone.drag{background:var(--accent-light);border-color:var(--accent)!important;color:var(--accent);}
   .thumb{height:170px}
   .thumb img{width:100%;height:100%;object-fit:cover;user-select:none}
-  .toolbar-btn{min-width:34px}
+  .toolbar-action{min-width:34px}
   .progress-mini{height:4px;background:#e9ecef;border-radius:2px;overflow:hidden}
   .progress-mini>div{height:100%;background:var(--accent);width:0;transition:width .2s}
   [x-cloak]{display:none!important;}
@@ -151,7 +151,7 @@
   {{-- ===== Upload New Media (normal form submit) ===== --}}
   <div class="mb-5 rounded-2xl border border-slate-200 bg-white shadow-sm">
     <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 flex justify-between items-center">
-      <h5 class="mb-0"><i class="bi bi-images mr-2"></i>Upload Media</h5>
+      <h5 class="mb-0"><i class="fas fa-images mr-2"></i>Upload Media</h5>
       <small class="text-slate-500" x-text="items.length ? `${items.length} selected` : ''"></small>
     </div>
 
@@ -176,7 +176,7 @@
       <div x-ref="b64Container"></div>
 
       {{-- Dropzone --}}
-      <div class="dropzone rounded-3 py-5 text-center mb-4"
+      <div class="dropzone mb-4 rounded-2xl py-5 text-center"
            :class="{'drag':dragging}"
            @click="$refs.fileInput.click()"
            @dragenter.prevent="dragging=true"
@@ -185,7 +185,7 @@
            @drop.prevent="handleDrop($event)"
            style="cursor:pointer;">
         <p class="mb-1">
-          <i class="bi bi-cloud-arrow-up fs-2 block mb-2"></i>
+          <i class="fas fa-cloud-arrow-up mb-2 block text-2xl"></i>
           Drag & drop images or videos here or click to browse
         </p>
         <small class="text-slate-500">Images up to 5MB - Videos up to 50MB</small>
@@ -206,21 +206,21 @@
                 <div class="absolute right-0 top-0 m-1 flex flex-col gap-1">
 
                   <template x-if="it.type==='image'">
-                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-amber-500 text-slate-900 hover:bg-amber-400 toolbar-btn" @click.prevent="openNewCrop(i)" title="Crop">
+                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-amber-500 text-slate-900 hover:bg-amber-400 toolbar-action" @click.prevent="openNewCrop(i)" title="Crop">
                       <i class="fas fa-crop"></i>
                     </button>
                   </template>
-                  <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-rose-600 text-white hover:bg-rose-500 toolbar-btn"
+                  <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-rose-600 text-white hover:bg-rose-500 toolbar-action"
                           @click.prevent="removeNew(i)"
                           title="Remove">
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
                 <div class="absolute bottom-0 left-0 m-1">
-                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-dark bg-opacity-75 text-xs" x-text="i+1"></span>
+                  <span class="inline-flex items-center rounded-full bg-slate-900/75 px-2 py-0.5 text-xs font-medium text-white" x-text="i+1"></span>
                 </div>
               </div>
-              <div class="text-truncate text-xs text-slate-500 mt-1" x-text="it.name"></div>
+              <div class="mt-1 truncate text-xs text-slate-500" x-text="it.name"></div>
             </div>
           </template>
         </div>
@@ -238,14 +238,14 @@
   </div>
 
   {{-- ===== Shared Crop Modal (used for both new & existing) ===== --}}
-  <div class="modal" id="cropModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-      <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+  <div x-cloak x-show="isCropOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/60" @click="closeCropModal()"></div>
+    <div class="relative w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900 flex items-center">
             <i class="fas fa-crop mr-2"></i> Crop Image
           </h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="closeCropModal()">×</button>
         </div>
         <div class="px-4 py-4">
           <div class="mb-3 flex flex-wrap gap-2">
@@ -256,7 +256,7 @@
                 <span x-text="r.label"></span>
               </span>
             </template>
-            <div class="ms-auto flex gap-2">
+            <div class="ml-auto flex gap-2">
               <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="zoom(0.1)"  title="Zoom In"><i class="fas fa-search-plus"></i></button>
               <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="zoom(-0.1)" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
               <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="rotate(-45)" title="Rotate Left"><i class="fas fa-undo"></i></button>
@@ -277,12 +277,12 @@
           <input type="hidden" name="cropped_image_b64" x-ref="existingB64">
           <input type="hidden" name="quality" x-ref="existingQuality">
           <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-            <div class="me-auto text-xs text-slate-500" x-text="dimText"></div>
+            <div class="mr-auto text-xs text-slate-500" x-text="dimText"></div>
             <div class="flex items-center mr-3">
               <label class="text-xs mr-2">Quality</label>
               <input type="range" min="60" max="100" step="2" x-model.number="quality" style="width:120px">
             </div>
-            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" @click="closeCropModal()">Cancel</button>
             <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" id="cropApplyBtn">
               <span x-show="!cropSaving">Apply</span>
               <span x-show="cropSaving" class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"></span>
@@ -290,7 +290,6 @@
           </div>
         </form>
       </div>
-    </div>
   </div>
 
       </div>
@@ -300,7 +299,6 @@
 @endsection
 
 @push('scripts')
-{{-- Bootstrap bundle (required for modal) --}}
 <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
@@ -321,7 +319,7 @@ function mediaPage(config = {}){
       bulkDeleteUrl: '{{ route('media.bulk-destroy', $product) }}',
       csrfToken: '{{ csrf_token() }}',
     // Crop
-    cropper:null, cropModal:null, cropSaving:false,
+    cropper:null, isCropOpen:false, cropSaving:false,
     activeRatio: NaN, quality: 92, dimText:'',
     flipXState:false, flipYState:false,
     // Context flags
@@ -338,13 +336,9 @@ function mediaPage(config = {}){
     ],
 
     init(){
-      const modalEl = document.getElementById('cropModal');
-      this.cropModal = new bootstrap.Modal(modalEl, { backdrop:'static' });
-      // Attach BEFORE showing to avoid race
+      // Attach once for crop action button.
       document.getElementById('cropApplyBtn').addEventListener('click', ()=> this.applyCrop());
 
-      this.$watch('selectedExisting', () => this.updateBulkField());
-      this.updateBulkField();
     },
 
     // ---------- Upload list helpers ----------
@@ -414,20 +408,28 @@ function mediaPage(config = {}){
       this.flipXState = this.flipYState = false;
       this.activeRatio = NaN;
       this.dimText = '';
+      this.isCropOpen = true;
+      this.$nextTick(() => {
+        setTimeout(() => {
+          if(this.cropper) this.cropper.destroy();
+          this.cropper = new Cropper(document.getElementById('cropImage'), {
+            viewMode:1, autoCropArea:1, responsive:true, background:false,
+            movable:true, zoomable:true, rotatable:true,
+            crop: e => { this.dimText = `${Math.round(e.detail.width)} x ${Math.round(e.detail.height)} px`; }
+          });
+        }, 25);
+      });
+    },
 
-      const modalEl = document.getElementById('cropModal');
-
-      const onShown = () => {
-        if(this.cropper) this.cropper.destroy();
-        this.cropper = new Cropper(document.getElementById('cropImage'), {
-          viewMode:1, autoCropArea:1, responsive:true, background:false,
-          movable:true, zoomable:true, rotatable:true,
-          crop: e => { this.dimText = `${Math.round(e.detail.width)} x ${Math.round(e.detail.height)} px`; }
-        });
-      };
-
-      modalEl.addEventListener('shown.bs.modal', onShown, { once:true });
-      this.cropModal.show();
+    closeCropModal(){
+      this.isCropOpen = false;
+      if (this.cropper) {
+        this.cropper.destroy();
+        this.cropper = null;
+      }
+      this.cropSaving = false;
+      this.existingMediaId = null;
+      this.newIndex = null;
     },
 
     // ---------- Cropper controls ----------
@@ -471,12 +473,7 @@ function mediaPage(config = {}){
       }
 
       // Close & cleanup
-      this.cropSaving = false;
-      this.cropModal.hide();
-      this.cropper.destroy();
-      this.cropper = null;
-      this.existingMediaId = null;
-      this.newIndex = null;
+      this.closeCropModal();
     },
 
     // ---------- Selection helpers ----------

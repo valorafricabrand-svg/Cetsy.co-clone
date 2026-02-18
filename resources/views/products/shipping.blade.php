@@ -13,7 +13,7 @@
     <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
       @include('seller.partials.sidebar')
 
-      <div class="space-y-6">
+      <div class="space-y-6" x-data="{ addRowOpen: false, editRowOpen: null }" @keydown.escape.window="addRowOpen = false; editRowOpen = null">
         @include('products.partials.edit-tabs', ['product' => $product, 'current' => $current])
 
   {{-- ALERTS --}}
@@ -100,7 +100,7 @@
 
     {{-- Pickup availability for this listing --}}
     <div class="col-span-12">
-      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 shadow-sm">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="p-4 sm:p-5 flex items-center justify-between">
           <div>
             <h6 class="mb-1">Pickup available</h6>
@@ -134,7 +134,7 @@
   {{-- SHIPPING ROWS --}}
   <div class="flex justify-between items-center mb-2">
     <h5 class="mb-0">Standard shipping</h5>
-    <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50" data-bs-toggle="modal" data-bs-target="#addRowModal">
+    <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-xs font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50" @click="addRowOpen = true">
       <i class="fa-solid fa-plus mr-1"></i> Add row
     </button>
   </div>
@@ -146,7 +146,7 @@
     <div class="border rounded p-4 mb-4 text-center">
       <p class="mb-1">No shipping rows yet.</p>
       <p class="text-slate-500 mb-3">Create rules for destinations, couriers, delivery windows, and charges.</p>
-      <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-3 py-1.5 text-xs" data-bs-toggle="modal" data-bs-target="#addRowModal">Add your first shipping row</button>
+      <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-xs font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" @click="addRowOpen = true">Add your first shipping row</button>
     </div>
   @else
     <div class="overflow-x-auto">
@@ -187,7 +187,7 @@
               <td>{{ $currency }} {{ number_format((float)$row->base_rate, 2) }}</td>
               <td>{{ $currency }} {{ number_format((float)$row->additional_rate, 2) }}</td>
               <td class="text-center">
-                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-toggle="modal" data-bs-target="#editRowModal{{ $row->id }}" title="Edit">Edit</button>
+                <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-xs font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" @click="editRowOpen = {{ (int) $row->id }}" title="Edit">Edit</button>
                 <form method="POST" action="{{ route('products.shipping.rows.destroy',[$product,$row]) }}" class="inline-block" onsubmit="return confirm('Delete this shipping row?');">
                   @csrf
                   @method('DELETE')
@@ -203,13 +203,14 @@
 </div>
 
 {{-- ADD ROW MODAL --}}
-<div class="modal" id="addRowModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+<div x-cloak x-show="addRowOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-slate-900/50" @click="addRowOpen = false"></div>
+  <div class="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto">
     <form method="POST" action="{{ route('products.shipping.rows.store',$product) }}" class="rounded-2xl border border-slate-200 bg-white shadow-xl" novalidate>
       @csrf
       <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900">Add shipping row</h5>
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="addRowOpen = false" aria-label="Close">×</button>
       </div>
 
       <div class="px-4 py-4">
@@ -306,7 +307,7 @@
       </div>
 
       <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" @click="addRowOpen = false">Cancel</button>
         <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
           <i class="fa-solid fa-plus mr-1"></i> Add row
         </button>
@@ -327,15 +328,16 @@
     $showCustom = $row->service==='Other' || $row->service==='Manual' || ($customServiceVal !== '');
     $couriers = couriers_list();
   @endphp
-  <div class="modal" id="editRowModal{{ $row->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+  <div x-cloak x-show="editRowOpen === {{ (int) $row->id }}" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/50" @click="editRowOpen = null"></div>
+    <div class="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <form method="POST" action="{{ route('products.shipping.rows.update',[$product,$row]) }}" class="rounded-2xl border border-slate-200 bg-white shadow-xl" novalidate>
         @csrf
         @method('PATCH')
 
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900">Edit shipping row</h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="editRowOpen = null" aria-label="Close">×</button>
         </div>
 
         <div class="px-4 py-4">
@@ -431,7 +433,7 @@
         </div>
 
         <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" @click="editRowOpen = null">Cancel</button>
           <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
             <i class="fa-regular fa-floppy-disk mr-1"></i> Save changes
           </button>
