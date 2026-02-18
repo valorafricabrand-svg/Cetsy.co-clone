@@ -1,297 +1,289 @@
 {{-- resources/views/seller/dashboard.blade.php --}}
-@extends('layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Seller Dashboard')
 
-@section('content')
+@section('main')
 @php
-    $brandColor = optional(auth()->user()->shop)->primary_color;
-    // Basic sanitize: accept hex colors (#RGB, #RRGGBB, #RRGGBBAA)
+    $shop = auth()->user()->shop;
+    $brandColor = optional($shop)->primary_color;
     if (!is_string($brandColor) || !preg_match('/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/', $brandColor)) {
-        // Fallback if not set or invalid
-        $brandColor = '#27b105';
+        $brandColor = '#0f766e';
     }
+
+    $walletBalance = wallet();
+    $walletHold = wallet('on_hold');
+    $currency = get_currency();
+
+    $cards = [
+        [
+            'value' => $total_orders,
+            'sub' => null,
+            'label' => 'Total Orders',
+            'icon' => 'fas fa-credit-card',
+            'href' => route('seller.orders.index'),
+            'tone' => 'text-amber-600',
+        ],
+        [
+            'value' => $total_products,
+            'sub' => null,
+            'label' => 'Total Listings',
+            'icon' => 'fas fa-box-open',
+            'href' => route('products.index'),
+            'tone' => 'text-sky-600',
+        ],
+        [
+            'value' => $currency.' '.number_format((float)$walletBalance, 2),
+            'sub' => 'On hold: '.$currency.' '.number_format((float)$walletHold, 2),
+            'label' => 'Wallet Balance',
+            'icon' => 'fas fa-wallet',
+            'href' => route('wallet.index'),
+            'tone' => 'text-emerald-600',
+        ],
+        [
+            'value' => $total_offers,
+            'sub' => $accepted_offers.' accepted | '.$declined_offers.' declined',
+            'label' => 'Offers Received',
+            'icon' => 'fas fa-handshake',
+            'href' => route('seller.offers.index'),
+            'tone' => 'text-indigo-600',
+        ],
+        [
+            'value' => $favorites_messages_total,
+            'sub' => 'Last 7 days: '.$favorites_messages_week,
+            'label' => 'Favorites Messages',
+            'icon' => 'fas fa-comments',
+            'href' => route('seller.favorites.index'),
+            'tone' => 'text-slate-600',
+        ],
+    ];
+
+    $statusTone = static function ($status) {
+        return match ((string)$status) {
+            'pending' => 'border-amber-200 bg-amber-50 text-amber-700',
+            'processing' => 'border-sky-200 bg-sky-50 text-sky-700',
+            'shipped' => 'border-indigo-200 bg-indigo-50 text-indigo-700',
+            'delivered', 'completed' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+            'cancelled' => 'border-rose-200 bg-rose-50 text-rose-700',
+            default => 'border-slate-200 bg-slate-100 text-slate-700',
+        };
+    };
 @endphp
-<style>
-    :root { --cetsy-green: {{ $brandColor }}; }
 
-    /* Brand utilities */
-    .brand-text         { color:var(--cetsy-green)!important; }
-    .brand-bg           { background:var(--cetsy-green)!important; color:#fff!important; }
-    .brand-outline      { color:var(--cetsy-green)!important; border-color:var(--cetsy-green)!important; }
-    .brand-outline:hover,
-    .brand-outline:focus{ background:var(--cetsy-green)!important; color:#fff!important; }
-
-    /* Cards & effects */
-    .card.hover-lift      { transition:transform .2s,box-shadow .2s; }
-    .card.hover-lift:hover{ transform:translateY(-4px); box-shadow:0 .5rem 1rem rgba(0,0,0,.15); }
-
-    /* Summary cards */
-    .summary-card {
-        border-radius: 1.25rem !important;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-        padding: 1.5rem 1rem 1.2rem 1rem;
-        min-height: 140px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: #fff;
-    }
-    .summary-card .icon { font-size: 2.1rem; margin-bottom: .5rem; color: var(--cetsy-green); }
-    .summary-card .card-value { font-size: 1.45rem; font-weight: 600; margin-bottom: .2rem; line-height: 1.1; }
-    .summary-card .card-label { font-size: .98rem; color: #6c757d; font-weight: 400; margin-top: .1rem; }
-    .summary-card .card-value small { font-size: .95rem; font-weight: 400; }
-
-    /* Misc */
-    .quick-actions .btn { border-radius: 9999px; }
-    .table-compact td, .table-compact th { padding: .5rem .6rem; }
-    .rounded-4 { border-radius: 1rem !important; }
-    /* Use brand color for header icons */
-    .card-header i { color: var(--cetsy-green) !important; }
-</style>
-
-<div class="content">
-
-    @if (session('status') === 'verification-link-sent')
-        <div class="alert alert-success d-flex justify-content-between align-items-center" role="alert">
-            <div>A new verification link was sent to your email.</div>
-        </div>
-    @endif
-    @if (! auth()->user()->hasVerifiedEmail())
-        <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
-            <div>
-                Your email is not verified. Please check your inbox for a verification link.
+<section class="bg-slate-50 py-8 md:py-10">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        @if (session('status') === 'verification-link-sent')
+            <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                A new verification link was sent to your email.
             </div>
-            <form method="POST" action="{{ route('verification.send') }}" class="ms-3">
-                @csrf
-                <button type="submit" class="btn btn-sm btn-warning">Resend verification email</button>
-            </form>
-        </div>
-    @endif
+        @endif
 
-    {{-- Header: shop info + quick actions --}}
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <div class="d-flex align-items-center gap-3">
-            <div class="rounded-circle d-inline-flex align-items-center justify-content-center brand-bg" style="width:48px;height:48px;">
-                <i class="fas fa-store"></i>
+        @if (! auth()->user()->hasVerifiedEmail())
+            <div class="mb-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+                <p>Your email is not verified. Please verify to unlock all seller features.</p>
+                <form method="POST" action="{{ route('verification.send') }}">
+                    @csrf
+                    <button type="submit" class="inline-flex rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100">
+                        Resend verification email
+                    </button>
+                </form>
             </div>
-            <div>
-                <h2 class="h4 fw-semibold mb-0">Seller Dashboard</h2>
-                <div class="text-muted small">
-                    {{ optional(auth()->user()->shop)->name ?? 'Your Shop' }}
-                    @isset($activeProducts)
-                        • <span class="text-success">Active: {{ $activeProducts }}</span>
-                    @endisset
-                    @isset($pausedProducts)
-                        • <span class="text-secondary">Paused: {{ $pausedProducts }}</span>
-                    @endisset
-                </div>
+        @endif
+
+        @if(session('success'))
+            <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                {{ session('success') }}
             </div>
-        </div>
-        <div class="quick-actions d-flex flex-wrap gap-2">
-            <a href="{{ route('products.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus me-1"></i> New Listing
-            </a>
-            <a href="{{ route('seller.orders.index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-receipt me-1"></i> Orders
-            </a>
-            <a href="{{ route('seller.offers.index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-handshake me-1"></i> Offers
-            </a>
-            <a href="{{ route('wallet.index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-wallet me-1"></i> Wallet
-            </a>
-            <a href="{{ route('seller.analytics.index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-chart-line me-1"></i> Analytics
-            </a>
-        </div>
-    </div>
+        @endif
 
-    {{-- Summary Cards --}}
-    <div class="row gy-4 mb-5">
+        <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+            @include('seller.partials.sidebar')
 
-        {{-- Card template --}}
-        @php
-            $cards = [
-                [
-                    'value' => $total_orders,
-                    'label' => 'Total Orders',
-                    'icon'  => 'fas fa-credit-card',
-                    'class' => 'text-warning',
-                    'href'  => route('seller.orders.index')
-                ],
-                [
-                    'value' => $total_products,
-                    'label' => 'Total Listings',
-                    'icon'  => 'fas fa-box-open',
-                    'class' => 'text-info',
-                    'href'  => route('products.index')
-                ],
-                [
-                    'value' => get_currency().' '.number_format(wallet(),2) . "<small class='text-muted ms-1'>(On Hold: ".get_currency().' '.number_format(wallet('on_hold'),2) . ")</small>",
-                    'label' => 'Wallet Balance',
-                    'icon'  => 'fas fa-wallet',
-                    'class' => 'text-success',
-                    'href'  => route('wallet.index')
-                ],
-                [
-                    'value' => $total_offers . "<small class='text-success ms-1' title='Accepted'>(".$accepted_offers." +)</small> <small class='text-danger ms-1' title='Declined'>(".$declined_offers." -)</small>",
-                    'label' => 'Offers Received',
-                    'icon'  => 'fas fa-handshake',
-                    'class' => 'text-primary',
-                    'href'  => route('seller.offers.index')
-                ],
-                [
-                    'value' => $favorites_messages_total . "<small class='text-muted ms-1'>(7d: ".$favorites_messages_week.")</small>",
-                    'label' => 'Messages from Favorites',
-                    'icon'  => 'fas fa-comments',
-                    'class' => 'text-secondary',
-                    'href'  => route('seller.favorites.index')
-                ],
-            ];
-        @endphp
-
-        @foreach($cards as $c)
-            <div class="col-6 col-md-3">
-                <a href="{{ $c['href'] }}" class="text-decoration-none text-dark">
-                    <div class="card summary-card hover-lift border-0">
-                        <div class="icon {{ $c['class'] }}">
-                            <i class="{{ $c['icon'] }}"></i>
+            <div class="space-y-6">
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="inline-flex h-12 w-12 items-center justify-center rounded-xl text-white" style="background-color: {{ $brandColor }}">
+                                <i class="fas fa-store"></i>
+                            </span>
+                            <div>
+                                <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Seller Dashboard</h1>
+                                <p class="text-sm text-slate-500">
+                                    {{ $shop->name ?? 'Your Shop' }}
+                                    <span class="mx-1">|</span>
+                                    Active: <span class="font-semibold text-emerald-700">{{ $activeProducts }}</span>
+                                    <span class="mx-1">|</span>
+                                    Paused: <span class="font-semibold text-slate-700">{{ $pausedProducts }}</span>
+                                    @if($isHolidayMode)
+                                        <span class="ml-2 inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Holiday mode</span>
+                                    @endif
+                                </p>
+                            </div>
                         </div>
-                        <div class="card-value">{!! $c['value'] !!}</div>
-                        <div class="card-label">{{ $c['label'] }}</div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ route('products.create') }}" class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold text-white shadow-sm" style="background-color: {{ $brandColor }}">
+                                <i class="fas fa-plus mr-1"></i> New Listing
+                            </a>
+                            <a href="{{ route('seller.orders.index') }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                                <i class="fas fa-receipt mr-1"></i> Orders
+                            </a>
+                            <a href="{{ route('seller.offers.index') }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                                <i class="fas fa-handshake mr-1"></i> Offers
+                            </a>
+                            <a href="{{ route('wallet.index') }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                                <i class="fas fa-wallet mr-1"></i> Wallet
+                            </a>
+                            <a href="{{ route('seller.analytics.index') }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                                <i class="fas fa-chart-line mr-1"></i> Analytics
+                            </a>
+                        </div>
                     </div>
-                </a>
-            </div>
-        @endforeach
-
-    </div>
-
-    {{-- Two-column: Recent Orders + Reviews/Quick Links --}}
-    <div class="row g-4 mb-5">
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center rounded-top-4">
-                    <div class="fw-semibold"><i class="fas fa-receipt me-2 text-primary"></i>Recent Orders</div>
-                    <a href="{{ route('seller.orders.index') }}" class="small text-decoration-none">View all</a>
                 </div>
-                <div class="card-body">
-                    @if($orders->count())
-                        <div class="table-responsive">
-                            <table class="table table-compact align-middle mb-0">
-                                <thead>
-                                    <tr class="text-muted small">
-                                        <th>ID</th>
-                                        <th>Customer</th>
-                                        <th>Total</th>
-                                        <th>Status</th>
-                                        <th>Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($orders as $o)
+
+                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                    @foreach($cards as $card)
+                        <a href="{{ $card['href'] }}" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                            <div class="flex items-start justify-between gap-3">
+                                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ $card['label'] }}</p>
+                                <i class="{{ $card['icon'] }} {{ $card['tone'] }}"></i>
+                            </div>
+                            <p class="mt-2 text-xl font-extrabold text-slate-900">{{ $card['value'] }}</p>
+                            @if($card['sub'])
+                                <p class="mt-1 text-xs text-slate-500">{{ $card['sub'] }}</p>
+                            @endif
+                        </a>
+                    @endforeach
+                </div>
+
+                <div class="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                            <h2 class="text-base font-bold text-slate-900">
+                                <i class="fas fa-receipt mr-2 text-emerald-600"></i>
+                                Recent Orders
+                            </h2>
+                            <a href="{{ route('seller.orders.index') }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-600">View all</a>
+                        </div>
+
+                        @if($orders->count())
+                            <div class="hidden overflow-x-auto md:block">
+                                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                                    <thead class="bg-slate-50 text-slate-600">
                                         <tr>
-                                            <td>#{{ $o->id }}</td>
-                                            <td>{{ optional($o->customer)->name ?? '—' }}</td>
-                                            <td>{{ get_currency() }} {{ number_format($o->total ?? ($o->total_amount ?? 0), 2) }}</td>
-                                        <td>
-                                            <span class="badge {{ $o->getStatusBadgeClass() }}">{{ ucfirst($o->status) }}</span>
+                                            <th class="px-3 py-2 text-left font-semibold">ID</th>
+                                            <th class="px-3 py-2 text-left font-semibold">Customer</th>
+                                            <th class="px-3 py-2 text-right font-semibold">Total</th>
+                                            <th class="px-3 py-2 text-left font-semibold">Status</th>
+                                            <th class="px-3 py-2 text-left font-semibold">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200">
+                                        @foreach($orders as $o)
                                             @php
                                                 $minDays = null; $maxDays = null;
                                                 foreach (($o->items ?? []) as $it) {
                                                     $sp = $it->shippingProfile;
                                                     $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
                                                     $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
-                                                    if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
-                                                    if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
+                                                    if (is_numeric($pMin)) $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin);
+                                                    if (is_numeric($pMax)) $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax);
                                                 }
-                                                // Use Carbon instance directly (avoid Optional wrapper in comparisons)
                                                 $placedAt = $o->created_at instanceof \Carbon\Carbon ? $o->created_at : ($o->created_at ? \Carbon\Carbon::parse($o->created_at) : null);
                                                 $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
-                                                $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
-                                                $shipStartLabel = ($shipStart && $placedAt && $shipStart->isSameDay($placedAt)) ? 'today' : ($shipStart ? $shipStart->format('M j') : null);
-                                                $shipEndLabel   = ($shipEnd && $placedAt && $shipEnd->isSameDay($placedAt)) ? 'today' : ($shipEnd ? $shipEnd->format('M j') : null);
+                                                $shipEnd = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
+                                                $dispatchBy = $shipEnd?->format('M j') ?? $shipStart?->format('M j');
                                             @endphp
-                                            @php $dispatchBy = $shipEndLabel ?? $shipStartLabel; @endphp
-                                            <div class="small text-muted mt-1">
-                                                @if($dispatchBy)
-                                                    Dispatch by {{ $dispatchBy }}
-                                                @else
-                                                    Dispatch soon
-                                                @endif
-                                            </div>
-                                        </td>
-                                            <td class="text-muted small">{{ optional($o->created_at)->format('d M Y') }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <div class="text-muted small">No recent orders.</div>
-                    @endif
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 h-100 mb-4">
-                <div class="card-header bg-white rounded-top-4 fw-semibold d-flex align-items-center gap-2">
-                    <i class="fas fa-star text-warning"></i> Recent Reviews
-                    <a href="{{ route('seller.reviews.index') }}" class="small ms-auto text-decoration-none">View all</a>
-                </div>
-                <div class="card-body">
-                    @if(isset($recentReviews) && $recentReviews->count())
-                        <ul class="list-group list-group-flush">
-                            @foreach($recentReviews as $r)
-                                <li class="list-group-item">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <div class="fw-semibold">{{ optional($r->orderItem?->product)->name ?? 'Product' }}</div>
-                                            <div class="small text-muted">Order #{{ $r->order_id }} 
-                                                • Rated: {{ $r->rating }} / 5
-                                            </div>
-                                            @if($r->comment)
-                                                <div class="small mt-1">{{ \Illuminate\Support\Str::limit($r->comment, 120) }}</div>
-                                            @endif
+                                            <tr>
+                                                <td class="px-3 py-2 text-slate-900">#{{ $o->id }}</td>
+                                                <td class="px-3 py-2 text-slate-700">{{ optional($o->customer)->name ?? '-' }}</td>
+                                                <td class="px-3 py-2 text-right font-semibold text-slate-900">{{ $currency }} {{ number_format((float)($o->total ?? $o->total_amount ?? 0), 2) }}</td>
+                                                <td class="px-3 py-2">
+                                                    <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusTone($o->status) }}">
+                                                        {{ ucfirst($o->status) }}
+                                                    </span>
+                                                    <p class="mt-1 text-[11px] text-slate-500">
+                                                        {{ $dispatchBy ? 'Dispatch by '.$dispatchBy : 'Dispatch soon' }}
+                                                    </p>
+                                                </td>
+                                                <td class="px-3 py-2 text-slate-500">{{ optional($o->created_at)->format('d M Y') }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="space-y-2 p-3 md:hidden">
+                                @foreach($orders as $o)
+                                    <div class="rounded-xl border border-slate-200 p-3">
+                                        <div class="flex items-center justify-between">
+                                            <p class="text-sm font-semibold text-slate-900">#{{ $o->id }}</p>
+                                            <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusTone($o->status) }}">
+                                                {{ ucfirst($o->status) }}
+                                            </span>
                                         </div>
-                                        <div class="ms-3">
-                                            <a href="{{ route('orders.chat.show', $r->order_id) }}" class="btn btn-sm btn-outline-primary">Respond</a>
-                                        </div>
+                                        <p class="mt-1 text-xs text-slate-500">{{ optional($o->customer)->name ?? '-' }}</p>
+                                        <p class="mt-1 text-sm font-bold text-slate-900">{{ $currency }} {{ number_format((float)($o->total ?? $o->total_amount ?? 0), 2) }}</p>
                                     </div>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @else
-                        <div class="text-muted small">No reviews yet.</div>
-                    @endif
-                </div>
-            </div>
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white rounded-top-4 fw-semibold">
-                    <i class="fas fa-bolt me-2 text-warning"></i>Quick Links
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a class="btn btn-outline-primary" href="{{ route('products.index') }}"><i class="fas fa-boxes-stacked me-2"></i> Manage Listings</a>
-                        <a class="btn btn-outline-primary" href="{{ route('seller.analytics.index') }}"><i class="fas fa-chart-line me-2"></i> View Analytics</a>
-                        <a class="btn btn-outline-primary" href="{{ route('seller.payouts.index') }}"><i class="fas fa-money-bill-transfer me-2"></i> Payouts</a>
-                        <a class="btn btn-outline-primary" href="{{ route('seller.messages.index') }}"><i class="fas fa-comments me-2"></i> Messages</a>
-                        <a class="btn btn-outline-primary" href="{{ route('seller.buyers.index') }}"><i class="fas fa-users me-2"></i> Buyers</a>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="px-4 py-6 text-sm text-slate-500">No recent orders.</p>
+                        @endif
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                            <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                                <h2 class="text-base font-bold text-slate-900">
+                                    <i class="fas fa-star mr-2 text-amber-500"></i>
+                                    Recent Reviews
+                                </h2>
+                                <a href="{{ route('seller.reviews.index') }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-600">View all</a>
+                            </div>
+                            @if(isset($recentReviews) && $recentReviews->count())
+                                <ul class="divide-y divide-slate-200">
+                                    @foreach($recentReviews as $r)
+                                        <li class="px-4 py-3">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <p class="text-sm font-semibold text-slate-900">{{ optional($r->orderItem?->product)->name ?? 'Product' }}</p>
+                                                    <p class="text-xs text-slate-500">Order #{{ $r->order_id }} | Rated {{ $r->rating }}/5</p>
+                                                    @if($r->comment)
+                                                        <p class="mt-1 text-xs text-slate-700">{{ \Illuminate\Support\Str::limit($r->comment, 120) }}</p>
+                                                    @endif
+                                                </div>
+                                                <a href="{{ route('orders.chat.show', $r->order_id) }}" class="inline-flex rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+                                                    Respond
+                                                </a>
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <p class="px-4 py-6 text-sm text-slate-500">No reviews yet.</p>
+                            @endif
+                        </div>
+
+                        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                            <div class="border-b border-slate-200 px-4 py-3">
+                                <h2 class="text-base font-bold text-slate-900">
+                                    <i class="fas fa-bolt mr-2 text-amber-500"></i>
+                                    Quick Links
+                                </h2>
+                            </div>
+                            <div class="grid gap-2 p-4 sm:grid-cols-2">
+                                <a class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="{{ route('products.index') }}"><i class="fas fa-boxes-stacked mr-1"></i>Manage Listings</a>
+                                <a class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="{{ route('seller.analytics.index') }}"><i class="fas fa-chart-line mr-1"></i>View Analytics</a>
+                                <a class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="{{ route('seller.payouts.index') }}"><i class="fas fa-money-bill-transfer mr-1"></i>Payouts</a>
+                                <a class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="{{ route('seller.messages.index') }}"><i class="fas fa-comments mr-1"></i>Messages</a>
+                                <a class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:col-span-2" href="{{ route('seller.buyers.index') }}"><i class="fas fa-users mr-1"></i>Buyers</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    {{-- Flash success --}}
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show rounded-3">
-            {{ session('success') }}
-            <button class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-
-</div>
-
+</section>
 @endsection

@@ -1,68 +1,100 @@
-@extends('layouts.frontapp')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Seller Billing')
 
 @section('main')
-  <section class="py-5">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-lg-9">
-          <h1 class="fw-bold mb-3">Billing &amp; Payments</h1>
-          <p class="text-muted mb-4">Quick access to your wallet, deposits, subscriptions, and payouts.</p>
+@php
+    $shop = auth()->user()->shop;
+    $brandColor = optional($shop)->primary_color;
+    if (!is_string($brandColor) || !preg_match('/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/', $brandColor)) {
+        $brandColor = '#0f766e';
+    }
 
-          <div class="row g-4">
-            <div class="col-12 col-md-6">
-              <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                  <h5 class="card-title">Wallet</h5>
-                  <p class="mb-2">Current balance: <strong>${{ number_format(wallet(), 2) }}</strong></p>
-                  <div class="d-flex gap-2">
-                    <a href="{{ route('wallet.index') }}" class="btn btn-outline-primary">View Wallet</a>
-                    @if(\Illuminate\Support\Facades\Route::has('wallet.deposit.form'))
-                      <a href="{{ route('wallet.deposit.form') }}" class="btn btn-success">Deposit Funds</a>
-                    @endif
-                  </div>
-                </div>
-              </div>
-            </div>
+    $currency = get_currency();
+    $walletBalance = wallet();
 
-            <div class="col-12 col-md-6">
-              <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                  <h5 class="card-title">Subscription</h5>
-                  <p class="mb-2">Manage your seller plan and renewals.</p>
-                  <a href="{{ route('seller.subscription') }}" class="btn btn-outline-primary">Manage Subscription</a>
-                </div>
-              </div>
-            </div>
+    $cards = [
+        [
+            'title' => 'Wallet',
+            'text' => 'Current balance: '.$currency.' '.number_format((float) $walletBalance, 2),
+            'icon' => 'fas fa-wallet',
+            'actions' => [
+                ['label' => 'View Wallet', 'href' => route('wallet.index'), 'tone' => 'border'],
+                \Illuminate\Support\Facades\Route::has('wallet.deposit.form')
+                    ? ['label' => 'Deposit Funds', 'href' => route('wallet.deposit.form'), 'tone' => 'solid']
+                    : null,
+            ],
+        ],
+        [
+            'title' => 'Subscription',
+            'text' => 'Manage your seller plan and renewals.',
+            'icon' => 'fas fa-file-invoice-dollar',
+            'actions' => [
+                ['label' => 'Manage Subscription', 'href' => route('seller.subscription'), 'tone' => 'border'],
+            ],
+        ],
+        [
+            'title' => 'Payouts',
+            'text' => 'Request payouts and track status.',
+            'icon' => 'fas fa-money-bill-transfer',
+            'actions' => [
+                ['label' => 'Payout Requests', 'href' => route('seller.payouts.index'), 'tone' => 'border'],
+            ],
+        ],
+        [
+            'title' => 'Order Payments',
+            'text' => 'Review payments received for orders.',
+            'icon' => 'fas fa-receipt',
+            'actions' => [
+                [
+                    'label' => 'View Payments',
+                    'href' => \Illuminate\Support\Facades\Route::has('seller.orders.payments')
+                        ? route('seller.orders.payments')
+                        : url('/seller/order/payments'),
+                    'tone' => 'border',
+                ],
+            ],
+        ],
+    ];
+@endphp
 
-            <div class="col-12 col-md-6">
-              <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                  <h5 class="card-title">Payouts</h5>
-                  <p class="mb-2">Request payouts and track status.</p>
-                  <a href="{{ route('seller.payouts.index') }}" class="btn btn-outline-primary">Payout Requests</a>
-                </div>
-              </div>
-            </div>
+<section class="bg-slate-50 py-8 md:py-10">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+            @include('seller.partials.sidebar')
 
-            <div class="col-12 col-md-6">
-              <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                  <h5 class="card-title">Order Payments</h5>
-                  <p class="mb-2">Review payments received for orders.</p>
-                  @if(\Illuminate\Support\Facades\Route::has('seller.orders.payments'))
-                    <a href="{{ route('seller.orders.payments') }}" class="btn btn-outline-primary">View Payments</a>
-                  @else
-                    <a href="{{ url('/seller/order/payments') }}" class="btn btn-outline-primary">View Payments</a>
-                  @endif
+            <div class="space-y-6">
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                    <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Billing & Payments</h1>
+                    <p class="mt-1 text-sm text-slate-500">Quick access to wallet, deposits, subscriptions, and payouts.</p>
                 </div>
-              </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    @foreach($cards as $card)
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <div class="flex items-start gap-3">
+                                <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-white" style="background-color: {{ $brandColor }}">
+                                    <i class="{{ $card['icon'] }}"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <h2 class="text-base font-bold text-slate-900">{{ $card['title'] }}</h2>
+                                    <p class="mt-1 text-sm text-slate-600">{{ $card['text'] }}</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                @foreach(array_filter($card['actions']) as $action)
+                                    <a href="{{ $action['href'] }}"
+                                       class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold {{ $action['tone'] === 'solid' ? 'text-white' : 'border border-slate-300 text-slate-700 hover:bg-slate-100' }}"
+                                       @if($action['tone'] === 'solid') style="background-color: {{ $brandColor }}" @endif>
+                                        {{ $action['label'] }}
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
-  </section>
+</section>
 @endsection
-
