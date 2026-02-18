@@ -1,4 +1,4 @@
-﻿{{-- resources/views/products/pay_fee.blade.php --}}
+{{-- resources/views/products/pay_fee.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 @section('title', 'Process Payment')
 
@@ -109,7 +109,7 @@
                       <span class="text-emerald-600">0.00 {{ $currency }}</span>
                     </template>
                     <template x-if="!noPaymentDue">
-                      <span :class="canPayFromWallet ? 'text-success' : 'text-danger'">
+                      <span :class="canPayFromWallet ? 'text-emerald-600' : 'text-rose-600'">
                         <span x-text="fmt(currentFee)"></span> {{ $currency }}
                       </span>
                     </template>
@@ -126,10 +126,10 @@
 
             {{-- ACTIONS --}}
             <div class="mt-4">
-              {{-- SERVER-SAFE VISIBILITY: also add d-none when initial wallet is <=0 or insufficient --}}
+              {{-- SERVER-SAFE VISIBILITY: also add hidden when initial wallet is <=0 or insufficient --}}
               <form
                 id="wallet-pay-form"
-                class="d-grid gap-2 {{ $showWalletFormInitial ? '' : 'd-none' }}"
+                class="grid gap-2 {{ $showWalletFormInitial ? '' : 'hidden' }}"
                 x-show="canPayFromWallet"
                 method="POST"
                 action="{{ route('listing.wallet.pay', $order->id) }}"
@@ -248,9 +248,9 @@ function checkoutPlans(cfg) {
       const form = document.getElementById('wallet-pay-form');
       if (form) {
         if (this.canPayFromWallet) {
-          form.classList.remove('d-none');
+          form.classList.remove('hidden');
         } else {
-          form.classList.add('d-none');
+          form.classList.add('hidden');
         }
       }
     },

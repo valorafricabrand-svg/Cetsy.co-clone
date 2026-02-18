@@ -93,9 +93,7 @@
         
         {{-- Loading indicator --}}
         <div id="loading-indicator" class="text-center py-3" style="display: none;">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
+          <div class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" role="status" aria-label="Loading"></div>
           <p class="mt-2 text-slate-500">Loading products...</p>
         </div>
 
@@ -193,13 +191,13 @@
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.product-card.border-primary {
+.product-card.is-selected {
   border-width: 2px !important;
 }
 
 .product-checkbox:checked + label .product-card {
-  border-color: var(--bs-primary) !important;
-  background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+  border-color: #10b981 !important;
+  background-color: #ecfdf5 !important;
 }
 
 #product-list {
@@ -216,7 +214,7 @@
 
 #selected-count {
   font-weight: 600;
-  color: var(--bs-primary);
+  color: #059669;
 }
 </style>
 @endpush
@@ -303,15 +301,15 @@ document.addEventListener('DOMContentLoaded', function() {
       const card = checkbox.closest('.product-card');
       checkbox.addEventListener('change', function() {
         if (this.checked) {
-          card.classList.add('border-primary', 'bg-light');
+          card.classList.add('is-selected');
         } else {
-          card.classList.remove('border-primary', 'bg-light');
+          card.classList.remove('is-selected');
         }
       });
       
       // Initialize visual state for pre-selected products
       if (checkbox.checked) {
-        card.classList.add('border-primary', 'bg-light');
+        card.classList.add('is-selected');
       }
     });
   }
@@ -330,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
     visibleCheckboxes.forEach(checkbox => {
       checkbox.checked = true;
       const card = checkbox.closest('.product-card');
-      card.classList.add('border-primary', 'bg-light');
+      card.classList.add('is-selected');
     });
     updateSelectedCount();
   }
@@ -340,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxes.forEach(checkbox => {
       checkbox.checked = false;
       const card = checkbox.closest('.product-card');
-      card.classList.remove('border-primary', 'bg-light');
+      card.classList.remove('is-selected');
     });
     updateSelectedCount();
   }

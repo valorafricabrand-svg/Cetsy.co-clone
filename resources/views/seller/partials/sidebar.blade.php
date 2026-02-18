@@ -149,7 +149,7 @@
                         <a href="{{ route($item['route']) }}"
                            class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ $isActive ? 'text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' }}"
                            @if($isActive) style="background-color: {{ $brandColor }}" @endif>
-                            <i class="{{ $item['icon'] }} w-4 text-center {{ $isActive ? 'text-white' : 'text-slate-500' }}"></i>
+                            <i class="{{ $item['icon'] }} w-4 text-center $isActive ? 'text-white' : 'text-slate-500'"></i>
                             <span class="flex-1 truncate">{{ $item['label'] }}</span>
                             @if($badge > 0)
                                 <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
@@ -244,7 +244,7 @@
                                 <a href="{{ route($item['route']) }}"
                                    class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ $isActive ? 'text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' }}"
                                    @if($isActive) style="background-color: {{ $brandColor }}" @endif>
-                                    <i class="{{ $item['icon'] }} w-4 text-center {{ $isActive ? 'text-white' : 'text-slate-500' }}"></i>
+                                    <i class="{{ $item['icon'] }} w-4 text-center $isActive ? 'text-white' : 'text-slate-500'"></i>
                                     <span class="flex-1 truncate">{{ $item['label'] }}</span>
                                     @if($badge > 0)
                                         <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">

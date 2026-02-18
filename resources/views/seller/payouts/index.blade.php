@@ -25,7 +25,7 @@
       @if(!empty($otpPending))
         <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 flex items-center justify-between">
           <div>
-            <i class="bi bi-shield-lock mr-2"></i>
+            <i class="fa-solid fa-shield mr-2"></i>
             You have a payout request (ID #{{ $otpPending->id }}) awaiting verification.
           </div>
           <div class="flex items-center gap-2">
@@ -80,7 +80,7 @@
 
       <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
           <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-slate-200 text-sm table-striped table-hover mb-0 align-middle">
+              <table class="min-w-full divide-y divide-slate-200 text-sm mb-0 align-middle">
                   <thead class="bg-slate-50 text-slate-600">
                       <tr>
                           <th>#</th>
@@ -112,7 +112,7 @@
                                 <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-{{ $cls }}">{{ $label }}</span>
                               </td>
                               <td>{{ $req->created_at->format('d M Y') }}</td>
-                              <td class="text-nowrap">
+                              <td class="whitespace-nowrap">
                                 @if($req->status === 'otp_pending')
                                   <a href="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.verify') ? route('seller.payouts.otp.verify', $req) : url('/seller/payouts/'.$req->id.'/verify')) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">Verify</a>
                                   <form action="{{ route('seller.payouts.otp.cancel', $req) }}" method="POST" class="inline" onsubmit="return confirm('Cancel this payout request?');">
@@ -151,6 +151,7 @@
  
 
  
+
 
 
 

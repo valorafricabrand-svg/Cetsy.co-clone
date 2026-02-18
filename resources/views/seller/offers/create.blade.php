@@ -7,7 +7,7 @@
       @include('seller.partials.sidebar')
       <div class="space-y-6">
 <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 py-4">
-    <h1 class="h4 mb-4">Create Offer</h1>
+    <h1 class="text-xl font-semibold mb-4">Create Offer</h1>
     <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">This is the create offer page. Add your form here.</div>
 </div>
       </div>

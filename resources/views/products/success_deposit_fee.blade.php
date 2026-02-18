@@ -1,4 +1,4 @@
-﻿{{-- resources/views/products/success_deposit_fee.blade.php --}}
+{{-- resources/views/products/success_deposit_fee.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 @section('title','Payment Successful')
 

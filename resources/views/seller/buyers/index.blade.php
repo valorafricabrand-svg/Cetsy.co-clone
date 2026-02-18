@@ -11,7 +11,7 @@
 <div class="content">
     {{-- Return to Admin Button (when impersonating) --}}
     @if(session('impersonating'))
-        <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 alert-dismissible fade show mb-4" role="alert">
+        <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 mb-4" role="alert">
             <div class="flex items-center justify-between">
                 <div>
                     <i class="fas fa-user-secret mr-2"></i>
@@ -28,7 +28,7 @@
         <div class="col-span-12">
             {{-- Page Header --}}
             <div class="flex items-center justify-between mb-4">
-                <h2 class="h5 font-semibold mb-0">My Buyers</h2>
+                <h2 class="text-lg font-semibold mb-0">My Buyers</h2>
                 <div class="flex items-center">
                     <span class="text-slate-500 mr-3">
                         <i class="fas fa-users mr-2 text-sky-600" style="color: #027333;"></i>
@@ -91,11 +91,11 @@
             {{-- Buyers Table --}}
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
                 <div class="border-b border-slate-200 px-4 py-3 bg-white border-0">
-                    <h3 class="h6 font-semibold mb-0">Buyer List</h3>
+                    <h3 class="text-base font-semibold mb-0">Buyer List</h3>
                 </div>
                 <div class="p-4 p-0">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 text-sm table-hover align-middle mb-0">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm align-middle mb-0">
                             <thead class="bg-slate-50 text-slate-600">
                                 <tr>
                                     <th scope="col" class="pl-4">Buyer</th>

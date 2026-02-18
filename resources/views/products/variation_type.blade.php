@@ -1,7 +1,7 @@
-﻿{{-- resources/views/products/variations.blade.php --}}
+{{-- resources/views/products/variations.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
-@section('title', 'Manage Variations â€” ' . ($type->name ?? 'Variation Type'))
+@section('title', 'Manage Variations — ' . ($type->name ?? 'Variation Type'))
 
 @push('styles')
 <style>
@@ -49,15 +49,15 @@
 
     {{-- Alerts --}}
     @if (session('status'))
-      <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 alert-dismissible" role="alert">
+      <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800" role="alert">
         {{ session('status') }}
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="alert" aria-label="Close"></button>
       </div>
     @endif
     @if (session('success'))
-      <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 alert-dismissible" role="alert">
+      <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800" role="alert">
         {{ session('success') }}
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="alert" aria-label="Close"></button>
       </div>
     @endif
     @if ($errors->any())
@@ -76,7 +76,7 @@
       <div class="lg:col-span-5">
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm card-rounded shadow-sm">
           <div class="p-4 sm:p-5">
-            <h5 class="text-lg font-semibold text-slate-900 mb-3">Options <small class="text-slate-500">for â€œ{{ $type->name }}â€</small></h5>
+            <h5 class="text-lg font-semibold text-slate-900 mb-3">Options <small class="text-slate-500">for “{{ $type->name }}”</small></h5>
 
             <div class="divide-y divide-slate-200 rounded-xl border border-slate-200 mb-3">
               @forelse($type->options as $opt)
@@ -138,9 +138,9 @@
 
               {{-- Required: pick one option from the current type --}}
               <div class="mb-3">
-                <label class="mb-1 block text-sm font-medium text-slate-700">Option for â€œ{{ $type->name }}â€ <span class="text-rose-600">*</span></label>
+                <label class="mb-1 block text-sm font-medium text-slate-700">Option for “{{ $type->name }}” <span class="text-rose-600">*</span></label>
                 <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" name="base_value" required>
-                  <option value="" disabled selected>â€” Select {{ $type->name }} â€”</option>
+                  <option value="" disabled selected>— Select {{ $type->name }} —</option>
                   @foreach($type->options as $opt)
                     <option value="{{ $opt->id }}">{{ $opt->value }}</option>
                   @endforeach
@@ -150,9 +150,9 @@
               {{-- Optional: pick options from other types to form a combo --}}
               @foreach($otherTypes as $ot)
                 <div class="mb-3">
-                  <label class="mb-1 block text-sm font-medium text-slate-700">Option for â€œ{{ $ot->name }}â€ <span class="text-slate-500">(optional)</span></label>
+                  <label class="mb-1 block text-sm font-medium text-slate-700">Option for “{{ $ot->name }}” <span class="text-slate-500">(optional)</span></label>
                   <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" name="extra_values[]">
-                    <option value="">â€” None â€”</option>
+                    <option value="">— None —</option>
                     @foreach($ot->options as $opt)
                       <option value="{{ $opt->id }}">{{ $opt->value }}</option>
                     @endforeach
@@ -190,7 +190,7 @@
 
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm card-rounded shadow-sm">
           <div class="p-4 sm:p-5">
-            <h5 class="text-lg font-semibold text-slate-900 mb-3">Variants with â€œ{{ $type->name }}â€</h5>
+            <h5 class="text-lg font-semibold text-slate-900 mb-3">Variants with “{{ $type->name }}”</h5>
 
             @if($variantsForType->count())
               <div class="overflow-x-auto">
@@ -217,7 +217,7 @@
                       <tr>
                         <td>
                           <small class="text-slate-500">
-                            {{ $v->options->map(fn($o) => $o->variationType->name . ': ' . $o->value)->join(' â€¢ ') }}
+                            {{ $v->options->map(fn($o) => $o->variationType->name . ': ' . $o->value)->join(' • ') }}
                           </small>
                         </td>
                         <td>

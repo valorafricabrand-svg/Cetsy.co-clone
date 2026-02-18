@@ -1,4 +1,4 @@
-ï»¿{{-- resources/views/products/shipping.blade.php --}}
+{{-- resources/views/products/shipping.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 @section('title', ($product->name ?? 'Product') . ' | Edit Shipping')
 
@@ -210,7 +210,7 @@
       @csrf
       <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900">Add shipping row</h5>
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="addRowOpen = false" aria-label="Close">Ã—</button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="addRowOpen = false" aria-label="Close">×</button>
       </div>
 
       <div class="px-4 py-4">
@@ -337,7 +337,7 @@
 
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900">Edit shipping row</h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="editRowOpen = null" aria-label="Close">Ã—</button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="editRowOpen = null" aria-label="Close">×</button>
         </div>
 
         <div class="px-4 py-4">

@@ -1,4 +1,4 @@
-﻿@php
+@php
   $current = $current ?? \Illuminate\Support\Facades\Route::currentRouteName();
 @endphp
 

@@ -1,4 +1,4 @@
-﻿{{-- resources/views/products/edit.blade.php --}}
+{{-- resources/views/products/edit.blade.php --}}
 
 
 
@@ -87,7 +87,7 @@
                     $mediaUrl = asset('storage/'.$media->url);
                     $isFeatured = $product->featured_image === $mediaUrl;
                   @endphp
-                  <form action="{{ route('products.setFeaturedImage', $product) }}" method="POST" class="d-inline">
+                  <form action="{{ route('products.setFeaturedImage', $product) }}" method="POST" class="inline">
                     @csrf @method('PATCH')
                     <input type="hidden" name="featured_image" value="{{ $media->url }}">
                     <button type="submit"
@@ -127,7 +127,7 @@
   {{-- ------------------ Upload New Media ------------------ --}}
   <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm mb-5">
     <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 flex justify-between items-center">
-      <h5 class="mb-0"><i class="bi bi-images mr-2"></i>Upload Media</h5>
+      <h5 class="mb-0"><i class="fa-regular fa-images mr-2"></i>Upload Media</h5>
       <small class="text-slate-500" x-text="items.length ? `${items.length} selected` : ''"></small>
     </div>
     <form x-ref="form"
@@ -147,7 +147,7 @@
            @drop.prevent="handleDrop($event)"
            style="cursor:pointer;">
         <p class="mb-1">
-          <i class="bi bi-cloud-arrow-up fs-2 block mb-2"></i>
+          <i class="fa-solid fa-cloud-arrow-up text-2xl block mb-2"></i>
           Drag & drop images or videos here or click to browse
         </p>
         <small class="text-slate-500">Images up to 5MB ------ Videos up to 50MB</small>
@@ -202,7 +202,7 @@
 
       {{-- Submit --}}
       <template x-if="items.length">
-        <div class="d-grid">
+        <div class="grid">
           <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 rounded-full" @click.prevent="submit">
             <span x-show="!loading"><i class="fas fa-upload mr-1"></i> Upload Media</span>
             <span x-show="loading" class="spinner-border spinner-border-sm"></span>
@@ -213,14 +213,14 @@
   </div>
 
   {{-- ------------------ Crop Modal (shared) ------------------ --}}
-  <div class="modal" id="cropModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
+  <div class="tw-modal" id="cropModal" tabindex="-1" aria-hidden="true">
+    <div class="tw-modal-dialog tw-modal-dialog-centered tw-modal-lg">
       <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900 flex items-center">
             <i class="fas fa-crop mr-2"></i> Crop Image
           </h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="modal"></button>
         </div>
         <div class="px-4 py-4">
           {{-- Aspect chips --}}
@@ -252,7 +252,7 @@
             <label class="text-xs mr-2">Quality</label>
             <input type="range" min="60" max="100" step="2" x-model="quality" style="width:120px">
           </div>
-          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-dismiss="modal">Cancel</button>
           <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" id="cropApplyBtn">
             <span x-show="!cropSaving">Apply</span>
             <span x-show="cropSaving" class="spinner-border spinner-border-sm"></span>
@@ -303,8 +303,21 @@ function modernUploader(){
     _sortable:null,
 
     init(){
-      // initialize Bootstrap modal
-      this.cropModal = new bootstrap.Modal(document.getElementById('cropModal'));
+      const modalEl = document.getElementById('cropModal');
+      this.cropModal = {
+        show() {
+          modalEl.classList.add('is-open');
+          document.body.classList.add('overflow-hidden');
+          modalEl.dispatchEvent(new Event('shown.bs.modal'));
+        },
+        hide() {
+          modalEl.classList.remove('is-open');
+          if (!document.querySelector('.tw-modal.is-open, .modal.is-open')) {
+            document.body.classList.remove('overflow-hidden');
+          }
+          modalEl.dispatchEvent(new Event('hidden.bs.modal'));
+        }
+      };
       document.getElementById('cropApplyBtn').addEventListener('click', ()=> this.applyCrop());
     },
 

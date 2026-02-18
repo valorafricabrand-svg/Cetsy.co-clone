@@ -1,4 +1,4 @@
-﻿{{-- resources/views/products/_shipping_row_fields.blade.php --}}
+{{-- resources/views/products/_shipping_row_fields.blade.php --}}
 {{-- Shared shipping row fields for both Add & Edit modals --}}
 
 <div class="mb-3">
@@ -12,7 +12,7 @@
 <div class="mb-3" x-show="row.location_type==='country'">
   <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
   <select name="row[country_id]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" x-model.number="row.country_id">
-    <option value="">Selectâ€¦</option>
+    <option value="">Select…</option>
     @foreach($countries as $c)
       <option value="{{ $c->id }}">{{ $c->name }}</option>
     @endforeach

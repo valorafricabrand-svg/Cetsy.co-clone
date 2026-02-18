@@ -7,7 +7,7 @@
       @include('seller.partials.sidebar')
       <div class="space-y-6">
 <div class="content">
-    <h2 class="h3 mb-4">Edit Service</h2>
+    <h2 class="text-2xl font-semibold mb-4">Edit Service</h2>
     @if(session('success'))
         <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">
             {{ session('success') }}

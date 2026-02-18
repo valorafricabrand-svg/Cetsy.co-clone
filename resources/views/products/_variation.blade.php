@@ -1,4 +1,4 @@
-﻿@props(['product'])
+@props(['product'])
 
 @php
     // Eager-load everything needed for types, options and variants
@@ -8,27 +8,27 @@
 
 {{-- FLASH + VALIDATION --}}
 @if(session('success'))
-  <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 alert-dismissible" role="alert">
+  <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800" role="alert">
     {{ session('success') }}
-    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
+    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="alert" aria-label="Close"></button>
   </div>
 @endif
 @if ($errors->any())
-  <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800 alert-dismissible" role="alert">
+  <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800" role="alert">
     <strong>There were some problems with your input.</strong>
     <ul class="mb-0">
       @foreach ($errors->all() as $error)
         <li>{{ $error }}</li>
       @endforeach
     </ul>
-    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
+    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="alert" aria-label="Close"></button>
   </div>
 @endif
 
 {{-- HEADER --}}
 <div class="mb-4 flex justify-between items-center">
   <h3 class="mb-0">Variations</h3>
-  <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-toggle="modal" data-bs-target="#manageVariationsModal">
+  <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-toggle="modal" data-target="#manageVariationsModal">
     Manage variation types
   </button>
 </div>
@@ -57,16 +57,16 @@
           {{-- Open the per-type modal for this type --}}
           <button
             class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
-            data-bs-toggle="modal"
-            data-bs-target="#typeOptionsModal{{ $type->id }}">
+            data-toggle="modal"
+            data-target="#typeOptionsModal{{ $type->id }}">
             Manage
           </button>
 
           <form
             action="{{ route('variationTypes.destroy', $type) }}"
             method="POST"
-            class="d-inline ml-2"
-            onsubmit="return confirm('Delete variation type â€œ{{ $type->name }}â€? This will also remove its options.')">
+            class="inline ml-2"
+            onsubmit="return confirm('Delete variation type “{{ $type->name }}”? This will also remove its options.')">
             @csrf
             @method('DELETE')
             <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50">Delete</button>
@@ -82,12 +82,12 @@
 </div>
 
 {{-- MANAGE VARIATION TYPES MODAL (list + add) --}}
-<div class="modal" id="manageVariationsModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl">
+<div class="tw-modal" id="manageVariationsModal" tabindex="-1" aria-hidden="true">
+  <div class="tw-modal-dialog tw-modal-lg">
     <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
       <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900">Manage Variation Types</h5>
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="modal"></button>
       </div>
 
       <div class="px-4 py-4">
@@ -161,7 +161,7 @@
       </div>
 
       <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -177,12 +177,12 @@
       $otherTypes = $variationTypes->where('id', '!=', $type->id);
   @endphp
 
-  <div class="modal" id="typeOptionsModal{{ $type->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+  <div class="tw-modal" id="typeOptionsModal{{ $type->id }}" tabindex="-1" aria-hidden="true">
+    <div class="tw-modal-dialog tw-modal-lg">
       <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900">Manage: {{ $type->name }}</h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="modal"></button>
         </div>
 
         <div class="px-4 py-4">
@@ -236,9 +236,9 @@
 
                   {{-- Required: pick one option from the current type --}}
                   <div class="mb-3">
-                    <label class="mb-1 block text-sm font-medium text-slate-700">Option for â€œ{{ $type->name }}â€ <span class="text-rose-600">*</span></label>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Option for “{{ $type->name }}” <span class="text-rose-600">*</span></label>
                     <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" name="base_value" required>
-                      <option value="" disabled selected>â€” Select {{ $type->name }} â€”</option>
+                      <option value="" disabled selected>— Select {{ $type->name }} —</option>
                       @foreach($type->options as $opt)
                         <option value="{{ $opt->id }}">{{ $opt->value }}</option>
                       @endforeach
@@ -248,9 +248,9 @@
                   {{-- Optional: pick options from other types to form a combo --}}
                   @foreach($otherTypes as $ot)
                     <div class="mb-3">
-                      <label class="mb-1 block text-sm font-medium text-slate-700">Option for â€œ{{ $ot->name }}â€ <span class="text-slate-500">(optional)</span></label>
+                      <label class="mb-1 block text-sm font-medium text-slate-700">Option for “{{ $ot->name }}” <span class="text-slate-500">(optional)</span></label>
                       <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" name="extra_values[]">
-                        <option value="">â€” None â€”</option>
+                        <option value="">— None —</option>
                         @foreach($ot->options as $opt)
                           <option value="{{ $opt->id }}">{{ $opt->value }}</option>
                         @endforeach
@@ -285,7 +285,7 @@
                 </form>
               </div>
 
-              <h6 class="mb-3">Variants with â€œ{{ $type->name }}â€</h6>
+              <h6 class="mb-3">Variants with “{{ $type->name }}”</h6>
               @php
                   $variantsForType = $product->variations->filter(
                       fn($v) => $v->options->pluck('variation_type_id')->contains($type->id)
@@ -317,7 +317,7 @@
                         <tr>
                           <td>
                             <small class="text-slate-500">
-                              {{ $v->options->map(fn($o)=>$o->variationType->name.': '.$o->value)->join(' â€¢ ') }}
+                              {{ $v->options->map(fn($o)=>$o->variationType->name.': '.$o->value)->join(' • ') }}
                             </small>
                           </td>
                           <td>
@@ -356,7 +356,7 @@
         </div>
 
         <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>

@@ -11,7 +11,8 @@
         $metaImage = trim($__env->yieldContent('meta_image', asset('assets/images/cetsylogmain.png')));
         $metaRobots = trim($__env->yieldContent('meta_robots', 'index, follow'));
         $favicon = favicon_url();
-        $legacyBootstrapCompat = (bool) config('theme.legacy_bootstrap_compat', true);
+        $isSellerArea = request()->is('seller*') || request()->routeIs('products.*');
+        $legacyBootstrapCompat = (bool) config('theme.legacy_bootstrap_compat', true) && !$isSellerArea;
 
         $topNavCategories = collect();
         try {
@@ -34,7 +35,7 @@
         }
 
         $settings = \App\Models\Setting::first();
-        $hideMarketplaceCategories = auth()->check() && (request()->is('seller*') || request()->routeIs('products.*'));
+        $hideMarketplaceCategories = auth()->check() && $isSellerArea;
     @endphp
 
     <meta charset="utf-8">
@@ -88,6 +89,88 @@
         <script src="{{ asset('vendors/fontawesome/all.min.js') }}" defer></script>
     @endif
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        .tw-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 80;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.55);
+            padding: 1rem;
+        }
+        .tw-modal.is-open { display: flex; }
+        .tw-modal-dialog { width: 100%; max-width: 32rem; }
+        .tw-modal-dialog.tw-modal-lg { max-width: 56rem; }
+        .tw-modal-content {
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            box-shadow: 0 20px 48px rgba(15, 23, 42, 0.25);
+        }
+        .tw-modal-header, .tw-modal-footer {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.9rem 1rem;
+        }
+        .tw-modal-header { justify-content: space-between; border-bottom: 1px solid #e2e8f0; }
+        .tw-modal-footer { justify-content: flex-end; border-top: 1px solid #e2e8f0; }
+        .tw-modal-body { padding: 1rem; }
+        .tw-modal-title { margin: 0; font-size: 1rem; font-weight: 600; color: #0f172a; }
+
+        .tw-dropdown-menu {
+            position: absolute;
+            z-index: 50;
+            margin-top: 0.5rem;
+            display: none;
+            min-width: 15rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            padding: 0.35rem;
+            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.15);
+        }
+        .tw-dropdown-menu.show { display: block; }
+        .tw-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            border-radius: 0.5rem;
+            padding: 0.45rem 0.55rem;
+            font-size: 0.85rem;
+            color: #1e293b;
+            text-align: left;
+            text-decoration: none;
+        }
+        .tw-dropdown-item:hover { background: #f1f5f9; }
+        .tw-dropdown-divider { margin: 0.35rem 0; border-color: #e2e8f0; }
+
+        .form-label { display: block; margin-bottom: 0.35rem; font-size: 0.875rem; font-weight: 600; color: #334155; }
+        .form-text { display: block; margin-top: 0.35rem; font-size: 0.75rem; color: #64748b; }
+        .invalid-feedback { display: block; margin-top: 0.35rem; font-size: 0.75rem; color: #b91c1c; }
+        .form-check { display: flex; align-items: center; gap: 0.5rem; }
+        .form-check-input { width: 1rem; height: 1rem; border: 1px solid #94a3b8; border-radius: 0.25rem; }
+        .form-check-label { font-size: 0.875rem; color: #334155; }
+        .text-uppercase { text-transform: uppercase; }
+        .text-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .fw-medium { font-weight: 500; }
+        .position-relative { position: relative; }
+        .position-absolute { position: absolute; }
+        .top-0 { top: 0; }
+        .bottom-0 { bottom: 0; }
+        .start-0 { left: 0; }
+        .end-0 { right: 0; }
+        .rounded-3 { border-radius: 0.75rem; }
+        .bg-dark { background: #0f172a; }
+        .border-0 { border-width: 0 !important; }
+        .table-hover tbody tr:hover { background: #f8fafc; }
+        .table-striped tbody tr:nth-child(odd) { background: #f8fafc; }
+        .table-sm > :not(caption) > * > * { padding-top: 0.4rem; padding-bottom: 0.4rem; }
+    </style>
 
     @yield('styles')
     @stack('styles')
@@ -360,6 +443,111 @@
     @endif
 
     <script src="{{ asset('assets/js/pwa-install.js') }}" defer></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const body = document.body;
+
+        function resolveTarget(trigger) {
+            const selector = trigger.getAttribute('data-ui-target') || trigger.getAttribute('data-target');
+            if (!selector) return null;
+            try { return document.querySelector(selector); } catch (_) { return null; }
+        }
+
+        function openModal(modal) {
+            if (!modal) return;
+            if (modal.classList.contains('tw-modal') || modal.classList.contains('modal')) {
+                modal.classList.add('is-open');
+            } else {
+                modal.classList.remove('hidden');
+            }
+            body.classList.add('overflow-hidden');
+            modal.dispatchEvent(new Event('shown.bs.modal'));
+            modal.dispatchEvent(new CustomEvent('modal:open', { bubbles: true }));
+        }
+
+        function closeModal(modal) {
+            if (!modal) return;
+            if (modal.classList.contains('tw-modal') || modal.classList.contains('modal')) {
+                modal.classList.remove('is-open');
+            } else {
+                modal.classList.add('hidden');
+            }
+            if (!document.querySelector('.tw-modal.is-open, .modal.is-open')) {
+                body.classList.remove('overflow-hidden');
+            }
+            modal.dispatchEvent(new Event('hidden.bs.modal'));
+            modal.dispatchEvent(new CustomEvent('modal:close', { bubbles: true }));
+        }
+
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('[data-ui-toggle], [data-toggle]');
+            if (trigger) {
+                const kind = trigger.getAttribute('data-ui-toggle') || trigger.getAttribute('data-toggle');
+                if (kind === 'modal') {
+                    event.preventDefault();
+                    openModal(resolveTarget(trigger));
+                    return;
+                }
+                if (kind === 'collapse') {
+                    event.preventDefault();
+                    const panel = resolveTarget(trigger);
+                    if (!panel) return;
+                    const willOpen = panel.classList.contains('hidden') || panel.classList.contains('collapse');
+                    panel.classList.toggle('hidden');
+                    panel.classList.toggle('collapse');
+                    panel.classList.toggle('show');
+                    trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                    return;
+                }
+                if (kind === 'dropdown') {
+                    event.preventDefault();
+                    const menu = trigger.nextElementSibling;
+                    if (!menu) return;
+                    const isOpen = menu.classList.toggle('show');
+                    trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                    return;
+                }
+            }
+
+            const dismiss = event.target.closest('[data-ui-dismiss], [data-dismiss]');
+            if (dismiss) {
+                const kind = dismiss.getAttribute('data-ui-dismiss') || dismiss.getAttribute('data-dismiss');
+                if (kind === 'alert') {
+                    event.preventDefault();
+                    const alertNode = dismiss.closest('[role="alert"], .alert, .rounded-xl');
+                    if (alertNode) alertNode.remove();
+                    return;
+                }
+                if (kind === 'modal') {
+                    event.preventDefault();
+                    closeModal(dismiss.closest('.tw-modal, .modal'));
+                    return;
+                }
+            }
+
+            // Click-outside for dropdown menus and modal backdrops.
+            document.querySelectorAll('.tw-dropdown-menu.show, .dropdown-menu.show').forEach(function (menu) {
+                const toggle = menu.previousElementSibling;
+                if (menu.contains(event.target) || (toggle && toggle.contains(event.target))) return;
+                menu.classList.remove('show');
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            });
+            const modalBackdrop = event.target.closest('.tw-modal, .modal');
+            if (modalBackdrop && event.target === modalBackdrop) {
+                closeModal(modalBackdrop);
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key !== 'Escape') return;
+            document.querySelectorAll('.tw-dropdown-menu.show, .dropdown-menu.show').forEach(function (menu) {
+                menu.classList.remove('show');
+            });
+            const modal = document.querySelector('.tw-modal.is-open, .modal.is-open');
+            if (modal) closeModal(modal);
+        });
+    });
+    </script>
 
     @yield('scripts')
     @stack('scripts')

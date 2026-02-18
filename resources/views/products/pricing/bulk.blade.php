@@ -1,4 +1,4 @@
-﻿{{-- resources/views/products/pricing/bulk.blade.php --}}
+{{-- resources/views/products/pricing/bulk.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Bulk Price Editor')
@@ -7,7 +7,7 @@
 <div class="content" x-data="bulkPricer({{ (int)($shopId ?? 0) }})">
 
     <h2 class="mb-4">
-        <i class="bi bi-cash-coin mr-1"></i> Bulk Price Editor
+        <i class="fa-solid fa-coins mr-1"></i> Bulk Price Editor
     </h2>
 
     {{-- Flash --}}
@@ -42,7 +42,7 @@
         </div> --}}
         <div class="col-auto">
             <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">
-                <i class="bi bi-funnel"></i> Filter
+                <i class="fa-solid fa-filter"></i> Filter
             </button>
         </div>
     </form>
@@ -106,7 +106,7 @@
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 font-semibold flex justify-between">
                 <span>Active Products ({{ $products->count() }})</span>
-                <span class="text-xs text-slate-500">Showing 1â€“{{ $products->count() }} (only active listings are included)</span>
+                <span class="text-xs text-slate-500">Showing 1–{{ $products->count() }} (only active listings are included)</span>
             </div>
             <div class="overflow-x-auto" style="max-height:60vh;overflow:auto;">
                 <table class="min-w-full divide-y divide-slate-200 text-sm align-middle mb-0">
@@ -221,7 +221,7 @@
 
             <div class="text-right">
                 <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
-                    <i class="bi bi-check2-circle mr-1"></i> Apply Update
+                    <i class="fa-solid fa-circle-check mr-1"></i> Apply Update
                 </button>
                 <div id="selected-hidden-container"></div>
             </div>

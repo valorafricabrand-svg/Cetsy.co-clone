@@ -1,4 +1,4 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', $product->name . ' | Variations')
 
@@ -100,7 +100,7 @@
     <div class="relative w-full max-w-5xl rounded-2xl border border-slate-200 bg-white shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900">Manage Variation Types</h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="manageVariationsModal = false">×</button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="manageVariationsModal = false">�</button>
         </div>
 
         <div class="px-4 py-4">

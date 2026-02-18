@@ -11,7 +11,7 @@
 <div class="content">
     {{-- Return to Admin Button (when impersonating) --}}
     @if(session('impersonating'))
-        <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 alert-dismissible fade show mb-4" role="alert">
+        <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 mb-4" role="alert">
             <div class="flex items-center justify-between">
                 <div>
                     <i class="fas fa-user-secret mr-2"></i>
@@ -33,7 +33,7 @@
                         <i class="fas fa-arrow-left mr-1"></i>
                         Back to Buyers
                     </a>
-                    <h2 class="h5 font-semibold mb-0">Buyer Details</h2>
+                    <h2 class="text-lg font-semibold mb-0">Buyer Details</h2>
                 </div>
             </div>
 
@@ -42,32 +42,32 @@
                 <div class="col-span-12 lg:col-span-8">
                     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
                         <div class="border-b border-slate-200 px-4 py-3 bg-white border-0">
-                            <h3 class="h6 font-semibold mb-0">Customer Information</h3>
+                            <h3 class="text-base font-semibold mb-0">Customer Information</h3>
                         </div>
                         <div class="p-4">
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                                <div class="-span-3 text-center mb-3">
+                                <div class="col-span-12 md:col-span-6 lg:col-span-3 text-center mb-3">
                                     <img src="{{ $buyer->get_gravatar(100) }}" 
                                          alt="{{ $buyer->name }}" 
                                          class="rounded-full mb-3" 
                                          width="100" 
                                          height="100">
                                 </div>
-                                <div class="-span-9">
+                                <div class="col-span-12 md:col-span-9">
                                     <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                                        <div class="-span-6 mb-3">
+                                        <div class="col-span-12 md:col-span-6 mb-3">
                                             <label class="form-label text-slate-500 text-xs">Name</label>
                                             <div class="font-semibold">{{ $buyer->name }}</div>
                                         </div>
-                                        <div class="-span-6 mb-3">
+                                        <div class="col-span-12 md:col-span-6 mb-3">
                                             <label class="form-label text-slate-500 text-xs">Email</label>
                                             <div class="font-semibold">{{ $buyer->email }}</div>
                                         </div>
-                                        <div class="-span-6 mb-3">
+                                        <div class="col-span-12 md:col-span-6 mb-3">
                                             <label class="form-label text-slate-500 text-xs">Phone</label>
                                             <div class="font-semibold">{{ $buyer->phone ?? 'Not provided' }}</div>
                                         </div>
-                                        <div class="-span-6 mb-3">
+                                        <div class="col-span-12 md:col-span-6 mb-3">
                                             <label class="form-label text-slate-500 text-xs">Member Since</label>
                                             <div class="font-semibold">{{ $buyer->created_at->format('M d, Y') }}</div>
                                         </div>
@@ -81,23 +81,23 @@
                 <div class="col-span-12 lg:col-span-4">
                     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
                         <div class="border-b border-slate-200 px-4 py-3 bg-white border-0">
-                            <h3 class="h6 font-semibold mb-0">Purchase Summary</h3>
+                            <h3 class="text-base font-semibold mb-0">Purchase Summary</h3>
                         </div>
                         <div class="p-4">
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-12 text-center">
-                                <div class="col-span-6 mb-3">
-                                    <div class="text-primary">{{ $orders->count() }}</div>
+                                <div class="col-span-12 md:col-span-6 mb-3">
+                                    <div class="text-emerald-600">{{ $orders->count() }}</div>
                                     <div class="text-slate-500 text-xs">Total Orders</div>
                                 </div>
-                                <div class="col-span-6 mb-3">
+                                <div class="col-span-12 md:col-span-6 mb-3">
                                     <div class="text-emerald-600">${{ number_format($totalSpent, 2) }}</div>
                                     <div class="text-slate-500 text-xs">Total Spent</div>
                                 </div>
-                                <div class="col-span-6 mb-3">
+                                <div class="col-span-12 md:col-span-6 mb-3">
                                     <div class="text-amber-600">${{ $orders->count() > 0 ? number_format($totalSpent / $orders->count(), 2) : '0.00' }}</div>
                                     <div class="text-slate-500 text-xs">Avg. Order Value</div>
                                 </div>
-                                <div class="col-span-6 mb-3">
+                                <div class="col-span-12 md:col-span-6 mb-3">
                                     <div class="text-sky-600">{{ $orders->where('created_at', '>=', now()->subDays(30))->count() }}</div>
                                     <div class="text-slate-500 text-xs">Orders (30 days)</div>
                                 </div>
@@ -110,11 +110,11 @@
             {{-- Orders Table --}}
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
                 <div class="border-b border-slate-200 px-4 py-3 bg-white border-0">
-                    <h3 class="h6 font-semibold mb-0">Order History</h3>
+                    <h3 class="text-base font-semibold mb-0">Order History</h3>
                 </div>
                 <div class="p-4 p-0">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 text-sm table-hover align-middle mb-0">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm align-middle mb-0">
                             <thead class="bg-slate-50 text-slate-600">
                                 <tr>
                                     <th scope="col" class="pl-4">Order ID</th>

@@ -27,7 +27,7 @@ in seller @foreach($products as $product)
         }
     }
   @endphp
-  <div class="-span-6 -span-4 product-item" data-product-name="{{ strtolower($product->name) }}">
+  <div class="col-span-12 md:col-span-6 lg:col-span-4 product-item" data-product-name="{{ strtolower($product->name) }}">
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-full product-card">
       <div class="p-4 p-3">
         <div class="form-check">
@@ -52,8 +52,8 @@ in seller @foreach($products as $product)
                   <i class="fas fa-image text-slate-500"></i>
                 </div>
               @endif
-              <div class="flex-grow-1">
-                <h6 class="mb-1 text-truncate" title="{{ $product->name }}">{{ $product->name }}</h6>
+              <div class="flex-1">
+                <h6 class="mb-1 truncate" title="{{ $product->name }}">{{ $product->name }}</h6>
                 <div class="text-slate-500 text-xs">
                   <div class="flex justify-between">
                     <span>Price: <strong>{{ get_currency() }} {{ number_format($product->price, 2) }}</strong></span>

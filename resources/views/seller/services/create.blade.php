@@ -7,7 +7,7 @@
       @include('seller.partials.sidebar')
       <div class="space-y-6">
 <div class="content">
-    <h2 class="h3 mb-4">Add Service</h2>
+    <h2 class="text-2xl font-semibold mb-4">Add Service</h2>
     @if(session('success'))
         <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">
             {{ session('success') }}
@@ -137,13 +137,13 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                    <div class="-span-6">
+                    <div class="col-span-6">
                         <div class="mb-3">
                             <label for="available_time_from" class="form-label">Available Hours - Start <span class="text-rose-600">Required</span></label>
                             <input type="time" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="available_time_from" name="available_time_from" required value="{{ old('available_time_from') }}">
                         </div>
                     </div>
-                    <div class="-span-6">
+                    <div class="col-span-6">
                         <div class="mb-3">
                             <label for="available_time_to" class="form-label">Available Hours - End <span class="text-rose-600">Required</span></label>
                             <input type="time" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="available_time_to" name="available_time_to" required value="{{ old('available_time_to') }}">
@@ -154,10 +154,10 @@
                 <div class="mb-3">
                     <label for="service_duration" class="form-label">Service Duration <span class="text-rose-600">Required</span></label>
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                        <div class="-span-6">
+                        <div class="col-span-6">
                             <input type="number" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="duration_value" name="duration_value" required placeholder="Duration" value="{{ old('duration_value') }}">
                         </div>
-                        <div class="-span-6">
+                        <div class="col-span-6">
                             <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="duration_unit" name="duration_unit" required>
                                 <option value="">Select Unit</option>
                                 <option value="minutes" {{ old('duration_unit') == 'minutes' ? 'selected' : '' }}>Minutes</option>

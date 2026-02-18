@@ -1,4 +1,4 @@
-﻿{{-- resources/views/products/media.blade.php --}}
+{{-- resources/views/products/media.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 @section('title', $product->name . ' | Media')
 
@@ -245,7 +245,7 @@
           <h5 class="text-base font-semibold text-slate-900 flex items-center">
             <i class="fas fa-crop mr-2"></i> Crop Image
           </h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="closeCropModal()">×</button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="closeCropModal()">�</button>
         </div>
         <div class="px-4 py-4">
           <div class="mb-3 flex flex-wrap gap-2">

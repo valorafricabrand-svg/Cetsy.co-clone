@@ -1,4 +1,4 @@
-﻿{{-- resources/views/products/create.blade.php --}}
+{{-- resources/views/products/create.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Create New Listing')

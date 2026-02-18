@@ -1,4 +1,4 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 @section('title', $product->name . ' | Edit Price & Inventory')
 
 @section('main')
