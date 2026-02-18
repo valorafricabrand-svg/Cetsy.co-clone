@@ -34,7 +34,7 @@
         }
 
         $settings = \App\Models\Setting::first();
-        $hideMarketplaceCategories = auth()->check() && request()->is('seller*');
+        $hideMarketplaceCategories = auth()->check() && (request()->is('seller*') || request()->routeIs('products.*'));
     @endphp
 
     <meta charset="utf-8">
