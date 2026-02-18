@@ -12,7 +12,7 @@
       <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">{{ session('error') }}</div>
     @endif
 
-    <h3 class="mb-4">Your Orders by Shop</h3>
+    <h3 class="mb-4 text-2xl font-semibold text-slate-900">Your Orders by Shop</h3>
     <p class="text-slate-500">We created separate orders for each shop in your cart. You can review and pay each order individually.</p>
 
     <div class="overflow-x-auto hidden md:block">
@@ -45,9 +45,9 @@
               <td class="text-right font-semibold">{{ get_currency() }} {{ number_format((float)$order->total_amount,2) }}</td>
               <td>
                 @if(method_exists($order,'isPaid') && $order->isPaid())
-                  <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" href="{{ route('buyer.orders.show', $order->id) }}">View</a>
+                  <a class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" href="{{ route('buyer.orders.show', $order->id) }}">View</a>
                 @else
-                  <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-3 py-1.5 text-xs" href="{{ route('pay_now', $order->id) }}">Pay Now</a>
+                  <a class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500" href="{{ route('pay_now', $order->id) }}">Pay Now</a>
                 @endif
               </td>
             </tr>
@@ -63,19 +63,19 @@
           @php
             $currency = get_currency();
           @endphp
-          <div class="px-4 py-3 p-3">
+          <div class="px-4 py-3">
             <div class="flex justify-between items-start mb-1">
               <div class="font-semibold">#{{ $order->id }}</div>
               <div class="text-xs">
-                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ method_exists($order,'getStatusBadgeClass') ? $order->getStatusBadgeClass() : 'bg-secondary' }} text-capitalize">
+                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ method_exists($order,'getStatusBadgeClass') ? $order->getStatusBadgeClass() : 'bg-slate-200 text-slate-700' }}">
                   {{ ucfirst($order->status) }}
                 </span>
               </div>
             </div>
-            <div class="mb-2 text-truncate">
+            <div class="mb-2 truncate">
               <span class="text-slate-500 text-xs">Shop:</span>
               @if($order->shop)
-<a href="{{ route('shop.show', $order->shop->slug) }}" class="no-underline">{{ $order->shop->name }}</a>
+<a href="{{ route('shop.show', $order->shop->slug) }}" class="text-slate-700 hover:text-emerald-700">{{ $order->shop->name }}</a>
               @else
                 <span class="text-slate-500">Unknown shop</span>
               @endif
@@ -94,9 +94,9 @@
             </div>
             <div class="mt-2">
               @if(method_exists($order,'isPaid') && $order->isPaid())
-                <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs w-full" href="{{ route('buyer.orders.show', $order->id) }}">View</a>
+                <a class="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" href="{{ route('buyer.orders.show', $order->id) }}">View</a>
               @else
-                <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-3 py-1.5 text-xs w-full" href="{{ route('pay_now', $order->id) }}">Pay Now</a>
+                <a class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500" href="{{ route('pay_now', $order->id) }}">Pay Now</a>
               @endif
             </div>
           </div>

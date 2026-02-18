@@ -39,7 +39,7 @@
 
     {{-- Heading --}}
     <h5 class="font-semibold text-slate-500 flex items-center gap-2 mb-4">
-      <i class="fas fa-route fs-4 text-sky-600"></i>
+      <i class="fas fa-route text-xl text-sky-600"></i>
       Order&nbsp;Progress
     </h5>
 
@@ -56,10 +56,10 @@
             <i class="{{ $meta['icon'] }}"></i>
           </div>
           <div class="line"></div>
-          <div class="label {{ $state === 'active' ? 'fw-semibold text-dark' : 'text-muted' }}">
+          <div class="label {{ $state === 'active' ? 'font-semibold text-slate-900' : 'text-slate-500' }}">
             {{ $meta['label'] }}
             @if($state === 'active')
-              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary ml-1">Now</span>
+              <span class="ml-1 inline-flex items-center rounded-full bg-sky-600 px-2 py-0.5 text-xs font-medium text-white">Now</span>
             @endif
           </div>
         </div>
@@ -75,8 +75,8 @@
     @if($order->status === \App\Models\Order::STATUS_PENDING)
     <div class="flex flex-wrap gap-3">
         <a href="{{ route('pay_now', $order->id) }}"
-                class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base flex gap-2">
-            <i class="fas fa-credit-card fs-5"></i>
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-emerald-500">
+            <i class="fas fa-credit-card text-base"></i>
             <span>Pay&nbsp;Now</span>
         </a>
     </div>

@@ -79,14 +79,6 @@
     background:rgba(14,165,164,.10);
     font-weight:700;
   }
-  .wallet-pay .btn-primary{
-    background:var(--brand);
-    border-color:var(--brand);
-    border-radius:12px;
-    padding:.75rem 1rem;
-    font-weight:600;
-  }
-  .wallet-pay .btn-primary:hover{background:var(--brand-strong);border-color:var(--brand-strong);}
   .method-card{
     background:var(--card-soft);
     border:1px solid rgba(15,23,42,.08);
@@ -114,11 +106,6 @@
     border-radius:12px;
     padding:.5rem .75rem;
     margin-bottom:.75rem;
-  }
-  .method-card .btn{
-    border-radius:12px;
-    font-weight:600;
-    padding:.7rem 1rem;
   }
   .payment-layout{
     display:flex;
@@ -189,10 +176,24 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes liftIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .alert{
+    border-radius:12px;
+    border:1px solid transparent;
+    padding:.6rem .8rem;
+    font-size:.82rem;
+    font-weight:500;
+  }
+  .alert-light{background:#f8fafc;border-color:#cbd5e1;color:#334155;}
+  .alert-success{background:#dcfce7;border-color:#86efac;color:#166534;}
+  .alert-warning{background:#fef3c7;border-color:#fcd34d;color:#92400e;}
+  .alert-danger{background:#fee2e2;border-color:#fca5a5;color:#991b1b;}
+  .text-success{color:#15803d;}
+  .text-danger{color:#b91c1c;}
+  .disabled{opacity:.6;pointer-events:none;}
   .d-none{display:none!important}
   @media (max-width: 576px){
     .checkout-page{padding:2rem 0;}
-    .paynow-card .card-body{padding:1.5rem!important;}
+    .paynow-card > div{padding:1.5rem!important;}
   }
   @media (max-width: 768px){
     .payment-layout{flex-direction:column;}
@@ -301,7 +302,7 @@
       <div class="lg:col-span-9 xl:col-span-8">
 
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 paynow-card">
-          <div class="p-4 sm:p-5 p-5 md:p-5">
+          <div class="p-5">
 
             <div class="paynow-header">
               <div class="paynow-eyebrow">Order payment</div>
@@ -335,7 +336,7 @@
             <form id="wallet-pay-form"
                   action="{{ route('order.wallet.pay', $order->id) }}"
                   method="POST"
-                  class="d-grid gap-2 mb-3 wallet-pay {{ $canPayWithWalletOnly ? '' : 'd-none' }}">
+                  class="grid gap-2 mb-3 wallet-pay {{ $canPayWithWalletOnly ? '' : 'd-none' }}">
               @csrf
               <input type="hidden" name="method" id="pay-method" value="wallet">
               <button type="submit" id="wallet-pay-btn" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
@@ -399,14 +400,14 @@
                             </div>
                           </div>
 
-                          <div class="d-grid">
+                          <div class="grid">
                             <button id="btn-start-stk" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
-                              <span class="spinner hidden" id="stk-spinner"></span>
+                              <span class="spinner d-none" id="stk-spinner"></span>
                               Pay with M-Pesa
                             </button>
                           </div>
 
-                          <div id="stk-live-status" class="rounded-xl border px-4 py-3 text-sm alert-light mt-3 hidden" aria-live="polite"></div>
+                          <div id="stk-live-status" class="rounded-xl border px-4 py-3 text-sm alert-light mt-3 d-none" aria-live="polite"></div>
                         </div>
                       </div>
                     @endif
@@ -429,7 +430,7 @@
                         <div class="method-card">
                           <div class="method-title">Card via Stripe</div>
                           <p class="method-copy">Pay securely with Stripe Checkout.</p>
-                          <div class="d-grid">
+                          <div class="grid">
                             <button id="btn-stripe" type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-900 text-white hover:bg-slate-700">Pay with Stripe</button>
                           </div>
                         </div>
@@ -441,7 +442,7 @@
                         <div class="method-card">
                           <div class="method-title">Paystack</div>
                           <p class="method-copy">Pay securely with Paystack checkout.</p>
-                          <div class="d-grid">
+                          <div class="grid">
                             <button id="btn-paystack" type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Pay with Paystack</button>
                           </div>
                         </div>
@@ -614,7 +615,7 @@ $(function () {
     function startPolling(ref){
       let attempts=0;
       clearInterval(pollTimer);
-      $liveStatus.removeClass('d-none alert-danger alert-success alert-warning').addClass('alert')
+      $liveStatus.removeClass('d-none hidden alert-danger alert-success alert-warning').addClass('alert')
                  .html(`<i class="fa fa-sync-alt fa-spin mr-2"></i> Waiting for M-Pesa confirmation...`);
       pollTimer=setInterval(function(){
         attempts++;

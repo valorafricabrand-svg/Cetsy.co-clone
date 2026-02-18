@@ -1,70 +1,70 @@
 ﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('header')
-    <h2 class="font-semibold fs-3 text-slate-900">
+    <h2 class="text-2xl font-semibold text-slate-900">
         {{ __('Your Offers') }}
     </h2>
 @endsection
 
 @section('main')
-<div class="content">
-    <div class="container-xxl">
+<div class="py-8">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <!-- Summary Cards -->
-        <div class="grid grid-cols-12 gap-4 mb-4">
-            <div class="md:col-span-3">
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm bg-primary text-white">
+        <div class="mb-4 grid grid-cols-12 gap-4">
+            <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+                <div class="rounded-2xl border border-slate-200 bg-sky-600 text-white shadow-sm">
                     <div class="p-4 sm:p-5">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-clock-history fs-1"></i>
+                            <div class="shrink-0">
+                                <i class="bi bi-clock-history text-4xl"></i>
                             </div>
-                            <div class="flex-grow-1 ml-3">
-                                <h4 class="mb-0">{{ $offers->count() }}</h4>
+                            <div class="ml-3 grow">
+                                <h4 class="mb-0 text-2xl font-bold">{{ $offers->count() }}</h4>
                                 <small>Total Products</small>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="md:col-span-3">
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm bg-amber-100 text-slate-900">
+            <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 text-amber-900 shadow-sm">
                     <div class="p-4 sm:p-5">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-hourglass-split fs-1"></i>
+                            <div class="shrink-0">
+                                <i class="bi bi-hourglass-split text-4xl"></i>
                             </div>
-                            <div class="flex-grow-1 ml-3">
-                                <h4 class="mb-0">{{ $offers->sum('status_summary.pending') }}</h4>
+                            <div class="ml-3 grow">
+                                <h4 class="mb-0 text-2xl font-bold">{{ $offers->sum('status_summary.pending') }}</h4>
                                 <small>Pending Offers</small>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="md:col-span-3">
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm bg-success text-white">
+            <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-600 text-white shadow-sm">
                     <div class="p-4 sm:p-5">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-check-circle fs-1"></i>
+                            <div class="shrink-0">
+                                <i class="bi bi-check-circle text-4xl"></i>
                             </div>
-                            <div class="flex-grow-1 ml-3">
-                                <h4 class="mb-0">{{ $offers->sum('status_summary.accepted') }}</h4>
+                            <div class="ml-3 grow">
+                                <h4 class="mb-0 text-2xl font-bold">{{ $offers->sum('status_summary.accepted') }}</h4>
                                 <small>Accepted Offers</small>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="md:col-span-3">
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm bg-sky-100 text-white">
+            <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+                <div class="rounded-2xl border border-indigo-200 bg-indigo-600 text-white shadow-sm">
                     <div class="p-4 sm:p-5">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-arrow-left-right fs-1"></i>
+                            <div class="shrink-0">
+                                <i class="bi bi-arrow-left-right text-4xl"></i>
                             </div>
-                            <div class="flex-grow-1 ml-3">
-                                <h4 class="mb-0">{{ $offers->where('has_counter_offers', true)->count() }}</h4>
+                            <div class="ml-3 grow">
+                                <h4 class="mb-0 text-2xl font-bold">{{ $offers->where('has_counter_offers', true)->count() }}</h4>
                                 <small>Counter Offers</small>
                             </div>
                         </div>
@@ -74,7 +74,7 @@
         </div>
 
         <!-- Make New Offer Section -->
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-4">
+        <div class="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div class="border-b border-slate-200 px-4 py-3 bg-slate-100">
                 <h6 class="mb-0">
                     <i class="bi bi-plus-circle mr-2"></i>Make New Offer
@@ -82,10 +82,10 @@
             </div>
             <div class="p-4 sm:p-5">
                 <div class="grid grid-cols-12 gap-4">
-                    <div class="md:col-span-8">
+                    <div class="col-span-12 md:col-span-8">
                         <p class="text-slate-500 mb-3">Make an offer on a product you're interested in. Browse products and submit your best offer!</p>
                     </div>
-                    <div class="md:col-span-4 text-right">
+                    <div class="col-span-12 text-left md:col-span-4 md:text-right">
                         <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" onclick="showNewOfferModal()">
                             <i class="bi bi-plus-circle mr-1"></i>Make New Offer
                         </button>
@@ -95,9 +95,9 @@
         </div>
 
         @if($offers->isEmpty())
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="p-4 sm:p-5 text-center py-5">
-                    <i class="bi bi-inbox fs-1 text-slate-500 mb-3"></i>
+                    <i class="bi bi-inbox mb-3 text-5xl text-slate-400"></i>
                     <h5 class="text-slate-500">No Offers Yet</h5>
                     <p class="text-slate-500">You haven't made any offers yet. Start browsing products to make your first offer!</p>
                     <a href="{{ route('listings') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
@@ -107,7 +107,15 @@
             </div>
         @else
             @foreach($offers as $productId => $offerData)
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-4 offer-card @if($offerData['latest_offer']->status === 'accepted') border-success border-3 accepted-offer-card @endif">
+                @php
+                    $latestStatusClass = match($offerData['latest_offer']->status) {
+                        'accepted' => 'bg-emerald-100 text-emerald-700',
+                        'declined' => 'bg-rose-100 text-rose-700',
+                        'countered' => 'bg-indigo-100 text-indigo-700',
+                        default => 'bg-amber-100 text-amber-700',
+                    };
+                @endphp
+                <div class="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm offer-card @if($offerData['latest_offer']->status === 'accepted') border-emerald-400 ring-2 ring-emerald-200 accepted-offer-card @endif">
                     <div class="border-b border-slate-200 px-4 py-3 bg-slate-100">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
@@ -136,7 +144,7 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $offerData['latest_offer']->status_badge_class }} fs-6">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $latestStatusClass }}">
                                     {{ $offerData['latest_offer']->status_label }}
                                 </span>
                             </div>
@@ -146,7 +154,7 @@
                     <div class="p-4 sm:p-5">
                         @if($offerData['latest_offer']->status === 'accepted')
                             <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 flex items-center mb-4 p-3 shadow-sm accepted-offer-alert">
-                                <i class="bi bi-patch-check-fill fs-3 mr-3 text-emerald-600"></i>
+                                <i class="bi bi-patch-check-fill mr-3 text-3xl text-emerald-600"></i>
                                 <div class="flex-grow-1">
                                     <strong class="text-emerald-600">Congratulations!</strong> Your offer was <b>accepted</b> by the seller.<br>
                                     <span class="text-xs text-emerald-600">You can now proceed to checkout or contact the seller for next steps.</span>
@@ -170,28 +178,28 @@
                         @endif
                         <!-- Latest Offer Summary -->
                         <div class="grid grid-cols-12 gap-4 mb-3">
-                            <div class="md:col-span-6">
+                            <div class="col-span-12 md:col-span-6">
                                 <div class="flex items-center">
                                     <div class="mr-3">
-                                        <i class="bi bi-currency-dollar fs-4 text-emerald-600"></i>
+                                        <i class="bi bi-currency-dollar text-2xl text-emerald-600"></i>
                                     </div>
                                     <div>
                                         <h6 class="mb-1">Your Latest Offer</h6>
-                                        <span class="fs-5 font-bold text-emerald-600">{{ $offerData['latest_offer']->formatted_price }}</span>
+                                        <span class="text-xl font-bold text-emerald-600">{{ $offerData['latest_offer']->formatted_price }}</span>
                                         <div class="text-slate-500 text-xs">
                                             <i class="bi bi-clock mr-1"></i>{{ $offerData['latest_offer']->time_ago }}
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="md:col-span-6">
+                            <div class="col-span-12 md:col-span-6">
                                 <div class="flex items-center">
                                     <div class="mr-3">
-                                        <i class="bi bi-tag fs-4 text-primary"></i>
+                                        <i class="bi bi-tag text-2xl text-sky-600"></i>
                                     </div>
                                     <div>
                                         <h6 class="mb-1">Original Price</h6>
-                                        <span class="fs-5 font-bold text-primary">{{ get_currency() }} {{ number_format($offerData['product']->price, 2) }}</span>
+                                        <span class="text-xl font-bold text-sky-600">{{ get_currency() }} {{ number_format($offerData['product']->price, 2) }}</span>
                                         <div class="text-slate-500 text-xs">
                                             Savings: {{ get_currency() }} {{ number_format($offerData['product']->price - $offerData['latest_offer']->offer_price, 2) }}
                                         </div>
@@ -211,7 +219,12 @@
                                         @php
                                             $isCounter = isset($offer->is_counter_offer) ? (bool) $offer->is_counter_offer : false;
                                             $isOriginal = isset($offer->is_original) ? (bool) $offer->is_original : false;
-                                            $statusBadge = $offer->status_badge_class ?? 'bg-secondary';
+                                            $statusBadge = match($offer->status ?? null) {
+                                                'accepted' => 'bg-emerald-100 text-emerald-700',
+                                                'declined' => 'bg-rose-100 text-rose-700',
+                                                'countered' => 'bg-indigo-100 text-indigo-700',
+                                                default => 'bg-amber-100 text-amber-700',
+                                            };
                                             $statusLabel = $offer->status_label ?? ($isOriginal ? 'Original Offer' : (isset($offer->status) ? ucfirst((string)$offer->status) : ''));
                                             $formattedPrice = $offer->formatted_price ?? (isset($offer->offer_price) ? (get_currency().' '.number_format((float)$offer->offer_price, 2)) : '');
                                             try {
@@ -220,10 +233,10 @@
                                         @endphp
                                         @php
                                             $labelText = $isCounter ? 'Counter Offer' : ($isOriginal ? 'Original Offer' : 'Your Offer');
-                                            $iconClass = $isCounter ? 'bi-arrow-left-right text-info' : ($isOriginal ? 'bi-flag text-secondary' : 'bi-arrow-up text-primary');
+                                            $iconClass = $isCounter ? 'bi-arrow-left-right text-indigo-600' : ($isOriginal ? 'bi-flag text-slate-600' : 'bi-arrow-up text-sky-600');
                                         @endphp
                                         <div class="timeline-item">
-                                            <div class="timeline-marker {{ $isCounter ? 'bg-info' : 'bg-primary' }}"></div>
+                                            <div class="timeline-marker {{ $isCounter ? 'bg-indigo-500' : 'bg-sky-500' }}"></div>
                                             <div class="timeline-content">
                                                 <div class="flex justify-between items-start">
                                                     <div>
@@ -238,7 +251,7 @@
                                                         @endif
                                                     </div>
                                                     <div class="text-right">
-                                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusBadge }} small">{{ $statusLabel }}</span>
+                                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusBadge }}">{{ $statusLabel }}</span>
                                                         @if($createdLabel)
                                                             <div class="text-slate-500 text-xs">{{ $createdLabel }}</div>
                                                         @endif
@@ -265,14 +278,15 @@
 </div>
 
 <!-- New Offer Modal -->
-<div class="modal" id="newOfferModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
-            <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                <h5 class="text-base font-semibold text-slate-900">Make New Offer</h5>
-                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="px-4 py-4">
+<div class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" id="newOfferModal">
+    <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+            <h5 class="text-base font-semibold text-slate-900">Make New Offer</h5>
+            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" onclick="hideNewOfferModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="max-h-[70vh] overflow-y-auto px-4 py-4">
                 <form id="newOfferForm">
                     @csrf
                     <div class="mb-3">
@@ -288,10 +302,10 @@
                         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                             <div class="p-4 sm:p-5">
                                 <div class="grid grid-cols-12 gap-4">
-                                    <div class="md:col-span-3">
-                                        <img id="productImage" src="" alt="Product" class="img-fluid rounded" style="max-width: 100px;">
+                                    <div class="col-span-12 md:col-span-3">
+                                        <img id="productImage" src="" alt="Product" class="h-20 w-20 rounded object-cover">
                                     </div>
-                                    <div class="md:col-span-9">
+                                    <div class="col-span-12 md:col-span-9">
                                         <h6 id="productName" class="mb-1"></h6>
                                         <p id="productPrice" class="text-slate-500 mb-2"></p>
                                         <small class="text-slate-500">Original Price</small>
@@ -320,11 +334,10 @@
                         <textarea name="message" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="3" placeholder="Add a message to your offer..."></textarea>
                     </div>
                 </form>
-            </div>
-            <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-                <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" onclick="submitNewOffer()">Submit Offer</button>
-            </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" onclick="hideNewOfferModal()">Cancel</button>
+            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" onclick="submitNewOffer()">Submit Offer</button>
         </div>
     </div>
 </div>
@@ -349,7 +362,7 @@
     top: 0;
     bottom: 0;
     width: 2px;
-    background: #e9ecef;
+    background: #e2e8f0;
 }
 .timeline-item {
     position: relative;
@@ -366,18 +379,17 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .timeline-content {
-    background: #f8f9fa;
+    background: #f8fafc;
     padding: 15px;
     border-radius: 8px;
-    border-left: 3px solid #007bff;
+    border-left: 3px solid #0ea5e9;
 }
 .accepted-offer-card {
-    border-color: #28a745 !important;
-    box-shadow: 0 0 0 0.2rem rgba(40,167,69,.15) !important;
+    box-shadow: 0 0 0 0.2rem rgba(34,197,94,.12) !important;
 }
 .accepted-offer-alert {
     background: linear-gradient(90deg, #e9fbe7 0%, #d4f5e9 100%);
-    border: 1.5px solid #28a745;
+    border: 1.5px solid #22c55e;
     border-radius: 0.75rem;
     font-size: 1.05rem;
 }
@@ -400,8 +412,16 @@ function showNewOfferModal() {
                 option.textContent = `${product.name} - ${product.currency} ${product.price}`;
                 select.appendChild(option);
             });
-            new bootstrap.Modal(document.getElementById('newOfferModal')).show();
+            const modal = document.getElementById('newOfferModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         });
+}
+
+function hideNewOfferModal() {
+    const modal = document.getElementById('newOfferModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 }
 
 function updateProductInfo() {
@@ -459,6 +479,23 @@ function submitNewOffer() {
         }
     });
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('newOfferModal');
+    if (!modal) return;
+
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) {
+            hideNewOfferModal();
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('flex')) {
+            hideNewOfferModal();
+        }
+    });
+});
 </script>
 @endpush
 @endsection 

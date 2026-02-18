@@ -10,22 +10,22 @@
       <div class="flex flex-col lg:flex-row gap-3 lg:items-end justify-between">
         <h3 class="text-slate-900 mb-0">My Orders</h3>
         <form method="GET" action="{{ url()->current() }}" class="w-full">
-          <div class="grid grid-cols-12 gap-4 gap-2 items-end">
+          <div class="grid grid-cols-12 gap-2 items-end">
             <div class="col-span-12 md:col-span-4">
-              <label class="mb-1 block text-sm font-medium text-slate-700 text-xs text-slate-500">Search</label>
-              <input type="search" name="q" value="{{ request('q') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs" placeholder="Search orders by # or status">
+              <label class="mb-1 block text-xs font-medium text-slate-500">Search</label>
+              <input type="search" name="q" value="{{ request('q') }}" class="w-full rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="Search orders by # or status">
             </div>
             <div class="col-span-6 md:col-span-3">
-              <label class="mb-1 block text-sm font-medium text-slate-700 text-xs text-slate-500">From</label>
-              <input type="date" name="from" value="{{ request('from') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs">
+              <label class="mb-1 block text-xs font-medium text-slate-500">From</label>
+              <input type="date" name="from" value="{{ request('from') }}" class="w-full rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500">
             </div>
             <div class="col-span-6 md:col-span-3">
-              <label class="mb-1 block text-sm font-medium text-slate-700 text-xs text-slate-500">To</label>
-              <input type="date" name="to" value="{{ request('to') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs">
+              <label class="mb-1 block text-xs font-medium text-slate-500">To</label>
+              <input type="date" name="to" value="{{ request('to') }}" class="w-full rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500">
             </div>
             <div class="col-span-6 md:col-span-2">
-              <label class="mb-1 block text-sm font-medium text-slate-700 text-xs text-slate-500">Sort</label>
-              <select name="sort" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs">
+              <label class="mb-1 block text-xs font-medium text-slate-500">Sort</label>
+              <select name="sort" class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
                 <option value="newest" @selected(request('sort','newest')==='newest')>Newest</option>
                 <option value="amount_desc" @selected(request('sort')==='amount_desc')>Amount (high to low)</option>
                 <option value="amount_asc" @selected(request('sort')==='amount_asc')>Amount (low to high)</option>
@@ -34,7 +34,7 @@
             <div class="col-span-12 md:col-span-12 flex gap-2">
               <div class="inline-flex flex-wrap gap-2" role="group" aria-label="Status filters">
                 @php $st = request('status'); @endphp
-                <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs {{ $st? 'btn-outline-secondary':'btn-secondary' }}" href="{{ url()->current() }}">All{{ isset($summary['all'])? ' ('.$summary['all'].')':'' }}</a>
+                <a class="inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold transition {{ $st ? 'border-slate-300 text-slate-700 hover:bg-slate-50' : 'border-slate-900 bg-slate-900 text-white hover:bg-slate-700' }}" href="{{ url()->current() }}">All{{ isset($summary['all'])? ' ('.$summary['all'].')':'' }}</a>
                 @foreach([
                   \App\Models\Order::STATUS_PENDING=>'Pending',
                   \App\Models\Order::STATUS_PROCESSING=>'Processing',
@@ -44,12 +44,12 @@
                   \App\Models\Order::STATUS_CANCELLED=>'Cancelled',
                   \App\Models\Order::STATUS_REFUNDED=>'Refunded',
                 ] as $code=>$label)
-                  <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs {{ $st===$code? 'btn-secondary':'btn-outline-secondary' }}" href="{{ url()->current().'?'.http_build_query(array_filter(array_merge(request()->except('page'),['status'=>$code]))) }}">
+                  <a class="inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold transition {{ $st === $code ? 'border-slate-900 bg-slate-900 text-white hover:bg-slate-700' : 'border-slate-300 text-slate-700 hover:bg-slate-50' }}" href="{{ url()->current().'?'.http_build_query(array_filter(array_merge(request()->except('page'),['status'=>$code]))) }}">
                     {{ $label }}@if(!empty($summary[strtolower($label)])) ({{ $summary[strtolower($label)] }}) @endif
                   </a>
                 @endforeach
               </div>
-              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500 ms-auto" type="submit">Apply</button>
+              <button class="ml-auto inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500" type="submit">Apply</button>
             </div>
           </div>
         </form>
@@ -72,7 +72,7 @@
           </thead>
           <tbody>
             @foreach($orders as $order)
-              <tr class="js-order-row" data-href="{{ route('buyer.orders.show', $order->id) }}" style="cursor:pointer;" tabindex="0">
+              <tr class="js-order-row cursor-pointer" data-href="{{ route('buyer.orders.show', $order->id) }}" tabindex="0">
                 <td>#{{ $order->id }}</td>
                 <td><a target="_blank" href="{{ route('shop.show', $order->shop) }}"> {{ optional($order->shop)->name ?? 'N/A' }}</a></td>
                 <td>{{ $order->created_at->format('d M Y') }}</td>
@@ -146,8 +146,8 @@
                 </td>
                 <td>{{ money((float) ($order->total_amount ?? 0)) }}</td>
                 <td class="text-nowrap">
-                  <a href="{{ route('buyer.orders.show', $order->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50">View</a>
-                  <a href="{{ route('orders.chat.show', $order->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">Chat</a>
+                  <a href="{{ route('buyer.orders.show', $order->id) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">View</a>
+                  <a href="{{ route('orders.chat.show', $order->id) }}" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">Chat</a>
                 </td>
               </tr>
             @endforeach
@@ -208,7 +208,7 @@
               }
             @endphp
 
-            <a href="{{ route('buyer.orders.show', $order->id) }}" class="px-4 py-3 block transition hover:bg-slate-50 p-3">
+            <a href="{{ route('buyer.orders.show', $order->id) }}" class="block px-4 py-3 transition hover:bg-slate-50">
               <div class="flex justify-between items-start mb-1">
                 <div class="font-semibold">#{{ $order->id }}</div>
                 <div class="text-slate-500 text-xs">{{ $order->created_at->format('d M Y') }}</div>
@@ -226,7 +226,7 @@
                 <div class="text-xs text-slate-500 mb-2">{{ $progressMessage }}</div>
               @endif
               <div class="flex justify-between items-center">
-                <div class="text-truncate">
+                <div class="truncate">
                   <span class="text-slate-500 text-xs">Shop:</span>
                   <span class="text-xs">{{ optional($order->shop)->name ?? 'N/A' }}</span>
                 </div>
@@ -262,10 +262,10 @@
     @else
       {{-- Empty state --}}
       <div class="text-center py-5">
-        <i class="bi bi-cart-x" style="font-size: 3rem; color: #6c757d;"></i>
-        <h4 class="mt-3">No orders found</h4>
+        <i class="bi bi-cart-x text-5xl text-slate-400"></i>
+        <h4 class="mt-3 text-xl font-semibold text-slate-900">No orders found</h4>
         <p class="mb-4 text-slate-500">You have no orders at the moment.</p>
-        <a href="{{ route('listings') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-5 py-2.5 text-base bg-emerald-600 text-white hover:bg-emerald-500">Start Shopping</a>
+        <a href="{{ route('listings') }}" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-emerald-500">Start Shopping</a>
       </div>
     @endif
   </div>

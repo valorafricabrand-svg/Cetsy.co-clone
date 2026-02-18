@@ -14,7 +14,7 @@
                     <label for="email" class="mb-1 block text-sm font-medium text-slate-700">Email Address</label>
                     <input type="email" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" id="email" name="email" value="{{ Auth::user()->email }}" placeholder="Enter your email">
                 </div>
-                <div class="d-grid">
+                <div>
                     <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Update Details</button>
                 </div>
             </form>

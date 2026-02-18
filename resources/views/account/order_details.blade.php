@@ -8,7 +8,7 @@
   /* Compact summary chips below header */
   .chip { display:inline-flex; align-items:center; gap:.45rem; padding:.35rem .6rem; border-radius:999px; background:#f1f3f5; font-size:.8125rem; }
   .chip i { opacity:.85; }
-  .chip .label-muted { color:#6c757d; }
+  .chip .label-muted { color:#64748b; }
 
   /* Order item mobile cards */
   .order-item-card .label { color:#6c757d; font-size:.8125rem; }
@@ -17,6 +17,69 @@
   .order-item__row { display:flex; justify-content:space-between; align-items:center; margin-top:.5rem; }
   .order-item__total { font-weight:700; }
   .text-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient: vertical; overflow:hidden; }
+  .text-uppercase { text-transform: uppercase; }
+  .no-underline { text-decoration: none; }
+  .list-group-flush { list-style: none; margin: 0; padding: 0; border: 0; border-radius: .75rem; }
+  .img-fluid { max-width: 100%; height: auto; }
+  .text-primary { color: #0284c7; }
+  .text-success { color: #059669; }
+  .text-warning { color: #d97706; }
+  .text-muted { color: #94a3b8; }
+  .bg-success { background: #d1fae5; color: #065f46; }
+  .bg-secondary { background: #e2e8f0; color: #334155; }
+  .border-success { border-color: #86efac !important; }
+  .border-danger { border-color: #fda4af !important; }
+  .d-grid { display: grid; }
+  .btn-toolbar { display: flex; }
+  .form-check { display: flex; align-items: center; gap: .5rem; }
+  .form-check-input { width: 1rem; height: 1rem; border-radius: .25rem; border: 1px solid #cbd5e1; }
+  .form-check-label { font-size: .875rem; color: #334155; }
+
+  /* Bootstrap-free modal behavior */
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.55);
+    padding: 1rem;
+  }
+  .modal.is-open { display: flex; }
+  .modal-dialog { width: 100%; max-width: 32rem; }
+  .modal-dialog.modal-lg { max-width: 56rem; }
+  .modal-dialog.modal-dialog-centered { margin: 0 auto; }
+  .modal-content {
+    border-radius: 1rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.25);
+  }
+  .modal-header, .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .9rem 1rem;
+  }
+  .modal-header { border-bottom: 1px solid #e2e8f0; }
+  .modal-footer { border-top: 1px solid #e2e8f0; justify-content: flex-end; }
+  .modal-body { padding: 1rem; }
+  .modal-title { font-size: 1rem; font-weight: 600; color: #0f172a; margin: 0; }
+  .btn-close {
+    width: 2rem;
+    height: 2rem;
+    border-radius: .5rem;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+  }
+  .btn-close::before { content: '\00d7'; font-size: 1.1rem; line-height: 1; display: inline-block; }
+  .btn-close:hover { background: #f1f5f9; color: #1e293b; }
+  .form-floating { display: flex; flex-direction: column; gap: .35rem; }
+  .form-floating > label { font-size: .8125rem; color: #64748b; }
 
   /* Print stylesheet: clean invoice look */
   @media print {
@@ -54,8 +117,53 @@
 @push('scripts')
 <script>
   document.addEventListener('DOMContentLoaded', function(){
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"], .has-tooltip'));
-    tooltipTriggerList.forEach(function (el) { try { new bootstrap.Tooltip(el); } catch(e) {} });
+    const body = document.body;
+    const openModal = (selector) => {
+      const modal = document.querySelector(selector);
+      if (!modal) return;
+      modal.classList.add('is-open');
+      body.classList.add('overflow-hidden');
+    };
+    const closeModal = (modal) => {
+      if (!modal) return;
+      modal.classList.remove('is-open');
+      if (!document.querySelector('.modal.is-open')) {
+        body.classList.remove('overflow-hidden');
+      }
+    };
+
+    document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target]').forEach((trigger) => {
+      trigger.addEventListener('click', function (event) {
+        event.preventDefault();
+        openModal(this.getAttribute('data-bs-target'));
+      });
+    });
+
+    document.querySelectorAll('[data-bs-dismiss="modal"]').forEach((button) => {
+      button.addEventListener('click', function () {
+        closeModal(this.closest('.modal'));
+      });
+    });
+
+    document.querySelectorAll('.modal').forEach((modal) => {
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal) closeModal(modal);
+      });
+    });
+
+    document.querySelectorAll('[data-bs-dismiss="alert"]').forEach((button) => {
+      button.addEventListener('click', function () {
+        const alertEl = this.closest('[role="alert"]');
+        if (alertEl) alertEl.remove();
+      });
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        const topModal = document.querySelector('.modal.is-open');
+        if (topModal) closeModal(topModal);
+      }
+    });
   });
   // Allow quick Ctrl/Cmd+P to show clean print
   window.addEventListener('keydown', function(e){
@@ -77,7 +185,7 @@
       @include('account.stepper')
 
       <div
-        class="flex flex-col md:flex-row justify-content-md-between items-start md:items-center gap-3">
+        class="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
 
         {{-- Title --}}
   <h2 class="mb-0 text-emerald-600 font-semibold flex items-center gap-1">
@@ -86,7 +194,7 @@
   </h2>
 
         {{-- Action buttons --}}
-        <div class="btn-toolbar flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2">
           @php
             // Collect all downloadable files across digital items in this order
             $__digitalFiles = [];
@@ -107,18 +215,17 @@
           @if($__canDownloadAll)
             @if(count($__digitalFiles) === 1)
               <a href="{{ route('digital-files.download', $__digitalFiles[0]) }}"
-                 class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base flex gap-2"
-                 data-bs-toggle="tooltip" data-bs-placement="bottom"
+                 class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-emerald-500"
                  title="Download your digital file">
-                <i class="bi bi-cloud-download fs-5"></i>
+                <i class="bi bi-cloud-download text-lg"></i>
                 <span>Download</span>
               </a>
             @else
               <button type="button"
-                      class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base flex gap-2"
+                      class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-emerald-500"
                       data-bs-toggle="modal" data-bs-target="#downloadAllModal"
                       title="Download your digital files">
-                <i class="bi bi-cloud-download fs-5"></i>
+                <i class="bi bi-cloud-download text-lg"></i>
                 <span>Download Files</span>
               </button>
             @endif
@@ -126,60 +233,60 @@
 
           @if($order->status === \App\Models\Order::STATUS_PENDING)
             <a href="{{ route('pay_now', $order->id) }}"
-               class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base flex gap-2"
-               data-bs-toggle="tooltip" data-bs-placement="bottom" title="Proceed to payment for this order">
-              <i class="bi bi-credit-card fs-5"></i>
+               class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-emerald-500"
+               title="Proceed to payment for this order">
+              <i class="bi bi-credit-card text-lg"></i>
               <span>Pay&nbsp;Now</span>
             </a>
           @endif
 
           <a href="{{ route('orders.chat.show', $order->id) }}"
-             class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition btn-outline-info px-5 py-2.5 text-base flex gap-2"
-             data-bs-toggle="tooltip" data-bs-placement="bottom" title="Open conversation about this order">
-            <i class="bi bi-chat-dots fs-5"></i>
+             class="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-600 px-5 py-2.5 text-base font-semibold text-sky-700 transition hover:bg-sky-50"
+             title="Open conversation about this order">
+            <i class="bi bi-chat-dots text-lg"></i>
             <span>Messages</span>
           </a>
 
           <button type="button"
-                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-5 py-2.5 text-base flex gap-2 no-print"
-                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Print a clean invoice view"
+                  class="no-print inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-2.5 text-base font-semibold text-slate-700 transition hover:bg-slate-50"
+                  title="Print a clean invoice view"
                   onclick="window.print()">
-            <i class="bi bi-printer fs-5"></i>
+            <i class="bi bi-printer text-lg"></i>
             <span>Print</span>
           </button>
 
           <a href="{{ route('account.orders') }}"
-             class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-5 py-2.5 text-base flex gap-2"
-             data-bs-toggle="tooltip" data-bs-placement="bottom" title="Return to your orders">
-            <i class="bi bi-arrow-left-circle fs-5"></i>
+             class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-2.5 text-base font-semibold text-slate-700 transition hover:bg-slate-50"
+             title="Return to your orders">
+            <i class="bi bi-arrow-left-circle text-lg"></i>
             <span>Back</span>
           </a>
 
           @if(in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
-            <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-rose-600 text-rose-700 hover:bg-rose-50 px-5 py-2.5 text-base flex gap-2"
+            <button class="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-600 px-5 py-2.5 text-base font-semibold text-rose-700 transition hover:bg-rose-50"
                     data-bs-toggle="modal"
                     data-bs-target="#cancelModal-{{ $order->id }}"
                     title="Cancel this order">
-              <i class="bi bi-x-circle fs-5"></i>
+              <i class="bi bi-x-circle text-lg"></i>
               <span>Cancel&nbsp;Order</span>
             </button>
           @endif
 
           @if($order->status === \App\Models\Order::STATUS_SHIPPED)
-            <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-5 py-2.5 text-base flex gap-2 has-tooltip"
-                    data-bs-placement="bottom" title="Confirm you received the order"
+            <button class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-600 px-5 py-2.5 text-base font-semibold text-emerald-700 transition hover:bg-emerald-50 has-tooltip"
+                    title="Confirm you received the order"
                     data-bs-toggle="modal"
                     data-bs-target="#deliverModal-{{ $order->id }}">
-              <i class="bi bi-check2-circle fs-5"></i>
+              <i class="bi bi-check2-circle text-lg"></i>
               <span>Mark&nbsp;Delivered</span>
             </button>
             @include('seller.orders.modals.delivered')
 
-            <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-amber-500 text-amber-700 hover:bg-amber-50 px-5 py-2.5 text-base flex gap-2 has-tooltip"
-                    data-bs-placement="bottom" title="Assess the shipped product or report a problem"
+            <button class="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-500 px-5 py-2.5 text-base font-semibold text-amber-700 transition hover:bg-amber-50 has-tooltip"
+                    title="Assess the shipped product or report a problem"
                     data-bs-toggle="modal"
                     data-bs-target="#assessModal-{{ $order->id }}">
-              <i class="bi bi-clipboard-check fs-5"></i>
+              <i class="bi bi-clipboard-check text-lg"></i>
               <span>Asses&nbsp;Delivery</span>
             </button>
           @endif
@@ -193,10 +300,10 @@
               <span>Awaiting payment to start processing.</span>
             </div>
             <div class="flex items-center gap-2">
-              <a href="{{ route('pay_now', $order->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500">
+              <a href="{{ route('pay_now', $order->id) }}" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500">
                 <i class="bi bi-credit-card"></i> Pay Now
               </a>
-              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 ml-2" data-bs-dismiss="alert" aria-label="Close"></button>
+              <button type="button" class="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
           </div>
         @endif
@@ -215,7 +322,7 @@
             <p class="mb-3">Are you sure you want to cancel this order? This action cannot be undone.</p>
             <div class="mb-3">
               <label for="cancel-reason-{{ $order->id }}" class="mb-1 block text-sm font-medium text-slate-700">Reason (optional)</label>
-              <textarea name="cancel_reason" id="cancel-reason-{{ $order->id }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="3" placeholder="Tell the seller why youâ€™re cancelling"></textarea>
+              <textarea name="cancel_reason" id="cancel-reason-{{ $order->id }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="3" placeholder="Tell the seller why you're cancelling"></textarea>
             </div>
           </div>
           <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
@@ -264,7 +371,7 @@
                       <strong>There is a problem</strong>
                     </div>
                     <p class="text-slate-500 mb-3">Start a dispute if the item arrived damaged, not as described, or never arrived.</p>
-                    <div class="d-grid gap-2 mt-auto">
+                    <div class="grid gap-2 mt-auto">
                       <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-rose-600 text-rose-700 hover:bg-rose-50" href="{{ route('disputes.create', ['order_id' => $order->id, 'type' => \App\Models\Dispute::TYPE_QUALITY_ISSUES]) }}">
                         <i class="bi bi-tools"></i> Not as described / Damaged
                       </a>
@@ -344,30 +451,30 @@
 
   <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-4">
     <div class="p-4 sm:p-5">
-      <div class="grid grid-cols-12 gap-4 gap-3 items-center">
+      <div class="grid grid-cols-12 gap-3 items-center">
         <div class="col-span-12 md:col-span-6">
           <div class="font-semibold mb-1">Processing Timeline</div>
-          <ul class="list-unstyled text-xs mb-0">
+          <ul class="text-xs">
             <li class="mb-2">
               <div class="flex justify-between items-center gap-3">
                 <div class="flex items-center gap-2">
-                  <i class="bi bi-check-circle {{ $stepPlaced ? 'text-success' : 'text-muted' }}"></i>
+                  <i class="bi bi-check-circle {{ $stepPlaced ? 'text-emerald-600' : 'text-slate-400' }}"></i>
                   <span>Order placed</span>
                 </div>
-                <span class="text-slate-500">{{ $formatDateTime($placedAt) ?? 'â€”' }}</span>
+                <span class="text-slate-500">{{ $formatDateTime($placedAt) ?? '-' }}</span>
               </div>
             </li>
             <li class="mb-2">
               <div class="flex justify-between items-center gap-3">
                 <div class="flex items-center gap-2">
-                  <i class="bi bi-gear-fill {{ $paid ? 'text-success' : 'text-warning' }}"></i>
+                  <i class="bi bi-gear-fill {{ $paid ? 'text-emerald-600' : 'text-amber-600' }}"></i>
                   <span>Processing</span>
                 </div>
                 <span class="text-slate-500">
                   @if($processingAt)
                     {{ $formatDateTime($processingAt) }}
                   @elseif($paid)
-                    â€”
+                    -
                   @else
                     Pending payment
                   @endif
@@ -380,28 +487,28 @@
             <li class="mb-2">
               <div class="flex justify-between items-center gap-3">
                 <div class="flex items-center gap-2">
-                  <i class="bi bi-truck {{ $stepShipped ? 'text-success' : 'text-muted' }}"></i>
+                  <i class="bi bi-truck {{ $stepShipped ? 'text-emerald-600' : 'text-slate-400' }}"></i>
                   <span>Shipped</span>
                 </div>
-                <span class="text-slate-500">{{ $formatDateTime($shippedAt) ?? 'â€”' }}</span>
+                <span class="text-slate-500">{{ $formatDateTime($shippedAt) ?? '-' }}</span>
               </div>
             </li>
             <li class="mb-2">
               <div class="flex justify-between items-center gap-3">
                 <div class="flex items-center gap-2">
-                  <i class="bi bi-box-seam {{ $stepDelivered ? 'text-success' : 'text-muted' }}"></i>
+                  <i class="bi bi-box-seam {{ $stepDelivered ? 'text-emerald-600' : 'text-slate-400' }}"></i>
                   <span>Delivered</span>
                 </div>
-                <span class="text-slate-500">{{ $formatDateTime($deliveredAt) ?? 'â€”' }}</span>
+                <span class="text-slate-500">{{ $formatDateTime($deliveredAt) ?? '-' }}</span>
               </div>
             </li>
             <li>
               <div class="flex justify-between items-center gap-3">
                 <div class="flex items-center gap-2">
-                  <i class="bi bi-flag {{ $stepCompleted ? 'text-success' : 'text-muted' }}"></i>
+                  <i class="bi bi-flag {{ $stepCompleted ? 'text-emerald-600' : 'text-slate-400' }}"></i>
                   <span>Completed</span>
                 </div>
-                <span class="text-slate-500">{{ $formatDateTime($completedAt) ?? 'â€”' }}</span>
+                <span class="text-slate-500">{{ $formatDateTime($completedAt) ?? '-' }}</span>
               </div>
             </li>
           </ul>
@@ -503,7 +610,7 @@
         @php $pendingReviewModalId = 'reviewModal_'.$pendingReviewItem->id; @endphp
         <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 mt-3 flex items-center justify-between flex-wrap gap-3" role="alert">
           <div class="flex items-center gap-2">
-            <i class="bi bi-star-fill fs-4"></i>
+            <i class="bi bi-star-fill text-xl"></i>
             <div>
               <strong>Your order has been delivered.</strong>
               <div class="text-xs">Share feedback with the seller by leaving a quick review.</div>
@@ -558,7 +665,7 @@
               <li class="px-4 py-3 px-0 flex justify-between">
                 <span class="font-semibold">Tracking Link:</span>
                 <span>
-                  <a href="{{ $order->tracking_url }}" target="_blank" rel="noopener" class="link-primary">Track package</a>
+                  <a href="{{ $order->tracking_url }}" target="_blank" rel="noopener" class="font-medium text-sky-700 underline hover:text-sky-600">Track package</a>
                 </span>
               </li>
               @endif
@@ -715,7 +822,7 @@
                           <img
                             src="{{ $thumbUrl }}"
                             alt="{{ $product->name }}"
-                            class="img-fluid rounded"
+                            class="h-auto max-w-full rounded"
                             style="max-width:100px; height:auto; object-fit:cover;">
                         </a>
                       @endif
@@ -724,7 +831,7 @@
                     {{-- Product --}}
                     <td>
                       @if($product)
-                        <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="no-underline">
+                        <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="text-slate-900 hover:text-emerald-700">
                           {{ $product->name }}
                         </a>
                         @if($isDigital)
@@ -757,7 +864,7 @@
                     <td class="text-center">
                       @if($reviewed)
                         <div class="flex items-center justify-center gap-2">
-                          <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-success gap-1">
+                          <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
                             <i class="bi bi-check-circle"></i>
                             {{ $item->review->rating }} &#9733;
                           </span>
@@ -850,12 +957,12 @@
                         <i class="bi bi-image"></i>
                       </div>
                     @endif
-                    <div class="flex-grow-1">
+                    <div class="grow">
                       <div class="flex justify-between items-start">
                         <div style="min-width:0;">
                           <div class="font-semibold text-clamp-2">
                             @if($product)
-                              <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="no-underline">{{ $product->name }}</a>
+                              <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="text-slate-900 hover:text-emerald-700">{{ $product->name }}</a>
                             @else
                               <span class="text-slate-500">&mdash;</span>
                             @endif
@@ -904,7 +1011,7 @@
                       <div class="flex justify-between items-center mt-3">
                         <div>
                           @if($reviewed)
-                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-success gap-1">
+                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
                               <i class="bi bi-check-circle"></i> Reviewed
                             </span>
                           @elseif(($order->status === \App\Models\Order::STATUS_DELIVERED) || ($isDigital && (($order->status === \App\Models\Order::STATUS_COMPLETED) || ($order->status === \App\Models\Order::STATUS_DELIVERED)) && !empty($item->downloaded_at)))
@@ -976,7 +1083,7 @@
                     <td>{{ ucfirst($pay->payment_method) }}</td>
                     <td>{{ money((float)($pay->total_amount ?? 0)) }}</td>
                     <td>
-                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $isCompleted ? 'bg-success' : 'bg-secondary' }}">
+                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700' }}">
                         {{ $statusLabel }}
                       </span>
                     </td>
@@ -1036,9 +1143,9 @@
           <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
             @foreach($__dlFiles as $__file)
               <li class="px-4 py-3 flex justify-between items-center">
-                <div class="mr-3 text-truncate">
+                <div class="mr-3 truncate">
                   <i class="bi bi-file-earmark-arrow-down mr-2"></i>
-                  <span class="text-truncate inline-block" style="max-width: 18rem;" title="{{ $__file->filename }}">{{ $__file->filename }}</span>
+                  <span class="inline-block max-w-72 truncate" title="{{ $__file->filename }}">{{ $__file->filename }}</span>
                 </div>
                 <a href="{{ route('digital-files.download', $__file) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500">
                   <i class="bi bi-download"></i> Download
@@ -1112,7 +1219,7 @@
           @csrf
           @method('PATCH')
           <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <h5 class="text-base font-semibold text-slate-900">Edit Review â€” {{ optional($item->product)->name }}</h5>
+            <h5 class="text-base font-semibold text-slate-900">Edit Review - {{ optional($item->product)->name }}</h5>
             <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
           </div>
           <div class="px-4 py-4">

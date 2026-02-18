@@ -4,7 +4,7 @@
 
 @section('main')
 <div class="content">
-    <h3 class="mb-4 text-emerald-600">My Payments</h3>
+    <h3 class="mb-4 text-2xl font-semibold text-slate-900">My Payments</h3>
 
     @if(count($payments) > 0)
         <div class="overflow-x-auto shadow-sm border rounded">
@@ -26,11 +26,11 @@
                             <td>{{ $pay->id }}</td>
                             <td>
                                 @if(!empty($pay->order_id))
-                                    <a href="{{ route('buyer.orders.show', $pay->order_id) }}" class="text-primary text-decoration-underline">
+                                    <a href="{{ route('buyer.orders.show', $pay->order_id) }}" class="font-medium text-sky-700 underline hover:text-sky-600">
                                         #{{ $pay->order_id }}
                                     </a>
                                 @else
-                                    â€”
+                                    —
                                 @endif
                             </td>
                             <td>
@@ -52,7 +52,7 @@
                             </td>
                             <td>
                                 @php($ok = in_array($pay->payment_status, ['successful','completed'], true))
-                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $ok ? 'bg-success' : 'bg-warning text-dark' }}">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $ok ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800' }}">
                                     {{ ucfirst($pay->payment_status) }}
                                 </span>
                             </td>
@@ -64,7 +64,7 @@
         </div>
     @else
         <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 text-center mt-4" role="alert">
-            <p class="mb-0">You have no payments at the moment.</p>
+            <p>You have no payments at the moment.</p>
         </div>
     @endif
 </div>
