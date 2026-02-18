@@ -21,11 +21,7 @@
       </div>
 
       <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-        @if(session('status'))
-          <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            {{ session('status') }}
-          </div>
-        @endif
+        <x-auth-session-status :status="session('status')" class="mb-4" />
 
         <form method="POST" action="{{ route('login') }}" novalidate>
           @csrf
