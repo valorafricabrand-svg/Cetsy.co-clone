@@ -1,7 +1,7 @@
-<section class="policy-section">
-  <h2 class="fw-semibold mb-2">Cetsy Terms and Conditions</h2>
-  <p class="text-muted">Effective June 2025</p>
-  <pre class="p-3 bg-light border rounded" style="white-space: pre-wrap;">Welcome to Cetsy! These Terms and Conditions ("Terms") govern your access to and use of Cetsy’s Services.
+<section class="policy-section space-y-3">
+  <h2 class="text-xl font-bold text-slate-900">Cetsy Terms and Conditions</h2>
+  <p class="text-sm text-slate-500">Effective June 2025</p>
+  <pre class="mt-3 overflow-x-auto rounded-2xl border border-slate-200 bg-slate-50 p-4 text-[13px] leading-6 text-slate-700" style="white-space: pre-wrap;">Welcome to Cetsy! These Terms and Conditions ("Terms") govern your access to and use of Cetsy’s Services.
 
 1. Acceptance of Terms
 By using the Services, you agree to these Terms and to our Privacy Policy. We may update Terms; continued use means acceptance.
@@ -54,3 +54,4 @@ By using the Services, you agree to these Terms and to our Privacy Policy. We ma
 • {{ support_email() }} or provided legal form.
   </pre>
 </section>
+

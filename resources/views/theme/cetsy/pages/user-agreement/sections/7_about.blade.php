@@ -1,6 +1,6 @@
-<section class="policy-section">
-  <h2 class="fw-semibold mb-2">About Cetsy</h2>
-  <pre class="p-3 bg-light border rounded" style="white-space: pre-wrap;">Mission
+<section class="policy-section space-y-3">
+  <h2 class="text-xl font-bold text-slate-900">About Cetsy</h2>
+  <pre class="mt-3 overflow-x-auto rounded-2xl border border-slate-200 bg-slate-50 p-4 text-[13px] leading-6 text-slate-700" style="white-space: pre-wrap;">Mission
 • Connect global markets; empower sellers; simplify buying; foster inclusion
 
 What We Do
@@ -27,3 +27,4 @@ Join
 • Become part of a global trade community; contact: {{ support_email() }}
   </pre>
 </section>
+

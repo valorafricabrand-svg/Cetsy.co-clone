@@ -1,6 +1,6 @@
-<section class="policy-section">
-  <h2 class="fw-semibold mb-2">Cetsy Seller Forum Guidelines</h2>
-  <pre class="p-3 bg-light border rounded" style="white-space: pre-wrap;">Purpose
+<section class="policy-section space-y-3">
+  <h2 class="text-xl font-bold text-slate-900">Cetsy Seller Forum Guidelines</h2>
+  <pre class="mt-3 overflow-x-auto rounded-2xl border border-slate-200 bg-slate-50 p-4 text-[13px] leading-6 text-slate-700" style="white-space: pre-wrap;">Purpose
 • Knowledge sharing, peer support, feedback, networking, announcements.
 
 Conduct & Etiquette
@@ -27,3 +27,4 @@ IP License
 Contact: via Seller Dashboard.
   </pre>
 </section>
+

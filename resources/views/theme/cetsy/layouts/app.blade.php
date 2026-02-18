@@ -71,7 +71,11 @@
         <link href="{{ asset('assets/css/user.min.css') }}" rel="stylesheet">
     @endif
 
-    <link rel="stylesheet" href="{{ asset('vendors/fontawesome/css/all.min.css') }}">
+    @if (file_exists(public_path('vendors/fontawesome/css/all.min.css')))
+        <link rel="stylesheet" href="{{ asset('vendors/fontawesome/css/all.min.css') }}">
+    @elseif (file_exists(public_path('vendors/fontawesome/all.min.js')))
+        <script src="{{ asset('vendors/fontawesome/all.min.js') }}" defer></script>
+    @endif
 
     @yield('styles')
     @stack('styles')
