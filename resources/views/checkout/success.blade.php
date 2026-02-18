@@ -1,16 +1,33 @@
-@extends('layouts.frontapp')
+@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
-<div class="max-w-3xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
-  <h1 class="text-3xl font-bold mb-6">Thank You!</h1>
+@section('title','Order Confirmed')
 
-  <p class="mb-4">Your order <strong>#{{ $order->id }}</strong> has been placed successfully.</p>
-  <p class="mb-8">Total paid: <strong>{{ money($order->total) }}</strong></p>
+@section('main')
+<section class="bg-slate-50 py-12 md:py-16">
+  <div class="mx-auto w-full max-w-3xl px-4 sm:px-6">
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-10">
+      <div class="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+        <i class="fa-solid fa-check text-lg" aria-hidden="true"></i>
+      </div>
 
-  <a href="{{ route('home') }}"
-     class="bg-primary text-white px-6 py-3 rounded hover:bg-primary-dark">
-    Continue Shopping
-  </a>
-</div>
+      <h1 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">Thank You</h1>
+      <p class="mt-2 text-sm text-slate-500">Your order was placed successfully.</p>
+
+      <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left sm:px-6">
+        <div class="flex items-center justify-between border-b border-slate-200 py-2 text-sm">
+          <span class="text-slate-600">Order Number</span>
+          <span class="font-semibold text-slate-900">#{{ $order->id }}</span>
+        </div>
+        <div class="flex items-center justify-between py-2 text-sm">
+          <span class="text-slate-600">Total Paid</span>
+          <span class="font-semibold text-slate-900">{{ money($order->total) }}</span>
+        </div>
+      </div>
+
+      <a href="{{ route('home') }}" class="mt-6 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500">
+        Continue Shopping
+      </a>
+    </div>
+  </div>
+</section>
 @endsection
-
