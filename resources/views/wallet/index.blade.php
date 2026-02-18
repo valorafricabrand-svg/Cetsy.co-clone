@@ -1,17 +1,42 @@
 ﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Wallet Transactions')
-
+@push('styles')
+<style>
+  .wallet-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.55);
+    padding: 1rem;
+  }
+  .wallet-modal.is-open { display: flex; }
+  .wallet-modal-dialog { width: 100%; max-width: 34rem; }
+  .wallet-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    padding: .25rem .6rem;
+    font-size: .75rem;
+    font-weight: 600;
+    color: #334155;
+  }
+</style>
+@endpush
 @section('main')
 <div class="content">
-    <div class="grid grid-cols-12 gap-4 gap-x-4 gap-y-4">
+    <div class="grid grid-cols-12 gap-4">
         <div class="col-span-12">
 
             {{-- Header --}}
-          {{-- Header --}}
 <div class="flex items-center justify-between mb-2">
-    <h2 class="text-base font-semibold font-semibold mb-0">Wallet Overview</h2>
-    <div class="flex items-center gap-2">
+    <h2 class="text-xl font-semibold text-slate-900">Wallet Overview</h2>
+    <div class="flex flex-wrap items-center gap-2">
         {{-- View Payouts --}}
         @if(auth()->user()->isSeller())
         <a href="{{ route('seller.payouts.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
@@ -23,7 +48,7 @@
         </a>
 
         @if(auth()->user()->isSeller())
-          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base mt-3 mt-0 md:mt-0"
+          <button class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
                   data-bs-toggle="modal"
                   data-bs-target="#payoutModal"
                   @disabled($balance < $minAmount || ($paymentMethods?->count() ?? 0) === 0)>
@@ -41,13 +66,13 @@
 
             {{-- Summary Card --}}
             <div class="grid grid-cols-12 gap-4 mb-4">
-                <div class="md:col-span-4 mb-3 mb-0 md:mb-0">
-                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 h-full">
+                <div class="md:col-span-4">
+                    <div class="h-full rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div class="p-4 sm:p-5 flex items-center">
-                            <i class="fas fa-wallet fa-2x text-emerald-600 mr-3"></i>
+                            <i class="fas fa-wallet text-3xl text-emerald-600 mr-3"></i>
                             <div>
                                 <div class="text-slate-500 text-xs">Available Balance</div>
-                                <div class="fs-4 font-bold">
+                                <div class="text-3xl font-bold text-slate-900">
                                     USD {{ number_format($balance, 2) }}
                                 </div>
                             </div>
@@ -55,18 +80,18 @@
                     </div>
                 </div>
                 <div class="md:col-span-4">
-                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 h-full">
+                    <div class="h-full rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div class="p-4 sm:p-5 flex items-center justify-between">
                             <div class="flex items-center">
-                                <i class="fas fa-pause-circle fa-2x text-amber-600 mr-3"></i>
+                                <i class="fas fa-pause-circle text-3xl text-amber-600 mr-3"></i>
                                 <div>
                                     <div class="text-slate-500 text-xs">On Hold</div>
-                                    <div class="fs-4 font-bold">
+                                    <div class="text-3xl font-bold text-slate-900">
                                         USD {{ number_format($onHold, 2) }}
                                     </div>
                                 </div>
                             </div>
-                            <a href="{{ route('wallet.index', array_merge(request()->query(), ['status' => 'on_hold'])) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50" title="View on-hold transactions">
+                            <a href="{{ route('wallet.index', array_merge(request()->query(), ['status' => 'on_hold'])) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" title="View on-hold transactions">
                                 View
                             </a>
                         </div>
@@ -84,14 +109,14 @@
     <i class="fas fa-exclamation-triangle"></i>
     <div>
       Add a payout method to request payouts.
-      <a href="{{ route('seller.payment-methods.index') }}" class="alert-link">Manage methods</a>.
+      <a href="{{ route('seller.payment-methods.index') }}" class="font-semibold underline">Manage methods</a>.
     </div>
   </div>
 @endif
 
 {{-- Payout modal --}}
-<div class="modal" id="payoutModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+<div class="wallet-modal" id="payoutModal" tabindex="-1" aria-hidden="true">
+    <div class="wallet-modal-dialog">
         <form method="POST"
       action="{{ route('seller.payouts.store') }}"
       class="rounded-2xl border border-slate-200 bg-white shadow-xl needs-validation"
@@ -102,7 +127,7 @@
 
     <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900">Request Payout</h5>
-        <button class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close">&times;</button>
     </div>
 
     <div class="px-4 py-4">
@@ -123,8 +148,8 @@
                       id="payoutMaxBtn"
                       tabindex="-1"
                       aria-label="Use available balance"
-                      data-bs-toggle="tooltip"
-                      data-bs-placement="top"
+                      
+                      
                       title="Use available balance" @disabled($maxPayout <= 0)>Max</button>
             </div>
             <div class="mt-1 text-xs text-rose-600">@error('amount') {{ $message }} @else Required @enderror</div>
@@ -166,7 +191,7 @@
 
         {{-- Add new payout method (separate modal trigger) --}}
         <div class="mb-3">
-          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" data-bs-toggle="modal" data-bs-target="#addPayoutMethodModal">
+          <button type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" data-bs-toggle="modal" data-bs-target="#addPayoutMethodModal">
             <i class="bi bi-plus-lg"></i> Add Payout Method
           </button>
           <small class="text-slate-500 ml-2">After saving, this page refreshes and you can submit the payout.</small>
@@ -176,7 +201,7 @@
     </div>
 
     <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3 justify-between">
-        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200" id="payoutNetBadge">You receive: {{ get_currency() }} 0.00</span>
+        <span class="wallet-chip" id="payoutNetBadge">You receive: {{ get_currency() }} 0.00</span>
         <button id="payoutSubmitBtn" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" type="submit">
             Submit&nbsp;Request
         </button>
@@ -186,7 +211,7 @@
 </div>
 
 @if(!empty($otpPendingPayout))
-  <div id="payout-verify-inline" class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mt-3">
+  <div id="payout-verify-inline" class="mt-3 rounded-2xl border border-slate-200 bg-white shadow-sm">
     <div class="border-b border-slate-200 px-4 py-3 bg-white font-semibold">Verify Payout</div>
     <div class="p-4 sm:p-5">
       <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.submit') ? route('seller.payouts.otp.submit', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/verify')) }}" class="grid grid-cols-12 gap-4 gap-3 items-end">
@@ -202,11 +227,11 @@
         </div>
       </form>
       <div class="mt-2 flex gap-3">
-        <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.resend') ? route('seller.payouts.otp.resend', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/resend-otp')) }}" class="d-inline">
+        <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.resend') ? route('seller.payouts.otp.resend', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/resend-otp')) }}" class="inline">
           @csrf
           <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition text-emerald-700 hover:text-emerald-600 underline-offset-2 hover:underline p-0">Resend code</button>
         </form>
-        <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.cancel') ? route('seller.payouts.otp.cancel', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/cancel')) }}" class="d-inline" onsubmit="return confirm('Cancel this payout request?');">
+        <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.cancel') ? route('seller.payouts.otp.cancel', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/cancel')) }}" class="inline" onsubmit="return confirm('Cancel this payout request?');">
           @csrf
           <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition text-emerald-700 hover:text-emerald-600 underline-offset-2 hover:underline text-rose-600 p-0">Cancel</button>
         </form>
@@ -217,15 +242,15 @@
 </div>
 
 {{-- Add Payout Method Modal (separate to avoid nested forms) --}}
-<div class="modal" id="addPayoutMethodModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+<div class="wallet-modal" id="addPayoutMethodModal" tabindex="-1" aria-hidden="true">
+  <div class="wallet-modal-dialog">
     <form action="{{ route('seller.payment-methods.store') }}" method="POST" class="rounded-2xl border border-slate-200 bg-white shadow-xl needs-validation" novalidate>
       @csrf
       <input type="hidden" name="redirect_to" value="{{ route('wallet.index') }}">
       <input type="hidden" name="open_payout" value="1">
       <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900">Add Payout Method</h5>
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close">&times;</button>
       </div>
       <div class="px-4 py-4">
         <div class="grid grid-cols-12 gap-4 gap-3">
@@ -278,7 +303,7 @@
                 <div class="md:col-span-3">
                     <input type="date" name="to" value="{{ request('to') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="To date">
                 </div>
-                <div class="md:col-span-3 d-grid">
+                <div class="md:col-span-3">
                     <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                         <i class="fas fa-filter mr-1"></i> Filter
                     </button>
@@ -417,6 +442,45 @@
 @push('scripts')
 <script>
   (function(){
+    const body = document.body;
+    const openModal = (selector) => {
+      const modal = document.querySelector(selector);
+      if (!modal) return;
+      modal.classList.add('is-open');
+      body.classList.add('overflow-hidden');
+    };
+    const closeModal = (modal) => {
+      if (!modal) return;
+      modal.classList.remove('is-open');
+      if (!document.querySelector('.wallet-modal.is-open')) {
+        body.classList.remove('overflow-hidden');
+      }
+    };
+    window.openWalletModal = openModal;
+    document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target]').forEach((trigger) => {
+      trigger.addEventListener('click', function(event){
+        event.preventDefault();
+        openModal(this.getAttribute('data-bs-target'));
+      });
+    });
+    document.querySelectorAll('[data-bs-dismiss="modal"]').forEach((button) => {
+      button.addEventListener('click', function(){
+        closeModal(this.closest('.wallet-modal'));
+      });
+    });
+    document.querySelectorAll('.wallet-modal').forEach((modal) => {
+      modal.addEventListener('click', function(event){
+        if (event.target === modal) closeModal(modal);
+      });
+    });
+    document.addEventListener('keydown', function(event){
+      if (event.key === 'Escape') {
+        const topModal = document.querySelector('.wallet-modal.is-open');
+        if (topModal) closeModal(topModal);
+      }
+    });
+  })();
+  (function(){
     // Support inline payout form (preferred) or fallback to old modal selectors
     let input = document.querySelector('#payout-inline input[name="amount"]');
     let methodSel = document.querySelector('#payout-inline select[name="method"]');
@@ -476,23 +540,15 @@
     recalc();
     updateSubmitDisabled();
   })();
-  // Bootstrap tooltip init (best-effort)
-  (function(){
-    try {
-      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el){
-        new bootstrap.Tooltip(el);
-      });
-    } catch (e) {}
-  })();
   // Auto-open payout modal if requested (after adding method)
   @if(session('open_payout_modal') || request()->boolean('open_payout') || $errors->has('amount') || $errors->has('method'))
     document.addEventListener('DOMContentLoaded', function(){
-      var el = document.getElementById('payoutModal');
-      if (el) { try { new bootstrap.Modal(el).show(); } catch(e) {} }
+      window.openWalletModal && window.openWalletModal('#payoutModal');
     });
   @endif
 </script>
 @endpush
+
 
 
 
