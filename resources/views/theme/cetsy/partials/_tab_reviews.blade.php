@@ -1,53 +1,50 @@
 {{-- resources/views/theme/{{ theme() }}/partials/_tab_reviews.blade.php --}}
-<div class="tab-pane fade" id="reviews-pane" role="tabpanel">
+<div class="listing-tab-pane hidden" id="reviews-pane" role="tabpanel">
   @forelse($reviews as $review)
-    <div class="border-bottom py-3">
-      <div class="d-flex align-items-center mb-1">
+    <article class="border-b border-slate-200 py-4 last:border-0">
+      <div class="mb-1 flex items-center gap-1">
         @for($i=1; $i<=5; $i++)
-          <i class="fa-star{{ $i <= $review->rating ? ' fa-solid text-warning' : ' fa-regular text-muted' }} me-1"></i>
+          <i class="fa-star{{ $i <= $review->rating ? ' fa-solid text-amber-500' : ' fa-regular text-slate-300' }}"></i>
         @endfor
-        <small class="text-muted ms-auto">{{ $review->created_at->diffForHumans() }}</small>
+        <small class="ml-auto text-xs text-slate-500">{{ $review->created_at->diffForHumans() }}</small>
       </div>
+
       @if($review->orderItem && $review->orderItem->product)
         @php
           $p = $review->orderItem->product;
-          $thumb = null;
-          if (!empty($p->featured_image)) {
-            $thumb = str_starts_with($p->featured_image, 'http')
-              ? $p->featured_image
-              : asset('storage/' . ltrim($p->featured_image, '/'));
-          }
+          $thumb = product_thumb_url($p);
         @endphp
-        <div class="d-flex align-items-center mb-2">
-          @if($thumb)
-            <a href="{{ route('listing.show', $p->slug ?? $p->id) }}" class="me-2">
-              <img src="{{ $thumb }}" alt="{{ $p->name }} thumbnail"
-                   style="width:48px;height:48px;border-radius:6px;object-fit:cover;">
-            </a>
-          @endif
-          <div class="small">
-            <div class="fw-semibold text-truncate" style="max-width:220px;">
-              <a href="{{ route('listing.show', $p->slug ?? $p->id) }}" class="text-decoration-none text-dark">
+        <div class="mb-2 flex items-center gap-2">
+          <a href="{{ route('listing.show', $p->slug ?? $p->id) }}">
+            <img src="{{ $thumb }}" alt="{{ $p->name }} thumbnail" class="h-12 w-12 rounded-lg border border-slate-200 object-cover">
+          </a>
+          <div class="text-sm">
+            <div class="max-w-[220px] truncate font-semibold text-slate-900">
+              <a href="{{ route('listing.show', $p->slug ?? $p->id) }}" class="hover:text-emerald-700">
                 {{ $p->name }}
               </a>
             </div>
-            <div class="text-muted">Reviewed item</div>
+            <div class="text-xs text-slate-500">Reviewed item</div>
           </div>
         </div>
       @endif
-      <p class="small mb-0">{{ $review->comment }}</p>
-      <div class="small text-muted mt-1">{{ $review->user->name }}</div>
+
+      <p class="text-sm text-slate-700">{{ $review->comment }}</p>
+      <div class="mt-1 text-xs text-slate-500">{{ $review->user->name }}</div>
+
       @if(!empty($review->image_path))
         <div class="mt-2">
-          <a href="{{ asset('storage/'.ltrim($review->image_path,'/')) }}" target="_blank">
-            <img src="{{ asset('storage/'.ltrim($review->image_path,'/')) }}"
-                 alt="Review photo"
-                 style="max-width:160px;max-height:160px;border-radius:8px;">
+          <a href="{{ asset('storage/'.ltrim($review->image_path,'/')) }}" target="_blank" rel="noopener">
+            <img
+              src="{{ asset('storage/'.ltrim($review->image_path,'/')) }}"
+              alt="Review photo"
+              class="max-h-40 max-w-40 rounded-lg border border-slate-200 object-cover"
+            >
           </a>
         </div>
       @endif
-    </div>
+    </article>
   @empty
-    <p class="text-muted small mb-0">No reviews yet.</p>
+    <p class="text-sm text-slate-500">No reviews yet.</p>
   @endforelse
 </div>

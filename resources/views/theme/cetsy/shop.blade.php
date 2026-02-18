@@ -1,12 +1,30 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @php
   use Illuminate\Support\Str;
+
   $shopImage = $shop->featured_image_url
     ?? $shop->logo_url
     ?? (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'));
+
   $shopDescription = Str::limit(strip_tags($shop->bio ?? $shop->announcement ?? ($shop->name . ' shop on Cetsy')), 155);
   $shopRouteParam = $shop->slug ?: $shop->id;
+
+  $totalSales = $shop->orders()->whereIn('status', [
+    \App\Models\Order::STATUS_COMPLETED,
+    \App\Models\Order::STATUS_DELIVERED,
+  ])->count();
+
+  $totalProducts = $shop->products()->where('is_active', true)->count();
+  $memberSince = $shop->created_at->diffForHumans();
+  $averageRating = (float) ($shop->reviews()->avg('rating') ?? 0);
+  $reviewCount = (int) $shop->reviews()->count();
+
+  $reviews = $shop->reviews()
+    ->with(['user', 'orderItem.product.media'])
+    ->latest()
+    ->take(10)
+    ->get();
 @endphp
 
 @section('title', $shop->name . ' | Shop on Cetsy')
@@ -15,792 +33,644 @@
 @section('meta_image', $shopImage)
 @section('meta_robots', 'index, follow')
 
+@push('styles')
+<style>
+  .shop-tab-btn.is-active {
+    border-color: rgb(16 185 129);
+    color: rgb(5 150 105);
+    background: rgb(236 253 245);
+  }
+
+  .view-toggle-btn.is-active {
+    background: rgb(5 150 105);
+    color: #fff;
+  }
+
+  .shop-product-item {
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+
+  .shop-product-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  }
+</style>
+@endpush
+
 @section('main')
-<!-- Shop Hero Section -->
-<section class="py-5 bg-white border-bottom">
-  <div class="container">
-    <div class="row align-items-center">
-      <div class="col-lg-9 d-flex align-items-center gap-4">
-        {{-- Shop Logo --}}
-<img 
-  src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg')) }}" 
-  alt="{{ $shop->name }} logo" 
-  class="rounded-circle shadow-sm border" 
-  style="width:80px; height:80px; object-fit:cover;" 
-  onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
+<div class="relative overflow-x-clip pb-10">
+  <div class="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-emerald-200/40 blur-3xl"></div>
+  <div class="pointer-events-none absolute -left-20 top-[30rem] h-72 w-72 rounded-full bg-sky-200/35 blur-3xl"></div>
 
+  <section class="relative border-b border-slate-200 bg-white py-8">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-start">
+        <div class="flex items-start gap-4">
+          <img
+            src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg')) }}"
+            alt="{{ $shop->name }} logo"
+            class="h-20 w-20 rounded-full border border-slate-200 object-cover shadow-sm"
+            onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));"
+          >
 
-        <div class="flex-grow-1">
-          <h1 class="h4 fw-bold mb-1">{{ $shop->name }}</h1>
-          <span class="text-muted d-block mb-2">{{ country_name($shop->country) }}</span>
+          <div class="min-w-0 flex-1">
+            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">{{ $shop->name }}</h1>
+            <p class="mt-1 text-sm text-slate-500">{{ country_name($shop->country) }}</p>
 
-          {{-- Shop Stats --}}
-          @php
-            $totalSales     = $shop->orders()->whereIn('status', [
-              \App\Models\Order::STATUS_COMPLETED,
-              \App\Models\Order::STATUS_DELIVERED,
-            ])->count();
-            $totalProducts  = $shop->products()->where('is_active', true)->count();
-            $memberSince    = $shop->created_at->diffForHumans();
-            $averageRating  = $shop->reviews()->avg('rating') ?? 0;
-            $reviewCount    = $shop->reviews()->count();
-          @endphp
-          <div class="d-flex flex-wrap align-items-center gap-4 mb-3">
-            <div class="d-flex align-items-center gap-2">
-              <i class="fas fa-shopping-bag text-success"></i>
-              <small class="text-muted">{{ $totalSales }} {{ Str::plural('sale', $totalSales) }}</small>
+            <div class="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-600 sm:text-sm">
+              <span class="inline-flex items-center gap-1.5"><i class="fas fa-shopping-bag text-emerald-600"></i> {{ $totalSales }} {{ Str::plural('sale', $totalSales) }}</span>
+              <span class="inline-flex items-center gap-1.5"><i class="fas fa-box text-sky-600"></i> {{ $totalProducts }} {{ Str::plural('item', $totalProducts) }}</span>
+              <span class="inline-flex items-center gap-1.5"><i class="fas fa-calendar text-indigo-600"></i> Since {{ $memberSince }}</span>
+              @if($reviewCount)
+                <span class="inline-flex items-center gap-1.5"><i class="fas fa-star text-amber-500"></i> {{ number_format($averageRating, 1) }} ({{ $reviewCount }})</span>
+              @endif
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <i class="fas fa-box text-primary"></i>
-              <small class="text-muted">{{ $totalProducts }} {{ Str::plural('item', $totalProducts) }}</small>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <i class="fas fa-calendar text-info"></i>
-              <small class="text-muted">Since {{ $memberSince }}</small>
-            </div>
-            @if($reviewCount)
-              <div class="d-flex align-items-center gap-2">
-                <i class="fas fa-star text-warning"></i>
-                <small class="text-muted">{{ number_format($averageRating,1) }} ({{ $reviewCount }})</small>
-              </div>
-            @endif
-          </div>
 
-          {{-- Reviews & Stars --}}
-          <div>
-            @if($reviewCount)
-              <a href="#reviews" class="text-decoration-none">
-                <div class="d-flex align-items-center gap-2">
-                  <div class="d-flex align-items-center">
-                    @for($i=1; $i<=5; $i++)
-                      @if($i <= floor($averageRating))
-                        <i class="fas fa-star text-warning" style="font-size:16px;"></i>
-                      @elseif($i - $averageRating < 1)
-                        <i class="fas fa-star-half-alt text-warning" style="font-size:16px;"></i>
-                      @else
-                        <i class="far fa-star text-muted" style="font-size:16px;"></i>
-                      @endif
-                    @endfor
-                  </div>
-                  <small class="fw-semibold text-dark">{{ number_format($averageRating,1) }}</small>
-                  <small class="text-muted">({{ $reviewCount }} {{ Str::plural('review', $reviewCount) }})</small>
-                </div>
-              </a>
-            @else
-              <div class="d-flex align-items-center gap-2">
-                <div class="d-flex align-items-center">
-                  @for($i=1; $i<=5; $i++)
-                    <i class="far fa-star text-muted" style="font-size:16px;"></i>
-                  @endfor
-                </div>
-                <small class="text-muted">No reviews yet</small>
-              </div>
-            @endif
+            <a href="#reviews" class="mt-3 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-emerald-700">
+              <span class="inline-flex items-center text-amber-500">
+                @for($i=1; $i<=5; $i++)
+                  @if($i <= floor($averageRating))
+                    <i class="fas fa-star"></i>
+                  @elseif($i - $averageRating < 1)
+                    <i class="fas fa-star-half-alt"></i>
+                  @else
+                    <i class="far fa-star text-slate-300"></i>
+                  @endif
+                @endfor
+              </span>
+              <span class="font-semibold text-slate-900">{{ $reviewCount ? number_format($averageRating, 1) : 'No reviews yet' }}</span>
+              @if($reviewCount)
+                <span class="text-slate-500">({{ $reviewCount }} {{ Str::plural('review', $reviewCount) }})</span>
+              @endif
+            </a>
           </div>
         </div>
-      </div>
 
-      {{-- Action Buttons --}}
-      <div class="col-lg-3 text-lg-end mt-3 mt-lg-0">
-        @if(Auth::id() === $shop->user_id)
-          <a href="{{ route('seller.shops.edit', $shop) }}" class="btn btn-outline-success rounded-pill">
-            <i class="fas fa-edit me-1"></i> Edit Shop
-          </a>
-        @else
-          <div class="d-flex justify-content-lg-end gap-2">
-            <button class="btn btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#messageModal">
-              <i class="fas fa-comment me-1"></i> Message Seller
+        <div class="flex items-center justify-start gap-2 lg:justify-end">
+          @if(Auth::id() === $shop->user_id)
+            <a href="{{ route('seller.shops.edit', $shop) }}" class="inline-flex items-center rounded-xl border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50">
+              <i class="fas fa-edit mr-2"></i> Edit Shop
+            </a>
+          @else
+            <button type="button" data-open-message class="inline-flex items-center rounded-xl border border-sky-300 px-4 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-50">
+              <i class="fas fa-comment mr-2"></i> Message Seller
             </button>
-            <div class="dropdown">
-              <button class="btn btn-outline-secondary rounded-pill dropdown-toggle" data-bs-toggle="dropdown">
+
+            <details class="relative">
+              <summary class="inline-flex cursor-pointer list-none items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                 <i class="fas fa-share-alt"></i>
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="#" onclick="shareOn('facebook')">
-                  <i class="fab fa-facebook me-2"></i> Facebook
-                </a></li>
-                <li><a class="dropdown-item" href="#" onclick="shareOn('twitter')">
-                  <i class="fab fa-twitter me-2"></i> Twitter
-                </a></li>
-                <li><a class="dropdown-item" href="#" onclick="shareOn('whatsapp')">
-                  <i class="fab fa-whatsapp me-2"></i> WhatsApp
-                </a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#" onclick="copyShopUrl('{{ url("shop/{$shop->slug}") }}')">
-                  <i class="fas fa-link me-2"></i> Copy Link
-                </a></li>
-              </ul>
-            </div>
-          </div>
-        @endif
+              </summary>
+              <div class="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-sm shadow-lg">
+                <button type="button" class="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50" onclick="shareOn('facebook')"><i class="fab fa-facebook mr-2"></i>Facebook</button>
+                <button type="button" class="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50" onclick="shareOn('twitter')"><i class="fab fa-twitter mr-2"></i>Twitter</button>
+                <button type="button" class="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50" onclick="shareOn('whatsapp')"><i class="fab fa-whatsapp mr-2"></i>WhatsApp</button>
+                <hr class="my-1 border-slate-200">
+                <button type="button" class="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50" onclick="copyShopUrl('{{ route('shop.show', $shopRouteParam) }}')"><i class="fas fa-link mr-2"></i>Copy Link</button>
+              </div>
+            </details>
+          @endif
+        </div>
       </div>
-
-    </div>
-  </div>
-</section>
-
-{{-- Navigation Tabs --}}
-<section class="bg-white border-bottom">
-  <div class="container">
-    <ul class="nav nav-tabs nav-fill border-0">
-      @foreach(['items'=>'Items','reviews'=>'Reviews','about'=>'About','policies'=>'Policies'] as $id=>$label)
-        <li class="nav-item">
-          <a class="nav-link @if($loop->first) active @endif" href="#{{ $id }}" data-bs-toggle="tab">{{ $label }}</a>
-        </li>
-      @endforeach
-    </ul>
-  </div>
-</section>
-
-{{-- Announcement & Flash --}}
-@if($shop->announcement)
-  <div class="container mt-4">
-    <div class="alert alert-info shadow-sm border-0">
-      <i class="fas fa-bullhorn me-2"></i>{!! $shop->announcement !!}
-    </div>
-  </div>
-@endif
-@if(session('success'))
-  <div class="container mt-4">
-    <div class="alert alert-success shadow-sm border-0">{{ session('success') }}</div>
-  </div>
-@endif
-
-{{-- Featured Image --}}
-@if($shop->featured_image)
-  <section class="py-4 bg-white">
-    <div class="container">
-      <img src="{{ $shop->featured_image_url ?? asset('storage/' . $shop->featured_image) }}"
-           alt="Featured image for {{ $shop->name }}"
-           class="w-100 rounded shadow-sm"
-           style="height:300px; object-fit:cover;">
     </div>
   </section>
-@endif
 
-<div class="tab-content">
+  <section class="border-b border-slate-200 bg-white">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-wrap gap-2 py-3">
+        @foreach(['items' => 'Items', 'reviews' => 'Reviews', 'about' => 'About', 'policies' => 'Policies'] as $id => $label)
+          <button
+            type="button"
+            class="shop-tab-btn {{ $loop->first ? 'is-active' : '' }} rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition"
+            data-target="{{ $id }}"
+          >
+            {{ $label }}
+          </button>
+        @endforeach
+      </div>
+    </div>
+  </section>
 
-  {{-- Items Tab --}}
-  <div class="tab-pane fade show active" id="items">
-    <section class="py-5 bg-light">
-      <div class="container">
-        {{-- Filters & Controls --}}
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-          <div class="d-flex flex-wrap gap-3">
-            <div>
-              <small class="form-label fw-semibold">Price</small>
-              <select id="priceFilter" class="form-select form-select-sm">
-                <option value="">All</option>
-                <option value="0-10">Under $10</option>
-                <option value="10-25">$10â“25</option>
-                <option value="25-50">$25â“50</option>
-                <option value="50-100">$50â“100</option>
-                <option value="100+">Over $100</option>
-              </select>
+  @if($shop->announcement)
+    <section class="bg-slate-50 pt-4">
+      <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+          <i class="fas fa-bullhorn mr-2"></i>{!! $shop->announcement !!}
+        </div>
+      </div>
+    </section>
+  @endif
+
+  @if(session('success'))
+    <section class="bg-slate-50 pt-4">
+      <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
+      </div>
+    </section>
+  @endif
+
+  @if($shop->featured_image)
+    <section class="bg-slate-50 py-4">
+      <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <img
+          src="{{ $shop->featured_image_url ?? asset('storage/' . $shop->featured_image) }}"
+          alt="Featured image for {{ $shop->name }}"
+          class="h-48 w-full rounded-2xl border border-slate-200 object-cover shadow-sm md:h-72"
+        >
+      </div>
+    </section>
+  @endif
+
+  <section class="bg-slate-50 py-5">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div id="items" class="shop-tab-panel space-y-4">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div class="grid gap-2 sm:grid-cols-3">
+              <label class="text-xs font-semibold text-slate-600">
+                <span class="mb-1 block">Price</span>
+                <select id="priceFilter" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none">
+                  <option value="">All</option>
+                  <option value="0-10">Under $10</option>
+                  <option value="10-25">$10-$25</option>
+                  <option value="25-50">$25-$50</option>
+                  <option value="50-100">$50-$100</option>
+                  <option value="100+">Over $100</option>
+                </select>
+              </label>
+
+              <label class="text-xs font-semibold text-slate-600">
+                <span class="mb-1 block">Type</span>
+                <select id="typeFilter" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none">
+                  <option value="">All Types</option>
+                  <option value="physical">Products</option>
+                  <option value="digital">Digital</option>
+                  <option value="service">Services</option>
+                </select>
+              </label>
+
+              <label class="text-xs font-semibold text-slate-600">
+                <span class="mb-1 block">Sort By</span>
+                <select id="sortFilter" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none">
+                  <option value="newest">Newest</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="rating">Top Rated</option>
+                </select>
+              </label>
             </div>
-            <div>
-              <small class="form-label fw-semibold">Type</small>
-              <select id="typeFilter" class="form-select form-select-sm">
-                <option value="">All Types</option>
-                <option value="physical">Products</option>
-                <option value="digital">Digital</option>
-                <option value="service">Services</option>
-              </select>
-            </div>
-            <div>
-              <small class="form-label fw-semibold">Sort By</small>
-              <select id="sortFilter" class="form-select form-select-sm">
-                <option value="newest">Newest</option>
-                <option value="price-low">Price: Low â†’ High</option>
-                <option value="price-high">Price: High â†’ Low</option>
-                <option value="rating">Top Rated</option>
-              </select>
-            </div>
-          </div>
-          <div class="d-flex align-items-center gap-3">
-            <span class="small text-muted">
-              {{ $products->firstItem() ?? 0 }}â“{{ $products->lastItem() ?? 0 }} of {{ $products->total() }}
-            </span>
-            <div class="btn-group btn-group-sm" role="group">
-              <input type="radio" class="btn-check" name="viewMode" id="viewGrid" value="grid" autocomplete="off" checked>
-              <label class="btn btn-outline-secondary" for="viewGrid"><i class="fas fa-th"></i></label>
-              <input type="radio" class="btn-check" name="viewMode" id="viewList" value="list" autocomplete="off">
-              <label class="btn btn-outline-secondary" for="viewList"><i class="fas fa-list"></i></label>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 lg:justify-end">
+              <span class="text-xs text-slate-500 sm:text-sm">{{ $products->firstItem() ?? 0 }}-{{ $products->lastItem() ?? 0 }} of {{ $products->total() }}</span>
+              <div class="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white p-1">
+                <button type="button" class="view-toggle-btn is-active inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm" data-view="grid" aria-label="Grid view">
+                  <i class="fas fa-th-large"></i>
+                </button>
+                <button type="button" class="view-toggle-btn inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm text-slate-700 hover:bg-slate-100" data-view="list" aria-label="List view">
+                  <i class="fas fa-bars"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {{-- Grid View --}}
-        <div id="gridView" class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+        <div id="gridView" class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
           @forelse($products as $product)
-            <div class="col product-item" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ $shop->reviews_avg_rating ?? ($shop->average_rating ?? 0) }}">
-              @include('theme.'.theme().'.partials.product-card', ['item'=>$product])
+            <div class="product-item shop-product-item" data-price="{{ (float) ($product->price ?? 0) }}" data-type="{{ $product->type }}" data-rating="{{ $shop->reviews_avg_rating ?? ($shop->average_rating ?? 0) }}">
+              @include('theme.'.theme().'.partials.product-card', ['item' => $product])
             </div>
           @empty
-            <div class="col-12">
-              <div class="alert alert-info border-0 shadow-sm">
-                <i class="fas fa-info-circle me-2"></i>No products listed.
-              </div>
+            <div class="col-span-full rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500">
+              <i class="fas fa-info-circle mb-2 block text-2xl text-slate-400"></i>
+              No products listed.
             </div>
           @endforelse
         </div>
 
-        {{-- List View --}}
-        <div id="listView" class="list-group d-none">
+        <div id="listView" class="hidden space-y-3">
           @foreach($products as $product)
             @php
-              if (!empty($product->featured_image)) {
-                  $thumbUrl = str_starts_with($product->featured_image, 'http')
-                            ? $product->featured_image
-                            : asset('storage/' . ltrim($product->featured_image, '/'));
-              } else {
-                  $firstMedia = $product->media->first();
-                  if ($firstMedia) {
-                      $thumbUrl = asset('storage/' . ltrim($firstMedia->url, '/'));
-                  } else {
-                      $thumbUrl = ($product->shop && $product->shop->logo)
-                                  ? asset('storage/' . ltrim($product->shop->logo, '/'))
-                                  : (setting('favicon_url') ?: asset('storage/placeholder.jpg'));
-                  }
-              }
+              $thumbUrl = product_thumb_url($product);
             @endphp
-            <div class="list-group-item product-item d-flex align-items-center" data-price="{{ $product->price }}" data-type="{{ $product->type }}" data-rating="{{ $shop->reviews_avg_rating ?? ($shop->average_rating ?? 0) }}">
-              <img src="{{ $thumbUrl }}" alt="{{ $product->name }}" class="rounded" style="width:80px; height:80px; object-fit:cover;">
-              <div class="ms-3 flex-grow-1">
-                <h6 class="mb-1">{{ $product->name }}</h6>
-                <small class="text-muted">${{ number_format($product->price,2) }}</small>
+
+            <article class="product-item product-item-list shop-product-item flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3" data-price="{{ (float) ($product->price ?? 0) }}" data-type="{{ $product->type }}" data-rating="{{ $shop->reviews_avg_rating ?? ($shop->average_rating ?? 0) }}">
+              <img src="{{ $thumbUrl }}" alt="{{ $product->name }}" class="h-20 w-20 rounded-xl border border-slate-200 object-cover">
+              <div class="min-w-0 flex-1">
+                <h3 class="line-clamp-1 text-sm font-semibold text-slate-900">{{ $product->name }}</h3>
+                <p class="mt-1 text-sm font-bold text-emerald-700">{{ money((float) $product->price, null) }}</p>
               </div>
-              <button class="btn btn-sm btn-success" onclick="addToCart({{ $product->id }})">
+              <button type="button" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500" onclick="addToCart({{ $product->id }})">
                 <i class="fas fa-cart-plus"></i>
               </button>
-            </div>
+            </article>
           @endforeach
         </div>
 
-        {{-- Load More Button --}}
         @if($products->hasMorePages())
-          <div class="mt-4 d-flex justify-content-center">
-            <button id="loadMore" class="btn btn-outline-secondary" data-next-page-url="{{ $products->nextPageUrl() }}">
+          <div class="text-center">
+            <button id="loadMore" class="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700" data-next-page-url="{{ $products->nextPageUrl() }}">
               Load More
             </button>
           </div>
         @endif
       </div>
-    </section>
-  </div>
-
-  {{-- Reviews Tab --}}
-  <div class="tab-pane fade" id="reviews">
-    <section class="py-5 bg-light">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-8">
-            <h3 class="h5 fw-bold mb-4">Reviews</h3>
-            @forelse($shop->reviews()->with(['user','orderItem.product'])->latest()->paginate(10) as $review)
-              <div class="card mb-3 shadow-sm">
-                <div class="card-body">
-                  <div class="d-flex align-items-center mb-2">
-                    <div class="me-3">
-                      @for($i=1;$i<=5;$i++)
-                        <i class="fa{{ $i <= $review->rating ? 's' : 'r' }} fa-star text-warning"></i>
-                      @endfor
-                    </div>
-                    <div>
-                      <strong>{{ $review->user->name }}</strong>
-                      <small class="text-muted ms-2">{{ $review->created_at->diffForHumans() }}</small>
-                    </div>
+      <div id="reviews" class="shop-tab-panel hidden">
+        <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
+          <div class="space-y-3">
+            <h2 class="text-lg font-bold text-slate-900">Reviews</h2>
+            @forelse($reviews as $review)
+              <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div class="flex flex-wrap items-center gap-2 text-sm">
+                  <div class="text-amber-500">
+                    @for($i=1; $i<=5; $i++)
+                      <i class="fa{{ $i <= $review->rating ? 's' : 'r' }} fa-star"></i>
+                    @endfor
                   </div>
-
-                  @if($review->orderItem && $review->orderItem->product)
-                    @php
-                      $product = $review->orderItem->product;
-                      $thumbUrl = null;
-                      if (!empty($product->featured_image)) {
-                        $thumbUrl = str_starts_with($product->featured_image, 'http')
-                          ? $product->featured_image
-                          : asset('storage/' . ltrim($product->featured_image, '/'));
-                      } elseif (method_exists($product, 'media') && ($product->relationLoaded('media') ? $product->media->isNotEmpty() : false)) {
-                        $firstImage = $product->media->firstWhere('type','image');
-                        if ($firstImage) { $thumbUrl = asset('storage/' . ltrim($firstImage->url,'/')); }
-                      } elseif (method_exists($product, 'media')) {
-                        try {
-                          $firstImage = $product->media()->where('type','image')->first();
-                          if ($firstImage) { $thumbUrl = asset('storage/' . ltrim($firstImage->url,'/')); }
-                        } catch (\Throwable $e) {}
-                      }
-                    @endphp
-                    <div class="d-flex align-items-center mb-2">
-                      @if($thumbUrl)
-                        <img src="{{ $thumbUrl }}" alt="{{ $product->name }} thumbnail" class="me-2" style="width:56px;height:56px;object-fit:cover;border-radius:6px;">
-                      @endif
-                      <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" class="small text-decoration-none">{{ $product->name }}</a>
-                    </div>
-                  @endif
-
-                  @if($review->comment)
-                    <p class="mb-0 text-secondary">{{ $review->comment }}</p>
-                  @endif
-
-                  @if(!empty($review->seller_response))
-                    <div class="mt-3 p-3 rounded bg-white border-start border-3 border-success">
-                      <div class="d-flex align-items-center mb-2">
-                        <span class="badge bg-success-subtle text-success fw-semibold">
-                          <i class="fa fa-reply me-1"></i> Seller reply
-                        </span>
-                        @if($review->seller_responded_at)
-                          <small class="text-muted ms-2">{{ $review->seller_responded_at->diffForHumans() }}</small>
-                        @endif
-                      </div>
-                      <div class="text-secondary small">{{ $review->seller_response }}</div>
-                    </div>
-                  @endif
-
-                  @if(!empty($review->image_path))
-                    <div class="mt-2">
-                      <a href="{{ asset('storage/' . ltrim($review->image_path,'/')) }}" target="_blank">
-                        <img src="{{ asset('storage/' . ltrim($review->image_path,'/')) }}" alt="Review photo" style="max-width:160px;max-height:160px;border-radius:8px;">
-                      </a>
-                    </div>
-                  @endif
+                  <span class="font-semibold text-slate-900">{{ $review->user->name }}</span>
+                  <span class="text-slate-500">{{ $review->created_at->diffForHumans() }}</span>
                 </div>
-              </div>
+
+                @if($review->orderItem && $review->orderItem->product)
+                  @php
+                    $reviewProduct = $review->orderItem->product;
+                    $reviewThumb = product_thumb_url($reviewProduct);
+                  @endphp
+
+                  <div class="mt-3 flex items-center gap-2">
+                    <img src="{{ $reviewThumb }}" alt="{{ $reviewProduct->name }} thumbnail" class="h-12 w-12 rounded-lg border border-slate-200 object-cover">
+                    <a href="{{ route('listing.show', $reviewProduct->slug ?? $reviewProduct->id) }}" class="text-sm font-medium text-slate-700 hover:text-emerald-700">{{ $reviewProduct->name }}</a>
+                  </div>
+                @endif
+
+                @if($review->comment)
+                  <p class="mt-3 text-sm text-slate-600">{{ $review->comment }}</p>
+                @endif
+
+                @if(!empty($review->seller_response))
+                  <div class="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                      <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 font-semibold text-emerald-700"><i class="fa fa-reply mr-1"></i>Seller reply</span>
+                      @if($review->seller_responded_at)
+                        <span class="text-slate-500">{{ $review->seller_responded_at->diffForHumans() }}</span>
+                      @endif
+                    </div>
+                    <p class="mt-2 text-sm text-slate-600">{{ $review->seller_response }}</p>
+                  </div>
+                @endif
+
+                @if(!empty($review->image_path))
+                  <a href="{{ asset('storage/' . ltrim($review->image_path, '/')) }}" target="_blank" rel="noopener" class="mt-3 inline-block">
+                    <img src="{{ asset('storage/' . ltrim($review->image_path, '/')) }}" alt="Review photo" class="h-32 w-32 rounded-xl border border-slate-200 object-cover">
+                  </a>
+                @endif
+              </article>
             @empty
-              <div class="alert alert-info border-0">
-                <i class="fas fa-info-circle me-2"></i>No reviews yet.
+              <div class="rounded-2xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
+                <i class="fas fa-info-circle mr-1"></i> No reviews yet.
               </div>
             @endforelse
           </div>
-          <div class="col-lg-4">
-            <div class="card shadow-sm">
-              <div class="card-body text-center">
-                <div class="display-6 fw-bold text-warning">{{ number_format($averageRating,1) }}</div>
-                <div class="mb-2">
-                  @for($i=1;$i<=5;$i++)
-                    <i class="fa{{ $i <= floor($averageRating) ? 's' : 'r' }} fa-star text-warning"></i>
-                  @endfor
-                </div>
-                <small class="text-muted">{{ $reviewCount }} {{ Str::plural('review', $reviewCount) }}</small>
-              </div>
+
+          <aside class="h-fit rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+            <p class="text-4xl font-extrabold text-amber-500">{{ number_format($averageRating, 1) }}</p>
+            <div class="mt-2 text-amber-500">
+              @for($i=1; $i<=5; $i++)
+                <i class="fa{{ $i <= floor($averageRating) ? 's' : 'r' }} fa-star"></i>
+              @endfor
             </div>
-          </div>
+            <p class="mt-2 text-sm text-slate-500">{{ $reviewCount }} {{ Str::plural('review', $reviewCount) }}</p>
+          </aside>
         </div>
       </div>
-    </section>
-  </div>
 
-  {{-- About Tab --}}
-  <div class="tab-pane fade" id="about">
-    <section class="py-5 bg-light">
-      <div class="container">
-        <div class="row g-4">
-          <div class="col-lg-8">
-            <div class="card shadow-sm h-100">
-              <div class="card-header bg-white fw-semibold">About This Shop</div>
-              <div class="card-body">
-                {!! $shop->bio ? $shop->bio : 'No description provided.' !!}
-              </div>
+      <div id="about" class="shop-tab-panel hidden">
+        <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
+          <article class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <header class="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900">About This Shop</header>
+            <div class="prose prose-sm max-w-none px-4 py-4 text-slate-700">
+              {!! $shop->bio ? $shop->bio : 'No description provided.' !!}
             </div>
-          </div>
-          <div class="col-lg-4">
-            <div class="card shadow-sm h-100">
-              <div class="card-header bg-white fw-semibold">Shop Details</div>
-              <div class="card-body">
-                <p class="mb-2"><strong>Language:</strong> <span class="text-muted">{{ $shop->language ?? 'N/A' }}</span></p>
-                <p class="mb-2"><strong>Country:</strong> <span class="text-muted">{{ country_name($shop->country) }}</span></p>
-                <p class="mb-2"><strong>Currency:</strong> <span class="text-muted">{{ $shop->currency ?? 'N/A' }}</span></p>
-                <p class="mb-0"><strong>Shop URL:</strong>
-                  <button class="btn btn-outline-success btn-sm ms-2" onclick="copyShopUrl('{{ url("shop/{$shop->slug}") }}')" data-bs-toggle="tooltip" title="Copy URL">
-                    <i class="fas fa-link"></i>
-                  </button>
-                </p>
-              </div>
-            </div>
-          </div>
+          </article>
 
-          {{-- Billing Address --}}
-          <div class="col-12">
-            <div class="card shadow-sm">
-              <div class="card-header bg-white fw-semibold">Billing Address</div>
-              <div class="card-body">
-                <p class="mb-1 text-secondary">{{ $shop->address ?? 'N/A' }}</p>
-                <p class="mb-0 text-secondary">{{ $shop->city }}{{ $shop->postal ? ', ' . $shop->postal : '' }}</p>
-              </div>
+          <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 class="text-sm font-semibold text-slate-900">Shop Details</h3>
+            <div class="mt-3 space-y-2 text-sm text-slate-600">
+              <p><strong class="text-slate-900">Language:</strong> {{ $shop->language ?? 'N/A' }}</p>
+              <p><strong class="text-slate-900">Country:</strong> {{ country_name($shop->country) }}</p>
+              <p><strong class="text-slate-900">Currency:</strong> {{ $shop->currency ?? 'N/A' }}</p>
+              <p class="flex items-center gap-2">
+                <strong class="text-slate-900">Shop URL:</strong>
+                <button type="button" class="rounded-lg border border-emerald-300 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50" onclick="copyShopUrl('{{ route('shop.show', $shopRouteParam) }}')" aria-label="Copy shop URL">
+                  <i class="fas fa-link"></i>
+                </button>
+              </p>
             </div>
-          </div>
+          </article>
         </div>
-      </div>
-    </section>
-  </div>
 
-  {{-- Policies Tab --}}
-  <div class="tab-pane fade" id="policies">
-    <section class="py-5 bg-light">
-      <div class="container">
+        <article class="mt-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <header class="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900">Billing Address</header>
+          <div class="px-4 py-4 text-sm text-slate-600">
+            <p>{{ $shop->address ?? 'N/A' }}</p>
+            <p>{{ $shop->city }}{{ $shop->postal ? ', ' . $shop->postal : '' }}</p>
+          </div>
+        </article>
+      </div>
+
+      <div id="policies" class="shop-tab-panel hidden">
         @if($shop->policies)
-          <div class="card shadow-sm">
-            <div class="card-header bg-white fw-semibold">Shop Policies</div>
-            <div class="card-body">
+          <article class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <header class="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900">Shop Policies</header>
+            <div class="prose prose-sm max-w-none px-4 py-4 text-slate-700">
               {!! $shop->policies !!}
             </div>
-          </div>
+          </article>
         @else
-          <div class="alert alert-info border-0">
-            <i class="fas fa-info-circle me-2"></i>No policies available.
+          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
+            <i class="fas fa-info-circle mr-1"></i> No policies available.
           </div>
         @endif
       </div>
-    </section>
-  </div>
-
+    </div>
+  </section>
 </div>
 
-{{-- Message Modal --}}
-<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <form class="modal-content" action="{{ route('messages.store') }}" method="POST" enctype="multipart/form-data">
+@if(Auth::id() !== $shop->user_id)
+<div id="messageModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 p-4" role="dialog" aria-modal="true" aria-labelledby="messageModalLabel">
+  <div class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-2xl">
+    <form action="{{ route('messages.store') }}" method="POST" enctype="multipart/form-data">
       @csrf
       <input type="hidden" name="receiver_id" value="{{ $shop->user_id }}">
       <input type="hidden" name="product_id" value="">
-      <div class="modal-header">
-        <h5 class="modal-title" id="messageModalLabel">Message Seller – {{ $shop->name }}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+      <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <h2 class="text-base font-semibold text-slate-900" id="messageModalLabel">Message Seller - {{ $shop->name }}</h2>
+        <button type="button" data-close-message class="rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50" aria-label="Close message dialog">Close</button>
       </div>
-      <div class="modal-body">
-        <label for="messageBody" class="form-label">Your message</label>
-        <textarea id="messageBody" name="message" class="form-control" rows="4" required></textarea>
-        <div class="mt-3">
-          <label for="messageAttachment" class="form-label">Attachment (optional)</label>
-          <input type="file" name="attachment" id="messageAttachment" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
-          <small class="text-muted">Images or PDF, max 5MB.</small>
+
+      <div class="space-y-3 px-4 py-4">
+        <label for="messageBody" class="block text-sm font-semibold text-slate-700">Your message</label>
+        <textarea id="messageBody" name="message" rows="4" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none"></textarea>
+
+        <div>
+          <label for="messageAttachment" class="mb-1 block text-sm font-semibold text-slate-700">Attachment (optional)</label>
+          <input type="file" name="attachment" id="messageAttachment" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
+          <p class="mt-1 text-xs text-slate-500">Images or PDF, max 5MB.</p>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Send Message</button>
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+
+      <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+        <button type="button" data-close-message class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
+        <button type="submit" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">Send Message</button>
       </div>
     </form>
   </div>
 </div>
+@endif
 @endsection
-
 @push('scripts')
 <script>
-// Fix modal title encoding and filter/sort wiring
-document.addEventListener('DOMContentLoaded', function() {
-    // Ensure clean UTF-8 dash in modal title regardless of source encoding
-    try {
-        var lbl = document.getElementById('messageModalLabel');
-        if (lbl) {
-            lbl.textContent = 'Message Seller \u2013 {{ addslashes($shop->name) }}';
-        }
-    } catch (e) {}
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabButtons = Array.from(document.querySelectorAll('.shop-tab-btn'));
+    const tabPanels = Array.from(document.querySelectorAll('.shop-tab-panel'));
+
+    function activateTab(targetId, pushHash = true) {
+      tabButtons.forEach(btn => {
+        const active = btn.dataset.target === targetId;
+        btn.classList.toggle('is-active', active);
+      });
+
+      tabPanels.forEach(panel => {
+        panel.classList.toggle('hidden', panel.id !== targetId);
+      });
+
+      if (pushHash) {
+        history.replaceState(null, '', `#${targetId}`);
+      }
+    }
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        activateTab(btn.dataset.target);
+      });
+    });
+
+    const initialHash = window.location.hash ? window.location.hash.replace('#', '') : '';
+    if (initialHash && tabPanels.some(panel => panel.id === initialHash)) {
+      activateTab(initialHash, false);
+    }
 
     const priceFilter = document.getElementById('priceFilter');
     const sortFilter = document.getElementById('sortFilter');
     const typeFilter = document.getElementById('typeFilter');
-    const viewModeInputs = document.querySelectorAll('input[name="viewMode"]');
-    
-    // Auto-scroll to tab content when tab is clicked
-    const navTabs = document.querySelectorAll('.nav-tabs .nav-link');
-    navTabs.forEach(tab => {
-        tab.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Get the target tab content
-            const targetId = this.getAttribute('href');
-            const targetContent = document.querySelector(targetId);
-            
-            if (targetContent) {
-                // Smooth scroll to the tab content
-                targetContent.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start',
-                    inline: 'nearest'
-                });
-                
-                // Add a small delay to ensure the scroll happens before the tab switch
-                setTimeout(() => {
-                    // Trigger the tab switch
-                    const tabTrigger = new bootstrap.Tab(this);
-                    tabTrigger.show();
-                }, 100);
-            }
-        });
-    });
-    
-    // View mode toggle
-    viewModeInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            const gridView = document.getElementById('gridView');
-            const listView = document.getElementById('listView');
-            
-            if (this.value === 'grid') {
-                gridView.classList.remove('d-none');
-                listView.classList.add('d-none');
-            } else {
-                gridView.classList.add('d-none');
-                listView.classList.remove('d-none');
-            }
-        });
-    });
-    
-    // Filter functionality
-    function filterProducts() {
-        const priceRange = priceFilter.value;
-        const productType = typeFilter.value;
-        const products = document.querySelectorAll('#gridView .product-item');
-        
-        products.forEach(product => {
-            const price = parseFloat(product.dataset.price);
-            const type = product.dataset.type;
-            let show = true;
-            
-            // Price filter
-            if (priceRange) {
-                const [min, max] = priceRange.split('-').map(p => p === '+' ? Infinity : parseFloat(p));
-                if (price < min || (max !== Infinity && price > max)) {
-                    show = false;
-                }
-            }
-            
-            // Type filter
-            if (productType && type !== productType) {
-                show = false;
-            }
-            
-            // Do not force display; let Bootstrap's grid manage layout
-            product.style.display = show ? '' : 'none';
-        });
-    }
-    
-    // Sort functionality
-    function sortProducts() {
-        const sortBy = sortFilter.value;
-        const container = document.getElementById('gridView');
-        const products = Array.from(document.querySelectorAll('#gridView .product-item'));
-        
-        products.sort((a, b) => {
-            const priceA = parseFloat(a.dataset.price);
-            const priceB = parseFloat(b.dataset.price);
-            const ratingA = parseFloat(a.dataset.rating);
-            const ratingB = parseFloat(b.dataset.rating);
-            
-            switch(sortBy) {
-                case 'price-low':
-                    return priceA - priceB;
-                case 'price-high':
-                    return priceB - priceA;
-                case 'rating':
-                    return ratingB - ratingA;
-                default:
-                    return 0;
-            }
-        });
-        
-        products.forEach(product => container.appendChild(product));
-    }
-    
-    priceFilter.addEventListener('change', filterProducts);
-    typeFilter.addEventListener('change', filterProducts);
-    sortFilter.addEventListener('change', sortProducts);
-});
-
-function copyShopUrl(url) {
-    const tempInput = document.createElement('input');
-    tempInput.value = url;
-    document.body.appendChild(tempInput);
-    
-    tempInput.select();
-    tempInput.setSelectionRange(0, 99999);
-    
-    try {
-        document.execCommand('copy');
-        
-        const button = event.target.closest('button');
-        const originalIcon = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i>';
-        button.classList.remove('btn-outline-success');
-        button.classList.add('btn-success');
-        
-        setTimeout(() => {
-            button.innerHTML = originalIcon;
-            button.classList.remove('btn-success');
-            button.classList.add('btn-outline-success');
-        }, 2000);
-        
-    } catch (err) {
-        console.error('Failed to copy URL: ', err);
-        alert('Failed to copy URL. Please copy manually.');
-    }
-    
-    document.body.removeChild(tempInput);
-}
-
-function contactShop() {
-    alert('Contact functionality will be implemented here');
-}
-
-function followShop() {
-    alert('Follow functionality will be implemented here');
-}
-
-function addToWishlist(productId) {
-    // Implement wishlist functionality
-    alert('Add to wishlist functionality will be implemented here');
-}
-
-function addToCart(productId) {
-    // Implement cart functionality
-    alert('Add to cart functionality will be implemented here');
-}
-
-function shareOnFacebook() {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent('Check out this amazing shop on Cetsy!');
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank');
-}
-
-function shareOnTwitter() {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent('Check out this amazing shop on Cetsy!');
-    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
-}
-
-function shareOnWhatsApp() {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent('Check out this amazing shop on Cetsy!');
-    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
-}
-
-// Initialize tooltips
-document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
-</script>
-@endpush
-
-@push('styles')
-<style>
-  .product-item:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.1); }
-  .nav-tabs .nav-link { border: none; padding:1rem; font-weight:500; color:#6c757d; }
-  .nav-tabs .nav-link.active { color:#198754; border-bottom:2px solid #198754; }
-</style>
-@endpush
-
-@push('scripts')
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const filters = {
-      price: document.getElementById('priceFilter'),
-      type: document.getElementById('typeFilter'),
-      sort: document.getElementById('sortFilter'),
-      grid: document.getElementById('viewGrid'),
-      list: document.getElementById('viewList')
-    };
     const gridView = document.getElementById('gridView');
     const listView = document.getElementById('listView');
+    const viewButtons = Array.from(document.querySelectorAll('.view-toggle-btn'));
 
-    function items() {
-      return Array.from(document.querySelectorAll('#gridView .product-item'));
+    function allItems() {
+      return Array.from(document.querySelectorAll('.product-item'));
+    }
+
+    function matchesPriceRange(price, rangeValue) {
+      if (!rangeValue) return true;
+      if (rangeValue === '100+') return price >= 100;
+
+      const parts = rangeValue.split('-').map(x => parseFloat(x));
+      if (parts.length !== 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1])) return true;
+      return price >= parts[0] && price <= parts[1];
     }
 
     function applyFilters() {
-      items().forEach(el => {
-        let show = true;
-        const price = parseFloat(el.dataset.price);
-        const type = el.dataset.type;
-        const [min, max] = filters.price.value.split('-').map(x=>x==='+'?Infinity:parseFloat(x));
+      const priceRange = priceFilter ? priceFilter.value : '';
+      const productType = typeFilter ? typeFilter.value : '';
 
-        if (filters.price.value && !(price >= min && (max===Infinity||price <= max))) show = false;
-        if (filters.type.value && type !== filters.type.value) show = false;
-        el.style.display = show ? '' : 'none';
+      allItems().forEach(item => {
+        const price = parseFloat(item.dataset.price || '0');
+        const type = item.dataset.type || '';
+
+        let show = true;
+        if (!matchesPriceRange(price, priceRange)) show = false;
+        if (productType && type !== productType) show = false;
+
+        item.classList.toggle('hidden', !show);
       });
+    }
+
+    function sortContainer(container, sortBy) {
+      const items = Array.from(container.querySelectorAll('.product-item'));
+      items.sort((a, b) => {
+        const priceA = parseFloat(a.dataset.price || '0');
+        const priceB = parseFloat(b.dataset.price || '0');
+        const ratingA = parseFloat(a.dataset.rating || '0');
+        const ratingB = parseFloat(b.dataset.rating || '0');
+
+        switch (sortBy) {
+          case 'price-low':
+            return priceA - priceB;
+          case 'price-high':
+            return priceB - priceA;
+          case 'rating':
+            return ratingB - ratingA;
+          default:
+            return 0;
+        }
+      });
+
+      items.forEach(item => container.appendChild(item));
     }
 
     function applySort() {
-      const sorted = items().filter(el => el.style.display !== 'none');
-      const parent = gridView;
-      sorted.sort((a,b) => {
-        const aP = parseFloat(a.dataset.price), bP = parseFloat(b.dataset.price);
-        const aR = parseFloat(a.dataset.rating), bR = parseFloat(b.dataset.rating);
-        switch(filters.sort.value) {
-          case 'price-low': return aP - bP;
-          case 'price-high': return bP - aP;
-          case 'rating': return bR - aR;
-          default: return 0;
-        }
-      });
-      sorted.forEach(el => parent.appendChild(el));
+      const sortBy = sortFilter ? sortFilter.value : 'newest';
+      if (gridView) sortContainer(gridView, sortBy);
+      if (listView) sortContainer(listView, sortBy);
     }
 
-    [filters.price, filters.type, filters.sort].forEach(el => el.addEventListener('change', () => {
-      applyFilters(); applySort();
-    }));
+    function setView(mode) {
+      if (!gridView || !listView) return;
+      const showGrid = mode !== 'list';
+      gridView.classList.toggle('hidden', !showGrid);
+      listView.classList.toggle('hidden', showGrid);
 
-    filters.grid.addEventListener('change', () => {
-      gridView.classList.remove('d-none');
-      listView.classList.add('d-none');
+      viewButtons.forEach(btn => {
+        const active = btn.dataset.view === (showGrid ? 'grid' : 'list');
+        btn.classList.toggle('is-active', active);
+        btn.classList.toggle('text-slate-700', !active);
+        btn.classList.toggle('hover:bg-slate-100', !active);
+      });
+    }
+
+    if (priceFilter) {
+      priceFilter.addEventListener('change', () => {
+        applyFilters();
+        applySort();
+      });
+    }
+
+    if (typeFilter) {
+      typeFilter.addEventListener('change', () => {
+        applyFilters();
+        applySort();
+      });
+    }
+
+    if (sortFilter) {
+      sortFilter.addEventListener('change', () => {
+        applySort();
+      });
+    }
+
+    viewButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        setView(btn.dataset.view);
+      });
     });
-    filters.list.addEventListener('change', () => {
-      gridView.classList.add('d-none');
-      listView.classList.remove('d-none');
-    });
 
-    window.shareOn = (platform) => {
-      const url = encodeURIComponent(location.href);
-      const text = encodeURIComponent('Check out this shop on Cetsy!');
-      const routes = {
-        facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
-        twitter:  `https://twitter.com/intent/tweet?url=${url}&text=${text}`,
-        whatsapp: `https://wa.me/?text=${text}%20${url}`
-      };
-      window.open(routes[platform], '_blank');
-    };
-
-    window.copyShopUrl = (url) => {
-      navigator.clipboard.writeText(url)
-        .then(() => alert('Shop URL copied!'))
-        .catch(() => alert('Copy failed, please try manually.'));
-    };
+    setView('grid');
 
     const loadMoreBtn = document.getElementById('loadMore');
     if (loadMoreBtn) {
       loadMoreBtn.addEventListener('click', () => {
-        const btn = loadMoreBtn;
-        const nextUrl = btn.dataset.nextPageUrl;
-        btn.disabled = true;
-        btn.textContent = 'Loading...';
+        const nextUrl = loadMoreBtn.dataset.nextPageUrl;
+        if (!nextUrl) return;
+
+        loadMoreBtn.disabled = true;
+        loadMoreBtn.textContent = 'Loading...';
 
         fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-
           .then(res => res.text())
           .then(html => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
 
-            doc.querySelectorAll('#gridItems .product-item').forEach(el => gridView.appendChild(el));
-            doc.querySelectorAll('#listItems .product-item').forEach(el => listView.appendChild(el));
+            const newGridItems = doc.querySelectorAll('#gridItems .product-item');
+            const newListItems = doc.querySelectorAll('#listItems .product-item');
 
-            const newBtn = doc.getElementById('loadMore');
-            if (newBtn && newBtn.dataset.nextPageUrl) {
-              btn.dataset.nextPageUrl = newBtn.dataset.nextPageUrl;
-              btn.disabled = false;
-              btn.textContent = 'Load More';
+            newGridItems.forEach(item => gridView.appendChild(item));
+            newListItems.forEach(item => listView.appendChild(item));
+
+            const nextBtn = doc.getElementById('loadMore');
+            if (nextBtn && nextBtn.dataset.nextPageUrl) {
+              loadMoreBtn.dataset.nextPageUrl = nextBtn.dataset.nextPageUrl;
+              loadMoreBtn.disabled = false;
+              loadMoreBtn.textContent = 'Load More';
             } else {
-              btn.remove();
+              loadMoreBtn.remove();
             }
+
             applyFilters();
             applySort();
           })
           .catch(() => {
-            btn.disabled = false;
-            btn.textContent = 'Load More';
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.textContent = 'Load More';
           });
       });
     }
+
+    const messageModal = document.getElementById('messageModal');
+    const openMessage = document.querySelector('[data-open-message]');
+    const closeMessageButtons = Array.from(document.querySelectorAll('[data-close-message]'));
+
+    function closeMessageModal() {
+      if (!messageModal) return;
+      messageModal.classList.add('hidden');
+      messageModal.classList.remove('flex');
+    }
+
+    function openMessageModal() {
+      if (!messageModal) return;
+      messageModal.classList.remove('hidden');
+      messageModal.classList.add('flex');
+    }
+
+    if (openMessage) {
+      openMessage.addEventListener('click', openMessageModal);
+    }
+
+    closeMessageButtons.forEach(btn => btn.addEventListener('click', closeMessageModal));
+
+    if (messageModal) {
+      messageModal.addEventListener('click', event => {
+        if (event.target === messageModal) {
+          closeMessageModal();
+        }
+      });
+    }
+
+    window.shareOn = platform => {
+      const url = encodeURIComponent(window.location.href);
+      const text = encodeURIComponent('Check out this shop on Cetsy!');
+      const routes = {
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+        twitter: `https://twitter.com/intent/tweet?url=${url}&text=${text}`,
+        whatsapp: `https://wa.me/?text=${text}%20${url}`,
+      };
+
+      if (routes[platform]) {
+        window.open(routes[platform], '_blank', 'noopener');
+      }
+    };
+
+    window.copyShopUrl = async url => {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(url);
+        } else {
+          const input = document.createElement('input');
+          input.value = url;
+          document.body.appendChild(input);
+          input.select();
+          document.execCommand('copy');
+          document.body.removeChild(input);
+        }
+        alert('Shop URL copied!');
+      } catch (error) {
+        alert('Copy failed, please copy manually.');
+      }
+    };
+
+    window.addToCart = () => {
+      alert('Add to cart functionality will be implemented here');
+    };
   });
 </script>
 @endpush

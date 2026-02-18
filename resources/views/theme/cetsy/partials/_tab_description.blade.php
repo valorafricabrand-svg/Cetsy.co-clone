@@ -1,4 +1,4 @@
 {{-- resources/views/theme/{{ theme() }}/partials/_tab_description.blade.php --}}
-<div class="tab-pane fade show active" id="desc-pane" role="tabpanel">
+<div class="listing-tab-pane prose prose-sm max-w-none text-slate-700" id="desc-pane" role="tabpanel">
   {!! $product->description !!}
 </div>

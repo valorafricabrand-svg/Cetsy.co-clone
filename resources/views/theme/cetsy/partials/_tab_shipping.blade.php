@@ -1,12 +1,17 @@
 {{-- resources/views/theme/{{ theme() }}/partials/_tab_shipping.blade.php --}}
 
-<div class="tab-pane fade" id="shipping-pane" role="tabpanel">
+<div class="listing-tab-pane hidden" id="shipping-pane" role="tabpanel">
   @if(!empty($etaLabel))
-    <div class="alert alert-light border d-flex align-items-center gap-3 mb-4">
-      <i class="fa-solid fa-truck-fast text-success"></i>
+    <div class="mb-4 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+      <i class="fa-solid fa-truck-fast mt-0.5 text-emerald-600"></i>
       <div>
-        <div class="fw-semibold text-dark">Estimated delivery</div>
-        <div class="small text-muted">{{ $etaLabel }} @if(!empty($procLabel) || !empty($transitLabel)) (Processing {{ $procLabel ?? '-' }}, Transit {{ $transitLabel ?? '-' }}) @endif</div>
+        <div class="text-sm font-semibold text-slate-900">Estimated delivery</div>
+        <div class="text-sm text-slate-600">
+          {{ $etaLabel }}
+          @if(!empty($procLabel) || !empty($transitLabel))
+            (Processing {{ $procLabel ?? '-' }}, Transit {{ $transitLabel ?? '-' }})
+          @endif
+        </div>
       </div>
     </div>
   @endif

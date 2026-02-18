@@ -6,34 +6,31 @@
 @endphp
 
 @if($isService)
-  <div class="card border-info border-start-4 shadow-sm mb-4">
-    <div class="card-body d-flex flex-wrap align-items-center gap-3">
-      <div
-        class="bg-info bg-opacity-10 text-info rounded-circle d-flex align-items-center justify-content-center"
-        style="width:48px;height:48px"
-      >
+  <div class="mb-4 rounded-2xl border border-sky-200 bg-sky-50 p-4">
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 text-sky-700">
         <i class="fa-solid fa-concierge-bell fa-lg"></i>
       </div>
-      <div class="flex-grow-1">
-        <h6 class="mb-1 fw-semibold text-info">Service Listing</h6>
-        <p class="mb-0 small text-muted">
+      <div class="flex-1">
+        <h6 class="mb-1 text-sm font-semibold text-sky-800">Service Listing</h6>
+        <p class="text-sm text-slate-600">
           This is a <strong>service</strong>. Contact the seller below for quotes.
         </p>
       </div>
-      <div class="d-flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2">
         <button
-          class="btn btn-outline-info btn-sm"
+          class="rounded-full border border-sky-300 px-3 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100"
           data-bs-toggle="modal"
           data-bs-target="#messageModal"
         >
-          <i class="fa-regular fa-comments me-1"></i>Message Seller
+          <i class="fa-regular fa-comments mr-1"></i>Message Seller
         </button>
         <button
-          class="btn btn-info btn-sm text-white"
+          class="rounded-full bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-500"
           data-bs-toggle="modal"
           data-bs-target="#offerModal"
         >
-          <i class="fa-solid fa-handshake-simple me-1"></i>Make an Offer
+          <i class="fa-solid fa-handshake-simple mr-1"></i>Make an Offer
         </button>
       </div>
     </div>

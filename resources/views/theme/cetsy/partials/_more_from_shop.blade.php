@@ -1,12 +1,12 @@
 {{-- resources/views/theme/{{ theme() }}/partials/_more_from_shop.blade.php --}}
 
 @if($moreFromShop->count())
-  <h3 class="h5 fw-bold mt-5 mb-3">
+  <h3 class="mt-8 mb-3 text-lg font-bold text-slate-900">
     More from {{ $product->shop->name }}
   </h3>
-  <div class="row g-3">
+  <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
     @foreach($moreFromShop as $item)
-      <div class="col-6 col-md-3 col-lg-3">
+      <div>
         @include('theme.'.theme().'.partials.product-card', ['item' => $item])
       </div>
     @endforeach
