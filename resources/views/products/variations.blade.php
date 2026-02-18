@@ -2,30 +2,6 @@
 
 @section('title', $product->name . ' | Variations')
 
-@push('styles')
-<style>
-  /* Sticky tab header */
-  .page-header-sticky {
-    position: sticky;
-    top: 0; /* adjust if your main navbar is fixed */
-    z-index: 1020;
-    background: #fff;
-    border-bottom: 1px solid rgba(0,0,0,.06);
-  }
-  /* Horizontal scroll for tabs on small screens */
-  .tab-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    white-space: nowrap;
-  }
-  .tab-scroll .nav-link { border-radius: 999px; }
-  .rounded-4 { border-radius: 1rem !important; }
-
-  .table td, .table th { vertical-align: middle; }
-  .list-group-item input.form-control-sm { min-width: 140px; }
-</style>
-@endpush
-
 @section('main')
 @php
   // Eager-load everything needed for types, options and variants
@@ -34,88 +10,34 @@
   $current = \Illuminate\Support\Facades\Route::currentRouteName();
 @endphp
 
-<div class="content">
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
 
-  {{-- â”€â”€â”€â”€â”€â”€â”€â”€â”€ Clickable Tabs Header (navigate to pages) â”€â”€â”€â”€â”€â”€â”€â”€â”€ --}}
-  <div class="page-header-sticky">
-    <div class="mx-auto w-full px-4 sm:px-6 px-0">
-      <div class="tab-scroll px-2 py-2">
-        <ul class="nav nav-pills gap-2 flex-nowrap">
-          <li class="">
-            <a class="nav-link {{ $current === 'products.show' ? 'active' : 'btn-outline-secondary' }}"
-               href="{{ route('products.show', $product) }}">
-              <i class="fa-regular fa-circle-question mr-1"></i> About
-            </a>
-          </li>
-
-          <li class="">
-            <a class="nav-link {{ $current === 'products.pricing' ? 'active' : 'btn-outline-secondary' }}"
-               href="{{ route('products.pricing', $product) }}">
-              <i class="fa-solid fa-tags mr-1"></i> Price & Inventory
-            </a>
-          </li>
-
-          <li class="">
-            <a class="nav-link {{ $current === 'products.variations' ? 'active' : 'btn-outline-secondary' }}"
-               href="{{ route('products.variations', $product) }}">
-              <i class="fa-solid fa-layer-group mr-1"></i> Variations
-            </a>
-          </li>
-
-          <li class="">
-            <a class="nav-link {{ $current === 'products.details' ? 'active' : 'btn-outline-secondary' }}"
-               href="{{ route('products.details', $product) }}">
-              <i class="fa-regular fa-rectangle-list mr-1"></i> Details
-            </a>
-          </li>
-
-          <li class="">
-            <a class="nav-link {{ $current === 'products.shipping' ? 'active' : 'btn-outline-secondary' }}"
-               href="{{ route('products.shipping', $product) }}">
-              <i class="fa-solid fa-truck mr-1"></i> Shipping
-            </a>
-          </li>
-
-          <li class="">
-            <a class="nav-link {{ $current === 'products.media' ? 'active' : 'btn-outline-secondary' }}"
-               href="{{ route('products.media', $product) }}">
-              <i class="fa-regular fa-images mr-1"></i> Media
-            </a>
-          </li>
-
-          <li class="">
-            <a class="nav-link {{ $current === 'products.settings' ? 'active' : 'btn-outline-secondary' }}"
-               href="{{ route('products.settings', $product) }}">
-              <i class="fa-solid fa-gear mr-1"></i> Settings
-            </a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
+      <div class="space-y-6">
+        @include('products.partials.edit-tabs', ['product' => $product, 'current' => $current])
 
   {{-- FLASH + VALIDATION --}}
   @if(session('success'))
-    <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 alert-dismissible rounded-3 mt-3" role="alert">
+    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="alert">
       {{ session('success') }}
-      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   @endif
   @if ($errors->any())
-    <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800 alert-dismissible rounded-3 mt-3" role="alert">
+    <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert">
       <strong>There were some problems with your input.</strong>
       <ul class="mb-0 mt-2 pl-3">
         @foreach ($errors->all() as $error)
           <li>{{ $error }}</li>
         @endforeach
       </ul>
-      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   @endif
 
   {{-- HEADER --}}
   <div class="flex justify-between items-center mt-3 mb-3">
-    <h2 class="mb-0">{{ $product->name }} â€” Variations</h2>
+    <h2 class="mb-0">{{ $product->name }} - Variations</h2>
     <div class="flex gap-2">
       <a href="{{ route('products.show', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-900 text-slate-900 hover:bg-slate-100 px-3 py-1.5 text-xs">
         <i class="fas fa-arrow-left mr-1"></i> Back
@@ -129,7 +51,7 @@
   {{-- QUICK OVERVIEW OF TYPES --}}
   <div class="mb-4">
     @forelse($variationTypes as $type)
-      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-2 shadow-sm border-0 rounded-4 variation-card" data-type-id="{{ $type->id }}">
+      <div class="variation-card mb-2 rounded-2xl border border-slate-200 bg-white shadow-sm" data-type-id="{{ $type->id }}">
         <div class="p-4 sm:p-5 flex justify-between items-center">
           <div class="mr-3">
             <h6 class="mb-1">{{ $type->name }}</h6>
@@ -155,7 +77,7 @@
             <form
               action="{{ route('variationTypes.destroy', $type) }}"
               method="POST"
-              class="d-inline ml-2 variation-delete-form"
+              class="ml-2 inline-block variation-delete-form"
               data-type-id="{{ $type->id }}"
               onsubmit="return false;">
               @csrf
@@ -166,7 +88,7 @@
         </div>
       </div>
     @empty
-      <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 mb-0 rounded-4">
+    <div class="mb-0 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
         No variation types defined yet. Use <strong>Manage variation types</strong> to add some.
       </div>
     @endforelse
@@ -175,7 +97,7 @@
   {{-- MANAGE VARIATION TYPES MODAL (list + add) --}}
   <div class="modal" id="manageVariationsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl">
-      <div class="rounded-2xl border border-slate-200 bg-white shadow-xl rounded-4">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900">Manage Variation Types</h5>
           <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
@@ -248,6 +170,9 @@
     @endphp
   @endforeach
 </div>
+    </div>
+  </div>
+</section>
 @endsection
 
 @push('scripts')

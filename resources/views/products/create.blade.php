@@ -1,245 +1,199 @@
 ﻿{{-- resources/views/products/create.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
+@section('title', 'Create New Listing')
+
 @section('main')
-<div class="content">
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="mb-0">Create New Listing</h2>
-    <a href="{{ route('products.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">
-      <i class="fas fa-arrow-left mr-1"></i> Back to Listings
-    </a>
-  </div>
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
 
-  {{-- Flash & Validation --}}
-  @foreach (['success','info','warning','danger'] as $msg)
-    @if(session()->has($msg))
-      <div class="alert alert-{{ $msg }} alert-dismissible fade show">
-        {{ session($msg) }}
-        <button class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert"></button>
-      </div>
-    @endif
-  @endforeach
-  @if($errors->any())
-    <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800"><strong>Please fix:</strong>
-      <ul class="mt-2 mb-0 pl-3">
-        @foreach($errors->all() as $error)
-          <li>{{ $error }}</li>
+      <div class="space-y-6">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Create New Listing</h1>
+              <p class="mt-1 text-sm text-slate-500">Add a new physical product, digital item, or service to your shop.</p>
+            </div>
+            <a href="{{ route('products.index') }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+              <i class="fas fa-arrow-left mr-2"></i> Back to Listings
+            </a>
+          </div>
+        </div>
+
+        @php
+          $flashStyles = [
+              'success' => 'border-emerald-200 bg-emerald-50 text-emerald-800',
+              'info' => 'border-sky-200 bg-sky-50 text-sky-800',
+              'warning' => 'border-amber-200 bg-amber-50 text-amber-900',
+              'danger' => 'border-rose-200 bg-rose-50 text-rose-800',
+          ];
+        @endphp
+        @foreach (['success','info','warning','danger'] as $msg)
+          @if(session()->has($msg))
+            <div class="rounded-xl border px-4 py-3 text-sm {{ $flashStyles[$msg] }}">{{ session($msg) }}</div>
+          @endif
         @endforeach
-      </ul>
-    </div>
-  @endif
 
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm rounded-4 p-4" x-data="listingForm()" x-init="init()">
-    <form action="{{ route('products.store') }}"
-          method="POST"
-          enctype="multipart/form-data"
-          @submit.prevent="$el.submit()">
-      @csrf
-
-      {{-- 1) Listing Name --}}
-      <div class="mb-3">
-        <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Listing Name</label>
-        <input type="text" name="name" id="name" spellcheck="true" autocapitalize="sentences" autocomplete="on"
-               class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 form-control-lg @error('name') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
-               value="{{ old('name') }}"
-               placeholder="e.g. Handmade Wooden Spoon" required>
-        @error('name')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
-      </div>
-
-      {{-- 2) Product Type --}}
-      <div class="mb-3">
-        <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Product Type</label>
-        <select name="type" id="type"
-                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('type') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
-                x-model="type"
-                @change="loadCategories()"
-                required>
-          <option value="">Select type</option>
-          <option value="physical" @selected(old('type')=='physical')>Physical</option>
-          <option value="service"  @selected(old('type')=='service')>Service</option>
-          <option value="digital"  @selected(old('type')=='digital')>Digital</option>
-        </select>
-        @error('type')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
-      </div>
-
-      {{-- 3) Category --}}
-      <div class="mb-3">
-        <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Category</label>
-        <div class="position-relative">
-          <input type="text"
-                 class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('category_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
-                 placeholder="Search categories..."
-                 x-model="categorySearch"
-                 @input="handleCategoryInput()"
-                 @focus="openCategorySuggestions()"
-                 @keydown.arrow-down.prevent="moveCategoryHighlight(1)"
-                 @keydown.arrow-up.prevent="moveCategoryHighlight(-1)"
-                 @keydown.enter.prevent="selectHighlightedCategory()"
-                 @keydown.escape.prevent="closeCategorySuggestions()"
-                 @blur="handleCategoryBlur()"
-                 autocomplete="off"
-                 role="combobox"
-                 aria-autocomplete="list"
-                 :aria-expanded="showCatSuggestions ? 'true' : 'false'"
-                 aria-controls="category-suggestion-list"
-                 aria-label="Search categories">
-          <input type="hidden" name="category_id" :value="categoryId || ''">
-          <div id="category-suggestion-list"
-               class="absolute z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl w-full shadow-sm mt-1"
-               :class="{ 'show': showCatSuggestions }"
-               style="max-height: 16rem; overflow-y: auto;"
-               x-cloak
-               x-show="showCatSuggestions"
-               x-transition
-               @mousedown.prevent>
-            <template x-if="loading">
-              <div class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 text-slate-500">Loading categories...</div>
-            </template>
-            <template x-if="!loading && !catsFiltered.length">
-              <div class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 text-slate-500">No categories match your search.</div>
-            </template>
-            <template x-for="(cat, idx) in catsFiltered" :key="cat.id">
-              <button type="button"
-                      class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 text-truncate"
-                      :class="{ 'active': idx === catHighlightIndex }"
-                      @click="selectCategory(cat)">
-                <span x-text="cat.indented"></span>
-              </button>
-            </template>
+        @if($errors->any())
+          <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            <strong>Please fix:</strong>
+            <ul class="mt-2 list-disc space-y-1 pl-5">
+              @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+              @endforeach
+            </ul>
           </div>
-        </div>
-        <div class="mt-1 text-xs text-slate-500 text-slate-500 mt-1" x-show="categoryId && !showCatSuggestions">
-          Selected: <span class="font-semibold" x-text="currentCategoryLabel()"></span>
-        </div>
-        <div x-show="loading" class="mt-1 text-xs text-slate-500 text-slate-500 mt-1">Loading categories...</div>
-        <div x-show="!loading && categorySearch && !catsFiltered.length" class="mt-1 text-xs text-slate-500 text-slate-500 mt-1" x-cloak>
-          No categories match your search.
-        </div>
-        <div x-show="fallback && !loading" class="mt-1 text-xs text-slate-500 text-amber-600">
-          Showing all categories. Ask admin to tag categories by listing type for better filtering.
-        </div>
-        @error('category_id')<div class="mt-1 text-xs text-rose-600 block">{{ $message }}</div>@enderror
-      </div>
+        @endif
 
-  {{-- Description --}}
-          <div class="col-span-12">
-            <label for="description" class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Description</label>
-            <textarea id="description" name="description" rows="6" spellcheck="true"
-                      class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('description') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">{{ old('description') }}</textarea>
-            @error('description')<div class="text-rose-600 mt-1">{{ $message }}</div>@enderror
-          </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5" x-data="listingForm()" x-init="init()">
+          <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" @submit.prevent="$el.submit()">
+            @csrf
 
-      {{-- 5) Price & Discount --}}
-      <div class="grid grid-cols-12 gap-4 gap-3 mb-4">
-        <div class="md:col-span-6">
-          <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold"
-                 x-text="type==='service' ? 'Priced From ({{ get_currency() }})' : 'Price ({{ get_currency() }})'">
-            Price ({{ get_currency() }})
-          </label>
-          <input type="number" name="price" step="0.01" min="0"
-                 class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('price') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
-                 x-bind:placeholder="type==='service' ? 'Enter starting price' : ''"
-                 value="{{ old('price') }}" required>
-          @error('price')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
-        </div>
-     <div class="md:col-span-6">
-  <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">% Discount <small class="text-slate-500">(optional)</small></label>
-  <input
-    type="number"
-    name="discount_percent"
-    step="1"
-    min="0"
-    max="100"
-    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('discount_percent') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
-    value="{{ old('discount_percent') }}"
-    placeholder="Enter discount percentage"
-  >
-  @error('discount_percent')
-    <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
-  @enderror
-</div>
-
-      </div>
-
-
-
-      {{-- 7) Country & Postal Code --}}
-      <div class="grid grid-cols-12 gap-4 gap-3 mb-4">
-        <div class="md:col-span-6">
-          <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold"
-                 x-text="type==='service' ? 'Service Area' : 'Country of Origin'">Country of Origin</label>
-          <select name="country_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('country_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" required>
-            <option value="">Choose a country</option>
-            @foreach($countries as $c)
-              <option value="{{ $c->id }}" @selected(old('country_id')==$c->id)>{{ $c->name }}</option>
-            @endforeach
-          </select>
-          @error('country_id')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
-        </div>
-        <div class="md:col-span-6">
-          <template x-if="type!=='service'">
-            <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Origin Postal Code</label>
-              <input type="text" name="origin_postal_code"
-                     class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('origin_postal_code') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
-                     value="{{ old('origin_postal_code') }}" placeholder="e.g. 90210">
-              @error('origin_postal_code')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+            <div class="mb-4">
+              <label class="mb-1 block text-sm font-semibold text-slate-700">Listing Name</label>
+              <input type="text" name="name" id="name" spellcheck="true" autocapitalize="sentences" autocomplete="on"
+                     class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('name') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                     value="{{ old('name') }}" placeholder="e.g. Handmade Wooden Spoon" required>
+              @error('name')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
             </div>
-          </template>
-          <template x-if="type==='service'">
-            <div>
-              <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">State(s)/Region(s)</label>
-              <div class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 flex flex-wrap gap-2 py-2">
-                <template x-for="(tag,i) in serviceRegions" :key="i">
-                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary bg-opacity-10 text-primary">
-                    <span x-text="tag"></span>
-                    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 text-white hover:bg-white/20 hover:text-white ml-1" aria-label="Remove"
-                            style="filter: invert(1); opacity:.6" @click="serviceRegions.splice(i,1)"></button>
-                  </span>
-                </template>
-                <input type="text" class="border-0 flex-grow-1" placeholder="Type a region and press Enter"
-                       x-model="serviceRegionInput"
-                       @keydown.enter.prevent="addServiceRegion()"
-                       @keydown.",".prevent="addServiceRegion()">
+
+            <div class="mb-4">
+              <label class="mb-1 block text-sm font-semibold text-slate-700">Product Type</label>
+              <select name="type" id="type"
+                      class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('type') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                      x-model="type" @change="loadCategories()" required>
+                <option value="">Select type</option>
+                <option value="physical" @selected(old('type')=='physical')>Physical</option>
+                <option value="service"  @selected(old('type')=='service')>Service</option>
+                <option value="digital"  @selected(old('type')=='digital')>Digital</option>
+              </select>
+              @error('type')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="mb-4">
+              <label class="mb-1 block text-sm font-semibold text-slate-700">Category</label>
+              <div class="relative">
+                <input type="text"
+                       class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('category_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                       placeholder="Search categories..."
+                       x-model="categorySearch"
+                       @input="handleCategoryInput()"
+                       @focus="openCategorySuggestions()"
+                       @keydown.arrow-down.prevent="moveCategoryHighlight(1)"
+                       @keydown.arrow-up.prevent="moveCategoryHighlight(-1)"
+                       @keydown.enter.prevent="selectHighlightedCategory()"
+                       @keydown.escape.prevent="closeCategorySuggestions()"
+                       @blur="handleCategoryBlur()"
+                       autocomplete="off"
+                       role="combobox"
+                       aria-autocomplete="list"
+                       :aria-expanded="showCatSuggestions ? 'true' : 'false'"
+                       aria-controls="category-suggestion-list"
+                       aria-label="Search categories">
+                <input type="hidden" name="category_id" :value="categoryId || ''">
+                <div id="category-suggestion-list"
+                     class="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
+                     x-cloak
+                     x-show="showCatSuggestions"
+                     x-transition
+                     @mousedown.prevent>
+                  <template x-if="loading"><div class="block rounded-lg px-3 py-2 text-sm text-slate-500">Loading categories...</div></template>
+                  <template x-if="!loading && !catsFiltered.length"><div class="block rounded-lg px-3 py-2 text-sm text-slate-500">No categories match your search.</div></template>
+                  <template x-for="(cat, idx) in catsFiltered" :key="cat.id">
+                    <button type="button" class="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100" :class="{ 'bg-emerald-50 text-emerald-700': idx === catHighlightIndex }" @click="selectCategory(cat)">
+                      <span x-text="cat.indented"></span>
+                    </button>
+                  </template>
+                </div>
               </div>
-              <input type="hidden" name="origin_postal_code" :value="serviceRegions.join(',')">
-              <div class="mt-1 text-xs text-slate-500">Add multiple regions; press Enter after each.</div>
+              <div class="mt-1 text-xs text-slate-500" x-show="categoryId && !showCatSuggestions">Selected: <span class="font-semibold" x-text="currentCategoryLabel()"></span></div>
+              <div x-show="loading" class="mt-1 text-xs text-slate-500">Loading categories...</div>
+              <div x-show="!loading && categorySearch && !catsFiltered.length" class="mt-1 text-xs text-slate-500" x-cloak>No categories match your search.</div>
+              <div x-show="fallback && !loading" class="mt-1 text-xs text-amber-600">Showing all categories. Ask admin to tag categories by listing type for better filtering.</div>
+              @error('category_id')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
             </div>
-          </template>
+
+            <div class="mb-4">
+              <label for="description" class="mb-1 block text-sm font-semibold text-slate-700">Description</label>
+              <textarea id="description" name="description" rows="6" spellcheck="true" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('description') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">{{ old('description') }}</textarea>
+              @error('description')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="mb-4 grid grid-cols-12 gap-3">
+              <div class="col-span-12 md:col-span-6">
+                <label class="mb-1 block text-sm font-semibold text-slate-700" x-text="type==='service' ? 'Priced From ({{ get_currency() }})' : 'Price ({{ get_currency() }})'">Price ({{ get_currency() }})</label>
+                <input type="number" name="price" step="0.01" min="0" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('price') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" x-bind:placeholder="type==='service' ? 'Enter starting price' : ''" value="{{ old('price') }}" required>
+                @error('price')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+              </div>
+              <div class="col-span-12 md:col-span-6">
+                <label class="mb-1 block text-sm font-semibold text-slate-700">% Discount <small class="text-slate-500">(optional)</small></label>
+                <input type="number" name="discount_percent" step="1" min="0" max="100" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('discount_percent') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" value="{{ old('discount_percent') }}" placeholder="Enter discount percentage">
+                @error('discount_percent')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+              </div>
+            </div>
+
+            <div class="mb-4 grid grid-cols-12 gap-3">
+              <div class="col-span-12 md:col-span-6">
+                <label class="mb-1 block text-sm font-semibold text-slate-700" x-text="type==='service' ? 'Service Area' : 'Country of Origin'">Country of Origin</label>
+                <select name="country_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('country_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" required>
+                  <option value="">Choose a country</option>
+                  @foreach($countries as $c)
+                    <option value="{{ $c->id }}" @selected(old('country_id')==$c->id)>{{ $c->name }}</option>
+                  @endforeach
+                </select>
+                @error('country_id')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+              </div>
+              <div class="col-span-12 md:col-span-6">
+                <template x-if="type!=='service'">
+                  <div>
+                    <label class="mb-1 block text-sm font-semibold text-slate-700">Origin Postal Code</label>
+                    <input type="text" name="origin_postal_code" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('origin_postal_code') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" value="{{ old('origin_postal_code') }}" placeholder="e.g. 90210">
+                    @error('origin_postal_code')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+                  </div>
+                </template>
+                <template x-if="type==='service'">
+                  <div>
+                    <label class="mb-1 block text-sm font-semibold text-slate-700">State(s)/Region(s)</label>
+                    <div class="flex w-full flex-wrap gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                      <template x-for="(tag,i) in serviceRegions" :key="i">
+                        <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                          <span x-text="tag"></span>
+                          <button type="button" class="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-emerald-700 hover:bg-emerald-200" aria-label="Remove" @click="serviceRegions.splice(i,1)">&times;</button>
+                        </span>
+                      </template>
+                      <input type="text" class="min-w-[10rem] flex-1 border-0 bg-transparent p-0 text-sm text-slate-700 focus:outline-none" placeholder="Type a region and press Enter" x-model="serviceRegionInput" @keydown.enter.prevent="addServiceRegion()" @keydown.comma.prevent="addServiceRegion()">
+                    </div>
+                    <input type="hidden" name="origin_postal_code" :value="serviceRegions.join(',')">
+                    <div class="mt-1 text-xs text-slate-500">Add multiple regions; press Enter after each.</div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="mb-1 block text-sm font-semibold text-slate-700" x-text="type==='service' ? 'Response Time (optional)' : 'Processing Time'">Processing Time</label>
+              <select name="processing_time_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_time_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">
+                <option value="" x-text="type==='service' ? 'Choose a response time' : 'Choose a processing time'">Choose a processing time</option>
+                @foreach($processingTimes as $pt)
+                  <option value="{{ $pt->id }}" @selected(old('processing_time_id')==$pt->id)>{{ $pt->name }} ({{ $pt->days }} days)</option>
+                @endforeach
+              </select>
+              @error('processing_time_id')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+            </div>
+
+            <div>
+              <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-emerald-500 sm:w-auto">
+                <i class="fas fa-check-circle mr-2"></i> Continue
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-
-      {{-- 8) Processing Time --}}
-      <div class="mb-4">
-        <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold"
-               x-text="type==='service' ? 'Response Time (optional)' : 'Processing Time'">Processing Time</label>
-        <select name="processing_time_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_time_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">
-          <option value="" x-text="type==='service' ? 'Choose a Response time' : 'Choose a processing time'">Choose a processing time</option>
-          @foreach($processingTimes as $pt)
-            <option value="{{ $pt->id }}" @selected(old('processing_time_id')==$pt->id)>
-              {{ $pt->name }} ({{ $pt->days }} days)
-            </option>
-          @endforeach
-        </select>
-        @error('processing_time_id')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
-      </div>
-
-
-
-  
- 
-
-      {{-- Submit --}}
-      <div class="d-grid">
-        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base rounded-full">
-          <i class="fas fa-check-circle mr-2"></i> Continue
-        </button>
-      </div>
-    </form>
+    </div>
   </div>
-</div>
-
-@include('shipping_profiles._create_modal', ['countries'=>$countries])
+</section>
 @endsection
 
 @push('scripts')
@@ -482,7 +436,7 @@ if (window.tinymce) tinymce.init({
     'quickbars emoticons autoresize'
   ],
 
-  /* Add fontâ€‘size, fontâ€‘family, lineâ€‘height and Format Painter to toolbar */
+  /* Add font-size, font-family, line-height and Format Painter to toolbar */
   toolbar: [
     'undo redo | fontselect fontsizeselect |', 
     'bold italic underline strikethrough forecolor backcolor |',
@@ -575,6 +529,7 @@ if (window.tinymce) tinymce.init({
 })();
 </script>
 @endpush
+
 
 
 

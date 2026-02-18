@@ -2,59 +2,19 @@
 @extends('theme.'.theme().'.layouts.app')
 @section('title', ($product->name ?? 'Product') . ' | Edit Shipping')
 
-@push('styles')
-<style>
-  .page-header-sticky{position:sticky;top:0;z-index:1020;background:#fff;border-bottom:1px solid rgba(0,0,0,.06)}
-  .charge-free{opacity:.6}
-  .nav.nav-pills.flex-nowrap{overflow:auto;white-space:nowrap;scrollbar-width:thin}
-  .table td,.table th{vertical-align:middle}
-  .form-hint{font-size:.85rem;color:#6c757d}
-</style>
-@endpush
-
 @section('main')
 @php
   $current = Route::currentRouteName();
   $currency = $currency ?? currency_symbol();
 @endphp
 
-<div class="content">
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
 
-  {{-- TABS --}}
-  <div class="page-header-sticky mb-3">
-    <ul class="nav nav-pills gap-2 flex-nowrap py-2" role="tablist" aria-label="Product sections">
-      <li class="">
-        <a class="nav-link {{ $current==='products.show' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.show',$product) }}">
-          <i class="fa-regular fa-circle-question mr-1"></i> About
-        </a>
-      </li>
-      <li class="">
-        <a class="nav-link {{ $current==='products.pricing' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.pricing',$product) }}">
-          <i class="fa-solid fa-tags mr-1"></i> Price & Inventory
-        </a>
-      </li>
-      <li class="">
-        <a class="nav-link {{ $current==='products.variations' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.variations',$product) }}">
-          <i class="fa-solid fa-layer-group mr-1"></i> Variations
-        </a>
-      </li>
-      <li class="">
-        <a class="nav-link {{ $current==='products.details' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.details',$product) }}">
-          <i class="fa-regular fa-rectangle-list mr-1"></i> Details
-        </a>
-      </li>
-      <li class="">
-        <a class="nav-link {{ $current==='products.shipping' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.shipping',$product) }}">
-          <i class="fa-solid fa-truck mr-1"></i> Shipping
-        </a>
-      </li>
-      <li class="">
-        <a class="nav-link {{ $current==='products.settings' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.settings',$product) }}">
-          <i class="fa-solid fa-gear mr-1"></i> Settings
-        </a>
-      </li>
-    </ul>
-  </div>
+      <div class="space-y-6">
+        @include('products.partials.edit-tabs', ['product' => $product, 'current' => $current])
 
   {{-- ALERTS --}}
   @if(session('success'))
@@ -68,7 +28,7 @@
 
   {{-- HEADER --}}
   <div class="flex justify-between items-center mb-3">
-    <h2 class="text-lg font-semibold mb-0">{{ $product->name ?? 'Product' }} â€” Edit Shipping</h2>
+    <h2 class="text-lg font-semibold mb-0">{{ $product->name ?? 'Product' }} - Edit Shipping</h2>
     <a href="{{ route('products.show',$product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-900 text-slate-900 hover:bg-slate-100 px-3 py-1.5 text-xs">Back</a>
   </div>
 
@@ -97,7 +57,7 @@
     <div class="md:col-span-4">
       <label class="mb-1 block text-sm font-medium text-slate-700">Processing time</label>
       <select name="processing_time_id" id="processing-time-select" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_time_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">
-        <option value="">Selectâ€¦</option>
+        <option value="">Select...</option>
         @foreach($processingTimes as $pt)
           <option value="{{ $pt->id }}" @selected(old('processing_time_id', $currentProfile->processing_time_id) == $pt->id)>{{ $pt->days }} day(s)</option>
         @endforeach
@@ -110,7 +70,7 @@
       @error('processing_time_id')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
       <div id="processing-custom-indicator" class="mt-1 text-xs text-slate-500 text-emerald-600" style="display: {{ $showCustomProcessing && ($currentProfile->processing_custom_min || $currentProfile->processing_custom_max) ? 'block' : 'none' }};">
         @if($showCustomProcessing && ($currentProfile->processing_custom_min || $currentProfile->processing_custom_max))
-          Custom set: {{ (int)$currentProfile->processing_custom_min }}â€“{{ (int)$currentProfile->processing_custom_max }} days âœ“
+          Custom set: {{ (int)$currentProfile->processing_custom_min }}-{{ (int)$currentProfile->processing_custom_max }} days 
         @endif
       </div>
     </div>
@@ -129,7 +89,7 @@
              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_custom_max') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
              value="{{ old('processing_custom_max', $currentProfile->processing_custom_max) }}">
       @error('processing_custom_max')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
-      <div class="form-hint">Shown if â€œCustomâ€ is selected.</div>
+      <div class="text-xs text-slate-500">Shown if "Custom" is selected.</div>
     </div>
 
     <div id="processing-warning" class="col-span-12 hidden">
@@ -148,16 +108,17 @@
               Let buyers know they can collect this item in person for this specific listing.
             </p>
           </div>
-          <div class="form-check form-switch ml-3">
+          <label class="ml-3 inline-flex items-center gap-2 text-sm text-slate-700">
             <input type="hidden" name="pickup_available" value="0">
             <input
-              class="form-check-input @error('pickup_available') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+              class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 @error('pickup_available') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
               type="checkbox"
               id="pickup_available"
               name="pickup_available"
               value="1"
               {{ old('pickup_available', $product->pickup_available) ? 'checked' : '' }}>
-          </div>
+            <span>Enabled</span>
+          </label>
         </div>
       </div>
       @error('pickup_available')<div class="text-rose-600 text-xs mt-1">{{ $message }}</div>@enderror
@@ -226,11 +187,11 @@
               <td>{{ $currency }} {{ number_format((float)$row->base_rate, 2) }}</td>
               <td>{{ $currency }} {{ number_format((float)$row->additional_rate, 2) }}</td>
               <td class="text-center">
-                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-toggle="modal" data-bs-target="#editRowModal{{ $row->id }}" title="Edit">âœŽ</button>
-                <form method="POST" action="{{ route('products.shipping.rows.destroy',[$product,$row]) }}" class="d-inline" onsubmit="return confirm('Delete this shipping row?');">
+                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-toggle="modal" data-bs-target="#editRowModal{{ $row->id }}" title="Edit">Edit</button>
+                <form method="POST" action="{{ route('products.shipping.rows.destroy',[$product,$row]) }}" class="inline-block" onsubmit="return confirm('Delete this shipping row?');">
                   @csrf
                   @method('DELETE')
-                  <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50" title="Delete">Ã—</button>
+                  <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50" title="Delete">x</button>
                 </form>
               </td>
             </tr>
@@ -272,12 +233,12 @@
         <div class="mb-3" id="add-country-wrap">
           <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
           <select name="row[country_id]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
-            <option value="">Selectâ€¦</option>
+            <option value="">Select...</option>
             @foreach($countries as $c)
               <option value="{{ $c->id }}">{{ $c->name }}</option>
             @endforeach
           </select>
-          <div class="form-hint">Shown only when â€œCountryâ€ is chosen.</div>
+          <div class="text-xs text-slate-500">Shown only when "Country" is chosen.</div>
         </div>
 
         <div class="mb-3">
@@ -304,7 +265,7 @@
         <div class="mb-3" id="add-service-other-wrap" style="display:none;">
           <label class="mb-1 block text-sm font-medium text-slate-700">Courier name</label>
           <input type="text" name="row[service_other]" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="Enter courier (e.g., DHL, Rider, etc.)" maxlength="100">
-          <div class="form-hint">Shown when Service is Other/Manual.</div>
+          <div class="text-xs text-slate-500">Shown when Service is Other/Manual.</div>
         </div>
 
         <div class="grid grid-cols-12 gap-4 gap-x-2 mb-3">
@@ -398,12 +359,12 @@
           <div class="mb-3" id="country-wrap-{{ $row->id }}">
             <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
             <select name="row[country_id]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
-              <option value="">Selectâ€¦</option>
+              <option value="">Select...</option>
               @foreach($countries as $c)
                 <option value="{{ $c->id }}" @selected($c->id==$row->dest_country_id)>{{ $c->name }}</option>
               @endforeach
             </select>
-            <div class="form-hint">Shown only when â€œCountryâ€ is chosen.</div>
+            <div class="text-xs text-slate-500">Shown only when "Country" is chosen.</div>
           </div>
 
           <div class="mb-3">
@@ -429,7 +390,7 @@
           <div class="mb-3" id="service-other-wrap-{{ $row->id }}" style="display: {{ $showCustom ? 'block' : 'none' }};">
             <label class="mb-1 block text-sm font-medium text-slate-700">Courier name</label>
             <input type="text" name="row[service_other]" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ $customServiceVal }}" placeholder="Enter courier (e.g., DHL, Rider, etc.)" maxlength="100">
-            <div class="form-hint">Shown when Service is Other/Manual.</div>
+            <div class="text-xs text-slate-500">Shown when Service is Other/Manual.</div>
           </div>
 
           <div class="grid grid-cols-12 gap-4 gap-x-2 mb-3">
@@ -479,6 +440,10 @@
     </div>
   </div>
 @endforeach
+      </div>
+    </div>
+  </div>
+</section>
 @endsection
 
 @push('scripts')
@@ -512,7 +477,7 @@ function toggleCountry(selectEl, wrapSelector){
   });
 })();
 
-/** Toggle â€œOther/Manualâ€ courier free text input */
+/** Toggle "Other/Manual" courier free text input */
 function bindServiceToggle(select){
   const targetSel = select.getAttribute('data-target');
   const wrap = targetSel ? $(targetSel) : null;
@@ -525,7 +490,7 @@ function bindServiceToggle(select){
 }
 $$('.service-select, .edit-service-select').forEach(bindServiceToggle);
 
-/** Disable price inputs when â€œFreeâ€ is selected */
+/** Disable price inputs when "Free" is selected */
 function bindChargeToggle(select){
   const oneSel = select.getAttribute('data-one');
   const addSel = select.getAttribute('data-add');
@@ -537,7 +502,7 @@ function bindChargeToggle(select){
       inp.readOnly = isFree;
       inp.required = !isFree;
       if(isFree) inp.value = '0.00';
-      inp.closest('.input-group')?.classList.toggle('opacity-50', isFree);
+      inp.closest('.flex')?.classList.toggle('opacity-50', isFree);
     });
   };
   const toggle = () => setState((select.value || '').toLowerCase() === 'free');
@@ -573,7 +538,7 @@ function updateProcessingIndicator(){
   const max = parseInt(maxEl.value, 10);
   const valid = isCustom && Number.isInteger(min) && Number.isInteger(max) && min > 0 && max > 0;
   ind.style.display = valid ? 'block' : 'none';
-  if (valid) ind.textContent = `Custom set: ${min}â€“${max} days âœ“`;
+  if (valid) ind.textContent = `Custom set: ${min}-${max} days `;
 }
 ['input','change'].forEach(ev => {
   const minEl = $('input[name="processing_custom_min"]');
@@ -596,7 +561,7 @@ function updateProcessingIndicator(){
       const max = parseInt(maxEl?.value || '', 10);
       if (!Number.isInteger(min) || !Number.isInteger(max)) {
         e.preventDefault();
-        if (warnWrap) warnWrap.classList.remove('d-none');
+        if (warnWrap) warnWrap.classList.remove('hidden');
         warnWrap?.scrollIntoView({behavior:'smooth', block:'center'});
       }
     }
@@ -604,5 +569,6 @@ function updateProcessingIndicator(){
 })();
 </script>
 @endpush
+
 
 
