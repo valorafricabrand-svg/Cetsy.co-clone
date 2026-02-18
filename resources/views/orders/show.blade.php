@@ -1,6 +1,6 @@
-@extends('layouts.frontapp')
+﻿@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
+@section('main')
 <div class="max-w-3xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
   <h1 class="text-3xl font-bold mb-6">Order #{{ $order->id }}</h1>
 
@@ -14,7 +14,7 @@
     <ul class="divide-y divide-gray-200">
       @foreach($order->items as $item)
         <li class="py-4 flex justify-between">
-          <span>{{ $item->product->name }} (×{{ $item->quantity }})</span>
+          <span>{{ $item->product->name }} (Ã—{{ $item->quantity }})</span>
           <span>{{ money($item->total_price) }}</span>
         </li>
       @endforeach
@@ -31,4 +31,6 @@
   </a>
 </div>
 @endsection
+
+
 

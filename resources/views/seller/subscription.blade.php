@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Seller Subscription')
 
@@ -100,39 +100,48 @@
     font-weight: 600;
   }
 </style>
+      </div>
+    </div>
+  </div>
+</section>
 @endsection
 
-@section('content')
+@section('main')
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
+      <div class="space-y-6">
 <div class="content sub-page">
-  <div class="row justify-content-center">
-    <div class="col-xl-9 col-lg-10">
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-12 justify-center">
+    <div class="-span-9 -span-10">
 
       <div class="sub-hero p-4 p-md-5 mb-4">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div class="flex flex-col flex-md-row align-items-md-center justify-between gap-3">
           <div>
             <h1 class="h3 mb-1 sub-hero__title">Seller Subscription</h1>
             <div class="sub-hero__subtitle">Renew early, upgrade your plan, and view payment history.</div>
           </div>
-          <div class="d-flex gap-2">
-            <a href="{{ route('seller.billing.index') }}" class="btn btn-outline-secondary">
-              <i class="bi bi-wallet2 me-1"></i> Billing
+          <div class="flex gap-2">
+            <a href="{{ route('seller.billing.index') }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100">
+              <i class="bi bi-wallet2 mr-1"></i> Billing
             </a>
-            <a href="{{ route('seller.dashboard') }}" class="btn btn-success">
-              <i class="bi bi-speedometer2 me-1"></i> Dashboard
+            <a href="{{ route('seller.dashboard') }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">
+              <i class="bi bi-speedometer2 mr-1"></i> Dashboard
             </a>
           </div>
         </div>
       </div>
 
       @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+        <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 alert-dismissible fade show mb-4" role="alert">
           <strong>Success:</strong> {{ session('success') }}
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       @endif
 
       @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-700 alert-dismissible fade show mb-4" role="alert">
           <strong>Error:</strong> {{ session('error') }}
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -144,32 +153,32 @@
         $daysLeft = !is_null($daysLeftSigned) ? max(0, (int) $daysLeftSigned) : null;
       @endphp
 
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body p-4 p-md-5">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-4">
+        <div class="p-4 p-md-5">
 
           {{-- Status --}}
           @if($isActive)
             <div class="sub-status p-4 mb-3">
-              <div class="d-flex gap-3">
+              <div class="flex gap-3">
                 <div class="sub-status__icon">
                   <i class="bi bi-patch-check-fill fs-4"></i>
                 </div>
                 <div class="flex-grow-1">
-                  <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
+                  <div class="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <div class="small text-uppercase fw-semibold pricing-muted">Status</div>
+                      <div class="text-xs text-uppercase font-semibold pricing-muted">Status</div>
                       <div class="h5 mb-1">Active subscription</div>
                       <div class="pricing-muted">
                         Active until <strong>{{ $subscription->end_date->format('F j, Y') }}</strong>
                         @if(!is_null($daysLeft))
-                          <span class="ms-2 badge sub-pill">
+                          <span class="ml-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold sub-pill">
                             @php $cls = $daysLeft <= 7 ? 'text-danger' : ($daysLeft <= 30 ? 'text-warning' : ''); @endphp
-                            <span class="fw-semibold {{ $cls }}">Expires in {{ number_format($daysLeft, 0) }} {{ Str::plural('day', $daysLeft) }}</span>
+                            <span class="font-semibold {{ $cls }}">Expires in {{ number_format($daysLeft, 0) }} {{ Str::plural('day', $daysLeft) }}</span>
                           </span>
                         @endif
                       </div>
                       @if($subscription->notes)
-                        <div class="small pricing-muted mt-1">Plan: {{ $subscription->notes }}</div>
+                        <div class="text-xs pricing-muted mt-1">Plan: {{ $subscription->notes }}</div>
                       @endif
                     </div>
                   </div>
@@ -178,10 +187,10 @@
             </div>
 
             <div class="sub-callout p-3 p-md-4 mb-4">
-              <div class="d-flex align-items-start gap-2">
+              <div class="flex items-start gap-2">
                 <i class="bi bi-info-circle-fill text-primary mt-1"></i>
                 <div>
-                  <div class="fw-semibold">Renew early anytime</div>
+                  <div class="font-semibold">Renew early anytime</div>
                   <div class="pricing-muted">
                     Renewing or upgrading will extend from your current end date, so you don’t lose remaining days.
                   </div>
@@ -202,28 +211,28 @@
 
             @if($expiredInfo)
               <div class="sub-status p-4 mb-3">
-                <div class="d-flex gap-3">
+                <div class="flex gap-3">
                   <div class="sub-status__icon" style="background: rgba(220,53,69,.10); color:#dc3545;">
                     <i class="bi bi-exclamation-triangle-fill fs-4"></i>
                   </div>
                   <div class="flex-grow-1">
-                    <div class="small text-uppercase fw-semibold pricing-muted">Status</div>
+                    <div class="text-xs text-uppercase font-semibold pricing-muted">Status</div>
                     <div class="h5 mb-1">Subscription expired</div>
                     <div class="pricing-muted">
                       Expired on <strong>{{ $expiredInfo['date'] }}</strong>
-                      <span class="ms-2 badge sub-pill"><span class="fw-semibold text-danger">Expired {{ number_format($expiredInfo['days'], 0) }} {{ Str::plural('day', $expiredInfo['days']) }} ago</span></span>
+                      <span class="ml-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold sub-pill"><span class="font-semibold text-rose-600">Expired {{ number_format($expiredInfo['days'], 0) }} {{ Str::plural('day', $expiredInfo['days']) }} ago</span></span>
                     </div>
                   </div>
                 </div>
               </div>
             @else
               <div class="sub-status p-4 mb-4">
-                <div class="d-flex gap-3">
+                <div class="flex gap-3">
                   <div class="sub-status__icon" style="background: rgba(255,193,7,.14); color:#b58100;">
                     <i class="bi bi-lock-fill fs-4"></i>
                   </div>
                   <div class="flex-grow-1">
-                    <div class="small text-uppercase fw-semibold pricing-muted">Status</div>
+                    <div class="text-xs text-uppercase font-semibold pricing-muted">Status</div>
                     <div class="h5 mb-1">Subscription required</div>
                     <div class="pricing-muted">To access seller features, you need an active subscription.</div>
                   </div>
@@ -232,9 +241,9 @@
             @endif
 
             @if($canStartTrial ?? false)
-              <div class="card border-0 shadow-sm mb-4" style="border-radius: 1rem;">
-                <div class="card-body p-4 p-md-5">
-                  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+              <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-4" style="border-radius: 1rem;">
+                <div class="p-4 p-md-5">
+                  <div class="flex flex-col flex-md-row align-items-md-center justify-between gap-3">
                     <div>
                       <div class="pricing-badge mb-2"><i class="bi bi-stars"></i> Free trial</div>
                       <div class="h5 mb-1">New seller? Try it free for {{ number_format($trialDays ?? 30, 0) }} {{ Str::plural('day', $trialDays ?? 30) }}</div>
@@ -242,8 +251,8 @@
                     </div>
                     <form action="{{ route('seller.subscription.trial') }}" method="POST" class="m-0">
                       @csrf
-                      <button type="submit" class="btn btn-success px-4">
-                        <i class="bi bi-rocket-takeoff me-1"></i> Start Trial
+                      <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 px-4">
+                        <i class="bi bi-rocket-takeoff mr-1"></i> Start Trial
                       </button>
                     </form>
                   </div>
@@ -258,7 +267,7 @@
             $yearlyCta  = $isActive ? 'Upgrade / Renew Yearly' : 'Choose Yearly';
           @endphp
 
-          <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
+          <div class="flex items-end justify-between flex-wrap gap-2 mb-3">
             <div>
               <div class="h5 mb-1">{{ $isActive ? 'Renew / Upgrade' : 'Choose a plan' }}</div>
               <div class="pricing-muted">
@@ -267,16 +276,16 @@
             </div>
           </div>
 
-          <div class="row g-3 g-lg-4">
-            <div class="col-md-6">
-              <div class="pricing-card h-100">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 g-lg-4">
+            <div class="-span-6">
+              <div class="pricing-card h-full">
                 <div class="p-4">
-                  <div class="d-flex align-items-start justify-content-between">
+                  <div class="flex items-start justify-between">
                     <div>
-                      <div class="fw-semibold">Monthly</div>
-                      <div class="pricing-muted small">Flexible month‑to‑month</div>
+                      <div class="font-semibold">Monthly</div>
+                      <div class="pricing-muted text-xs">Flexible month‑to‑month</div>
                     </div>
-                    <span class="badge sub-pill"><i class="bi bi-calendar3 me-1"></i> 1 month</span>
+                    <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold sub-pill"><i class="bi bi-calendar3 mr-1"></i> 1 month</span>
                   </div>
 
                   <div class="mt-3">
@@ -296,7 +305,7 @@
                   <form action="{{ route('seller.subscription.subscribe') }}" method="POST" class="m-0">
                     @csrf
                     <input type="hidden" name="plan" value="monthly">
-                    <button type="submit" class="btn btn-outline-success w-100">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 w-full">
                       {{ $monthlyCta }}
                     </button>
                   </form>
@@ -304,13 +313,13 @@
               </div>
             </div>
 
-            <div class="col-md-6">
-              <div class="pricing-card pricing-card--featured h-100">
+            <div class="-span-6">
+              <div class="pricing-card pricing-card--featured h-full">
                 <div class="p-4">
-                  <div class="d-flex align-items-start justify-content-between">
+                  <div class="flex items-start justify-between">
                     <div>
-                      <div class="fw-semibold">Yearly</div>
-                      <div class="pricing-muted small">Best value for serious sellers</div>
+                      <div class="font-semibold">Yearly</div>
+                      <div class="pricing-muted text-xs">Best value for serious sellers</div>
                     </div>
                     <span class="pricing-badge">
                       <i class="bi bi-award-fill"></i> Save {{ config('subscription.yearly_discount_percent', 17) }}%
@@ -320,9 +329,9 @@
                   <div class="mt-3">
                     <div class="pricing-price">USD {{ number_format(config('subscription.yearly_fee', 50), 2) }}</div>
                     <div class="pricing-muted">per year</div>
-                    <div class="small pricing-muted mt-1">
+                    <div class="text-xs pricing-muted mt-1">
                       <span class="text-decoration-line-through">USD {{ number_format(config('subscription.monthly_fee', 5) * 12, 2) }}</span>
-                      <span class="ms-2">billed annually</span>
+                      <span class="ml-2">billed annually</span>
                     </div>
                   </div>
 
@@ -338,7 +347,7 @@
                   <form action="{{ route('seller.subscription.subscribe') }}" method="POST" class="m-0">
                     @csrf
                     <input type="hidden" name="plan" value="yearly">
-                    <button type="submit" class="btn btn-success w-100">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 w-full">
                       {{ $yearlyCta }}
                     </button>
                   </form>
@@ -351,17 +360,17 @@
       </div>
 
       {{-- Payment history --}}
-      <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white sub-card-header">
-          <div class="d-flex align-items-center justify-content-between">
-            <h3 class="h5 mb-0"><i class="bi bi-receipt-cutoff me-2"></i>Subscription Payment History</h3>
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
+        <div class="border-b border-slate-200 px-4 py-3 bg-white sub-card-header">
+          <div class="flex items-center justify-between">
+            <h3 class="h5 mb-0"><i class="bi bi-receipt-cutoff mr-2"></i>Subscription Payment History</h3>
           </div>
         </div>
-        <div class="card-body">
+        <div class="p-4">
           @if($subscriptionPayments->count() > 0)
-            <div class="table-responsive">
-              <table class="table align-middle table-hover mb-0">
-                <thead class="table-light">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-slate-200 text-sm align-middle table-hover mb-0">
+                <thead class="bg-slate-50 text-slate-600">
                   <tr>
                     <th>Date</th>
                     <th>Transaction</th>
@@ -373,20 +382,20 @@
                 <tbody>
                   @foreach($subscriptionPayments as $payment)
                     <tr>
-                      <td class="text-nowrap">{{ $payment->created_at->format('M d, Y') }}<div class="small text-muted">{{ $payment->created_at->format('h:i A') }}</div></td>
-                      <td><code class="small">{{ $payment->local_transaction_id ?? 'N/A' }}</code></td>
+                      <td class="text-nowrap">{{ $payment->created_at->format('M d, Y') }}<div class="text-xs text-slate-500">{{ $payment->created_at->format('h:i A') }}</div></td>
+                      <td><code class="text-xs">{{ $payment->local_transaction_id ?? 'N/A' }}</code></td>
                       <td>
-                        <div class="fw-semibold">${{ number_format($payment->total_amount, 2) }}</div>
-                        <div class="small text-muted">{{ $payment->currency }}</div>
+                        <div class="font-semibold">${{ number_format($payment->total_amount, 2) }}</div>
+                        <div class="text-xs text-slate-500">{{ $payment->currency }}</div>
                       </td>
                       <td><span class="sub-method-badge">{{ ucfirst($payment->payment_method) }}</span></td>
                       <td>
                         @if($payment->payment_status == 'successful')
-                          <span class="badge bg-success">Successful</span>
+                          <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-emerald-100 text-emerald-800 border-emerald-200">Successful</span>
                         @elseif($payment->payment_status == 'pending')
-                          <span class="badge bg-warning text-dark">Pending</span>
+                          <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-amber-100 text-amber-800 border-amber-200 text-slate-900">Pending</span>
                         @else
-                          <span class="badge bg-danger">Failed</span>
+                          <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-rose-100 text-rose-800 border-rose-200">Failed</span>
                         @endif
                       </td>
                     </tr>
@@ -395,10 +404,10 @@
               </table>
             </div>
           @else
-            <div class="text-center text-muted py-5">
-              <i class="bi bi-credit-card-2-front fs-1 mb-2 d-block"></i>
-              <div class="fw-semibold">No subscription payments yet</div>
-              <div class="small">Once you subscribe or renew, your transactions will show here.</div>
+            <div class="text-center text-slate-500 py-5">
+              <i class="bi bi-credit-card-2-front fs-1 mb-2 block"></i>
+              <div class="font-semibold">No subscription payments yet</div>
+              <div class="text-xs">Once you subscribe or renew, your transactions will show here.</div>
             </div>
           @endif
         </div>
@@ -407,4 +416,12 @@
     </div>
   </div>
 </div>
+      </div>
+    </div>
+  </div>
+</section>
 @endsection
+
+
+
+

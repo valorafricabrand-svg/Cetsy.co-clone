@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', $product->name . ' | Variations')
 
@@ -26,7 +26,7 @@
 </style>
 @endpush
 
-@section('content')
+@section('main')
 @php
   // Eager-load everything needed for types, options and variants
   $product->loadMissing('variations.options.variationType', 'variationTypes.options');
@@ -36,57 +36,57 @@
 
 <div class="content">
 
-  {{-- ───────── Clickable Tabs Header (navigate to pages) ───────── --}}
+  {{-- â”€â”€â”€â”€â”€â”€â”€â”€â”€ Clickable Tabs Header (navigate to pages) â”€â”€â”€â”€â”€â”€â”€â”€â”€ --}}
   <div class="page-header-sticky">
-    <div class="container-fluid px-0">
+    <div class="mx-auto w-full px-4 sm:px-6 px-0">
       <div class="tab-scroll px-2 py-2">
         <ul class="nav nav-pills gap-2 flex-nowrap">
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.show' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.show', $product) }}">
-              <i class="fa-regular fa-circle-question me-1"></i> About
+              <i class="fa-regular fa-circle-question mr-1"></i> About
             </a>
           </li>
 
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.pricing' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.pricing', $product) }}">
-              <i class="fa-solid fa-tags me-1"></i> Price & Inventory
+              <i class="fa-solid fa-tags mr-1"></i> Price & Inventory
             </a>
           </li>
 
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.variations' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.variations', $product) }}">
-              <i class="fa-solid fa-layer-group me-1"></i> Variations
+              <i class="fa-solid fa-layer-group mr-1"></i> Variations
             </a>
           </li>
 
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.details' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.details', $product) }}">
-              <i class="fa-regular fa-rectangle-list me-1"></i> Details
+              <i class="fa-regular fa-rectangle-list mr-1"></i> Details
             </a>
           </li>
 
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.shipping' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.shipping', $product) }}">
-              <i class="fa-solid fa-truck me-1"></i> Shipping
+              <i class="fa-solid fa-truck mr-1"></i> Shipping
             </a>
           </li>
 
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.media' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.media', $product) }}">
-              <i class="fa-regular fa-images me-1"></i> Media
+              <i class="fa-regular fa-images mr-1"></i> Media
             </a>
           </li>
 
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.settings' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.settings', $product) }}">
-              <i class="fa-solid fa-gear me-1"></i> Settings
+              <i class="fa-solid fa-gear mr-1"></i> Settings
             </a>
           </li>
         </ul>
@@ -96,32 +96,32 @@
 
   {{-- FLASH + VALIDATION --}}
   @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show rounded-3 mt-3" role="alert">
+    <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 alert-dismissible rounded-3 mt-3" role="alert">
       {{ session('success') }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   @endif
   @if ($errors->any())
-    <div class="alert alert-danger alert-dismissible fade show rounded-3 mt-3" role="alert">
+    <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800 alert-dismissible rounded-3 mt-3" role="alert">
       <strong>There were some problems with your input.</strong>
-      <ul class="mb-0 mt-2 ps-3">
+      <ul class="mb-0 mt-2 pl-3">
         @foreach ($errors->all() as $error)
           <li>{{ $error }}</li>
         @endforeach
       </ul>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   @endif
 
   {{-- HEADER --}}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
-    <h2 class="mb-0">{{ $product->name }} — Variations</h2>
-    <div class="d-flex gap-2">
-      <a href="{{ route('products.show', $product) }}" class="btn btn-outline-dark btn-sm">
-        <i class="fas fa-arrow-left me-1"></i> Back
+  <div class="flex justify-between items-center mt-3 mb-3">
+    <h2 class="mb-0">{{ $product->name }} â€” Variations</h2>
+    <div class="flex gap-2">
+      <a href="{{ route('products.show', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-900 text-slate-900 hover:bg-slate-100 px-3 py-1.5 text-xs">
+        <i class="fas fa-arrow-left mr-1"></i> Back
       </a>
-      <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#manageVariationsModal">
-        <i class="fas fa-sliders-h me-1"></i> Manage variation types
+      <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" data-bs-toggle="modal" data-bs-target="#manageVariationsModal">
+        <i class="fas fa-sliders-h mr-1"></i> Manage variation types
       </button>
     </div>
   </div>
@@ -129,66 +129,66 @@
   {{-- QUICK OVERVIEW OF TYPES --}}
   <div class="mb-4">
     @forelse($variationTypes as $type)
-      <div class="card mb-2 shadow-sm border-0 rounded-4 variation-card" data-type-id="{{ $type->id }}">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div class="me-3">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-2 shadow-sm border-0 rounded-4 variation-card" data-type-id="{{ $type->id }}">
+        <div class="p-4 sm:p-5 flex justify-between items-center">
+          <div class="mr-3">
             <h6 class="mb-1">{{ $type->name }}</h6>
-            <div class="small text-muted">
+            <div class="text-xs text-slate-500">
               {{ $type->options->count() }} {{ \Illuminate\Support\Str::plural('option', $type->options->count()) }}
             </div>
             <div class="mt-2">
               @foreach($type->options->take(6) as $opt)
-                <span class="badge bg-light text-dark me-1 mb-1">{{ $opt->value }}</span>
+                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-900 mr-1 mb-1">{{ $opt->value }}</span>
               @endforeach
               @if($type->options->count() > 6)
-                <span class="badge bg-secondary">+{{ $type->options->count() - 6 }} more</span>
+                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200">+{{ $type->options->count() - 6 }} more</span>
               @endif
             </div>
           </div>
 
-          <div class="text-end">
+          <div class="text-right">
             <a
               href="{{ route('products.variations.manage', ['product' => $product, 'type' => $type]) }}"
-              class="btn btn-sm btn-outline-secondary">
+              class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50">
               Manage
             </a>
             <form
               action="{{ route('variationTypes.destroy', $type) }}"
               method="POST"
-              class="d-inline ms-2 variation-delete-form"
+              class="d-inline ml-2 variation-delete-form"
               data-type-id="{{ $type->id }}"
               onsubmit="return false;">
               @csrf
               @method('DELETE')
-              <button class="btn btn-sm btn-outline-danger">Delete</button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50">Delete</button>
             </form>
           </div>
         </div>
       </div>
     @empty
-      <div class="alert alert-info mb-0 rounded-4">
+      <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 mb-0 rounded-4">
         No variation types defined yet. Use <strong>Manage variation types</strong> to add some.
       </div>
     @endforelse
   </div>
 
   {{-- MANAGE VARIATION TYPES MODAL (list + add) --}}
-  <div class="modal fade" id="manageVariationsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal" id="manageVariationsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl">
-      <div class="modal-content rounded-4">
-        <div class="modal-header">
-          <h5 class="modal-title">Manage Variation Types</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-xl rounded-4">
+        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <h5 class="text-base font-semibold text-slate-900">Manage Variation Types</h5>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
         </div>
 
-        <div class="modal-body">
+        <div class="px-4 py-4">
           @forelse($variationTypes as $type)
-            <div class="mb-4 p-3 border rounded d-flex justify-content-between align-items-start variation-card" data-type-id="{{ $type->id }}">
-              <div class="me-3">
+            <div class="mb-4 p-3 border rounded flex justify-between items-start variation-card" data-type-id="{{ $type->id }}">
+              <div class="mr-3">
                 <strong>{{ $type->name }}</strong>
                 <div class="mt-2">
                   @foreach($type->options as $opt)
-                    <span class="badge bg-light text-dark me-1 mb-1">{{ $opt->value }}</span>
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-900 mr-1 mb-1">{{ $opt->value }}</span>
                   @endforeach
                 </div>
               </div>
@@ -198,13 +198,13 @@
                     onsubmit="return false;">
                 @csrf
                 @method('DELETE')
-                <button class="btn btn-sm btn-outline-danger">
+                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50">
                   <i class="fas fa-trash"></i> Delete
                 </button>
               </form>
             </div>
           @empty
-            <p class="text-muted mb-0">No variation types found.</p>
+            <p class="text-slate-500 mb-0">No variation types found.</p>
           @endforelse
 
           <hr class="my-4">
@@ -213,25 +213,25 @@
           <form class="border p-3 rounded" method="POST" action="{{ route('variationTypes.store', $product) }}">
             @csrf
             <h6 class="mb-3">Add Custom Variation Type</h6>
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Name</label>
-                <input name="name" type="text" class="form-control" placeholder="e.g. Length" required>
+            <div class="grid grid-cols-12 gap-4 gap-3">
+              <div class="md:col-span-4">
+                <label class="mb-1 block text-sm font-medium text-slate-700">Name</label>
+                <input name="name" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="e.g. Length" required>
               </div>
-              <div class="col-md-8">
-                <label class="form-label">Options</label>
-                <input name="options" type="text" class="form-control" placeholder="Red,Blue,Green" required>
-                <small class="form-text text-muted">Separate options with commas.</small>
+              <div class="md:col-span-8">
+                <label class="mb-1 block text-sm font-medium text-slate-700">Options</label>
+                <input name="options" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="Red,Blue,Green" required>
+                <small class="mt-1 text-xs text-slate-500 text-slate-500">Separate options with commas.</small>
               </div>
             </div>
             <div class="mt-3">
-              <button type="submit" class="btn btn-success">Add Type</button>
+              <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Add Type</button>
             </div>
           </form>
         </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
@@ -309,3 +309,4 @@
   });
 </script>
 @endpush
+

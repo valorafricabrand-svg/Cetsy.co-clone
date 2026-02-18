@@ -1,4 +1,4 @@
-@php
+﻿@php
     $statusClass = match($dispute->status) {
         \App\Models\Dispute::STATUS_PENDING => 'bg-warning text-dark',
         \App\Models\Dispute::STATUS_UNDER_REVIEW => 'bg-info text-dark',
@@ -15,20 +15,20 @@
     $statusLabel = ucfirst(str_replace('_', ' ', $dispute->status));
 @endphp
 
-<div class="card h-100 dispute-card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="badge rounded-pill px-3 py-2 {{ $statusClass }}">
+<div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-full dispute-card">
+    <div class="border-b border-slate-200 px-4 py-3 flex justify-between items-center">
+        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium px-3 py-2 {{ $statusClass }}">
             {{ $statusLabel }}
         </span>
-        <small class="text-muted">{{ $dispute->created_at->diffForHumans() }}</small>
+        <small class="text-slate-500">{{ $dispute->created_at->diffForHumans() }}</small>
     </div>
     
-    <div class="card-body">
+    <div class="p-4 sm:p-5">
         <div class="mb-3">
-            <h6 class="card-title mb-1">
+            <h6 class="text-lg font-semibold text-slate-900 mb-1">
                 <strong>{{ $dispute->getTypeLabel() }}</strong>
             </h6>
-            <p class="card-text text-muted small mb-0">
+            <p class="card-text text-slate-500 text-xs mb-0">
                 Order #{{ $dispute->order->id }}
             </p>
         </div>
@@ -39,19 +39,19 @@
             </p>
         </div>
 
-        <div class="row text-center mb-3">
-            <div class="col-6">
-                <small class="text-muted d-block">Buyer</small>
+        <div class="grid grid-cols-12 gap-4 text-center mb-3">
+            <div class="col-span-6">
+                <small class="text-slate-500 block">Buyer</small>
                 <strong>{{ $dispute->buyer->name }}</strong>
             </div>
-            <div class="col-6">
-                <small class="text-muted d-block">Seller</small>
+            <div class="col-span-6">
+                <small class="text-slate-500 block">Seller</small>
                 <strong>{{ $dispute->order->shop->name ?? 'Seller' }}</strong>
             </div>
         </div>
 
         @if($dispute->isResolved())
-            <div class="alert alert-info small mb-3">
+            <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 text-xs mb-3">
                 <strong>Decision:</strong> {{ $dispute->getDecisionLabel() }}
                 @if($dispute->refund_amount)
                     <br><strong>Refund:</strong> ${{ number_format($dispute->refund_amount, 2) }}
@@ -60,13 +60,13 @@
         @endif
 
         @if($dispute->appeal)
-            <div class="alert alert-warning small mb-3">
+            <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 text-xs mb-3">
                 <strong>Appeal Status:</strong> {{ ucfirst($dispute->appeal->status) }}
             </div>
         @endif
 
         @if($dispute->canBeAppealed())
-            <div class="alert alert-info small mb-3">
+            <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 text-xs mb-3">
                 @if($dispute->appeal_deadline)
                     <strong>Appeal Deadline:</strong> {{ $dispute->getAppealDeadlineDaysLeft() }} days left
                 @else
@@ -76,23 +76,25 @@
         @endif
 
         @if($dispute->isAppealDeadlineExpired() && $dispute->can_appeal)
-            <div class="alert alert-danger small mb-3">
+            <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800 text-xs mb-3">
                 <strong>Appeal Deadline Expired</strong>
             </div>
         @endif
     </div>
 
-    <div class="card-footer">
-        <div class="d-flex justify-content-between align-items-center">
-            <a href="{{ route('disputes.show', $dispute->id) }}" class="btn btn-sm btn-outline-primary">
+    <div class="border-t border-slate-200 px-4 py-3">
+        <div class="flex justify-between items-center">
+            <a href="{{ route('disputes.show', $dispute->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                 View Details
             </a>
             
             @if($dispute->canBeAppealed())
-                <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-sm btn-warning">
+                <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-amber-500 text-slate-900 hover:bg-amber-400">
                     Appeal
                 </a>
             @endif
         </div>
     </div>
 </div>
+
+

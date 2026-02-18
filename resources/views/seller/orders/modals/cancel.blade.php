@@ -12,17 +12,17 @@
             @csrf
             @method('patch')
 
-            <div class="modal-header bg-light">
-                <h5 class="modal-title text-danger" id="cancelModalLabel-{{ $order->id }}">
-                    <i class="fa-solid fa-exclamation-triangle me-2"></i>
+            <div class="modal-header bg-slate-50">
+                <h5 class="modal-title text-rose-600" id="cancelModalLabel-{{ $order->id }}">
+                    <i class="fa-solid fa-exclamation-triangle mr-2"></i>
                     Cancel Order #{{ $order->id }}
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="fa-solid fa-info-circle me-2"></i>
+                <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
+                    <i class="fa-solid fa-info-circle mr-2"></i>
                     <strong>Warning:</strong> This action cannot be undone. 
                     @if($order->status === \App\Models\Order::STATUS_PROCESSING)
                         The buyer will be automatically refunded.
@@ -35,7 +35,7 @@
                 </p>
 
                 <div class="form-floating mb-3">
-                    <select class="form-select" name="cancel_reason" id="cancelReason-{{ $order->id }}" required>
+                    <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" name="cancel_reason" id="cancelReason-{{ $order->id }}" required>
                         <option value="">Select a reason...</option>
                         <option value="Out of stock">Out of stock</option>
                         <option value="Product discontinued">Product discontinued</option>
@@ -49,7 +49,7 @@
                 </div>
 
                 <div class="form-floating">
-                    <textarea class="form-control"
+                    <textarea class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                               name="cancel_reason"
                               id="cancelReasonText-{{ $order->id }}"
                               style="height:80px"
@@ -59,14 +59,14 @@
                 </div>
             </div>
 
-            <div class="modal-footer bg-light">
+            <div class="modal-footer bg-slate-50">
                 <button type="button"
-                        class="btn btn-outline-secondary"
+                        class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100"
                         data-bs-dismiss="modal">
                     Keep Order
                 </button>
-                <button type="submit" class="btn btn-danger">
-                    <i class="fa-solid fa-times-circle me-1"></i> Cancel Order
+                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-rose-600 bg-rose-600 text-white hover:bg-rose-700">
+                    <i class="fa-solid fa-times-circle mr-1"></i> Cancel Order
                 </button>
             </div>
         </form>
@@ -87,3 +87,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+

@@ -1,19 +1,19 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
+@section('main')
 <div class="content">
-    <h2 class="text-center fw-bold mb-5">Edit Your Shop</h2>
+    <h2 class="text-center font-bold mb-5">Edit Your Shop</h2>
 
     {{-- Flash Success --}}
     @if(session('success'))
-      <div class="alert alert-success">
+      <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">
         {{ session('success') }}
       </div>
     @endif
 
     {{-- Validation Errors --}}
     @if($errors->any())
-      <div class="alert alert-danger">
+      <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">
         <ul class="mb-0">
           @foreach($errors->all() as $error)
             <li>{{ $error }}</li>
@@ -41,36 +41,36 @@
       @method('PATCH')
 
       {{-- 1) Shop Preferences --}}
-      <div class="card mb-4">
-        <div class="card-header fw-semibold">1. Shop Preferences</div>
-        <div class="card-body row g-3">
-          <div class="col-md-4">
-            <label for="language" class="form-label">Language <span class="text-danger">*</span></label>
-            <select name="language" id="language" required class="form-select">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+        <div class="border-b border-slate-200 px-4 py-3 font-semibold">1. Shop Preferences</div>
+        <div class="p-4 sm:p-5 grid grid-cols-12 gap-4 gap-3">
+          <div class="md:col-span-4">
+            <label for="language" class="mb-1 block text-sm font-medium text-slate-700">Language <span class="text-rose-600">*</span></label>
+            <select name="language" id="language" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
               <option value="" disabled selected>Select language</option>
               <option value="English" {{ old('language', $shop->language)=='English'?'selected':'' }}>English</option>
               <option value="Swahili" {{ old('language', $shop->language)=='Swahili'?'selected':'' }}>Swahili</option>
             </select>
-            <div class="invalid-feedback">Please select a language.</div>
+            <div class="mt-1 text-xs text-rose-600">Please select a language.</div>
           </div>
-          <div class="col-md-4">
-            <label for="country" class="form-label">Country <span class="text-danger">*</span></label>
-            <select name="country" id="country" required class="form-select">
+          <div class="md:col-span-4">
+            <label for="country" class="mb-1 block text-sm font-medium text-slate-700">Country <span class="text-rose-600">*</span></label>
+            <select name="country" id="country" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
               <option value="" disabled selected>Select country</option>
               @foreach($countries as $country)
                 <option value="{{ $country->id }}" {{ old('country', $shop->country)==$country->id?'selected':'' }}>{{ $country->name }}</option>
               @endforeach
             </select>
-            <div class="invalid-feedback">Please select a country.</div>
+            <div class="mt-1 text-xs text-rose-600">Please select a country.</div>
           </div>
-          <div class="col-md-4">
-            <label for="currency" class="form-label">
-              Currency <span class="text-danger">*</span>
+          <div class="md:col-span-4">
+            <label for="currency" class="mb-1 block text-sm font-medium text-slate-700">
+              Currency <span class="text-rose-600">*</span>
             </label>
             <select
               id="currency"
               name="currency"
-              class="form-select @error('currency') is-invalid @enderror"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('currency') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
               required
             >
               <option value="" disabled {{ old('currency', $shop->currency) ? '' : 'selected' }}>
@@ -86,9 +86,9 @@
               @endforeach
             </select>
             @error('currency')
-              <div class="invalid-feedback">{{ $message }}</div>
+              <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
             @else
-              <div class="invalid-feedback">Please select a currency.</div>
+              <div class="mt-1 text-xs text-rose-600">Please select a currency.</div>
             @enderror
           </div>
 
@@ -96,92 +96,92 @@
       </div>
 
       {{-- 2) Name & Slug --}}
-      <div class="card mb-4">
-        <div class="card-header fw-semibold">2. Name Your Shop</div>
-        <div class="card-body">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+        <div class="border-b border-slate-200 px-4 py-3 font-semibold">2. Name Your Shop</div>
+        <div class="p-4 sm:p-5">
           <div class="mb-3">
-            <label for="name" class="form-label">Shop Name <span class="text-danger">*</span></label>
-            <input type="text" id="name" name="name" x-model="name" class="form-control" required>
+            <label for="name" class="mb-1 block text-sm font-medium text-slate-700">Shop Name <span class="text-rose-600">*</span></label>
+            <input type="text" id="name" name="name" x-model="name" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
           </div>
           <div>
-            <label for="slug" class="form-label">Slug (URL Identifier)</label>
-            <div class="input-group">
-              <span class="input-group-text">{{ url('shop') }}/</span>
-              <input type="text" id="slug" name="slug" x-model="slug" class="form-control" required>
+            <label for="slug" class="mb-1 block text-sm font-medium text-slate-700">Slug (URL Identifier)</label>
+            <div class="flex w-full items-stretch">
+              <span class="inline-flex items-center rounded-l-xl border border-slate-300 bg-slate-100 px-3 text-sm text-slate-600">{{ url('shop') }}/</span>
+              <input type="text" id="slug" name="slug" x-model="slug" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
             </div>
-            <div class="form-text">You may customize, but it must be unique.</div>
+            <div class="mt-1 text-xs text-slate-500">You may customize, but it must be unique.</div>
           </div>
         </div>
       </div>
 
       {{-- 3) Shop Description --}}
-      <div class="card mb-4">
-        <div class="card-header fw-semibold">3. Describe Your Shop</div>
-        <div class="card-body">
-          <div class="col-12">
-          <label for="bio" class="form-label fw-semibold">Description</label>
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+        <div class="border-b border-slate-200 px-4 py-3 font-semibold">3. Describe Your Shop</div>
+        <div class="p-4 sm:p-5">
+          <div class="col-span-12">
+          <label for="bio" class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Description</label>
             <textarea id="bio" name="bio" rows="6"
-                      class="form-control @error('bio') is-invalid @enderror">{{ old('bio',$shop->bio) }}</textarea>
-            @error('bio')<div class="text-danger mt-1">{{ $message }}</div>@enderror
-            <div class="form-text">Tell customers about your shop and what makes it special.</div>
+                      class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('bio') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">{{ old('bio',$shop->bio) }}</textarea>
+            @error('bio')<div class="text-rose-600 mt-1">{{ $message }}</div>@enderror
+            <div class="mt-1 text-xs text-slate-500">Tell customers about your shop and what makes it special.</div>
           </div>
         </div>
       </div>
 
       {{-- 3b) Shop Announcement --}}
-      <div class="card mb-4">
-        <div class="card-header fw-semibold">3b. Shop Announcement</div>
-        <div class="card-body">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+        <div class="border-b border-slate-200 px-4 py-3 font-semibold">3b. Shop Announcement</div>
+        <div class="p-4 sm:p-5">
           <div class="mb-3">
-            <label for="announcement" class="form-label">Shop Announcement</label>
-            <textarea id="announcement" name="announcement" class="form-control" rows="2">{{ old('announcement', $shop->announcement) }}</textarea>
-            <div class="form-text">This announcement will appear at the top of your shop page.</div>
+            <label for="announcement" class="mb-1 block text-sm font-medium text-slate-700">Shop Announcement</label>
+            <textarea id="announcement" name="announcement" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="2">{{ old('announcement', $shop->announcement) }}</textarea>
+            <div class="mt-1 text-xs text-slate-500">This announcement will appear at the top of your shop page.</div>
           </div>
         </div>
       </div>
 
       {{-- 3c) Shop Policies --}}
-      <div class="card mb-4">
-        <div class="card-header fw-semibold">3c. Shop Policies</div>
-        <div class="card-body">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+        <div class="border-b border-slate-200 px-4 py-3 font-semibold">3c. Shop Policies</div>
+        <div class="p-4 sm:p-5">
           <div class="mb-3">
-            <label for="policies" class="form-label">Shop Policies</label>
-            <textarea id="policies" name="policies" class="form-control" rows="3">{{ old('policies', $shop->policies) }}</textarea>
-            <div class="form-text">Describe your shop's return, shipping, and other important policies.</div>
+            <label for="policies" class="mb-1 block text-sm font-medium text-slate-700">Shop Policies</label>
+            <textarea id="policies" name="policies" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="3">{{ old('policies', $shop->policies) }}</textarea>
+            <div class="mt-1 text-xs text-slate-500">Describe your shop's return, shipping, and other important policies.</div>
           </div>
         </div>
       </div>
 
       {{-- 4) Billing Info --}}
-      <div class="card mb-4">
-        <div class="card-header fw-semibold">4. Share Your Billing Info</div>
-        <div class="card-body">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+        <div class="border-b border-slate-200 px-4 py-3 font-semibold">4. Share Your Billing Info</div>
+        <div class="p-4 sm:p-5">
           <div class="mb-3">
-            <label for="address" class="form-label">Street Address <span class="text-danger">*</span></label>
-            <input type="text" id="address" name="address" value="{{ old('address', $shop->address) }}" class="form-control" required>
+            <label for="address" class="mb-1 block text-sm font-medium text-slate-700">Street Address <span class="text-rose-600">*</span></label>
+            <input type="text" id="address" name="address" value="{{ old('address', $shop->address) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
           </div>
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="city" class="form-label">City <span class="text-danger">*</span></label>
-              <input type="text" id="city" name="city" value="{{ old('city', $shop->city) }}" class="form-control" required>
+          <div class="grid grid-cols-12 gap-4 gap-3">
+            <div class="md:col-span-6">
+              <label for="city" class="mb-1 block text-sm font-medium text-slate-700">City <span class="text-rose-600">*</span></label>
+              <input type="text" id="city" name="city" value="{{ old('city', $shop->city) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
             </div>
-            <div class="col-md-6">
-              <label for="postal" class="form-label">Postal Code <span class="text-danger">*</span></label>
-              <input type="text" id="postal" name="postal" value="{{ old('postal', $shop->postal) }}" class="form-control" required>
+            <div class="md:col-span-6">
+              <label for="postal" class="mb-1 block text-sm font-medium text-slate-700">Postal Code <span class="text-rose-600">*</span></label>
+              <input type="text" id="postal" name="postal" value="{{ old('postal', $shop->postal) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
             </div>
           </div>
         </div>
       </div>
 
       {{-- 5) Security --}}
-      <div class="card mb-4">
-        <div class="card-header fw-semibold">5. Your Shop Security</div>
-        <div class="card-body">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+        <div class="border-b border-slate-200 px-4 py-3 font-semibold">5. Your Shop Security</div>
+        <div class="p-4 sm:p-5">
           <div class="mb-3">
-            <label for="password" class="form-label">Confirm Your Password <span class="text-danger">*</span></label>
-            <div class="input-group">
-              <input type="password" id="password" name="password" class="form-control" required placeholder="Enter your account password">
-              <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+            <label for="password" class="mb-1 block text-sm font-medium text-slate-700">Confirm Your Password <span class="text-rose-600">*</span></label>
+            <div class="flex w-full items-stretch">
+              <input type="password" id="password" name="password" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required placeholder="Enter your account password">
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" type="button" id="togglePassword">
                 <i class="fas fa-eye" id="eyeIcon"></i>
               </button>
             </div>
@@ -193,19 +193,19 @@
           </div>
 
           <div class="mt-4">
-            <label for="logo" class="form-label">Logo (optional)</label>
-            <input class="form-control" type="file" id="logo" name="logo" accept="image/*">
+            <label for="logo" class="mb-1 block text-sm font-medium text-slate-700">Logo (optional)</label>
+            <input class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" type="file" id="logo" name="logo" accept="image/*">
             @if($shop->logo)
               <div class="mt-2">
-                <img src="{{ asset('storage/' . $shop->logo) }}" alt="logo" class="rounded-circle" width="50" height="50">
+                <img src="{{ asset('storage/' . $shop->logo) }}" alt="logo" class="rounded-full" width="50" height="50">
               </div>
             @endif
           </div>
 
           <div class="mt-4">
-            <label for="featured_image" class="form-label">Featured Image (optional)</label>
-            <input class="form-control" type="file" id="featured_image" name="featured_image" accept="image/*">
-            <div class="form-text">This image will be displayed prominently on your shop page. Recommended size: 1200x400 pixels.</div>
+            <label for="featured_image" class="mb-1 block text-sm font-medium text-slate-700">Featured Image (optional)</label>
+            <input class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" type="file" id="featured_image" name="featured_image" accept="image/*">
+            <div class="mt-1 text-xs text-slate-500">This image will be displayed prominently on your shop page. Recommended size: 1200x400 pixels.</div>
             @if($shop->featured_image)
               <div class="mt-2">
                 <img src="{{ asset('storage/' . $shop->featured_image) }}" alt="featured image" class="img-fluid rounded" style="max-width: 300px; max-height: 150px; object-fit: cover;">
@@ -216,9 +216,9 @@
       </div>
 
       {{-- Submit --}}
-      <div class="text-end">
-        <a href="{{ route('seller.shops.show', $shop) }}" class="btn btn-secondary px-4">Cancel</a>
-        <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+      <div class="text-right">
+        <a href="{{ route('seller.shops.show', $shop) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500 px-4">Cancel</a>
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-4">Save Changes</button>
       </div>
     </form>
 </div>
@@ -355,3 +355,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </style>
 
 @endsection
+
+

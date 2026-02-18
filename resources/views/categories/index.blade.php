@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('header')
   <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -6,7 +6,7 @@
   </h2>
 @endsection
 
-@section('content')
+@section('main')
 <div class="content">
   <div class="py-6">
     <div class="container-lg">
@@ -15,36 +15,36 @@
       @includeWhen(session('success'), 'partials.alert-success', ['msg'=>session('success')])
 
       {{-- TOP BAR ------------------------------------------------------------ --}}
-      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+      <div class="flex flex-col md:flex-row justify-between md:items-center mb-4">
         {{-- search --}}
-        <form action="{{ route('admin.categories.index') }}" method="GET" class="w-100 w-md-auto mb-3 mb-md-0">
-          <div class="input-group">
+        <form action="{{ route('admin.categories.index') }}" method="GET" class="w-full w-md-auto mb-3 mb-0 md:mb-0">
+          <div class="flex w-full items-stretch">
             <input type="text"
                    name="q"
                    value="{{ request('q') }}"
-                   placeholder="Search categories…"
-                   class="form-control"
+                   placeholder="Search categoriesâ€¦"
+                   class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                    autocomplete="off">
-            <button class="btn btn-outline-secondary" type="submit">Search</button>
+            <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" type="submit">Search</button>
             @if(request()->filled('q'))
-              <a href="{{ route('admin.categories.index') }}" class="btn btn-outline-danger">×</a>
+              <a href="{{ route('admin.categories.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-rose-600 text-rose-700 hover:bg-rose-50">Ã—</a>
             @endif
           </div>
         </form>
 
         {{-- new category --}}
-        <div class="d-flex gap-2 ms-md-3 align-items-center">
-          <button type="button" id="bulkUpdateBtn" class="btn btn-outline-primary" disabled data-bs-toggle="modal" data-bs-target="#bulkUpdateModal">
+        <div class="flex gap-2 ms-md-3 items-center">
+          <button type="button" id="bulkUpdateBtn" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50" disabled data-bs-toggle="modal" data-bs-target="#bulkUpdateModal">
             Bulk Update
           </button>
-          <div class="vr d-none d-md-block"></div>
-          <button type="button" id="bulkMoveBtn" class="btn btn-outline-secondary" disabled data-bs-toggle="modal" data-bs-target="#bulkMoveModal">
+          <div class="vr hidden md:block"></div>
+          <button type="button" id="bulkMoveBtn" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" disabled data-bs-toggle="modal" data-bs-target="#bulkMoveModal">
             Move To Parent
           </button>
-          <div class="vr d-none d-md-block"></div>
-          <button type="button" id="collapseAll" class="btn btn-outline-secondary">Collapse All</button>
-          <button type="button" id="expandAll"   class="btn btn-outline-secondary">Expand All</button>
-          <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
+          <div class="vr hidden md:block"></div>
+          <button type="button" id="collapseAll" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">Collapse All</button>
+          <button type="button" id="expandAll"   class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">Expand All</button>
+          <a href="{{ route('admin.categories.create') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
             + New Category
           </a>
         </div>
@@ -52,13 +52,13 @@
       {{-- /TOP BAR ----------------------------------------------------------- --}}
 
       @if($parents->isEmpty())
-        <p class="text-muted">No categories found.</p>
+        <p class="text-slate-500">No categories found.</p>
       @else
-          <div class="card shadow-sm">
-            <div class="card-body p-0">
-              <div class="table-responsive">
-              <table class="table table-striped mb-0 align-middle table-hover category-table">
-              <thead class="table-light">
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm">
+            <div class="p-4 sm:p-5 p-0">
+              <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-slate-200 text-sm mb-0 align-middle category-table">
+              <thead class="bg-slate-50">
                 <tr>
                   <th class="text-center" style="width:40px">
                     <input type="checkbox" id="select_all">
@@ -69,7 +69,7 @@
                   <th>Parent</th>
                   <th>Fee</th>
                   <th>Cycle</th>
-                  <th class="text-end" style="width:220px">Actions</th>
+                  <th class="text-right" style="width:220px">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -83,28 +83,28 @@
           </div>
 
           <!-- Bulk Update Modal -->
-          <div class="modal fade" id="bulkUpdateModal" tabindex="-1" aria-hidden="true">
+          <div class="modal" id="bulkUpdateModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
-              <form class="modal-content" action="{{ route('admin.categories.bulk-update') }}" method="POST" id="bulkUpdateForm">
+              <form class="rounded-2xl border border-slate-200 bg-white shadow-xl" action="{{ route('admin.categories.bulk-update') }}" method="POST" id="bulkUpdateForm">
                 @csrf
-                <div class="modal-header">
-                  <h5 class="modal-title">Bulk Update Categories</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                  <h5 class="text-base font-semibold text-slate-900">Bulk Update Categories</h5>
+                  <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                  <p class="text-muted mb-3">
+                <div class="px-4 py-4">
+                  <p class="text-slate-500 mb-3">
                     Applying changes to <span id="selectedCount">0</span> selected categor<span id="selectedCountPlural">ies</span>.
                   </p>
 
                   <div class="mb-3">
-                    <label class="form-label">Listing Fee</label>
-                    <input type="number" name="listing_fee" step="0.01" class="form-control" placeholder="Leave blank to keep">
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Listing Fee</label>
+                    <input type="number" name="listing_fee" step="0.01" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="Leave blank to keep">
                   </div>
 
                   <div class="mb-3">
-                    <label class="form-label">Listing Type</label>
-                    <select name="listing_type" class="form-select">
-                      <option value="">— Leave unchanged —</option>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Listing Type</label>
+                    <select name="listing_type" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
+                      <option value="">â€” Leave unchanged â€”</option>
                       <option value="products">Products</option>
                       <option value="services">Services</option>
                       <option value="digital">Digital Downloads</option>
@@ -112,41 +112,41 @@
                   </div>
 
                   <div class="mb-3">
-                    <label class="form-label">Listing Frequency</label>
-                    <select name="listing_frequency" class="form-select">
-                      <option value="">— Leave unchanged —</option>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Listing Frequency</label>
+                    <select name="listing_frequency" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
+                      <option value="">â€” Leave unchanged â€”</option>
                       <option value="1">1 month</option>
                       <option value="4">4 months</option>
                     </select>
                   </div>
                 </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button type="submit" class="btn btn-primary">Update Selected</button>
+                <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                  <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Update Selected</button>
                 </div>
               </form>
             </div>
           </div>
 
           <!-- Bulk Move Modal -->
-          <div class="modal fade" id="bulkMoveModal" tabindex="-1" aria-hidden="true">
+          <div class="modal" id="bulkMoveModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
-              <form class="modal-content" action="{{ route('admin.categories.bulk-move') }}" method="POST" id="bulkMoveForm">
+              <form class="rounded-2xl border border-slate-200 bg-white shadow-xl" action="{{ route('admin.categories.bulk-move') }}" method="POST" id="bulkMoveForm">
                 @csrf
-                <div class="modal-header">
-                  <h5 class="modal-title">Move Categories</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                  <h5 class="text-base font-semibold text-slate-900">Move Categories</h5>
+                  <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                  <p class="text-muted">Select a new parent for the selected categories. Choose “None” to move them to top level.</p>
+                <div class="px-4 py-4">
+                  <p class="text-slate-500">Select a new parent for the selected categories. Choose â€œNoneâ€ to move them to top level.</p>
 
-                  <label class="form-label">New Parent</label>
-                  <select name="parent_id" class="form-select">
-                    <option value="">— None (Top level) —</option>
+                  <label class="mb-1 block text-sm font-medium text-slate-700">New Parent</label>
+                  <select name="parent_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
+                    <option value="">â€” None (Top level) â€”</option>
                     @php
                       $renderOptions = function($nodes, $depth = 0) use (&$renderOptions) {
                         foreach ($nodes as $node) {
-                          echo '<option value="'.$node->id.'">'.str_repeat('— ', $depth).e($node->name).'</option>';
+                          echo '<option value="'.$node->id.'">'.str_repeat('â€” ', $depth).e($node->name).'</option>';
                           if ($node->relationLoaded('children') && $node->children->isNotEmpty()) {
                               $renderOptions($node->children, $depth+1);
                           }
@@ -156,9 +156,9 @@
                     @php $renderOptions($parents); @endphp
                   </select>
                 </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <button type="submit" class="btn btn-primary">Move Selected</button>
+                <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                  <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Move Selected</button>
                 </div>
               </form>
             </div>
@@ -319,4 +319,6 @@
   .slug { font-size: 12px; color:#6b7280; }
 </style>
 @endpush
+
+
 

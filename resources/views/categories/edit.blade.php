@@ -1,5 +1,5 @@
-{{-- resources/views/admin/categories/edit.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/admin/categories/edit.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 
 @section('header')
   <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -45,14 +45,14 @@
 </script>
 @endpush
 
-@section('content')
+@section('main')
 <div class="content">
   <div class="container-lg">
 
     {{-- NAV BUTTON --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <a href="{{ route('admin.categories.show', $category) }}" class="btn btn-outline-secondary">
-        ← Back to details
+    <div class="flex justify-between items-center mb-4">
+      <a href="{{ route('admin.categories.show', $category) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">
+        â† Back to details
       </a>
     </div>
 
@@ -87,13 +87,13 @@
 
       <!-- Category Name -->
       <div class="mb-4">
-        <label for="name" class="form-label">Name</label>
+        <label for="name" class="mb-1 block text-sm font-medium text-slate-700">Name</label>
         <input
           id="name"
           x-model="name"
           name="name"
           type="text"
-          class="form-control"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
           value="{{ old('name', $category->name) }}"
           required
         >
@@ -101,13 +101,13 @@
 
       <!-- Category Slug -->
       <div class="mb-4">
-        <label for="slug" class="form-label">Slug</label>
+        <label for="slug" class="mb-1 block text-sm font-medium text-slate-700">Slug</label>
         <input
           id="slug"
           x-model="slug"
           name="slug"
           type="text"
-          class="form-control bg-light"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-100"
           value="{{ old('slug', $category->slug) }}"
           readonly
         >
@@ -115,9 +115,9 @@
 
       <!-- Parent Category Selection -->
       <div class="mb-4">
-        <label for="parent_id" class="form-label">Parent Category</label>
-        <select id="parent_id" name="parent_id" class="form-select">
-          <option value="">— None —</option>
+        <label for="parent_id" class="mb-1 block text-sm font-medium text-slate-700">Parent Category</label>
+        <select id="parent_id" name="parent_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
+          <option value="">â€” None â€”</option>
           @foreach($parents as $p)
             <option
               value="{{ $p->id }}"
@@ -131,8 +131,8 @@
 
       <!-- Listing Type -->
       <div class="mb-4">
-        <label for="listing_type" class="form-label">Listing Type</label>
-        <select id="listing_type" name="listing_type" class="form-select" required>
+        <label for="listing_type" class="mb-1 block text-sm font-medium text-slate-700">Listing Type</label>
+        <select id="listing_type" name="listing_type" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" required>
           <option value="products" @selected(old('listing_type', $category->listing_type)=='products')>
             Products
           </option>
@@ -147,21 +147,21 @@
 
       <!-- Listing Fee -->
       <div class="mb-4">
-        <label for="listing_fee" class="form-label">Listing Fee</label>
+        <label for="listing_fee" class="mb-1 block text-sm font-medium text-slate-700">Listing Fee</label>
         <input
           id="listing_fee"
           name="listing_fee"
           type="number"
           step="0.01"
-          class="form-control"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
           value="{{ old('listing_fee', $category->listing_fee) }}"
         >
       </div>
 
       <!-- Listing Frequency -->
       <div class="mb-4">
-        <label for="listing_frequency" class="form-label">Listing Frequency</label>
-        <select id="listing_frequency" name="listing_frequency" class="form-select" required>
+        <label for="listing_frequency" class="mb-1 block text-sm font-medium text-slate-700">Listing Frequency</label>
+        <select id="listing_frequency" name="listing_frequency" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" required>
           <option value="1" @selected(old('listing_frequency', $category->listing_frequency) == 1 || old('listing_frequency', $category->listing_frequency) === '1')>1 month</option>
           <option value="4" @selected(old('listing_frequency', $category->listing_frequency) == 4 || old('listing_frequency', $category->listing_frequency) === '4')>4 months</option>
         </select>
@@ -169,19 +169,19 @@
 
       <!-- Description -->
       <div class="mb-4">
-        <label for="description" class="form-label">Description</label>
+        <label for="description" class="mb-1 block text-sm font-medium text-slate-700">Description</label>
         <textarea
           id="description"
           name="description"
           rows="3"
-          class="form-control"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
         >{{ old('description', $category->description) }}</textarea>
-        <div class="form-text">Optional—briefly describe this category.</div>
+        <div class="mt-1 text-xs text-slate-500">Optionalâ€”briefly describe this category.</div>
       </div>
 
       <!-- Current Featured Image -->
       <div class="mb-4">
-        <label class="form-label">Current Featured Image</label><br>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Current Featured Image</label><br>
         @if($category->image)
           <img
             src="{{ asset('storage/' . $category->image) }}"
@@ -189,27 +189,29 @@
             style="max-width: 150px;"
           >
         @else
-          <span class="text-muted">No image uploaded.</span>
+          <span class="text-slate-500">No image uploaded.</span>
         @endif
       </div>
 
       <!-- Replace Image -->
       <div class="mb-6">
-        <label for="image" class="form-label">Replace Image</label>
+        <label for="image" class="mb-1 block text-sm font-medium text-slate-700">Replace Image</label>
         <input
           id="image"
           name="image"
           type="file"
           accept="image/*"
-          class="form-control"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
         >
       </div>
 
       <!-- Submit Button -->
-      <button type="submit" class="btn btn-primary">
+      <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
         Update Category
       </button>
     </form>
   </div>
 </div>
 @endsection
+
+

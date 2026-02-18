@@ -1,16 +1,16 @@
-@extends('layouts.appbar')
+﻿@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
+@section('main')
     <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
         <!-- Content Header (Page header) -->
         <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
+            <div class="mx-auto w-full px-4 sm:px-6">
+                <div class="grid grid-cols-12 gap-4 mb-2">
+                    <div class="sm:col-span-6">
                         <h1>Users</h1>
                     </div>
-                    <div class="col-sm-6">
+                    <div class="sm:col-span-6">
                         <ol class="breadcrumb float-sm-right">
                             <li class="breadcrumb-item"><a href="#">Home</a></li>
                             <li class="breadcrumb-item active">Orders</li>
@@ -22,17 +22,17 @@
 
         <!-- Main content -->
         <section class="content">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-md-12">
+            <div class="mx-auto w-full px-4 sm:px-6">
+                <div class="grid grid-cols-12 gap-4">
+                    <div class="md:col-span-12">
                         <!-- Orders List -->
-                        <div class="card card-primary">
-                            <div class="card-header">
-                                <h3 class="card-title">Users List</h3>
+                        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm card-primary">
+                            <div class="border-b border-slate-200 px-4 py-3">
+                                <h3 class="text-lg font-semibold text-slate-900">Users List</h3>
                             </div>
                             <!-- /.card-header -->
-                            <div class="card-body">
-                                <table class="table table-bordered table-hover">
+                            <div class="p-4 sm:p-5">
+                                <table class="min-w-full divide-y divide-slate-200 text-sm border border-slate-200">
                                     <thead>
                                         <tr>
                                             <th>Order ID</th>
@@ -55,7 +55,7 @@
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <a href="{{ route('orders.show', $order->id) }}" class="btn btn-info btn-sm">View</a>
+                                                    <a href="{{ route('orders.show', $order->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-sky-500 text-white hover:bg-sky-400 px-3 py-1.5 text-xs">View</a>
                                                 </td>
                                             </tr>
                                         @empty
@@ -67,9 +67,9 @@
                                 </table>
                             </div>
                             <!-- /.card-body -->
-                            <div class="card-footer">
+                            <div class="border-t border-slate-200 px-4 py-3">
                                 <!-- Pagination -->
-                                {{$users->links("pagination::bootstrap-4")}}
+                                {{$users->links("pagination::tailwind")}}
                             </div>
                         </div>
                         <!-- /.card -->
@@ -82,3 +82,7 @@
         <!-- /.content -->
     </div>
 @endsection
+
+
+
+

@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 @section('title', $product->name . ' | Edit Details')
 
 @push('styles')
@@ -10,22 +10,22 @@
 </style>
 @endpush
 
-@section('content')
+@section('main')
 @php $current = \Illuminate\Support\Facades\Route::currentRouteName(); @endphp
 
 <div class="content" x-data="detailsForm()" x-init="init()">
   {{-- Header tabs --}}
   <div class="page-header-sticky">
-    <div class="container-fluid px-0">
+    <div class="mx-auto w-full px-4 sm:px-6 px-0">
       <div class="tab-scroll px-2 py-2">
         <ul class="nav nav-pills gap-2 flex-nowrap">
-          <li class="nav-item"><a class="nav-link {{ $current==='products.show' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.show', $product) }}"><i class="fa-regular fa-circle-question me-1"></i> About</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.pricing' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.pricing', $product) }}"><i class="fa-solid fa-tags me-1"></i> Price & Inventory</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.variations' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.variations', $product) }}"><i class="fa-solid fa-layer-group me-1"></i> Variations</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.details' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.details', $product) }}"><i class="fa-regular fa-rectangle-list me-1"></i> Details</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.shipping' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.shipping', $product) }}"><i class="fa-solid fa-truck me-1"></i> Shipping</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.media' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.media', $product) }}"><i class="fa-regular fa-images me-1"></i> Media</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.settings' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.settings', $product) }}"><i class="fa-solid fa-gear me-1"></i> Settings</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.show' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.show', $product) }}"><i class="fa-regular fa-circle-question mr-1"></i> About</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.pricing' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.pricing', $product) }}"><i class="fa-solid fa-tags mr-1"></i> Price & Inventory</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.variations' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.variations', $product) }}"><i class="fa-solid fa-layer-group mr-1"></i> Variations</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.details' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.details', $product) }}"><i class="fa-regular fa-rectangle-list mr-1"></i> Details</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.shipping' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.shipping', $product) }}"><i class="fa-solid fa-truck mr-1"></i> Shipping</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.media' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.media', $product) }}"><i class="fa-regular fa-images mr-1"></i> Media</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.settings' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.settings', $product) }}"><i class="fa-solid fa-gear mr-1"></i> Settings</a></li>
 
 
             
@@ -36,48 +36,48 @@
 
   {{-- Validation errors --}}
   @if ($errors->any())
-    <div class="alert alert-danger mt-3">
+    <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800 mt-3">
       <strong>Please fix the following errors:</strong>
-      <ul class="mt-2 mb-0 ps-3">@foreach ($errors->all() as $error) <li>{{ $error }}</li> @endforeach</ul>
+      <ul class="mt-2 mb-0 pl-3">@foreach ($errors->all() as $error) <li>{{ $error }}</li> @endforeach</ul>
     </div>
   @endif
 
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+  <div class="flex justify-between items-center mt-3 mb-3">
     <h2 class="mb-0">{{ $product->name }} — Edit Details</h2>
-    <a href="{{ route('products.show', $product) }}" class="btn btn-outline-dark btn-sm"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    <a href="{{ route('products.show', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-900 text-slate-900 hover:bg-slate-100 px-3 py-1.5 text-xs"><i class="fas fa-arrow-left mr-1"></i>Back</a>
   </div>
 
-  <div class="card shadow-sm border-0 rounded-4">
-    <div class="card-body">
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-0 rounded-4">
+    <div class="p-4 sm:p-5">
       <form action="{{ route('products.details.update', $product) }}" method="POST" enctype="multipart/form-data">
         @csrf @method('PATCH')
 
-        <div class="row g-3">
-          <div class="col-md-8">
-            <label class="form-label fw-semibold">Listing Name</label>
+        <div class="grid grid-cols-12 gap-4 gap-3">
+          <div class="md:col-span-8">
+            <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Listing Name</label>
             <input type="text" name="name" id="name" spellcheck="true" autocapitalize="sentences" autocomplete="on"
-                   class="form-control @error('name') is-invalid @enderror"
+                   class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('name') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
                    value="{{ old('name', $product->name) }}" required autofocus>
-            @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            @error('name') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
           </div>
 
-          <div class="col-md-4">
-            <label class="form-label fw-semibold">Listing Type</label>
+          <div class="md:col-span-4">
+            <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Listing Type</label>
             <select name="type" x-model="type" @change="loadCategories()"
-                    class="form-select @error('type') is-invalid @enderror" required>
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('type') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" required>
               <option value="">Choose type</option>
               <option value="physical" @selected(old('type',$product->type)=='physical')>Physical</option>
               <option value="digital"  @selected(old('type',$product->type)=='digital')>Digital</option>
               <option value="service"  @selected(old('type',$product->type)=='service')>Service</option>
             </select>
-            @error('type') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            @error('type') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
           </div>
 
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">Category</label>
+          <div class="md:col-span-6">
+            <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Category</label>
             <div class="position-relative">
               <input type="text"
-                     class="form-control @error('category_id') is-invalid @enderror"
+                     class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('category_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
                      placeholder="Search categories..."
                      x-model="categorySearch"
                      @input="handleCategoryInput()"
@@ -95,7 +95,7 @@
                      aria-label="Search categories">
               <input type="hidden" name="category_id" :value="categoryId || ''">
               <div id="details-category-suggestion-list"
-                   class="dropdown-menu w-100 shadow-sm mt-1"
+                   class="absolute z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl w-full shadow-sm mt-1"
                    :class="{ 'show': showCatSuggestions }"
                    style="max-height: 16rem; overflow-y: auto;"
                    x-cloak
@@ -103,14 +103,14 @@
                    x-transition
                    @mousedown.prevent>
                 <template x-if="loading">
-                  <div class="dropdown-item text-muted">Loading categories...</div>
+                  <div class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 text-slate-500">Loading categories...</div>
                 </template>
                 <template x-if="!loading && !catsFiltered.length">
-                  <div class="dropdown-item text-muted">No categories match your search.</div>
+                  <div class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 text-slate-500">No categories match your search.</div>
                 </template>
                 <template x-for="(cat, idx) in catsFiltered" :key="cat.id">
                   <button type="button"
-                          class="dropdown-item text-truncate"
+                          class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 text-truncate"
                           :class="{ 'active': idx === catHighlightIndex }"
                           @click="selectCategory(cat)">
                     <span x-text="cat.indented"></span>
@@ -118,41 +118,41 @@
                 </template>
               </div>
             </div>
-            <div class="form-text text-muted mt-1" x-show="categoryId && !showCatSuggestions">
-              Selected: <span class="fw-semibold" x-text="currentCategoryLabel()"></span>
+            <div class="mt-1 text-xs text-slate-500 text-slate-500 mt-1" x-show="categoryId && !showCatSuggestions">
+              Selected: <span class="font-semibold" x-text="currentCategoryLabel()"></span>
             </div>
-            <div x-show="loading" class="form-text text-muted mt-1">Loading categories...</div>
-            <div x-show="!loading && categorySearch && !catsFiltered.length" class="form-text text-muted mt-1" x-cloak>
+            <div x-show="loading" class="mt-1 text-xs text-slate-500 text-slate-500 mt-1">Loading categories...</div>
+            <div x-show="!loading && categorySearch && !catsFiltered.length" class="mt-1 text-xs text-slate-500 text-slate-500 mt-1" x-cloak>
               No categories match your search.
             </div>
-            <div x-show="fallback && !loading" class="form-text text-warning">Showing all categories (fallback). Ask admin to tag categories by type.</div>
-            @error('category_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+            <div x-show="fallback && !loading" class="mt-1 text-xs text-slate-500 text-amber-600">Showing all categories (fallback). Ask admin to tag categories by type.</div>
+            @error('category_id') <div class="mt-1 text-xs text-rose-600 block">{{ $message }}</div> @enderror
           </div>
 
           
 
-          <div class="col-12">
-            <label class="form-label fw-semibold">Description</label>
+          <div class="col-span-12">
+            <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Description</label>
             <textarea id="description" name="description" rows="8" spellcheck="true"
-                      class="form-control @error('description') is-invalid @enderror"
+                      class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('description') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
                       placeholder="Full product description...">{{ old('description',$product->description ?? '') }}</textarea>
-            @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            @error('description') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
           </div>
 
           {{-- Digital-only file upload (optional) --}}
-          <div class="col-md-6" x-show="type==='digital'">
-            <label class="form-label fw-semibold">Digital File</label>
+          <div class="md:col-span-6" x-show="type==='digital'">
+            <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Digital File</label>
             <input type="file" name="digital_file"
-                   class="form-control @error('digital_file') is-invalid @enderror"
+                   class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('digital_file') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
                    accept=".zip,.pdf,.mp3,.mp4,.docx,.xlsx,.pptx">
-            @error('digital_file') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            <div class="form-text">Upload replacement or additional file for this digital listing.</div>
+            @error('digital_file') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
+            <div class="mt-1 text-xs text-slate-500">Upload replacement or additional file for this digital listing.</div>
           </div>
         </div>
 
-        <div class="mt-4 d-flex gap-2">
-          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Save</button>
-          <a href="{{ route('products.show', $product) }}" class="btn btn-outline-secondary">Cancel</a>
+        <div class="mt-4 flex gap-2">
+          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500"><i class="fas fa-save mr-1"></i> Save</button>
+          <a href="{{ route('products.show', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">Cancel</a>
         </div>
       </form>
     </div>
@@ -160,17 +160,17 @@
 
   {{-- Existing Digital Files (if any) --}}
   @if($product->digitalFiles->count())
-    <div class="card mt-4 shadow-sm">
-      <div class="card-header bg-light"><h5 class="mb-0">Current Digital Files</h5></div>
-      <ul class="list-group list-group-flush">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4 shadow-sm">
+      <div class="border-b border-slate-200 px-4 py-3 bg-slate-100"><h5 class="mb-0">Current Digital Files</h5></div>
+      <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
         @foreach($product->digitalFiles as $file)
-          <li class="list-group-item d-flex justify-content-between align-items-center">
+          <li class="px-4 py-3 flex justify-between items-center">
             <a href="{{ route('digital-files.download',$file) }}" target="_blank">
-              <i class="fas fa-file-download me-2"></i>{{ $file->filename }}
+              <i class="fas fa-file-download mr-2"></i>{{ $file->filename }}
             </a>
             <form action="{{ route('digital-files.destroy',$file) }}" method="POST" onsubmit="return confirm('Delete this file?')">
               @csrf @method('DELETE')
-              <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50"><i class="fas fa-trash"></i></button>
             </form>
           </li>
         @endforeach
@@ -533,6 +533,8 @@ function detailsForm(){
 })();
 </script>
 @endpush
+
+
 
 
 

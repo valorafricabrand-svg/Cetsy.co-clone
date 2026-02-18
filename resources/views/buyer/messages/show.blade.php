@@ -1,40 +1,40 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('header')
-    <h2 class="fw-semibold fs-3 text-dark">
+    <h2 class="font-semibold fs-3 text-slate-900">
         Conversation with {{ $shop ? $shop->name : ($otherUser->name ?? 'Seller') }}
         @if($product)
-            <span class="badge bg-secondary ms-2">{{ $product->name }}</span>
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200 ml-2">{{ $product->name }}</span>
         @endif
     </h2>
 @endsection
 
-@section('content')
+@section('main')
 <div class="content">
     <div class="container-xxl">
-        <div class="row justify-content-center">
-            <div class="col-lg-8 col-md-10">
+        <div class="grid grid-cols-12 gap-4 justify-center">
+            <div class="lg:col-span-8 md:col-span-10">
                 <!-- Product Info Card -->
                 @if($product)
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+                    <div class="p-4 sm:p-5">
+                        <div class="flex items-center">
                             @if($product->media && $product->media->count() > 0)
                                 @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null); @endphp
                                 <img src="{{ $thumb }}" alt="{{ $product->name }}" 
-                                     class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                     class="rounded mr-3" style="width: 60px; height: 60px; object-fit: cover;">
                             @else
-                                <div class="bg-light rounded d-flex align-items-center justify-content-center me-3" 
+                                <div class="bg-slate-100 rounded flex items-center justify-center mr-3" 
                                      style="width: 60px; height: 60px;">
-                                    <i class="bi bi-image text-muted"></i>
+                                    <i class="bi bi-image text-slate-500"></i>
                                 </div>
                             @endif
                             <div class="flex-grow-1">
                                 <h6 class="mb-1">{{ $product->name }}</h6>
-                                <p class="text-muted mb-0 small">{!! $product->description ? \Illuminate\Support\Str::limit($product->description, 100) : 'No description available' !!}</p>
+                                <p class="text-slate-500 mb-0 text-xs">{!! $product->description ? \Illuminate\Support\Str::limit($product->description, 100) : 'No description available' !!}</p>
                             </div>
-                            <div class="text-end">
-                                <span class="badge bg-primary">{{ $product->price_formatted }}</span>
+                            <div class="text-right">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary">{{ $product->price_formatted }}</span>
                             </div>
                         </div>
                     </div>
@@ -42,33 +42,33 @@
                 @endif
 
                 <!-- Messages Container -->
-                <div class="card shadow mb-4">
-                    <div class="card-header bg-light">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <div class="avatar bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2" 
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow mb-4">
+                    <div class="border-b border-slate-200 px-4 py-3 bg-slate-100">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="avatar bg-success text-white rounded-full flex items-center justify-center mr-2" 
                                      style="width: 40px; height: 40px; font-size: 1.1rem;">
                                     {{ strtoupper(substr(($shop ? $shop->name : ($otherUser->name ?? 'U')), 0, 1)) }}
                                 </div>
                                 <div>
                                     <h6 class="mb-0">{{ $shop ? $shop->name : ($otherUser->name ?? 'Unknown') }}</h6>
-                                    <small class="text-muted">{{ $messages->count() }} message{{ $messages->count() > 1 ? 's' : '' }}</small>
+                                    <small class="text-slate-500">{{ $messages->count() }} message{{ $messages->count() > 1 ? 's' : '' }}</small>
                                 </div>
                             </div>
-                            <a href="{{ route('buyer.messages.index') }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-arrow-left me-1"></i>Back to Conversations
+                            <a href="{{ route('buyer.messages.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs">
+                                <i class="bi bi-arrow-left mr-1"></i>Back to Conversations
                             </a>
                         </div>
                     </div>
                     
-                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                    <div class="p-4 sm:p-5" style="max-height: 500px; overflow-y: auto;">
                         @if($messages->count())
                             @foreach($messages as $message)
                                 <div class="mb-3 {{ $message->sender_id == auth()->id() ? 'text-end' : 'text-start' }}">
-                                    <div class="d-inline-block p-3 rounded {{ $message->sender_id == auth()->id() ? 'bg-success text-white' : 'bg-light' }}" 
+                                    <div class="inline-block p-3 rounded {{ $message->sender_id == auth()->id() ? 'bg-success text-white' : 'bg-light' }}" 
                                          style="max-width: 75%;">
-                                        <div class="d-flex align-items-center mb-1">
-                                            <strong class="me-2">{{ $message->sender->shop->name ?? $message->sender->name }}</strong>
+                                        <div class="flex items-center mb-1">
+                                            <strong class="mr-2">{{ $message->sender->shop->name ?? $message->sender->name }}</strong>
                                             <small class="{{ $message->sender_id == auth()->id() ? 'text-white-50' : 'text-muted' }}">
                                                 {{ $message->created_at->format('M d, H:i') }}
                                             </small>
@@ -87,8 +87,8 @@
                                                         <img src="{{ $attachmentUrl }}" alt="Attachment" class="img-fluid rounded" style="max-width: 240px;">
                                                     </a>
                                                 @else
-                                                    <a href="{{ $attachmentUrl }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                                                        <i class="bi bi-paperclip me-1"></i>View attachment
+                                                    <a href="{{ $attachmentUrl }}" target="_blank" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50">
+                                                        <i class="bi bi-paperclip mr-1"></i>View attachment
                                                     </a>
                                                 @endif
                                             </div>
@@ -97,7 +97,7 @@
                                 </div>
                             @endforeach
                         @else
-                            <div class="alert alert-info text-center">
+                            <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 text-center">
                                 <i class="bi bi-chat-dots mb-2" style="font-size: 2rem;"></i>
                                 <div>No messages yet. Start the conversation!</div>
                             </div>
@@ -106,30 +106,30 @@
                 </div>
 
                 <!-- Message Form -->
-                <div class="card shadow">
-                    <div class="card-body">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow">
+                    <div class="p-4 sm:p-5">
                         <form method="POST" action="{{ route('messages.store') }}" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" name="receiver_id" value="{{ $otherUser->id }}">
                             <input type="hidden" name="product_id" value="{{ $product->id ?? '' }}">
                             
                             <div class="mb-3">
-                                <textarea name="message" class="form-control" rows="3" 
+                                <textarea name="message" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="3" 
                                           placeholder="Type your message..." required 
                                           style="resize: none;"></textarea>
                             </div>
                             <div class="mb-3">
-                                <label for="buyerAttachment" class="form-label">Attachment (optional)</label>
-                                <input type="file" name="attachment" id="buyerAttachment" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
-                                <small class="text-muted">Images or PDF, max 5MB.</small>
+                                <label for="buyerAttachment" class="mb-1 block text-sm font-medium text-slate-700">Attachment (optional)</label>
+                                <input type="file" name="attachment" id="buyerAttachment" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
+                                <small class="text-slate-500">Images or PDF, max 5MB.</small>
                             </div>
                             
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">
+                            <div class="flex justify-between items-center">
+                                <small class="text-slate-500">
                                     Press Enter to send, Shift+Enter for new line
                                 </small>
-                                <button type="submit" class="btn btn-success px-4">
-                                    <i class="bi bi-send me-1"></i>Send Message
+                                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+                                    <i class="bi bi-send mr-1"></i>Send Message
                                 </button>
                             </div>
                         </form>
@@ -196,3 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
+
+
+
+

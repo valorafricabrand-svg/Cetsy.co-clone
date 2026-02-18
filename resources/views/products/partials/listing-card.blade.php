@@ -46,14 +46,14 @@
     }
 @endphp
 
-<div class="col-md-6 col-lg-4">
-    <div class="card position-relative h-100 shadow-sm border-0 rounded-4 js-product-card"
+<div class="md:col-span-6 lg:col-span-4">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm position-relative h-full shadow-sm border-0 rounded-4 js-product-card"
          data-href="{{ route('products.show', $product) }}"
          tabindex="0"
          aria-label="Open {{ $product->name }} details">
         <span class="badge bg-{{ $statusClass }} text-white position-absolute top-0 start-0 m-2">{{ $statusLabel }}</span>
         @if(((int)($product->is_active ?? 0) === 1) && empty($product->featured_image))
-            <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2" title="This published listing has no featured image">No Featured Image</span>
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-slate-900 position-absolute top-0 end-0 m-2" title="This published listing has no featured image">No Featured Image</span>
         @endif
 
         @if ($thumb)
@@ -64,19 +64,19 @@
                      onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
             @endif
         @else
-            <div class="bg-light d-flex align-items-center justify-content-center" style="height:220px;">
-                <span class="text-muted">No Media</span>
+            <div class="bg-slate-100 flex items-center justify-center" style="height:220px;">
+                <span class="text-slate-500">No Media</span>
             </div>
         @endif
 
-        <div class="card-body d-flex flex-column">
-            <h5 class="card-title mb-1">{{ Str::limit($product->name, 40) }}</h5>
-            <div class="text-muted small mb-2">ID: #{{ $product->id }}</div>
+        <div class="p-4 sm:p-5 flex flex-col">
+            <h5 class="text-lg font-semibold text-slate-900 mb-1">{{ Str::limit($product->name, 40) }}</h5>
+            <div class="text-slate-500 text-xs mb-2">ID: #{{ $product->id }}</div>
             @php $due = $product->next_due_date ? \Carbon\Carbon::parse($product->next_due_date) : null; @endphp
             @if($due)
-                <div class="small mb-2">
-                    <span class="badge bg-light text-dark border">
-                        <i class="far fa-calendar-alt me-1"></i>
+                <div class="text-xs mb-2">
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-900 border">
+                        <i class="far fa-calendar-alt mr-1"></i>
                         {{ $due->isFuture() ? 'Expires' : 'Expired' }}: {{ $due->toFormattedDateString() }}
                     </span>
                 </div>
@@ -100,62 +100,62 @@
                 $formatMoney = fn($n) => money((float) $n, null);
             @endphp
 
-            <p class="mb-2 text-muted small d-flex align-items-center flex-wrap gap-2">
+            <p class="mb-2 text-slate-500 text-xs flex items-center flex-wrap gap-2">
                 <span>{{ ucfirst($product->type ?? 'Listing') }}</span>
                 @if (! is_null($product->stock))
                     <span>| Stock: {{ $product->stock }}</span>
                 @endif
                 @if ($hasVariants)
-                    <span class="badge bg-info bg-opacity-10 text-info">Has variations</span>
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-sky-100 bg-opacity-10 text-sky-600">Has variations</span>
                 @else
-                    <span class="badge bg-light text-muted">No variations</span>
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-500">No variations</span>
                 @endif
             </p>
 
-            <div class="fw-bold mb-3">
+            <div class="font-bold mb-3">
                 @php $isService = (strtolower((string)($product->type ?? '')) === 'service'); @endphp
                 @if (!is_null($lowestVariantPrice))
-                    <div class="small text-muted lh-1">{{ $isService ? 'Priced From' : 'From' }}</div>
-                    <div class="text-success">{{ $formatMoney($lowestVariantPrice) }}</div>
+                    <div class="text-xs text-slate-500 lh-1">{{ $isService ? 'Priced From' : 'From' }}</div>
+                    <div class="text-emerald-600">{{ $formatMoney($lowestVariantPrice) }}</div>
                 @else
                     @if ($isService)
-                        <div class="small text-muted lh-1">Priced From</div>
-                        <span class="text-success">{{ $formatMoney($product->discount_price && $product->discount_price < ($product->price ?? 0) ? $product->discount_price : $product->price) }}</span>
+                        <div class="text-xs text-slate-500 lh-1">Priced From</div>
+                        <span class="text-emerald-600">{{ $formatMoney($product->discount_price && $product->discount_price < ($product->price ?? 0) ? $product->discount_price : $product->price) }}</span>
                         @if (!empty($product->discount_price) && $product->discount_price < ($product->price ?? 0))
-                            <span class="text-muted text-decoration-line-through ms-2">{{ $formatMoney($product->price) }}</span>
+                            <span class="text-slate-500 text-decoration-line-through ml-2">{{ $formatMoney($product->price) }}</span>
                         @endif
                     @else
                         @if (!empty($product->discount_price) && $product->discount_price < ($product->price ?? 0))
-                            <span class="text-success me-2">{{ $formatMoney($product->discount_price) }}</span>
-                            <span class="text-muted text-decoration-line-through">{{ $formatMoney($product->price) }}</span>
+                            <span class="text-emerald-600 mr-2">{{ $formatMoney($product->discount_price) }}</span>
+                            <span class="text-slate-500 text-decoration-line-through">{{ $formatMoney($product->price) }}</span>
                         @else
-                            <span class="text-success">{{ $formatMoney($product->price) }}</span>
+                            <span class="text-emerald-600">{{ $formatMoney($product->price) }}</span>
                         @endif
                     @endif
                 @endif
             </div>
 
-            <div class="mt-auto d-flex flex-wrap align-items-center gap-2">
-                <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-eye me-1"></i> View
+            <div class="mt-auto flex flex-wrap items-center gap-2">
+                <a href="{{ route('products.show', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-3 py-1.5 text-xs">
+                    <i class="fas fa-eye mr-1"></i> View
                 </a>
 
                 <div class="dropdown ms-auto">
-                    <button class="btn btn-light btn-sm border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More actions">
+                    <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 text-xs border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More actions">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
+                    <ul class="absolute z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl dropdown-menu-end">
                         <li>
                             <form action="{{ route('products.duplicate', $product) }}" method="POST" class="d-inline">
                                 @csrf
-                                <button type="submit" class="dropdown-item">
-                                    <i class="fas fa-copy me-2"></i> Duplicate
+                                <button type="submit" class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                                    <i class="fas fa-copy mr-2"></i> Duplicate
                                 </button>
                             </form>
                         </li>
                         <li>
-                            <a href="{{ route('products.variations', $product) }}" class="dropdown-item">
-                                <i class="fa-solid fa-layer-group me-2"></i>
+                            <a href="{{ route('products.variations', $product) }}" class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                                <i class="fa-solid fa-layer-group mr-2"></i>
                                 {{ $hasVariants ? 'Manage Variations' : 'Add Variations' }}
                             </a>
                         </li>
@@ -165,4 +165,5 @@
         </div>
     </div>
 </div>
+
 

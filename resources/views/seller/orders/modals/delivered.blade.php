@@ -13,7 +13,7 @@
             @method('patch')
             <input type="hidden" name="action" value="deliver">
 
-            <div class="modal-header bg-light">
+            <div class="modal-header bg-slate-50">
                 <h5 class="modal-title" id="deliverModalLabel-{{ $order->id }}">
                     Confirm Delivery
                 </h5>
@@ -24,12 +24,12 @@
                 <p class="mb-3">
                     Are you sure you want to mark
                     <strong>Order #{{ $order->id }}</strong>
-                    as <span class="text-success fw-semibold">Delivered</span>?
+                    as <span class="text-emerald-600 font-semibold">Delivered</span>?
                 </p>
 
                 {{-- Optional delivery note / proof --}}
                 <div class="form-floating">
-                    <textarea class="form-control"
+                    <textarea class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                               name="delivery_note"
                               id="deliveryNote-{{ $order->id }}"
                               style="height: 100px"></textarea>
@@ -37,16 +37,18 @@
                 </div>
             </div>
 
-            <div class="modal-footer bg-light">
+            <div class="modal-footer bg-slate-50">
                 <button type="button"
-                        class="btn btn-outline-secondary"
+                        class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100"
                         data-bs-dismiss="modal">
                     Cancel
                 </button>
-                <button class="btn btn-success">
-                    <i class="bi bi-check2-circle me-1"></i> Mark Delivered
+                <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">
+                    <i class="bi bi-check2-circle mr-1"></i> Mark Delivered
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+

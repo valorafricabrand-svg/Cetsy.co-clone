@@ -1,12 +1,12 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('header')
-    <h2 class="fw-semibold fs-3 text-dark">
+    <h2 class="font-semibold fs-3 text-slate-900">
         {{ __('Your Dashboard') }}
     </h2>
 @endsection
 
-@section('content')
+@section('main')
 <div class="content buyer-dashboard">
     <style>
         .buyer-dashboard {
@@ -66,34 +66,34 @@
     <div class="container-xxl">
 
         @if (session('status') === 'verification-link-sent')
-            <div class="alert alert-success" role="alert">
+            <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800" role="alert">
                 A new verification link was sent to your email.
             </div>
         @endif
         @if (! auth()->user()->hasVerifiedEmail())
-            <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+            <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 flex justify-between items-center" role="alert">
                 <div>
                     Your email is not verified. Please check your inbox for a verification link.
                 </div>
-                <form method="POST" action="{{ route('verification.send') }}" class="ms-3">
+                <form method="POST" action="{{ route('verification.send') }}" class="ml-3">
                     @csrf
-                    <button type="submit" class="btn btn-sm btn-warning">Resend verification email</button>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-amber-500 text-slate-900 hover:bg-amber-400">Resend verification email</button>
                 </form>
             </div>
         @endif
 
         {{-- ========== WELCOME ==========' --}}
-        <div class="buyer-dashboard-hero mb-4 d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
+        <div class="buyer-dashboard-hero mb-4 flex flex-col lg:flex-row justify-between items-start gap-3">
             <div>
-                <div class="text-uppercase small text-success fw-semibold mb-1">
-                    <i class="fas fa-user-check me-1"></i> Buyer overview
+                <div class="text-uppercase text-xs text-emerald-600 font-semibold mb-1">
+                    <i class="fas fa-user-check mr-1"></i> Buyer overview
                 </div>
-                <h3 class="text-dark mb-1">Welcome back, {{ Auth::user()->name }}</h3>
-                <p class="text-muted mb-0">
+                <h3 class="text-slate-900 mb-1">Welcome back, {{ Auth::user()->name }}</h3>
+                <p class="text-slate-500 mb-0">
                     Track your orders, favourites and offers at a glance.
                 </p>
             </div>
-            <div class="d-flex flex-wrap gap-2 mt-3 mt-lg-0">
+            <div class="flex flex-wrap gap-2 mt-3 mt-0 lg:mt-0">
                 <span class="buyer-hero-chip">
                     <i class="fas fa-shopping-bag"></i>
                     {{ $ordersCount }} {{ Str::plural('Order', $ordersCount) }}
@@ -110,17 +110,17 @@
         </div>
 
         {{-- ========== ACCOUNT OVERVIEW ==========' --}}
-        <div class="row g-4 mb-4">
+        <div class="grid grid-cols-12 gap-4 mb-4">
 
             {{-- ORDERS --}}
-            <div class="col-md-3">
-                <a href="{{ route('account.orders') }}" class="card buyer-stat-card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
-                    <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
+            <div class="md:col-span-3">
+                <a href="{{ route('account.orders') }}" class="rounded-2xl border border-slate-200 bg-white shadow-sm buyer-stat-card border-0 h-full text-center no-underline link-hover">
+                    <div class="p-4 sm:p-5 flex flex-col items-center justify-center py-4">
                         <div class="mb-3">
                             <i class="fas fa-shopping-cart fa-3x text-primary"></i>
                         </div>
-                        <h5 class="fw-bold text-primary">Orders</h5>
-                        <p class="fs-5 text-muted mb-0">
+                        <h5 class="font-bold text-primary">Orders</h5>
+                        <p class="fs-5 text-slate-500 mb-0">
                             {{ $ordersCount }} {{ Str::plural('Order', $ordersCount) }}
                         </p>
                     </div>
@@ -128,14 +128,14 @@
             </div>
 
             {{-- WISHLIST --}}
-            <div class="col-md-3">
-                <a href="{{ route('wishlist') }}" class="card buyer-stat-card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
-                    <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
+            <div class="md:col-span-3">
+                <a href="{{ route('wishlist') }}" class="rounded-2xl border border-slate-200 bg-white shadow-sm buyer-stat-card border-0 h-full text-center no-underline link-hover">
+                    <div class="p-4 sm:p-5 flex flex-col items-center justify-center py-4">
                         <div class="mb-3">
-                            <i class="fas fa-heart fa-3x text-success"></i>
+                            <i class="fas fa-heart fa-3x text-emerald-600"></i>
                         </div>
-                        <h5 class="fw-bold text-success">Favourites</h5>
-                        <p class="fs-5 text-muted mb-0">
+                        <h5 class="font-bold text-emerald-600">Favourites</h5>
+                        <p class="fs-5 text-slate-500 mb-0">
                             {{ $wishlistCount }} {{ Str::plural('Item', $wishlistCount) }}
                         </p>
                     </div>
@@ -143,29 +143,29 @@
             </div>
 
             {{-- OFFERS --}}
-            <div class="col-md-3">
-                <a href="{{ route('buyer.offers') }}" class="card buyer-stat-card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
-                    <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
+            <div class="md:col-span-3">
+                <a href="{{ route('buyer.offers') }}" class="rounded-2xl border border-slate-200 bg-white shadow-sm buyer-stat-card border-0 h-full text-center no-underline link-hover">
+                    <div class="p-4 sm:p-5 flex flex-col items-center justify-center py-4">
                         <div class="mb-3">
-                            <i class="fas fa-hand-holding-dollar fa-3x text-info"></i>
+                            <i class="fas fa-hand-holding-dollar fa-3x text-sky-600"></i>
                         </div>
-                        <h5 class="fw-bold text-info">Offers</h5>
-                        <p class="fs-5 text-muted mb-0">
-                            {!! $total_offers . " <small class='text-success ms-1' title='Accepted'>(".$accepted_offers." &check;)</small> <small class='text-danger ms-1' title='Declined'>(".$declined_offers." &times;)</small>" !!}
+                        <h5 class="font-bold text-sky-600">Offers</h5>
+                        <p class="fs-5 text-slate-500 mb-0">
+                            {!! $total_offers . " <small class='text-emerald-600 ml-1' title='Accepted'>(".$accepted_offers." &check;)</small> <small class='text-rose-600 ml-1' title='Declined'>(".$declined_offers." &times;)</small>" !!}
                         </p>
                     </div>
                 </a>
             </div>
 
             {{-- WALLET --}}
-            <div class="col-md-3">
-                <a href="{{ url('wallet') }}" class="card buyer-stat-card shadow-sm border-0 h-100 text-center text-decoration-none link-hover">
-                    <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
+            <div class="md:col-span-3">
+                <a href="{{ url('wallet') }}" class="rounded-2xl border border-slate-200 bg-white shadow-sm buyer-stat-card border-0 h-full text-center no-underline link-hover">
+                    <div class="p-4 sm:p-5 flex flex-col items-center justify-center py-4">
                         <div class="mb-3">
-                            <i class="fas fa-wallet fa-3x text-warning"></i>
+                            <i class="fas fa-wallet fa-3x text-amber-600"></i>
                         </div>
-                        <h5 class="fw-bold text-warning">Account&nbsp;Balance</h5>
-                        <p class="fs-5 text-muted mb-0">
+                        <h5 class="font-bold text-amber-600">Account&nbsp;Balance</h5>
+                        <p class="fs-5 text-slate-500 mb-0">
                             {{ get_currency() }} {{ number_format(wallet(), 2) }}
                         </p>
                     </div>
@@ -174,9 +174,9 @@
         </div>
 
         @if(isset($recommendedProducts) && $recommendedProducts->isNotEmpty())
-            <div class="card buyer-section-card shadow-sm border-0 mt-4">
-                <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
-                    <i class="bi bi-stars text-warning"></i> Recommended For You
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm buyer-section-card border-0 mt-4">
+                <div class="border-b border-slate-200 px-4 py-3 bg-white font-semibold flex items-center gap-2">
+                    <i class="bi bi-stars text-amber-600"></i> Recommended For You
                 </div>
                 @include('theme.'.theme().'.partials.product-carousel', [
                     'items' => $recommendedProducts,
@@ -193,30 +193,30 @@
         </div>
 
         {{-- ========== YOUR RECENT REVIEWS ==========' --}}
-        <div class="card buyer-section-card shadow-sm border-0 mt-4">
-            <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
-                <i class="bi bi-star-fill text-warning"></i> Your Recent Reviews
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm buyer-section-card border-0 mt-4">
+            <div class="border-b border-slate-200 px-4 py-3 bg-white font-semibold flex items-center gap-2">
+                <i class="bi bi-star-fill text-amber-600"></i> Your Recent Reviews
             </div>
-            <div class="card-body">
+            <div class="p-4 sm:p-5">
                 @if(isset($myRecentReviews) && $myRecentReviews->count())
-                    <ul class="list-group list-group-flush">
+                    <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
                         @foreach($myRecentReviews as $r)
-                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <li class="px-4 py-3 flex justify-between items-start">
                                 <div>
-                                    <div class="fw-semibold">{{ optional($r->orderItem?->product)->name ?? 'Product' }}</div>
-                                    <div class="small text-muted">Order #{{ $r->order_id }} • Rated: {{ $r->rating }} / 5</div>
+                                    <div class="font-semibold">{{ optional($r->orderItem?->product)->name ?? 'Product' }}</div>
+                                    <div class="text-xs text-slate-500">Order #{{ $r->order_id }} â€¢ Rated: {{ $r->rating }} / 5</div>
                                     @if($r->comment)
-                                        <div class="small mt-1">{{ \Illuminate\Support\Str::limit($r->comment, 140) }}</div>
+                                        <div class="text-xs mt-1">{{ \Illuminate\Support\Str::limit($r->comment, 140) }}</div>
                                     @endif
                                 </div>
                                 @if($r->orderItem?->product?->slug)
-                                    <a href="{{ route('listing.show', $r->orderItem->product->slug) }}" class="btn btn-sm btn-outline-secondary">View Item</a>
+                                    <a href="{{ route('listing.show', $r->orderItem->product->slug) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50">View Item</a>
                                 @endif
                             </li>
                         @endforeach
                     </ul>
                 @else
-                    <div class="text-muted small">You haven't left any reviews yet.</div>
+                    <div class="text-slate-500 text-xs">You haven't left any reviews yet.</div>
                 @endif
             </div>
         </div>
@@ -226,3 +226,7 @@
     </div>
 </div>
 @endsection
+
+
+
+

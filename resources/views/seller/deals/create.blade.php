@@ -1,6 +1,11 @@
-@extends('layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
+@section('main')
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
+      <div class="space-y-6">
 <div class="content">
   <h1 class="mb-4">Create Deal</h1>
   <form action="{{ route('seller.deals.store') }}" method="POST">
@@ -12,7 +17,7 @@
       <input
         type="text"
         name="name"
-        class="form-control @error('name') is-invalid @enderror"
+        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 @error('name') border-rose-400 focus:border-rose-500 focus:ring-rose-100 @enderror"
         value="{{ old('name') }}"
         required
       >
@@ -29,7 +34,7 @@
         name="discount_percent"
         min="1"
         max="100"
-        class="form-control @error('discount_percent') is-invalid @enderror"
+        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 @error('discount_percent') border-rose-400 focus:border-rose-500 focus:ring-rose-100 @enderror"
         value="{{ old('discount_percent') }}"
         required
       >
@@ -47,24 +52,24 @@
         class="form-check-input"
         {{ old('applies_to_all') ? 'checked' : '' }}
       >
-      <label for="applies_to_all" class="form-check-label fw-semibold">
-        <i class="fas fa-globe me-1"></i>Apply to all products
+      <label for="applies_to_all" class="form-check-label font-semibold">
+        <i class="fas fa-globe mr-1"></i>Apply to all products
       </label>
       <div class="form-text">When checked, this deal will apply to all products in your shop</div>
     </div>
 
     {{-- Product Selector (hidden when applies_to_all is checked) --}}
     <div class="mb-4" id="product-selector">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <label class="form-label fw-semibold mb-0">
-          <i class="fas fa-box me-1"></i>Select Specific Products
+      <div class="flex justify-between items-center mb-3">
+        <label class="form-label font-semibold mb-0">
+          <i class="fas fa-box mr-1"></i>Select Specific Products
         </label>
-        <div class="btn-group btn-group-sm" role="group">
-          <button type="button" class="btn btn-outline-primary" id="select-all-products">
-            <i class="fas fa-check-double me-1"></i>Select All
+        <div class="inline-flex items-center gap-1 rounded-xl border border-slate-300 p-1 text-xs" role="group">
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50" id="select-all-products">
+            <i class="fas fa-check-double mr-1"></i>Select All
           </button>
-          <button type="button" class="btn btn-outline-secondary" id="deselect-all-products">
-            <i class="fas fa-times me-1"></i>Clear All
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100" id="deselect-all-products">
+            <i class="fas fa-times mr-1"></i>Clear All
           </button>
         </div>
       </div>
@@ -74,14 +79,14 @@
         <input
           type="text"
           id="product-search"
-          class="form-control"
+          class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
           placeholder="Search products by name..."
         >
       </div>
 
       {{-- Product Selection Area --}}
       <div class="border rounded p-3" style="max-height: 500px; overflow-y: auto;">
-        <div class="row g-2" id="product-list">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-2" id="product-list">
           @include('seller.deals.partials.product-cards', ['products' => $products->items(), 'selectedIds' => old('product_ids', [])])
         </div>
         
@@ -90,34 +95,34 @@
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
           </div>
-          <p class="mt-2 text-muted">Loading products...</p>
+          <p class="mt-2 text-slate-500">Loading products...</p>
         </div>
 
         {{-- Load more button --}}
         <div id="load-more-container" class="text-center mt-3" style="display: none;">
-          <button type="button" class="btn btn-outline-primary" id="load-more-products">
-            <i class="fas fa-plus me-1"></i>Load More Products
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50" id="load-more-products">
+            <i class="fas fa-plus mr-1"></i>Load More Products
           </button>
         </div>
         
         @if($products->isEmpty())
           <div class="text-center py-4">
-            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-            <p class="text-muted mb-0">No products available</p>
-            <small class="text-muted">Create some products first to add them to deals</small>
+            <i class="fas fa-box-open fa-3x text-slate-500 mb-3"></i>
+            <p class="text-slate-500 mb-0">No products available</p>
+            <span class="text-slate-500 text-xs">Create some products first to add them to deals</span>
           </div>
         @endif
       </div>
 
       {{-- Selected Count --}}
       <div class="mt-2">
-        <small class="text-muted">
+        <span class="text-slate-500 text-xs">
           <span id="selected-count">0</span> products selected
-        </small>
+        </span>
       </div>
 
       @error('product_ids')
-        <div class="invalid-feedback d-block">{{ $message }}</div>
+        <div class="invalid-feedback block">{{ $message }}</div>
       @enderror
     </div>
 
@@ -127,7 +132,7 @@
       <input
         type="datetime-local"
         name="starts_at"
-        class="form-control @error('starts_at') is-invalid @enderror"
+        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 @error('starts_at') border-rose-400 focus:border-rose-500 focus:ring-rose-100 @enderror"
         value="{{ old('starts_at') }}"
         required
       >
@@ -142,7 +147,7 @@
       <input
         type="datetime-local"
         name="ends_at"
-        class="form-control @error('ends_at') is-invalid @enderror"
+        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 @error('ends_at') border-rose-400 focus:border-rose-500 focus:ring-rose-100 @enderror"
         value="{{ old('ends_at') }}"
         required
       >
@@ -151,9 +156,13 @@
       @enderror
     </div>
 
-    <button class="btn btn-success">Save Deal</button>
+    <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">Save Deal</button>
   </form>
 </div>
+      </div>
+    </div>
+  </div>
+</section>
 @endsection
 
 @push('styles')
@@ -349,3 +358,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
+
+
+
+
+
+

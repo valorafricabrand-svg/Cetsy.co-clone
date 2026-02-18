@@ -1,4 +1,4 @@
-{{-- resources/views/products/edit.blade.php --}}
+﻿{{-- resources/views/products/edit.blade.php --}}
 
 
 
@@ -35,35 +35,35 @@
 <div x-data="modernUploader()" x-init="init()">
 
   {{-- ------------------ Current Media (with Crop button) ------------------ --}}
-  <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-light"><h5>Current Media</h5></div>
-    <div class="card-body">
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4 shadow-sm">
+    <div class="border-b border-slate-200 px-4 py-3 bg-slate-100"><h5>Current Media</h5></div>
+    <div class="p-4 sm:p-5">
       @if($product->media->count())
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3" x-show="existingCount > 0">
-          <div class="small text-muted" x-cloak x-text="selectedExisting.length ? `${selectedExisting.length} selected` : ''"></div>
+        <div class="flex justify-between items-center flex-wrap gap-2 mb-3" x-show="existingCount > 0">
+          <div class="text-xs text-slate-500" x-cloak x-text="selectedExisting.length ? `${selectedExisting.length} selected` : ''"></div>
           <div class="ms-auto">
             <button type="button"
-                    class="btn btn-outline-danger btn-sm d-inline-flex align-items-center"
+                    class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-rose-600 text-rose-700 hover:bg-rose-50 px-3 py-1.5 text-xs inline-flex items-center"
                     x-cloak
                     x-show="selectedExisting.length"
                     :disabled="deletingExisting"
                     @click="confirmBulkDelete()">
               <template x-if="!deletingExisting">
-                <span><i class="fas fa-trash me-1"></i>Delete selected</span>
+                <span><i class="fas fa-trash mr-1"></i>Delete selected</span>
               </template>
               <template x-if="deletingExisting">
-                <span class="d-inline-flex align-items-center">
-                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span class="inline-flex items-center">
+                  <span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
                   Deleting...
                 </span>
               </template>
             </button>
           </div>
         </div>
-        <div class="row g-3" x-show="existingCount > 0">
+        <div class="grid grid-cols-12 gap-4 gap-3" x-show="existingCount > 0">
           @foreach($product->media as $media)
-            <div class="col-6 col-sm-4 col-md-3" data-media-id="{{ $media->id }}">
-              <div class="card position-relative h-100"
+            <div class="col-span-6 sm:col-span-4 md:col-span-3" data-media-id="{{ $media->id }}">
+              <div class="rounded-2xl border border-slate-200 bg-white shadow-sm position-relative h-full"
                    :class="selectedExisting.includes('{{ (string) $media->id }}') ? 'border-danger border-2 shadow' : ''">
                 <div class="position-absolute top-0 start-0 m-2">
                   <div class="form-check">
@@ -82,7 +82,7 @@
                        class="card-img-top"
                        style="height:140px;object-fit:cover;">
                 @endif
-                <div class="card-footer text-center py-2">
+                <div class="border-t border-slate-200 px-4 py-3 text-center py-2">
                   @php
                     $mediaUrl = asset('storage/'.$media->url);
                     $isFeatured = $product->featured_image === $mediaUrl;
@@ -99,14 +99,14 @@
                   {{-- Crop existing image --}}
                   @if($media->type !== 'video')
                   <button type="button"
-                          class="btn btn-sm btn-outline-secondary"
+                          class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
                           @click.prevent="openExistingCrop({{ $media->id }}, '{{ asset('storage/'.$media->url) }}')">
                     <i class="fas fa-crop"></i> Crop
                   </button>
                   @endif
 
                   <button type="button"
-                          class="btn btn-sm btn-outline-danger"
+                          class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50"
                           :disabled="deletingExisting"
                           @click.prevent="confirmDeleteExisting({{ $media->id }})"
                           title="Delete media">
@@ -117,24 +117,24 @@
             </div>
           @endforeach
         </div>
-        <p class="text-muted" x-show="existingCount === 0" x-cloak>No media uploaded yet.</p>
+        <p class="text-slate-500" x-show="existingCount === 0" x-cloak>No media uploaded yet.</p>
       @else
-        <p class="text-muted">No media uploaded yet.</p>
+        <p class="text-slate-500">No media uploaded yet.</p>
       @endif
     </div>
   </div>
 
   {{-- ------------------ Upload New Media ------------------ --}}
-  <div class="card shadow-sm mb-5">
-    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-      <h5 class="mb-0"><i class="bi bi-images me-2"></i>Upload Media</h5>
-      <small class="text-muted" x-text="items.length ? `${items.length} selected` : ''"></small>
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm mb-5">
+    <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 flex justify-between items-center">
+      <h5 class="mb-0"><i class="bi bi-images mr-2"></i>Upload Media</h5>
+      <small class="text-slate-500" x-text="items.length ? `${items.length} selected` : ''"></small>
     </div>
     <form x-ref="form"
           action="{{ route('media.upload', $product) }}"
           method="POST"
           enctype="multipart/form-data"
-          class="card-body">
+          class="p-4 sm:p-5">
       @csrf
 
       {{-- Drop zone --}}
@@ -147,12 +147,12 @@
            @drop.prevent="handleDrop($event)"
            style="cursor:pointer;">
         <p class="mb-1">
-          <i class="bi bi-cloud-arrow-up fs-2 d-block mb-2"></i>
+          <i class="bi bi-cloud-arrow-up fs-2 block mb-2"></i>
           Drag & drop images or videos here or click to browse
         </p>
-        <small class="text-muted">Images up to 5MB ------ Videos up to 50MB</small>
+        <small class="text-slate-500">Images up to 5MB ------ Videos up to 50MB</small>
         <input type="file"
-               class="d-none"
+               class="hidden"
                multiple
                accept="image/*,video/*"
                x-ref="file"
@@ -161,40 +161,40 @@
 
       {{-- Preview grid --}}
       <template x-if="items.length">
-        <div class="row g-3 mb-4" id="previewList">
+        <div class="grid grid-cols-12 gap-4 gap-3 mb-4" id="previewList">
           <template x-for="(it,i) in items" :key="it.id">
-            <div class="col-6 col-sm-4 col-md-3">
+            <div class="col-span-6 sm:col-span-4 md:col-span-3">
               <div class="position-relative border rounded thumb overflow-hidden shadow-sm">
                 <template x-if="it.type==='video'">
-                  <video :src="it.url" class="w-100 h-100" controls></video>
+                  <video :src="it.url" class="w-full h-full" controls></video>
                 </template>
                 <template x-if="it.type==='image'">
                   <img :src="it.url" draggable="false">
                 </template>
-                <div class="position-absolute top-0 end-0 m-1 d-flex flex-column gap-1">
+                <div class="position-absolute top-0 end-0 m-1 flex flex-col gap-1">
                   <template x-if="it.type==='image'">
                     <button type="button"
-                            class="btn btn-sm btn-warning toolbar-btn"
+                            class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-amber-500 text-slate-900 hover:bg-amber-400 toolbar-btn"
                             @click.prevent="openNewCrop(i)"
                             title="Crop">
                       <i class="fas fa-crop"></i>
                     </button>
                   </template>
                   <button type="button"
-                          class="btn btn-sm btn-danger toolbar-btn"
+                          class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-rose-600 text-white hover:bg-rose-500 toolbar-btn"
                           @click.prevent="remove(i)"
                           title="Remove">
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
                 <div class="position-absolute bottom-0 start-0 m-1">
-                  <span class="badge bg-dark bg-opacity-75 small" x-text="i+1"></span>
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-dark bg-opacity-75 text-xs" x-text="i+1"></span>
                 </div>
                 <div class="position-absolute bottom-0 start-0 end-0" x-show="it.progress !== undefined">
                   <div class="progress-mini"><div :style="`width:${it.progress}%;`"></div></div>
                 </div>
               </div>
-              <div class="text-truncate small text-muted mt-1" x-text="it.file.name"></div>
+              <div class="text-truncate text-xs text-slate-500 mt-1" x-text="it.file.name"></div>
             </div>
           </template>
         </div>
@@ -203,8 +203,8 @@
       {{-- Submit --}}
       <template x-if="items.length">
         <div class="d-grid">
-          <button class="btn btn-success rounded-pill" @click.prevent="submit">
-            <span x-show="!loading"><i class="fas fa-upload me-1"></i> Upload Media</span>
+          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 rounded-full" @click.prevent="submit">
+            <span x-show="!loading"><i class="fas fa-upload mr-1"></i> Upload Media</span>
             <span x-show="loading" class="spinner-border spinner-border-sm"></span>
           </button>
         </div>
@@ -213,18 +213,18 @@
   </div>
 
   {{-- ------------------ Crop Modal (shared) ------------------ --}}
-  <div class="modal fade" id="cropModal" tabindex="-1" aria-hidden="true">
+  <div class="modal" id="cropModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title d-flex align-items-center">
-            <i class="fas fa-crop me-2"></i> Crop Image
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <h5 class="text-base font-semibold text-slate-900 flex items-center">
+            <i class="fas fa-crop mr-2"></i> Crop Image
           </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body">
+        <div class="px-4 py-4">
           {{-- Aspect chips --}}
-          <div class="mb-3 d-flex flex-wrap gap-2">
+          <div class="mb-3 flex flex-wrap gap-2">
             <template x-for="r in ratios" :key="r.label">
               <span class="ratio-chip"
                     :class="{'active':activeRatio===r.value}"
@@ -232,28 +232,28 @@
                 <span x-text="r.label"></span>
               </span>
             </template>
-            <div class="ms-auto d-flex gap-2">
-              <button class="btn btn-outline-secondary btn-sm" @click="zoom(0.1)"  title="Zoom In"><i class="fas fa-search-plus"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="zoom(-0.1)" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="rotate(-45)" title="Rotate Left"><i class="fas fa-undo"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="rotate(45)"  title="Rotate Right"><i class="fas fa-redo"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="flipX()"     title="Flip Horizontal"><i class="fas fa-arrows-alt-h"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="flipY()"     title="Flip Vertical"><i class="fas fa-arrows-alt-v"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="reset()"     title="Reset"><i class="fas fa-sync"></i></button>
+            <div class="ms-auto flex gap-2">
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="zoom(0.1)"  title="Zoom In"><i class="fas fa-search-plus"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="zoom(-0.1)" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="rotate(-45)" title="Rotate Left"><i class="fas fa-undo"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="rotate(45)"  title="Rotate Right"><i class="fas fa-redo"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="flipX()"     title="Flip Horizontal"><i class="fas fa-arrows-alt-h"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="flipY()"     title="Flip Vertical"><i class="fas fa-arrows-alt-v"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="reset()"     title="Reset"><i class="fas fa-sync"></i></button>
             </div>
           </div>
           <div id="cropWrapper">
             <img id="cropImage" src="">
           </div>
         </div>
-        <div class="modal-footer">
-          <div class="me-auto small text-muted" x-text="dimText"></div>
-          <div class="d-flex align-items-center me-3">
-            <label class="small me-2">Quality</label>
+        <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+          <div class="me-auto text-xs text-slate-500" x-text="dimText"></div>
+          <div class="flex items-center mr-3">
+            <label class="text-xs mr-2">Quality</label>
             <input type="range" min="60" max="100" step="2" x-model="quality" style="width:120px">
           </div>
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-primary" id="cropApplyBtn">
+          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" id="cropApplyBtn">
             <span x-show="!cropSaving">Apply</span>
             <span x-show="cropSaving" class="spinner-border spinner-border-sm"></span>
           </button>
@@ -515,4 +515,5 @@ function modernUploader(){
   }
 }
 </script>
+
 

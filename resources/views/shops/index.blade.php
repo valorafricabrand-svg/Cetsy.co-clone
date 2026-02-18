@@ -1,5 +1,5 @@
-{{-- resources/views/shops/index.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/shops/index.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 
 @section('header')
     <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -7,7 +7,7 @@
     </h2>
 @endsection
 
-@section('content')
+@section('main')
 <div class="py-6">
     <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
         {{-- Success Message --}}
@@ -17,7 +17,7 @@
             </div>
         @endif
 
-        {{-- “New Shop” Button --}}
+        {{-- â€œNew Shopâ€ Button --}}
         <div class="flex justify-end mb-4">
             <a href="{{ route('shops.create') }}"
                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded">
@@ -53,3 +53,4 @@
     </div>
 </div>
 @endsection
+

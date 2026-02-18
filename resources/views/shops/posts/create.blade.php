@@ -1,27 +1,27 @@
-{{-- resources/views/shops/posts/create.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/shops/posts/create.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
+@section('main')
 <div class="content">
-  <div class="card shadow-sm mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center bg-white">
-      <h2 class="mb-0 fw-bold">Create New Shop Post</h2>
-      <a href="{{ route('seller.shop-posts.index') }}" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left me-1"></i> Back to Posts
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm mb-4">
+    <div class="border-b border-slate-200 px-4 py-3 flex justify-between items-center bg-white">
+      <h2 class="mb-0 font-bold">Create New Shop Post</h2>
+      <a href="{{ route('seller.shop-posts.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">
+        <i class="fas fa-arrow-left mr-1"></i> Back to Posts
       </a>
     </div>
     @if(session('success'))
-    <div class="alert alert-success">
+    <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">
       {{ session('success') }}
     </div>
     @endif
     @if(session('error'))
-    <div class="alert alert-danger">
+    <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">
       {{ session('error') }}
     </div>
     @endif
     @if($errors->any())
-    <div class="alert alert-danger">
+    <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">
       <ul class="mb-0">
         @foreach($errors->all() as $error)
           <li>{{ $error }}</li>
@@ -29,50 +29,50 @@
       </ul>
     </div>
     @endif
-    <div class="card-body">
+    <div class="p-4 sm:p-5">
       <form action="{{ route('seller.shop-posts.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
-        <div class="row">
-          <div class="col-md-7">
+        <div class="grid grid-cols-12 gap-4">
+          <div class="md:col-span-7">
             <div class="mb-3">
-              <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
-              <input type="text" name="title" id="title" class="form-control" value="{{ old('title') }}" required>
+              <label for="title" class="mb-1 block text-sm font-medium text-slate-700">Title <span class="text-rose-600">*</span></label>
+              <input type="text" name="title" id="title" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ old('title') }}" required>
             </div>
             <div class="mb-3">
-              <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
-              <textarea name="description" id="description" class="form-control" rows="6" required>{{ old('description') }}</textarea>
+              <label for="description" class="mb-1 block text-sm font-medium text-slate-700">Description <span class="text-rose-600">*</span></label>
+              <textarea name="description" id="description" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="6" required>{{ old('description') }}</textarea>
             </div>
           </div>
-          <div class="col-md-5">
+          <div class="md:col-span-5">
             <div class="mb-3">
-              <label for="image" class="form-label">Image</label>
-              <input type="file" name="image" id="image" class="form-control" accept="image/*">
+              <label for="image" class="mb-1 block text-sm font-medium text-slate-700">Image</label>
+              <input type="file" name="image" id="image" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" accept="image/*">
             </div>
             <div class="mb-3">
-              <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
-              <select name="status" id="status" class="form-select" required>
+              <label for="status" class="mb-1 block text-sm font-medium text-slate-700">Status <span class="text-rose-600">*</span></label>
+              <select name="status" id="status" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" required>
                 <option value="draft" {{ old('status') == 'draft' ? 'selected' : '' }}>Draft</option>
                 <option value="published" {{ old('status') == 'published' ? 'selected' : '' }}>Published</option>
               </select>
             </div>
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="published_at" class="form-label">Published At</label>
-                <input type="date" name="published_at" id="published_at" class="form-control" value="{{ old('published_at') }}">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="md:col-span-6 mb-3">
+                <label for="published_at" class="mb-1 block text-sm font-medium text-slate-700">Published At</label>
+                <input type="date" name="published_at" id="published_at" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ old('published_at') }}">
               </div>
-              <div class="col-md-6 mb-3">
-                <label for="expired_at" class="form-label">Expired At</label>
-                <input type="date" name="expired_at" id="expired_at" class="form-control" value="{{ old('expired_at') }}">
+              <div class="md:col-span-6 mb-3">
+                <label for="expired_at" class="mb-1 block text-sm font-medium text-slate-700">Expired At</label>
+                <input type="date" name="expired_at" id="expired_at" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ old('expired_at') }}">
               </div>
             </div>
           </div>
         </div>
-        <div class="text-end mt-4">
-          <a href="{{ route('seller.shop-posts.index') }}" class="btn btn-outline-secondary px-4 me-2">
-            <i class="fas fa-times me-1"></i> Cancel
+        <div class="text-right mt-4">
+          <a href="{{ route('seller.shop-posts.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 mr-2">
+            <i class="fas fa-times mr-1"></i> Cancel
           </a>
-          <button type="submit" class="btn btn-success px-4">
-            <i class="fas fa-check me-1"></i> Create Post
+          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-4">
+            <i class="fas fa-check mr-1"></i> Create Post
           </button>
         </div>
       </form>
@@ -118,3 +118,5 @@
 })();
 </script>
 @endpush
+
+

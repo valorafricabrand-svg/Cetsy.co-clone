@@ -1,5 +1,5 @@
-ï»¿{{-- resources/views/seller/orders/show.blade.php --}}
-@extends('layouts.app')
+{{-- resources/views/seller/orders/show.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Order Details')
 
@@ -10,7 +10,7 @@
 </style>
 @endpush
 
-@section('content')
+@section('main')
 @php
   $symbol = shop_currency($order->shop ?? null);
   $disputes = $order->disputes ?? collect();
@@ -49,37 +49,42 @@
   });
 @endphp
 
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
+      <div class="space-y-4">
 <div class="content">
   {{-- HEADER & ACTIONS --}}
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
-    <h2 class="h4 text-success mb-0">
-      <i class="fa-solid fa-receipt order-detail-icon me-2"></i>
+  <div class="flex flex-col flex-md-row justify-between items-start align-items-md-center mb-4 gap-3">
+    <h2 class="h4 text-emerald-600 mb-0">
+      <i class="fa-solid fa-receipt order-detail-icon mr-2"></i>
       Order #{{ $order->id }} Details
     </h2>
 
-    <div class="btn-toolbar gap-2 flex-wrap">
+    <div class="flex flex-wrap items-center gap-2">
       @if($activeDispute && $exchangeRequested)
-        <span class="badge bg-warning text-dark d-flex align-items-center gap-2" title="Buyer requested a return/exchange via dispute">
+        <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-amber-100 text-amber-800 border-amber-200 text-slate-900 flex gap-2" title="Buyer requested a return/exchange via dispute">
           <i class="fa-solid fa-triangle-exclamation"></i>
           The buyer has requested a order refund and your order has been restored to processing state, please ship that product again.
         </span>
       @endif
       <a href="{{ route('orders.chat.show', $order->id) }}"
-         class="btn btn-outline-info btn-sm d-flex align-items-center gap-1">
+         class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-sky-600 text-sky-700 hover:bg-sky-50 px-2.5 py-1.5 text-xs rounded-lg flex gap-1">
         <i class="fa-solid fa-comments"></i> Messages
       </a>
 
       @if($order->status === \App\Models\Order::STATUS_PENDING)
         @php $paid = method_exists($order,'isPaid') ? $order->isPaid() : false; @endphp
         @if($paid)
-          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+          <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-2.5 py-1.5 text-xs rounded-lg flex gap-1"
                   data-bs-toggle="modal"
                   data-bs-target="#processModal-{{ $order->id }}">
             <i class="fa-solid fa-gear"></i> Process
           </button>
           @include('seller.orders.modals.process')
         @else
-          <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" disabled
+          <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100 px-2.5 py-1.5 text-xs rounded-lg flex gap-1" disabled
                   title="Awaiting buyer payment">
             <i class="fa-solid fa-hourglass-half"></i> Pending Payment
           </button>
@@ -88,11 +93,11 @@
         {{-- Cancel moved into kebab menu --}}
       @elseif($order->status === \App\Models\Order::STATUS_PROCESSING)
         @if($digitalOnly)
-          <span class="badge bg-secondary d-flex align-items-center gap-2" title="Digital order - no shipping required">
+          <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-100 text-slate-700 border-slate-200 flex gap-2" title="Digital order - no shipping required">
             <i class="fa-solid fa-cloud-arrow-down"></i> Digital order
           </span>
         @else
-          <button class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1"
+          <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-amber-500 text-amber-700 hover:bg-amber-50 px-2.5 py-1.5 text-xs rounded-lg flex gap-1"
                   data-bs-toggle="modal"
                   data-bs-target="#shipModal">
             <i class="fa-solid fa-truck"></i> Ship
@@ -101,7 +106,7 @@
 
         {{-- Cancel moved into kebab menu --}}
       @elseif($order->status === \App\Models\Order::STATUS_SHIPPED)
-        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+        <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-2.5 py-1.5 text-xs rounded-lg flex gap-1"
                 data-bs-toggle="modal"
                 data-bs-target="#editTrackingModal">
           <i class="fa-solid fa-pen"></i> Edit Tracking
@@ -109,8 +114,8 @@
       @endif
 
       {{-- More (kebab) menu with dispute/appeal actions --}}
-      <div class="dropdown">
-        <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center"
+      <div class="relative inline-block">
+        <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100 px-2.5 py-1.5 text-xs rounded-lg flex"
                 id="moreActions"
                 data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
                 title="More actions">
@@ -119,15 +124,15 @@
         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="moreActions">
           @if($activeDispute)
             <li>
-              <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('disputes.show', $activeDispute->id) }}">
-                <i class="fa-solid fa-exclamation-triangle text-warning"></i>
+              <a class="dropdown-item flex items-center gap-2" href="{{ route('disputes.show', $activeDispute->id) }}">
+                <i class="fa-solid fa-exclamation-triangle text-amber-600"></i>
                 <span>View Dispute</span>
               </a>
             </li>
           @else
             {{-- Sellers do not initiate disputes; buyers open disputes and sellers respond. --}}
             <li>
-              <span class="dropdown-item text-muted small d-flex align-items-center gap-2" title="Sellers do not initiate disputes">
+              <span class="dropdown-item text-slate-500 text-xs flex items-center gap-2" title="Sellers do not initiate disputes">
                 <i class="fa-solid fa-circle-info"></i>
                 <span>Disputes are initiated by buyers</span>
               </span>
@@ -136,9 +141,9 @@
           @if(in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
             <li><hr class="dropdown-divider"></li>
             <li>
-              <a class="dropdown-item d-flex align-items-center gap-2"
+              <a class="dropdown-item flex items-center gap-2"
                  href="#" data-bs-toggle="modal" data-bs-target="#cancelModal-{{ $order->id }}">
-                <i class="fa-solid fa-times-circle text-danger"></i>
+                <i class="fa-solid fa-times-circle text-rose-600"></i>
                 <span>Cancel Order</span>
               </a>
             </li>
@@ -146,8 +151,8 @@
           @if($resolvedDispute && method_exists($resolvedDispute,'canBeAppealed') && $resolvedDispute->canBeAppealed())
             <li><hr class="dropdown-divider"></li>
             <li>
-              <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('disputes.appeal.create', $resolvedDispute->id) }}">
-                <i class="fa-solid fa-gavel text-danger"></i>
+              <a class="dropdown-item flex items-center gap-2" href="{{ route('disputes.appeal.create', $resolvedDispute->id) }}">
+                <i class="fa-solid fa-gavel text-rose-600"></i>
                 <span>Appeal Decision</span>
               </a>
             </li>
@@ -160,43 +165,43 @@
   @include('seller.orders.modals.cancel')
 
   {{-- SUMMARY & CUSTOMER --}}
-  <div class="row g-4 mb-4">
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-4">
     {{-- Order Summary --}}
-    <div class="col-lg-6">
-      <div class="card shadow-sm h-100">
-        <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+    <div class="-span-6">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-full">
+        <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex items-center gap-2">
           <i class="fa-solid fa-list-check"></i> Order Summary
         </div>
-        <div class="card-body">
+        <div class="p-4">
           @foreach ([
             'Tracking No' => $order->tracking_no ?? '-',
             'Courier'     => $order->courier ?? '-',
             'Items'       => $order->items->sum('quantity'),
             'Subtotal'    => "{$symbol} ".number_format($subtotalVal,2),
           ] as $label => $value)
-            <div class="d-flex justify-content-between mb-2">
-              <span class="fw-semibold">{{ $label }}:</span>
+            <div class="flex justify-between mb-2">
+              <span class="font-semibold">{{ $label }}:</span>
               <span>{{ $value }}</span>
             </div>
           @endforeach
 
           @if(!empty($order->tracking_url))
-            <div class="d-flex justify-content-between mb-2">
-              <span class="fw-semibold">Tracking Link:</span>
+            <div class="flex justify-between mb-2">
+              <span class="font-semibold">Tracking Link:</span>
               <span>
                 <a href="{{ $order->tracking_url }}" target="_blank" rel="noopener" class="link-primary">Open tracking</a>
               </span>
             </div>
           @endif
 
-          <div class="d-flex justify-content-between mb-2">
-            <span class="fw-semibold">Shipping Fee:</span>
+          <div class="flex justify-between mb-2">
+            <span class="font-semibold">Shipping Fee:</span>
             <span>{{ $symbol }} {{ number_format($shippingVal,2) }}</span>
           </div>
 
           <hr>
 
-          <div class="d-flex justify-content-between mb-2 fw-bold">
+          <div class="flex justify-between mb-2 font-bold">
             <span>Total Amount:</span>
             <span>{{ $symbol }} {{ number_format($totalVal,2) }}</span>
           </div>
@@ -217,8 +222,8 @@
             $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
           @endphp
           @if(!is_null($minDays) || !is_null($maxDays))
-            <div class="d-flex justify-content-between mb-2">
-              <span class="fw-semibold">Ship by:</span>
+            <div class="flex justify-between mb-2">
+              <span class="font-semibold">Ship by:</span>
               <span>
                 @if($shipStart && $shipEnd)
                   Ships within {{ (int)$minDays }}&ndash;{{ (int)$maxDays }} days
@@ -234,24 +239,24 @@
             </div>
           @endif
 
-          <div class="d-flex justify-content-between mb-2">
-            <span class="fw-semibold">Status:</span>
+          <div class="flex justify-between mb-2">
+            <span class="font-semibold">Status:</span>
             <span>
-              <span class="badge {{ $order->getStatusBadgeClass() }} text-capitalize">
+              <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $order->getStatusBadgeClass() }} text-capitalize">
                 {{ $order->status }}
               </span>
             </span>
           </div>
 
           @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
-            <div class="d-flex justify-content-between mb-2">
-              <span class="fw-semibold text-danger">Cancellation Reason:</span>
-              <span class="text-danger">{{ $order->cancel_reason }}</span>
+            <div class="flex justify-between mb-2">
+              <span class="font-semibold text-rose-600">Cancellation Reason:</span>
+              <span class="text-rose-600">{{ $order->cancel_reason }}</span>
             </div>
           @endif
 
-          <div class="d-flex justify-content-between">
-            <span class="fw-semibold">Created:</span>
+          <div class="flex justify-between">
+            <span class="font-semibold">Created:</span>
             <span>{{ $order->created_at->format('d M Y, h:i A') }}</span>
           </div>
         </div>
@@ -259,17 +264,17 @@
     </div>
 
     {{-- Customer Info --}}
-    <div class="col-lg-6">
-      <div class="card shadow-sm h-100">
-        <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+    <div class="-span-6">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-full">
+        <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex items-center gap-2">
           <i class="fa-solid fa-user"></i> Customer Info
         </div>
-        <div class="card-body">
+        <div class="p-4">
           <p class="mb-1"><strong>Name:</strong> {{ $order->full_name }}</p>
           <p class="mb-1"><strong>Email:</strong> {{ $order->email }}</p>
           <p class="mb-3"><strong>Phone:</strong> {{ $order->phone ?? '-' }}</p>
 
-          <p class="fw-semibold mb-1">Shipping Address</p>
+          <p class="font-semibold mb-1">Shipping Address</p>
           <address class="mb-3">
             {{ $order->shipping_address_1 }}<br>
             @if($order->shipping_address_2){{ $order->shipping_address_2 }}<br>@endif
@@ -286,13 +291,13 @@
 
   {{-- ITEMS (hide shipping details for digital products) --}}
   @if($order->items->isNotEmpty())
-    <div class="card mb-4 shadow-sm">
-      <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+      <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex items-center gap-2">
         <i class="fa-solid fa-boxes-stacked"></i> Order Items
       </div>
       {{-- Mobile: stacked cards --}}
-      <div class="card-body d-block d-md-none p-2">
-        <div class="list-group list-group-flush">
+      <div class="p-4 block d-md-none p-2">
+        <div class="space-y-2 list-group-flush">
           @foreach($order->items as $item)
             @php
               $product   = optional($item->product);
@@ -315,33 +320,33 @@
               $lineSub  = $unit * $qty;
               $thumbUrl = product_thumb_url($product);
             @endphp
-            <div class="list-group-item">
-              <div class="d-flex gap-2">
+            <div class="rounded-xl border border-slate-200 bg-white p-3">
+              <div class="flex gap-2">
                 @if($thumbUrl)
                   <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" class="rounded" style="width:64px;height:64px;object-fit:cover;">
                 @endif
                 <div class="flex-grow-1">
-                  <div class="d-flex justify-content-between align-items-start">
-                    <div class="fw-semibold text-truncate">
+                  <div class="flex justify-between items-start">
+                    <div class="font-semibold text-truncate">
                       @if($product?->slug)
                         <a href="{{ route('listing.show', $product->slug) }}" class="text-decoration-none" target="_blank">{{ $product->name ?? 'N/A' }}</a>
                       @else
                         {{ $product->name ?? 'N/A' }}
                       @endif
                       @if($isDigital)
-                        <span class="badge bg-secondary ms-1">Digital</span>
+                        <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-100 text-slate-700 border-slate-200 ml-1">Digital</span>
                       @endif
                     </div>
-                    <div class="ms-2 text-nowrap">{{ $symbol }} {{ number_format($unit,2) }}</div>
+                    <div class="ml-2 text-nowrap">{{ $symbol }} {{ number_format($unit,2) }}</div>
                   </div>
-                  <div class="small text-muted text-truncate">Listing: {{ $product->id ?? $item->product_id ?? 'N/A' }}</div>
+                  <div class="text-xs text-slate-500 text-truncate">Listing: {{ $product->id ?? $item->product_id ?? 'N/A' }}</div>
                   @if($item->variation_summary)
-                    <div class="small text-muted">{{ $item->variation_summary }}</div>
+                    <div class="text-xs text-slate-500">{{ $item->variation_summary }}</div>
                   @endif
-                  <div class="d-flex justify-content-between align-items-center mt-1">
-                    <div class="small"><span class="text-muted">Qty:</span> {{ $qty }}</div>
-                    <div class="small text-muted">Shipping: {{ $isDigital ? '-' : ($shipLabel ?: '-') }}</div>
-                    <div class="fw-semibold">{{ $symbol }} {{ number_format($lineSub,2) }}</div>
+                  <div class="flex justify-between items-center mt-1">
+                    <div class="text-xs"><span class="text-slate-500">Qty:</span> {{ $qty }}</div>
+                    <div class="text-xs text-slate-500">Shipping: {{ $isDigital ? '-' : ($shipLabel ?: '-') }}</div>
+                    <div class="font-semibold">{{ $symbol }} {{ number_format($lineSub,2) }}</div>
                   </div>
                 </div>
               </div>
@@ -351,9 +356,9 @@
       </div>
 
       {{-- Desktop/Tablet: table --}}
-      <div class="card-body table-responsive p-0 d-none d-md-block">
-        <table class="table table-hover table-striped align-middle mb-0">
-          <thead class="table-light text-nowrap">
+      <div class="p-4 overflow-x-auto p-0 hidden d-md-block">
+        <table class="min-w-full divide-y divide-slate-200 text-sm table-hover table-striped align-middle mb-0">
+          <thead class="bg-slate-50 text-slate-600 text-nowrap">
             <tr>
               <th>#</th>
               <th>Image</th>
@@ -361,10 +366,10 @@
               <th>Listing ID</th>
               <th>Variation</th>
               <th class="text-center">Qty</th>
-              <th class="text-end">Price</th>
+              <th class="text-right">Price</th>
               <th>Shipping Profile</th>
-              <th class="text-end">Shipping Cost</th>
-              <th class="text-end">Subtotal</th>
+              <th class="text-right">Shipping Cost</th>
+              <th class="text-right">Subtotal</th>
             </tr>
           </thead>
           <tbody>
@@ -395,7 +400,7 @@
                 <td>
                   @if($thumbUrl)
                     <a href="{{ $product?->slug ? route('listing.show', $product->slug) : 'javascript:void(0)' }}" target="_blank">
-                      <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" class="img-fluid rounded" style="max-width: 80px; height:auto; object-fit: cover;">
+                      <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" class="h-auto max-w-full rounded" style="max-width: 80px; height:auto; object-fit: cover;">
                     </a>
                   @endif
                 </td>
@@ -406,16 +411,16 @@
                     {{ $product->name ?? 'N/A' }}
                   @endif
                   @if($isDigital)
-                    <span class="badge bg-secondary ms-1">Digital</span>
+                    <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-100 text-slate-700 border-slate-200 ml-1">Digital</span>
                   @endif
                 </td>
                 <td>{{ $product->id ?? $item->product_id ?? 'N/A' }}</td>
                 <td>{{ $item->variation_summary ?? '-' }}</td>
                 <td class="text-center">{{ $qty }}</td>
-                <td class="text-end">{{ $symbol }} {{ number_format($unit,2) }}</td>
+                <td class="text-right">{{ $symbol }} {{ number_format($unit,2) }}</td>
                 <td>{{ $isDigital ? '-' : $shipLabel }}</td>
-                <td class="text-end">{{ $symbol }} {{ number_format($isDigital ? 0 : $shipCost,2) }}</td>
-                <td class="text-end">{{ $symbol }} {{ number_format($lineSub,2) }}</td>
+                <td class="text-right">{{ $symbol }} {{ number_format($isDigital ? 0 : $shipCost,2) }}</td>
+                <td class="text-right">{{ $symbol }} {{ number_format($lineSub,2) }}</td>
               </tr>
             @endforeach
           </tbody>
@@ -426,13 +431,13 @@
 
   {{-- PAYMENTS --}}
   @if($order->payments->isNotEmpty())
-    <div class="card mb-4 shadow-sm">
-      <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+      <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex items-center gap-2">
         <i class="fa-solid fa-wallet"></i> Payments
       </div>
       {{-- Mobile: stacked cards --}}
-      <div class="card-body d-block d-md-none p-2">
-        <div class="list-group list-group-flush">
+      <div class="p-4 block d-md-none p-2">
+        <div class="space-y-2 list-group-flush">
           @foreach($order->payments as $payment)
             @php
               $raw = strtolower((string)$payment->status);
@@ -444,15 +449,15 @@
                 default   => 'dark',
               };
             @endphp
-            <div class="list-group-item">
-              <div class="d-flex justify-content-between align-items-start mb-1">
-                <div class="fw-semibold">{{ $payment->local_transaction_id ?? 'N/A' }}</div>
-                <div class="small text-muted">{{ $payment->created_at->format('d M Y, h:i A') }}</div>
+            <div class="rounded-xl border border-slate-200 bg-white p-3">
+              <div class="flex justify-between items-start mb-1">
+                <div class="font-semibold">{{ $payment->local_transaction_id ?? 'N/A' }}</div>
+                <div class="text-xs text-slate-500">{{ $payment->created_at->format('d M Y, h:i A') }}</div>
               </div>
-              <div class="d-flex justify-content-between align-items-center">
-                <div class="small text-muted">{{ ucfirst($payment->payment_method) }}</div>
-                <div><span class="badge bg-{{ $statusColor }} text-capitalize">{{ $statusText }}</span></div>
-                <div class="fw-semibold">{{ $symbol }} {{ number_format($payment->total_amount,2) }}</div>
+              <div class="flex justify-between items-center">
+                <div class="text-xs text-slate-500">{{ ucfirst($payment->payment_method) }}</div>
+                <div><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-{{ $statusColor }} text-capitalize">{{ $statusText }}</span></div>
+                <div class="font-semibold">{{ $symbol }} {{ number_format($payment->total_amount,2) }}</div>
               </div>
             </div>
           @endforeach
@@ -460,14 +465,14 @@
       </div>
 
       {{-- Desktop/Tablet: table --}}
-      <div class="card-body table-responsive p-0 d-none d-md-block">
-        <table class="table table-hover table-striped align-middle mb-0">
-          <thead class="table-light text-nowrap">
+      <div class="p-4 overflow-x-auto p-0 hidden d-md-block">
+        <table class="min-w-full divide-y divide-slate-200 text-sm table-hover table-striped align-middle mb-0">
+          <thead class="bg-slate-50 text-slate-600 text-nowrap">
             <tr>
               <th>#</th>
               <th>Reference</th>
               <th>Method</th>
-              <th class="text-end">Amount</th>
+              <th class="text-right">Amount</th>
               <th>Status</th>
               <th>Paid On</th>
             </tr>
@@ -488,8 +493,8 @@
                 <td>{{ $loop->iteration }}</td>
                 <td>{{ $payment->local_transaction_id ?? 'N/A' }}</td>
                 <td>{{ ucfirst($payment->payment_method) }}</td>
-                <td class="text-end">{{ $symbol }} {{ number_format($payment->total_amount,2) }}</td>
-                <td><span class="badge bg-{{ $statusColor }} text-capitalize">{{ $statusText }}</span></td>
+                <td class="text-right">{{ $symbol }} {{ number_format($payment->total_amount,2) }}</td>
+                <td><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-{{ $statusColor }} text-capitalize">{{ $statusText }}</span></td>
                 <td>{{ $payment->created_at->format('d M Y, h:i A') }}</td>
               </tr>
             @endforeach
@@ -505,29 +510,29 @@
     $reviewsOnOrder = $order->items->map(fn($it)=>$it->review)->filter();
   @endphp
   @if($isFinished)
-    <div class="card mb-4 shadow-sm">
-      <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
-        <i class="fa-solid fa-star text-warning"></i> Reviews on this Order
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+      <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex items-center gap-2">
+        <i class="fa-solid fa-star text-amber-600"></i> Reviews on this Order
       </div>
-      <div class="card-body">
+      <div class="p-4">
         @if($reviewsOnOrder->isEmpty())
-          <div class="text-muted small">No reviews left yet for this order.</div>
+          <div class="text-slate-500 text-xs">No reviews left yet for this order.</div>
         @else
-          <ul class="list-group list-group-flush">
+          <ul class="space-y-2 list-group-flush">
             @foreach($order->items as $item)
               @php $rev = $item->review; @endphp
               @if($rev)
-                <li class="list-group-item">
-                  <div class="d-flex justify-content-between align-items-start">
+                <li class="rounded-xl border border-slate-200 bg-white p-3">
+                  <div class="flex justify-between items-start">
                     <div>
-                      <div class="fw-semibold">{{ optional($item->product)->name ?? 'Product' }}</div>
-                      <div class="small text-muted">Rating: {{ $rev->rating }} / 5</div>
+                      <div class="font-semibold">{{ optional($item->product)->name ?? 'Product' }}</div>
+                      <div class="text-xs text-slate-500">Rating: {{ $rev->rating }} / 5</div>
                       @if($rev->comment)
-                        <div class="small mt-1">{{ $rev->comment }}</div>
+                        <div class="text-xs mt-1">{{ $rev->comment }}</div>
                       @endif
                     </div>
-                    <div class="ms-3">
-                      <a href="{{ route('orders.chat.show', $order->id) }}" class="btn btn-sm btn-outline-primary">Respond</a>
+                    <div class="ml-3">
+                      <a href="{{ route('orders.chat.show', $order->id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50">Respond</a>
                     </div>
                   </div>
                 </li>
@@ -542,27 +547,27 @@
 
 {{-- DISPUTE INFORMATION --}}
 @if($order->disputes && $order->disputes->isNotEmpty())
-  <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
-      <i class="fa-solid fa-exclamation-triangle text-warning"></i> Dispute Information
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+    <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex items-center gap-2">
+      <i class="fa-solid fa-exclamation-triangle text-amber-600"></i> Dispute Information
     </div>
-    <div class="card-body">
+    <div class="p-4">
       @foreach($order->disputes as $dispute)
         <div class="border-bottom pb-3 mb-3 @if(!$loop->last) @endif">
-          <div class="d-flex justify-content-between align-items-start mb-2">
+          <div class="flex justify-between items-start mb-2">
             <h6 class="mb-1">
               {{ $dispute->getTypeLabel() }}
-              <span class="badge {{ $dispute->getStatusBadgeClass() }} ms-2">
+              <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $dispute->getStatusBadgeClass() }} ml-2">
                 {{ ucfirst(str_replace('_', ' ', $dispute->status)) }}
               </span>
             </h6>
-            <small class="text-muted">{{ $dispute->created_at->format('d M Y, h:i A') }}</small>
+            <span class="text-slate-500 text-xs">{{ $dispute->created_at->format('d M Y, h:i A') }}</span>
           </div>
           
-          <p class="mb-2 text-muted">{{ Str::limit($dispute->description, 150) }}</p>
+          <p class="mb-2 text-slate-500">{{ Str::limit($dispute->description, 150) }}</p>
           
           @if($dispute->isResolved())
-            <div class="alert alert-info small mb-2">
+            <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 text-xs mb-2">
               <strong>Decision:</strong> {{ $dispute->getDecisionLabel() }}
               @if($dispute->refund_amount)
                 <br><strong>Refund Amount:</strong> {{ $symbol }} {{ number_format($dispute->refund_amount, 2) }}
@@ -570,7 +575,7 @@
             </div>
             
             @if($dispute->canBeAppealed())
-              <div class="alert alert-warning small mb-2">
+              <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 text-xs mb-2">
                 @if($dispute->appeal_deadline)
                   <strong>Appeal Deadline:</strong> {{ $dispute->getAppealDeadlineDaysLeft() }} days remaining
                 @else
@@ -580,20 +585,20 @@
             @endif
             
             @if($dispute->appeal)
-              <div class="alert alert-warning small mb-2">
+              <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 text-xs mb-2">
                 <strong>Appeal Status:</strong> {{ ucfirst($dispute->appeal->status) }}
               </div>
             @endif
           @endif
           
-          <div class="d-flex gap-2">
-            <a href="{{ route('disputes.show', $dispute->id) }}" class="btn btn-outline-primary btn-sm">
-              <i class="fa-solid fa-eye me-1"></i> View Details
+          <div class="flex gap-2">
+            <a href="{{ route('disputes.show', $dispute->id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-2.5 py-1.5 text-xs rounded-lg">
+              <i class="fa-solid fa-eye mr-1"></i> View Details
             </a>
             
             @if($dispute->canBeAppealed())
-              <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-warning btn-sm">
-                <i class="fa-solid fa-gavel me-1"></i> Appeal
+              <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-amber-500 bg-amber-500 text-slate-900 hover:bg-amber-400 px-2.5 py-1.5 text-xs rounded-lg">
+                <i class="fa-solid fa-gavel mr-1"></i> Appeal
               </a>
             @endif
           </div>
@@ -612,10 +617,10 @@
             class="modal-content needs-validation" novalidate>
         @csrf
         @method('PATCH')
-        <div class="modal-header bg-light">
+        <div class="modal-header bg-slate-50">
           <h5 class="modal-title" id="editTrackingLabel">
-            <i class="fa-solid fa-pen me-2"></i>
-            Edit Tracking â€” Order #{{ $order->id }}
+            <i class="fa-solid fa-pen mr-2"></i>
+            Edit Tracking — Order #{{ $order->id }}
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
@@ -628,10 +633,10 @@
             $isCustomCourier = $courierValue && !in_array($courierValue, $standardList, true);
             $showOther = $isCustomCourier || in_array(strtolower((string)$courierValue), ['manual','other'], true);
           @endphp
-          <div class="row g-3 mb-3">
-            <div class="col-md-6">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 mb-3">
+            <div class="-span-6">
               <div class="form-floating">
-                <select class="form-select" id="editCourierSelect" name="courier" required>
+                <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editCourierSelect" name="courier" required>
                   <option value="" disabled {{ $courierValue ? '' : 'selected' }}>Select courier...</option>
                   @foreach($couriers as $c)
                     <option value="{{ $c }}" {{ (string)$courierValue === (string)$c ? 'selected' : '' }}>{{ $c }}</option>
@@ -643,46 +648,46 @@
                 <div class="invalid-feedback">Please select a courier.</div>
               </div>
               <div class="form-floating mt-2" id="editCourierOtherWrap" style="display: {{ $showOther ? 'block' : 'none' }};">
-                <input type="text" class="form-control" id="editCourierOtherInput" name="courier_other" placeholder="Courier name" value="{{ old('courier_other', $isCustomCourier ? (string)$courierValue : '') }}">
+                <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editCourierOtherInput" name="courier_other" placeholder="Courier name" value="{{ old('courier_other', $isCustomCourier ? (string)$courierValue : '') }}">
                 <label for="editCourierOtherInput">Courier name (if Manual/Other)</label>
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="-span-6">
               <div class="form-floating">
-                <input type="text" class="form-control" id="editTrackingInput" name="tracking_no" placeholder="ABC123" value="{{ old('tracking_no', $order->tracking_no) }}" required>
+                <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editTrackingInput" name="tracking_no" placeholder="ABC123" value="{{ old('tracking_no', $order->tracking_no) }}" required>
                 <label for="editTrackingInput">Tracking number *</label>
                 <div class="invalid-feedback">Tracking number required.</div>
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="-span-6">
               <div class="form-floating">
-                <input type="url" class="form-control" id="editTrackingUrlInput" name="tracking_url" value="{{ old('tracking_url', $order->tracking_url) }}" placeholder="https://carrier.example/track/ABC123">
+                <input type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editTrackingUrlInput" name="tracking_url" value="{{ old('tracking_url', $order->tracking_url) }}" placeholder="https://carrier.example/track/ABC123">
                 <label for="editTrackingUrlInput">Tracking URL (optional)</label>
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="-span-6">
               <div class="form-floating">
-                <input type="date" class="form-control" id="editShipDateInput" name="shipped_at" value="{{ old('shipped_at', optional($order->shipped_at)->toDateString() ?? now()->toDateString()) }}">
+                <input type="date" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editShipDateInput" name="shipped_at" value="{{ old('shipped_at', optional($order->shipped_at)->toDateString() ?? now()->toDateString()) }}">
                 <label for="editShipDateInput">Shipping date</label>
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="-span-6">
               <div class="form-floating">
-                <textarea class="form-control" id="editShipNotes" name="ship_notes" style="height: 100px;">{{ old('ship_notes', $order->ship_notes) }}</textarea>
+                <textarea class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editShipNotes" name="ship_notes" style="height: 100px;">{{ old('ship_notes', $order->ship_notes) }}</textarea>
                 <label for="editShipNotes">Notes (optional)</label>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="modal-footer bg-light">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">
-            <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+        <div class="modal-footer bg-slate-50">
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">
+            <i class="fa-solid fa-floppy-disk mr-1"></i> Save Changes
           </button>
         </div>
       </form>
@@ -691,14 +696,14 @@
 @endif
 {{-- NO DISPUTES SECTION --}}
 @if(!$order->disputes || $order->disputes->isEmpty())
-  <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
-      <i class="fa-solid fa-check-circle text-success"></i> Dispute Status
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+    <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex items-center gap-2">
+      <i class="fa-solid fa-check-circle text-emerald-600"></i> Dispute Status
     </div>
-    <div class="card-body text-center">
-      <p class="text-muted mb-2">No disputes have been filed for this order.</p>
-      <p class="small text-muted mb-0">
-        Sellers do not initiate disputes. If a buyer opens a dispute, it will appear here and youâ€™ll be notified to respond.
+    <div class="p-4 text-center">
+      <p class="text-slate-500 mb-2">No disputes have been filed for this order.</p>
+      <p class="text-xs text-slate-500 mb-0">
+        Sellers do not initiate disputes. If a buyer opens a dispute, it will appear here and you’ll be notified to respond.
       </p>
     </div>
   </div>
@@ -712,16 +717,16 @@
             method="POST"
             class="modal-content needs-validation" novalidate>
         @csrf
-        <div class="modal-header bg-light">
+        <div class="modal-header bg-slate-50">
           <h5 class="modal-title" id="shipModalLabel">
-            <i class="fa-solid fa-truck-fast me-2"></i>
+            <i class="fa-solid fa-truck-fast mr-2"></i>
             Ship Order #{{ $order->id }}
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
 
         <div class="px-4 pt-3">
-          <div class="alert alert-info small mb-0">
+          <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 text-xs mb-0">
             <strong>Customer:</strong> {{ $order->full_name }} &nbsp;|&nbsp;
             <strong>Total:</strong> {{ $symbol }} {{ number_format($order->total_amount,2) }}
           </div>
@@ -738,10 +743,10 @@
             $showOther = $isCustomCourier || in_array(strtolower((string)$courierValue), ['manual','other'], true);
           @endphp
 
-          <div class="row g-3 mb-4">
-            <div class="col-md-6">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 mb-4">
+            <div class="-span-6">
               <div class="form-floating">
-                <select class="form-select" id="courierSelect" name="courier" data-target="#courierOtherWrap" required>
+                <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="courierSelect" name="courier" data-target="#courierOtherWrap" required>
                   <option value="" disabled {{ $courierValue ? '' : 'selected' }}>Select courier...</option>
                   @foreach($couriers as $c)
                     <option value="{{ $c }}" {{ (string)$courierValue === (string)$c ? 'selected' : '' }}>{{ $c }}</option>
@@ -755,7 +760,7 @@
 
               <div class="form-floating mt-2" id="courierOtherWrap" style="display: {{ $showOther ? 'block' : 'none' }};">
                 <input type="text"
-                       class="form-control"
+                       class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
                        id="courierOtherInput"
                        name="courier_other"
                        placeholder="Courier name"
@@ -764,33 +769,33 @@
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="-span-6">
               <div class="form-floating">
-                <input type="text" class="form-control" id="trackingInput" name="tracking_no" placeholder="ABC123" required>
+                <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="trackingInput" name="tracking_no" placeholder="ABC123" required>
                 <label for="trackingInput">Tracking number *</label>
                 <div class="invalid-feedback">Tracking number required.</div>
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="-span-6">
               <div class="form-floating">
-                <input type="url" class="form-control" id="trackingUrlInput" name="tracking_url" placeholder="https://carrier.example/track/ABC123" required>
+                <input type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="trackingUrlInput" name="tracking_url" placeholder="https://carrier.example/track/ABC123" required>
                 <label for="trackingUrlInput">Tracking URL *</label>
                 <div class="invalid-feedback">Tracking URL is required.</div>
                 <div class="form-text">Paste a direct tracking link from the courier.</div>
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="-span-6">
               <div class="form-floating">
-                <input type="date" class="form-control" id="shipDateInput" name="shipped_at" value="{{ old('shipped_at', now()->toDateString()) }}">
+                <input type="date" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="shipDateInput" name="shipped_at" value="{{ old('shipped_at', now()->toDateString()) }}">
                 <label for="shipDateInput">Shipping date</label>
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="-span-6">
               <div class="form-floating">
-                <textarea class="form-control" id="shipNotes" name="ship_notes" style="height: 100px;"></textarea>
+                <textarea class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="shipNotes" name="ship_notes" style="height: 100px;"></textarea>
                 <label for="shipNotes">Notes (optional)</label>
               </div>
             </div>
@@ -799,16 +804,20 @@
           {{-- Items & Shipping Profiles section removed per request --}}
         </div>
 
-        <div class="modal-footer bg-light">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">
-            <i class="fa-solid fa-truck me-1"></i> Mark as Shipped
+        <div class="modal-footer bg-slate-50">
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">
+            <i class="fa-solid fa-truck mr-1"></i> Mark as Shipped
           </button>
         </div>
       </form>
     </div>
   </div>
 @endif
+</div>
+    </div>
+  </div>
+</section>
 @endsection
 
 @push('scripts')
@@ -859,3 +868,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
+
+
+
+
+

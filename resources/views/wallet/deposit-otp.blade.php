@@ -1,41 +1,41 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Verify Deposit')
 
-@section('content')
+@section('main')
 <div class="content">
-  <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-      <div class="card shadow-sm border-0 mt-5">
-        <div class="card-body p-4">
-          <h2 class="h5 fw-semibold mb-3 text-center">Two‑Step Verification</h2>
-          <p class="text-muted text-center">We sent a code to <strong>{{ auth()->user()->email }}</strong>. Enter it to continue {{ $purpose ?? 'with your deposit' }}.</p>
+  <div class="grid grid-cols-12 gap-4 justify-center">
+    <div class="md:col-span-6 lg:col-span-5">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mt-5">
+        <div class="p-4 sm:p-5">
+          <h2 class="text-base font-semibold font-semibold mb-3 text-center">Twoâ€‘Step Verification</h2>
+          <p class="text-slate-500 text-center">We sent a code to <strong>{{ auth()->user()->email }}</strong>. Enter it to continue {{ $purpose ?? 'with your deposit' }}.</p>
 
           @if(session('status'))
-            <div class="alert alert-success">{{ session('status') }}</div>
+            <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">{{ session('status') }}</div>
           @endif
           @if($errors->any())
-            <div class="alert alert-danger">{{ $errors->first() }}</div>
+            <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">{{ $errors->first() }}</div>
           @endif
 
-          <form method="POST" action="{{ $verifyRoute ?? route('wallet.deposit.otp.verify') }}" class="row g-3">
+          <form method="POST" action="{{ $verifyRoute ?? route('wallet.deposit.otp.verify') }}" class="grid grid-cols-12 gap-4 gap-3">
             @csrf
-            <div class="col-12">
-              <label class="form-label">Verification Code</label>
-              <input type="text" name="code" class="form-control @error('code') is-invalid @enderror" placeholder="6-digit code" autofocus required>
-              @error('code') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            <div class="col-span-12">
+              <label class="mb-1 block text-sm font-medium text-slate-700">Verification Code</label>
+              <input type="text" name="code" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('code') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" placeholder="6-digit code" autofocus required>
+              @error('code') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
             </div>
-            <div class="col-12 d-flex align-items-center justify-content-between">
-              <a class="btn btn-outline-secondary" href="{{ route('wallet.index') }}">Cancel</a>
-              <button class="btn btn-primary">Verify</button>
+            <div class="col-span-12 flex items-center justify-between">
+              <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" href="{{ route('wallet.index') }}">Cancel</a>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Verify</button>
             </div>
           </form>
 
           <form method="POST" action="{{ $resendRoute ?? route('wallet.deposit.otp.resend') }}" class="mt-3">
             @csrf
-            <button class="btn btn-link" type="submit">Resend code</button>
+            <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition text-emerald-700 hover:text-emerald-600 underline-offset-2 hover:underline" type="submit">Resend code</button>
             @if(!empty($cooldown) && $cooldown > 0)
-              <small class="text-muted">Please wait {{ $cooldown }}s to resend.</small>
+              <small class="text-slate-500">Please wait {{ $cooldown }}s to resend.</small>
             @endif
           </form>
         </div>
@@ -44,3 +44,7 @@
   </div>
 </div>
 @endsection
+
+
+
+

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Deposit Funds')
 
@@ -264,13 +264,13 @@
 </style>
 @endsection
 
-@section('content')
+@section('main')
 <div class="content wallet-deposit">
-    <div class="row justify-content-center deposit-shell">
-        <div class="col-md-9 col-lg-9 col-xl-8">
+    <div class="grid grid-cols-12 gap-4 justify-center deposit-shell">
+        <div class="md:col-span-9 lg:col-span-9 xl:col-span-8">
 
-            <div class="card border-0 wallet-deposit__card mt-3">
-                <div class="card-body p-4 p-md-5">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 wallet-deposit__card mt-3">
+                <div class="p-4 sm:p-5 p-5 md:p-5">
 
                     <div class="wallet-deposit__header">
                         <div class="wallet-deposit__eyebrow">Wallet top-up</div>
@@ -287,10 +287,10 @@
 
                     {{-- Deposit Amount (USD for wallet) --}}
                     <div class="deposit-amount">
-                        <label for="deposit_amount" class="form-label">Deposit Amount (USD)</label>
-                        <input type="number" id="deposit_amount" class="form-control" min="1" step="0.01" required placeholder="Enter amount e.g. 25.00"
+                        <label for="deposit_amount" class="mb-1 block text-sm font-medium text-slate-700">Deposit Amount (USD)</label>
+                        <input type="number" id="deposit_amount" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" min="1" step="0.01" required placeholder="Enter amount e.g. 25.00"
                                value="{{ isset($defaultAmount) && $defaultAmount ? number_format((float)$defaultAmount, 2, '.', '') : '' }}">
-                        <div class="form-text">Your wallet is in USD. For M-Pesa we'll auto-convert to KES using our configured rate.</div>
+                        <div class="mt-1 text-xs text-slate-500">Your wallet is in USD. For M-Pesa we'll auto-convert to KES using our configured rate.</div>
                     </div>
 
                     @php
@@ -320,7 +320,7 @@
 
                     {{-- Payment Methods --}}
                     @if(empty($availableMethods))
-                      <div class="alert alert-warning text-center">
+                      <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 text-center">
                         No payment gateways are enabled/configured. Please contact support.
                       </div>
                     @else
@@ -356,16 +356,16 @@
                         <div class="payment-content">
                           @if($paypalAvailable)
                             <div id="paypal-section" class="payment-panel method-panel {{ $defaultGateway === 'paypal' ? 'is-active' : '' }}" data-method="paypal">
-                              <p class="text-muted text-center">Proceed securely using PayPal or card.</p>
+                              <p class="text-slate-500 text-center">Proceed securely using PayPal or card.</p>
                               <div id="paypal-button-container" class="text-center"></div>
                             </div>
                           @endif
 
                           @if($stripeAvailable)
                             <div id="stripe-section" class="payment-panel method-panel {{ $defaultGateway === 'stripe' ? 'is-active' : '' }}" data-method="stripe">
-                              <p class="text-muted text-center">Pay securely by card using Stripe checkout.</p>
+                              <p class="text-slate-500 text-center">Pay securely by card using Stripe checkout.</p>
                               <div class="d-grid">
-                                  <button type="button" id="btn-stripe-checkout" class="btn btn-dark">
+                                  <button type="button" id="btn-stripe-checkout" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-900 text-white hover:bg-slate-700">
                                       Continue to Stripe
                                   </button>
                               </div>
@@ -374,9 +374,9 @@
 
                           @if($paystackAvailable)
                             <div id="paystack-section" class="payment-panel method-panel {{ $defaultGateway === 'paystack' ? 'is-active' : '' }}" data-method="paystack">
-                              <p class="text-muted text-center">Pay securely via Paystack checkout.</p>
+                              <p class="text-slate-500 text-center">Pay securely via Paystack checkout.</p>
                               <div class="d-grid">
-                                  <button type="button" id="btn-paystack-checkout" class="btn btn-success">
+                                  <button type="button" id="btn-paystack-checkout" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                                       Continue to Paystack
                                   </button>
                               </div>
@@ -385,45 +385,45 @@
 
                           @if($mpesaAvailable)
                           <div id="mpesa-section" class="payment-panel method-panel {{ $defaultGateway === 'mpesa' ? 'is-active' : '' }}" data-method="mpesa">
-                              <div class="alert mpesa-callout">
-                                  <div class="d-flex align-items-center">
-                                      <i class="fa fa-mobile me-2"></i>
+                              <div class="rounded-xl border px-4 py-3 text-sm mpesa-callout">
+                                  <div class="flex items-center">
+                                      <i class="fa fa-mobile mr-2"></i>
                                       <div>
                                           <strong>M-Pesa STK Push:</strong> We'll send a prompt to your phone. Enter your PIN to approve.
                                       </div>
                                   </div>
                               </div>
 
-                              <div class="row g-3">
-                                  <div class="col-md-7">
-                                      <label for="mpesa_phone" class="form-label">M-Pesa Phone (Safaricom)</label>
-                                      <input type="text" id="mpesa_phone" class="form-control" placeholder="e.g. 07XXXXXXXX, 7XXXXXXXX, or 2547XXXXXXXX" maxlength="13">
-                                      <div class="form-text">We'll normalize to <code>2547XXXXXXXX</code>.</div>
+                              <div class="grid grid-cols-12 gap-4 gap-3">
+                                  <div class="md:col-span-7">
+                                      <label for="mpesa_phone" class="mb-1 block text-sm font-medium text-slate-700">M-Pesa Phone (Safaricom)</label>
+                                      <input type="text" id="mpesa_phone" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="e.g. 07XXXXXXXX, 7XXXXXXXX, or 2547XXXXXXXX" maxlength="13">
+                                      <div class="mt-1 text-xs text-slate-500">We'll normalize to <code>2547XXXXXXXX</code>.</div>
                                   </div>
-                                  <div class="col-md-5">
-                                      <label class="form-label">KES Amount (auto)</label>
-                                      <input type="text" id="mpesa_kes_preview" class="form-control" disabled value="KES 0.00">
-                                      <div class="form-text">Calculated from USD amount x rate.</div>
+                                  <div class="md:col-span-5">
+                                      <label class="mb-1 block text-sm font-medium text-slate-700">KES Amount (auto)</label>
+                                      <input type="text" id="mpesa_kes_preview" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" disabled value="KES 0.00">
+                                      <div class="mt-1 text-xs text-slate-500">Calculated from USD amount x rate.</div>
                                   </div>
                               </div>
 
                               <div class="d-grid mt-3">
-                                  <button id="btn-start-stk" class="btn btn-success">
-                                      <span class="spinner d-none" id="stk-spinner"></span>
+                                  <button id="btn-start-stk" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+                                      <span class="spinner hidden" id="stk-spinner"></span>
                                       Send STK Push
                                   </button>
                               </div>
 
-                              <div class="small text-muted mt-2">
+                              <div class="text-xs text-slate-500 mt-2">
                                   By continuing you agree that M-Pesa transaction charges (if any) are borne by you.
                               </div>
 
                               {{-- Live status area when polling --}}
-                              <div id="stk-live-status" class="alert alert-light border mt-3 d-none"></div>
+                              <div id="stk-live-status" class="rounded-xl border px-4 py-3 text-sm alert-light mt-3 hidden"></div>
                           </div>
                           @endif
 
-                          <div id="generic-result" class="wallet-result text-center mt-3 fw-semibold" role="status" aria-live="polite"></div>
+                          <div id="generic-result" class="wallet-result text-center mt-3 font-semibold" role="status" aria-live="polite"></div>
                         </div>
                       </div>
                     @endif
@@ -642,7 +642,7 @@
         clearInterval(pollTimer);
 
         $liveStatus.removeClass('d-none alert-danger alert-success alert-warning').addClass('alert').html(`
-            <i class="fa fa-sync-alt fa-spin me-2"></i>
+            <i class="fa fa-sync-alt fa-spin mr-2"></i>
             Waiting for M-Pesa confirmation... (this can take up to 2 minutes)
         `);
 
@@ -653,7 +653,7 @@
                 if (resp?.status === 'success') {
                     clearInterval(pollTimer);
                     $liveStatus.removeClass('alert-warning alert-danger').addClass('alert-success').html(`
-                        <i class="fa fa-check-circle me-2"></i>
+                        <i class="fa fa-check-circle mr-2"></i>
                         Payment successful! Redirecting to your wallet...
                     `);
                     setTimeout(() => redirectSuccess(), 1200);
@@ -662,7 +662,7 @@
                 if (resp?.status === 'failed') {
                     clearInterval(pollTimer);
                     $liveStatus.removeClass('alert-warning alert-success').addClass('alert-danger').html(`
-                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        <i class="fa fa-exclamation-triangle mr-2"></i>
                         Payment failed: ${msg || 'Unknown error'}.
                     `);
                     return;
@@ -675,7 +675,7 @@
             if (attempts >= MAX_POLLS) {
                 clearInterval(pollTimer);
                 $liveStatus.removeClass('alert-success alert-danger').addClass('alert-warning').html(`
-                    <i class="fa fa-hourglass-half me-2"></i>
+                    <i class="fa fa-hourglass-half mr-2"></i>
                     It's taking longer than expected to confirm. If you've approved the prompt, please check your wallet shortly.
                 `);
             }
@@ -720,3 +720,7 @@
 })();
 </script>
 @endsection
+
+
+
+

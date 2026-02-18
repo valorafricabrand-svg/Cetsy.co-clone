@@ -1,27 +1,27 @@
-{{-- resources/views/shops/create.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/shops/create.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
+@section('main')
 <div class="content">
-  <div class="row justify-content-center">
-    <div class="col-lg-10">
-      <div class="card shadow-sm">
-        <div class="card-header bg-white border-0">
-          <h2 class="h4 mb-0 text-center">Create Your Shop</h2>
+  <div class="grid grid-cols-12 gap-4 justify-center">
+    <div class="lg:col-span-10">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm">
+        <div class="border-b border-slate-200 px-4 py-3 bg-white border-0">
+          <h2 class="text-lg font-semibold mb-0 text-center">Create Your Shop</h2>
         </div>
-        <div class="card-body">
+        <div class="p-4 sm:p-5">
 
           {{-- Flash Success --}}
           @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 alert-dismissible" role="alert">
               {{ session('success') }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
           @endif
 
           {{-- Validation Errors --}}
           @if($errors->any())
-            <div class="alert alert-danger">
+            <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">
               <ul class="mb-0">
                 @foreach($errors->all() as $error)
                   <li>{{ $error }}</li>
@@ -43,35 +43,35 @@
 
             {{-- 1) Shop Preferences --}}
             <h5 class="mt-4">1. Shop Preferences</h5>
-            <div class="row g-3 mb-4">
-              <div class="col-md-4">
-                <label for="language" class="form-label">Language <span class="text-danger">*</span></label>
-                <select name="language" id="language" required class="form-select">
+            <div class="grid grid-cols-12 gap-4 gap-3 mb-4">
+              <div class="md:col-span-4">
+                <label for="language" class="mb-1 block text-sm font-medium text-slate-700">Language <span class="text-rose-600">*</span></label>
+                <select name="language" id="language" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
                   <option value="" disabled selected>Select language</option>
                   <option value="English" {{ old('language')=='English'?'selected':'' }}>English</option>
                 </select>
-                <div class="invalid-feedback">Please select a language.</div>
+                <div class="mt-1 text-xs text-rose-600">Please select a language.</div>
               </div>
-              <div class="col-md-4">
-                <label for="country" class="form-label">Country <span class="text-danger">*</span></label>
-                <select name="country" id="country" required class="form-select">
+              <div class="md:col-span-4">
+                <label for="country" class="mb-1 block text-sm font-medium text-slate-700">Country <span class="text-rose-600">*</span></label>
+                <select name="country" id="country" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
                   <option value="" disabled selected>Select country</option>
                   @foreach($countries as $country)
                     <option value="{{ $country->id }}" {{ old('country')==$country->id?'selected':'' }}>{{ $country->name }}</option>
                   @endforeach
                 </select>
-                <div class="invalid-feedback">Please select a country.</div>
+                <div class="mt-1 text-xs text-rose-600">Please select a country.</div>
               </div>
 
 
-  <div class="col-md-4">
-  <label for="currency" class="form-label">
-    Currency <span class="text-danger">*</span>
+  <div class="md:col-span-4">
+  <label for="currency" class="mb-1 block text-sm font-medium text-slate-700">
+    Currency <span class="text-rose-600">*</span>
   </label>
   <select
     id="currency"
     name="currency"
-    class="form-select @error('currency') is-invalid @enderror"
+    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('currency') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
     required
   >
     <option value="" disabled {{ old('currency') ? '' : 'selected' }}>
@@ -88,9 +88,9 @@
   </select>
 
   @error('currency')
-    <div class="invalid-feedback">{{ $message }}</div>
+    <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
   @else
-    <div class="invalid-feedback">Please select a currency.</div>
+    <div class="mt-1 text-xs text-rose-600">Please select a currency.</div>
   @enderror
 </div>
 
@@ -100,30 +100,30 @@
 
             {{-- 2) Name & Slug --}}
             <h5 class="mt-4">2. Name Your Shop</h5>
-            <div class="row g-3 mb-4">
-              <div class="col-md-8">
-                <label for="name" class="form-label">Shop Name <span class="text-danger">*</span></label>
+            <div class="grid grid-cols-12 gap-4 gap-3 mb-4">
+              <div class="md:col-span-8">
+                <label for="name" class="mb-1 block text-sm font-medium text-slate-700">Shop Name <span class="text-rose-600">*</span></label>
                 <input 
                   id="name" name="name" type="text"
                   x-model="name"
                   required
-                  class="form-control"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                   placeholder="e.g. MyCraftShop"
                 >
-                <div class="invalid-feedback">Please enter your shop name.</div>
+                <div class="mt-1 text-xs text-rose-600">Please enter your shop name.</div>
               </div>
-              <div class="col-md-4">
-                <label for="slug" class="form-label">Slug (URL Identifier)</label>
-                <div class="input-group">
-                  <span class="input-group-text">{{ url('shop') }}/</span>
+              <div class="md:col-span-4">
+                <label for="slug" class="mb-1 block text-sm font-medium text-slate-700">Slug (URL Identifier)</label>
+                <div class="flex w-full items-stretch">
+                  <span class="inline-flex items-center rounded-l-xl border border-slate-300 bg-slate-100 px-3 text-sm text-slate-600">{{ url('shop') }}/</span>
                   <input 
                     id="slug" name="slug" type="text"
                     x-model="slug"
                     readonly
-                    class="form-control bg-light"
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-100"
                   >
                 </div>
-                <div class="form-text">Auto-generated from your shop name.</div>
+                <div class="mt-1 text-xs text-slate-500">Auto-generated from your shop name.</div>
               </div>
             </div>
 
@@ -131,70 +131,70 @@
 
             {{-- 3) Shop Images --}}
             <h5 class="mt-4">3. Shop Images</h5>
-            <div class="row g-3 mb-4">
-              <div class="col-md-6">
-                <label for="logo" class="form-label">Logo (optional)</label>
+            <div class="grid grid-cols-12 gap-4 gap-3 mb-4">
+              <div class="md:col-span-6">
+                <label for="logo" class="mb-1 block text-sm font-medium text-slate-700">Logo (optional)</label>
                 <input 
                   id="logo" name="logo" type="file"
                   accept="image/*"
-                  class="form-control"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                 >
-                <div class="form-text">Upload your shop logo. Recommended size: 200x200 pixels.</div>
+                <div class="mt-1 text-xs text-slate-500">Upload your shop logo. Recommended size: 200x200 pixels.</div>
               </div>
-              <div class="col-md-6">
-                <label for="featured_image" class="form-label">Featured Image (optional)</label>
+              <div class="md:col-span-6">
+                <label for="featured_image" class="mb-1 block text-sm font-medium text-slate-700">Featured Image (optional)</label>
                 <input 
                   id="featured_image" name="featured_image" type="file"
                   accept="image/*"
-                  class="form-control"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                 >
-                <div class="form-text">This image will be displayed prominently on your shop page. Recommended size: 1200x400 pixels.</div>
+                <div class="mt-1 text-xs text-slate-500">This image will be displayed prominently on your shop page. Recommended size: 1200x400 pixels.</div>
               </div>
             </div>
 
             {{-- 4) Share Your Billing Info --}}
             <h5 class="mt-4">4. Share Your Billing Info</h5>
-            <div class="row g-3 mb-4">
-              <div class="col-12">
-                <label for="address" class="form-label">Street Address <span class="text-danger">*</span></label>
+            <div class="grid grid-cols-12 gap-4 gap-3 mb-4">
+              <div class="col-span-12">
+                <label for="address" class="mb-1 block text-sm font-medium text-slate-700">Street Address <span class="text-rose-600">*</span></label>
                 <input 
                   id="address" name="address" type="text"
                   value="{{ old('address') }}"
                   required
-                  class="form-control"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                   placeholder="123 Main St"
                 >
-                <div class="invalid-feedback">Please enter your address.</div>
+                <div class="mt-1 text-xs text-rose-600">Please enter your address.</div>
               </div>
-              <div class="col-md-6">
-                <label for="city" class="form-label">City <span class="text-danger">*</span></label>
+              <div class="md:col-span-6">
+                <label for="city" class="mb-1 block text-sm font-medium text-slate-700">City <span class="text-rose-600">*</span></label>
                 <input 
                   id="city" name="city" type="text"
                   value="{{ old('city') }}"
                   required
-                  class="form-control"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                   placeholder="Anytown"
                 >
-                <div class="invalid-feedback">Please enter your city.</div>
+                <div class="mt-1 text-xs text-rose-600">Please enter your city.</div>
               </div>
-              <div class="col-md-6">
-                <label for="postal" class="form-label">Postal Code <span class="text-danger">*</span></label>
+              <div class="md:col-span-6">
+                <label for="postal" class="mb-1 block text-sm font-medium text-slate-700">Postal Code <span class="text-rose-600">*</span></label>
                 <input 
                   id="postal" name="postal" type="text"
                   value="{{ old('postal') }}"
                   required
-                  class="form-control"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                   placeholder="12345"
                 >
-                <div class="invalid-feedback">Please enter your postal code.</div>
+                <div class="mt-1 text-xs text-rose-600">Please enter your postal code.</div>
               </div>
             </div>
 
             {{-- Submit --}}
-            <div class="text-end mb-3">
+            <div class="text-right mb-3">
               <button 
                 type="submit"
-                class="btn btn-success px-5"
+                class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5"
               >
                 Finish & Create
               </button>
@@ -227,3 +227,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 @endsection
+
+

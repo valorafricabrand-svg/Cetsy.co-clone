@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 @section('title','Analytics Dashboard')
 
 @push('styles')
@@ -39,18 +39,23 @@
     </style>
 @endpush
 
-@section('content')
+@section('main')
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
+      <div class="space-y-6">
 <div class="content">
-    <div class="container-xxl">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
 
-        <div class="mb-4 d-flex justify-content-between align-items-center">
+        <div class="mb-4 flex justify-between items-center">
             <div>
-                <h1 class="h4 fw-semibold mb-1">Analytics Dashboard</h1>
-                <p class="text-muted small mb-0">Monitor your shop performance at a glance.</p>
+                <h1 class="h4 font-semibold mb-1">Analytics Dashboard</h1>
+                <p class="text-slate-500 text-xs mb-0">Monitor your shop performance at a glance.</p>
                 <div class="range-label">Range: <strong>{{ $rangeLabel }}</strong></div>
             </div>
-            <form method="GET" class="d-flex align-items-center gap-2" id="rangeForm">
-                <select name="range" class="form-select form-select-sm" id="rangeSelect">
+            <form method="GET" class="flex items-center gap-2" id="rangeForm">
+                <select name="range" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="rangeSelect">
                     <option value="today"    {{ $range=='today'    ? 'selected' : '' }}>Today</option>
                     <option value="yesterday"{{ $range=='yesterday'? 'selected' : '' }}>Yesterday</option>
                     <option value="week"     {{ $range=='week'     ? 'selected' : '' }}>Last 7 Days</option>
@@ -61,17 +66,17 @@
                     <option value="6months"  {{ $range=='6months'  ? 'selected' : '' }}>Last 6 Months</option>
                     <option value="custom"   {{ $range=='custom'   ? 'selected' : '' }}>Custom</option>
                 </select>
-                <div id="customRange" class="d-flex align-items-center gap-2 {{ $range!='custom' ? 'd-none' : '' }}">
-                    <input type="date" name="start" value="{{ $startDate }}" class="form-control form-control-sm">
-                    <span class="text-muted">to</span>
-                    <input type="date" name="end" value="{{ $endDate }}" class="form-control form-control-sm">
-                    <button class="btn btn-primary btn-sm" type="submit">Apply</button>
+                <div id="customRange" class="flex align-items-center gap-2 {{ $range!='custom' ? 'd-none' : '' }}">
+                    <input type="date" name="start" value="{{ $startDate }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                    <span class="text-slate-500">to</span>
+                    <input type="date" name="end" value="{{ $endDate }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                    <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 px-2.5 py-1.5 text-xs rounded-lg" type="submit">Apply</button>
                 </div>
             </form>
         </div>
 
         {{-- ======================= KPIs ======================= --}}
-        <div class="row g-4 mb-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-4">
             <x-analytics.card title="Total Sales"
                               :value="shop_currency().' '.number_format($kpi->total_sales,2)"
                               :delta="$kpiDelta->sales"
@@ -90,70 +95,70 @@
         </div>
 
         {{-- quick facts --}}
-        <div class="d-flex flex-wrap gap-2 mb-4">
-            <span class="badge bg-light text-dark border">Best Day: <strong class="ms-1">{{ $bestDay ? date('M j, Y', strtotime($bestDay)) : '—' }}</strong> <span class="ms-1">({{ shop_currency() }} {{ number_format($bestRevenue,2) }})</span></span>
-            <span class="badge bg-light text-dark border">Avg Daily Revenue: <strong class="ms-1">{{ shop_currency() }} {{ number_format($avgDailyRevenue,2) }}</strong></span>
-            <span class="badge bg-light text-dark border">Overall Conversion: <strong class="ms-1">{{ number_format($overallConversion,2) }}%</strong></span>
+        <div class="flex flex-wrap gap-2 mb-4">
+            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-50 text-slate-900">Best Day: <strong class="ml-1">{{ $bestDay ? date('M j, Y', strtotime($bestDay)) : '—' }}</strong> <span class="ml-1">({{ shop_currency() }} {{ number_format($bestRevenue,2) }})</span></span>
+            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-50 text-slate-900">Avg Daily Revenue: <strong class="ml-1">{{ shop_currency() }} {{ number_format($avgDailyRevenue,2) }}</strong></span>
+            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-50 text-slate-900">Overall Conversion: <strong class="ml-1">{{ number_format($overallConversion,2) }}%</strong></span>
         </div>
 
         {{-- ======================= Revenue & Orders chart ======================= --}}
-        <div class="card shadow-sm border-0 rounded-3 mb-5 glass">
-            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                <h6 class="fw-semibold mb-0"><i class="fas fa-chart-area me-2" style="color:var(--brand)"></i>Revenue & Orders</h6>
-                <div class="d-flex align-items-center gap-2">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-5 glass">
+            <div class="border-b border-slate-200 px-4 py-3 bg-transparent border-0 flex justify-between items-center">
+                <h6 class="font-semibold mb-0"><i class="fas fa-chart-area mr-2" style="color:var(--brand)"></i>Revenue & Orders</h6>
+                <div class="flex items-center gap-2">
                     {{-- toggle --}}
-                    <div class="btn-group btn-group-sm" role="group" id="chartToggle">
-                        <button class="btn btn-outline-secondary active" data-target="revenue">Revenue</button>
-                        <button class="btn btn-outline-secondary"           data-target="orders" >Orders</button>
+                    <div class="inline-flex items-center gap-1 rounded-xl border border-slate-300 p-1 text-xs" role="group" id="chartToggle">
+                        <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100 active" data-target="revenue">Revenue</button>
+                        <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100"           data-target="orders" >Orders</button>
                     </div>
                 </div>
             </div>
-            <div class="card-body">
+            <div class="p-4">
                 <canvas id="revenueChart" height="100"></canvas>
-                <canvas id="ordersChart"  height="100" class="d-none"></canvas>
+                <canvas id="ordersChart"  height="100" class="hidden"></canvas>
             </div>
         </div>
 
         {{-- ======================= Sales by Weekday ======================= --}}
-        <div class="card shadow-sm border-0 rounded-3 mb-5 glass">
-            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                <h6 class="fw-semibold mb-0"><i class="fas fa-calendar-week me-2" style="color:var(--brand)"></i>Sales by Day of Week</h6>
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-5 glass">
+            <div class="border-b border-slate-200 px-4 py-3 bg-transparent border-0 flex justify-between items-center">
+                <h6 class="font-semibold mb-0"><i class="fas fa-calendar-week mr-2" style="color:var(--brand)"></i>Sales by Day of Week</h6>
             </div>
-            <div class="card-body">
+            <div class="p-4">
                 <canvas id="dowChart" height="90"></canvas>
             </div>
         </div>
 
         {{-- ======================= Top products ======================= --}}
-        <div class="row g-4 mb-4">
-            <div class="col-lg-6">
-                <div class="card shadow-sm border-0 rounded-3 glass h-100">
-                    <div class="card-header bg-transparent border-0 fw-semibold d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-ranking-star me-2" style="color:var(--brand)"></i>Top Products</span>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="exportTopCsv"><i class="fas fa-file-csv me-1"></i>Export</button>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-4">
+            <div class="-span-6">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 glass h-full">
+                    <div class="border-b border-slate-200 px-4 py-3 bg-transparent border-0 font-semibold flex justify-between items-center">
+                        <span><i class="fas fa-ranking-star mr-2" style="color:var(--brand)"></i>Top Products</span>
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100" id="exportTopCsv"><i class="fas fa-file-csv mr-1"></i>Export</button>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover align-middle mb-0" id="topProductsTable">
-                                <thead class="table-light">
+                    <div class="p-4 p-0">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 text-sm table-striped table-hover align-middle mb-0" id="topProductsTable">
+                                <thead class="bg-slate-50 text-slate-600">
                                     <tr>
                                         <th>Product</th>
-                                        <th class="text-end">Qty</th>
-                                        <th class="text-end">Revenue</th>
+                                        <th class="text-right">Qty</th>
+                                        <th class="text-right">Revenue</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($topProducts as $p)
                                         <tr>
-                                            <td class="d-flex align-items-center gap-2">
+                                            <td class="flex items-center gap-2">
                                                 <img src="{{ $p->thumbnail_url ?? asset('storage/placeholder.jpg') }}" class="rounded" width="40" height="40" alt="">
                                                 <span>{{ Str::limit($p->name, 30) }}</span>
                                             </td>
-                                            <td class="text-end">{{ $p->qty_sold }}</td>
-                                            <td class="text-end">{{ shop_currency() }} {{ number_format($p->revenue,2) }}</td>
+                                            <td class="text-right">{{ $p->qty_sold }}</td>
+                                            <td class="text-right">{{ shop_currency() }} {{ number_format($p->revenue,2) }}</td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="3" class="text-center text-muted py-4">No products in this range.</td></tr>
+                                        <tr><td colspan="3" class="text-center text-slate-500 py-4">No products in this range.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -163,20 +168,20 @@
             </div>
 
             {{-- Listing performance --}}
-            <div class="col-lg-6">
-                <div class="card shadow-sm border-0 rounded-3 glass h-100">
-                    <div class="card-header bg-transparent border-0 fw-semibold d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-bolt me-2" style="color:var(--brand)"></i>Listing Performance</span>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="exportPerfCsv"><i class="fas fa-file-csv me-1"></i>Export</button>
+            <div class="-span-6">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 glass h-full">
+                    <div class="border-b border-slate-200 px-4 py-3 bg-transparent border-0 font-semibold flex justify-between items-center">
+                        <span><i class="fas fa-bolt mr-2" style="color:var(--brand)"></i>Listing Performance</span>
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100" id="exportPerfCsv"><i class="fas fa-file-csv mr-1"></i>Export</button>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover align-middle mb-0" id="performanceTable">
-                                <thead class="table-light">
+                    <div class="p-4 p-0">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 text-sm table-striped table-hover align-middle mb-0" id="performanceTable">
+                                <thead class="bg-slate-50 text-slate-600">
                                     <tr>
                                         <th>Product</th>
-                                        <th class="text-end">Views</th>
-                                        <th class="text-end">Sales</th>
+                                        <th class="text-right">Views</th>
+                                        <th class="text-right">Sales</th>
                                         <th style="width:130px">Conversion</th>
                                     </tr>
                                 </thead>
@@ -184,13 +189,13 @@
                                     @forelse($performance as $p)
                                     @php
                                         $conv = (float) $p->conversion;
-                                        $bar  = $conv >= 5 ? 'bg-success'
-                                              : ($conv >= 2 ? 'bg-warning' : 'bg-danger');
+                                        $bar  = $conv >= 5 ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                              : ($conv >= 2 ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-rose-100 text-rose-700 border-rose-200');
                                     @endphp
                                     <tr>
                                         <td>{{ Str::limit($p->name, 25) }}</td>
-                                        <td class="text-end">{{ $p->views ?? 0 }}</td>
-                                        <td class="text-end">{{ $p->sales ?? 0 }}</td>
+                                        <td class="text-right">{{ $p->views ?? 0 }}</td>
+                                        <td class="text-right">{{ $p->sales ?? 0 }}</td>
                                         <td>
                                             <div class="progress rounded-pill" style="height:6px">
                                                 <div class="progress-bar {{ $bar }} rounded-pill"
@@ -200,11 +205,11 @@
                                                      data-bs-title="{{ $conv }}%">
                                                 </div>
                                             </div>
-                                            <small class="text-muted">{{ $conv }}%</small>
+                                            <span class="text-slate-500 text-xs">{{ $conv }}%</span>
                                         </td>
                                     </tr>
                                     @empty
-                                        <tr><td colspan="4" class="text-center text-muted py-4">No listing activity in this range.</td></tr>
+                                        <tr><td colspan="4" class="text-center text-slate-500 py-4">No listing activity in this range.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -216,6 +221,10 @@
 
     </div>
 </div>
+      </div>
+    </div>
+  </div>
+</section>
 @endsection
 
 @push('scripts')
@@ -354,3 +363,11 @@
 })();
 </script>
 @endpush
+
+
+
+
+
+
+
+

@@ -1,17 +1,22 @@
-@extends('layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 @section('title', 'My Offers')
 
-@section('content')
+@section('main')
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
+      <div class="space-y-6">
 <div class="content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="flex justify-between items-center mb-4">
         <div>
             <h1 class="h4 mb-1">My Offers Received</h1>
-            <p class="text-muted mb-0">Manage offers from potential buyers for your products</p>
+            <p class="text-slate-500 mb-0">Manage offers from potential buyers for your products</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="flex gap-2">
             @if($stats['pending'] > 0)
-                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#bulkActionModal">
-                    <i class="bi bi-check-all me-1"></i>Bulk Actions
+                <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-amber-500 bg-amber-500 text-slate-900 hover:bg-amber-400 px-2.5 py-1.5 text-xs rounded-lg" data-bs-toggle="modal" data-bs-target="#bulkActionModal">
+                    <i class="bi bi-check-all mr-1"></i>Bulk Actions
                 </button>
             @endif
             
@@ -19,79 +24,79 @@
     </div>
 
     @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+        <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">{{ session('success') }}</div>
     @endif
     @if(session('warning'))
-        <div class="alert alert-warning">{{ session('warning') }}</div>
+        <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">{{ session('warning') }}</div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
+        <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-700">{{ session('error') }}</div>
     @endif
 
     {{-- Statistics Cards --}}
-    <div class="row mb-4">
-        <div class="col-md-4 col-sm-6 mb-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-4">
+        <div class="-span-4 -span-6 mb-3">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 h-full">
+                <div class="p-4">
+                    <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <div class="bg-primary bg-opacity-10 rounded p-3">
+                            <div class="bg-emerald-600 text-white border-emerald-600 bg-opacity-10 rounded p-3">
                                 <i class="bi bi-hand-holding-dollar text-primary fs-4"></i>
                             </div>
                         </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="card-title mb-1">Total Offers</h6>
+                        <div class="flex-grow-1 ml-3">
+                            <h6 class="text-base font-bold text-slate-900 mb-1">Total Offers</h6>
                             <h4 class="mb-0">{{ $stats['total'] }}</h4>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4 col-sm-6 mb-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
+        <div class="-span-4 -span-6 mb-3">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 h-full">
+                <div class="p-4">
+                    <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <div class="bg-warning bg-opacity-10 rounded p-3">
-                                <i class="bi bi-clock text-warning fs-4"></i>
+                            <div class="bg-amber-100 text-amber-800 border-amber-200 bg-opacity-10 rounded p-3">
+                                <i class="bi bi-clock text-amber-600 fs-4"></i>
                             </div>
                         </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="card-title mb-1">Pending</h6>
+                        <div class="flex-grow-1 ml-3">
+                            <h6 class="text-base font-bold text-slate-900 mb-1">Pending</h6>
                             <h4 class="mb-0">{{ $stats['pending'] }}</h4>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4 col-sm-6 mb-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
+        <div class="-span-4 -span-6 mb-3">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 h-full">
+                <div class="p-4">
+                    <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <div class="bg-success bg-opacity-10 rounded p-3">
-                                <i class="bi bi-check-circle text-success fs-4"></i>
+                            <div class="bg-emerald-100 text-emerald-800 border-emerald-200 bg-opacity-10 rounded p-3">
+                                <i class="bi bi-check-circle text-emerald-600 fs-4"></i>
                             </div>
                         </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="card-title mb-1">Accepted</h6>
+                        <div class="flex-grow-1 ml-3">
+                            <h6 class="text-base font-bold text-slate-900 mb-1">Accepted</h6>
                             <h4 class="mb-0">{{ $stats['accepted'] }}</h4>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
+        <!-- <div class="-span-3 -span-6 mb-3">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 h-full">
+                <div class="p-4">
+                    <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <div class="bg-info bg-opacity-10 rounded p-3">
-                                <i class="bi bi-currency-dollar text-info fs-4"></i>
+                            <div class="bg-sky-100 text-sky-800 border-sky-200 bg-opacity-10 rounded p-3">
+                                <i class="bi bi-currency-dollar text-sky-600 fs-4"></i>
                             </div>
                         </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="card-title mb-1">Avg Value</h6>
+                        <div class="flex-grow-1 ml-3">
+                            <h6 class="text-base font-bold text-slate-900 mb-1">Avg Value</h6>
                             <h4 class="mb-0">{{ shop_currency() }} {{ number_format($stats['avg_value'] ?? 0, 2) }}</h4>
                         </div>
                     </div>
@@ -101,13 +106,13 @@
     </div>
 
     {{-- Filters --}}
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-4">
+        <div class="p-4">
             <form method="GET" action="{{ route('seller.offers.index') }}" id="filterForm">
-                <div class="row g-3">
-                    <div class="col-md-2">
-                        <label class="form-label small">Status</label>
-                        <select name="status" class="form-select form-select-sm">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3">
+                    <div class="-span-2">
+                        <label class="form-label text-xs">Status</label>
+                        <select name="status" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
                             <option value="">All Status</option>
                             <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="accepted" {{ request('status') === 'accepted' ? 'selected' : '' }}>Accepted</option>
@@ -115,17 +120,17 @@
                             <option value="expired" {{ request('status') === 'expired' ? 'selected' : '' }}>Expired</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label small">Type</label>
-                        <select name="type" class="form-select form-select-sm">
+                    <div class="-span-2">
+                        <label class="form-label text-xs">Type</label>
+                        <select name="type" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
                             <option value="">All Types</option>
                             <option value="original" {{ request('type') === 'original' ? 'selected' : '' }}>Original Offers</option>
                             <option value="counter" {{ request('type') === 'counter' ? 'selected' : '' }}>Counter Offers</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label small">Product</label>
-                        <select name="product" class="form-select form-select-sm">
+                    <div class="-span-2">
+                        <label class="form-label text-xs">Product</label>
+                        <select name="product" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
                             <option value="">All Products</option>
                             @foreach($products as $product)
                                 <option value="{{ $product->id }}" {{ request('product') == $product->id ? 'selected' : '' }}>
@@ -134,22 +139,22 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label small">Price Min</label>
-                        <input type="number" name="price_min" class="form-control form-control-sm" value="{{ request('price_min') }}" placeholder="Min">
+                    <div class="-span-2">
+                        <label class="form-label text-xs">Price Min</label>
+                        <input type="number" name="price_min" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" value="{{ request('price_min') }}" placeholder="Min">
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label small">Price Max</label>
-                        <input type="number" name="price_max" class="form-control form-control-sm" value="{{ request('price_max') }}" placeholder="Max">
+                    <div class="-span-2">
+                        <label class="form-label text-xs">Price Max</label>
+                        <input type="number" name="price_max" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" value="{{ request('price_max') }}" placeholder="Max">
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label small">&nbsp;</label>
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="bi bi-funnel me-1"></i>Filter
+                    <div class="-span-2">
+                        <label class="form-label text-xs">&nbsp;</label>
+                        <div class="flex gap-2">
+                            <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 px-2.5 py-1.5 text-xs rounded-lg">
+                                <i class="bi bi-funnel mr-1"></i>Filter
                             </button>
-                            <a href="{{ route('seller.offers.index') }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-x-circle me-1"></i>Clear
+                            <a href="{{ route('seller.offers.index') }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100 px-2.5 py-1.5 text-xs rounded-lg">
+                                <i class="bi bi-x-circle mr-1"></i>Clear
                             </a>
                         </div>
                     </div>
@@ -159,19 +164,19 @@
     </div>
 
     {{-- Offers Table --}}
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-light">
-            <div class="d-flex justify-content-between align-items-center">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
+        <div class="border-b border-slate-200 px-4 py-3 bg-slate-50">
+            <div class="flex justify-between items-center">
                 <h6 class="mb-0">Offers ({{ $offers->total() }})</h6>
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="selectAllHeader">
-                    <label class="form-check-label small" for="selectAllHeader">Select All</label>
+                    <label class="form-check-label text-xs" for="selectAllHeader">Select All</label>
                 </div>
             </div>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm table-hover align-middle mb-0">
+                <thead class="bg-slate-50 text-slate-600">
                     <tr>
                         <th width="30">
                             <input type="checkbox" class="form-check-input" id="selectAllCheckbox">
@@ -181,7 +186,7 @@
                         <th>Offer</th>
                         <th>Status</th>
                         <th>Date</th>
-                        <th class="text-end">Actions</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -193,41 +198,41 @@
                                 @endif
                             </td>
                             <td style="min-width:200px;">
-                                <div class="d-flex align-items-center gap-2">
+                                <div class="flex items-center gap-2">
                                     @php
                                         $thumb = product_thumb_url($offer->product);
                                     @endphp
                                     <img src="{{ $thumb }}" class="rounded" style="width:40px;height:40px;object-fit:cover;" alt="{{ $offer->product->name }}">
                                     <div class="flex-grow-1">
-                                        <span class="fw-semibold text-dark d-block" title="{{ $offer->product->name ?? '-' }}">
+                                        <span class="font-semibold text-slate-900 block" title="{{ $offer->product->name ?? '-' }}">
                                             {{ \Illuminate\Support\Str::limit($offer->product->name ?? '-', 25) }}
                                         </span>
-                                        <span class="badge bg-light text-muted border small">#{{ $offer->product_id }}</span>
+                                        <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-50 text-slate-500 text-xs">#{{ $offer->product_id }}</span>
                                         @if($offer->is_counter_offer)
-                                            <span class="badge bg-info small ms-1">Counter</span>
+                                            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-sky-100 text-sky-800 border-sky-200 text-xs ml-1">Counter</span>
                                         @endif
                                     </div>
                                 </div>
                             </td>
                             <td style="min-width:150px;">
-                                <div class="d-flex flex-column">
-                                    <span class="fw-semibold small text-dark">{{ $offer->buyer->name ?? '-' }}</span>
-                                    <span class="text-muted small" title="{{ $offer->buyer->email ?? '' }}">
-                                        <i class="bi bi-envelope me-1"></i>{{ \Illuminate\Support\Str::limit($offer->buyer->email ?? '', 20) }}
+                                <div class="flex flex-col">
+                                    <span class="font-semibold text-xs text-slate-900">{{ $offer->buyer->name ?? '-' }}</span>
+                                    <span class="text-slate-500 text-xs" title="{{ $offer->buyer->email ?? '' }}">
+                                        <i class="bi bi-envelope mr-1"></i>{{ \Illuminate\Support\Str::limit($offer->buyer->email ?? '', 20) }}
                                     </span>
                                 </div>
                             </td>
                             <td>
-                                <div class="d-flex flex-column">
-                                    <span class="fw-bold text-dark">{{ $offer->formatted_price }}</span>
+                                <div class="flex flex-col">
+                                    <span class="font-bold text-slate-900">{{ $offer->formatted_price }}</span>
                                     @if($offer->is_counter_offer)
                                         @php
                                             $diff = $offer->getPriceDifference();
                                             $diffPercent = $offer->getPriceDifferencePercentage();
                                         @endphp
                                         @if($diff != 0)
-                                            <span class="small {{ $diff > 0 ? 'text-success' : 'text-danger' }}">
-                                                <i class="bi {{ $diff > 0 ? 'bi-arrow-up' : 'bi-arrow-down' }} me-1"></i>
+                                            <span class="text-xs {{ $diff > 0 ? 'text-success' : 'text-danger' }}">
+                                                <i class="bi {{ $diff > 0 ? 'bi-arrow-up' : 'bi-arrow-down' }} mr-1"></i>
                                                 {{ $diff > 0 ? '+' : '' }}{{ shop_currency() }} {{ number_format(abs($diff), 2) }}
                                                 ({{ $diff > 0 ? '+' : '' }}{{ number_format($diffPercent, 1) }}%)
                                             </span>
@@ -236,24 +241,24 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="badge {{ $offer->status_badge_class }}">{{ $offer->status_label }}</span>
+                                <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $offer->status_badge_class }}">{{ $offer->status_label }}</span>
                             </td>
                             <td>
-                                <div class="d-flex flex-column">
-                                    <span class="small text-dark">{{ $offer->created_at->format('d M Y') }}</span>
-                                    <span class="text-muted small">{{ $offer->time_ago }}</span>
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-slate-900">{{ $offer->created_at->format('d M Y') }}</span>
+                                    <span class="text-slate-500 text-xs">{{ $offer->time_ago }}</span>
                                 </div>
                             </td>
-                            <td class="text-end">
-                                <a href="{{ route('seller.offers.show', $offer->id) }}" class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-eye me-1"></i>View
+                            <td class="text-right">
+                                <a href="{{ route('seller.offers.show', $offer->id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-2.5 py-1.5 text-xs rounded-lg">
+                                    <i class="bi bi-eye mr-1"></i>View
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
-                                <i class="bi bi-inbox me-2"></i> No offers found for your products.
+                            <td colspan="7" class="text-center py-4 text-slate-500">
+                                <i class="bi bi-inbox mr-2"></i> No offers found for your products.
                             </td>
                         </tr>
                     @endforelse
@@ -261,7 +266,7 @@
             </table>
         </div>
         @if($offers->hasPages())
-            <div class="card-footer">
+            <div class="border-t border-slate-200 px-4 py-3">
                 {{ $offers->links() }}
             </div>
         @endif
@@ -281,7 +286,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Action</label>
-                        <select name="action" class="form-select" required>
+                        <select name="action" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" required>
                             <option value="">Select Action</option>
                             <option value="accept">Accept Selected</option>
                             <option value="decline">Decline Selected</option>
@@ -290,16 +295,16 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Reason (for decline)</label>
-                        <textarea name="reason" class="form-control" rows="3" placeholder="Optional reason for declining..."></textarea>
+                        <textarea name="reason" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" rows="3" placeholder="Optional reason for declining..."></textarea>
                     </div>
-                    <div id="selectedOffersInfo" class="alert alert-info d-none">
-                        <i class="bi bi-info-circle me-2"></i>
+                    <div id="selectedOffersInfo" class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 hidden">
+                        <i class="bi bi-info-circle mr-2"></i>
                         <span id="selectedCount">0</span> offers selected
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Apply Action</button>
+                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-700 bg-slate-700 text-white hover:bg-slate-800" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">Apply Action</button>
                 </div>
             </form>
         </div>
@@ -455,4 +460,14 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </style>
 @endpush
+      </div>
+    </div>
+  </div>
+</section>
 @endsection 
+
+
+
+
+
+

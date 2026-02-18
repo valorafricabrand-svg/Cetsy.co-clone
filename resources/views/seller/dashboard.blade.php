@@ -146,7 +146,7 @@
                         <a href="{{ $card['href'] }}" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                             <div class="flex items-start justify-between gap-3">
                                 <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ $card['label'] }}</p>
-                                <i class="{{ $card['icon'] }} {{ $card['tone'] }}"></i>
+                                <i class="{{ $card['icon'] }} $card['tone']"></i>
                             </div>
                             <p class="mt-2 text-xl font-extrabold text-slate-900">{{ $card['value'] }}</p>
                             @if($card['sub'])
@@ -287,3 +287,4 @@
     </div>
 </section>
 @endsection
+

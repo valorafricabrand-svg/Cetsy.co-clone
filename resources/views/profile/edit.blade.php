@@ -1,44 +1,44 @@
-{{-- resources/views/profile/index.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/profile/index.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
+@section('main')
 <div class="content">
   <div class="container-xxl">
 
     {{-- ================== GRID ================== --}}
-    <div class="row g-4">
+    <div class="grid grid-cols-12 gap-4 gap-4">
 
-      {{-- 1️⃣  Update profile information --}}
-      <div class="col-12">
-        <div class="card shadow-sm border-light-subtle rounded-3">
-          <div class="card-header bg-white border-0">
-            <h5 class="mb-0 fw-semibold">Update&nbsp;Profile&nbsp;Information</h5>
+      {{-- 1ï¸âƒ£  Update profile information --}}
+      <div class="col-span-12">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-light-subtle rounded-3">
+          <div class="border-b border-slate-200 px-4 py-3 bg-white border-0">
+            <h5 class="mb-0 font-semibold">Update&nbsp;Profile&nbsp;Information</h5>
           </div>
-          <div class="card-body">
+          <div class="p-4 sm:p-5">
             @include('profile.partials.update-profile-information-form', ['countries' => $countries])
           </div>
         </div>
       </div>
 
-      {{-- 2️⃣  Change password --}}
-      <div class="col-12">
-        <div class="card shadow-sm border-light-subtle rounded-3">
-          <div class="card-header bg-white border-0">
-            <h5 class="mb-0 fw-semibold">Change&nbsp;Password</h5>
+      {{-- 2ï¸âƒ£  Change password --}}
+      <div class="col-span-12">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-light-subtle rounded-3">
+          <div class="border-b border-slate-200 px-4 py-3 bg-white border-0">
+            <h5 class="mb-0 font-semibold">Change&nbsp;Password</h5>
           </div>
-          <div class="card-body">
+          <div class="p-4 sm:p-5">
             @include('profile.partials.update-password-form')
           </div>
         </div>
       </div>
 
-      {{-- 3️⃣  Delete account --}}
-      <div class="col-12">
-        <div class="card shadow-sm border-danger-subtle border-2 rounded-3">
-          <div class="card-header bg-white border-0">
-            <h5 class="mb-0 text-danger fw-semibold">Delete&nbsp;Account</h5>
+      {{-- 3ï¸âƒ£  Delete account --}}
+      <div class="col-span-12">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-danger-subtle border-2 rounded-3">
+          <div class="border-b border-slate-200 px-4 py-3 bg-white border-0">
+            <h5 class="mb-0 text-rose-600 font-semibold">Delete&nbsp;Account</h5>
           </div>
-          <div class="card-body">
+          <div class="p-4 sm:p-5">
             @include('profile.partials.delete-user-form')
           </div>
         </div>
@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Show loading state
       const submitBtn = this.querySelector('button[type="submit"]');
       const originalText = submitBtn.innerHTML;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
       submitBtn.disabled = true;
       
       // Re-enable after a delay (in case of errors)
@@ -158,9 +158,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
     alertDiv.innerHTML = `
-      <i class="fas fa-${type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+      <i class="fas fa-${type === 'danger' ? 'exclamation-triangle' : 'info-circle'} mr-2"></i>
       ${message}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
     
     // Insert at the top of the form
@@ -178,3 +178,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 @endsection
+
+

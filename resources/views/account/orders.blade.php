@@ -1,40 +1,40 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'My Orders')
 
-@section('content')
+@section('main')
 <div class="content">
-  <div class="container">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6">
     {{-- Header with title and filters --}}
     <div class="mb-3">
-      <div class="d-flex flex-column flex-lg-row gap-3 align-items-lg-end justify-content-between">
-        <h3 class="text-dark mb-0">My Orders</h3>
-        <form method="GET" action="{{ url()->current() }}" class="w-100">
-          <div class="row g-2 align-items-end">
-            <div class="col-12 col-md-4">
-              <label class="form-label small text-muted">Search</label>
-              <input type="search" name="q" value="{{ request('q') }}" class="form-control form-control-sm" placeholder="Search orders by # or status">
+      <div class="flex flex-col lg:flex-row gap-3 lg:items-end justify-between">
+        <h3 class="text-slate-900 mb-0">My Orders</h3>
+        <form method="GET" action="{{ url()->current() }}" class="w-full">
+          <div class="grid grid-cols-12 gap-4 gap-2 items-end">
+            <div class="col-span-12 md:col-span-4">
+              <label class="mb-1 block text-sm font-medium text-slate-700 text-xs text-slate-500">Search</label>
+              <input type="search" name="q" value="{{ request('q') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs" placeholder="Search orders by # or status">
             </div>
-            <div class="col-6 col-md-3">
-              <label class="form-label small text-muted">From</label>
-              <input type="date" name="from" value="{{ request('from') }}" class="form-control form-control-sm">
+            <div class="col-span-6 md:col-span-3">
+              <label class="mb-1 block text-sm font-medium text-slate-700 text-xs text-slate-500">From</label>
+              <input type="date" name="from" value="{{ request('from') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs">
             </div>
-            <div class="col-6 col-md-3">
-              <label class="form-label small text-muted">To</label>
-              <input type="date" name="to" value="{{ request('to') }}" class="form-control form-control-sm">
+            <div class="col-span-6 md:col-span-3">
+              <label class="mb-1 block text-sm font-medium text-slate-700 text-xs text-slate-500">To</label>
+              <input type="date" name="to" value="{{ request('to') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs">
             </div>
-            <div class="col-6 col-md-2">
-              <label class="form-label small text-muted">Sort</label>
-              <select name="sort" class="form-select form-select-sm">
+            <div class="col-span-6 md:col-span-2">
+              <label class="mb-1 block text-sm font-medium text-slate-700 text-xs text-slate-500">Sort</label>
+              <select name="sort" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs">
                 <option value="newest" @selected(request('sort','newest')==='newest')>Newest</option>
                 <option value="amount_desc" @selected(request('sort')==='amount_desc')>Amount (high to low)</option>
                 <option value="amount_asc" @selected(request('sort')==='amount_asc')>Amount (low to high)</option>
               </select>
             </div>
-            <div class="col-12 col-md-12 d-flex gap-2">
-              <div class="btn-group" role="group" aria-label="Status filters">
+            <div class="col-span-12 md:col-span-12 flex gap-2">
+              <div class="inline-flex flex-wrap gap-2" role="group" aria-label="Status filters">
                 @php $st = request('status'); @endphp
-                <a class="btn btn-sm {{ $st? 'btn-outline-secondary':'btn-secondary' }}" href="{{ url()->current() }}">All{{ isset($summary['all'])? ' ('.$summary['all'].')':'' }}</a>
+                <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs {{ $st? 'btn-outline-secondary':'btn-secondary' }}" href="{{ url()->current() }}">All{{ isset($summary['all'])? ' ('.$summary['all'].')':'' }}</a>
                 @foreach([
                   \App\Models\Order::STATUS_PENDING=>'Pending',
                   \App\Models\Order::STATUS_PROCESSING=>'Processing',
@@ -44,12 +44,12 @@
                   \App\Models\Order::STATUS_CANCELLED=>'Cancelled',
                   \App\Models\Order::STATUS_REFUNDED=>'Refunded',
                 ] as $code=>$label)
-                  <a class="btn btn-sm {{ $st===$code? 'btn-secondary':'btn-outline-secondary' }}" href="{{ url()->current().'?'.http_build_query(array_filter(array_merge(request()->except('page'),['status'=>$code]))) }}">
+                  <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs {{ $st===$code? 'btn-secondary':'btn-outline-secondary' }}" href="{{ url()->current().'?'.http_build_query(array_filter(array_merge(request()->except('page'),['status'=>$code]))) }}">
                     {{ $label }}@if(!empty($summary[strtolower($label)])) ({{ $summary[strtolower($label)] }}) @endif
                   </a>
                 @endforeach
               </div>
-              <button class="btn btn-sm btn-primary ms-auto" type="submit">Apply</button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500 ms-auto" type="submit">Apply</button>
             </div>
           </div>
         </form>
@@ -58,9 +58,9 @@
 
     @if($orders->isNotEmpty())
       {{-- Orders List (Desktop/Tablet) --}}
-      <div class="table-responsive mb-4 d-none d-md-block">
-        <table class="table table-striped table-hover align-middle">
-          <thead class="table-light">
+      <div class="overflow-x-auto mb-4 hidden md:block">
+        <table class="min-w-full divide-y divide-slate-200 text-sm align-middle">
+          <thead class="bg-slate-50">
             <tr>
               <th>Order #</th>
               <th>Shop</th>
@@ -77,14 +77,14 @@
                 <td><a target="_blank" href="{{ route('shop.show', $order->shop) }}"> {{ optional($order->shop)->name ?? 'N/A' }}</a></td>
                 <td>{{ $order->created_at->format('d M Y') }}</td>
                 <td>
-                  <span class="badge {{ $order->getStatusBadgeClass() }}">
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $order->getStatusBadgeClass() }}">
                     {{ ucfirst($order->status) }}
                   </span>
                   @if($order->status === \App\Models\Order::STATUS_PENDING)
-                    <div class="small text-warning fw-semibold mt-1">Pending payment</div>
+                    <div class="text-xs text-amber-600 font-semibold mt-1">Pending payment</div>
                   @endif
                   @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
-                    <br><small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
+                    <br><small class="text-rose-600">{{ Str::limit($order->cancel_reason, 50) }}</small>
                   @endif
                   @php
                     $minDays = null; $maxDays = null;
@@ -141,13 +141,13 @@
                     }
                   @endphp
                   @if(!empty($progressMessage))
-                    <div class="small text-muted mt-1">{{ $progressMessage }}</div>
+                    <div class="text-xs text-slate-500 mt-1">{{ $progressMessage }}</div>
                   @endif
                 </td>
                 <td>{{ money((float) ($order->total_amount ?? 0)) }}</td>
                 <td class="text-nowrap">
-                  <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-sm btn-outline-secondary">View</a>
-                  <a href="{{ route('orders.chat.show', $order->id) }}" class="btn btn-sm btn-outline-primary">Chat</a>
+                  <a href="{{ route('buyer.orders.show', $order->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50">View</a>
+                  <a href="{{ route('orders.chat.show', $order->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">Chat</a>
                 </td>
               </tr>
             @endforeach
@@ -156,8 +156,8 @@
       </div>
 
       {{-- Orders List (Mobile Cards) --}}
-      <div class="d-block d-md-none mb-4">
-        <div class="list-group">
+      <div class="block md:hidden mb-4">
+        <div class="divide-y divide-slate-200 rounded-xl border border-slate-200">
           @foreach($orders as $order)
             @php
               $minDays = null; $maxDays = null;
@@ -208,29 +208,29 @@
               }
             @endphp
 
-            <a href="{{ route('buyer.orders.show', $order->id) }}" class="list-group-item list-group-item-action p-3">
-              <div class="d-flex justify-content-between align-items-start mb-1">
-                <div class="fw-semibold">#{{ $order->id }}</div>
-                <div class="text-muted small">{{ $order->created_at->format('d M Y') }}</div>
+            <a href="{{ route('buyer.orders.show', $order->id) }}" class="px-4 py-3 block transition hover:bg-slate-50 p-3">
+              <div class="flex justify-between items-start mb-1">
+                <div class="font-semibold">#{{ $order->id }}</div>
+                <div class="text-slate-500 text-xs">{{ $order->created_at->format('d M Y') }}</div>
               </div>
-              <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="badge {{ $order->getStatusBadgeClass() }}">{{ ucfirst($order->status) }}</span>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $order->getStatusBadgeClass() }}">{{ ucfirst($order->status) }}</span>
                 @if($order->status === \App\Models\Order::STATUS_PENDING)
-                  <span class="badge bg-warning text-dark">Pending payment</span>
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-slate-900">Pending payment</span>
                 @endif
                 @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
-                  <small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
+                  <small class="text-rose-600">{{ Str::limit($order->cancel_reason, 50) }}</small>
                 @endif
               </div>
               @if(!empty($progressMessage))
-                <div class="small text-muted mb-2">{{ $progressMessage }}</div>
+                <div class="text-xs text-slate-500 mb-2">{{ $progressMessage }}</div>
               @endif
-              <div class="d-flex justify-content-between align-items-center">
+              <div class="flex justify-between items-center">
                 <div class="text-truncate">
-                  <span class="text-muted small">Shop:</span>
-                  <span class="small">{{ optional($order->shop)->name ?? 'N/A' }}</span>
+                  <span class="text-slate-500 text-xs">Shop:</span>
+                  <span class="text-xs">{{ optional($order->shop)->name ?? 'N/A' }}</span>
                 </div>
-                <div class="fw-semibold">{{ money((float) ($order->total_amount ?? 0)) }}</div>
+                <div class="font-semibold">{{ money((float) ($order->total_amount ?? 0)) }}</div>
               </div>
             </a>
           @endforeach
@@ -256,19 +256,23 @@
       </script>
 
       {{-- Pagination --}}
-      <div class="d-flex justify-content-center">
-          {{ $orders->links('pagination::bootstrap-5') }}
+      <div class="flex justify-center">
+          {{ $orders->links('pagination::tailwind') }}
       </div>
     @else
       {{-- Empty state --}}
       <div class="text-center py-5">
         <i class="bi bi-cart-x" style="font-size: 3rem; color: #6c757d;"></i>
         <h4 class="mt-3">No orders found</h4>
-        <p class="mb-4 text-muted">You have no orders at the moment.</p>
-        <a href="{{ route('listings') }}" class="btn btn-lg btn-primary">Start Shopping</a>
+        <p class="mb-4 text-slate-500">You have no orders at the moment.</p>
+        <a href="{{ route('listings') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-5 py-2.5 text-base bg-emerald-600 text-white hover:bg-emerald-500">Start Shopping</a>
       </div>
     @endif
   </div>
 </div>
 @endsection
+
+
+
+
 

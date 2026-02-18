@@ -1,5 +1,5 @@
-{{-- resources/views/products/pay_fee.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/products/pay_fee.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 @section('title', 'Process Payment')
 
 @php
@@ -45,16 +45,16 @@
           : url('/wallet/deposit'));
 @endphp
 
-@section('content')
+@section('main')
 <div class="content">
-  <div class="container py-5">
-    <div class="row justify-content-center">
-      <div class="col-12 col-lg-7">
-        <div class="card p-4 p-md-5">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 py-5">
+    <div class="grid grid-cols-12 gap-4 justify-center">
+      <div class="col-span-12 lg:col-span-7">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 p-5 md:p-5">
 
           <div class="text-center mb-3">
             <div class="badge-dot success subtle mb-2">Secure Checkout</div>
-            <h1 class="h3 headline mb-1">Complete Your Payment</h1>
+            <h1 class="text-xl font-semibold headline mb-1">Complete Your Payment</h1>
             <p class="subtle mb-0">We'll use your wallet to pay for the listing.</p>
           </div>
 
@@ -72,41 +72,41 @@
             x-cloak
           >
             {{-- PLAN SELECTOR --}}
-            <div class="plan-toggle d-flex justify-content-center gap-3 mb-4" x-show="hasPlans">
+            <div class="plan-toggle flex justify-center gap-3 mb-4" x-show="hasPlans">
               <template x-for="([key, details], index) in planEntries" :key="key">
                 <button
                   type="button"
-                  class="btn btn-outline-secondary"
-                  :class="{ 'active btn-secondary text-white border-0': plan === key }"
+                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50"
+                  :class="{ 'active bg-slate-600 text-white hover:bg-slate-500 text-white border-0': plan === key }"
                   @click="setPlan(key)"
                 >
-                  <div class="fw-semibold" x-text="details.label || key"></div>
+                  <div class="font-semibold" x-text="details.label || key"></div>
                   <small class="subtle">
                     <span x-text="fmt(details.amount)"></span> {{ $currency }}
                   </small>
                 </button>
               </template>
             </div>
-            <div x-show="!hasPlans" class="alert alert-warning mt-3">
+            <div x-show="!hasPlans" class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 mt-3">
               No listing plans are currently available for this category. Please contact support.
             </div>
 
             {{-- BREAKDOWN --}}
             <div class="mb-3">
               <ul class="list-unstyled mb-0">
-                <li class="list-group-item">
+                <li class="px-4 py-3">
                   <span>Selected Plan <span class="subtle">(<span x-text="planLabel"></span>)</span></span>
                   <span class="amount"><span x-text="fmt(currentFee)"></span> {{ $currency }}</span>
                 </li>
-                <li class="list-group-item">
+                <li class="px-4 py-3">
                   <span>Wallet Balance</span>
                   <span class="amount"><span x-text="fmt(wallet)"></span> {{ $currency }}</span>
                 </li>
-                <li class="list-group-item fw-semibold">
+                <li class="px-4 py-3 font-semibold">
                   <span>Amount Due</span>
                   <span class="amount">
                     <template x-if="noPaymentDue">
-                      <span class="text-success">0.00 {{ $currency }}</span>
+                      <span class="text-emerald-600">0.00 {{ $currency }}</span>
                     </template>
                     <template x-if="!noPaymentDue">
                       <span :class="canPayFromWallet ? 'text-success' : 'text-danger'">
@@ -116,9 +116,9 @@
                   </span>
                 </li>
                 <template x-if="!noPaymentDue && !canPayFromWallet">
-                  <li class="list-group-item">
+                  <li class="px-4 py-3">
                     <span>Top Up Needed</span>
-                    <span class="amount text-danger"><span x-text="fmt(topUpNeeded)"></span> {{ $currency }}</span>
+                    <span class="amount text-rose-600"><span x-text="fmt(topUpNeeded)"></span> {{ $currency }}</span>
                   </li>
                 </template>
               </ul>
@@ -138,24 +138,24 @@
                 @csrf
                 <input type="hidden" name="plan" value="">
                 <input type="hidden" name="via"  value="wallet">
-                <button type="submit" class="btn btn-primary btn-lg">
+                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base">
                   Pay via Wallet
                 </button>
                 <small class="text-center subtle">Your wallet will be debited immediately.</small>
               </form>
 
               {{-- If nothing to pay at all (free/comp) --}}
-              <div x-show="noPaymentDue" class="alert subtle mt-3" style="background:rgba(148,163,184,.12);">
-                <strong class="d-block mb-1" style="color:var(--ink)">No payment due</strong>
+              <div x-show="noPaymentDue" class="rounded-xl border px-4 py-3 text-sm subtle mt-3" style="background:rgba(148,163,184,.12);">
+                <strong class="block mb-1" style="color:var(--ink)">No payment due</strong>
                 <span>Your selected plan does not require a payment right now.</span>
               </div>
 
               {{-- If wallet is 0 or insufficient: show Top Up Wallet CTA only --}}
               <div x-show="!canPayFromWallet && !noPaymentDue" class="text-center">
-                <a :href="buildDepositUrl()" class="btn btn-success btn-lg w-100">
+                <a :href="buildDepositUrl()" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base w-full">
                   Top Up Wallet
                 </a>
-                <small class="d-block subtle mt-2">
+                <small class="block subtle mt-2">
                   You will be redirected to the wallet deposit page to add
                   <strong><span x-text="fmt(topUpNeeded)"></span> {{ $currency }}</strong>.
                 </small>
@@ -163,8 +163,8 @@
             </div>
 
             <div class="mt-4">
-              <div class="alert subtle" style="background:rgba(148,163,184,.12);">
-                <strong class="d-block mb-1" style="color:var(--ink)">Heads up</strong>
+              <div class="rounded-xl border px-4 py-3 text-sm subtle" style="background:rgba(148,163,184,.12);">
+                <strong class="block mb-1" style="color:var(--ink)">Heads up</strong>
                 <span>If you just topped up but still see an insufficient balance, refresh this page to re-check your wallet.</span>
               </div>
             </div>
@@ -265,3 +265,5 @@ function checkoutPlans(cfg) {
 }
 </script>
 @endsection
+
+

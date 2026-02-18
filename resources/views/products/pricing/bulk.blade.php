@@ -1,22 +1,22 @@
-{{-- resources/views/products/pricing/bulk.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/products/pricing/bulk.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Bulk Price Editor')
 
-@section('content')
+@section('main')
 <div class="content" x-data="bulkPricer({{ (int)($shopId ?? 0) }})">
 
     <h2 class="mb-4">
-        <i class="bi bi-cash-coin me-1"></i> Bulk Price Editor
+        <i class="bi bi-cash-coin mr-1"></i> Bulk Price Editor
     </h2>
 
     {{-- Flash --}}
     @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+        <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">{{ session('success') }}</div>
     @endif
     @if($errors->any())
-        <div class="alert alert-danger">
-            <ul class="mb-0 small">
+        <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">
+            <ul class="mb-0 text-xs">
                 @foreach($errors->all() as $err)
                     <li>{{ $err }}</li>
                 @endforeach
@@ -25,13 +25,13 @@
     @endif
 
     {{-- Filter/search (optional) --}}
-    <form method="GET" class="row g-2 mb-3">
-        <div class="col-sm-4">
-            <input type="text" name="q" value="{{ request('q') }}" class="form-control" placeholder="Search product name">
+    <form method="GET" class="grid grid-cols-12 gap-4 gap-2 mb-3">
+        <div class="sm:col-span-4">
+            <input type="text" name="q" value="{{ request('q') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="Search product name">
         </div>
         {{-- Example: category filter --}}
-        {{-- <div class="col-sm-3">
-            <select name="category_id" class="form-select">
+        {{-- <div class="sm:col-span-3">
+            <select name="category_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
                 <option value="">All categories</option>
                 @foreach($categories as $cat)
                     <option value="{{ $cat->id }}" {{ request('category_id')==$cat->id?'selected':'' }}>
@@ -41,7 +41,7 @@
             </select>
         </div> --}}
         <div class="col-auto">
-            <button class="btn btn-outline-secondary">
+            <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">
                 <i class="bi bi-funnel"></i> Filter
             </button>
         </div>
@@ -52,41 +52,41 @@
         <input type="hidden" name="apply_to_all" :value="applyAll ? 1 : 0">
 
         {{-- Settings card --}}
-        <div class="card mb-3">
-            <div class="card-header bg-light fw-semibold">Update Settings</div>
-            <div class="card-body row g-3 align-items-end">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-3">
+            <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 font-semibold">Update Settings</div>
+            <div class="p-4 sm:p-5 grid grid-cols-12 gap-4 gap-3 items-end">
 
-                <div class="col-sm-2">
-                    <label class="form-label mb-0 small text-muted">Direction</label>
-                    <select name="direction" class="form-select form-select-sm">
+                <div class="sm:col-span-2">
+                    <label class="mb-1 block text-sm font-medium text-slate-700 mb-0 text-xs text-slate-500">Direction</label>
+                    <select name="direction" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs">
                         <option value="up">Increase</option>
                         <option value="down">Decrease</option>
                     </select>
                 </div>
 
-                <div class="col-sm-2">
-                    <label class="form-label mb-0 small text-muted">Percent (%)</label>
-                    <input type="number" step="0.01" min="0" name="percent" class="form-control form-control-sm" required>
+                <div class="sm:col-span-2">
+                    <label class="mb-1 block text-sm font-medium text-slate-700 mb-0 text-xs text-slate-500">Percent (%)</label>
+                    <input type="number" step="0.01" min="0" name="percent" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs" required>
                 </div>
 
-                <div class="col-sm-2">
-                    <label class="form-label mb-0 small text-muted">Column</label>
-                    <select name="column" class="form-select form-select-sm">
+                <div class="sm:col-span-2">
+                    <label class="mb-1 block text-sm font-medium text-slate-700 mb-0 text-xs text-slate-500">Column</label>
+                    <select name="column" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs">
                         <option value="price">price</option>
                         <option value="sale_price">sale_price</option>
                     </select>
                 </div>
 
-                <div class="col-sm-2">
-                    <label class="form-label mb-0 small text-muted">Round to</label>
-                    <select name="round_to" class="form-select form-select-sm">
+                <div class="sm:col-span-2">
+                    <label class="mb-1 block text-sm font-medium text-slate-700 mb-0 text-xs text-slate-500">Round to</label>
+                    <select name="round_to" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs">
                         @foreach([0,1,2,3,4] as $r)
                             <option value="{{ $r }}">{{ $r }} decimals</option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="col-sm-4">
+                <div class="sm:col-span-4">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="apply_all"
                                @change="setAll(true)" :checked="applyAll">
@@ -97,27 +97,27 @@
                                @change="setAll(false)" :checked="!applyAll">
                         <label class="form-check-label" for="apply_selected">Apply only to selected rows</label>
                     </div>
-                    <div class="form-text">When "Apply to ALL" is on, row checkboxes are disabled.</div>
+                    <div class="mt-1 text-xs text-slate-500">When "Apply to ALL" is on, row checkboxes are disabled.</div>
                 </div>
             </div>
         </div>
 
         {{-- Products list --}}
-        <div class="card">
-            <div class="card-header bg-light fw-semibold d-flex justify-content-between">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 font-semibold flex justify-between">
                 <span>Active Products ({{ $products->count() }})</span>
-                <span class="small text-muted">Showing 1–{{ $products->count() }} (only active listings are included)</span>
+                <span class="text-xs text-slate-500">Showing 1â€“{{ $products->count() }} (only active listings are included)</span>
             </div>
-            <div class="table-responsive" style="max-height:60vh;overflow:auto;">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+            <div class="overflow-x-auto" style="max-height:60vh;overflow:auto;">
+                <table class="min-w-full divide-y divide-slate-200 text-sm align-middle mb-0">
+                    <thead class="bg-slate-50">
                         <tr>
                             <th style="width:32px;">
                                 <input type="checkbox" @change="togglePage($event)" x-ref="page_select" :disabled="applyAll">
                             </th>
                             <th>Item</th>
-                            <th class="text-end">Price</th>
-                            <th class="text-end">Sale Price</th>
+                            <th class="text-right">Price</th>
+                            <th class="text-right">Sale Price</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -152,10 +152,10 @@
                                            x-model="selectedIds">
                                 </td>
                                 <td>
-                                    <div class="d-flex align-items-center gap-2">
+                                    <div class="flex items-center gap-2">
                                         @if($thumb)
                                             @if($mediaType === 'video')
-                                                <span class="bg-light rounded" style="width:44px;height:44px;display:inline-block;"></span>
+                                                <span class="bg-slate-100 rounded" style="width:44px;height:44px;display:inline-block;"></span>
                                             @else
                                                 <img src="{{ $thumb ?? setting('favicon_url') }}" alt="{{ $p->name }}"
                                                      style="width:44px;height:44px;object-fit:cover;border-radius:.5rem;">
@@ -164,8 +164,8 @@
                                         <div class="fw-medium text-truncate" style="max-width:420px;" title="{{ $p->name }}">{{ $p->name }}</div>
                                     </div>
                                 </td>
-                                <td class="text-end">{{ number_format($p->price,2) }}</td>
-                                <td class="text-end">{{ number_format($p->sale_price ?? $p->discount_price ?? 0, 2) }}</td>
+                                <td class="text-right">{{ number_format($p->price,2) }}</td>
+                                <td class="text-right">{{ number_format($p->sale_price ?? $p->discount_price ?? 0, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -174,40 +174,40 @@
             {{-- No pagination footer: all filtered products are listed above --}}
         </div>
 
-        <div class="mt-3 d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
+        <div class="mt-3 flex flex-col lg:flex-row justify-between items-start gap-3">
             @isset($history)
                 <div class="flex-grow-1">
-                    <div class="card shadow-sm border-0">
-                        <div class="card-header bg-light fw-semibold">Recent Bulk Updates</div>
-                        <div class="card-body p-0">
+                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-0">
+                        <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 font-semibold">Recent Bulk Updates</div>
+                        <div class="p-4 sm:p-5 p-0">
                             @if($history->isEmpty())
-                                <p class="small text-muted m-3">No bulk edits recorded yet.</p>
+                                <p class="text-xs text-slate-500 m-3">No bulk edits recorded yet.</p>
                             @else
-                                <div class="table-responsive">
-                                    <table class="table table-sm mb-0 align-middle">
-                                        <thead class="table-light">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-slate-200 text-sm table-sm mb-0 align-middle">
+                                        <thead class="bg-slate-50">
                                             <tr>
                                                 <th>When</th>
                                                 <th>Direction</th>
                                                 <th>Percent</th>
                                                 <th>Column</th>
                                                 <th>Scope</th>
-                                                <th class="text-end">Products</th>
-                                                <th class="text-end">Variants</th>
+                                                <th class="text-right">Products</th>
+                                                <th class="text-right">Variants</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach($history as $log)
                                                 <tr>
-                                                    <td class="small text-muted">{{ $log->created_at->format('d M Y H:i') }}</td>
+                                                    <td class="text-xs text-slate-500">{{ $log->created_at->format('d M Y H:i') }}</td>
                                                     <td>{{ ucfirst($log->direction) }}</td>
                                                     <td>{{ rtrim(rtrim(number_format($log->percent,2), '0'), '.') }}%</td>
                                                     <td>{{ $log->column }}</td>
-                                                    <td class="small">
+                                                    <td class="text-xs">
                                                         {{ $log->apply_all ? 'All filtered' : ($log->selection_count . ' selected') }}
                                                     </td>
-                                                    <td class="text-end small">{{ $log->affected_products }}</td>
-                                                    <td class="text-end small">{{ $log->affected_variants }}</td>
+                                                    <td class="text-right text-xs">{{ $log->affected_products }}</td>
+                                                    <td class="text-right text-xs">{{ $log->affected_variants }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -219,9 +219,9 @@
                 </div>
             @endisset
 
-            <div class="text-end">
-                <button class="btn btn-primary">
-                    <i class="bi bi-check2-circle me-1"></i> Apply Update
+            <div class="text-right">
+                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+                    <i class="bi bi-check2-circle mr-1"></i> Apply Update
                 </button>
                 <div id="selected-hidden-container"></div>
             </div>
@@ -344,3 +344,5 @@ function bulkPricer(shopId = 0){
 }
 </script>
 @endpush
+
+

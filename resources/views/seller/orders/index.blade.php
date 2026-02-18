@@ -1,317 +1,350 @@
-@extends('layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Shop Orders')
 
-@push('styles')
-<style>
-    .badge.text-capitalize { text-transform: capitalize; }
-    .status-pill.active { text-decoration: none; }
-    /* Clickable rows */
-    tr.order-row { cursor: pointer; }
-    
-    /* Dispute and Appeal Status Pills */
-    .status-pill[href*="disputes"] {
-        background-color: #ffc107 !important;
-        color: #000 !important;
-        border: 1px solid #ffc107;
-    }
-    
-    .status-pill[href*="disputes"]:hover {
-        background-color: #e0a800 !important;
-        border-color: #e0a800;
-    }
-    
-    .status-pill[href*="appeals"] {
-        background-color: #dc3545 !important;
-        color: #fff !important;
-        border: 1px solid #dc3545;
-    }
-    
-    .status-pill[href*="appeals"]:hover {
-        background-color: #c82333 !important;
-        border-color: #c82333;
-    }
-    
-    /* Active states for dispute/appeal pills */
-    .status-pill[href*="disputes"].active,
-    .status-pill[href*="disputes"]:active {
-        background-color: #e0a800 !important;
-        border-color: #e0a800;
-    }
-    
-    .status-pill[href*="appeals"].active,
-    .status-pill[href*="appeals"]:active {
-        background-color: #c82333 !important;
-        border-color: #c82333;
-    }
-    
-    /* Dispute/Appeal table column styling */
-    .dispute-appeal-cell {
-        min-width: 120px;
-    }
-    
-    .dispute-appeal-cell .badge {
-        font-size: 0.75rem;
-    }
-    
-    /* Minimal Action Buttons (only View is used) */
-    .action-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        align-items: center;
-        min-width: 120px;
-    }
-    
-    .action-btn {
-        width: 100%;
-        max-width: 100px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        border-radius: 6px;
-        transition: all 0.2s ease;
-        text-decoration: none;
-        border-width: 1.5px;
-    }
-    
-    .action-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-    
-    .action-btn:active {
-        transform: translateY(0);
-    }
-    
-    /* Button-specific styling (only primary outline used) */
-    .action-btn.btn-outline-primary {
-        color: #0d6efd;
-        border-color: #0d6efd;
-        background-color: rgba(13, 110, 253, 0.05);
-    }
-    
-    .action-btn.btn-outline-primary:hover {
-        background-color: #0d6efd;
-        color: white;
-        border-color: #0d6efd;
-    }
-    
-    /* Removed: warning/danger/success/info variants no longer used */
-    
-    /* Button text styling */
-    .btn-text {
-        font-size: 0.7rem;
-        font-weight: 600;
-        letter-spacing: 0.3px;
-    }
-    
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .action-buttons {
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 6px;
+@section('main')
+@php
+    $disputeCount = $statusCounts['disputes'] ?? 0;
+    $appealCount = $statusCounts['appeals'] ?? 0;
+    $totalOrders = $statusCounts['all'] ?? 0;
+
+    $statuses = [
+        'all' => 'All',
+        'pending' => 'Pending',
+        'processing' => 'Processing',
+        'shipped' => 'Shipped',
+        'completed' => 'Completed',
+        'cancelled' => 'Cancelled',
+    ];
+
+    $statusTone = static function (string $status): string {
+        return match ($status) {
+            'pending' => 'bg-amber-100 text-amber-800 border-amber-200',
+            'processing' => 'bg-sky-100 text-sky-800 border-sky-200',
+            'shipped' => 'bg-indigo-100 text-indigo-800 border-indigo-200',
+            'delivered', 'completed' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+            'cancelled', 'refunded' => 'bg-rose-100 text-rose-800 border-rose-200',
+            default => 'bg-slate-100 text-slate-700 border-slate-200',
+        };
+    };
+
+    $disputeTone = static function (?string $status): string {
+        return match ((string) $status) {
+            'pending' => 'bg-amber-100 text-amber-800 border-amber-200',
+            'under_review' => 'bg-sky-100 text-sky-800 border-sky-200',
+            'resolved', 'mutually_resolved' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+            'rejected', 'cancelled' => 'bg-slate-100 text-slate-700 border-slate-200',
+            default => 'bg-slate-100 text-slate-700 border-slate-200',
+        };
+    };
+
+    $progressMessage = static function ($order): string {
+        $minDays = null;
+        $maxDays = null;
+
+        foreach (($order->items ?? []) as $item) {
+            $sp = $item->shippingProfile;
+            $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
+            $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
+
+            if (is_numeric($pMin)) {
+                $minDays = is_null($minDays) ? (int) $pMin : min($minDays, (int) $pMin);
+            }
+            if (is_numeric($pMax)) {
+                $maxDays = is_null($maxDays) ? (int) $pMax : max($maxDays, (int) $pMax);
+            }
         }
-        
-        .action-btn {
-            width: auto;
-            min-width: 80px;
-            padding: 0.375rem 0.5rem;
+
+        $placedAt = $order->created_at instanceof \Carbon\Carbon
+            ? $order->created_at
+            : ($order->created_at ? \Carbon\Carbon::parse($order->created_at) : null);
+
+        $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
+        $shipEnd = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
+
+        $dispatchBy = $shipEnd?->format('M j') ?? $shipStart?->format('M j');
+
+        $formatDateTime = static function ($value): ?string {
+            if (! $value) {
+                return null;
+            }
+            if (! $value instanceof \Carbon\Carbon) {
+                try {
+                    $value = \Carbon\Carbon::parse($value);
+                } catch (\Throwable $e) {
+                    return null;
+                }
+            }
+            return $value->format('M j, Y \a\t g:i A');
+        };
+
+        if ($order->status === \App\Models\Order::STATUS_COMPLETED) {
+            $time = $formatDateTime($order->completed_at ?: $order->delivered_at);
+            return $time ? 'Completed on '.$time : 'Completed';
         }
-        
-        .btn-text {
-            display: none;
+
+        if ($order->status === \App\Models\Order::STATUS_DELIVERED) {
+            $time = $formatDateTime($order->delivered_at);
+            return $time ? 'Delivered on '.$time : 'Delivered';
         }
-        
-        .action-btn i {
-            font-size: 1rem;
+
+        if ($order->status === \App\Models\Order::STATUS_SHIPPED) {
+            $time = $formatDateTime($order->shipped_at);
+            return $time ? 'Shipped on '.$time : 'Shipped';
         }
-    }
-    
-    /* Removed: hover styles for legacy actions (dispute/cancel/process/ship/deliver) */
-    
-    /* Status Progress Indicator Styles */
-    .status-progress {
-        margin-bottom: 12px;
-        padding: 8px 0;
-    }
-    
-    .progress-indicator {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        position: relative;
-        max-width: 80px;
-        margin: 0 auto;
-    }
-    
-    .progress-step {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        flex: 1;
-    }
-    
-    .step-dot {
-        width: 8px;
-        height: 8px;
-        background-color: #e9ecef;
-        border-radius: 50%;
-        border: 2px solid #dee2e6;
-        transition: all 0.3s ease;
-        z-index: 2;
-    }
-    
-    .step-line {
-        position: absolute;
-        top: 4px;
-        left: 50%;
-        width: 100%;
-        height: 2px;
-        background-color: #dee2e6;
-        transform: translateX(-50%);
-        z-index: 1;
-    }
-    
-    .progress-step.completed .step-dot {
-        background-color: #198754;
-        border-color: #198754;
-        box-shadow: 0 0 0 2px rgba(25, 135, 84, 0.2);
-    }
-    
-    .progress-step.current .step-dot {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.2);
-        transform: scale(1.2);
-    }
-    
-    .progress-step.completed .step-line {
-        background-color: #198754;
-    }
-    
-    .progress-step.current .step-line {
-        background-color: #0d6efd;
-    }
-    
-    /* Responsive adjustments for status progress */
-    @media (max-width: 768px) {
-        .status-progress {
-            margin-bottom: 8px;
-        }
-        
-        .progress-indicator {
-            max-width: 60px;
-        }
-        
-        .step-dot {
-            width: 6px;
-            height: 6px;
-        }
-        
-        .step-line {
-            top: 3px;
-        }
-    }
-</style>
-@endpush
+
+        return $dispatchBy ? 'Dispatch by '.$dispatchBy : 'Dispatch soon';
+    };
+@endphp
+
+<section class="bg-slate-50 py-8 md:py-10">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+            @include('seller.partials.sidebar')
+
+            <div class="space-y-6">
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Orders for {{ $shop->name ?? $user->name }}</h1>
+                            <p class="mt-1 text-sm text-slate-500">Track fulfillment, disputes, and appeals from one place.</p>
+                        </div>
+                        @if($disputeCount > 0 || $appealCount > 0)
+                            <div class="flex flex-wrap gap-2">
+                                @if($disputeCount > 0)
+                                    <a href="{{ route('seller.orders.index', ['status' => 'disputes']) }}" class="inline-flex items-center rounded-xl border border-amber-300 bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800">
+                                        <i class="fa-solid fa-triangle-exclamation mr-2"></i>
+                                        Disputes ({{ $disputeCount }})
+                                    </a>
+                                @endif
+                                @if($appealCount > 0)
+                                    <a href="{{ route('seller.orders.index', ['status' => 'appeals']) }}" class="inline-flex items-center rounded-xl border border-rose-300 bg-rose-100 px-3 py-2 text-sm font-semibold text-rose-800">
+                                        <i class="fa-solid fa-gavel mr-2"></i>
+                                        Appeals ({{ $appealCount }})
+                                    </a>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                @if($disputeCount > 0 || $appealCount > 0)
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-amber-700">Active Disputes</p>
+                            <p class="mt-2 text-2xl font-extrabold text-slate-900">{{ $disputeCount }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-rose-200 bg-white p-4 shadow-sm">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-rose-700">Pending Appeals</p>
+                            <p class="mt-2 text-2xl font-extrabold text-slate-900">{{ $appealCount }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-sky-200 bg-white p-4 shadow-sm">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-sky-700">Total Orders</p>
+                            <p class="mt-2 text-2xl font-extrabold text-slate-900">{{ $totalOrders }}</p>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <form method="GET" action="{{ route('seller.orders.index') }}" class="space-y-3">
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($statuses as $key => $label)
+                                @php
+                                    $count = $statusCounts[$key] ?? 0;
+                                    $active = $currentStatus === $key;
+                                @endphp
+                                <a href="{{ route('seller.orders.index', ['status' => $key, 'search' => $searchId]) }}"
+                                   class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold {{ $active ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100' }}">
+                                    {{ $label }} ({{ $count }})
+                                </a>
+                            @endforeach
+
+                            <a href="{{ route('seller.orders.index', ['status' => 'disputes', 'search' => $searchId]) }}"
+                               class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold {{ $currentStatus === 'disputes' ? 'border-amber-500 bg-amber-500 text-white' : 'border-amber-300 bg-amber-100 text-amber-800' }}">
+                                Disputes ({{ $disputeCount }})
+                            </a>
+                            <a href="{{ route('seller.orders.index', ['status' => 'appeals', 'search' => $searchId]) }}"
+                               class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold {{ $currentStatus === 'appeals' ? 'border-rose-600 bg-rose-600 text-white' : 'border-rose-300 bg-rose-100 text-rose-800' }}">
+                                Appeals ({{ $appealCount }})
+                            </a>
+                        </div>
+
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <input type="hidden" name="status" value="{{ $currentStatus }}">
+                            <div class="relative w-full sm:max-w-sm">
+                                <i class="fa-solid fa-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="search" name="search" value="{{ $searchId }}" placeholder="Search by order ID"
+                                       class="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                            </div>
+                            <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                                Apply
+                            </button>
+                            @if($searchId)
+                                <a href="{{ route('seller.orders.index', ['status' => $currentStatus]) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                                    Clear
+                                </a>
+                            @endif
+                        </div>
+                    </form>
+                </div>
+
+                @if($orders->isNotEmpty())
+                    <div class="space-y-3 md:hidden">
+                        @foreach($orders as $order)
+                            @php
+                                $qtyTotal = $order->items->sum('quantity');
+                                $symbol = shop_currency($order->shop ?? null);
+                                $dispute = $order->disputes()->latest()->first();
+                                $statusClass = $statusTone((string) $order->status);
+                            @endphp
+                            <a href="{{ route('seller.orders.show', $order) }}" class="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="text-sm font-bold text-slate-900">Order #{{ $order->id }}</p>
+                                    <p class="text-xs text-slate-500">{{ optional($order->created_at)->format('d M Y') }}</p>
+                                </div>
+
+                                <p class="mt-2 text-sm text-slate-700">{{ $order->full_name }}</p>
+                                <div class="mt-2 flex items-center justify-between text-sm">
+                                    <p class="text-slate-500">Qty: {{ $qtyTotal }}</p>
+                                    <p class="font-bold text-slate-900">{{ $symbol }} {{ number_format((float)$order->total_amount, 2) }}</p>
+                                </div>
+
+                                <div class="mt-2 flex flex-wrap items-center gap-2">
+                                    <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }}">{{ ucfirst($order->status) }}</span>
+                                    @if($order->status === \App\Models\Order::STATUS_PENDING)
+                                        <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Pending payment</span>
+                                    @endif
+                                </div>
+
+                                <p class="mt-2 text-xs text-slate-500">{{ $progressMessage($order) }}</p>
+
+                                @if($dispute)
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $disputeTone((string) $dispute->status) }}">
+                                            Dispute: {{ ucfirst(str_replace('_', ' ', (string) $dispute->status)) }}
+                                        </span>
+                                        @if($dispute->appeal)
+                                            <span class="inline-flex rounded-full border border-rose-200 bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-800">
+                                                Appeal: {{ ucfirst((string) $dispute->appeal->status) }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                <p class="mt-2 text-xs text-slate-500">Tracking: {{ $order->tracking_no ?: '-' }}</p>
+                            </a>
+                        @endforeach
+
+                        @if($orders->hasPages())
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                                {{ $orders->appends(request()->only('status','search'))->links('pagination::tailwind') }}
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 text-sm">
+                                <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">
+                                    <tr>
+                                        <th class="px-4 py-3">#</th>
+                                        <th class="px-4 py-3">Buyer</th>
+                                        <th class="px-4 py-3 text-center">Qty</th>
+                                        <th class="px-4 py-3 text-right">Amount</th>
+                                        <th class="px-4 py-3">Status</th>
+                                        <th class="px-4 py-3">Dispute/Appeal</th>
+                                        <th class="px-4 py-3">Tracking</th>
+                                        <th class="px-4 py-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    @foreach($orders as $order)
+                                        @php
+                                            $row = $orders->firstItem() + $loop->index;
+                                            $qtyTotal = $order->items->sum('quantity');
+                                            $dispute = $order->disputes()->latest()->first();
+                                            $statusClass = $statusTone((string) $order->status);
+                                        @endphp
+                                        <tr class="order-row cursor-pointer hover:bg-slate-50" data-href="{{ route('seller.orders.show', $order) }}" tabindex="0" aria-label="View order #{{ $order->id }} details">
+                                            <td class="px-4 py-3 font-semibold text-slate-900">{{ $row }}</td>
+                                            <td class="px-4 py-3">
+                                                <p class="font-semibold text-slate-900">{{ $order->full_name }}</p>
+                                                <p class="text-xs text-slate-500">{{ $order->phone ?: '-' }}</p>
+                                            </td>
+                                            <td class="px-4 py-3 text-center text-slate-700">{{ $qtyTotal }}</td>
+                                            <td class="px-4 py-3 text-right font-semibold text-slate-900">{{ shop_currency($order->shop ?? null) }} {{ number_format((float)$order->total_amount,2) }}</td>
+                                            <td class="px-4 py-3">
+                                                <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }}">{{ ucfirst($order->status) }}</span>
+                                                @if($order->status === \App\Models\Order::STATUS_PENDING)
+                                                    <p class="mt-1 text-[11px] font-semibold text-amber-700">Pending payment</p>
+                                                @endif
+                                                @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
+                                                    <p class="mt-1 text-[11px] text-rose-600">{{ \Illuminate\Support\Str::limit($order->cancel_reason, 50) }}</p>
+                                                @endif
+                                                <p class="mt-1 text-[11px] text-slate-500">{{ $progressMessage($order) }}</p>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                @if($dispute)
+                                                    <div class="flex flex-wrap gap-1">
+                                                        <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $disputeTone((string) $dispute->status) }}">
+                                                            {{ ucfirst(str_replace('_', ' ', (string) $dispute->status)) }}
+                                                        </span>
+                                                        @if($dispute->appeal)
+                                                            <span class="inline-flex rounded-full border border-rose-200 bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-800">
+                                                                Appeal: {{ ucfirst((string) $dispute->appeal->status) }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <span class="text-xs text-slate-400">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3 text-slate-700">{{ $order->tracking_no ?: '-' }}</td>
+                                            <td class="px-4 py-3 text-center">
+                                                <a href="{{ route('seller.orders.show', $order) }}" class="inline-flex items-center rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+                                                    <i class="fa-regular fa-eye mr-1"></i>
+                                                    View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        @if($orders->hasPages())
+                            <div class="border-t border-slate-200 bg-white px-4 py-3">
+                                {{ $orders->appends(request()->only('status','search'))->links('pagination::tailwind') }}
+                            </div>
+                        @endif
+                    </div>
+                @else
+                    <div class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-800 shadow-sm">
+                        No orders found for your shop.
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</section>
+@endsection
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Bootstrap tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-    
-    // Add click tracking for action buttons
-    document.querySelectorAll('.action-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            // Add a small visual feedback
-            this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                this.style.transform = '';
-            }, 150);
-            
-            // Track button clicks (you can add analytics here)
-            const action = this.textContent.trim();
-            const orderId = this.closest('tr').querySelector('th').textContent.replace('#', '');
-            console.log(`Action "${action}" clicked for Order #${orderId}`);
-        });
-    });
-    
-    // Add hover effects for dispute buttons
-    document.querySelectorAll('.dispute-btn').forEach(button => {
-        button.addEventListener('mouseenter', function() {
-            this.style.boxShadow = '0 4px 12px rgba(255, 193, 7, 0.3)';
-        });
-        
-        button.addEventListener('mouseleave', function() {
-            this.style.boxShadow = '';
-        });
-    });
-    
-    // Add confirmation for destructive actions
-    document.querySelectorAll('.cancel-btn, .process-btn, .ship-btn, .deliver-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            const action = this.textContent.trim();
-            const orderId = this.closest('tr').querySelector('th').textContent.replace('#', '');
-            
-            // Show confirmation for important actions
-            if (action === 'Cancel') {
-                if (!confirm(`Are you sure you want to cancel Order #${orderId}?`)) {
-                    e.preventDefault();
-                    return false;
-                }
-            }
-        });
-    });
-    
-    // Add keyboard navigation support
-    document.querySelectorAll('.action-btn').forEach(button => {
-        button.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                this.click();
-            }
-        });
-    });
-    
-    // Add loading states for buttons that trigger modals
-    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
-        button.addEventListener('click', function() {
-            const originalText = this.innerHTML;
-            this.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading...';
-            this.disabled = true;
-            
-            // Reset button after modal is shown
-            setTimeout(() => {
-                this.innerHTML = originalText;
-                this.disabled = false;
-            }, 1000);
-        });
-    });
-
-    // Make table rows clickable (navigate to order details)
-    const isInteractive = (el) => {
+document.addEventListener('DOMContentLoaded', function () {
+    function isInteractive(el) {
         if (!el) return false;
-        const selector = 'a,button,input,select,textarea,.action-buttons *,[data-bs-toggle]';
-        return el.closest(selector) !== null;
-    };
-    document.querySelectorAll('tr.order-row').forEach(row => {
-        row.addEventListener('click', (e) => {
-            if (isInteractive(e.target)) return; // ignore clicks on controls/links
+        return el.closest('a,button,input,select,textarea,[data-bs-toggle]') !== null;
+    }
+
+    document.querySelectorAll('tr.order-row').forEach(function (row) {
+        row.addEventListener('click', function (e) {
+            if (isInteractive(e.target)) return;
             const href = row.getAttribute('data-href');
             if (href) window.location.href = href;
         });
-        row.addEventListener('keydown', (e) => {
+
+        row.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 const href = row.getAttribute('data-href');
@@ -322,455 +355,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
-
-@section('content')
-<div class="content">
-    @php
-        // Define dispute and appeal counts at the top so they're available throughout the view
-        $disputeCount = $statusCounts['disputes'] ?? 0;
-        $appealCount = $statusCounts['appeals'] ?? 0;
-        $totalOrders = $statusCounts['all'] ?? 0;
-    @endphp
-
-    {{-- HEADER --}}
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
-        <h2 class="mb-0 text-success">
-            <i class="fa-solid fa-cart-shopping me-2"></i>
-            Orders for {{ $shop->name ?? $user->name }}
-        </h2>
-        
-        @if($disputeCount > 0 || $appealCount > 0)
-        <div class="d-flex gap-2">
-            @if($disputeCount > 0)
-            <a href="{{ route('orders.index', ['status' => 'disputes']) }}" 
-               class="btn btn-warning">
-                <i class="bi bi-exclamation-triangle me-1"></i>
-                View Disputes ({{ $disputeCount }})
-            </a>
-            @endif
-            
-            @if($appealCount > 0)
-            <a href="{{ route('orders.index', ['status' => 'appeals']) }}" 
-               class="btn btn-danger">
-                <i class="bi bi-gavel me-1"></i>
-                View Appeals ({{ $appealCount }})
-            </a>
-            @endif
-        </div>
-        @endif
-    </div>
-
-    {{-- DISPUTE & APPEAL OVERVIEW --}}
-    @if($disputeCount > 0 || $appealCount > 0)
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card border-warning">
-                <div class="card-body text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <i class="bi bi-exclamation-triangle text-warning me-2" style="font-size: 1.5rem;"></i>
-                        <h5 class="mb-0 text-warning">{{ $disputeCount }}</h5>
-                    </div>
-                    <p class="mb-0 text-muted">Active Disputes</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card border-danger">
-                <div class="card-body text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <i class="bi bi-gavel text-danger me-2" style="font-size: 1.5rem;"></i>
-                        <h5 class="mb-0 text-danger">{{ $appealCount }}</h5>
-                    </div>
-                    <p class="mb-0 text-muted">Pending Appeals</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card border-info">
-                <div class="card-body text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <i class="bi bi-box text-info me-2" style="font-size: 1.5rem;"></i>
-                        <h5 class="mb-0 text-info">{{ $totalOrders }}</h5>
-                    </div>
-                    <p class="mb-0 text-muted">Total Orders</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-
-    {{-- FILTERS: Status pills + Search by ID --}}
-    <form method="GET" action="{{ route('orders.index') }}" class="row gx-2 gy-2 align-items-center mb-4">
-        {{-- Preserve status --}}
-        <input type="hidden" name="status" value="{{ $currentStatus }}">
-
-        <div class="col-auto">
-            <div class="btn-group" role="group" aria-label="Order status filters">
-                @php
-                    $statuses = [
-                        'all'        => 'All',
-                        'pending'    => 'Pending',
-                        'processing' => 'Processing',
-                        'shipped'    => 'Shipped',
-                        'completed'  => 'Completed',
-                        'cancelled'  => 'Cancelled',
-                    ];
-                @endphp
-                @foreach($statuses as $key => $label)
-                    @php
-                        $count    = $statusCounts[$key] ?? 0;
-                        $isActive = $currentStatus === $key;
-                    @endphp
-                    <a href="{{ route('orders.index', ['status'=>$key, 'search'=>$searchId]) }}"
-                       class="badge {{ $isActive ? 'bg-primary' : 'bg-secondary' }} text-capitalize me-1 status-pill">
-                        {{ $label }} ({{ $count }})
-                    </a>
-                @endforeach
-
-                {{-- Dispute and Appeal Status Pills --}}
-                @php
-                    $disputeCount = $statusCounts['disputes'] ?? 0;
-                    $appealCount = $statusCounts['appeals'] ?? 0;
-                @endphp
-                
-                <a href="{{ route('orders.index', ['status'=>'disputes', 'search'=>$searchId]) }}"
-                   class="badge {{ $currentStatus === 'disputes' ? 'bg-warning' : 'bg-warning' }} text-dark me-1 status-pill">
-                    <i class="bi bi-exclamation-triangle"></i> Disputes ({{ $disputeCount }})
-                </a>
-                
-                <a href="{{ route('orders.index', ['status'=>'appeals', 'search'=>$searchId]) }}"
-                   class="badge {{ $currentStatus === 'appeals' ? 'bg-danger' : 'bg-danger' }} text-white me-1 status-pill">
-                    <i class="bi bi-gavel"></i> Appeals ({{ $appealCount }})
-                </a>
-            </div>
-        </div>
-
-        <div class="col-auto">
-            <div class="input-group">
-                <input type="search"
-                       name="search"
-                       class="form-control"
-                       placeholder="Search by Order ID"
-                       value="{{ $searchId }}">
-                <button class="btn btn-outline-secondary" type="submit">
-                    <i class="fa-solid fa-search"></i>
-                </button>
-            </div>
-        </div>
-    </form>
-
-    @if ($orders->isNotEmpty())
-        {{-- ORDERS (Mobile Cards) --}}
-        <div class="d-block d-md-none mb-3">
-            <div class="list-group">
-                @foreach ($orders as $order)
-                    @php
-                        $qtyTotal = $order->items->sum('quantity');
-                        $symbol   = shop_currency($order->shop ?? null);
-                        $dispute  = $order->disputes()->latest()->first();
-                        // Dispatch-by window
-                        $minDays = null; $maxDays = null;
-                        foreach (($order->items ?? []) as $it) {
-                            $sp = $it->shippingProfile;
-                            $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
-                            $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
-                            if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
-                            if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
-                        }
-                        $placedAt = $order->created_at instanceof \Carbon\Carbon ? $order->created_at : ($order->created_at ? \Carbon\Carbon::parse($order->created_at) : null);
-                        $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
-                        $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
-                        $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
-                        $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
-                        $dispatchBy = $shipEndLabel ?? $shipStartLabel;
-                        $formatDateTime = static function ($value) {
-                            if (! $value) {
-                                return null;
-                            }
-                            if (! $value instanceof \Carbon\Carbon) {
-                                try {
-                                    $value = \Carbon\Carbon::parse($value);
-                                } catch (\Throwable $e) {
-                                    return null;
-                                }
-                            }
-                            return $value->format('M j, Y \a\t g:i A');
-                        };
-                        if ($order->status === \App\Models\Order::STATUS_COMPLETED) {
-                            $progressMessage = $formatDateTime($order->completed_at ?: $order->delivered_at)
-                                ? 'Completed on '.$formatDateTime($order->completed_at ?: $order->delivered_at)
-                                : 'Completed';
-                        } elseif ($order->status === \App\Models\Order::STATUS_DELIVERED) {
-                            $progressMessage = $formatDateTime($order->delivered_at)
-                                ? 'Delivered on '.$formatDateTime($order->delivered_at)
-                                : 'Delivered';
-                        } elseif ($order->status === \App\Models\Order::STATUS_SHIPPED) {
-                            $progressMessage = $formatDateTime($order->shipped_at)
-                                ? 'Shipped on '.$formatDateTime($order->shipped_at)
-                                : 'Shipped';
-                        } elseif ($dispatchBy) {
-                            $progressMessage = 'Dispatch by '.$dispatchBy;
-                        } else {
-                            $progressMessage = 'Dispatch soon';
-                        }
-                    @endphp
-
-                    <a href="{{ route('seller.orders.show', $order) }}" class="list-group-item list-group-item-action p-3">
-                        <div class="d-flex justify-content-between align-items-start mb-1">
-                            <div class="fw-semibold">#{{ $order->id }}</div>
-                            <div class="text-muted small">{{ optional($order->created_at)->format('d M Y') }}</div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="small text-muted">Buyer</div>
-                            <div class="text-truncate">{{ $order->full_name }}</div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div class="small"><span class="text-muted">Qty:</span> {{ $qtyTotal }}</div>
-                            <div class="fw-semibold">{{ $symbol }} {{ number_format($order->total_amount, 2) }}</div>
-                        </div>
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <span class="badge {{ $order->getStatusBadgeClass() }} text-capitalize">{{ $order->status }}</span>
-                            @if($order->status === \App\Models\Order::STATUS_PENDING)
-                                <span class="badge bg-warning text-dark">Pending payment</span>
-                            @endif
-                            @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
-                                <small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
-                            @endif
-                        </div>
-                        <div class="small text-muted mb-2">{{ $progressMessage }}</div>
-                        @if($dispute)
-                            <div class="small mb-1">
-                                @if($dispute->appeal)
-                                    <span class="badge bg-danger text-white me-1"><i class="bi bi-gavel"></i> Appeal: {{ ucfirst($dispute->appeal->status) }}</span>
-                                @endif
-                                @if($dispute->status === 'pending')
-                                    <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Dispute: Pending</span>
-                                @elseif($dispute->status === 'under_review')
-                                    <span class="badge bg-info text-dark"><i class="bi bi-search"></i> Dispute: Under review</span>
-                                @elseif(in_array($dispute->status, ['resolved','mutually_resolved']))
-                                    <span class="badge bg-success text-dark"><i class="bi bi-check-circle"></i> Dispute: Resolved</span>
-                                @elseif(in_array($dispute->status, ['rejected','cancelled']))
-                                    <span class="badge bg-secondary text-dark"><i class="bi bi-x-circle"></i> Dispute: {{ ucfirst($dispute->status) }}</span>
-                                @endif
-                            </div>
-                        @endif
-                        <div class="small text-muted">
-                            @if($order->tracking_no)
-                                Tracking: {{ $order->tracking_no }}
-                            @else
-                                Tracking: —
-                            @endif
-                        </div>
-                    </a>
-                @endforeach
-            </div>
-            @if ($orders->hasPages())
-                <div class="d-flex justify-content-center mt-3">
-                    {{ $orders->appends(request()->only('status','search'))->links('pagination::bootstrap-5') }}
-                </div>
-            @endif
-        </div>
-
-        {{-- ORDERS TABLE (Desktop/Tablet) --}}
-        <div class="card shadow-sm border-0 d-none d-md-block">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped align-middle mb-0">
-                        <thead class="table-light text-nowrap">
-                            <tr>
-                                <th>#</th>
-                                <th>Buyer</th>
-                                <th>Phone</th>
-                                <th class="text-center">Qty</th>
-                                <th class="text-end">Amount</th>
-                                <th>Status</th>
-                                <th class="dispute-appeal-cell">Dispute/Appeal</th>
-                                <th>Tracking No</th>
-                                <!-- <th>Placed</th> -->
-                                <th class="text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($orders as $order)
-                                @php
-                                    $row      = $orders->firstItem() + $loop->index;
-                                    $qtyTotal = $order->items->sum('quantity');
-                                    $symbol   = shop_currency($order->shop ?? null);
-                                    $dispute  = $order->disputes()->latest()->first();
-                                @endphp
-                                <tr class="order-row" data-href="{{ route('seller.orders.show', $order) }}" tabindex="0" aria-label="View order #{{ $order->id }} details">
-                                    <th scope="row">{{ $row }}</th>
-                                    <td>{{ $order->full_name }}</td>
-                                    <td>{{ $order->phone ?? '—' }}</td>
-                                    <td class="text-center">{{ $qtyTotal }}</td>
-                                    <td class="text-end">{{ shop_currency($order->shop ?? null) }} {{ number_format($order->total_amount,2) }}</td>
-                                    <td>
-                                        <a href="{{ route('orders.index', ['status'=>$order->status, 'search'=>$searchId]) }}"
-                                           class="badge {{ $order->getStatusBadgeClass() }} text-capitalize">
-                                            {{ $order->status }}
-                                        </a>
-                                        @if($order->status === \App\Models\Order::STATUS_PENDING)
-                                            <div class="small text-warning fw-semibold mt-1">Pending payment</div>
-                                        @endif
-                                        @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
-                                            <br><small class="text-danger">{{ Str::limit($order->cancel_reason, 50) }}</small>
-                                        @endif
-                                        @php
-                                            $minDays = null; $maxDays = null;
-                                            foreach (($order->items ?? []) as $it) {
-                                                $sp = $it->shippingProfile;
-                                                $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
-                                                $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
-                                                if (is_numeric($pMin)) { $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin); }
-                                                if (is_numeric($pMax)) { $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax); }
-                                            }
-                                            $placedAt = $order->created_at instanceof \Carbon\Carbon ? $order->created_at : ($order->created_at ? \Carbon\Carbon::parse($order->created_at) : null);
-                                            $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
-                                            $shipEnd   = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
-                                            $shipStartLabel = $shipStart && $placedAt && $shipStart->isSameDay($placedAt) ? 'today' : ($shipStart? $shipStart->format('M j') : null);
-                                            $shipEndLabel   = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
-                                            $dispatchBy = $shipEndLabel ?? $shipStartLabel;
-                                            $formatDateTime = static function ($value) {
-                                                if (! $value) {
-                                                    return null;
-                                                }
-                                                if (! $value instanceof \Carbon\Carbon) {
-                                                    try {
-                                                        $value = \Carbon\Carbon::parse($value);
-                                                    } catch (\Throwable $e) {
-                                                        return null;
-                                                    }
-                                                }
-                                                return $value->format('M j, Y \a\t g:i A');
-                                            };
-                                            if ($order->status === \App\Models\Order::STATUS_COMPLETED) {
-                                                $progressMessage = $formatDateTime($order->completed_at ?: $order->delivered_at)
-                                                    ? 'Completed on '.$formatDateTime($order->completed_at ?: $order->delivered_at)
-                                                    : 'Completed';
-                                            } elseif ($order->status === \App\Models\Order::STATUS_DELIVERED) {
-                                                $progressMessage = $formatDateTime($order->delivered_at)
-                                                    ? 'Delivered on '.$formatDateTime($order->delivered_at)
-                                                    : 'Delivered';
-                                            } elseif ($order->status === \App\Models\Order::STATUS_SHIPPED) {
-                                                $progressMessage = $formatDateTime($order->shipped_at)
-                                                    ? 'Shipped on '.$formatDateTime($order->shipped_at)
-                                                    : 'Shipped';
-                                            } elseif ($dispatchBy) {
-                                                $progressMessage = 'Dispatch by '.$dispatchBy;
-                                            } else {
-                                                $progressMessage = 'Dispatch soon';
-                                            }
-                                        @endphp
-                                        <div class="small text-muted mt-1">{{ $progressMessage }}</div>
-                                    </td>
-                                    <td class="dispute-appeal-cell">
-                                        @if($dispute)
-                                            @if($dispute->appeal)
-                                                <div class="mb-1">
-                                                    <span class="badge bg-danger text-white">
-                                                        <i class="bi bi-gavel"></i> Appeal: {{ ucfirst($dispute->appeal->status) }}
-                                                    </span>
-                                                </div>
-                                            @endif
-                                            
-                                            <div class="mb-1">
-                                                @if($dispute->status === 'pending')
-                                                <span class="badge bg-warning text-dark">
-                                                    <i class="bi bi-exclamation-triangle"></i> Dispute: {{ ucfirst($dispute->status) }}
-                                                </span>
-                                                @elseif($dispute->status === 'under_review')
-                                                <span class="badge bg-info text-dark">
-                                                    <i class="bi bi-search"></i> Dispute: {{ ucfirst($dispute->status) }}
-                                                </span>
-                                                @elseif($dispute->status === 'resolved' || $dispute->status === 'mutually_resolved')
-                                                <span class="badge bg-success text-dark">
-                                                    <i class="bi bi-check-circle"></i> Dispute: {{ ucfirst($dispute->status) }}
-                                                </span>
-                                                @endif
-                                            </div>
-                                            
-                                            @if($dispute->status === 'pending')
-                                                <small class="text-warning d-block">
-                                                    <i class="bi bi-clock"></i> Awaiting response
-                                                </small>
-                                            @elseif($dispute->status === 'under_review')
-                                                <small class="text-info d-block">
-                                                    <i class="bi bi-search"></i> Under review
-                                                </small>
-                                            @elseif($dispute->status === 'resolved')
-                                                <small class="text-success d-block">
-                                                    <i class="bi bi-check-circle"></i> Resolved
-                                                </small>
-                                            @elseif($dispute->status === 'mutually_resolved')
-                                                <small class="text-success d-block">
-                                                    <i class="bi bi-handshake"></i> Mutually Resolved
-                                                </small>
-                                            @endif
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $order->tracking_no ?? '—' }}</td>
-                                    <!-- <td>{{ $order->created_at->format('d M Y') }}</td> -->
-                                    <td class="text-center">
-                                        {{-- Status Progress Indicator --}}
-                                        <div class="status-progress mb-2">
-                                            @php
-                                                $statusOrder = ['pending', 'processing', 'shipped', 'delivered'];
-                                                $currentIndex = array_search($order->status, $statusOrder);
-                                            @endphp
-                                            
-                                            @if($currentIndex !== false)
-                                                <div class="progress-indicator">
-                                                    @foreach($statusOrder as $index => $status)
-                                                        <div class="progress-step {{ $index <= $currentIndex ? 'completed' : '' }} {{ $index === $currentIndex ? 'current' : '' }}">
-                                                            <div class="step-dot"></div>
-                                                            @if($index < count($statusOrder) - 1)
-                                                                <div class="step-line"></div>
-                                                            @endif
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                                <small class="text-muted d-block mt-1">{{ ucfirst($order->status) }}</small>
-                                            @endif
-                                        </div>
-                                        
-                                        <div class="action-buttons">
-                                            {{-- View Order Only; manage actions on the Show page --}}
-                                            <a href="{{ route('seller.orders.show', $order) }}"
-                                               class="btn btn-sm btn-outline-primary action-btn"
-                                               data-bs-toggle="tooltip"
-                                               data-bs-placement="top"
-                                               title="View Order Details">
-                                                <i class="bi bi-eye"></i>
-                                                <span class="btn-text">View</span>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {{-- PAGINATION --}}
-            @if ($orders->hasPages())
-                <div class="card-footer bg-white border-0">
-                    <div class="d-flex justify-content-center">
-                        {{ $orders->appends(request()->only('status','search'))->links('pagination::bootstrap-5') }}
-                    </div>
-                </div>
-            @endif
-        </div>
-    @else
-        {{-- EMPTY STATE --}}
-        <div class="alert alert-info d-flex align-items-center" role="alert">
-            <i class="fa-solid fa-circle-info me-2"></i>
-            No orders found for your shop.
-        </div>
-    @endif
-</div>
-@endsection

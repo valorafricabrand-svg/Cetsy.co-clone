@@ -1,4 +1,4 @@
-{{-- resources/views/products/partials/_processing_time_form.blade.php --}}
+﻿{{-- resources/views/products/partials/_processing_time_form.blade.php --}}
 @php
   // Decide if "Custom" should be shown as selected and fields visible
   $showCustomProcessing = old('processing_time_id')==='custom'
@@ -6,15 +6,15 @@
         && ($currentProfile->processing_custom_min || $currentProfile->processing_custom_max));
 @endphp
 
-<div class="col-md-4">
-  <label class="form-label">Processing time</label>
-  <select name="processing_time_id" id="processing-time-select" class="form-select @error('processing_time_id') is-invalid @enderror">
-    <option value="">Select…</option>
+<div class="md:col-span-4">
+  <label class="mb-1 block text-sm font-medium text-slate-700">Processing time</label>
+  <select name="processing_time_id" id="processing-time-select" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_time_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">
+    <option value="">Selectâ€¦</option>
     @foreach(($processingTimes ?? collect()) as $pt)
       @php
         $label = isset($pt->days)
           ? ($pt->days.' day(s)')
-          : trim(($pt->start_day ?? '').'–'.($pt->end_day ?? '').' day(s)');
+          : trim(($pt->start_day ?? '').'â€“'.($pt->end_day ?? '').' day(s)');
       @endphp
       <option value="{{ $pt->id }}" @selected(old('processing_time_id', $currentProfile->processing_time_id) == $pt->id)>
         {{ $label ?: 'Processing preset' }}
@@ -22,24 +22,24 @@
     @endforeach
     <option value="custom" @selected($showCustomProcessing)>Custom</option>
   </select>
-  @error('processing_time_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+  @error('processing_time_id')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
 </div>
 
 {{-- Custom processing window (auto toggled) --}}
-<div class="col-md-2 processing-custom-wrap" style="display: {{ $showCustomProcessing ? 'block' : 'none' }};">
-  <label class="form-label">Min days</label>
+<div class="md:col-span-2 processing-custom-wrap" style="display: {{ $showCustomProcessing ? 'block' : 'none' }};">
+  <label class="mb-1 block text-sm font-medium text-slate-700">Min days</label>
   <input type="number" min="1" name="processing_custom_min"
-         class="form-control @error('processing_custom_min') is-invalid @enderror"
+         class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_custom_min') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
          value="{{ old('processing_custom_min', $currentProfile->processing_custom_min) }}">
-  @error('processing_custom_min')<div class="invalid-feedback">{{ $message }}</div>@enderror
+  @error('processing_custom_min')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
 </div>
-<div class="col-md-2 processing-custom-wrap" style="display: {{ $showCustomProcessing ? 'block' : 'none' }};">
-  <label class="form-label">Max days</label>
+<div class="md:col-span-2 processing-custom-wrap" style="display: {{ $showCustomProcessing ? 'block' : 'none' }};">
+  <label class="mb-1 block text-sm font-medium text-slate-700">Max days</label>
   <input type="number" min="1" name="processing_custom_max"
-         class="form-control @error('processing_custom_max') is-invalid @enderror"
+         class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_custom_max') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
          value="{{ old('processing_custom_max', $currentProfile->processing_custom_max) }}">
-  @error('processing_custom_max')<div class="invalid-feedback">{{ $message }}</div>@enderror
-  <div class="form-hint">Shown if “Custom” is selected.</div>
+  @error('processing_custom_max')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+  <div class="form-hint">Shown if â€œCustomâ€ is selected.</div>
 </div>
 
 @push('scripts')
@@ -57,4 +57,5 @@
   });
   </script>
 @endpush
+
 

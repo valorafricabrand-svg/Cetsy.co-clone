@@ -1,4 +1,4 @@
-{{-- ===== ORDER JOURNEY & ACTIONS  Font Awesome icons ===== --}}
+﻿{{-- ===== ORDER JOURNEY & ACTIONS  Font Awesome icons ===== --}}
 
 @php
     /** 1) Status + label & FA icon */
@@ -34,12 +34,12 @@
 .stepper .upcoming .line {background:var(--step-upcoming)}
 </style>
 
-<div class="card shadow-sm mb-5 border-0">
-  <div class="card-body">
+<div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-5 border-0">
+  <div class="p-4 sm:p-5">
 
     {{-- Heading --}}
-    <h5 class="fw-semibold text-muted d-flex align-items-center gap-2 mb-4">
-      <i class="fas fa-route fs-4 text-info"></i>
+    <h5 class="font-semibold text-slate-500 flex items-center gap-2 mb-4">
+      <i class="fas fa-route fs-4 text-sky-600"></i>
       Order&nbsp;Progress
     </h5>
 
@@ -59,7 +59,7 @@
           <div class="label {{ $state === 'active' ? 'fw-semibold text-dark' : 'text-muted' }}">
             {{ $meta['label'] }}
             @if($state === 'active')
-              <span class="badge bg-primary ms-1">Now</span>
+              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary ml-1">Now</span>
             @endif
           </div>
         </div>
@@ -67,15 +67,15 @@
     </div>
 
     {{-- 3) Info text --}}
-    <p class="small text-muted mb-4">
+    <p class="text-xs text-slate-500 mb-4">
       Email notifications are sent at every step. Refresh this page anytime for real-time status.
     </p>
 
     {{-- 4) Action buttons --}}
     @if($order->status === \App\Models\Order::STATUS_PENDING)
-    <div class="d-flex flex-wrap gap-3">
+    <div class="flex flex-wrap gap-3">
         <a href="{{ route('pay_now', $order->id) }}"
-                class="btn btn-success btn-lg d-flex align-items-center gap-2 px-4 py-2">
+                class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base flex gap-2">
             <i class="fas fa-credit-card fs-5"></i>
             <span>Pay&nbsp;Now</span>
         </a>
@@ -84,6 +84,8 @@
 
   </div>
 </div>
+
+
 
 
 

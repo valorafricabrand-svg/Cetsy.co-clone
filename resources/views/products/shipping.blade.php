@@ -1,5 +1,5 @@
-{{-- resources/views/products/shipping.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/products/shipping.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 @section('title', ($product->name ?? 'Product') . ' | Edit Shipping')
 
 @push('styles')
@@ -12,7 +12,7 @@
 </style>
 @endpush
 
-@section('content')
+@section('main')
 @php
   $current = Route::currentRouteName();
   $currency = $currency ?? currency_symbol();
@@ -23,34 +23,34 @@
   {{-- TABS --}}
   <div class="page-header-sticky mb-3">
     <ul class="nav nav-pills gap-2 flex-nowrap py-2" role="tablist" aria-label="Product sections">
-      <li class="nav-item">
+      <li class="">
         <a class="nav-link {{ $current==='products.show' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.show',$product) }}">
-          <i class="fa-regular fa-circle-question me-1"></i> About
+          <i class="fa-regular fa-circle-question mr-1"></i> About
         </a>
       </li>
-      <li class="nav-item">
+      <li class="">
         <a class="nav-link {{ $current==='products.pricing' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.pricing',$product) }}">
-          <i class="fa-solid fa-tags me-1"></i> Price & Inventory
+          <i class="fa-solid fa-tags mr-1"></i> Price & Inventory
         </a>
       </li>
-      <li class="nav-item">
+      <li class="">
         <a class="nav-link {{ $current==='products.variations' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.variations',$product) }}">
-          <i class="fa-solid fa-layer-group me-1"></i> Variations
+          <i class="fa-solid fa-layer-group mr-1"></i> Variations
         </a>
       </li>
-      <li class="nav-item">
+      <li class="">
         <a class="nav-link {{ $current==='products.details' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.details',$product) }}">
-          <i class="fa-regular fa-rectangle-list me-1"></i> Details
+          <i class="fa-regular fa-rectangle-list mr-1"></i> Details
         </a>
       </li>
-      <li class="nav-item">
+      <li class="">
         <a class="nav-link {{ $current==='products.shipping' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.shipping',$product) }}">
-          <i class="fa-solid fa-truck me-1"></i> Shipping
+          <i class="fa-solid fa-truck mr-1"></i> Shipping
         </a>
       </li>
-      <li class="nav-item">
+      <li class="">
         <a class="nav-link {{ $current==='products.settings' ? 'active':'btn-outline-secondary' }}" href="{{ route('products.settings',$product) }}">
-          <i class="fa-solid fa-gear me-1"></i> Settings
+          <i class="fa-solid fa-gear mr-1"></i> Settings
         </a>
       </li>
     </ul>
@@ -58,46 +58,46 @@
 
   {{-- ALERTS --}}
   @if(session('success'))
-    <div class="alert alert-success" role="alert">{{ session('success') }}</div>
+    <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800" role="alert">{{ session('success') }}</div>
   @endif
   @if($errors->any())
-    <div class="alert alert-danger" role="alert">
+    <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800" role="alert">
       <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
     </div>
   @endif
 
   {{-- HEADER --}}
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h4 mb-0">{{ $product->name ?? 'Product' }} — Edit Shipping</h2>
-    <a href="{{ route('products.show',$product) }}" class="btn btn-outline-dark btn-sm">Back</a>
+  <div class="flex justify-between items-center mb-3">
+    <h2 class="text-lg font-semibold mb-0">{{ $product->name ?? 'Product' }} â€” Edit Shipping</h2>
+    <a href="{{ route('products.show',$product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-900 text-slate-900 hover:bg-slate-100 px-3 py-1.5 text-xs">Back</a>
   </div>
 
   {{-- PROFILE INFO FORM --}}
-  <form id="shipping-info-form" method="POST" action="{{ route('products.shipping.update',$product) }}" class="row g-3 mb-4" novalidate>
+  <form id="shipping-info-form" method="POST" action="{{ route('products.shipping.update',$product) }}" class="grid grid-cols-12 gap-4 gap-3 mb-4" novalidate>
     @csrf
     @method('PATCH')
 
-    <div class="col-md-4">
-      <label class="form-label">Ship-from country</label>
-      <select name="country_id" class="form-select @error('country_id') is-invalid @enderror" required>
+    <div class="md:col-span-4">
+      <label class="mb-1 block text-sm font-medium text-slate-700">Ship-from country</label>
+      <select name="country_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('country_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" required>
         @foreach($countries as $c)
           <option value="{{ $c->id }}" @selected(old('country_id', $currentProfile->country_id) == $c->id)>{{ $c->name }}</option>
         @endforeach
       </select>
-      @error('country_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+      @error('country_id')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
     </div>
 
-    <div class="col-md-4">
-      <label class="form-label">Postal code</label>
-      <input type="text" name="origin_postal_code" class="form-control @error('origin_postal_code') is-invalid @enderror"
+    <div class="md:col-span-4">
+      <label class="mb-1 block text-sm font-medium text-slate-700">Postal code</label>
+      <input type="text" name="origin_postal_code" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('origin_postal_code') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
              value="{{ old('origin_postal_code', $currentProfile->origin_postal_code) }}" autocomplete="postal-code">
-      @error('origin_postal_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+      @error('origin_postal_code')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
     </div>
 
-    <div class="col-md-4">
-      <label class="form-label">Processing time</label>
-      <select name="processing_time_id" id="processing-time-select" class="form-select @error('processing_time_id') is-invalid @enderror">
-        <option value="">Select…</option>
+    <div class="md:col-span-4">
+      <label class="mb-1 block text-sm font-medium text-slate-700">Processing time</label>
+      <select name="processing_time_id" id="processing-time-select" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_time_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">
+        <option value="">Selectâ€¦</option>
         @foreach($processingTimes as $pt)
           <option value="{{ $pt->id }}" @selected(old('processing_time_id', $currentProfile->processing_time_id) == $pt->id)>{{ $pt->days }} day(s)</option>
         @endforeach
@@ -107,51 +107,51 @@
         @endphp
         <option value="custom" @selected($showCustomProcessing)>Custom</option>
       </select>
-      @error('processing_time_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-      <div id="processing-custom-indicator" class="form-text text-success" style="display: {{ $showCustomProcessing && ($currentProfile->processing_custom_min || $currentProfile->processing_custom_max) ? 'block' : 'none' }};">
+      @error('processing_time_id')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+      <div id="processing-custom-indicator" class="mt-1 text-xs text-slate-500 text-emerald-600" style="display: {{ $showCustomProcessing && ($currentProfile->processing_custom_min || $currentProfile->processing_custom_max) ? 'block' : 'none' }};">
         @if($showCustomProcessing && ($currentProfile->processing_custom_min || $currentProfile->processing_custom_max))
-          Custom set: {{ (int)$currentProfile->processing_custom_min }}–{{ (int)$currentProfile->processing_custom_max }} days ✓
+          Custom set: {{ (int)$currentProfile->processing_custom_min }}â€“{{ (int)$currentProfile->processing_custom_max }} days âœ“
         @endif
       </div>
     </div>
 
     {{-- Custom processing window (auto toggled) --}}
-    <div class="col-md-2 processing-custom-wrap" style="display: {{ $showCustomProcessing ? 'block' : 'none' }};">
-      <label class="form-label">Min days</label>
+    <div class="md:col-span-2 processing-custom-wrap" style="display: {{ $showCustomProcessing ? 'block' : 'none' }};">
+      <label class="mb-1 block text-sm font-medium text-slate-700">Min days</label>
       <input type="number" min="1" name="processing_custom_min"
-             class="form-control @error('processing_custom_min') is-invalid @enderror"
+             class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_custom_min') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
              value="{{ old('processing_custom_min', $currentProfile->processing_custom_min) }}">
-      @error('processing_custom_min')<div class="invalid-feedback">{{ $message }}</div>@enderror
+      @error('processing_custom_min')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
     </div>
-    <div class="col-md-2 processing-custom-wrap" style="display: {{ $showCustomProcessing ? 'block' : 'none' }};">
-      <label class="form-label">Max days</label>
+    <div class="md:col-span-2 processing-custom-wrap" style="display: {{ $showCustomProcessing ? 'block' : 'none' }};">
+      <label class="mb-1 block text-sm font-medium text-slate-700">Max days</label>
       <input type="number" min="1" name="processing_custom_max"
-             class="form-control @error('processing_custom_max') is-invalid @enderror"
+             class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_custom_max') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
              value="{{ old('processing_custom_max', $currentProfile->processing_custom_max) }}">
-      @error('processing_custom_max')<div class="invalid-feedback">{{ $message }}</div>@enderror
-      <div class="form-hint">Shown if “Custom” is selected.</div>
+      @error('processing_custom_max')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+      <div class="form-hint">Shown if â€œCustomâ€ is selected.</div>
     </div>
 
-    <div id="processing-warning" class="col-12 d-none">
-      <div class="alert alert-warning mb-0" role="alert">
+    <div id="processing-warning" class="col-span-12 hidden">
+      <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 mb-0" role="alert">
         For custom processing time, please enter both Min and Max days.
       </div>
     </div>
 
     {{-- Pickup availability for this listing --}}
-    <div class="col-12">
-      <div class="card border-0 shadow-sm">
-        <div class="card-body d-flex align-items-center justify-content-between">
+    <div class="col-span-12">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 shadow-sm">
+        <div class="p-4 sm:p-5 flex items-center justify-between">
           <div>
             <h6 class="mb-1">Pickup available</h6>
-            <p class="mb-0 text-muted small">
+            <p class="mb-0 text-slate-500 text-xs">
               Let buyers know they can collect this item in person for this specific listing.
             </p>
           </div>
-          <div class="form-check form-switch ms-3">
+          <div class="form-check form-switch ml-3">
             <input type="hidden" name="pickup_available" value="0">
             <input
-              class="form-check-input @error('pickup_available') is-invalid @enderror"
+              class="form-check-input @error('pickup_available') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
               type="checkbox"
               id="pickup_available"
               name="pickup_available"
@@ -160,37 +160,37 @@
           </div>
         </div>
       </div>
-      @error('pickup_available')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+      @error('pickup_available')<div class="text-rose-600 text-xs mt-1">{{ $message }}</div>@enderror
     </div>
 
-    <div class="col-12 text-end">
-      <button class="btn btn-primary">
-        <i class="fa-regular fa-floppy-disk me-1"></i> Save Info
+    <div class="col-span-12 text-right">
+      <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+        <i class="fa-regular fa-floppy-disk mr-1"></i> Save Info
       </button>
     </div>
   </form>
 
   {{-- SHIPPING ROWS --}}
-  <div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="flex justify-between items-center mb-2">
     <h5 class="mb-0">Standard shipping</h5>
-    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addRowModal">
-      <i class="fa-solid fa-plus me-1"></i> Add row
+    <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50" data-bs-toggle="modal" data-bs-target="#addRowModal">
+      <i class="fa-solid fa-plus mr-1"></i> Add row
     </button>
   </div>
-  <p class="text-muted small mb-3">
+  <p class="text-slate-500 text-xs mb-3">
     Tip: add separate rows for local and international services (and a free row for pickup, if you offer it) so buyers can choose the option that fits them best in the cart.
   </p>
 
   @if(($shippingProfiles ?? collect())->isEmpty())
     <div class="border rounded p-4 mb-4 text-center">
       <p class="mb-1">No shipping rows yet.</p>
-      <p class="text-muted mb-3">Create rules for destinations, couriers, delivery windows, and charges.</p>
-      <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addRowModal">Add your first shipping row</button>
+      <p class="text-slate-500 mb-3">Create rules for destinations, couriers, delivery windows, and charges.</p>
+      <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-3 py-1.5 text-xs" data-bs-toggle="modal" data-bs-target="#addRowModal">Add your first shipping row</button>
     </div>
   @else
-    <div class="table-responsive">
-      <table class="table table-bordered mb-4 align-middle">
-        <thead class="table-light">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-sm border border-slate-200 mb-4 align-middle">
+        <thead class="bg-slate-50">
           <tr>
             <th>Location</th>
             <th>Service</th>
@@ -226,11 +226,11 @@
               <td>{{ $currency }} {{ number_format((float)$row->base_rate, 2) }}</td>
               <td>{{ $currency }} {{ number_format((float)$row->additional_rate, 2) }}</td>
               <td class="text-center">
-                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editRowModal{{ $row->id }}" title="Edit">✎</button>
+                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-toggle="modal" data-bs-target="#editRowModal{{ $row->id }}" title="Edit">âœŽ</button>
                 <form method="POST" action="{{ route('products.shipping.rows.destroy',[$product,$row]) }}" class="d-inline" onsubmit="return confirm('Delete this shipping row?');">
                   @csrf
                   @method('DELETE')
-                  <button class="btn btn-sm btn-outline-danger" title="Delete">×</button>
+                  <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50" title="Delete">Ã—</button>
                 </form>
               </td>
             </tr>
@@ -242,16 +242,16 @@
 </div>
 
 {{-- ADD ROW MODAL --}}
-<div class="modal fade" id="addRowModal" tabindex="-1" aria-hidden="true">
+<div class="modal" id="addRowModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
-    <form method="POST" action="{{ route('products.shipping.rows.store',$product) }}" class="modal-content" novalidate>
+    <form method="POST" action="{{ route('products.shipping.rows.store',$product) }}" class="rounded-2xl border border-slate-200 bg-white shadow-xl" novalidate>
       @csrf
-      <div class="modal-header">
-        <h5 class="modal-title">Add shipping row</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <h5 class="text-base font-semibold text-slate-900">Add shipping row</h5>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
-      <div class="modal-body">
+      <div class="px-4 py-4">
         {{-- Inherit profile-level values --}}
         <input type="hidden" name="profile_name"          value="{{ $currentProfile->profile_name }}">
         <input type="hidden" name="set_default"           value="{{ $currentProfile->is_default?1:0 }}">
@@ -262,28 +262,28 @@
         <input type="hidden" name="processing_custom_max" value="{{ $currentProfile->processing_custom_max }}">
 
         <div class="mb-3">
-          <label class="form-label">Location type</label>
-          <select name="row[location_type]" class="form-select" id="add-location-type" required>
+          <label class="mb-1 block text-sm font-medium text-slate-700">Location type</label>
+          <select name="row[location_type]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" id="add-location-type" required>
             <option value="country" selected>Country</option>
             <option value="everywhere_else">Everywhere</option>
           </select>
         </div>
 
         <div class="mb-3" id="add-country-wrap">
-          <label class="form-label">Country</label>
-          <select name="row[country_id]" class="form-select">
-            <option value="">Select…</option>
+          <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
+          <select name="row[country_id]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
+            <option value="">Selectâ€¦</option>
             @foreach($countries as $c)
               <option value="{{ $c->id }}">{{ $c->name }}</option>
             @endforeach
           </select>
-          <div class="form-hint">Shown only when “Country” is chosen.</div>
+          <div class="form-hint">Shown only when â€œCountryâ€ is chosen.</div>
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Service</label>
+          <label class="mb-1 block text-sm font-medium text-slate-700">Service</label>
           @php $couriers = couriers_list(); @endphp
-          <select name="row[service]" class="form-select service-select" id="add-service-select" data-target="#add-service-other-wrap" required>
+          <select name="row[service]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 service-select" id="add-service-select" data-target="#add-service-other-wrap" required>
             @if(!empty($couriers))
               <optgroup label="Common Couriers">
                 @foreach($couriers as $c)
@@ -302,52 +302,52 @@
         </div>
 
         <div class="mb-3" id="add-service-other-wrap" style="display:none;">
-          <label class="form-label">Courier name</label>
-          <input type="text" name="row[service_other]" class="form-control" placeholder="Enter courier (e.g., DHL, Rider, etc.)" maxlength="100">
+          <label class="mb-1 block text-sm font-medium text-slate-700">Courier name</label>
+          <input type="text" name="row[service_other]" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="Enter courier (e.g., DHL, Rider, etc.)" maxlength="100">
           <div class="form-hint">Shown when Service is Other/Manual.</div>
         </div>
 
-        <div class="row gx-2 mb-3">
-          <div class="col">
-            <label class="form-label">Min days</label>
-            <input type="number" name="row[days_min]" class="form-control" min="1" value="1" required>
+        <div class="grid grid-cols-12 gap-4 gap-x-2 mb-3">
+          <div class="col-span-12">
+            <label class="mb-1 block text-sm font-medium text-slate-700">Min days</label>
+            <input type="number" name="row[days_min]" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" min="1" value="1" required>
           </div>
-          <div class="col">
-            <label class="form-label">Max days</label>
-            <input type="number" name="row[days_max]" class="form-control" min="1" value="1" required>
+          <div class="col-span-12">
+            <label class="mb-1 block text-sm font-medium text-slate-700">Max days</label>
+            <input type="number" name="row[days_max]" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" min="1" value="1" required>
           </div>
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Charge type</label>
-          <select name="row[charge_type]" class="form-select charge-type-select" data-one="#add-price-one" data-add="#add-price-additional">
+          <label class="mb-1 block text-sm font-medium text-slate-700">Charge type</label>
+          <select name="row[charge_type]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 charge-type-select" data-one="#add-price-one" data-add="#add-price-additional">
             <option value="fixed" selected>Fixed</option>
             <option value="free">Free</option>
           </select>
         </div>
 
-        <div class="row gx-2 mb-3">
-          <div class="col">
-            <label class="form-label">One item</label>
-            <div class="input-group">
-              <span class="input-group-text">{{ $currency }}</span>
-              <input id="add-price-one" type="number" name="row[price_one]" step="0.01" class="form-control" value="0.00" required>
+        <div class="grid grid-cols-12 gap-4 gap-x-2 mb-3">
+          <div class="col-span-12">
+            <label class="mb-1 block text-sm font-medium text-slate-700">One item</label>
+            <div class="flex w-full items-stretch">
+              <span class="inline-flex items-center rounded-l-xl border border-slate-300 bg-slate-100 px-3 text-sm text-slate-600">{{ $currency }}</span>
+              <input id="add-price-one" type="number" name="row[price_one]" step="0.01" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="0.00" required>
             </div>
           </div>
-          <div class="col">
-            <label class="form-label">Additional</label>
-            <div class="input-group">
-              <span class="input-group-text">{{ $currency }}</span>
-              <input id="add-price-additional" type="number" name="row[price_additional]" step="0.01" class="form-control" value="0.00" required>
+          <div class="col-span-12">
+            <label class="mb-1 block text-sm font-medium text-slate-700">Additional</label>
+            <div class="flex w-full items-stretch">
+              <span class="inline-flex items-center rounded-l-xl border border-slate-300 bg-slate-100 px-3 text-sm text-slate-600">{{ $currency }}</span>
+              <input id="add-price-additional" type="number" name="row[price_additional]" step="0.01" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="0.00" required>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">
-          <i class="fa-solid fa-plus me-1"></i> Add row
+      <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+          <i class="fa-solid fa-plus mr-1"></i> Add row
         </button>
       </div>
     </form>
@@ -366,18 +366,18 @@
     $showCustom = $row->service==='Other' || $row->service==='Manual' || ($customServiceVal !== '');
     $couriers = couriers_list();
   @endphp
-  <div class="modal fade" id="editRowModal{{ $row->id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal" id="editRowModal{{ $row->id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-      <form method="POST" action="{{ route('products.shipping.rows.update',[$product,$row]) }}" class="modal-content" novalidate>
+      <form method="POST" action="{{ route('products.shipping.rows.update',[$product,$row]) }}" class="rounded-2xl border border-slate-200 bg-white shadow-xl" novalidate>
         @csrf
         @method('PATCH')
 
-        <div class="modal-header">
-          <h5 class="modal-title">Edit shipping row</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <h5 class="text-base font-semibold text-slate-900">Edit shipping row</h5>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <div class="modal-body">
+        <div class="px-4 py-4">
           {{-- Hidden profile-level fields (preserved) --}}
           <input type="hidden" name="profile_name"          value="{{ $row->profile_name }}">
           <input type="hidden" name="set_default"           value="{{ $row->is_default?1:0 }}">
@@ -388,27 +388,27 @@
           <input type="hidden" name="processing_custom_max" value="{{ $row->processing_custom_max }}">
 
           <div class="mb-3">
-            <label class="form-label">Location type</label>
-            <select name="row[location_type]" class="form-select edit-location-type" data-target="#country-wrap-{{ $row->id }}" required>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Location type</label>
+            <select name="row[location_type]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 edit-location-type" data-target="#country-wrap-{{ $row->id }}" required>
               <option value="country" @selected($row->dest_location_type==='country')>Country</option>
               <option value="everywhere_else" @selected($row->dest_location_type==='everywhere_else')>Everywhere</option>
             </select>
           </div>
 
           <div class="mb-3" id="country-wrap-{{ $row->id }}">
-            <label class="form-label">Country</label>
-            <select name="row[country_id]" class="form-select">
-              <option value="">Select…</option>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
+            <select name="row[country_id]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
+              <option value="">Selectâ€¦</option>
               @foreach($countries as $c)
                 <option value="{{ $c->id }}" @selected($c->id==$row->dest_country_id)>{{ $c->name }}</option>
               @endforeach
             </select>
-            <div class="form-hint">Shown only when “Country” is chosen.</div>
+            <div class="form-hint">Shown only when â€œCountryâ€ is chosen.</div>
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Service</label>
-            <select name="row[service]" class="form-select edit-service-select" data-target="#service-other-wrap-{{ $row->id }}" required>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Service</label>
+            <select name="row[service]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 edit-service-select" data-target="#service-other-wrap-{{ $row->id }}" required>
               @if(!empty($couriers))
                 <optgroup label="Common Couriers">
                   @foreach($couriers as $c)
@@ -427,52 +427,52 @@
           </div>
 
           <div class="mb-3" id="service-other-wrap-{{ $row->id }}" style="display: {{ $showCustom ? 'block' : 'none' }};">
-            <label class="form-label">Courier name</label>
-            <input type="text" name="row[service_other]" class="form-control" value="{{ $customServiceVal }}" placeholder="Enter courier (e.g., DHL, Rider, etc.)" maxlength="100">
+            <label class="mb-1 block text-sm font-medium text-slate-700">Courier name</label>
+            <input type="text" name="row[service_other]" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ $customServiceVal }}" placeholder="Enter courier (e.g., DHL, Rider, etc.)" maxlength="100">
             <div class="form-hint">Shown when Service is Other/Manual.</div>
           </div>
 
-          <div class="row gx-2 mb-3">
-            <div class="col">
-              <label class="form-label">Min days</label>
-              <input type="number" name="row[days_min]" class="form-control" min="1" value="{{ (int)$row->days_min }}" required>
+          <div class="grid grid-cols-12 gap-4 gap-x-2 mb-3">
+            <div class="col-span-12">
+              <label class="mb-1 block text-sm font-medium text-slate-700">Min days</label>
+              <input type="number" name="row[days_min]" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" min="1" value="{{ (int)$row->days_min }}" required>
             </div>
-            <div class="col">
-              <label class="form-label">Max days</label>
-              <input type="number" name="row[days_max]" class="form-control" min="1" value="{{ (int)$row->days_max }}" required>
+            <div class="col-span-12">
+              <label class="mb-1 block text-sm font-medium text-slate-700">Max days</label>
+              <input type="number" name="row[days_max]" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" min="1" value="{{ (int)$row->days_max }}" required>
             </div>
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Charge type</label>
-            <select name="row[charge_type]" class="form-select charge-type-select" data-one="#price-one-{{ $row->id }}" data-add="#price-additional-{{ $row->id }}">
+            <label class="mb-1 block text-sm font-medium text-slate-700">Charge type</label>
+            <select name="row[charge_type]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 charge-type-select" data-one="#price-one-{{ $row->id }}" data-add="#price-additional-{{ $row->id }}">
               <option value="fixed" @selected($row->charge_type==='fixed')>Fixed</option>
               <option value="free"  @selected($row->charge_type==='free')>Free</option>
             </select>
           </div>
 
-          <div class="row gx-2 mb-3">
-            <div class="col">
-              <label class="form-label">One item</label>
-              <div class="input-group">
-                <span class="input-group-text">{{ $currency }}</span>
-                <input id="price-one-{{ $row->id }}" type="number" name="row[price_one]" step="0.01" class="form-control" value="{{ number_format((float)$row->base_rate, 2, '.', '') }}" required>
+          <div class="grid grid-cols-12 gap-4 gap-x-2 mb-3">
+            <div class="col-span-12">
+              <label class="mb-1 block text-sm font-medium text-slate-700">One item</label>
+              <div class="flex w-full items-stretch">
+                <span class="inline-flex items-center rounded-l-xl border border-slate-300 bg-slate-100 px-3 text-sm text-slate-600">{{ $currency }}</span>
+                <input id="price-one-{{ $row->id }}" type="number" name="row[price_one]" step="0.01" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ number_format((float)$row->base_rate, 2, '.', '') }}" required>
               </div>
             </div>
-            <div class="col">
-              <label class="form-label">Additional</label>
-              <div class="input-group">
-                <span class="input-group-text">{{ $currency }}</span>
-                <input id="price-additional-{{ $row->id }}" type="number" name="row[price_additional]" step="0.01" class="form-control" value="{{ number_format((float)$row->additional_rate, 2, '.', '') }}" required>
+            <div class="col-span-12">
+              <label class="mb-1 block text-sm font-medium text-slate-700">Additional</label>
+              <div class="flex w-full items-stretch">
+                <span class="inline-flex items-center rounded-l-xl border border-slate-300 bg-slate-100 px-3 text-sm text-slate-600">{{ $currency }}</span>
+                <input id="price-additional-{{ $row->id }}" type="number" name="row[price_additional]" step="0.01" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ number_format((float)$row->additional_rate, 2, '.', '') }}" required>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">
-            <i class="fa-regular fa-floppy-disk me-1"></i> Save changes
+        <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+            <i class="fa-regular fa-floppy-disk mr-1"></i> Save changes
           </button>
         </div>
       </form>
@@ -512,7 +512,7 @@ function toggleCountry(selectEl, wrapSelector){
   });
 })();
 
-/** Toggle “Other/Manual” courier free text input */
+/** Toggle â€œOther/Manualâ€ courier free text input */
 function bindServiceToggle(select){
   const targetSel = select.getAttribute('data-target');
   const wrap = targetSel ? $(targetSel) : null;
@@ -525,7 +525,7 @@ function bindServiceToggle(select){
 }
 $$('.service-select, .edit-service-select').forEach(bindServiceToggle);
 
-/** Disable price inputs when “Free” is selected */
+/** Disable price inputs when â€œFreeâ€ is selected */
 function bindChargeToggle(select){
   const oneSel = select.getAttribute('data-one');
   const addSel = select.getAttribute('data-add');
@@ -573,7 +573,7 @@ function updateProcessingIndicator(){
   const max = parseInt(maxEl.value, 10);
   const valid = isCustom && Number.isInteger(min) && Number.isInteger(max) && min > 0 && max > 0;
   ind.style.display = valid ? 'block' : 'none';
-  if (valid) ind.textContent = `Custom set: ${min}–${max} days ✓`;
+  if (valid) ind.textContent = `Custom set: ${min}â€“${max} days âœ“`;
 }
 ['input','change'].forEach(ev => {
   const minEl = $('input[name="processing_custom_min"]');
@@ -604,3 +604,5 @@ function updateProcessingIndicator(){
 })();
 </script>
 @endpush
+
+

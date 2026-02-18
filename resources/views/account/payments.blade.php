@@ -1,15 +1,15 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'KYC Management')
 
-@section('content')
+@section('main')
 <div class="content">
-    <h3 class="mb-4 text-success">My Payments</h3>
+    <h3 class="mb-4 text-emerald-600">My Payments</h3>
 
     @if(count($payments) > 0)
-        <div class="table-responsive shadow-sm border rounded">
-            <table class="table table-bordered table-hover align-middle mb-0">
-                <thead class="table-light text-center">
+        <div class="overflow-x-auto shadow-sm border rounded">
+            <table class="min-w-full divide-y divide-slate-200 text-sm border border-slate-200 align-middle mb-0">
+                <thead class="bg-slate-50 text-center">
                     <tr>
                         <th>Payment ID</th>
                          <th>Order ID</th>
@@ -30,7 +30,7 @@
                                         #{{ $pay->order_id }}
                                     </a>
                                 @else
-                                    —
+                                    â€”
                                 @endif
                             </td>
                             <td>
@@ -52,7 +52,7 @@
                             </td>
                             <td>
                                 @php($ok = in_array($pay->payment_status, ['successful','completed'], true))
-                                <span class="badge {{ $ok ? 'bg-success' : 'bg-warning text-dark' }}">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $ok ? 'bg-success' : 'bg-warning text-dark' }}">
                                     {{ ucfirst($pay->payment_status) }}
                                 </span>
                             </td>
@@ -63,10 +63,14 @@
             </table>
         </div>
     @else
-        <div class="alert alert-info text-center mt-4" role="alert">
+        <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 text-center mt-4" role="alert">
             <p class="mb-0">You have no payments at the moment.</p>
         </div>
     @endif
 </div>
 @endsection
+
+
+
+
 

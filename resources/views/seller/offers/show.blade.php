@@ -1,45 +1,50 @@
-@extends('layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 @section('title', 'Offer Details')
 
-@section('content')
+@section('main')
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
+      <div class="space-y-6">
 <div class="content">
-    <div class="container-xxl">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <div class="flex justify-between items-center mb-4">
             <div>
                 <h2 class="mb-1">Offer Details</h2>
-                <p class="text-muted mb-0">Manage and respond to this offer from {{ $offer->buyer->name ?? 'Buyer' }}</p>
+                <p class="text-slate-500 mb-0">Manage and respond to this offer from {{ $offer->buyer->name ?? 'Buyer' }}</p>
             </div>
-            <div class="d-flex gap-2">
+            <div class="flex gap-2">
                 @if($offer && $offer->buyer)
-                    <a href="{{ route('seller.messages.show', $offer->product_id . '-' . $offer->buyer_id) }}" class="btn btn-outline-success">
-                        <i class="bi bi-chat-dots me-1"></i> Message Buyer
+                    <a href="{{ route('seller.messages.show', $offer->product_id . '-' . $offer->buyer_id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+                        <i class="bi bi-chat-dots mr-1"></i> Message Buyer
                     </a>
                 @endif
-                <a href="{{ route('seller.offers.index') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Back to Offers
+                <a href="{{ route('seller.offers.index') }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100">
+                    <i class="bi bi-arrow-left mr-1"></i> Back to Offers
                 </a>
                 @if($offer->is_negotiable)
-                    <div class="dropdown">
-                        <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-gear me-1"></i> Actions
+                    <div class="relative inline-block">
+                        <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear mr-1"></i> Actions
                         </button>
                         <ul class="dropdown-menu">
                             <li>
-                                <form method="POST" action="{{ route('seller.offers.accept', $offer->id) }}" class="d-inline">
+                                <form method="POST" action="{{ route('seller.offers.accept', $offer->id) }}" class="inline">
                                     @csrf
                                     <button type="submit" class="dropdown-item" onclick="return confirm('Accept this offer?')">
-                                        <i class="bi bi-check-circle text-success me-2"></i>Accept Offer
+                                        <i class="bi bi-check-circle text-emerald-600 mr-2"></i>Accept Offer
                                     </button>
                                 </form>
                             </li>
                             <li>
                                 <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#declineModal">
-                                    <i class="bi bi-x-circle text-danger me-2"></i>Decline Offer
+                                    <i class="bi bi-x-circle text-rose-600 mr-2"></i>Decline Offer
                                 </button>
                             </li>
                             <li>
                                 <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#counterModal">
-                                    <i class="bi bi-arrow-left-right text-warning me-2"></i>Make Counter Offer
+                                    <i class="bi bi-arrow-left-right text-amber-600 mr-2"></i>Make Counter Offer
                                 </button>
                             </li>
                         </ul>
@@ -49,92 +54,92 @@
         </div>
 
         @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
+            <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">{{ session('success') }}</div>
         @endif
         @if(session('warning'))
-            <div class="alert alert-warning">{{ session('warning') }}</div>
+            <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">{{ session('warning') }}</div>
         @endif
 
-        <div class="row">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
             {{-- Main Offer Details --}}
-            <div class="col-lg-8">
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-light">
+            <div class="-span-8">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-4">
+                    <div class="border-b border-slate-200 px-4 py-3 bg-slate-50">
                         <h5 class="mb-0">Offer Information</h5>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <dl class="row mb-0">
-                                    <dt class="col-sm-4">Offer ID</dt>
-                                    <dd class="col-sm-8">{{ $offer->id }}</dd>
+                    <div class="p-4">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                            <div class="-span-6">
+                                <dl class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-0">
+                                    <dt class="-span-4">Offer ID</dt>
+                                    <dd class="-span-8">{{ $offer->id }}</dd>
 
-                                    <dt class="col-sm-4">Status</dt>
-                                    <dd class="col-sm-8">
-                                        <span class="badge {{ $offer->status_badge_class }}">{{ $offer->status_label }}</span>
+                                    <dt class="-span-4">Status</dt>
+                                    <dd class="-span-8">
+                                        <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $offer->status_badge_class }}">{{ $offer->status_label }}</span>
                                     </dd>
 
-                                    <dt class="col-sm-4">Offer Price</dt>
-                                    <dd class="col-sm-8 fw-bold text-success">{{ $offer->formatted_price }}</dd>
+                                    <dt class="-span-4">Offer Price</dt>
+                                    <dd class="-span-8 font-bold text-emerald-600">{{ $offer->formatted_price }}</dd>
 
-                                    <dt class="col-sm-4">Date</dt>
-                                    <dd class="col-sm-8">{{ $offer->created_at ? $offer->created_at->format('d M Y, H:i') : '-' }}</dd>
+                                    <dt class="-span-4">Date</dt>
+                                    <dd class="-span-8">{{ $offer->created_at ? $offer->created_at->format('d M Y, H:i') : '-' }}</dd>
 
                                     @if($offer->is_counter_offer)
-                                        <dt class="col-sm-4">Counter Offer</dt>
-                                        <dd class="col-sm-8">
-                                            <span class="badge bg-info">Yes</span>
+                                        <dt class="-span-4">Counter Offer</dt>
+                                        <dd class="-span-8">
+                                            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-sky-100 text-sky-800 border-sky-200">Yes</span>
                                             @if($offer->originalOffer)
-                                                <br><small class="text-muted">Original: {{ shop_currency() }} {{ number_format($offer->originalOffer->offer_price, 2) }}</small>
+                                                <br><span class="text-slate-500 text-xs">Original: {{ shop_currency() }} {{ number_format($offer->originalOffer->offer_price, 2) }}</span>
                                             @endif
                                         </dd>
                                     @endif
                                 </dl>
                             </div>
-                            <div class="col-md-6">
-                                <dl class="row mb-0">
-                                    <dt class="col-sm-4">Product</dt>
-                                    <dd class="col-sm-8">
-                                        <div class="d-flex align-items-center gap-2">
+                            <div class="-span-6">
+                                <dl class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-0">
+                                    <dt class="-span-4">Product</dt>
+                                    <dd class="-span-8">
+                                        <div class="flex items-center gap-2">
                                             @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($offer->product) : (optional($offer->product->media->first())->url ? asset('storage/' . $offer->product->media->first()->url) : null); @endphp
                                             @if($thumb)
                                                 <img src="{{ $thumb }}" 
                                                      alt="{{ $offer->product->name }}" class="rounded" style="width:40px;height:40px;object-fit:cover;">
                                             @else
-                                                <div class="bg-light border rounded d-flex align-items-center justify-content-center" 
+                                                <div class="bg-slate-50 border rounded flex items-center justify-center" 
                                                      style="width:40px;height:40px;">
                                                     <i class="bi bi-box text-secondary"></i>
                                                 </div>
                                             @endif
                                             <div>
-                                                <span class="fw-semibold">{{ $offer->product->name ?? '-' }}</span><br>
-                                                <small class="text-muted">#{{ $offer->product_id }}</small>
+                                                <span class="font-semibold">{{ $offer->product->name ?? '-' }}</span><br>
+                                                <span class="text-slate-500 text-xs">#{{ $offer->product_id }}</span>
                                             </div>
                                         </div>
                                     </dd>
 
-                                    <dt class="col-sm-4">Buyer</dt>
-                                    <dd class="col-sm-8">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
+                                    <dt class="-span-4">Buyer</dt>
+                                    <dd class="-span-8">
+                                        <div class="flex items-center gap-2">
+                                            <div class="bg-emerald-600 text-white border-emerald-600 bg-opacity-10 rounded-full flex items-center justify-center" 
                                                  style="width:40px;height:40px;">
                                                 <i class="bi bi-person text-primary"></i>
                                             </div>
                                             <div>
-                                                <span class="fw-semibold">{{ $offer->buyer->name ?? '-' }}</span><br>
-                                                <small class="text-muted">{{ $offer->buyer->email ?? '' }}</small>
+                                                <span class="font-semibold">{{ $offer->buyer->name ?? '-' }}</span><br>
+                                                <span class="text-slate-500 text-xs">{{ $offer->buyer->email ?? '' }}</span>
                                             </div>
                                         </div>
                                     </dd>
 
                                     @if($offer->seller_notes)
-                                        <dt class="col-sm-4">Seller Notes</dt>
-                                        <dd class="col-sm-8">{{ $offer->seller_notes }}</dd>
+                                        <dt class="-span-4">Seller Notes</dt>
+                                        <dd class="-span-8">{{ $offer->seller_notes }}</dd>
                                     @endif
 
                                     @if($offer->buyer_notes)
-                                        <dt class="col-sm-4">Buyer Notes</dt>
-                                        <dd class="col-sm-8">{{ $offer->buyer_notes }}</dd>
+                                        <dt class="-span-4">Buyer Notes</dt>
+                                        <dd class="-span-8">{{ $offer->buyer_notes }}</dd>
                                     @endif
                                 </dl>
                             </div>
@@ -144,11 +149,11 @@
 
                 {{-- Offer History --}}
                 @if($offerHistory->count() > 1)
-                    <div class="card shadow-sm border-0 mb-4">
-                        <div class="card-header bg-light">
+                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-4">
+                        <div class="border-b border-slate-200 px-4 py-3 bg-slate-50">
                             <h5 class="mb-0">Offer History</h5>
                         </div>
-                        <div class="card-body">
+                        <div class="p-4">
                             <div class="timeline">
                                 @php
                                     $lastDisplayedPrice = null;
@@ -169,14 +174,14 @@
                                         $lastDisplayedPrice = $currentPrice;
                                     @endphp
                                     <div class="timeline-item {{ isset($historyOffer->id) && $historyOffer->id === $offer->id ? 'active' : '' }}">
-                                        <div class="timeline-marker {{ isset($historyOffer->id) && $historyOffer->id === $offer->id ? 'bg-primary' : 'bg-secondary' }}"></div>
+                                        <div class="timeline-marker {{ isset($historyOffer->id) && $historyOffer->id === $offer->id ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-200 text-slate-700 border-slate-300' }}"></div>
                                         <div class="timeline-content">
-                                            <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex justify-between items-start">
                                                 <div>
                                                     <h6 class="mb-1">
                                                         {{ isset($historyOffer->is_original) && $historyOffer->is_original ? 'Original Offer' : (isset($historyOffer->is_counter_offer) && $historyOffer->is_counter_offer ? 'Counter Offer' : 'Original Offer') }}
                                                         @if(isset($historyOffer->id) && $historyOffer->id === $offer->id)
-                                                            <span class="badge bg-primary ms-2">Current</span>
+                                                            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-emerald-600 text-white border-emerald-600 ml-2">Current</span>
                                                         @endif
                                                     </h6>
                                                     <p class="mb-1">
@@ -186,20 +191,20 @@
                                                                 $diff = $historyOffer->getPriceDifference();
                                                                 $diffPercent = $historyOffer->getPriceDifferencePercentage();
                                                             @endphp
-                                                            <span class="small {{ $diff > 0 ? 'text-success' : 'text-danger' }}">
+                                                            <span class="text-xs {{ $diff > 0 ? 'text-success' : 'text-danger' }}">
                                                                 ({{ $diff > 0 ? '+' : '' }}{{ shop_currency() }} {{ number_format(abs($diff), 2) }}, 
                                                                 {{ $diff > 0 ? '+' : '' }}{{ number_format($diffPercent, 1) }}%)
                                                             </span>
                                                         @endif
                                                     </p>
-                                                    <small class="text-muted">{{ $historyOffer->created_at->format('d M Y, H:i') }}</small>
+                                                    <span class="text-slate-500 text-xs">{{ $historyOffer->created_at->format('d M Y, H:i') }}</span>
                                                 </div>
-                                                <span class="badge {{ isset($historyOffer->status_badge_class) ? $historyOffer->status_badge_class : 'bg-secondary' }}">{{ isset($historyOffer->status_label) ? $historyOffer->status_label : $historyOffer->status }}</span>
+                                                <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ isset($historyOffer->status_badge_class) ? $historyOffer->status_badge_class : 'bg-slate-200 text-slate-700 border-slate-300' }}">{{ isset($historyOffer->status_label) ? $historyOffer->status_label : $historyOffer->status }}</span>
                                             </div>
                                             @if(isset($historyOffer->seller_notes) && $historyOffer->seller_notes)
-                                                <div class="mt-2 p-2 bg-light rounded">
-                                                    <small class="text-muted">Seller Notes:</small><br>
-                                                    <small>{{ $historyOffer->seller_notes }}</small>
+                                                <div class="mt-2 p-2 bg-slate-50 rounded">
+                                                    <span class="text-slate-500 text-xs">Seller Notes:</span><br>
+                                                    <span class="text-xs">{{ $historyOffer->seller_notes }}</span>
                                                 </div>
                                             @endif
                                         </div>
@@ -212,28 +217,28 @@
             </div>
 
             {{-- Sidebar --}}
-            <div class="col-lg-4">
+            <div class="-span-4">
                 {{-- Quick Actions --}}
                 @if($offer->is_negotiable)
-                    <div class="card shadow-sm border-0 mb-4">
-                        <div class="card-header bg-light">
+                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-4">
+                        <div class="border-b border-slate-200 px-4 py-3 bg-slate-50">
                             <h6 class="mb-0">Quick Actions</h6>
                         </div>
-                        <div class="card-body">
+                        <div class="p-4">
                             <div class="d-grid gap-2">
                                 <form method="POST" action="{{ route('seller.offers.accept', $offer->id) }}">
                                     @csrf
-                                    <button type="submit" class="btn btn-success w-100" onclick="return confirm('Accept this offer?')">
-                                        <i class="bi bi-check-circle me-2"></i>Accept Offer
+                                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 w-full" onclick="return confirm('Accept this offer?')">
+                                        <i class="bi bi-check-circle mr-2"></i>Accept Offer
                                     </button>
                                 </form>
                                 
-                                <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#declineModal">
-                                    <i class="bi bi-x-circle me-2"></i>Decline Offer
+                                <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-rose-600 bg-rose-600 text-white hover:bg-rose-700 w-full" data-bs-toggle="modal" data-bs-target="#declineModal">
+                                    <i class="bi bi-x-circle mr-2"></i>Decline Offer
                                 </button>
                                 
-                                <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#counterModal">
-                                    <i class="bi bi-arrow-left-right me-2"></i>Make Counter Offer
+                                <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-amber-500 bg-amber-500 text-slate-900 hover:bg-amber-400 w-full" data-bs-toggle="modal" data-bs-target="#counterModal">
+                                    <i class="bi bi-arrow-left-right mr-2"></i>Make Counter Offer
                                 </button>
                             </div>
                         </div>
@@ -241,60 +246,60 @@
                 @endif
 
                 {{-- Product Details --}}
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-light">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-4">
+                    <div class="border-b border-slate-200 px-4 py-3 bg-slate-50">
                         <h6 class="mb-0">Product Details</h6>
                     </div>
-                    <div class="card-body">
+                    <div class="p-4">
                         @if($offer->product)
-                            <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="flex items-center gap-3 mb-3">
                                 @php $thumb2 = function_exists('product_thumb_url') ? product_thumb_url($offer->product) : (optional($offer->product->media->first())->url ? asset('storage/' . $offer->product->media->first()->url) : null); @endphp
                                 @if($thumb2)
                                     <img src="{{ $thumb2 }}" 
                                          alt="{{ $offer->product->name }}" class="rounded" style="width:60px;height:60px;object-fit:cover;">
                                 @else
-                                    <div class="bg-light border rounded d-flex align-items-center justify-content-center" 
+                                    <div class="bg-slate-50 border rounded flex items-center justify-center" 
                                          style="width:60px;height:60px;">
                                         <i class="bi bi-box text-secondary"></i>
                                     </div>
                                 @endif
                                 <div>
                                     <h6 class="mb-1">{{ $offer->product->name }}</h6>
-                                    <small class="text-muted">#{{ $offer->product_id }}</small>
+                                    <span class="text-slate-500 text-xs">#{{ $offer->product_id }}</span>
                                 </div>
                             </div>
                             
-                            <dl class="row mb-0">
-                                <dt class="col-6">Listed Price</dt>
-                                <dd class="col-6">{{ shop_currency() }} {{ number_format($offer->product->price ?? 0, 2) }}</dd>
+                            <dl class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-0">
+                                <dt class="col-span-6">Listed Price</dt>
+                                <dd class="col-span-6">{{ shop_currency() }} {{ number_format($offer->product->price ?? 0, 2) }}</dd>
                                 
-                                <dt class="col-6">Offer Price</dt>
-                                <dd class="col-6 fw-bold text-success">{{ $offer->formatted_price }}</dd>
+                                <dt class="col-span-6">Offer Price</dt>
+                                <dd class="col-span-6 font-bold text-emerald-600">{{ $offer->formatted_price }}</dd>
                                 
                                 @if($offer->product->price && $offer->product->price > 0)
                                     @php
                                         $discount = (($offer->product->price - $offer->offer_price) / $offer->product->price) * 100;
                                     @endphp
-                                    <dt class="col-6">Discount</dt>
+                                    <dt class="col-span-6">Discount</dt>
                                     <dd class="col-6 {{ $discount > 0 ? 'text-success' : 'text-danger' }}">
                                         {{ $discount > 0 ? '-' : '+' }}{{ number_format(abs($discount), 1) }}%
                                     </dd>
                                 @endif
                             </dl>
                         @else
-                            <p class="text-muted mb-0">Product not found</p>
+                            <p class="text-slate-500 mb-0">Product not found</p>
                         @endif
                     </div>
                 </div>
 
                 {{-- Buyer Information --}}
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-light">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
+                    <div class="border-b border-slate-200 px-4 py-3 bg-slate-50">
                         <h6 class="mb-0">Buyer Information</h6>
                     </div>
-                    <div class="card-body">
+                    <div class="p-4">
                         @if($offer->buyer)
-                            <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="flex items-center gap-3 mb-3">
                                 @php
                                     $buyerPhotoUrl = null;
                                     if (!empty($offer->buyer->photo)) {
@@ -313,28 +318,28 @@
 
                                 @if($buyerPhotoUrl)
                                     <img src="{{ $buyerPhotoUrl }}" alt="{{ $offer->buyer->name }}" 
-                                         class="rounded-circle" style="width:50px;height:50px;object-fit:cover;">
+                                         class="rounded-full" style="width:50px;height:50px;object-fit:cover;">
                                 @else
-                                    <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
+                                    <div class="bg-emerald-600 text-white border-emerald-600 bg-opacity-10 rounded-full flex items-center justify-center" 
                                          style="width:50px;height:50px;">
                                         <i class="bi bi-person text-primary fs-4"></i>
                                     </div>
                                 @endif
                                 <div>
                                     <h6 class="mb-1">{{ $offer->buyer->name }}</h6>
-                                    <small class="text-muted">{{ $offer->buyer->email }}</small>
+                                    <span class="text-slate-500 text-xs">{{ $offer->buyer->email }}</span>
                                 </div>
                             </div>
                             
-                            <dl class="row mb-0">
-                                <dt class="col-6">Member Since</dt>
-                                <dd class="col-6">{{ $offer->buyer->created_at ? $offer->buyer->created_at->format('M Y') : '-' }}</dd>
+                            <dl class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-0">
+                                <dt class="col-span-6">Member Since</dt>
+                                <dd class="col-span-6">{{ $offer->buyer->created_at ? $offer->buyer->created_at->format('M Y') : '-' }}</dd>
                                 
-                                <dt class="col-6">Location</dt>
-                                <dd class="col-6">{{ $offer->buyer->address ?? '-' }}</dd>
+                                <dt class="col-span-6">Location</dt>
+                                <dd class="col-span-6">{{ $offer->buyer->address ?? '-' }}</dd>
                             </dl>
                         @else
-                            <p class="text-muted mb-0">Buyer information not available</p>
+                            <p class="text-slate-500 mb-0">Buyer information not available</p>
                         @endif
                     </div>
                 </div>
@@ -357,12 +362,12 @@
                     <p>Are you sure you want to decline this offer from <strong>{{ $offer->buyer->name ?? 'Buyer' }}</strong>?</p>
                     <div class="mb-3">
                         <label class="form-label">Reason (Optional)</label>
-                        <textarea name="reason" class="form-control" rows="3" placeholder="Provide a reason for declining..."></textarea>
+                        <textarea name="reason" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" rows="3" placeholder="Provide a reason for declining..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Decline Offer</button>
+                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-700 bg-slate-700 text-white hover:bg-slate-800" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-rose-600 bg-rose-600 text-white hover:bg-rose-700">Decline Offer</button>
                 </div>
             </form>
         </div>
@@ -380,16 +385,16 @@
             <form method="POST" action="{{ route('seller.offers.counter', $offer->id) }}">
                 @csrf
                 <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
+                    <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
+                        <i class="bi bi-info-circle mr-2"></i>
                         <strong>Original Offer:</strong> {{ $offer->formatted_price }}
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Counter Price <span class="text-danger">*</span></label>
-                        <div class="input-group">
+                        <label class="form-label">Counter Price <span class="text-rose-600">*</span></label>
+                        <div class="flex items-stretch gap-2">
                             <span class="input-group-text">{{ shop_currency() }}</span>
-                            <input type="number" name="counter_price" class="form-control" step="0.01" min="0.01" 
+                            <input type="number" name="counter_price" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" step="0.01" min="0.01" 
                                    value="{{ $offer->offer_price }}" required>
                         </div>
                         <div class="form-text">Enter your counter offer price</div>
@@ -397,13 +402,13 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Message (Optional)</label>
-                        <textarea name="message" class="form-control" rows="3" 
+                        <textarea name="message" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" rows="3" 
                                   placeholder="Add a message to your counter offer..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning">Send Counter Offer</button>
+                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-700 bg-slate-700 text-white hover:bg-slate-800" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-amber-500 bg-amber-500 text-slate-900 hover:bg-amber-400">Send Counter Offer</button>
                 </div>
             </form>
         </div>
@@ -465,4 +470,14 @@
 }
 </style>
 @endpush
+      </div>
+    </div>
+  </div>
+</section>
 @endsection 
+
+
+
+
+
+

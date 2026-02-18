@@ -1,23 +1,23 @@
-@extends('layouts.frontapp')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('main')
 
 <!-- Shop Reviews Header -->
 <section class="py-5 bg-white border-bottom">
-  <div class="container">
-    <div class="row align-items-center">
-      <div class="col-md-8">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6">
+    <div class="grid grid-cols-12 gap-4 items-center">
+      <div class="md:col-span-8">
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="{{ route('shop.show', $shop) }}" class="text-decoration-none">{{ $shop->name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('shop.show', $shop) }}" class="no-underline">{{ $shop->name }}</a></li>
             <li class="breadcrumb-item active" aria-current="page">Reviews</li>
           </ol>
         </nav>
-        <h1 class="h3 fw-bold mt-2 mb-1">Reviews for {{ $shop->name }}</h1>
+        <h1 class="text-xl font-semibold font-bold mt-2 mb-1">Reviews for {{ $shop->name }}</h1>
         
         <!-- Rating Summary -->
-        <div class="d-flex align-items-center gap-3 mt-3">
-          <div class="d-flex align-items-center">
+        <div class="flex items-center gap-3 mt-3">
+          <div class="flex items-center">
             @for($i = 1; $i <= 5; $i++)
               @if($i <= $averageRating)
                 <i class="fas fa-star" style="font-size: 18px; color:#e5780b;"></i>
@@ -29,18 +29,18 @@
             @endfor
           </div>
           <div>
-            <span class="fw-bold fs-4">{{ number_format($averageRating, 1) }}</span>
-            <span class="text-muted">out of 5</span>
+            <span class="font-bold fs-4">{{ number_format($averageRating, 1) }}</span>
+            <span class="text-slate-500">out of 5</span>
           </div>
-          <div class="text-muted">
+          <div class="text-slate-500">
             {{ $reviewCount }} {{ Str::plural('review', $reviewCount) }}
           </div>
         </div>
       </div>
       
-      <div class="col-md-4 text-md-end">
-        <a href="{{ route('shop.show', $shop) }}" class="btn btn-outline-success">
-          <i class="fas fa-arrow-left me-1"></i> Back to Shop
+      <div class="md:col-span-4 text-md-end">
+        <a href="{{ route('shop.show', $shop) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+          <i class="fas fa-arrow-left mr-1"></i> Back to Shop
         </a>
       </div>
     </div>
@@ -48,24 +48,24 @@
 </section>
 
 <!-- Reviews List -->
-<section class="py-5 bg-light">
-  <div class="container">
+<section class="py-5 bg-slate-100">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6">
     @if($reviews->isEmpty())
       <div class="text-center py-5">
-        <i class="fas fa-star text-muted" style="font-size: 48px;"></i>
+        <i class="fas fa-star text-slate-500" style="font-size: 48px;"></i>
         <h3 class="mt-3">No Reviews Yet</h3>
-        <p class="text-muted">This shop hasn't received any reviews yet. Be the first to leave a review!</p>
+        <p class="text-slate-500">This shop hasn't received any reviews yet. Be the first to leave a review!</p>
       </div>
     @else
-      <div class="row">
-        <div class="col-lg-8">
+      <div class="grid grid-cols-12 gap-4">
+        <div class="lg:col-span-8">
           <!-- Reviews -->
           @foreach($reviews as $review)
-            <div class="card shadow-sm border-0 mb-4">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="d-flex align-items-center">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-0 mb-4">
+              <div class="p-4 sm:p-5">
+                <div class="flex justify-between items-start mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="flex items-center">
                       @for($i = 1; $i <= 5; $i++)
                         @if($i <= $review->rating)
                           <i class="fas fa-star" style="font-size: 14px; color:#e5780b;"></i>
@@ -76,7 +76,7 @@
                     </div>
                     <div>
                       <strong>{{ $review->user ? $review->user->name : 'Anonymous User' }}</strong>
-                      <div class="text-muted small">{{ $review->created_at->diffForHumans() }}</div>
+                      <div class="text-slate-500 text-xs">{{ $review->created_at->diffForHumans() }}</div>
                     </div>
                   </div>
                   
@@ -97,16 +97,16 @@
                         } catch (\Throwable $e) {}
                       }
                     @endphp
-                    <div class="text-end d-flex flex-column align-items-end">
-                      <small class="text-muted">Reviewed item</small>
-                      <div class="d-flex align-items-center mt-1">
+                    <div class="text-right flex flex-col items-end">
+                      <small class="text-slate-500">Reviewed item</small>
+                      <div class="flex items-center mt-1">
                         @if($thumbUrl)
-                          <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" class="me-2">
+                          <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" class="mr-2">
                             <img src="{{ $thumbUrl }}" alt="{{ $product->name }} thumbnail" style="width:56px;height:56px;object-fit:cover;border-radius:6px;">
                           </a>
                         @endif
                         <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" 
-                           class="text-decoration-none text-success small">
+                           class="no-underline text-emerald-600 text-xs">
                           {{ $product->name }}
                         </a>
                       </div>
@@ -117,7 +117,7 @@
                 @if($review->comment)
                   <p class="mb-2">{{ $review->comment }}</p>
                 @else
-                  <p class="text-muted mb-2"><em>No comment provided</em></p>
+                  <p class="text-slate-500 mb-2"><em>No comment provided</em></p>
                 @endif
 
                 @if(!empty($review->image_path))
@@ -131,36 +131,36 @@
           
           <!-- Pagination -->
           @if($reviews->hasPages())
-            <div class="d-flex justify-content-center">
-              {{ $reviews->links('pagination::bootstrap-5') }}
+            <div class="flex justify-center">
+              {{ $reviews->links('pagination::tailwind') }}
             </div>
           @endif
         </div>
         
         <!-- Sidebar -->
-        <div class="col-lg-4">
-          <div class="card shadow-sm border-0">
-            <div class="card-header bg-white fw-semibold border-bottom">
+        <div class="lg:col-span-4">
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-0">
+            <div class="border-b border-slate-200 px-4 py-3 bg-white font-semibold border-bottom">
               Shop Information
             </div>
-            <div class="card-body">
-              <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="p-4 sm:p-5">
+              <div class="flex items-center gap-3 mb-3">
                 @if($shop->logo_url)
                   <img src="{{ $shop->logo_url }}" alt="{{ $shop->name }} logo"
-                       class="rounded-circle"
+                       class="rounded-full"
                        style="width: 50px; height: 50px; object-fit: cover;">
                 @endif
                 <div>
                   <h6 class="mb-0">{{ $shop->name }}</h6>
-                  <small class="text-muted">Owned by {{ $shop->user->name }}</small>
+                  <small class="text-slate-500">Owned by {{ $shop->user->name }}</small>
                 </div>
               </div>
               
               @if($shop->bio)
-                <p class="small text-muted mb-3">{{ Str::limit($shop->bio, 100) }}</p>
+                <p class="text-xs text-slate-500 mb-3">{{ Str::limit($shop->bio, 100) }}</p>
               @endif
               
-              <a href="{{ route('shop.show', $shop) }}" class="btn btn-success w-100">
+              <a href="{{ route('shop.show', $shop) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 w-full">
                 Visit Shop
               </a>
             </div>
@@ -172,3 +172,5 @@
 </section>
 
 @endsection 
+
+

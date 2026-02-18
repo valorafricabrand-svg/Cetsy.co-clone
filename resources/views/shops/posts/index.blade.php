@@ -1,18 +1,18 @@
-{{-- resources/views/shops/posts/index.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/shops/posts/index.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
+@section('main')
 <div class="content">
-  <div class="card mb-4 shadow-sm">
-    <div class="card-header d-flex justify-content-between align-items-center bg-white">
-      <h2 class="mb-0 fw-bold">Shop Posts</h2>
-      <a href="{{ route('seller.shop-posts.create') }}" class="btn btn-outline-success">
-        <i class="fas fa-plus me-1"></i> Create Post
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4 shadow-sm">
+    <div class="border-b border-slate-200 px-4 py-3 flex justify-between items-center bg-white">
+      <h2 class="mb-0 font-bold">Shop Posts</h2>
+      <a href="{{ route('seller.shop-posts.create') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+        <i class="fas fa-plus mr-1"></i> Create Post
       </a>
     </div>
-    <div class="card-body p-0">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
+    <div class="p-4 sm:p-5 p-0">
+      <table class="min-w-full divide-y divide-slate-200 text-sm align-middle mb-0">
+        <thead class="bg-slate-50">
           <tr>
             <th>Title</th>
             <th>Description</th>
@@ -26,7 +26,7 @@
         <tbody>
           @forelse($shopPosts as $post)
             <tr>
-              <td class="fw-semibold">{{ $post->title }}</td>
+              <td class="font-semibold">{{ $post->title }}</td>
               <td>
                 <span title="{{ $post->description }}">
                   {{ Str::limit($post->description, 60) }}
@@ -36,29 +36,29 @@
                 @if($post->image)
                   <img src="{{ asset('storage/' . $post->image) }}" alt="Image" style="width: 60px; height: 40px; object-fit: cover;" class="rounded shadow-sm border">
                 @else
-                  <span class="text-muted">—</span>
+                  <span class="text-slate-500">â€”</span>
                 @endif
               </td>
               <td>
                 @if($post->status === 'published')
-                  <span class="badge bg-success">Published</span>
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-success">Published</span>
                 @else
-                  <span class="badge bg-secondary">Draft</span>
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200">Draft</span>
                 @endif
               </td>
               <td>{{ $post->published_at ? $post->published_at->format('Y-m-d') : '-' }}</td>
               <td>{{ $post->expired_at ? $post->expired_at->format('Y-m-d') : '-' }}</td>
               <td class="text-center">
-                <a href="{{ route('seller.shop-posts.edit', $post) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                <a href="{{ route('seller.shop-posts.edit', $post) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50 mr-1" title="Edit">
                   <i class="fas fa-edit"></i>
                 </a>
-                <a href="{{ route('seller.shop-posts.show', $post) }}" class="btn btn-sm btn-outline-info me-1" title="View">
+                <a href="{{ route('seller.shop-posts.show', $post) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs btn-outline-info mr-1" title="View">
                   <i class="fas fa-eye"></i>
                 </a>
                 <form action="{{ route('seller.shop-posts.destroy', $post) }}" method="POST" style="display: inline;">
                   @csrf
                   @method('DELETE')
-                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this post?')">
+                  <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50" title="Delete" onclick="return confirm('Are you sure you want to delete this post?')">
                     <i class="fas fa-trash"></i>
                   </button>
                 </form>
@@ -66,7 +66,7 @@
             </tr>
           @empty
             <tr>
-              <td colspan="7" class="text-center text-muted py-5">
+              <td colspan="7" class="text-center text-slate-500 py-5">
                 <i class="fas fa-file-alt fa-2x mb-2"></i>
                 <div>No posts found. Click <b>Create Post</b> to add your first shop post.</div>
               </td>
@@ -78,3 +78,4 @@
   </div>
 </div>
 @endsection 
+

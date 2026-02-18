@@ -1,23 +1,28 @@
 {{-- resources/views/seller/orders/payments.blade.php --}}
-@extends('layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Order Payments')
 
-@section('content')
+@section('main')
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
+      <div class="space-y-6">
 <div class="content">
 
     {{-- ───────────── PAGE TITLE & FILTERS  ───────────── --}}
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-        <h2 class="text-success mb-0">
-            <i class="bi bi-credit-card-2-back me-1"></i>
+    <div class="flex flex-col flex-md-row justify-between align-items-md-center mb-4 gap-3">
+        <h2 class="text-emerald-600 mb-0">
+            <i class="bi bi-credit-card-2-back mr-1"></i>
             Payments
         </h2>
 
         {{-- Filters --}}
-        <form method="GET" class="row g-2 align-items-end">
-            <div class="col-auto">
-                <label for="status" class="form-label mb-0 small text-muted">Status</label>
-                <select name="status" id="status" class="form-select form-select-sm">
+        <form method="GET" class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-2 items-end">
+            <div class="w-auto">
+                <label for="status" class="form-label mb-0 text-xs text-slate-500">Status</label>
+                <select name="status" id="status" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
                     <option value="">All</option>
                     <option value="pending" {{ request('status')=='pending'?'selected':'' }}>Pending</option>
                     <option value="success" {{ request('status')=='success'?'selected':'' }}>Success</option>
@@ -25,9 +30,9 @@
                 </select>
             </div>
 
-            <div class="col-auto">
-                <label for="method" class="form-label mb-0 small text-muted">Method</label>
-                <select name="method" id="method" class="form-select form-select-sm">
+            <div class="w-auto">
+                <label for="method" class="form-label mb-0 text-xs text-slate-500">Method</label>
+                <select name="method" id="method" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
                     <option value="">All</option>
                     <option value="mpesa"  {{ request('method')=='mpesa' ?'selected':'' }}>M-Pesa</option>
                     <option value="paypal" {{ request('method')=='paypal'?'selected':'' }}>PayPal</option>
@@ -38,42 +43,42 @@
                 </select>
             </div>
 
-            <div class="col-auto">
-                <label for="per_page" class="form-label mb-0 small text-muted">Per Page</label>
-                <select name="per_page" id="per_page" class="form-select form-select-sm">
+            <div class="w-auto">
+                <label for="per_page" class="form-label mb-0 text-xs text-slate-500">Per Page</label>
+                <select name="per_page" id="per_page" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
                     @foreach ([20,50,100] as $size)
                         <option value="{{ $size }}" {{ request('per_page',20)==$size?'selected':'' }}>{{ $size }}</option>
                     @endforeach
                 </select>
             </div>
 
-            <div class="col-auto">
-                <button class="btn btn-sm btn-success">
-                    <i class="bi bi-funnel me-1"></i> Apply
+            <div class="w-auto">
+                <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">
+                    <i class="bi bi-funnel mr-1"></i> Apply
                 </button>
                 @if(request()->hasAny(['status','method','per_page']))
-                    <a href="{{ route(Route::currentRouteName()) }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    <a href="{{ route(Route::currentRouteName()) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100">Reset</a>
                 @endif
             </div>
         </form>
     </div>
 
     @if ($payments->isNotEmpty())
-        <div class="card shadow-sm">
-            <div class="card-header bg-light fw-semibold d-flex justify-content-between align-items-center">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex justify-between items-center">
                 <span>Payment History ({{ $payments->total() }})</span>
-                <small class="text-muted">
+                <span class="text-slate-500 text-xs">
                     Showing {{ $payments->firstItem() }}–{{ $payments->lastItem() }} of {{ $payments->total() }}
-                </small>
+                </span>
             </div>
 
-            <div class="table-responsive">
-                <table class="table table-hover table-striped align-middle mb-0">
-                    <thead class="table-light">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 text-sm table-hover table-striped align-middle mb-0">
+                    <thead class="bg-slate-50 text-slate-600">
                         <tr>
                             <th>#</th>
                             <th>Reference</th>
-                            <th class="text-end">Amount</th>
+                            <th class="text-right">Amount</th>
                             <th>Method</th>
                             <th>Paid&nbsp;On</th>
                         </tr>
@@ -105,10 +110,10 @@
                                 </span>
                             </td>
 
-                            <td class="text-end">{{ money($payment->total_amount) }}</td>
+                            <td class="text-right">{{ money($payment->total_amount) }}</td>
 
                             <td>
-                                <span class="d-inline-flex align-items-center gap-1 text-capitalize">
+                                <span class="d-inline-flex items-center gap-1 text-capitalize">
                                     @switch($payment->payment_method)
                                         @case('mpesa')   <i class="bi bi-phone"></i> @break
                                         @case('paypal')  <i class="bi bi-paypal"></i> @break
@@ -131,16 +136,26 @@
             </div>
 
             {{-- Pagination --}}
-            <div class="card-footer">
-                      {{ $payments->links('pagination::bootstrap-5') }}
+            <div class="border-t border-slate-200 px-4 py-3">
+                      {{ $payments->links('pagination::tailwind') }}
             </div>
         </div>
     @else
-        <div class="alert alert-info mt-4">
-            <i class="bi bi-exclamation-circle me-1"></i>
+        <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 mt-4">
+            <i class="bi bi-exclamation-circle mr-1"></i>
             No payments recorded yet.
         </div>
     @endif
 </div>
+      </div>
+    </div>
+  </div>
+</section>
 @endsection
+
+
+
+
+
+
 

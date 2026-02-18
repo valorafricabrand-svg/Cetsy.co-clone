@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Notifications')
 
@@ -583,12 +583,12 @@
 </style>
 @endsection
 
-@section('content')
+@section('main')
 <div class="content">
     <div class="notifications-container">
         <!-- Page Header -->
         <div class="page-header">
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="flex justify-between items-center">
                 <h1 class="page-title">
                     <i class="fas fa-bell"></i>
                     Notifications
@@ -596,8 +596,8 @@
                 @if($notifications->where('is_read', false)->count() > 0)
                     <form method="POST" action="{{ route('notifications.mark-all-read') }}" class="d-inline mark-all-form">
                         @csrf
-                        <button type="submit" class="btn mark-all-btn">
-                            <i class="fas fa-check-double me-1"></i>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition mark-all-btn">
+                            <i class="fas fa-check-double mr-1"></i>
                             Mark All as Read
                         </button>
                     </form>
@@ -613,15 +613,15 @@
         </div>
 
         <!-- Notifications Card -->
-        <div class="card notifications-card">
-            <div class="card-body p-0">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm notifications-card">
+            <div class="p-4 sm:p-5 p-0">
                 @if($notifications->count() > 0)
                     <div class="notification-list">
                         @foreach($notifications as $notification)
                             <div class="notification-item {{ !$notification->is_read ? 'unread' : '' }}" id="notification-{{ $notification->id }}">
                                 @if(!$notification->is_read)
                                     <div class="new-badge">
-                                        <i class="fas fa-star me-1"></i>New
+                                        <i class="fas fa-star mr-1"></i>New
                                     </div>
                                 @endif
                                 
@@ -632,7 +632,7 @@
                                         $href = $route;
                                     @endphp
                                     @if($href && $href !== route('notifications.index'))
-                                        <a href="{{ $href }}" class="notification-text {{ !$notification->is_read ? 'unread' : '' }} text-decoration-none d-block">
+                                        <a href="{{ $href }}" class="notification-text {{ !$notification->is_read ? 'unread' : '' }} text-decoration-none block">
                                             {{ $notification->description }}
                                         </a>
                                     @else
@@ -646,7 +646,7 @@
                                             <i class="far fa-clock"></i>
                                             {{ $notification->created_at->format('M d, Y \a\t g:i A') }}
                                         </div>
-                                        <span class="text-muted">•</span>
+                                        <span class="text-slate-500">â€¢</span>
                                         <span>{{ $notification->created_at->diffForHumans() }}</span>
                                     </div>
 
@@ -663,7 +663,7 @@
                                                     class="btn-mark-read" 
                                                     data-notification-id="{{ $notification->id }}"
                                                     data-notification-description="{{ $notification->description }}">
-                                                <i class="fas fa-check me-1"></i>Mark as Read
+                                                <i class="fas fa-check mr-1"></i>Mark as Read
                                             </button>
                                         @endif
                                     </div>
@@ -675,13 +675,13 @@
                     <!-- Pagination -->
                     @if($notifications->hasPages())
                         <div class="pagination-wrapper">
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="flex justify-between items-center">
                                 <div class="pagination-info">
                                     Showing {{ $notifications->firstItem() }} to {{ $notifications->lastItem() }} 
                                     of {{ $notifications->total() }} notifications
                                 </div>
                                 <div>
-                                    {{ $notifications->links("pagination::bootstrap-5") }}
+                                    {{ $notifications->links("pagination::tailwind") }}
                                 </div>
                             </div>
                         </div>
@@ -690,7 +690,7 @@
                     <div class="empty-state">
                         <i class="far fa-bell-slash empty-icon"></i>
                         <h5 class="mb-3">No notifications yet</h5>
-                        <p class="text-muted">You're all caught up! New notifications will appear here.</p>
+                        <p class="text-slate-500">You're all caught up! New notifications will appear here.</p>
                     </div>
                 @endif
             </div>
@@ -698,30 +698,30 @@
     </div>
 
     <!-- Mark as Read Confirmation Modal -->
-    <div class="modal fade" id="markReadModal" tabindex="-1" aria-labelledby="markReadModalLabel" aria-hidden="true">
+    <div class="modal" id="markReadModal" tabindex="-1" aria-labelledby="markReadModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
                 <form id="markReadForm" method="POST">
                     @csrf
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="markReadModalLabel">
-                            <i class="fas fa-check-circle me-2"></i>Mark as Read
+                    <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                        <h5 class="text-base font-semibold text-slate-900" id="markReadModalLabel">
+                            <i class="fas fa-check-circle mr-2"></i>Mark as Read
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="px-4 py-4">
                         <p class="mb-3">Are you sure you want to mark this notification as read?</p>
-                        <div class="alert alert-info">
-                            <strong><i class="fas fa-info-circle me-1"></i>Notification:</strong>
+                        <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
+                            <strong><i class="fas fa-info-circle mr-1"></i>Notification:</strong>
                             <p class="mb-0 mt-2" id="notificationDescription"></p>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="fas fa-times me-1"></i>Cancel
+                    <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i>Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-check me-1"></i>Mark as Read
+                        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+                            <i class="fas fa-check mr-1"></i>Mark as Read
                         </button>
                     </div>
                 </form>
@@ -785,7 +785,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalHTML = submitBtn.innerHTML;
         submitBtn.classList.add('btn-loading');
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Processing...';
         submitBtn.disabled = true;
         
         fetch(this.action, {
@@ -852,7 +852,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalHTML = submitBtn.innerHTML;
             submitBtn.classList.add('btn-loading');
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Processing...';
             submitBtn.disabled = true;
             
             fetch(this.action, {
@@ -890,3 +890,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
+
+
+
+

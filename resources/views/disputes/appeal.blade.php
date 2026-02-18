@@ -1,18 +1,18 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Submit Appeal')
 
-@section('content')
+@section('main')
 <div class="content">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
+    <div class="grid grid-cols-12 gap-4 justify-center">
+        <div class="md:col-span-8">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-200 px-4 py-3">
                     <h4 class="mb-0">Submit Appeal</h4>
                 </div>
-                <div class="card-body">
+                <div class="p-4 sm:p-5">
                     @if($errors->any())
-                        <div class="alert alert-danger">
+                        <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">
                             <ul class="mb-0">
                                 @foreach($errors->all() as $error)
                                     <li>{{ $error }}</li>
@@ -22,7 +22,7 @@
                     @endif
 
                     <!-- Dispute Summary -->
-                    <div class="alert alert-info mb-4">
+                    <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 mb-4">
                         <h6 class="alert-heading">Dispute Summary</h6>
                         <p class="mb-2"><strong>Type:</strong> {{ $dispute->getTypeLabel() }}</p>
                         <p class="mb-2"><strong>Order:</strong> #{{ $dispute->order->order_number }}</p>
@@ -34,22 +34,22 @@
 
                     <!-- Appeal Deadline Warning -->
                     @if($dispute->isAppealDeadlineExpired())
-                        <div class="alert alert-danger">
+                        <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">
                             <h6 class="alert-heading">Appeal Deadline Expired</h6>
                             <p class="mb-0">The appeal deadline has passed. You can no longer appeal this decision.</p>
                         </div>
                     @else
                         @if($dispute->appeal_deadline)
-                            <div class="alert alert-warning">
+                            <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
                                 <h6 class="alert-heading">Appeal Deadline</h6>
                                 <p class="mb-0">
                                     You have <strong>{{ $dispute->getAppealDeadlineDaysLeft() }} days</strong> remaining to submit your appeal.
                                     <br>
-                                    <small class="text-muted">Deadline: {{ $dispute->appeal_deadline->format('M d, Y \a\t g:i A') }}</small>
+                                    <small class="text-slate-500">Deadline: {{ $dispute->appeal_deadline->format('M d, Y \a\t g:i A') }}</small>
                                 </p>
                             </div>
                         @else
-                            <div class="alert alert-info">
+                            <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
                                 <h6 class="alert-heading">Appeal Available</h6>
                                 <p class="mb-0">You can submit an appeal at any time. There is no deadline for this dispute.</p>
                             </div>
@@ -60,33 +60,33 @@
                             
                             <!-- Appeal Reason -->
                             <div class="mb-3">
-                                <label for="reason" class="form-label">Appeal Reason *</label>
-                                <textarea name="reason" id="reason" rows="5" class="form-control @error('reason') is-invalid @enderror" 
+                                <label for="reason" class="mb-1 block text-sm font-medium text-slate-700">Appeal Reason *</label>
+                                <textarea name="reason" id="reason" rows="5" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('reason') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" 
                                     placeholder="Please explain why you believe the decision should be reconsidered. Provide specific reasons and any new information..." required>{{ old('reason') }}</textarea>
-                                <div class="form-text">
+                                <div class="mt-1 text-xs text-slate-500">
                                     Be specific about why you disagree with the decision. Provide new evidence or information that wasn't available during the initial review.
                                 </div>
                                 @error('reason')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
                                 @enderror
                             </div>
 
                             <!-- New Evidence Upload -->
                             <div class="mb-3">
-                                <label for="new_evidence" class="form-label">New Evidence (Optional)</label>
-                                <input type="file" name="new_evidence[]" id="new_evidence" class="form-control @error('new_evidence.*') is-invalid @enderror" 
+                                <label for="new_evidence" class="mb-1 block text-sm font-medium text-slate-700">New Evidence (Optional)</label>
+                                <input type="file" name="new_evidence[]" id="new_evidence" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('new_evidence.*') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" 
                                     multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
-                                <div class="form-text">
+                                <div class="mt-1 text-xs text-slate-500">
                                     Upload any new documents, screenshots, or photos that support your appeal. 
                                     Max 10MB per file. Supported formats: JPG, PNG, PDF, DOC, DOCX
                                 </div>
                                 @error('new_evidence.*')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
                                 @enderror
                             </div>
 
                             <!-- Appeal Process Information -->
-                            <div class="alert alert-info">
+                            <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
                                 <h6 class="alert-heading">Appeal Process</h6>
                                 <ul class="mb-0">
                                     <li>Your appeal will be reviewed by a senior support team member</li>
@@ -98,7 +98,7 @@
                             </div>
 
                             <!-- Important Notes -->
-                            <div class="alert alert-warning">
+                            <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
                                 <h6 class="alert-heading">Important Notes</h6>
                                 <ul class="mb-0">
                                     <li>Appeals are only considered for new evidence or procedural errors</li>
@@ -108,11 +108,11 @@
                                 </ul>
                             </div>
 
-                            <div class="d-flex justify-content-between">
-                                <a href="{{ route('disputes.show', $dispute->id) }}" class="btn btn-secondary">
+                            <div class="flex justify-between">
+                                <a href="{{ route('disputes.show', $dispute->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500">
                                     <i class="fas fa-arrow-left"></i> Back to Dispute
                                 </a>
-                                <button type="submit" class="btn btn-warning">
+                                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400">
                                     <i class="fas fa-gavel"></i> Submit Appeal
                                 </button>
                             </div>
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     deadlineElement.innerHTML = `
                         You have <strong>${days} days, ${hours} hours, ${minutes} minutes</strong> remaining to submit your appeal.
                         <br>
-                        <small class="text-muted">Deadline: {{ $dispute->appeal_deadline->format('M d, Y \a\t g:i A') }}</small>
+                        <small class="text-slate-500">Deadline: {{ $dispute->appeal_deadline->format('M d, Y \a\t g:i A') }}</small>
                     `;
                 } else {
                     deadlineElement.innerHTML = '<strong>Appeal deadline has expired!</strong>';
@@ -190,3 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
+
+
+
+

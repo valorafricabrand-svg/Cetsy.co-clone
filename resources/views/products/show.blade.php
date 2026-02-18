@@ -1,5 +1,5 @@
-{{-- resources/views/products/show.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/products/show.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', $product->name . ' | Product')
 
@@ -24,7 +24,7 @@
 </style>
 @endpush
 
-@section('content')
+@section('main')
 @php
     $current = \Illuminate\Support\Facades\Route::currentRouteName();
 @endphp
@@ -33,58 +33,58 @@
   <a target="_blank" href="{{ route('listing.show', $product->slug) }}">View Public </a>
 
 
-  {{-- ───────── Clickable Tabs Header (navigate to pages) ───────── --}}
+  {{-- â”€â”€â”€â”€â”€â”€â”€â”€â”€ Clickable Tabs Header (navigate to pages) â”€â”€â”€â”€â”€â”€â”€â”€â”€ --}}
   <div class="page-header-sticky">
-    <div class="container-fluid px-0">
+    <div class="mx-auto w-full px-4 sm:px-6 px-0">
       <div class="tab-scroll px-2 py-2">
         <ul class="nav nav-pills gap-2 flex-nowrap">
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.show' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.show', $product) }}">
-              <i class="fa-regular fa-circle-question me-1"></i> About
+              <i class="fa-regular fa-circle-question mr-1"></i> About
             </a>
           </li>
 
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.pricing' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.pricing', $product) }}">
-              <i class="fa-solid fa-tags me-1"></i> Price & Inventory
+              <i class="fa-solid fa-tags mr-1"></i> Price & Inventory
             </a>
           </li>
 
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.variations' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.variations', $product) }}">
-              <i class="fa-solid fa-layer-group me-1"></i> Variations
+              <i class="fa-solid fa-layer-group mr-1"></i> Variations
             </a>
           </li>
 
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.details' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.details', $product) }}">
-              <i class="fa-regular fa-rectangle-list me-1"></i> Details
+              <i class="fa-regular fa-rectangle-list mr-1"></i> Details
             </a>
           </li>
 
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.shipping' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.shipping', $product) }}">
-              <i class="fa-solid fa-truck me-1"></i> Shipping
+              <i class="fa-solid fa-truck mr-1"></i> Shipping
             </a>
           </li>
 
           {{-- NEW: Media tab --}}
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.media' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.media', $product) }}">
-              <i class="fa-regular fa-images me-1"></i> Media
+              <i class="fa-regular fa-images mr-1"></i> Media
             </a>
           </li>
 
-          <li class="nav-item">
+          <li class="">
             <a class="nav-link {{ $current === 'products.settings' ? 'active' : 'btn-outline-secondary' }}"
                href="{{ route('products.settings', $product) }}">
-              <i class="fa-solid fa-gear me-1"></i> Settings
+              <i class="fa-solid fa-gear mr-1"></i> Settings
             </a>
           </li>
 
@@ -97,28 +97,28 @@
 
   {{-- Flash --}}
   @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show rounded-3 mt-3" role="alert">
+    <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 alert-dismissible rounded-3 mt-3" role="alert">
       {{ session('success') }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   @endif
 
-  {{-- ───────── ABOUT PAGE CONTENT (this view is the About page) ───────── --}}
-  <div class="row gx-5 gy-4 mt-2">
-    {{-- ───────── Media Carousel ───────── --}}
-    <div class="col-lg-6">
+  {{-- â”€â”€â”€â”€â”€â”€â”€â”€â”€ ABOUT PAGE CONTENT (this view is the About page) â”€â”€â”€â”€â”€â”€â”€â”€â”€ --}}
+  <div class="grid grid-cols-12 gap-4 gap-x-5 gap-y-4 mt-2">
+    {{-- â”€â”€â”€â”€â”€â”€â”€â”€â”€ Media Carousel â”€â”€â”€â”€â”€â”€â”€â”€â”€ --}}
+    <div class="lg:col-span-6">
       @if($product->media->count())
         <div id="productCarousel" class="carousel slide rounded-4 shadow-sm border" data-bs-ride="carousel">
           <div class="carousel-inner">
             @foreach($product->media as $i => $media)
               <div class="carousel-item @if($i===0) active @endif">
                 @if($media->type === 'video')
-                  <video controls class="d-block w-100 rounded-4" style="height:400px; object-fit:cover;">
+                  <video controls class="block w-full rounded-4" style="height:400px; object-fit:cover;">
                     <source src="{{ asset('storage/'.$media->url) }}" />
                   </video>
                 @else
                   <img src="{{ asset('storage/'.$media->url) }}"
-                       class="d-block w-100 rounded-4"
+                       class="block w-full rounded-4"
                        style="height:400px; object-fit:cover;"
                        alt="{{ $product->name }}">
                 @endif
@@ -133,16 +133,16 @@
           </button>
         </div>
       @else
-        <div class="d-flex align-items-center justify-content-center border rounded-4 text-muted" style="height:400px;">
+        <div class="flex items-center justify-center border rounded-4 text-slate-500" style="height:400px;">
           No media available
         </div>
       @endif
     </div>
 
-    {{-- ───────── Product Details ───────── --}}
-    <div class="col-lg-6 d-flex flex-column">
+    {{-- â”€â”€â”€â”€â”€â”€â”€â”€â”€ Product Details â”€â”€â”€â”€â”€â”€â”€â”€â”€ --}}
+    <div class="lg:col-span-6 flex flex-col">
       {{-- Title & Status Badge --}}
-      <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="flex justify-between items-center mb-3">
         <h2 class="mb-0">{{ $product->name }}</h2>
         @php
           switch($product->is_active) {
@@ -173,25 +173,25 @@
       @endif
 
       {{-- Type (price removed per request) --}}
-      <p class="mb-3 text-muted">
-        <i class="fas fa-box me-1"></i>
+      <p class="mb-3 text-slate-500">
+        <i class="fas fa-box mr-1"></i>
         <strong>Type:</strong> {{ ucfirst($product->type) }}
       </p>
 
       {{-- Listing Dates --}}
       @if($product->is_active === 1)
-        <ul class="list-unstyled mb-3 text-muted small">
+        <ul class="list-unstyled mb-3 text-slate-500 text-xs">
             <li>
-            <i class="fas fa-calendar-plus me-1"></i>
+            <i class="fas fa-calendar-plus mr-1"></i>
             <strong>Listing id:</strong>{{ $product->id }}
           </li>
           <li>
-            <i class="fas fa-calendar-plus me-1"></i>
+            <i class="fas fa-calendar-plus mr-1"></i>
             <strong>Listed on:</strong>
             {{ \Carbon\Carbon::parse($product->listing_paid_at)->toDayDateTimeString() }}
           </li>
           <li>
-            <i class="fas fa-calendar-check me-1"></i>
+            <i class="fas fa-calendar-check mr-1"></i>
             <strong>Next due:</strong>
             {{ \Carbon\Carbon::parse($product->next_due_date)->toFormattedDateString() }}
           </li>
@@ -203,11 +203,11 @@
         <strong>Renewal:</strong>
         @if($product->is_active === 1)
           <form method="POST" action="{{ route('products.updateRenewal', $product) }}"
-                class="d-inline-flex align-items-center">
+                class="inline-flex items-center">
             @csrf
             @method('PATCH')
             <select name="renewal_type"
-                    class="form-select form-select-sm me-2 @error('renewal_type') is-invalid @enderror"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs mr-2 @error('renewal_type') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
                     onchange="this.form.submit()">
               <option value="automatic" {{ $product->renewal_type === 'automatic' ? 'selected' : '' }}>
                 Automatic
@@ -217,18 +217,18 @@
               </option>
             </select>
             @error('renewal_type')
-              <div class="invalid-feedback d-block">{{ $message }}</div>
+              <div class="mt-1 text-xs text-rose-600 block">{{ $message }}</div>
             @enderror
           </form>
         @else
-          <span class="text-muted">{{ ucfirst($product->renewal_type) }}</span>
+          <span class="text-slate-500">{{ ucfirst($product->renewal_type) }}</span>
         @endif
       </div>
 
       {{-- Stock --}}
       @if(! is_null($product->stock))
         <p class="mb-3">
-          <i class="fas fa-layer-group me-1"></i>
+          <i class="fas fa-layer-group mr-1"></i>
           <strong>Stock:</strong> {{ $product->stock }}
         </p>
       @endif
@@ -262,8 +262,8 @@
 
       @if($product->is_active === 3)
         {{-- Suspended --}}
-        <div class="alert alert-danger d-flex align-items-center mb-4">
-          <i class="fas fa-ban me-2"></i>
+        <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800 flex items-center mb-4">
+          <i class="fas fa-ban mr-2"></i>
           This listing has been suspended. Please contact the administrator for assistance.
         </div>
 
@@ -271,14 +271,14 @@
         {{-- Paused --}}
         @if($product->next_due_date && Carbon::parse($product->next_due_date)->lte(Carbon::now()))
           {{-- Subscription expired: allow renewal --}}
-          <div class="alert alert-warning d-flex align-items-center mb-4">
-            <i class="fas fa-exclamation-triangle me-2"></i>
+          <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 flex items-center mb-4">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
             Your subscription expired on {{ Carbon::parse($product->next_due_date)->format('M d, Y') }}. Renew below to reactivate your listing.
           </div>
 
           @php $actionPrefix = 'Renew'; @endphp
 
-          <div class="d-flex flex-wrap gap-2 mb-4">
+          <div class="flex flex-wrap gap-2 mb-4">
             @foreach($planButtons as $planKey => $option)
               <form method="POST" action="{{ route('products.pay-fee', $product) }}">
                 @csrf
@@ -292,8 +292,8 @@
           </div>
         @else
           {{-- Paused but not yet due --}}
-          <div class="alert alert-info d-flex align-items-center mb-4">
-            <i class="fas fa-pause me-2"></i>
+          <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 flex items-center mb-4">
+            <i class="fas fa-pause mr-2"></i>
             This listing is paused. It will automatically become eligible for renewal on {{ Carbon::parse($product->next_due_date)->format('M d, Y') }}.
           </div>
         @endif
@@ -310,20 +310,20 @@
 
         @if($hasPaid && $dueFuture)
           @if(! $hasFeatured)
-            <div class="alert alert-warning d-flex align-items-center mb-3">
-              <i class="fas fa-exclamation-triangle me-2"></i>
+            <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 flex items-center mb-3">
+              <i class="fas fa-exclamation-triangle mr-2"></i>
               Listing not live yet. Add a featured image, then publish your listing.
             </div>
-            <div class="d-flex flex-wrap gap-2 mb-4">
-              <a href="{{ route('products.media', $product) }}" class="btn btn-primary">Add Featured Image</a>
-              <a href="{{ route('products.settings', $product) }}" class="btn btn-outline-secondary">Go to Settings</a>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <a href="{{ route('products.media', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Add Featured Image</a>
+              <a href="{{ route('products.settings', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">Go to Settings</a>
             </div>
           @else
-            <div class="alert alert-info d-flex align-items-center mb-3">
-              <i class="fas fa-circle-info me-2"></i>
+            <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 flex items-center mb-3">
+              <i class="fas fa-circle-info mr-2"></i>
               Listing ready to publish. Review settings and publish when you're ready.
             </div>
-            <div class="d-flex flex-wrap gap-2 mb-4">
+            <div class="flex flex-wrap gap-2 mb-4">
               <form action="{{ route('products.settings.update', $product) }}" method="POST" onsubmit="return confirm('Publish this listing now?');">
                 @csrf
                 @method('PATCH')
@@ -338,23 +338,23 @@
                 @if(!empty($product->tags))
                   <input type="hidden" name="tags" value="{{ $product->tags }}">
                 @endif
-                <button class="btn btn-success">
-                  <i class="fa-solid fa-check me-1"></i> Publish Now
+                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+                  <i class="fa-solid fa-check mr-1"></i> Publish Now
                 </button>
               </form>
-              <a href="{{ route('products.settings', $product) }}" class="btn btn-primary">Go to Settings</a>
-              <a href="{{ route('products.media', $product) }}" class="btn btn-outline-secondary">Manage Media</a>
+              <a href="{{ route('products.settings', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Go to Settings</a>
+              <a href="{{ route('products.media', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">Manage Media</a>
             </div>
           @endif
         @else
-          <div class="alert alert-warning d-flex align-items-center mb-4">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            This listing isn’t live yet. Pay the fee below to activate it.
+          <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 flex items-center mb-4">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            This listing isnâ€™t live yet. Pay the fee below to activate it.
           </div>
 
           @php $actionPrefix = 'Pay'; @endphp
 
-          <div class="d-flex flex-wrap gap-2 mb-4">
+          <div class="flex flex-wrap gap-2 mb-4">
             @foreach($planButtons as $planKey => $option)
               <form method="POST" action="{{ route('products.pay-fee', $product) }}">
                 @csrf
@@ -372,8 +372,8 @@
       {{-- Action Links --}}
       <div class="mt-auto">
       
-        <a href="{{ route('products.index') }}" class="btn btn-outline-dark">
-          <i class="fas fa-arrow-left me-1"></i> Back
+        <a href="{{ route('products.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-900 text-slate-900 hover:bg-slate-100">
+          <i class="fas fa-arrow-left mr-1"></i> Back
         </a>
       </div>
     </div>
@@ -383,7 +383,7 @@
   @if($product->description)
     <div class="mt-5">
       <h5>Description</h5>
-      <div class="p-4 bg-light border rounded">
+      <div class="p-4 bg-slate-100 border rounded">
         {!! $product->description !!}
       </div>
     </div>
@@ -391,4 +391,6 @@
 
 </div>
 @endsection
+
+
 

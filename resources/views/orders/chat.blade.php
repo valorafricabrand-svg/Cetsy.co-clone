@@ -1,8 +1,8 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Order Chat')
 
-@section('content')
+@section('main')
 <style>
     body { background: #e5eee9 !important; }
     .wa-app-container {
@@ -197,7 +197,7 @@
             </div>
         </template>
         <template x-if="loading">
-            <div class="text-center text-muted py-2">Loading messages...</div>
+            <div class="text-center text-slate-500 py-2">Loading messages...</div>
         </template>
     </div>
     <!-- Footer/Input -->
@@ -318,3 +318,6 @@ function chatComponent() {
 }
 </script>
 @endpush
+
+
+

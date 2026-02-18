@@ -1,5 +1,5 @@
-{{-- resources/views/listings/checkout.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/listings/checkout.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 @section('title','Process Payment')
 
 {{-- ----------------------------------------------
@@ -294,14 +294,14 @@
 {{-- ----------------------------------------------
 |  MAIN CONTENT
 ---------------------------------------------- --}}
-@section('content')
-<div class="content checkout-page d-flex align-items-center">
-  <div class="container paynow-shell">
-    <div class="row justify-content-center">
-      <div class="col-lg-9 col-xl-8">
+@section('main')
+<div class="content checkout-page flex items-center">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 paynow-shell">
+    <div class="grid grid-cols-12 gap-4 justify-center">
+      <div class="lg:col-span-9 xl:col-span-8">
 
-        <div class="card border-0 paynow-card">
-          <div class="card-body p-4 p-md-5">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 paynow-card">
+          <div class="p-4 sm:p-5 p-5 md:p-5">
 
             <div class="paynow-header">
               <div class="paynow-eyebrow">Order payment</div>
@@ -310,14 +310,14 @@
             </div>
 
             {{-- -- Amount breakdown ----------------------------- --}}
-            <ul class="list-group mb-4 summary-list">
-              <li class="list-group-item d-flex justify-content-between summary-row">
+            <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 mb-4 summary-list">
+              <li class="px-4 py-3 flex justify-between summary-row">
                 <span>Order&nbsp;Total</span>
                 <span>{{ $currency }} {{ number_format($orderTotal, 2) }}</span>
               </li>
 
               @if($walletApplied > 0)
-                <li class="list-group-item d-flex justify-content-between summary-row">
+                <li class="px-4 py-3 flex justify-between summary-row">
                   <span>Wallet&nbsp;Applied</span>
                   <span>- {{ $currency }} {{ number_format($walletApplied, 2) }}</span>
                 </li>
@@ -325,7 +325,7 @@
 
               {{-- No fee shown here; PayPal fee shown near PayPal button only --}}
 
-              <li class="list-group-item d-flex justify-content-between summary-row summary-row--total">
+              <li class="px-4 py-3 flex justify-between summary-row summary-row--total">
                 <span>Amount&nbsp;Due&nbsp;Now</span>
                 <span>{{ $currency }} {{ $amountDueNowDisplay }}</span>
               </li>
@@ -338,9 +338,9 @@
                   class="d-grid gap-2 mb-3 wallet-pay {{ $canPayWithWalletOnly ? '' : 'd-none' }}">
               @csrf
               <input type="hidden" name="method" id="pay-method" value="wallet">
-              <button type="submit" id="wallet-pay-btn" class="btn btn-primary">
+              <button type="submit" id="wallet-pay-btn" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                 Pay via Wallet
-                <small class="fw-normal">(Balance: {{ $currency }} {{ number_format($walletBalance,2) }})</small>
+                <small class="font-normal">(Balance: {{ $currency }} {{ number_format($walletBalance,2) }})</small>
               </button>
             </form>
 
@@ -380,33 +380,33 @@
                       <div class="method-panel {{ $defaultMethod === 'mpesa' ? 'is-active' : '' }}" data-method="mpesa">
                         <div id="mpesa-section" class="method-card method-card--mpesa">
                           <div class="method-title">M-Pesa STK Push</div>
-                          <div class="method-alert small d-flex align-items-center mb-3">
-                            <i class="fa fa-mobile me-2"></i>
+                          <div class="method-alert text-xs flex items-center mb-3">
+                            <i class="fa fa-mobile mr-2"></i>
                             <span>We'll send a prompt to your phone. Approve with your M-Pesa PIN.</span>
                           </div>
 
-                          <div class="row g-3 mb-2">
-                            <div class="col-md-7">
-                              <label for="mpesa_phone" class="form-label">M-Pesa Phone (Safaricom)</label>
-                              <input type="text" id="mpesa_phone" class="form-control" placeholder="07XXXXXXXX / 7XXXXXXXX / 2547XXXXXXXX" maxlength="13" autocomplete="tel">
-                              <div class="form-text">We'll normalize to <code>2547XXXXXXXX</code>.</div>
+                          <div class="grid grid-cols-12 gap-4 gap-3 mb-2">
+                            <div class="md:col-span-7">
+                              <label for="mpesa_phone" class="mb-1 block text-sm font-medium text-slate-700">M-Pesa Phone (Safaricom)</label>
+                              <input type="text" id="mpesa_phone" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="07XXXXXXXX / 7XXXXXXXX / 2547XXXXXXXX" maxlength="13" autocomplete="tel">
+                              <div class="mt-1 text-xs text-slate-500">We'll normalize to <code>2547XXXXXXXX</code>.</div>
                             </div>
-                            <div class="col-md-5">
-                              <label class="form-label">KES Amount (auto)</label>
-                              <input type="text" id="mpesa_kes_preview" class="form-control" disabled
+                            <div class="md:col-span-5">
+                              <label class="mb-1 block text-sm font-medium text-slate-700">KES Amount (auto)</label>
+                              <input type="text" id="mpesa_kes_preview" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" disabled
                                      value="KES {{ number_format($previewKes, 2) }}">
-                              <div class="form-text">Rate used: {{ number_format($usdToKesRate, 2) }} KES / USD</div>
+                              <div class="mt-1 text-xs text-slate-500">Rate used: {{ number_format($usdToKesRate, 2) }} KES / USD</div>
                             </div>
                           </div>
 
                           <div class="d-grid">
-                            <button id="btn-start-stk" class="btn btn-success">
-                              <span class="spinner d-none" id="stk-spinner"></span>
+                            <button id="btn-start-stk" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+                              <span class="spinner hidden" id="stk-spinner"></span>
                               Pay with M-Pesa
                             </button>
                           </div>
 
-                          <div id="stk-live-status" class="alert alert-light border mt-3 d-none" aria-live="polite"></div>
+                          <div id="stk-live-status" class="rounded-xl border px-4 py-3 text-sm alert-light mt-3 hidden" aria-live="polite"></div>
                         </div>
                       </div>
                     @endif
@@ -416,7 +416,7 @@
                         <div class="method-card">
                           <div class="method-title">PayPal</div>
                           <p class="method-copy">Pay with your PayPal balance or card.</p>
-                          <div class="fee-note small">
+                          <div class="fee-note text-xs">
                             Paying with PayPal adds an online fee of {{ $currency }} {{ number_format($paypalFeeShort, 2) }} ({{ number_format($transactionFeePercentDisplay, 2) }}%).
                           </div>
                           <div id="paypal-button-container" class="text-center"></div>
@@ -430,7 +430,7 @@
                           <div class="method-title">Card via Stripe</div>
                           <p class="method-copy">Pay securely with Stripe Checkout.</p>
                           <div class="d-grid">
-                            <button id="btn-stripe" type="button" class="btn btn-dark">Pay with Stripe</button>
+                            <button id="btn-stripe" type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-900 text-white hover:bg-slate-700">Pay with Stripe</button>
                           </div>
                         </div>
                       </div>
@@ -442,17 +442,17 @@
                           <div class="method-title">Paystack</div>
                           <p class="method-copy">Pay securely with Paystack checkout.</p>
                           <div class="d-grid">
-                            <button id="btn-paystack" type="button" class="btn btn-success">Pay with Paystack</button>
+                            <button id="btn-paystack" type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Pay with Paystack</button>
                           </div>
                         </div>
                       </div>
                     @endif
 
-                    <div id="generic-result" class="paynow-result text-center mt-3 fw-semibold" role="status" aria-live="polite"></div>
+                    <div id="generic-result" class="paynow-result text-center mt-3 font-semibold" role="status" aria-live="polite"></div>
                   </div>
                 </div>
               @else
-                <div class="alert alert-warning mb-0">
+                <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 mb-0">
                   No payment methods are currently available. Please contact support.
                 </div>
               @endif
@@ -615,14 +615,14 @@ $(function () {
       let attempts=0;
       clearInterval(pollTimer);
       $liveStatus.removeClass('d-none alert-danger alert-success alert-warning').addClass('alert')
-                 .html(`<i class="fa fa-sync-alt fa-spin me-2"></i> Waiting for M-Pesa confirmation...`);
+                 .html(`<i class="fa fa-sync-alt fa-spin mr-2"></i> Waiting for M-Pesa confirmation...`);
       pollTimer=setInterval(function(){
         attempts++;
         $.get("{{ route('wallet.deposit.mpesa.status', '__REF__') }}".replace('__REF__', encodeURIComponent(ref)), function(resp){
           if(resp?.status==='success'){
             clearInterval(pollTimer);
             $liveStatus.removeClass('alert-warning alert-danger').addClass('alert-success')
-                       .html(`<i class="fa fa-check-circle me-2"></i> Payment confirmed! Finalizing your order...`);
+                       .html(`<i class="fa fa-check-circle mr-2"></i> Payment confirmed! Finalizing your order...`);
             if(!autoPayInProgress && $walletForm.length){
               autoPayInProgress = true;
               $methodInput.val('mpesa');
@@ -634,7 +634,7 @@ $(function () {
           if(resp?.status==='failed'){
             clearInterval(pollTimer);
             $liveStatus.removeClass('alert-warning alert-success').addClass('alert-danger')
-                       .html(`<i class="fa fa-exclamation-triangle me-2"></i> Payment failed: ${resp?.message || 'Unknown error'}`);
+                       .html(`<i class="fa fa-exclamation-triangle mr-2"></i> Payment failed: ${resp?.message || 'Unknown error'}`);
             return;
           }
         }).fail(()=>{ /* keep polling on transient errors */ });
@@ -642,7 +642,7 @@ $(function () {
         if(attempts>=MAX_POLLS){
           clearInterval(pollTimer);
           $liveStatus.removeClass('alert-success alert-danger').addClass('alert-warning')
-                     .html(`<i class="fa fa-hourglass-half me-2"></i> Still waiting on M-Pesa. If you approved the prompt, try again shortly.`);
+                     .html(`<i class="fa fa-hourglass-half mr-2"></i> Still waiting on M-Pesa. If you approved the prompt, try again shortly.`);
         }
       }, POLL_INTERVAL_MS);
     }
@@ -725,3 +725,7 @@ $(function () {
 });
 </script>
 @endsection
+
+
+
+

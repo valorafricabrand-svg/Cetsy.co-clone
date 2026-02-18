@@ -1,39 +1,39 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Dispute Details')
 
-@section('content')
+@section('main')
 <div class="content">
     {{-- Dispute Summary Header --}}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <div class="d-flex align-items-center mb-2">
-                                <h2 class="mb-0 me-3">
-                                    <i class="bi bi-exclamation-triangle text-warning"></i>
+    <div class="grid grid-cols-12 gap-4 mb-4">
+        <div class="col-span-12">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
+                <div class="p-4 sm:p-5">
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <div class="md:col-span-8">
+                            <div class="flex items-center mb-2">
+                                <h2 class="mb-0 mr-3">
+                                    <i class="bi bi-exclamation-triangle text-amber-600"></i>
                                     Dispute #{{ $dispute->id }}
                                 </h2>
-                                <span class="badge {{ $dispute->getStatusBadgeClass() }} fs-6 px-3 py-2">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $dispute->getStatusBadgeClass() }} fs-6 px-3 py-2">
                                     {{ ucfirst(str_replace('_', ' ', $dispute->status)) }}
                                 </span>
                             </div>
-                            <p class="text-muted mb-0">
+                            <p class="text-slate-500 mb-0">
                                 <i class="bi bi-calendar3"></i> Created {{ $dispute->created_at->diffForHumans() }}
                                 @if($dispute->isResolved())
-                                    • <i class="bi bi-check-circle text-success"></i> Resolved {{ $dispute->resolved_at->diffForHumans() }}
+                                    â€¢ <i class="bi bi-check-circle text-emerald-600"></i> Resolved {{ $dispute->resolved_at->diffForHumans() }}
                                 @endif
                             </p>
                         </div>
-                        <div class="col-md-4 text-md-end">
-                            <div class="d-flex flex-column flex-sm-row gap-2 justify-content-md-end">
-                                <a href="{{ route('disputes.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <div class="md:col-span-4 text-md-end">
+                            <div class="flex flex-col sm:flex-row gap-2 justify-content-md-end">
+                                <a href="{{ route('disputes.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs">
                                     <i class="bi bi-arrow-left"></i> Back to Disputes
                                 </a>
                                 @if(config('disputes.enable_appeals') && $dispute->canBeAppealed())
-                                    <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="btn btn-warning btn-sm">
+                                    <a href="{{ route('disputes.appeal.create', $dispute->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400 px-3 py-1.5 text-xs">
                                         <i class="bi bi-gavel"></i> Appeal
                                     </a>
                                 @endif
@@ -54,8 +54,8 @@
         } catch (\Throwable $e) { $adminIntervened = false; }
     @endphp
     @if($adminIntervened)
-        <div class="alert alert-info d-flex align-items-center" role="alert">
-            <i class="bi bi-shield-check me-2"></i>
+        <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 flex items-center" role="alert">
+            <i class="bi bi-shield-check mr-2"></i>
             <div>Customer Support is now intervening in this dispute. Please continue communication here.</div>
         </div>
     @endif
@@ -74,8 +74,8 @@
         } catch (\Throwable $e) { $exchangeRequested = false; }
     @endphp
     @if($isSellerUser && $exchangeRequested)
-        <div class="alert alert-warning d-flex align-items-center" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 flex items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill mr-2"></i>
             <div>
                 The buyer has requested a order refund and your order has been restored to processing state, please ship that product again.
             </div>
@@ -88,30 +88,30 @@
         $isBuyerUser = auth()->check() && $dispute->buyer_id === auth()->id();
     @endphp
     @if($pendingRefund)
-        <div class="alert alert-warning" role="alert">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800" role="alert">
+            <div class="flex justify-between items-center flex-wrap gap-2">
                 <div>
                     <strong>Pending Refund Proposal:</strong>
                     Seller proposed a {{ rtrim(rtrim(number_format($pendingRefund['percent'] ?? 0, 2), '0'), '.') }}% refund
                     ({{ get_currency() }} {{ number_format($pendingRefund['amount'] ?? 0, 2) }}).
                 </div>
                 @if($isBuyerUser)
-                    <div class="d-flex gap-2">
+                    <div class="flex gap-2">
                         <form method="POST" action="{{ route('disputes.refund-proposal.accept', $dispute->id) }}">
                             @csrf
-                            <button type="submit" class="btn btn-sm btn-success">
+                            <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500">
                                 <i class="bi bi-check-circle"></i> Accept
                             </button>
                         </form>
                         <form method="POST" action="{{ route('disputes.refund-proposal.decline', $dispute->id) }}">
                             @csrf
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50">
                                 <i class="bi bi-x-circle"></i> Decline
                             </button>
                         </form>
                     </div>
                 @else
-                    <span class="badge bg-warning text-dark">Awaiting buyer response</span>
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-slate-900">Awaiting buyer response</span>
                 @endif
             </div>
         </div>
@@ -120,26 +120,26 @@
     {{-- Contact Support (buyer & seller) and Admin Request Evidence --}}
     @php $isResolvedOrClosed = $dispute->isResolved() || $dispute->isClosed(); @endphp
     @if(!$isResolvedOrClosed)
-        <div class="card mb-4 border-warning">
-            <div class="card-header bg-warning text-dark fw-semibold d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-life-preserver me-1"></i> Need Help?</span>
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4 border-warning">
+            <div class="border-b border-slate-200 px-4 py-3 bg-amber-100 text-slate-900 font-semibold flex justify-between items-center">
+                <span><i class="bi bi-life-preserver mr-1"></i> Need Help?</span>
                 @if(auth()->check() && (auth()->id() === $dispute->buyer_id || auth()->id() === $dispute->seller_id) && !$adminIntervened)
                     <form method="POST" action="{{ route('disputes.contact-support', $dispute->id) }}" class="m-0">
                         @csrf
-                        <button type="submit" class="btn btn-sm btn-outline-dark">
+                        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-900 text-slate-900 hover:bg-slate-100">
                             <i class="bi bi-headset"></i> Contact Support
                         </button>
                     </form>
                 @endif
             </div>
             @if(auth()->check() && method_exists(auth()->user(), 'isAdmin') && auth()->user()->isAdmin())
-                <div class="card-body">
-                    <div class="mb-0 small text-muted">
+                <div class="p-4 sm:p-5">
+                    <div class="mb-0 text-xs text-slate-500">
                         Assigned Admin: <strong>{{ $dispute->assignedAdmin->name ?? 'None' }}</strong>
                         @if(empty($dispute->assignedAdmin))
-                            <form method="POST" action="{{ route('disputes.assign-admin', $dispute->id) }}" class="d-inline ms-2">
+                            <form method="POST" action="{{ route('disputes.assign-admin', $dispute->id) }}" class="d-inline ml-2">
                                 @csrf
-                                <button type="submit" class="btn btn-sm btn-outline-info">Assign to Me</button>
+                                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs btn-outline-info">Assign to Me</button>
                             </form>
                         @endif
                     </div>
@@ -152,16 +152,16 @@
     @if(isset($evidenceRequests) && auth()->check())
         @php $myPendingReqs = $evidenceRequests->where('requested_from', auth()->id())->where('status','pending'); @endphp
         @foreach($myPendingReqs as $req)
-            <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 flex justify-between items-center">
                 <div>
-                    <i class="bi bi-info-circle me-1"></i>
+                    <i class="bi bi-info-circle mr-1"></i>
                     <strong>Additional Information Requested:</strong>
                     {{ $req->message }}
                     @if($req->deadline)
-                        <span class="ms-2 small text-muted">Deadline: {{ $req->deadline->format('M d, Y') }}</span>
+                        <span class="ml-2 text-xs text-slate-500">Deadline: {{ $req->deadline->format('M d, Y') }}</span>
                     @endif
                 </div>
-                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#evidenceRespond-{{ $req->id }}">
+                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50" data-bs-toggle="collapse" data-bs-target="#evidenceRespond-{{ $req->id }}">
                     Provide Info
                 </button>
             </div>
@@ -169,15 +169,15 @@
                 <form action="{{ route('disputes.evidence-requests.respond', $req->id) }}" method="POST" enctype="multipart/form-data" class="border rounded p-3">
                     @csrf
                     <div class="mb-2">
-                        <label class="form-label">Notes</label>
-                        <textarea name="response_notes" class="form-control" rows="3" placeholder="Add any explanation or notes..." required></textarea>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">Notes</label>
+                        <textarea name="response_notes" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="3" placeholder="Add any explanation or notes..." required></textarea>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Attachments</label>
-                        <input type="file" name="submitted_evidence[]" class="form-control" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" required>
-                        <div class="form-text">Max 10MB per file. Supported: JPG, PNG, PDF, DOC, DOCX</div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">Attachments</label>
+                        <input type="file" name="submitted_evidence[]" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" required>
+                        <div class="mt-1 text-xs text-slate-500">Max 10MB per file. Supported: JPG, PNG, PDF, DOC, DOCX</div>
                     </div>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                         <i class="bi bi-upload"></i> Submit Response
                     </button>
                 </form>
@@ -186,40 +186,40 @@
     @endif
 
     {{-- Dispute Statistics --}}
-    <div class="row mb-4">
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card border-0 bg-primary text-white">
-                <div class="card-body text-center">
+    <div class="grid grid-cols-12 gap-4 mb-4">
+        <div class="md:col-span-3 sm:col-span-6 mb-3">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 bg-primary text-white">
+                <div class="p-4 sm:p-5 text-center">
                     <i class="bi bi-chat-dots fs-1 mb-2"></i>
                     <h4 class="mb-1">{{ $allMessages->count() }}</h4>
-                    <p class="mb-0 small">Total Messages</p>
+                    <p class="mb-0 text-xs">Total Messages</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card border-0 bg-info text-white">
-                <div class="card-body text-center">
+        <div class="md:col-span-3 sm:col-span-6 mb-3">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 bg-sky-100 text-white">
+                <div class="p-4 sm:p-5 text-center">
                     <i class="bi bi-chat fs-1 mb-2"></i>
                     <h4 class="mb-1">{{ $orderMessages->count() }}</h4>
-                    <p class="mb-0 small">Order Messages</p>
+                    <p class="mb-0 text-xs">Order Messages</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card border-0 bg-warning text-dark">
-                <div class="card-body text-center">
+        <div class="md:col-span-3 sm:col-span-6 mb-3">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 bg-amber-100 text-slate-900">
+                <div class="p-4 sm:p-5 text-center">
                     <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
                     <h4 class="mb-1">{{ $disputeMessages->count() }}</h4>
-                    <p class="mb-0 small">Dispute Messages</p>
+                    <p class="mb-0 text-xs">Dispute Messages</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card border-0 bg-success text-white">
-                <div class="card-body text-center">
+        <div class="md:col-span-3 sm:col-span-6 mb-3">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 bg-success text-white">
+                <div class="p-4 sm:p-5 text-center">
                     <i class="bi bi-paperclip fs-1 mb-2"></i>
                     <h4 class="mb-1">{{ $dispute->evidence ? count($dispute->evidence) : 0 }}</h4>
-                    <p class="mb-0 small">Evidence Files</p>
+                    <p class="mb-0 text-xs">Evidence Files</p>
                 </div>
             </div>
         </div>
@@ -256,23 +256,23 @@
     @endphp
     
     @if($totalEvidenceFiles > 0)
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-0 bg-light">
-                    <div class="card-body p-4">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
+        <div class="grid grid-cols-12 gap-4 mb-4">
+            <div class="col-span-12">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 bg-slate-100">
+                    <div class="p-4 sm:p-5">
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <div class="md:col-span-8">
                                 <h5 class="mb-2">
                                     <i class="bi bi-files text-primary"></i> 
                                     Evidence Files Overview
                                 </h5>
-                                <p class="text-muted mb-0">
+                                <p class="text-slate-500 mb-0">
                                     Total {{ $totalEvidenceFiles }} files ({{ number_format($totalEvidenceSize / 1024 / 1024, 2) }} MB) available for review
                                 </p>
                             </div>
-                            <div class="col-md-4 text-md-end">
-                                <div class="d-flex gap-2 justify-content-md-end">
-                                    <span class="badge bg-primary fs-6 px-3 py-2">
+                            <div class="md:col-span-4 text-md-end">
+                                <div class="flex gap-2 justify-content-md-end">
+                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary fs-6 px-3 py-2">
                                         <i class="bi bi-paperclip"></i> {{ $dispute->evidence ? count($dispute->evidence) : 0 }} Initial
                                     </span>
                                     @if($dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
@@ -284,7 +284,7 @@
                                                 }
                                             }
                                         @endphp
-                                        <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-slate-900 fs-6 px-3 py-2">
                                             <i class="bi bi-gavel"></i> {{ $appealEvidenceCount }} Appeal
                                         </span>
                                     @endif
@@ -296,7 +296,7 @@
                                             }
                                         }
                                     @endphp
-                                    <span class="badge bg-info text-dark fs-6 px-3 py-2">
+                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-sky-100 text-slate-900 fs-6 px-3 py-2">
                                         <i class="bi bi-chat"></i> {{ $messageAttachmentsCount }} Messages
                                     </span>
                                 </div>
@@ -308,18 +308,18 @@
         </div>
     @endif
 
-    <div class="row">
-        <div class="col-md-8">
+    <div class="grid grid-cols-12 gap-4">
+        <div class="md:col-span-8">
             <!-- Order Context Header -->
             @if($order)
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+                <div class="border-b border-slate-200 px-4 py-3 bg-slate-100">
+                    <div class="flex justify-between items-center">
                         <div>
                             <h5 class="mb-0">
                                 <i class="bi bi-box"></i> Order Context
                             </h5>
-                            <small class="text-muted">
+                            <small class="text-slate-500">
                                 This dispute is related to Order #{{ $order->id }} from {{ $order->shop->name ?? 'the shop' }}
                             </small>
                         </div>
@@ -333,25 +333,25 @@
                                     ? route('buyer.orders.show', $order->id)
                                     : route('orders.show', $order->id));
                         @endphp
-                        <a href="{{ $orderHref }}" class="btn btn-sm btn-outline-primary">
+                        <a href="{{ $orderHref }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                             <i class="bi bi-eye"></i> View Full Order
                         </a>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
+                <div class="p-4 sm:p-5">
+                    <div class="grid grid-cols-12 gap-4">
+                        <div class="md:col-span-6">
                             <h6>Order Details</h6>
                             <p class="mb-2">
                                 <strong>Order #:</strong> {{ $order->id }}<br>
                                 <strong>Date:</strong> {{ $order->created_at->format('M d, Y') }}<br>
                                 <strong>Status:</strong> 
-                                <span class="badge {{ $order->getStatusBadgeClass() }}">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $order->getStatusBadgeClass() }}">
                                     {{ ucfirst($order->status) }}
                                 </span>
                             </p>
                         </div>
-                        <div class="col-md-6">
+                        <div class="md:col-span-6">
                             <h6>Order Items</h6>
                             @if($orderItems->isNotEmpty())
                                 @foreach($orderItems->take(3) as $item)
@@ -368,28 +368,28 @@
                                                     : null);
                                         }
                                     @endphp
-                                    <div class="d-flex align-items-center mb-2">
+                                    <div class="flex items-center mb-2">
                                         @if($thumb)
                                             <img src="{{ $thumb }}"
                                                  alt="{{ $product->name ?? 'Product image' }}"
-                                                 class="rounded me-2"
+                                                 class="rounded mr-2"
                                                  style="width: 40px; height: 40px; object-fit: cover;"
                                                  loading="lazy"
                                                  onerror="this.src='{{ asset('storage/placeholder.jpg') }}';">
                                         @else
-                                            <div class="bg-light rounded me-2 d-flex align-items-center justify-content-center"
+                                            <div class="bg-slate-100 rounded mr-2 flex items-center justify-center"
                                                  style="width: 40px; height: 40px;">
-                                                <i class="bi bi-image text-muted"></i>
+                                                <i class="bi bi-image text-slate-500"></i>
                                             </div>
                                         @endif
                                         <div>
-                                            <small class="d-block">{{ Str::limit($product->name ?? 'Product', 30) }}</small>
-                                            <small class="text-muted">Qty: {{ $item->quantity }}</small>
+                                            <small class="block">{{ Str::limit($product->name ?? 'Product', 30) }}</small>
+                                            <small class="text-slate-500">Qty: {{ $item->quantity }}</small>
                                         </div>
                                     </div>
                                 @endforeach
                                 @if($orderItems->count() > 3)
-                                    <small class="text-muted">+{{ $orderItems->count() - 3 }} more items</small>
+                                    <small class="text-slate-500">+{{ $orderItems->count() - 3 }} more items</small>
                                 @endif
                             @endif
                         </div>
@@ -399,24 +399,24 @@
             @endif
 
             <!-- Dispute Header -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+                <div class="border-b border-slate-200 px-4 py-3">
+                    <div class="flex justify-between items-center">
                         <h4 class="mb-0">Dispute #{{ $dispute->id }}</h4>
-                        <span class="badge {{ $dispute->getStatusBadgeClass() }} fs-6">
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $dispute->getStatusBadgeClass() }} fs-6">
                             {{ ucfirst(str_replace('_', ' ', $dispute->status)) }}
                         </span>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="p-4 sm:p-5">
                     {{-- Initial Dispute Description - Prominently Displayed --}}
-                    <div class="alert alert-warning mb-4">
-                        <div class="d-flex align-items-start">
-                            <i class="bi bi-exclamation-triangle-fill text-warning me-3" style="font-size: 1.5rem; margin-top: 2px;"></i>
+                    <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 mb-4">
+                        <div class="flex items-start">
+                            <i class="bi bi-exclamation-triangle-fill text-amber-600 mr-3" style="font-size: 1.5rem; margin-top: 2px;"></i>
                             <div class="flex-grow-1">
                                 <h6 class="alert-heading mb-2">
                                     <strong>Initial Dispute Description</strong>
-                                    <small class="text-muted ms-2">by {{ $dispute->buyer_id === auth()->id() ? 'You' : $dispute->buyer->name }}</small>
+                                    <small class="text-slate-500 ml-2">by {{ $dispute->buyer_id === auth()->id() ? 'You' : $dispute->buyer->name }}</small>
                                 </h6>
                                 <p class="mb-3 fs-6">{!! $dispute->description !!}</p>
                                 
@@ -424,9 +424,9 @@
                                 @if($dispute->evidence && count($dispute->evidence) > 0)
                                     <div class="mt-3">
                                         <h6 class="mb-2"><i class="bi bi-paperclip"></i> Initial Evidence ({{ count($dispute->evidence) }})</h6>
-                                        <div class="row g-2">
+                                        <div class="grid grid-cols-12 gap-4 gap-2">
                                             @foreach($dispute->evidence as $file)
-                                                <div class="col-md-3 col-sm-4 col-6">
+                                                <div class="md:col-span-3 sm:col-span-4 col-span-6">
                                                     <div class="evidence-item border rounded p-2 text-center">
                                                         @if(in_array($file['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
                                                             <img src="{{ Storage::url($file['path']) }}" 
@@ -443,19 +443,19 @@
                                                                 <i class="bi bi-file-word fs-4"></i>
                                                             </div>
                                                         @else
-                                                            <div class="bg-secondary text-white rounded p-3 mb-2">
+                                                            <div class="bg-slate-200 text-white rounded p-3 mb-2">
                                                                 <i class="bi bi-file-earmark fs-4"></i>
                                                             </div>
                                                         @endif
-                                                        <div class="small text-truncate" title="{{ $file['filename'] }}">
+                                                        <div class="text-xs text-truncate" title="{{ $file['filename'] }}">
                                                             {{ Str::limit($file['filename'], 20) }}
                                                         </div>
-                                                        <div class="small text-muted">
+                                                        <div class="text-xs text-slate-500">
                                                             {{ number_format($file['size'] / 1024, 1) }} KB
                                                         </div>
                                                         <a href="{{ Storage::url($file['path']) }}" 
                                                            target="_blank" 
-                                                           class="btn btn-sm btn-outline-primary mt-1">
+                                                           class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50 mt-1">
                                                             <i class="bi bi-download"></i> View
                                                         </a>
                                                     </div>
@@ -468,8 +468,8 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
+                    <div class="grid grid-cols-12 gap-4">
+                        <div class="md:col-span-6">
                             <h6>Dispute Type</h6>
                             <p class="mb-3">{{ $dispute->getTypeLabel() }}</p>
                             
@@ -483,12 +483,12 @@
                                             ? route('buyer.orders.show', $o->id)
                                             : route('orders.show', $o->id));
                                 @endphp
-                                <a href="{{ $orderHref2 }}" class="text-decoration-none">
+                                <a href="{{ $orderHref2 }}" class="no-underline">
                                     Order #{{ $dispute->order->id }}
                                 </a>
                             </p>
                         </div>
-                        <div class="col-md-6">
+                        <div class="md:col-span-6">
                             <h6>Created</h6>
                             <p class="mb-3">{{ $dispute->created_at->format('M d, Y \a\t g:i A') }}</p>
                             
@@ -501,7 +501,7 @@
                     </div>
 
                     @if($dispute->isResolved())
-                        <div class="alert alert-info">
+                        <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
                             <h6 class="alert-heading">Resolution</h6>
                             <p class="mb-2">{{ $dispute->resolution }}</p>
                             <strong>Decision:</strong> {{ $dispute->getDecisionLabel() }}
@@ -527,27 +527,27 @@
                 $canRefund = $isSeller || $isAdmin;
             @endphp
             @if($canRefund && !$dispute->isResolved() && !$dispute->isClosed())
-                <div class="card mb-4 border-warning">
-                    <div class="card-header bg-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <h6 class="mb-0 d-flex align-items-center gap-2">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4 border-warning">
+                    <div class="border-b border-slate-200 px-4 py-3 bg-amber-100 flex justify-between items-center flex-wrap gap-2">
+                        <h6 class="mb-0 flex items-center gap-2">
                             <i class="bi bi-cash-coin"></i> Issue Refund to Buyer
                         </h6>
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="flex items-center gap-2">
                           @php
                               $fullRefundLabel = $isAdmin ? 'Issue Full Refund (100%)' : 'Accept Full Refund (100%)';
                               $partialRefundLabel = $isAdmin ? 'Propose Partial Refund' : 'Offer Partial Refund';
                           @endphp
-                          <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#fullRefundModal-{{ $dispute->id }}">
+                          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500" data-bs-toggle="modal" data-bs-target="#fullRefundModal-{{ $dispute->id }}">
                             <i class="bi bi-check2-circle"></i> {{ $fullRefundLabel }}
                           </button>
-                          <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#refundModal-{{ $dispute->id }}">
+                          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-slate-900 text-white hover:bg-slate-700" data-bs-toggle="modal" data-bs-target="#refundModal-{{ $dispute->id }}">
                             <i class="bi bi-sliders"></i> {{ $partialRefundLabel }}
                           </button>
                         </div>
                     </div>
-                    <div class="card-body">
+                    <div class="p-4 sm:p-5">
                         <p class="mb-2">You can resolve this dispute by issuing a partial or full refund to the buyer's wallet.</p>
-                        <ul class="mb-0 small text-muted">
+                        <ul class="mb-0 text-xs text-slate-500">
                             <li>Refund is credited to the buyer and debited from the seller's wallet.</li>
                             <li>For non-delivery, consider a full (100%) refund.</li>
                             <li>For damaged or not as described, you may agree on a partial refund.</li>
@@ -556,31 +556,31 @@
                 </div>
 
                 <!-- Refund Modal -->
-                <div class="modal fade" id="refundModal-{{ $dispute->id }}" tabindex="-1" aria-labelledby="refundModalLabel-{{ $dispute->id }}" aria-hidden="true">
+                <div class="modal" id="refundModal-{{ $dispute->id }}" tabindex="-1" aria-labelledby="refundModalLabel-{{ $dispute->id }}" aria-hidden="true">
                   <div class="modal-dialog">
-                    <form method="POST" action="{{ route('disputes.refund', $dispute) }}" class="modal-content">
+                    <form method="POST" action="{{ route('disputes.refund', $dispute) }}" class="rounded-2xl border border-slate-200 bg-white shadow-xl">
                       @csrf
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="refundModalLabel-{{ $dispute->id }}">Confirm Refund</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                        <h5 class="text-base font-semibold text-slate-900" id="refundModalLabel-{{ $dispute->id }}">Confirm Refund</h5>
+                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
                       </div>
-                      <div class="modal-body">
+                      <div class="px-4 py-4">
                         @php $orderTotal = (float)($dispute->order->total_amount ?? 0); @endphp
                         <div class="mb-3">
-                          <label for="refund-percent-{{ $dispute->id }}" class="form-label">Refund Percentage (%)</label>
-                          <input type="number" name="refund_percent" id="refund-percent-{{ $dispute->id }}" class="form-control" value="50" min="1" max="100" step="0.01" required>
-                          <div class="form-text">Order Total: {{ get_currency() }} {{ number_format($orderTotal, 2) }}. Set the percentage to refund to the buyer.</div>
+                          <label for="refund-percent-{{ $dispute->id }}" class="mb-1 block text-sm font-medium text-slate-700">Refund Percentage (%)</label>
+                          <input type="number" name="refund_percent" id="refund-percent-{{ $dispute->id }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="50" min="1" max="100" step="0.01" required>
+                          <div class="mt-1 text-xs text-slate-500">Order Total: {{ get_currency() }} {{ number_format($orderTotal, 2) }}. Set the percentage to refund to the buyer.</div>
                         </div>
-                        <div class="alert alert-info" id="refund-amount-box-{{ $dispute->id }}">
+                        <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800" id="refund-amount-box-{{ $dispute->id }}">
                           <i class="bi bi-calculator"></i>
                           <strong>Refund Amount:</strong>
                           <span id="refund-amount-{{ $dispute->id }}">{{ get_currency() }} {{ number_format($orderTotal, 2) }}</span>
                         </div>
-                        <p class="small text-muted mb-0">This will credit the buyer's wallet and debit the seller's wallet. This action cannot be undone.</p>
+                        <p class="text-xs text-slate-500 mb-0">This will credit the buyer's wallet and debit the seller's wallet. This action cannot be undone.</p>
                       </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-warning">
+                      <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400">
                           <i class="bi bi-check2-circle"></i> Confirm Refund
                         </button>
                       </div>
@@ -589,22 +589,22 @@
                 </div>
 
                 <!-- Full Refund Confirm Modal -->
-                <div class="modal fade" id="fullRefundModal-{{ $dispute->id }}" tabindex="-1" aria-labelledby="fullRefundModalLabel-{{ $dispute->id }}" aria-hidden="true">
+                <div class="modal" id="fullRefundModal-{{ $dispute->id }}" tabindex="-1" aria-labelledby="fullRefundModalLabel-{{ $dispute->id }}" aria-hidden="true">
                   <div class="modal-dialog">
-                    <form method="POST" action="{{ route('disputes.refund', $dispute) }}" class="modal-content">
+                    <form method="POST" action="{{ route('disputes.refund', $dispute) }}" class="rounded-2xl border border-slate-200 bg-white shadow-xl">
                       @csrf
                       <input type="hidden" name="refund_percent" value="100">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="fullRefundModalLabel-{{ $dispute->id }}">Confirm Full Refund</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                        <h5 class="text-base font-semibold text-slate-900" id="fullRefundModalLabel-{{ $dispute->id }}">Confirm Full Refund</h5>
+                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
                       </div>
-                      <div class="modal-body">
+                      <div class="px-4 py-4">
                         @php $fullVerb = $isAdmin ? 'issue' : 'accept'; @endphp
                         Are you sure you want to {{ $fullVerb }} a full refund (100%)? This will credit the buyer and debit the seller's wallet.
                       </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">
+                      <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                           <i class="bi bi-check2-circle"></i> Confirm Full Refund
                         </button>
                       </div>
@@ -638,50 +638,50 @@
 
             {{-- Mutual Resolution Section (disabled via config) --}}
             @if(config('disputes.enable_mutual_resolution') && $dispute->canBeMutuallyResolved())
-                <div class="card mb-4 border-success">
-                    <div class="card-header bg-success text-white">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4 border-success">
+                    <div class="border-b border-slate-200 px-4 py-3 bg-success text-white">
                         <h6 class="mb-0">
                             <i class="bi bi-handshake"></i> Mutual Resolution
                         </h6>
                     </div>
-                    <div class="card-body">
+                    <div class="p-4 sm:p-5">
                         @if($dispute->mutual_resolution_terms)
                             {{-- Show existing mutual resolution proposal --}}
-                            <div class="alert alert-info mb-3">
+                            <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 mb-3">
                                 <h6 class="alert-heading">Proposed Resolution Terms</h6>
                                 <p class="mb-2">{{ $dispute->mutual_resolution_terms }}</p>
-                                <small class="text-muted">
+                                <small class="text-slate-500">
                                     Proposed by: {{ $dispute->buyer_agreed_at && !$dispute->seller_agreed_at ? $dispute->buyer->name : $dispute->seller->name }}
                                 </small>
                             </div>
 
                             {{-- Show agreement status --}}
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-person-circle me-2"></i>
+                            <div class="grid grid-cols-12 gap-4 mb-3">
+                                <div class="md:col-span-6">
+                                    <div class="flex items-center">
+                                        <i class="bi bi-person-circle mr-2"></i>
                                         <span>Buyer ({{ $dispute->buyer->name }})</span>
                                         @if($dispute->buyer_agreed_at)
-                                            <span class="badge bg-success ms-2">
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-success ml-2">
                                                 <i class="bi bi-check-circle"></i> Agreed
                                             </span>
                                         @else
-                                            <span class="badge bg-warning ms-2">
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 ml-2">
                                                 <i class="bi bi-clock"></i> Pending
                                             </span>
                                         @endif
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-shop me-2"></i>
+                                <div class="md:col-span-6">
+                                    <div class="flex items-center">
+                                        <i class="bi bi-shop mr-2"></i>
                                         <span>Seller ({{ $dispute->seller->name }})</span>
                                         @if($dispute->seller_agreed_at)
-                                            <span class="badge bg-success ms-2">
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-success ml-2">
                                                 <i class="bi bi-check-circle"></i> Agreed
                                             </span>
                                         @else
-                                            <span class="badge bg-warning ms-2">
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 ml-2">
                                                 <i class="bi bi-clock"></i> Pending
                                             </span>
                                         @endif
@@ -694,20 +694,20 @@
                                  ($dispute->seller_id === auth()->id() && !$dispute->seller_agreed_at))
                                 <form action="{{ route('disputes.mutual-resolution.agree', $dispute->id) }}" method="POST" class="d-inline">
                                     @csrf
-                                    <button type="submit" class="btn btn-success">
+                                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                                         <i class="bi bi-check-circle"></i> I Agree to These Terms
                                     </button>
                                 </form>
                             @endif
 
                             @if($dispute->buyer_agreed_at && $dispute->seller_agreed_at)
-                                <div class="alert alert-success">
+                                <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">
                                     <i class="bi bi-check-circle"></i>
                                     <strong>Both parties have agreed!</strong> This dispute will be automatically resolved.
                                 </div>
                             @else
                                 {{-- Appeal Button for Mutual Resolution Failure --}}
-                                <div class="alert alert-info">
+                                <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
                                     <i class="bi bi-info-circle"></i>
                                     <strong>Mutual Resolution Pending</strong>
                                     <p class="mb-0 mt-2">Waiting for both parties to agree on the proposed terms.</p>
@@ -715,21 +715,21 @@
                             @endif
                         @else
                             {{-- Show form to propose mutual resolution --}}
-                            <p class="text-muted mb-3">
+                            <p class="text-slate-500 mb-3">
                                 If you and the other party have reached an agreement, you can propose mutual resolution terms here.
                             </p>
                             
                             <form action="{{ route('disputes.mutual-resolution.initiate', $dispute->id) }}" method="POST">
                                 @csrf
                                 <div class="mb-3">
-                                    <label for="terms" class="form-label">Resolution Terms</label>
-                                    <textarea name="terms" id="terms" rows="3" class="form-control" 
+                                    <label for="terms" class="mb-1 block text-sm font-medium text-slate-700">Resolution Terms</label>
+                                    <textarea name="terms" id="terms" rows="3" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" 
                                         placeholder="Describe the agreed resolution terms..." required></textarea>
-                                    <div class="form-text">
+                                    <div class="mt-1 text-xs text-slate-500">
                                         Clearly state what both parties have agreed to resolve this dispute.
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-success">
+                                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                                     <i class="bi bi-handshake"></i> Propose Mutual Resolution
                                 </button>
                             </form>
@@ -740,7 +740,7 @@
 
             {{-- Show mutual resolution status if already resolved (respect config) --}}
             @if(config('disputes.enable_mutual_resolution') && $dispute->isMutuallyResolved())
-                <div class="alert alert-success mb-4">
+                <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 mb-4">
                     <h6 class="alert-heading">
                         <i class="bi bi-handshake"></i> Mutually Resolved
                     </h6>
@@ -769,23 +769,23 @@
             @endphp
             
             @if($allAttachments->isNotEmpty())
-                <div class="card mb-4 border-secondary">
-                    <div class="card-header bg-secondary text-white">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4 border-secondary">
+                    <div class="border-b border-slate-200 px-4 py-3 bg-slate-200 text-white">
                         <h6 class="mb-0">
                             <i class="bi bi-paperclip"></i> All Message Attachments
-                            <span class="badge bg-light text-dark ms-2">{{ $allAttachments->count() }} file(s)</span>
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-900 ml-2">{{ $allAttachments->count() }} file(s)</span>
                         </h6>
                     </div>
-                    <div class="card-body">
-                        <div class="alert alert-secondary">
+                    <div class="p-4 sm:p-5">
+                        <div class="rounded-xl border px-4 py-3 text-sm border-slate-200 bg-slate-100 text-slate-700">
                             <h6 class="alert-heading">Message Attachments Overview</h6>
                             <p class="mb-0">All files attached to messages in this dispute. These files are visible to all parties involved.</p>
                         </div>
                         
-                        <div class="row g-3">
+                        <div class="grid grid-cols-12 gap-4 gap-3">
                             @foreach($allAttachments as $attachment)
-                                <div class="col-md-4 col-sm-6 col-12">
-                                    <div class="evidence-item border rounded p-3 text-center h-100">
+                                <div class="md:col-span-4 sm:col-span-6 col-span-12">
+                                    <div class="evidence-item border rounded p-3 text-center h-full">
                                         @if(in_array($attachment['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
                                             <img src="{{ Storage::url($attachment['path']) }}" 
                                                  alt="{{ $attachment['filename'] }}" 
@@ -802,36 +802,36 @@
                                                 <i class="bi bi-file-word fs-1"></i>
                                             </div>
                                         @else
-                                            <div class="bg-secondary text-white rounded p-3 mb-2">
+                                            <div class="bg-slate-200 text-white rounded p-3 mb-2">
                                                 <i class="bi bi-file-earmark fs-1"></i>
                                             </div>
                                         @endif
                                         
                                         <div class="evidence-info">
-                                            <div class="fw-bold text-truncate mb-2" title="{{ $attachment['filename'] }}">
+                                            <div class="font-bold text-truncate mb-2" title="{{ $attachment['filename'] }}">
                                                 {{ Str::limit($attachment['filename'], 25) }}
                                             </div>
-                                            <div class="small text-muted mb-2">
+                                            <div class="text-xs text-slate-500 mb-2">
                                                 {{ number_format($attachment['size'] / 1024, 1) }} KB
                                             </div>
-                                            <div class="small text-secondary mb-2">
+                                            <div class="text-xs text-slate-600 mb-2">
                                                 <i class="bi bi-person"></i> {{ $attachment['message_sender'] }}
                                             </div>
-                                            <div class="small text-muted mb-2" title="{{ $attachment['message_content'] }}">
+                                            <div class="text-xs text-slate-500 mb-2" title="{{ $attachment['message_content'] }}">
                                                 <i class="bi bi-chat"></i> {{ $attachment['message_content'] }}
                                             </div>
-                                            <div class="small text-muted mb-2">
+                                            <div class="text-xs text-slate-500 mb-2">
                                                 <i class="bi bi-clock"></i> {{ $attachment['message_date']->format('M d, Y') }}
                                             </div>
-                                            <div class="d-flex gap-1 justify-content-center">
+                                            <div class="flex gap-1 justify-center">
                                                 <a href="{{ Storage::url($attachment['path']) }}" 
                                                    target="_blank" 
-                                                   class="btn btn-sm btn-outline-primary">
+                                                   class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                                                     <i class="bi bi-eye"></i> View
                                                 </a>
                                                 <a href="{{ Storage::url($attachment['path']) }}" 
                                                    download="{{ $attachment['filename'] }}"
-                                                   class="btn btn-sm btn-outline-secondary">
+                                                   class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50">
                                                     <i class="bi bi-download"></i> Download
                                                 </a>
                                             </div>
@@ -842,13 +842,13 @@
                         </div>
                         
                         {{-- Attachments Summary --}}
-                        <div class="mt-4 p-3 bg-light rounded">
+                        <div class="mt-4 p-3 bg-slate-100 rounded">
                             <h6 class="mb-2">Attachments Summary</h6>
-                            <div class="row">
-                                <div class="col-md-6">
+                            <div class="grid grid-cols-12 gap-4">
+                                <div class="md:col-span-6">
                                     <strong>Total Files:</strong> {{ $allAttachments->count() }}
                                 </div>
-                                <div class="col-md-6">
+                                <div class="md:col-span-6">
                                     <strong>Total Size:</strong> {{ number_format($allAttachments->sum('size') / 1024 / 1024, 2) }} MB
                                 </div>
                             </div>
@@ -867,38 +867,38 @@
             @endif
 
             <!-- Unified Messages Section -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-200 px-4 py-3">
+                    <div class="flex justify-between items-center">
                         <div>
                             <h5 class="mb-0">
                                 <i class="bi bi-chat-dots"></i> Complete Communication History
-                                <span class="badge bg-secondary ms-2">{{ $disputeMessages->count() }} messages</span>
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200 ml-2">{{ $disputeMessages->count() }} messages</span>
                             </h5>
                             @if($order)
-                                <small class="text-muted">
+                                <small class="text-slate-500">
                                     <i class="bi bi-box"></i> Order #{{ $order->id }} - {{ $order->shop->name ?? 'Shop' }}
                                 </small>
                             @endif
                         </div>
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-outline-warning active" data-filter="dispute">
+                        <div class="inline-flex flex-wrap gap-2 inline-flex flex-wrap gap-1" role="group">
+                            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-amber-500 text-amber-700 hover:bg-amber-50 active" data-filter="dispute">
                                 <i class="bi bi-exclamation-triangle"></i> Dispute ({{ $disputeMessages->count() }})
                             </button>
                         </div>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="p-4 sm:p-5">
                     @if($order)
-                        <div class="alert alert-info mb-3">
+                        <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 mb-3">
                             <i class="bi bi-info-circle"></i>
                             <strong>Communication Context:</strong> This communication history shows dispute-specific messages related to <strong>Order #{{ $order->id }}</strong> 
                             from <strong>{{ $order->shop->name ?? 'the shop' }}</strong>. It includes only dispute-related communications and evidence uploads.
                             
-                            <div class="mt-2 small">
+                            <div class="mt-2 text-xs">
                                 <strong>Message Breakdown:</strong>
-                                <span class="badge bg-warning me-2">{{ $disputeMessages->count() }} Dispute Messages</span>
-                                <span class="badge bg-secondary">{{ $disputeMessages->count() }} Total Messages</span>
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 mr-2">{{ $disputeMessages->count() }} Dispute Messages</span>
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200">{{ $disputeMessages->count() }} Total Messages</span>
                             </div>
                         </div>
                     @endif
@@ -1015,36 +1015,36 @@
                                 }
                             @endphp
                             
-                            <div class="message mb-4 {{ $messageClass }} {{ $isDisputeMessage ? 'dispute-message' : 'order-message' }}" 
+                            <div class="message mb-4 {{ $messageClass }} $isDisputeMessage ? 'dispute-message' : 'order-message'" 
                                  data-message-type="{{ $isDisputeMessage ? 'dispute' : 'order' }}">
                                 
                                 {{-- Message Header with Source Badge --}}
-                                <div class="message-header d-flex justify-content-between align-items-center mb-3">
-                                    <div class="d-flex align-items-center">
+                                <div class="message-header flex justify-between items-center mb-3">
+                                    <div class="flex items-center">
                                         @if($message->is_dispute_message)
-                                            <span class="badge bg-warning text-dark me-2">
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-slate-900 mr-2">
                                                 <i class="bi bi-exclamation-triangle"></i> Dispute
                                             </span>
                                         @else
-                                            <span class="badge bg-info text-dark me-2">
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-sky-100 text-slate-900 mr-2">
                                                 <i class="bi bi-chat"></i> Order
                                             </span>
                                         @endif
                                         
-                                                                                <div class="d-flex align-items-center">
+                                                                                <div class="flex items-center">
                                             @if($userPhoto && $userName !== 'Unknown User')
                                                 <img src="{{ $userPhoto }}" 
                                                      alt="{{ $userName }}" 
-                                                     class="rounded-circle me-2" 
+                                                     class="rounded-full mr-2" 
                                                      width="32" height="32"
                                                      style="object-fit: cover;"
                                                      onerror="this.style.display='none'; this.nextElementSibling.nextElementSibling.style.display='block';">
                                                 <strong>{{ $userName }}</strong>
-                                                <span class="badge {{ $userRole === 'Buyer' ? 'bg-primary' : ($userRole === 'System' ? 'bg-secondary' : ($userRole === 'Seller' ? 'bg-success' : 'bg-warning')) }} ms-2">
+                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $userRole === 'Buyer' ? 'bg-primary' : ($userRole === 'System' ? 'bg-secondary' : ($userRole === 'Seller' ? 'bg-success' : 'bg-warning')) }} ml-2">
                                                     {{ $userRole }}
                                                 </span>
                                             @else
-                                                <div class="rounded-circle avatar-fallback me-2" 
+                                                <div class="rounded-full avatar-fallback mr-2" 
                                                      style="width: 32px; height: 32px; {{ $userRole === 'Buyer' ? 'background-color: #e3f2fd; color: #1976d2;' : ($userRole === 'System' ? 'background-color: #6c757d; color: white;' : ($userRole === 'Seller' ? 'background-color: #f3e5f5; color: #7b1fa2;' : 'background-color: #fff3cd; color: #856404;')) }}">
                                                     @if($userRole === 'Buyer')
                                                         <i class="bi bi-person-fill"></i>
@@ -1057,14 +1057,14 @@
                                                     @endif
                                                 </div>
                                                 <strong>{{ $userName }}</strong>
-                                                <span class="badge {{ $userRole === 'Buyer' ? 'bg-primary' : ($userRole === 'System' ? 'bg-secondary' : ($userRole === 'Seller' ? 'bg-success' : 'bg-warning')) }} ms-2">
+                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $userRole === 'Buyer' ? 'bg-primary' : ($userRole === 'System' ? 'bg-secondary' : ($userRole === 'Seller' ? 'bg-success' : 'bg-warning')) }} ml-2">
                                                     {{ $userRole }}
                                                 </span>
                                             @endif
                                         </div>
                                     </div>
                                     
-                                    <div class="text-muted small">
+                                    <div class="text-slate-500 text-xs">
                                         <i class="bi bi-clock"></i>
                                         {{ $message->created_at->format('M d, Y g:i A') }}
                                     </div>
@@ -1083,10 +1083,10 @@
                                                 <i class="bi bi-paperclip"></i> 
                                                 Attachments ({{ $attachmentsCount }})
                                             </h6>
-                                            <div class="row g-3">
+                                            <div class="grid grid-cols-12 gap-4 gap-3">
                                                 @foreach($message->attachments ?? [] as $attachment)
-                                                    <div class="col-md-4 col-sm-6 col-12">
-                                                        <div class="attachment-item border rounded p-3 text-center h-100">
+                                                    <div class="md:col-span-4 sm:col-span-6 col-span-12">
+                                                        <div class="attachment-item border rounded p-3 text-center h-full">
                                                             @if(in_array($attachment['mime_type'], ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']))
                                                                 <img src="{{ Storage::url($attachment['path']) }}" 
                                                                      alt="{{ $attachment['filename'] }}" 
@@ -1103,27 +1103,27 @@
                                                                     <i class="bi bi-file-word fs-1"></i>
                                                                 </div>
                                                             @else
-                                                                <div class="bg-secondary text-white rounded p-3 mb-2">
+                                                                <div class="bg-slate-200 text-white rounded p-3 mb-2">
                                                                     <i class="bi bi-file-earmark fs-1"></i>
                                                                 </div>
                                                             @endif
                                                             
                                                             <div class="attachment-info">
-                                                                <div class="fw-bold text-truncate" title="{{ $attachment['filename'] }}">
+                                                                <div class="font-bold text-truncate" title="{{ $attachment['filename'] }}">
                                                                     {{ Str::limit($attachment['filename'], 25) }}
                                                                 </div>
-                                                                <div class="small text-muted mb-2">
+                                                                <div class="text-xs text-slate-500 mb-2">
                                                                     {{ number_format($attachment['size'] / 1024, 1) }} KB
                                                                 </div>
-                                                                <div class="d-flex gap-1 justify-content-center">
+                                                                <div class="flex gap-1 justify-center">
                                                                     <a href="{{ Storage::url($attachment['path']) }}" 
                                                                        target="_blank" 
-                                                                       class="btn btn-sm btn-outline-primary">
+                                                                       class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                                                                         <i class="bi bi-eye"></i> View
                                                                     </a>
                                                                     <a href="{{ Storage::url($attachment['path']) }}" 
                                                                        download="{{ $attachment['filename'] }}"
-                                                                       class="btn btn-sm btn-outline-secondary">
+                                                                       class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50">
                                                                         <i class="bi bi-download"></i> Download
                                                                     </a>
                                                                 </div>
@@ -1137,7 +1137,7 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="text-center text-muted py-5">
+                            <div class="text-center text-slate-500 py-5">
                                 <i class="bi bi-chat-dots fs-1 mb-3"></i>
                                 <h5>No messages yet</h5>
                                 <p>
@@ -1158,40 +1158,40 @@
                         <form action="{{ route('disputes.messages.store', $dispute->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <div class="mb-3">
-                                <label for="message" class="form-label">
+                                <label for="message" class="mb-1 block text-sm font-medium text-slate-700">
                                     <i class="bi bi-chat-dots"></i> Add Message to Dispute
                                 </label>
-                                <textarea name="message" id="message" rows="4" class="form-control @error('message') is-invalid @enderror" 
+                                <textarea name="message" id="message" rows="4" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('message') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" 
                                     placeholder="Type your message here... Be clear and provide any relevant details or evidence." required></textarea>
                                 @error('message')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
                                 @enderror
                             </div>
 
                             <div class="mb-3">
-                                <label for="attachments" class="form-label">
+                                <label for="attachments" class="mb-1 block text-sm font-medium text-slate-700">
                                     <i class="bi bi-paperclip"></i> Attachments (Optional)
                                 </label>
-                                <input type="file" name="attachments[]" id="attachments" class="form-control" 
+                                <input type="file" name="attachments[]" id="attachments" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" 
                                     multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx">
-                                <div class="form-text">
+                                <div class="mt-1 text-xs text-slate-500">
                                     <i class="bi bi-info-circle"></i>
                                     Max 10MB per file. Supported: JPG, PNG, WebP, PDF, DOC, DOCX
                                 </div>
                             </div>
 
-                            <div class="d-flex justify-content-between align-items-center">
-                                <button type="submit" class="btn btn-primary">
+                            <div class="flex justify-between items-center">
+                                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                                     <i class="bi bi-send"></i> Send Message
                                 </button>
-                                <small class="text-muted">
+                                <small class="text-slate-500">
                                     <i class="bi bi-clock"></i> 
                                     Messages are sent immediately and visible to both parties
                                 </small>
                             </div>
                         </form>
                     @else
-                        <div class="alert alert-info text-center">
+                        <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 text-center">
                             <i class="bi bi-info-circle"></i>
                             This dispute is final and no further messages can be added.
                         </div>
@@ -1200,20 +1200,20 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="md:col-span-4">
             <!-- Quick Actions -->
-            <div class="card mb-4">
-                <div class="card-header">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+                <div class="border-b border-slate-200 px-4 py-3">
                     <h6 class="mb-0">Quick Actions</h6>
                 </div>
-                <div class="card-body">
+                <div class="p-4 sm:p-5">
                     <div class="d-grid gap-2">
-                        <a href="{{ route('disputes.index') }}" class="btn btn-outline-secondary">
+                        <a href="{{ route('disputes.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">
                             <i class="fas fa-arrow-left"></i> Back to Disputes
                         </a>
                         
                         @if($order)
-                        <a href="{{ route('orders.chat.show', $order->id) }}" class="btn btn-outline-info">
+                        <a href="{{ route('orders.chat.show', $order->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition btn-outline-info">
                             <i class="bi bi-chat"></i> Order Chat
                         </a>
 
@@ -1223,19 +1223,19 @@
                             $disputeClosedOrResolved = $dispute->isClosed() || $dispute->isResolved() || $dispute->isMutuallyResolved();
                         @endphp
                         @if($viewerIsBuyer && $orderIsShipped && $disputeClosedOrResolved)
-                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#deliverModal-{{ $order->id }}">
+                            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400" data-bs-toggle="modal" data-bs-target="#deliverModal-{{ $order->id }}">
                                 <i class="bi bi-check2-circle"></i> Mark Delivered
                             </button>
                         @endif
                         @if($viewerIsBuyer && $order && $order->status === \App\Models\Order::STATUS_DELIVERED)
-                            <a href="{{ route('buyer.orders.show', $order->id) }}#reviews" class="btn btn-outline-warning">
+                            <a href="{{ route('buyer.orders.show', $order->id) }}#reviews" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-amber-500 text-amber-700 hover:bg-amber-50">
                                 <i class="bi bi-star"></i> Leave a Review
                             </a>
                         @endif
                         @endif
                         
                         @if($dispute->status !== 'resolved' && $dispute->status !== 'closed' && $dispute->status !== 'final' && (auth()->id() === $dispute->created_by || auth()->user()->isAdmin()))
-                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#closeDisputeModal">
+                            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" data-bs-toggle="modal" data-bs-target="#closeDisputeModal">
                                 <i class="bi bi-check-circle"></i> 
                                 @if(auth()->user()->isAdmin())
                                     Close Dispute (Admin)
@@ -1249,59 +1249,59 @@
             </div>
 
             <!-- Dispute Timeline -->
-            <div class="card">
-                <div class="card-header">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-200 px-4 py-3">
                     <h6 class="mb-0">Timeline</h6>
                 </div>
-                <div class="card-body">
+                <div class="p-4 sm:p-5">
                     <div class="timeline">
                         <div class="timeline-item">
                             <div class="timeline-marker bg-primary"></div>
                             <div class="timeline-content">
                                 <h6 class="mb-1">Dispute Created</h6>
-                                <small class="text-muted">{{ $dispute->created_at->format('M d, Y g:i A') }}</small>
+                                <small class="text-slate-500">{{ $dispute->created_at->format('M d, Y g:i A') }}</small>
                                 @if($dispute->createdBy)
-                                    <br><small class="text-muted">by {{ $dispute->createdBy->name }}</small>
+                                    <br><small class="text-slate-500">by {{ $dispute->createdBy->name }}</small>
                                 @endif
                             </div>
                         </div>
 
                         @if($dispute->status === 'pending')
                             <div class="timeline-item">
-                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-marker bg-amber-100"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Status: Pending</h6>
-                                    <small class="text-muted">Awaiting response from the other party</small>
+                                    <small class="text-slate-500">Awaiting response from the other party</small>
                                 </div>
                             </div>
                         @endif
 
                         @if($dispute->status === 'under_review')
                             <div class="timeline-item">
-                                <div class="timeline-marker bg-info"></div>
+                                <div class="timeline-marker bg-sky-100"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Status: Under Review</h6>
-                                    <small class="text-muted">Being reviewed by Cetsy support team</small>
+                                    <small class="text-slate-500">Being reviewed by Cetsy support team</small>
                                 </div>
                             </div>
                         @endif
 
                         @if(config('disputes.enable_appeals') && $dispute->status === 'appealed')
                             <div class="timeline-item">
-                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-marker bg-amber-100"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Status: Appealed</h6>
-                                    <small class="text-muted">Dispute has been appealed for review</small>
+                                    <small class="text-slate-500">Dispute has been appealed for review</small>
                                 </div>
                             </div>
                         @endif
 
                         @if(config('disputes.enable_appeals') && $dispute->status === 'appeal_under_review')
                             <div class="timeline-item">
-                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-marker bg-amber-100"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Status: Appeal Under Review</h6>
-                                    <small class="text-muted">Appeal is being reviewed by support team</small>
+                                    <small class="text-slate-500">Appeal is being reviewed by support team</small>
                                 </div>
                             </div>
                         @endif
@@ -1311,7 +1311,7 @@
                                 <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Status: Appeal Approved</h6>
-                                    <small class="text-muted">Appeal has been approved</small>
+                                    <small class="text-slate-500">Appeal has been approved</small>
                                 </div>
                             </div>
                         @endif
@@ -1321,7 +1321,7 @@
                                 <div class="timeline-marker bg-danger"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Status: Appeal Rejected</h6>
-                                    <small class="text-muted">Appeal has been rejected</small>
+                                    <small class="text-slate-500">Appeal has been rejected</small>
                                 </div>
                             </div>
                         @endif
@@ -1331,7 +1331,7 @@
                                 <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Mutual Resolution Proposed</h6>
-                                    <small class="text-muted">Terms: {{ Str::limit($dispute->mutual_resolution_terms, 50) }}</small>
+                                    <small class="text-slate-500">Terms: {{ Str::limit($dispute->mutual_resolution_terms, 50) }}</small>
                                 </div>
                             </div>
                         @endif
@@ -1341,7 +1341,7 @@
                                 <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Buyer Agreed to Resolution</h6>
-                                    <small class="text-muted">{{ $dispute->buyer_agreed_at->format('M d, Y g:i A') }}</small>
+                                    <small class="text-slate-500">{{ $dispute->buyer_agreed_at->format('M d, Y g:i A') }}</small>
                                 </div>
                             </div>
                         @endif
@@ -1351,7 +1351,7 @@
                                 <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Seller Agreed to Resolution</h6>
-                                    <small class="text-muted">{{ $dispute->seller_agreed_at->format('M d, Y g:i A') }}</small>
+                                    <small class="text-slate-500">{{ $dispute->seller_agreed_at->format('M d, Y g:i A') }}</small>
                                 </div>
                             </div>
                         @endif
@@ -1361,7 +1361,7 @@
                                 <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Status: Mutually Resolved</h6>
-                                    <small class="text-muted">Both parties agreed to resolution terms</small>
+                                    <small class="text-slate-500">Both parties agreed to resolution terms</small>
                                 </div>
                             </div>
                         @endif
@@ -1371,9 +1371,9 @@
                                 <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Status: Resolved</h6>
-                                    <small class="text-muted">{{ $dispute->resolved_at ? $dispute->resolved_at->format('M d, Y g:i A') : 'Resolution completed' }}</small>
+                                    <small class="text-slate-500">{{ $dispute->resolved_at ? $dispute->resolved_at->format('M d, Y g:i A') : 'Resolution completed' }}</small>
                                     @if($dispute->resolvedBy)
-                                        <br><small class="text-muted">by {{ $dispute->resolvedBy->name }}</small>
+                                        <br><small class="text-slate-500">by {{ $dispute->resolvedBy->name }}</small>
                                     @endif
                                 </div>
                             </div>
@@ -1384,9 +1384,9 @@
                                 <div class="timeline-marker bg-success"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Status: Closed</h6>
-                                    <small class="text-muted">{{ $dispute->closed_at ? $dispute->closed_at->format('M d, Y g:i A') : 'Dispute closed' }}</small>
+                                    <small class="text-slate-500">{{ $dispute->closed_at ? $dispute->closed_at->format('M d, Y g:i A') : 'Dispute closed' }}</small>
                                     @if($dispute->closedBy)
-                                        <br><small class="text-muted">by {{ $dispute->closedBy->name }}</small>
+                                        <br><small class="text-slate-500">by {{ $dispute->closedBy->name }}</small>
                                     @endif
                                 </div>
                             </div>
@@ -1397,7 +1397,7 @@
                                 <div class="timeline-marker bg-dark"></div>
                                 <div class="timeline-content">
                                     <h6 class="mb-1">Status: Final Decision</h6>
-                                    <small class="text-muted">No further appeals possible</small>
+                                    <small class="text-slate-500">No further appeals possible</small>
                                 </div>
                             </div>
                         @endif
@@ -1412,19 +1412,19 @@
 
 {{-- Appeal Modal --}}
 @if(config('disputes.enable_appeals'))
-<div class="modal fade" id="appealModal" tabindex="-1" aria-labelledby="appealModalLabel" aria-hidden="true">
+<div class="modal" id="appealModal" tabindex="-1" aria-labelledby="appealModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title" id="appealModalLabel">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 bg-amber-100 text-slate-900">
+                <h5 class="text-base font-semibold text-slate-900" id="appealModalLabel">
                     <i class="bi bi-gavel"></i> Submit Appeal
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('disputes.appeal.store', $dispute->id) }}" method="POST" enctype="multipart/form-data" id="appealForm">
                 @csrf
-                <div class="modal-body">
-                    <div class="alert alert-info">
+                <div class="px-4 py-4">
+                    <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
                         <h6 class="alert-heading">Appeal Information</h6>
                         @if($dispute->status === 'resolved')
                             <p class="mb-0">Please provide a detailed reason for your appeal and any new evidence to support your case.</p>
@@ -1436,8 +1436,8 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="reason_category" class="form-label">Appeal Reason Category *</label>
-                        <select name="reason_category" id="reason_category" class="form-control" required>
+                        <label for="reason_category" class="mb-1 block text-sm font-medium text-slate-700">Appeal Reason Category *</label>
+                        <select name="reason_category" id="reason_category" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
                             <option value="">Select a reason category</option>
                             @if($dispute->status === 'resolved')
                                 <option value="new_evidence">New Evidence Available</option>
@@ -1456,57 +1456,57 @@
                                 <option value="other">Other Reasons</option>
                             @endif
                         </select>
-                        <div class="form-text">
+                        <div class="mt-1 text-xs text-slate-500">
                             Choose the category that best describes your appeal reason.
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="reason" class="form-label">Appeal Reason *</label>
-                        <textarea name="reason" id="reason" rows="4" class="form-control" 
+                        <label for="reason" class="mb-1 block text-sm font-medium text-slate-700">Appeal Reason *</label>
+                        <textarea name="reason" id="reason" rows="4" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" 
                             placeholder="Please explain why you believe the decision should be reconsidered. Provide specific reasons and any new information..." required></textarea>
-                        <div class="form-text">
+                        <div class="mt-1 text-xs text-slate-500">
                             Be specific about why you disagree with the decision. Provide new evidence or information that wasn't available during the initial review.
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="new_evidence" class="form-label">New Evidence *</label>
-                        <input type="file" name="new_evidence[]" id="new_evidence" class="form-control" 
+                        <label for="new_evidence" class="mb-1 block text-sm font-medium text-slate-700">New Evidence *</label>
+                        <input type="file" name="new_evidence[]" id="new_evidence" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" 
                             multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" required>
-                        <div class="form-text">
+                        <div class="mt-1 text-xs text-slate-500">
                             Upload supporting documents, screenshots, or photos for your appeal. 
                             <strong>Required:</strong> At least 1 file. Max 10MB per file. Total limit: 50MB. Supported: JPG, PNG, PDF, DOC, DOCX
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="evidence_descriptions" class="form-label">Evidence Descriptions (Optional)</label>
+                        <label for="evidence_descriptions" class="mb-1 block text-sm font-medium text-slate-700">Evidence Descriptions (Optional)</label>
                         <div id="evidence-descriptions-container">
                             <div class="evidence-description-item mb-2">
-                                <input type="text" name="evidence_descriptions[]" class="form-control" 
+                                <input type="text" name="evidence_descriptions[]" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" 
                                     placeholder="Describe what this evidence proves (optional)">
                             </div>
                         </div>
-                        <div class="form-text">
+                        <div class="mt-1 text-xs text-slate-500">
                             Add descriptions for your evidence files to help reviewers understand their relevance.
                         </div>
                     </div>
 
                     @if($dispute->appeal_deadline)
-                        <div class="alert alert-warning">
+                        <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
                             <h6 class="alert-heading">Appeal Deadline</h6>
                             <p class="mb-0">
                                 You have <strong>{{ $dispute->getAppealDeadlineDaysLeft() }} days</strong> remaining to submit your appeal.
                                 <br>
-                                <small class="text-muted">Deadline: {{ $dispute->appeal_deadline->format('M d, Y \a\t g:i A') }}</small>
+                                <small class="text-slate-500">Deadline: {{ $dispute->appeal_deadline->format('M d, Y \a\t g:i A') }}</small>
                             </p>
                         </div>
                     @endif
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning">
+                <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400">
                         <i class="bi bi-gavel"></i> Submit Appeal
                     </button>
                 </div>
@@ -1520,42 +1520,42 @@
 @if(config('disputes.enable_appeals') && $dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
     @foreach($dispute->appeal->evidenceRequests as $evidenceRequest)
         @if($evidenceRequest->status === 'pending' && $evidenceRequest->requested_from === auth()->id())
-            <div class="modal fade" id="evidenceResponseModal-{{ $evidenceRequest->id }}" tabindex="-1" aria-labelledby="evidenceResponseModalLabel-{{ $evidenceRequest->id }}" aria-hidden="true">
+            <div class="modal" id="evidenceResponseModal-{{ $evidenceRequest->id }}" tabindex="-1" aria-labelledby="evidenceResponseModalLabel-{{ $evidenceRequest->id }}" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title" id="evidenceResponseModalLabel-{{ $evidenceRequest->id }}">
+                    <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+                        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 bg-primary text-white">
+                            <h5 class="text-base font-semibold text-slate-900" id="evidenceResponseModalLabel-{{ $evidenceRequest->id }}">
                                 <i class="bi bi-upload"></i> Submit Evidence Response
                             </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <form action="{{ route('disputes.evidence-requests.respond', $evidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf
-                            <div class="modal-body">
-                                <div class="alert alert-info">
+                            <div class="px-4 py-4">
+                                <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
                                     <h6 class="alert-heading">Evidence Request Details</h6>
                                     <p class="mb-0">{{ $evidenceRequest->message }}</p>
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="response_notes" class="form-label">Response Notes</label>
-                                    <textarea name="response_notes" id="response_notes" rows="4" class="form-control" 
+                                    <label for="response_notes" class="mb-1 block text-sm font-medium text-slate-700">Response Notes</label>
+                                    <textarea name="response_notes" id="response_notes" rows="4" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" 
                                         placeholder="Please provide any additional context or explanation for your evidence..." required></textarea>
-                                    <div class="form-text">
+                                    <div class="mt-1 text-xs text-slate-500">
                                         Explain how your evidence supports your position in this dispute.
                                     </div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="submitted_evidence" class="form-label">Evidence Files</label>
-                                    <input type="file" name="submitted_evidence[]" id="submitted_evidence" class="form-control" 
+                                    <label for="submitted_evidence" class="mb-1 block text-sm font-medium text-slate-700">Evidence Files</label>
+                                    <input type="file" name="submitted_evidence[]" id="submitted_evidence" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" 
                                         multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" required>
-                                    <div class="form-text">
+                                    <div class="mt-1 text-xs text-slate-500">
                                         Upload supporting documents, screenshots, or photos. Max 10MB per file. Supported: JPG, PNG, PDF, DOC, DOCX
                                     </div>
                                 </div>
 
-                                <div class="alert alert-warning">
+                                <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
                                     <h6 class="alert-heading">Important</h6>
                                     <p class="mb-0">
                                         <strong>Deadline:</strong> {{ $evidenceRequest->deadline->format('M d, Y \a\t g:i A') }}
@@ -1564,9 +1564,9 @@
                                     </p>
                                 </div>
                             </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn btn-primary">
+                            <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                                <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                                     <i class="bi bi-upload"></i> Submit Evidence Response
                                 </button>
                             </div>
@@ -1969,9 +1969,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const descriptionItem = document.createElement('div');
                 descriptionItem.className = 'evidence-description-item mb-2';
                 descriptionItem.innerHTML = `
-                    <div class="input-group">
-                        <span class="input-group-text">${i + 1}</span>
-                        <input type="text" name="evidence_descriptions[]" class="form-control" 
+                    <div class="flex w-full items-stretch">
+                        <span class="inline-flex items-center rounded-l-xl border border-slate-300 bg-slate-100 px-3 text-sm text-slate-600">${i + 1}</span>
+                        <input type="text" name="evidence_descriptions[]" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" 
                             placeholder="Describe what ${files[i].name} proves (optional)">
                     </div>
                 `;
@@ -1985,24 +1985,24 @@ document.addEventListener('DOMContentLoaded', function() {
 function openImageModal(imageSrc, imageAlt) {
     // Create modal HTML
     const modalHTML = `
-        <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="imageModalLabel">${imageAlt}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+                    <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                        <h5 class="text-base font-semibold text-slate-900" id="imageModalLabel">${imageAlt}</h5>
+                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body text-center">
+                    <div class="px-4 py-4 text-center">
                         <img src="${imageSrc}" alt="${imageAlt}" class="img-fluid" style="max-height: 70vh;">
                     </div>
-                    <div class="modal-footer">
-                        <a href="${imageSrc}" target="_blank" class="btn btn-primary">
+                    <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                        <a href="${imageSrc}" target="_blank" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                             <i class="bi bi-box-arrow-up-right"></i> Open in New Tab
                         </a>
-                        <a href="${imageSrc}" download="${imageAlt}" class="btn btn-secondary">
+                        <a href="${imageSrc}" download="${imageAlt}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500">
                             <i class="bi bi-download"></i> Download
                         </a>
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
@@ -2082,44 +2082,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
 {{-- Appeal Modal --}}
 @if(config('disputes.enable_appeals') && $dispute->canBeAppealed() && (auth()->id() === $dispute->buyer_id || auth()->id() === $dispute->seller_id))
-<div class="modal fade" id="appealModal" tabindex="-1" aria-labelledby="appealModalLabel" aria-hidden="true">
+<div class="modal" id="appealModal" tabindex="-1" aria-labelledby="appealModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="appealModalLabel">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                <h5 class="text-base font-semibold text-slate-900" id="appealModalLabel">
                     <i class="bi bi-gavel"></i> Appeal to Support Team
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('disputes.appeal.store', $dispute->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <div class="modal-body">
-                    <div class="alert alert-info">
+                <div class="px-4 py-4">
+                    <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
                         <i class="bi bi-info-circle"></i>
                         <strong>Appeal Process:</strong> You can appeal to our support team for intervention at any time. Please provide a clear reason and supporting evidence for your appeal.
                     </div>
                     
                     <div class="mb-3">
-                        <label for="reason" class="form-label">Appeal Reason <span class="text-danger">*</span></label>
-                        <textarea name="reason" id="reason" rows="4" class="form-control" 
+                        <label for="reason" class="mb-1 block text-sm font-medium text-slate-700">Appeal Reason <span class="text-rose-600">*</span></label>
+                        <textarea name="reason" id="reason" rows="4" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" 
                             placeholder="Please explain why you need support team intervention and what you hope to achieve..." required></textarea>
-                        <div class="form-text">
+                        <div class="mt-1 text-xs text-slate-500">
                             Clearly state your reasons for appealing and what you hope to achieve.
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="new_evidence" class="form-label">Supporting Evidence</label>
-                        <input type="file" name="new_evidence[]" id="new_evidence" class="form-control" 
+                        <label for="new_evidence" class="mb-1 block text-sm font-medium text-slate-700">Supporting Evidence</label>
+                        <input type="file" name="new_evidence[]" id="new_evidence" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" 
                             multiple accept="image/*,.pdf,.doc,.docx">
-                        <div class="form-text">
+                        <div class="mt-1 text-xs text-slate-500">
                             Upload screenshots, documents, or any other evidence to support your appeal. (Max 5 files, 5MB each)
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning">
+                <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400">
                         <i class="bi bi-gavel"></i> Submit Appeal
                     </button>
                 </div>
@@ -2141,31 +2141,31 @@ document.addEventListener('DOMContentLoaded', function() {
     @endphp
     
     @if($userEvidenceRequest && $userEvidenceRequest->status !== 'submitted')
-        <div class="modal fade" id="submitEvidenceModal" tabindex="-1" aria-labelledby="submitEvidenceModalLabel" aria-hidden="true">
+        <div class="modal" id="submitEvidenceModal" tabindex="-1" aria-labelledby="submitEvidenceModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="submitEvidenceModalLabel">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+                    <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                        <h5 class="text-base font-semibold text-slate-900" id="submitEvidenceModalLabel">
                             <i class="bi bi-upload"></i> Submit Evidence
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <form action="{{ route('evidence-requests.submit', $userEvidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <div class="modal-body">
-                            <div class="alert alert-info">
+                        <div class="px-4 py-4">
+                            <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
                                 <i class="bi bi-info-circle"></i>
                                 <strong>Evidence Request:</strong> {{ $userEvidenceRequest->request_message }}
                             </div>
                             
-                            <div class="row mb-3">
-                                <div class="col-md-6">
+                            <div class="grid grid-cols-12 gap-4 mb-3">
+                                <div class="md:col-span-6">
                                     <h6>Required Evidence Types</h6>
                                     @foreach($userEvidenceRequest->getRequiredEvidenceTypesList() as $evidenceType)
-                                        <span class="badge bg-primary me-2 mb-2">{{ $evidenceType }}</span>
+                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary mr-2 mb-2">{{ $evidenceType }}</span>
                                     @endforeach
                                 </div>
-                                <div class="col-md-6">
+                                <div class="md:col-span-6">
                                     <h6>Deadline Information</h6>
                                     <p class="mb-1"><strong>Deadline:</strong> {{ $userEvidenceRequest->deadline->format('M d, Y \a\t g:i A') }}</p>
                                     <p class="mb-0">
@@ -2177,25 +2177,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             
                             <div class="mb-3">
-                                <label for="evidence_description" class="form-label">Evidence Description <span class="text-danger">*</span></label>
-                                <textarea name="evidence_description" id="evidence_description" rows="4" class="form-control @error('evidence_description') is-invalid @enderror" 
+                                <label for="evidence_description" class="mb-1 block text-sm font-medium text-slate-700">Evidence Description <span class="text-rose-600">*</span></label>
+                                <textarea name="evidence_description" id="evidence_description" rows="4" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('evidence_description') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" 
                                     placeholder="Please describe the evidence you are submitting and how it supports your case..." required>{{ old('evidence_description') }}</textarea>
                                 @error('evidence_description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">
+                                <div class="mt-1 text-xs text-slate-500">
                                     Provide a clear description of your evidence and how it relates to the dispute.
                                 </div>
                             </div>
                             
                             <div class="mb-3">
-                                <label for="evidence_files" class="form-label">Evidence Files <span class="text-danger">*</span></label>
-                                <input type="file" name="evidence_files[]" id="evidence_files" class="form-control @error('evidence_files.*') is-invalid @enderror" 
+                                <label for="evidence_files" class="mb-1 block text-sm font-medium text-slate-700">Evidence Files <span class="text-rose-600">*</span></label>
+                                <input type="file" name="evidence_files[]" id="evidence_files" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('evidence_files.*') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" 
                                     multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.mp4,.mov" required>
                                 @error('evidence_files.*')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">
+                                <div class="mt-1 text-xs text-slate-500">
                                     <strong>Accepted formats:</strong> Images (JPG, PNG), Documents (PDF, DOC, DOCX), Videos (MP4, MOV)<br>
                                     <strong>Maximum file size:</strong> 50MB per file<br>
                                     <strong>Multiple files:</strong> You can select multiple files at once
@@ -2203,22 +2203,22 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             
                             <div class="mb-3">
-                                <label for="additional_notes" class="form-label">Additional Notes</label>
-                                <textarea name="additional_notes" id="additional_notes" rows="3" class="form-control @error('additional_notes') is-invalid @enderror" 
+                                <label for="additional_notes" class="mb-1 block text-sm font-medium text-slate-700">Additional Notes</label>
+                                <textarea name="additional_notes" id="additional_notes" rows="3" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('additional_notes') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" 
                                     placeholder="Any additional information or context you'd like to provide...">{{ old('additional_notes') }}</textarea>
                                 @error('additional_notes')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
                                 @enderror
                             </div>
                             
-                            <div class="alert alert-warning">
+                            <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
                                 <i class="bi bi-exclamation-triangle"></i>
                                 <strong>Important:</strong> Once you submit evidence, you cannot modify it. Please ensure all files are correct before submission.
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary">
+                        <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                                 <i class="bi bi-upload"></i> Submit Evidence
                             </button>
                         </div>
@@ -2244,47 +2244,47 @@ document.addEventListener('DOMContentLoaded', function() {
     @endif
 
 {{-- Close Dispute Modal --}}
-<div class="modal fade" id="closeDisputeModal" tabindex="-1" aria-labelledby="closeDisputeModalLabel" aria-hidden="true">
+<div class="modal" id="closeDisputeModal" tabindex="-1" aria-labelledby="closeDisputeModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="closeDisputeModalLabel">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 bg-success text-white">
+                <h5 class="text-base font-semibold text-slate-900" id="closeDisputeModalLabel">
                     <i class="bi bi-check-circle"></i> Close Dispute
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 text-white hover:bg-white/20 hover:text-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('disputes.close', $dispute->id) }}" method="POST">
                 @csrf
-                <div class="modal-body">
+                <div class="px-4 py-4">
                     @if(auth()->user()->isAdmin())
-                        <div class="alert alert-warning">
+                        <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
                             <i class="bi bi-shield-check"></i>
                             <strong>Admin Action:</strong> You are closing this dispute as an administrator.
                         </div>
                     @endif
                     
-                    <div class="alert alert-info">
+                    <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
                         <i class="bi bi-info-circle"></i>
                         <strong>Closing Dispute:</strong> This action will mark the dispute as closed. Only the dispute creator or admin users can close disputes. Please ensure all issues have been resolved before proceeding.
                     </div>
                     
                     <div class="mb-3">
-                        <label for="closure_notes" class="form-label">Additional Notes (Optional)</label>
-                        <textarea name="closure_notes" id="closure_notes" rows="3" class="form-control" 
+                        <label for="closure_notes" class="mb-1 block text-sm font-medium text-slate-700">Additional Notes (Optional)</label>
+                        <textarea name="closure_notes" id="closure_notes" rows="3" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" 
                             placeholder="Provide any additional details about the resolution or closure..."></textarea>
-                        <div class="form-text">
+                        <div class="mt-1 text-xs text-slate-500">
                             Optional: Add any additional context about how the dispute was resolved.
                         </div>
                     </div>
 
-                    <div class="alert alert-warning">
+                    <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
                         <i class="bi bi-exclamation-triangle"></i>
                         <strong>Important:</strong> Once closed, this dispute cannot be reopened. Make sure all parties are satisfied with the resolution.
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">
+                <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                         <i class="bi bi-check-circle"></i> Confirm Close Dispute
                     </button>
                 </div>
@@ -2293,3 +2293,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 @endsection
+
+
+
+

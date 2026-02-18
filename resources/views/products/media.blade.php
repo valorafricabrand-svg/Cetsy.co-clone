@@ -1,5 +1,5 @@
-{{-- resources/views/products/media.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/products/media.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 @section('title', $product->name . ' | Media')
 
 @push('styles')
@@ -28,23 +28,23 @@
 </style>
 @endpush
 
-@section('content')
+@section('main')
 @php $current = \Illuminate\Support\Facades\Route::currentRouteName(); @endphp
 
 <div class="content" x-data="mediaPage({ existingIds: @json($product->media->pluck('id')) })" x-init="init()">
 
   {{-- Tabs header --}}
   <div class="page-header-sticky">
-    <div class="container-fluid px-0">
+    <div class="mx-auto w-full px-4 sm:px-6 px-0">
       <div class="tab-scroll px-2 py-2">
         <ul class="nav nav-pills gap-2 flex-nowrap">
-          <li class="nav-item"><a class="nav-link {{ $current==='products.show' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.show', $product) }}"><i class="fa-regular fa-circle-question me-1"></i> About</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.pricing' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.pricing', $product) }}"><i class="fa-solid fa-tags me-1"></i> Price & Inventory</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.variations' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.variations', $product) }}"><i class="fa-solid fa-layer-group me-1"></i> Variations</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.details' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.details', $product) }}"><i class="fa-regular fa-rectangle-list me-1"></i> Details</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.shipping' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.shipping', $product) }}"><i class="fa-solid fa-truck me-1"></i> Shipping</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.media' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.media', $product) }}"><i class="fa-regular fa-images me-1"></i> Media</a></li>
-          <li class="nav-item"><a class="nav-link {{ $current==='products.settings' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.settings', $product) }}"><i class="fa-solid fa-gear me-1"></i> Settings</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.show' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.show', $product) }}"><i class="fa-regular fa-circle-question mr-1"></i> About</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.pricing' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.pricing', $product) }}"><i class="fa-solid fa-tags mr-1"></i> Price & Inventory</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.variations' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.variations', $product) }}"><i class="fa-solid fa-layer-group mr-1"></i> Variations</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.details' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.details', $product) }}"><i class="fa-regular fa-rectangle-list mr-1"></i> Details</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.shipping' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.shipping', $product) }}"><i class="fa-solid fa-truck mr-1"></i> Shipping</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.media' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.media', $product) }}"><i class="fa-regular fa-images mr-1"></i> Media</a></li>
+          <li class=""><a class="nav-link {{ $current==='products.settings' ? 'active' : 'btn-outline-secondary' }}" href="{{ route('products.settings', $product) }}"><i class="fa-solid fa-gear mr-1"></i> Settings</a></li>
         </ul>
       </div>
     </div>
@@ -52,48 +52,48 @@
 
   {{-- Flash --}}
   @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show rounded-3 mt-3" role="alert">
+    <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 alert-dismissible rounded-3 mt-3" role="alert">
       {{ session('success') }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert"></button>
     </div>
   @endif
   @if ($errors->any())
-    <div class="alert alert-danger mt-3">
+    <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800 mt-3">
       <strong>Please fix the following errors:</strong>
-      <ul class="mt-2 mb-0 ps-3">
+      <ul class="mt-2 mb-0 pl-3">
         @foreach ($errors->all() as $error) <li>{{ $error }}</li> @endforeach
       </ul>
     </div>
   @endif
 
   {{-- ===== Current Media ===== --}}
-  <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-light d-flex flex-wrap gap-2 align-items-center justify-content-between">
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4 shadow-sm">
+    <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 flex flex-wrap gap-2 items-center justify-between">
       <h5 class="mb-0">Current Media</h5>
       @if($product->media->count())
-        <div class="d-flex align-items-center gap-2" x-show="existingIds.length" x-cloak>
+        <div class="flex items-center gap-2" x-show="existingIds.length" x-cloak>
           <button type="button"
-                  class="btn btn-sm btn-outline-secondary"
+                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
                   @click="toggleSelectAllExisting()"
                   :disabled="existingIds.length === 0">
             <span x-text="selectedExisting.length && selectedExisting.length === existingIds.length ? 'Clear Selection' : 'Select All'"></span>
           </button>
-          <span class="text-muted small" x-show="selectedExisting.length" x-text="`${selectedExisting.length} selected`"></span>
+          <span class="text-slate-500 text-xs" x-show="selectedExisting.length" x-text="`${selectedExisting.length} selected`"></span>
           <button type="button"
-                  class="btn btn-sm btn-outline-danger d-flex align-items-center gap-2"
+                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50 flex items-center gap-2"
                   :disabled="selectedExisting.length === 0 || deletingExisting"
                   @click="confirmBulkDelete()">
             <template x-if="!deletingExisting">
-              <span class="d-flex align-items-center gap-2">
+              <span class="flex items-center gap-2">
                 <i class="fas fa-trash"></i>
                 <span>Delete Selected</span>
-                <span class="badge bg-danger bg-opacity-10 text-danger"
+                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-danger bg-opacity-10 text-rose-600"
                       x-show="selectedExisting.length"
                       x-text="selectedExisting.length"></span>
               </span>
             </template>
             <template x-if="deletingExisting">
-              <span class="d-flex align-items-center gap-2">
+              <span class="flex items-center gap-2">
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 <span>Deleting...</span>
               </span>
@@ -102,18 +102,18 @@
         </div>
       @endif
     </div>
-    <div class="card-body">
+    <div class="p-4 sm:p-5">
       @if($product->media->count())
-        <div class="row g-3">
+        <div class="grid grid-cols-12 gap-4 gap-3">
           @foreach($product->media as $media)
             @php
               $mediaUrl = asset('storage/'.$media->url);
               $isFeatured = $product->featured_image === $mediaUrl;
             @endphp
-            <div class="col-6 col-sm-4 col-md-3">
-              <div class="card position-relative"
+            <div class="col-span-6 sm:col-span-4 md:col-span-3">
+              <div class="rounded-2xl border border-slate-200 bg-white shadow-sm position-relative"
                    :class="selectedExisting.includes({{ $media->id }}) ? 'border-primary border-2 shadow' : ''">
-                <div class="position-absolute top-0 start-0 m-2 bg-white rounded-pill shadow-sm">
+                <div class="position-absolute top-0 start-0 m-2 bg-white rounded-full shadow-sm">
                   <input type="checkbox"
                          class="form-check-input"
                          x-model.number="selectedExisting"
@@ -127,7 +127,7 @@
                        class="card-img-top"
                        style="height:140px;object-fit:cover;">
                 @endif
-                <div class="card-footer text-center py-2">
+                <div class="border-t border-slate-200 px-4 py-3 text-center py-2">
                   {{-- Make featured --}}
                   <form action="{{ route('products.setFeaturedImage', $product) }}" method="POST" class="d-inline">
                     @csrf @method('PATCH')
@@ -140,7 +140,7 @@
                   {{-- Crop existing (form-submitted) --}}
                   @if($media->type !== 'video')
                   <button type="button"
-                          class="btn btn-sm btn-outline-secondary"
+                          class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
                           @click="openExistingCrop({{ $media->id }}, '{{ $mediaUrl }}')">
                     <i class="fas fa-crop"></i> Crop
                   </button>
@@ -148,7 +148,7 @@
 
                   {{-- Delete --}}
                     <button type="button"
-                            class="btn btn-sm btn-outline-danger"
+                            class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50"
                             :disabled="deletingExisting"
                             @click.prevent="confirmDeleteExisting({{ $media->id }})"
                             title="Delete media">
@@ -160,22 +160,22 @@
           @endforeach
         </div>
       @else
-        <p class="text-muted mb-0">No media uploaded yet.</p>
+        <p class="text-slate-500 mb-0">No media uploaded yet.</p>
       @endif
     </div>
   </div>
 
   {{-- ===== Upload New Media (normal form submit) ===== --}}
-  <div class="card shadow-sm mb-5">
-    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-      <h5 class="mb-0"><i class="bi bi-images me-2"></i>Upload Media</h5>
-      <small class="text-muted" x-text="items.length ? `${items.length} selected` : ''"></small>
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm mb-5">
+    <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 flex justify-between items-center">
+      <h5 class="mb-0"><i class="bi bi-images mr-2"></i>Upload Media</h5>
+      <small class="text-slate-500" x-text="items.length ? `${items.length} selected` : ''"></small>
     </div>
 
     <form action="{{ route('media.upload', $product) }}"
           method="POST"
           enctype="multipart/form-data"
-          class="card-body"
+          class="p-4 sm:p-5"
           x-ref="uploadForm"
           @submit="beforeUploadSubmit">
       @csrf
@@ -183,7 +183,7 @@
       {{-- real file input for non-cropped files --}}
       <input type="file"
              name="media[]"
-             class="d-none"
+             class="hidden"
              multiple
              accept="image/*,video/*"
              x-ref="fileInput"
@@ -202,42 +202,42 @@
            @drop.prevent="handleDrop($event)"
            style="cursor:pointer;">
         <p class="mb-1">
-          <i class="bi bi-cloud-arrow-up fs-2 d-block mb-2"></i>
+          <i class="bi bi-cloud-arrow-up fs-2 block mb-2"></i>
           Drag & drop images or videos here or click to browse
         </p>
-        <small class="text-muted">Images up to 5MB - Videos up to 50MB</small>
+        <small class="text-slate-500">Images up to 5MB - Videos up to 50MB</small>
       </div>
 
       {{-- Previews --}}
       <template x-if="items.length">
-        <div class="row g-3 mb-4" id="previewList">
+        <div class="grid grid-cols-12 gap-4 gap-3 mb-4" id="previewList">
           <template x-for="(it,i) in items" :key="it.id">
-            <div class="col-6 col-sm-4 col-md-3">
+            <div class="col-span-6 sm:col-span-4 md:col-span-3">
               <div class="position-relative border rounded thumb overflow-hidden shadow-sm">
                 <template x-if="it.type==='video'">
-                  <video :src="it.previewUrl" class="w-100 h-100" controls></video>
+                  <video :src="it.previewUrl" class="w-full h-full" controls></video>
                 </template>
                 <template x-if="it.type==='image'">
                   <img :src="it.previewUrl" draggable="false">
                 </template>
-                <div class="position-absolute top-0 end-0 m-1 d-flex flex-column gap-1">
+                <div class="position-absolute top-0 end-0 m-1 flex flex-col gap-1">
 
                   <template x-if="it.type==='image'">
-                    <button type="button" class="btn btn-sm btn-warning toolbar-btn" @click.prevent="openNewCrop(i)" title="Crop">
+                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-amber-500 text-slate-900 hover:bg-amber-400 toolbar-btn" @click.prevent="openNewCrop(i)" title="Crop">
                       <i class="fas fa-crop"></i>
                     </button>
                   </template>
-                  <button type="button" class="btn btn-sm btn-danger toolbar-btn"
+                  <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-rose-600 text-white hover:bg-rose-500 toolbar-btn"
                           @click.prevent="removeNew(i)"
                           title="Remove">
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
                 <div class="position-absolute bottom-0 start-0 m-1">
-                  <span class="badge bg-dark bg-opacity-75 small" x-text="i+1"></span>
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-dark bg-opacity-75 text-xs" x-text="i+1"></span>
                 </div>
               </div>
-              <div class="text-truncate small text-muted mt-1" x-text="it.name"></div>
+              <div class="text-truncate text-xs text-slate-500 mt-1" x-text="it.name"></div>
             </div>
           </template>
         </div>
@@ -246,8 +246,8 @@
       {{-- Submit --}}
       <template x-if="items.length">
         <div class="d-grid">
-          <button type="submit" class="btn btn-success rounded-pill">
-            <i class="fas fa-upload me-1"></i> Upload Media
+          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 rounded-full">
+            <i class="fas fa-upload mr-1"></i> Upload Media
           </button>
         </div>
       </template>
@@ -255,17 +255,17 @@
   </div>
 
   {{-- ===== Shared Crop Modal (used for both new & existing) ===== --}}
-  <div class="modal fade" id="cropModal" tabindex="-1" aria-hidden="true">
+  <div class="modal" id="cropModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title d-flex align-items-center">
-            <i class="fas fa-crop me-2"></i> Crop Image
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <h5 class="text-base font-semibold text-slate-900 flex items-center">
+            <i class="fas fa-crop mr-2"></i> Crop Image
           </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body">
-          <div class="mb-3 d-flex flex-wrap gap-2">
+        <div class="px-4 py-4">
+          <div class="mb-3 flex flex-wrap gap-2">
             <template x-for="r in ratios" :key="r.label">
               <span class="ratio-chip"
                     :class="{'active':activeRatio===r.value}"
@@ -273,14 +273,14 @@
                 <span x-text="r.label"></span>
               </span>
             </template>
-            <div class="ms-auto d-flex gap-2">
-              <button class="btn btn-outline-secondary btn-sm" @click="zoom(0.1)"  title="Zoom In"><i class="fas fa-search-plus"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="zoom(-0.1)" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="rotate(-45)" title="Rotate Left"><i class="fas fa-undo"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="rotate(45)"  title="Rotate Right"><i class="fas fa-redo"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="flipX()"     title="Flip Horizontal"><i class="fas fa-arrows-alt-h"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="flipY()"     title="Flip Vertical"><i class="fas fa-arrows-alt-v"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" @click="reset()"     title="Reset"><i class="fas fa-sync"></i></button>
+            <div class="ms-auto flex gap-2">
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="zoom(0.1)"  title="Zoom In"><i class="fas fa-search-plus"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="zoom(-0.1)" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="rotate(-45)" title="Rotate Left"><i class="fas fa-undo"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="rotate(45)"  title="Rotate Right"><i class="fas fa-redo"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="flipX()"     title="Flip Horizontal"><i class="fas fa-arrows-alt-h"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="flipY()"     title="Flip Vertical"><i class="fas fa-arrows-alt-v"></i></button>
+              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="reset()"     title="Reset"><i class="fas fa-sync"></i></button>
             </div>
           </div>
           <div id="cropWrapper"><img id="cropImage" src=""></div>
@@ -293,14 +293,14 @@
           @csrf
           <input type="hidden" name="cropped_image_b64" x-ref="existingB64">
           <input type="hidden" name="quality" x-ref="existingQuality">
-          <div class="modal-footer">
-            <div class="me-auto small text-muted" x-text="dimText"></div>
-            <div class="d-flex align-items-center me-3">
-              <label class="small me-2">Quality</label>
+          <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+            <div class="me-auto text-xs text-slate-500" x-text="dimText"></div>
+            <div class="flex items-center mr-3">
+              <label class="text-xs mr-2">Quality</label>
               <input type="range" min="60" max="100" step="2" x-model.number="quality" style="width:120px">
             </div>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" id="cropApplyBtn">
+            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" id="cropApplyBtn">
               <span x-show="!cropSaving">Apply</span>
               <span x-show="cropSaving" class="spinner-border spinner-border-sm"></span>
             </button>
@@ -315,7 +315,6 @@
 
 @push('scripts')
 {{-- Bootstrap bundle (required for modal) --}}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
@@ -634,6 +633,8 @@ function mediaPage(config = {}){
 }
 </script>
 @endpush
+
+
 
 
 

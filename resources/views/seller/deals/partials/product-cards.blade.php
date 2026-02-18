@@ -27,9 +27,9 @@ in seller @foreach($products as $product)
         }
     }
   @endphp
-  <div class="col-md-6 col-lg-4 product-item" data-product-name="{{ strtolower($product->name) }}">
-    <div class="card h-100 product-card">
-      <div class="card-body p-3">
+  <div class="-span-6 -span-4 product-item" data-product-name="{{ strtolower($product->name) }}">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-full product-card">
+      <div class="p-4 p-3">
         <div class="form-check">
           <input
             class="form-check-input product-checkbox"
@@ -39,40 +39,40 @@ in seller @foreach($products as $product)
             id="product_{{ $product->id }}"
             {{ in_array($product->id, $selectedIds) ? 'checked' : '' }}
           >
-          <label class="form-check-label w-100" for="product_{{ $product->id }}">
-            <div class="d-flex align-items-start">
+          <label class="form-check-label w-full" for="product_{{ $product->id }}">
+            <div class="flex items-start">
               @if($product->image)
                 <img src="{{ asset('storage/' . $product->image) }}" 
-                     class="rounded me-3" 
+                     class="rounded mr-3" 
                      style="width: 50px; height: 50px; object-fit: cover;"
                      alt="{{ $product->name }}">
               @else
-                <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
+                <div class="bg-slate-50 rounded mr-3 flex items-center justify-center" 
                      style="width: 50px; height: 50px;">
-                  <i class="fas fa-image text-muted"></i>
+                  <i class="fas fa-image text-slate-500"></i>
                 </div>
               @endif
               <div class="flex-grow-1">
                 <h6 class="mb-1 text-truncate" title="{{ $product->name }}">{{ $product->name }}</h6>
-                <div class="text-muted small">
-                  <div class="d-flex justify-content-between">
+                <div class="text-slate-500 text-xs">
+                  <div class="flex justify-between">
                     <span>Price: <strong>{{ get_currency() }} {{ number_format($product->price, 2) }}</strong></span>
                     @if($product->discount_percent > 0)
-                      <span class="text-success">Already {{ $product->discount_percent }}% off</span>
+                      <span class="text-emerald-600">Already {{ $product->discount_percent }}% off</span>
                     @endif
                   </div>
                   <div class="mt-1">
-                    <span class="badge bg-light text-dark">{{ $isDigital ? 'Digital' : ($product->product_type ?? 'Product') }}</span>
+                    <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-50 text-slate-900">{{ $isDigital ? 'Digital' : ($product->product_type ?? 'Product') }}</span>
                     @unless($isDigital)
                       @if($isInStock)
-                        <span class="badge bg-success">
+                        <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-emerald-100 text-emerald-800 border-emerald-200">
                           In Stock
                           @if(! is_null($stockTotal))
                             ({{ $stockTotal }})
                           @endif
                         </span>
                       @else
-                        <span class="badge bg-danger">Out of Stock</span>
+                        <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-rose-100 text-rose-800 border-rose-200">Out of Stock</span>
                       @endif
                     @endunless
                   </div>
@@ -85,3 +85,5 @@ in seller @foreach($products as $product)
     </div>
   </div>
 @endforeach
+
+

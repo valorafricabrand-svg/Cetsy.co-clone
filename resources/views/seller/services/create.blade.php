@@ -1,20 +1,25 @@
-@extends('layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
+@section('main')
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
+      <div class="space-y-6">
 <div class="content">
     <h2 class="h3 mb-4">Add Service</h2>
     @if(session('success'))
-        <div class="alert alert-success">
+        <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">
             {{ session('success') }}
         </div>
     @endif
     @if(session('error'))   
-        <div class="alert alert-danger">
+        <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-700">
             {{ session('error') }}
         </div>
     @endif
     @if($errors->any()) 
-        <div class="alert alert-danger">
+        <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-700">
             <ul>
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -26,25 +31,25 @@
         @csrf
         
 
-        <div class="card mb-4">
-            <div class="card-header">Listing details</div>
-            <div class="card-body">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+            <div class="border-b border-slate-200 px-4 py-3">Listing details</div>
+            <div class="p-4">
                 <div class="mb-3">
-                    <label for="name" class="form-label">Service Name <span class="text-danger">Required</span></label>
-                    <input type="text" class="form-control" id="name" name="name"  placeholder="Service name" value="{{ old('name') }}">
+                    <label for="name" class="form-label">Service Name <span class="text-rose-600">Required</span></label>
+                    <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="name" name="name"  placeholder="Service name" value="{{ old('name') }}">
                     
                 </div>
                 <div class="mb-3">
-                    <label for="phone" class="form-label">Phone Number <span class="text-danger">Required</span></label>
-                    <input type="text" class="form-control" id="phone" name="phone" required placeholder="+254 xxx xxx xxx" value="{{ old('phone') }}">
+                    <label for="phone" class="form-label">Phone Number <span class="text-rose-600">Required</span></label>
+                    <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="phone" name="phone" required placeholder="+254 xxx xxx xxx" value="{{ old('phone') }}">
                 </div>
                 <div class="mb-3">
-                    <label for="price" class="form-label">Price <span class="text-danger">Required</span></label>
-                    <input type="text" class="form-control" id="price" name="price" required placeholder="Price" value="{{ old('price') }}">
+                    <label for="price" class="form-label">Price <span class="text-rose-600">Required</span></label>
+                    <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="price" name="price" required placeholder="Price" value="{{ old('price') }}">
                 </div>
                 <div class="mb-3">
-                    <label for="price_type" class="form-label">Price Type <span class="text-danger">Required</span></label>
-                    <select class="form-select" id="price_type" name="price_type" required>
+                    <label for="price_type" class="form-label">Price Type <span class="text-rose-600">Required</span></label>
+                    <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="price_type" name="price_type" required>
                         <option value="">Select price type</option>
                         <option value="fixed" {{ old('price_type') == 'fixed' ? 'selected' : '' }}>Fixed Price</option>
                         <option value="hourly" {{ old('price_type') == 'hourly' ? 'selected' : '' }}>Hourly Rate</option>
@@ -53,17 +58,17 @@
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label for="email" class="form-label">Service Provider Email Address <span class="text-danger">Required</span></label>
-                    <input type="email" class="form-control" id="email" name="email" required placeholder="Service Provider Email Address" value="{{ old('email') }}">
+                    <label for="email" class="form-label">Service Provider Email Address <span class="text-rose-600">Required</span></label>
+                    <input type="email" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="email" name="email" required placeholder="Service Provider Email Address" value="{{ old('email') }}">
                 </div>
                 <div class="mb-3">
-                    <label for="tags" class="form-label">Tags <span class="text-muted">Optional</span></label>
-                    <input type="text" class="form-control" id="tags" name="tags" placeholder="e.g. Cleaning, Medical, Dog-Walking" value="{{ old('tags') }}">
-                    <small class="form-text text-muted">Add up to 13 tags to help people find your service.</small>
+                    <label for="tags" class="form-label">Tags <span class="text-slate-500">Optional</span></label>
+                    <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="tags" name="tags" placeholder="e.g. Cleaning, Medical, Dog-Walking" value="{{ old('tags') }}">
+                    <span class="form-text text-slate-500 text-xs">Add up to 13 tags to help people find your service.</span>
                 </div>
                 <div class="mb-3">
-                    <label for="category" class="form-label">Category <span class="text-danger">Required</span></label>
-                    <select class="form-select" id="category_id" name="category_id" required>
+                    <label for="category" class="form-label">Category <span class="text-rose-600">Required</span></label>
+                    <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="category_id" name="category_id" required>
                         <option value="">--choose--</option>
                         @foreach ($categories as $category)
                             <option value="{{ $category->id }}" {{ old('category') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
@@ -71,8 +76,8 @@
                     </select>
                 </div>
                 <div class="mb-3">
-                        <label for="origin_id" class="form-label">Country <span class="text-danger">Required</span></label>
-                        <select class="form-select" id="origin_id" name="origin_id" required>
+                        <label for="origin_id" class="form-label">Country <span class="text-rose-600">Required</span></label>
+                        <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="origin_id" name="origin_id" required>
                         <option value="">--choose--</option>
                         @foreach ($countries as $country)
                             <option value="{{ $country->id }}" {{ old('country') == $country->id ? 'selected' : '' }}>{{ $country->name }}</option>
@@ -80,9 +85,9 @@
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label for="description" class="form-label">Service Description <span class="text-danger">Required</span></label>
-                    <textarea class="form-control" id="description" name="description" rows="5" required>{{ old('description') }}</textarea>
-                    <small class="form-text text-muted">Make sure the service description provides a detailed explanation of your service so that it is easy to understand and find your service. It is recommended not to enter info on mobile numbers, e-mails, etc. into the service description to protect your personal data.</small>
+                    <label for="description" class="form-label">Service Description <span class="text-rose-600">Required</span></label>
+                    <textarea class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="description" name="description" rows="5" required>{{ old('description') }}</textarea>
+                    <span class="form-text text-slate-500 text-xs">Make sure the service description provides a detailed explanation of your service so that it is easy to understand and find your service. It is recommended not to enter info on mobile numbers, e-mails, etc. into the service description to protect your personal data.</span>
                 </div>
                 
                 
@@ -90,12 +95,12 @@
             </div>
         </div>
 
-        <div class="card mb-4">
-            <div class="card-header">Location & Availability</div>
-            <div class="card-body">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+            <div class="border-b border-slate-200 px-4 py-3">Location & Availability</div>
+            <div class="p-4">
                 <div class="mb-3">
-                    <label for="service_area" class="form-label">Service Area <span class="text-danger">Required</span></label>
-                    <input type="text" class="form-control" id="location" name="location" required placeholder="e.g., Nairobi, Remote, Global" value="{{ old('location') }}">
+                    <label for="service_area" class="form-label">Service Area <span class="text-rose-600">Required</span></label>
+                    <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="location" name="location" required placeholder="e.g., Nairobi, Remote, Global" value="{{ old('location') }}">
                 </div>
 
                 <div class="mb-3">
@@ -108,14 +113,14 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Available Days <span class="text-danger">Required</span></label>
-                    <div class="row g-3">
+                    <label class="form-label">Available Days <span class="text-rose-600">Required</span></label>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3">
                         @php
                             $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
                             $oldDays = old('available_days', []);
                         @endphp
                         @foreach($days as $day)
-                            <div class="col-auto">
+                            <div class="w-auto">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" 
                                            id="day_{{ strtolower($day) }}" 
@@ -131,29 +136,29 @@
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                    <div class="-span-6">
                         <div class="mb-3">
-                            <label for="available_time_from" class="form-label">Available Hours - Start <span class="text-danger">Required</span></label>
-                            <input type="time" class="form-control" id="available_time_from" name="available_time_from" required value="{{ old('available_time_from') }}">
+                            <label for="available_time_from" class="form-label">Available Hours - Start <span class="text-rose-600">Required</span></label>
+                            <input type="time" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="available_time_from" name="available_time_from" required value="{{ old('available_time_from') }}">
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="-span-6">
                         <div class="mb-3">
-                            <label for="available_time_to" class="form-label">Available Hours - End <span class="text-danger">Required</span></label>
-                            <input type="time" class="form-control" id="available_time_to" name="available_time_to" required value="{{ old('available_time_to') }}">
+                            <label for="available_time_to" class="form-label">Available Hours - End <span class="text-rose-600">Required</span></label>
+                            <input type="time" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="available_time_to" name="available_time_to" required value="{{ old('available_time_to') }}">
                         </div>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label for="service_duration" class="form-label">Service Duration <span class="text-danger">Required</span></label>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <input type="number" class="form-control" id="duration_value" name="duration_value" required placeholder="Duration" value="{{ old('duration_value') }}">
+                    <label for="service_duration" class="form-label">Service Duration <span class="text-rose-600">Required</span></label>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                        <div class="-span-6">
+                            <input type="number" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="duration_value" name="duration_value" required placeholder="Duration" value="{{ old('duration_value') }}">
                         </div>
-                        <div class="col-md-6">
-                            <select class="form-select" id="duration_unit" name="duration_unit" required>
+                        <div class="-span-6">
+                            <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="duration_unit" name="duration_unit" required>
                                 <option value="">Select Unit</option>
                                 <option value="minutes" {{ old('duration_unit') == 'minutes' ? 'selected' : '' }}>Minutes</option>
                                 <option value="hours" {{ old('duration_unit') == 'hours' ? 'selected' : '' }}>Hours</option>
@@ -166,19 +171,23 @@
             </div>
         </div>
 
-        <div class="card mb-4">
-            <div class="card-header">Photos</div>
-            <div class="card-body">
-                <p class="text-muted">Avoid offering services that are violating Intellectual Property Rights, so that your services are not blacklisted.</p>
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+            <div class="border-b border-slate-200 px-4 py-3">Photos</div>
+            <div class="p-4">
+                <p class="text-slate-500">Avoid offering services that are violating Intellectual Property Rights, so that your services are not blacklisted.</p>
                 <div class="mb-3">
-                    <label for="photos" class="form-label">Service Photos <span class="text-danger">Required</span></label>
-                    <input class="form-control" type="file" id="photos" name="photos[]" multiple required>
+                    <label for="photos" class="form-label">Service Photos <span class="text-rose-600">Required</span></label>
+                    <input class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" type="file" id="photos" name="photos[]" multiple required>
                 </div>
             </div>
         </div>
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">Save</button>
     </form>
 </div>
+      </div>
+    </div>
+  </div>
+</section>
 @endsection 
 
 @push('scripts')
@@ -218,3 +227,8 @@
 })();
 </script>
 @endpush
+
+
+
+
+

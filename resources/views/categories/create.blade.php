@@ -1,5 +1,5 @@
-{{-- resources/views/admin/categories/create.blade.php --}}
-@extends('layouts.app')
+﻿{{-- resources/views/admin/categories/create.blade.php --}}
+@extends('theme.'.theme().'.layouts.app')
 
 @section('header')
 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -45,7 +45,7 @@
 </script>
 @endpush
 
-@section('content')
+@section('main')
 <div class="content">
   <div class="container-lg">
 
@@ -76,13 +76,13 @@
 
       {{-- Category Name --}}
       <div class="mb-4">
-        <label for="name" class="form-label">Name</label>
+        <label for="name" class="mb-1 block text-sm font-medium text-slate-700">Name</label>
         <input
           id="name"
           x-model="name"
           name="name"
           type="text"
-          class="form-control"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
           value="{{ old('name') }}"
           required
         >
@@ -90,13 +90,13 @@
 
       {{-- Category Slug --}}
       <div class="mb-4">
-        <label for="slug" class="form-label">Slug</label>
+        <label for="slug" class="mb-1 block text-sm font-medium text-slate-700">Slug</label>
         <input
           id="slug"
           x-model="slug"
           name="slug"
           type="text"
-          class="form-control bg-light"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-100"
           value="{{ old('slug') }}"
           readonly
         >
@@ -104,9 +104,9 @@
 
       {{-- Parent Category --}}
       <div class="mb-4">
-        <label for="parent_id" class="form-label">Parent Category</label>
-        <select id="parent_id" name="parent_id" class="form-select">
-          <option value="">— None —</option>
+        <label for="parent_id" class="mb-1 block text-sm font-medium text-slate-700">Parent Category</label>
+        <select id="parent_id" name="parent_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
+          <option value="">â€” None â€”</option>
           @foreach($parents as $p)
             <option
               value="{{ $p->id }}"
@@ -120,8 +120,8 @@
 
       {{-- Listing Type --}}
       <div class="mb-4">
-        <label for="listing_type" class="form-label">Listing Type</label>
-        <select id="listing_type" name="listing_type" class="form-select" required>
+        <label for="listing_type" class="mb-1 block text-sm font-medium text-slate-700">Listing Type</label>
+        <select id="listing_type" name="listing_type" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" required>
           <option value="products"  @selected(old('listing_type')=='products')>Products</option>
           <option value="services"  @selected(old('listing_type')=='services')>Services</option>
           <option value="digital"   @selected(old('listing_type')=='digital')>Digital Downloads</option>
@@ -130,21 +130,21 @@
 
       {{-- Listing Fee --}}
       <div class="mb-4">
-        <label for="listing_fee" class="form-label">Listing Fee</label>
+        <label for="listing_fee" class="mb-1 block text-sm font-medium text-slate-700">Listing Fee</label>
         <input
           id="listing_fee"
           name="listing_fee"
           type="number"
           step="0.01"
-          class="form-control"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
           value="{{ old('listing_fee') }}"
         >
       </div>
 
       {{-- Listing Frequency --}}
       <div class="mb-4">
-        <label for="listing_frequency" class="form-label">Listing Frequency</label>
-        <select id="listing_frequency" name="listing_frequency" class="form-select" required>
+        <label for="listing_frequency" class="mb-1 block text-sm font-medium text-slate-700">Listing Frequency</label>
+        <select id="listing_frequency" name="listing_frequency" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" required>
           <option value="1" @selected(old('listing_frequency') == 1 || old('listing_frequency') === '1')>1 month</option>
           <option value="4" @selected(old('listing_frequency', 4) == 4 || old('listing_frequency', 4) === '4')>4 months</option>
         </select>
@@ -152,30 +152,30 @@
 
       {{-- Description --}}
       <div class="mb-4">
-        <label for="description" class="form-label">Description</label>
+        <label for="description" class="mb-1 block text-sm font-medium text-slate-700">Description</label>
         <textarea
           id="description"
           name="description"
           rows="3"
-          class="form-control"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
         >{{ old('description') }}</textarea>
-        <div class="form-text">Optional—describe this category for listing pages.</div>
+        <div class="mt-1 text-xs text-slate-500">Optionalâ€”describe this category for listing pages.</div>
       </div>
 
       {{-- Featured Image --}}
       <div class="mb-6">
-        <label for="image" class="form-label">Featured Image</label>
+        <label for="image" class="mb-1 block text-sm font-medium text-slate-700">Featured Image</label>
         <input
           id="image"
           name="image"
           type="file"
           accept="image/*"
-          class="form-control"
+          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
         >
       </div>
 
       {{-- Submit Button --}}
-      <button type="submit" class="btn btn-success btn-lg">
+      <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base">
         Save Category
       </button>
     </form>
@@ -183,3 +183,5 @@
   </div>
 </div>
 @endsection
+
+

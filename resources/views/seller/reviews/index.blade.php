@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Shop Reviews')
 
@@ -15,7 +15,12 @@
 </style>
 @endpush
 
-@section('content')
+@section('main')
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
+      <div class="space-y-6">
 @php
     $summary = array_merge([
         'count' => 0,
@@ -31,87 +36,87 @@
 @endphp
 
 <div class="content">
-  <div class="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-3">
+  <div class="flex flex-wrap justify-between items-end mb-4 gap-3">
     <div>
       <h2 class="mb-1">Shop Reviews</h2>
-      <p class="text-muted mb-0">Only reviews from finished or delivered orders are shown here.</p>
+      <p class="text-slate-500 mb-0">Only reviews from finished or delivered orders are shown here.</p>
     </div>
-    <div class="text-end">
-      <div class="value text-warning">{{ number_format($summary['average'], 1) }}</div>
-      <div class="text-muted small">Average rating across {{ $summary['count'] }} review{{ $summary['count'] === 1 ? '' : 's' }}</div>
+    <div class="text-right">
+      <div class="value text-amber-600">{{ number_format($summary['average'], 1) }}</div>
+      <div class="text-slate-500 text-xs">Average rating across {{ $summary['count'] }} review{{ $summary['count'] === 1 ? '' : 's' }}</div>
     </div>
   </div>
 
-  <div class="row g-3 mb-4">
-    <div class="col-md-3 col-sm-6">
-      <div class="card shadow-sm stat-card h-100">
-        <div class="card-body text-center">
-          <div class="label text-muted mb-1">Total Reviews</div>
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 mb-4">
+    <div class="-span-3 -span-6">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm stat-card h-full">
+        <div class="p-4 text-center">
+          <div class="label text-slate-500 mb-1">Total Reviews</div>
           <div class="value">{{ $summary['count'] }}</div>
         </div>
       </div>
     </div>
-    <div class="col-md-3 col-sm-6">
-      <div class="card shadow-sm stat-card h-100">
-        <div class="card-body text-center">
-          <div class="label text-muted mb-1">Five-Star</div>
+    <div class="-span-3 -span-6">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm stat-card h-full">
+        <div class="p-4 text-center">
+          <div class="label text-slate-500 mb-1">Five-Star</div>
           @php $fivePercent = $summary['count'] ? round(($summary['five_star'] / $summary['count']) * 100) : 0; @endphp
-          <div class="value text-warning">{{ $summary['five_star'] }}</div>
-          <div class="small text-muted">{{ $fivePercent }}% of reviews</div>
+          <div class="value text-amber-600">{{ $summary['five_star'] }}</div>
+          <div class="text-xs text-slate-500">{{ $fivePercent }}% of reviews</div>
         </div>
       </div>
     </div>
-    <div class="col-md-3 col-sm-6">
-      <div class="card shadow-sm stat-card h-100">
-        <div class="card-body text-center">
-          <div class="label text-muted mb-1">Four-Star</div>
+    <div class="-span-3 -span-6">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm stat-card h-full">
+        <div class="p-4 text-center">
+          <div class="label text-slate-500 mb-1">Four-Star</div>
           @php $fourPercent = $summary['count'] ? round(($summary['four_star'] / $summary['count']) * 100) : 0; @endphp
-          <div class="value text-warning">{{ $summary['four_star'] }}</div>
-          <div class="small text-muted">{{ $fourPercent }}% of reviews</div>
+          <div class="value text-amber-600">{{ $summary['four_star'] }}</div>
+          <div class="text-xs text-slate-500">{{ $fourPercent }}% of reviews</div>
         </div>
       </div>
     </div>
-    <div class="col-md-3 col-sm-6">
-      <div class="card shadow-sm stat-card h-100">
-        <div class="card-body text-center">
-          <div class="label text-muted mb-1">Three-Star & Below</div>
+    <div class="-span-3 -span-6">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm stat-card h-full">
+        <div class="p-4 text-center">
+          <div class="label text-slate-500 mb-1">Three-Star & Below</div>
           @php $lowCount = $summary['three_star'] + $summary['two_star'] + $summary['one_star'];
                $lowPercent = $summary['count'] ? round(($lowCount / $summary['count']) * 100) : 0;
           @endphp
-          <div class="value text-warning">{{ $lowCount }}</div>
-          <div class="small text-muted">{{ $lowPercent }}% of reviews</div>
+          <div class="value text-amber-600">{{ $lowCount }}</div>
+          <div class="text-xs text-slate-500">{{ $lowPercent }}% of reviews</div>
         </div>
       </div>
     </div>
   </div>
 
-  <form action="{{ route('seller.reviews.index') }}" method="GET" class="card shadow-sm border-0 mb-4">
-    <div class="card-body row g-3 align-items-end">
-      <div class="col-md-5">
+  <form action="{{ route('seller.reviews.index') }}" method="GET" class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 mb-4">
+    <div class="p-4 grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 items-end">
+      <div class="-span-5">
         <label class="form-label">Search</label>
-        <input type="text" class="form-control" name="q" value="{{ $search }}" placeholder="Search by listing, buyer, order, or comment">
+        <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" name="q" value="{{ $search }}" placeholder="Search by listing, buyer, order, or comment">
       </div>
-      <div class="col-md-3 col-sm-6">
+      <div class="-span-3 -span-6">
         <label class="form-label">Rating</label>
-        <select name="rating" class="form-select">
+        <select name="rating" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
           <option value="">All ratings</option>
           @for($i = 5; $i >= 1; $i--)
             <option value="{{ $i }}" @selected($ratingFilter === $i)>{{ $i }} star{{ $i === 1 ? '' : 's' }}</option>
           @endfor
         </select>
       </div>
-      <div class="col-md-2 col-sm-6">
+      <div class="-span-2 -span-6">
         <label class="form-label">Per Page</label>
-        <select name="per_page" class="form-select">
+        <select name="per_page" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
           @foreach([10, 15, 25, 50, 100] as $option)
             <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
           @endforeach
         </select>
       </div>
-      <div class="col-md-2 d-flex gap-2">
-        <button type="submit" class="btn btn-primary flex-fill"><i class="fas fa-filter me-1"></i> Filter</button>
+      <div class="-span-2 flex gap-2">
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 flex-1"><i class="fas fa-filter mr-1"></i> Filter</button>
         @if($search !== '' || ! is_null($ratingFilter) || $perPage !== 15)
-          <a href="{{ route('seller.reviews.index') }}" class="btn btn-outline-secondary" title="Reset filters">
+          <a href="{{ route('seller.reviews.index') }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100" title="Reset filters">
             <i class="fas fa-rotate-left"></i>
           </a>
         @endif
@@ -119,10 +124,10 @@
     </div>
   </form>
 
-  <div class="card shadow-sm border-0">
-    <div class="table-responsive">
-      <table class="table align-middle mb-0">
-        <thead class="table-light">
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-sm align-middle mb-0">
+        <thead class="bg-slate-50 text-slate-600">
           <tr>
             <th scope="col">Order</th>
             <th scope="col">Listing</th>
@@ -140,25 +145,25 @@
                 $product = optional($review->orderItem)->product;
                 $buyer = $review->user;
                 $status = $order?->status;
-                $statusBadge = method_exists($order, 'getStatusBadgeClass') ? $order->getStatusBadgeClass() : 'bg-secondary';
+                $statusBadge = method_exists($order, 'getStatusBadgeClass') ? $order->getStatusBadgeClass() : 'bg-slate-200 text-slate-700 border-slate-300';
             @endphp
             <tr id="review-{{ $review->id }}">
               <td>
-                <div class="fw-semibold">{{ $orderNumber }}</div>
+                <div class="font-semibold">{{ $orderNumber }}</div>
                 @if($status)
-                  <span class="badge {{ $statusBadge }} text-capitalize">{{ str_replace('_', ' ', $status) }}</span>
+                  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusBadge }} text-capitalize">{{ str_replace('_', ' ', $status) }}</span>
                 @endif
               </td>
               <td>
                 @if($product)
-                  <div class="fw-semibold">{{ $product->name }}</div>
-                  <div class="text-muted small text-capitalize">{{ $product->type }}</div>
+                  <div class="font-semibold">{{ $product->name }}</div>
+                  <div class="text-slate-500 text-xs text-capitalize">{{ $product->type }}</div>
                 @else
-                  <span class="text-muted">Listing removed</span>
+                  <span class="text-slate-500">Listing removed</span>
                 @endif
               </td>
               <td>
-                <div class="fw-semibold">{{ $buyer->name ?? 'Unknown Buyer' }}</div>
+                <div class="font-semibold">{{ $buyer->name ?? 'Unknown Buyer' }}</div>
               </td>
               <td>
                 <div class="rating-stars mb-1">
@@ -170,13 +175,13 @@
                     @endif
                   @endfor
                 </div>
-                <div class="small text-muted">{{ $review->rating }} / 5</div>
+                <div class="text-xs text-slate-500">{{ $review->rating }} / 5</div>
               </td>
               <td>
                 @if($review->comment)
-                  <div class="review-comment small">{{ \Illuminate\Support\Str::limit($review->comment, 200) }}</div>
+                  <div class="review-comment text-xs">{{ \Illuminate\Support\Str::limit($review->comment, 200) }}</div>
                 @else
-                  <span class="text-muted small">No comment left</span>
+                  <span class="text-slate-500 text-xs">No comment left</span>
                 @endif
 
                 @if(!empty($review->image_path))
@@ -190,17 +195,17 @@
                 {{-- Seller response display / form --}}
                 <div class="mt-2">
                   @if(!empty($review->seller_response))
-                    <div class="border rounded p-2 bg-light">
-                      <div class="fw-semibold mb-1">Your response</div>
-                      <div class="seller-response small">{{ $review->seller_response }}</div>
-                      <div class="d-flex gap-2 mt-2">
-                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#respondForm-{{ $review->id }}" aria-expanded="false" aria-controls="respondForm-{{ $review->id }}">
+                    <div class="border rounded p-2 bg-slate-50">
+                      <div class="font-semibold mb-1">Your response</div>
+                      <div class="seller-response text-xs">{{ $review->seller_response }}</div>
+                      <div class="flex gap-2 mt-2">
+                        <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100" type="button" data-bs-toggle="collapse" data-bs-target="#respondForm-{{ $review->id }}" aria-expanded="false" aria-controls="respondForm-{{ $review->id }}">
                           Edit response
                         </button>
                       </div>
                     </div>
                   @else
-                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#respondForm-{{ $review->id }}" aria-expanded="false" aria-controls="respondForm-{{ $review->id }}">
+                    <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50" type="button" data-bs-toggle="collapse" data-bs-target="#respondForm-{{ $review->id }}" aria-expanded="false" aria-controls="respondForm-{{ $review->id }}">
                       Respond
                     </button>
                   @endif
@@ -210,26 +215,26 @@
                   <form action="{{ route('seller.reviews.respond', $review) }}" method="POST" class="border rounded p-2">
                     @csrf
                     <label for="seller_response_{{ $review->id }}" class="form-label mb-1">Your response</label>
-                    <textarea class="form-control" id="seller_response_{{ $review->id }}" name="seller_response" rows="3" maxlength="2000" placeholder="Write a helpful, professional reply visible to the buyer.">{{ old('seller_response', $review->seller_response) }}</textarea>
-                    <div class="d-flex justify-content-end gap-2 mt-2">
-                      <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#respondForm-{{ $review->id }}">Cancel</button>
+                    <textarea class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="seller_response_{{ $review->id }}" name="seller_response" rows="3" maxlength="2000" placeholder="Write a helpful, professional reply visible to the buyer.">{{ old('seller_response', $review->seller_response) }}</textarea>
+                    <div class="flex justify-end gap-2 mt-2">
+                      <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">Save</button>
+                      <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100" data-bs-toggle="collapse" data-bs-target="#respondForm-{{ $review->id }}">Cancel</button>
                     </div>
                   </form>
                 </div>
               </td>
               <td>
-                <div class="fw-semibold">{{ optional($review->created_at)->format('M d, Y') }}</div>
+                <div class="font-semibold">{{ optional($review->created_at)->format('M d, Y') }}</div>
                 @if($order?->delivered_at)
-                  <div class="text-muted small">Delivered: {{ optional($order->delivered_at)->format('M d, Y') }}</div>
+                  <div class="text-slate-500 text-xs">Delivered: {{ optional($order->delivered_at)->format('M d, Y') }}</div>
                 @elseif($order?->completed_at)
-                  <div class="text-muted small">Completed: {{ optional($order->completed_at)->format('M d, Y') }}</div>
+                  <div class="text-slate-500 text-xs">Completed: {{ optional($order->completed_at)->format('M d, Y') }}</div>
                 @endif
               </td>
             </tr>
           @empty
             <tr>
-              <td colspan="6" class="text-center py-5 text-muted">
+              <td colspan="6" class="text-center py-5 text-slate-500">
                 <i class="fas fa-star-half-alt fa-2x mb-2"></i>
                 <div>No reviews yet. Encourage buyers to leave feedback once orders are delivered.</div>
               </td>
@@ -240,10 +245,19 @@
     </div>
 
     @if($reviews->hasPages())
-      <div class="card-footer bg-white">
-        {{ $reviews->links('pagination::bootstrap-5') }}
+      <div class="border-t border-slate-200 px-4 py-3 bg-white">
+        {{ $reviews->links('pagination::tailwind') }}
       </div>
     @endif
   </div>
 </div>
+      </div>
+    </div>
+  </div>
+</section>
 @endsection
+
+
+
+
+

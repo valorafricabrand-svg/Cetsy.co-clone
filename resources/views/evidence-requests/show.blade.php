@@ -1,12 +1,12 @@
-@extends('layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
+@section('main')
 <div class="content">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
+    <div class="grid grid-cols-12 gap-4 justify-center">
+        <div class="md:col-span-10">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-200 px-4 py-3">
+                    <div class="flex justify-between items-center">
                         <h4 class="mb-0">
                             <i class="fas fa-file-alt"></i> Evidence Request
                         </h4>
@@ -19,34 +19,34 @@
                         @endphp
                         
                         @if($isBuyer || $isSeller)
-                            <a href="{{ route('disputes.show', $dispute->id) }}" class="btn btn-secondary">
+                            <a href="{{ route('disputes.show', $dispute->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500">
                                 <i class="fas fa-arrow-left"></i> Back to Dispute #{{ $dispute->id }}
                             </a>
                         @else
-                            <a href="{{ route('evidence-requests.index') }}" class="btn btn-secondary">
+                            <a href="{{ route('evidence-requests.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500">
                                 <i class="fas fa-arrow-left"></i> Back to Evidence Requests
                             </a>
                         @endif
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="p-4 sm:p-5">
                     <!-- Appeal Information -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
+                    <div class="grid grid-cols-12 gap-4 mb-4">
+                        <div class="md:col-span-6">
                             <h6>Appeal Information</h6>
                             <p><strong>Appeal ID:</strong> #{{ $evidenceRequest->appeal->id }}</p>
                             <p><strong>Dispute ID:</strong> 
-                                <a href="{{ route('disputes.show', $evidenceRequest->appeal->dispute_id) }}" class="text-decoration-none">
+                                <a href="{{ route('disputes.show', $evidenceRequest->appeal->dispute_id) }}" class="no-underline">
                                     #{{ $evidenceRequest->appeal->dispute_id }}
                                 </a>
                             </p>
                             <p><strong>Appealed By:</strong> {{ $evidenceRequest->appeal->appealedBy->name }}</p>
                             <p><strong>Appeal Reason:</strong> {{ $evidenceRequest->appeal->reason }}</p>
                         </div>
-                        <div class="col-md-6">
+                        <div class="md:col-span-6">
                             <h6>Evidence Request Details</h6>
                             <p><strong>Status:</strong> 
-                                <span class="badge {{ $evidenceRequest->getStatusBadgeClass() }}">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $evidenceRequest->getStatusBadgeClass() }}">
                                     {{ ucfirst($evidenceRequest->status) }}
                                 </span>
                             </p>
@@ -65,21 +65,21 @@
                     </div>
 
                     <!-- Request Message -->
-                    <div class="alert alert-info">
+                    <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
                         <h6><i class="fas fa-info-circle"></i> Evidence Request from Cetsy Support Team</h6>
                         <p class="mb-0">{{ $evidenceRequest->request_message }}</p>
                     </div>
 
                     <!-- Required Evidence Types -->
-                    <div class="card mb-4">
-                        <div class="card-header">
+                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+                        <div class="border-b border-slate-200 px-4 py-3">
                             <h6 class="mb-0"><i class="fas fa-list"></i> Required Evidence Types</h6>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
+                        <div class="p-4 sm:p-5">
+                            <div class="grid grid-cols-12 gap-4">
                                 @foreach($evidenceRequest->getRequiredEvidenceTypesList() as $evidenceType)
-                                    <div class="col-md-4 mb-2">
-                                        <span class="badge bg-primary me-2">{{ $evidenceType }}</span>
+                                    <div class="md:col-span-4 mb-2">
+                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary mr-2">{{ $evidenceType }}</span>
                                     </div>
                                 @endforeach
                             </div>
@@ -88,34 +88,34 @@
 
                     <!-- Evidence Submission Form -->
                     @if($evidenceRequest->status === 'pending' && !$evidenceRequest->isDeadlineExpired())
-                        <div class="card">
-                            <div class="card-header">
+                        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                            <div class="border-b border-slate-200 px-4 py-3">
                                 <h6 class="mb-0"><i class="fas fa-upload"></i> Submit Evidence</h6>
                             </div>
-                            <div class="card-body">
+                            <div class="p-4 sm:p-5">
                                 <form action="{{ route('evidence-requests.submit', $evidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
                                     @csrf
                                     
                                     <div class="mb-3">
-                                        <label for="evidence_description" class="form-label">Evidence Description *</label>
-                                        <textarea name="evidence_description" id="evidence_description" rows="4" class="form-control @error('evidence_description') is-invalid @enderror" 
+                                        <label for="evidence_description" class="mb-1 block text-sm font-medium text-slate-700">Evidence Description *</label>
+                                        <textarea name="evidence_description" id="evidence_description" rows="4" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('evidence_description') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" 
                                             placeholder="Please describe the evidence you are submitting and how it supports your case..." required>{{ old('evidence_description') }}</textarea>
                                         @error('evidence_description')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
                                         @enderror
-                                        <div class="form-text">
+                                        <div class="mt-1 text-xs text-slate-500">
                                             Provide a clear description of your evidence and how it relates to the dispute.
                                         </div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label for="evidence_files" class="form-label">Evidence Files *</label>
-                                        <input type="file" name="evidence_files[]" id="evidence_files" class="form-control @error('evidence_files.*') is-invalid @enderror" 
+                                        <label for="evidence_files" class="mb-1 block text-sm font-medium text-slate-700">Evidence Files *</label>
+                                        <input type="file" name="evidence_files[]" id="evidence_files" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('evidence_files.*') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" 
                                             multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.mp4,.mov" required>
                                         @error('evidence_files.*')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
                                         @enderror
-                                        <div class="form-text">
+                                        <div class="mt-1 text-xs text-slate-500">
                                             <strong>Accepted formats:</strong> Images (JPG, PNG), Documents (PDF, DOC, DOCX), Videos (MP4, MOV)<br>
                                             <strong>Maximum file size:</strong> 50MB per file<br>
                                             <strong>Multiple files:</strong> You can select multiple files at once
@@ -123,21 +123,21 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label for="additional_notes" class="form-label">Additional Notes</label>
-                                        <textarea name="additional_notes" id="additional_notes" rows="3" class="form-control @error('additional_notes') is-invalid @enderror" 
+                                        <label for="additional_notes" class="mb-1 block text-sm font-medium text-slate-700">Additional Notes</label>
+                                        <textarea name="additional_notes" id="additional_notes" rows="3" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('additional_notes') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" 
                                             placeholder="Any additional information or context you'd like to provide...">{{ old('additional_notes') }}</textarea>
                                         @error('additional_notes')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
                                         @enderror
                                     </div>
 
-                                    <div class="alert alert-warning">
+                                    <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
                                         <i class="fas fa-exclamation-triangle"></i>
                                         <strong>Important:</strong> Once you submit evidence, you cannot modify it. Please ensure all files are correct before submission.
                                     </div>
 
                                     <div class="d-grid">
-                                        <button type="submit" class="btn btn-primary btn-lg">
+                                        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base">
                                             <i class="fas fa-upload"></i> Submit Evidence
                                         </button>
                                     </div>
@@ -146,18 +146,18 @@
                         </div>
                     @elseif($evidenceRequest->status === 'submitted')
                         <!-- Submitted Evidence Display -->
-                        <div class="card">
-                            <div class="card-header">
+                        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                            <div class="border-b border-slate-200 px-4 py-3">
                                 <h6 class="mb-0"><i class="fas fa-check-circle"></i> Evidence Submitted</h6>
                             </div>
-                            <div class="card-body">
-                                <div class="alert alert-success">
+                            <div class="p-4 sm:p-5">
+                                <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">
                                     <i class="fas fa-check-circle"></i>
                                     <strong>Evidence submitted successfully!</strong> Our support team will review your evidence and get back to you.
                                 </div>
 
-                                <div class="row">
-                                    <div class="col-md-6">
+                                <div class="grid grid-cols-12 gap-4">
+                                    <div class="md:col-span-6">
                                         <h6>Submission Details</h6>
                                         <p><strong>Submitted At:</strong> {{ $evidenceRequest->submitted_at->format('M d, Y \a\t g:i A') }}</p>
                                         <p><strong>Description:</strong> {{ $evidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
@@ -165,19 +165,19 @@
                                             <p><strong>Additional Notes:</strong> {{ $evidenceRequest->submitted_evidence['additional_notes'] }}</p>
                                         @endif
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="md:col-span-6">
                                         <h6>Submitted Files</h6>
                                         @if(isset($evidenceRequest->submitted_evidence['files']))
                                             <div class="evidence-files">
                                                 @foreach($evidenceRequest->submitted_evidence['files'] as $file)
-                                                    <div class="card mb-2">
-                                                        <div class="card-body p-2">
-                                                            <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-2">
+                                                        <div class="p-4 sm:p-5 p-2">
+                                                            <div class="flex justify-between items-center">
                                                                 <div>
-                                                                    <small class="text-muted">{{ $file['filename'] }}</small><br>
-                                                                    <small class="text-muted">{{ number_format($file['size'] / 1024, 1) }} KB</small>
+                                                                    <small class="text-slate-500">{{ $file['filename'] }}</small><br>
+                                                                    <small class="text-slate-500">{{ number_format($file['size'] / 1024, 1) }} KB</small>
                                                                 </div>
-                                                                <a href="{{ Storage::url($file['path']) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                <a href="{{ Storage::url($file['path']) }}" target="_blank" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                                                                     <i class="fas fa-download"></i> View
                                                                 </a>
                                                             </div>
@@ -186,7 +186,7 @@
                                                 @endforeach
                                             </div>
                                         @else
-                                            <p class="text-muted">No files submitted.</p>
+                                            <p class="text-slate-500">No files submitted.</p>
                                         @endif
                                     </div>
                                 </div>
@@ -194,36 +194,36 @@
                         </div>
                     @elseif($evidenceRequest->status === 'overdue')
                         <!-- Overdue Notice -->
-                        <div class="alert alert-danger">
+                        <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">
                             <i class="fas fa-exclamation-triangle"></i>
                             <strong>Deadline Expired:</strong> The deadline for submitting evidence has passed. Please contact our support team for assistance.
                         </div>
                     @endif
 
                                          <!-- Both Parties Evidence Status -->
-                     <div class="card mt-4">
-                         <div class="card-header">
+                     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4">
+                         <div class="border-b border-slate-200 px-4 py-3">
                              <h6 class="mb-0"><i class="fas fa-users"></i> Both Parties Evidence Status</h6>
                          </div>
-                         <div class="card-body">
-                             <div class="row">
-                                 <div class="col-md-6">
+                         <div class="p-4 sm:p-5">
+                             <div class="grid grid-cols-12 gap-4">
+                                 <div class="md:col-span-6">
                                      <h6 class="mb-3">
                                          <i class="fas fa-user text-primary"></i> Buyer Evidence
                                          @if($evidenceRequest->appeal->buyerEvidenceRequest)
-                                             <span class="badge {{ $evidenceRequest->appeal->buyerEvidenceRequest->getStatusBadgeClass() }} ms-2">
+                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $evidenceRequest->appeal->buyerEvidenceRequest->getStatusBadgeClass() }} ml-2">
                                                  {{ ucfirst($evidenceRequest->appeal->buyerEvidenceRequest->status) }}
                                              </span>
                                          @else
-                                             <span class="badge bg-secondary ms-2">Pending</span>
+                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200 ml-2">Pending</span>
                                          @endif
                                      </h6>
                                      
                                      @if($evidenceRequest->appeal->buyerEvidenceRequest && $evidenceRequest->appeal->buyerEvidenceRequest->status === 'submitted')
                                          <div class="evidence-submission-card border rounded p-3 mb-3">
-                                             <div class="d-flex justify-content-between align-items-start mb-2">
+                                             <div class="flex justify-between items-start mb-2">
                                                  <strong>Submitted:</strong>
-                                                 <small class="text-muted">{{ $evidenceRequest->appeal->buyerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</small>
+                                                 <small class="text-slate-500">{{ $evidenceRequest->appeal->buyerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</small>
                                              </div>
                                              <p class="mb-2"><strong>Description:</strong> {{ $evidenceRequest->appeal->buyerEvidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
                                              
@@ -231,9 +231,9 @@
                                                  <div class="submitted-files">
                                                      <strong>Files:</strong>
                                                      @foreach($evidenceRequest->appeal->buyerEvidenceRequest->submitted_evidence['files'] as $file)
-                                                         <div class="file-item d-flex justify-content-between align-items-center mt-1">
+                                                         <div class="file-item flex justify-between items-center mt-1">
                                                              <small class="text-truncate">{{ $file['filename'] }}</small>
-                                                             <a href="{{ Storage::url($file['path']) }}" target="_blank" class="btn btn-sm btn-outline-primary btn-sm">
+                                                             <a href="{{ Storage::url($file['path']) }}" target="_blank" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                                                                  <i class="fas fa-eye"></i>
                                                              </a>
                                                          </div>
@@ -242,29 +242,29 @@
                                              @endif
                                          </div>
                                      @else
-                                         <div class="text-muted">
+                                         <div class="text-slate-500">
                                              <i class="fas fa-clock"></i> Waiting for buyer to submit evidence
                                          </div>
                                      @endif
                                  </div>
                                  
-                                 <div class="col-md-6">
+                                 <div class="md:col-span-6">
                                      <h6 class="mb-3">
-                                         <i class="fas fa-shop text-success"></i> Seller Evidence
+                                         <i class="fas fa-shop text-emerald-600"></i> Seller Evidence
                                          @if($evidenceRequest->appeal->sellerEvidenceRequest)
-                                             <span class="badge {{ $evidenceRequest->appeal->sellerEvidenceRequest->getStatusBadgeClass() }} ms-2">
+                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $evidenceRequest->appeal->sellerEvidenceRequest->getStatusBadgeClass() }} ml-2">
                                                  {{ ucfirst($evidenceRequest->appeal->sellerEvidenceRequest->status) }}
                                              </span>
                                          @else
-                                             <span class="badge bg-secondary ms-2">Pending</span>
+                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200 ml-2">Pending</span>
                                          @endif
                                      </h6>
                                      
                                      @if($evidenceRequest->appeal->sellerEvidenceRequest && $evidenceRequest->appeal->sellerEvidenceRequest->status === 'submitted')
                                          <div class="evidence-submission-card border rounded p-3 mb-3">
-                                             <div class="d-flex justify-content-between align-items-start mb-2">
+                                             <div class="flex justify-between items-start mb-2">
                                                  <strong>Submitted:</strong>
-                                                 <small class="text-muted">{{ $evidenceRequest->appeal->sellerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</small>
+                                                 <small class="text-slate-500">{{ $evidenceRequest->appeal->sellerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</small>
                                              </div>
                                              <p class="mb-2"><strong>Description:</strong> {{ $evidenceRequest->appeal->sellerEvidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
                                              
@@ -272,9 +272,9 @@
                                                  <div class="submitted-files">
                                                      <strong>Files:</strong>
                                                      @foreach($evidenceRequest->appeal->sellerEvidenceRequest->submitted_evidence['files'] as $file)
-                                                         <div class="file-item d-flex justify-content-between align-items-center mt-1">
+                                                         <div class="file-item flex justify-between items-center mt-1">
                                                              <small class="text-truncate">{{ $file['filename'] }}</small>
-                                                             <a href="{{ Storage::url($file['path']) }}" target="_blank" class="btn btn-sm btn-outline-primary btn-sm">
+                                                             <a href="{{ Storage::url($file['path']) }}" target="_blank" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                                                                  <i class="fas fa-eye"></i>
                                                              </a>
                                                          </div>
@@ -283,7 +283,7 @@
                                              @endif
                                          </div>
                                      @else
-                                         <div class="text-muted">
+                                         <div class="text-slate-500">
                                              <i class="fas fa-clock"></i> Waiting for seller to submit evidence
                                          </div>
                                      @endif
@@ -293,11 +293,11 @@
                      </div>
 
                      <!-- Appeal Progress Timeline -->
-                     <div class="card mt-4">
-                         <div class="card-header">
+                     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4">
+                         <div class="border-b border-slate-200 px-4 py-3">
                              <h6 class="mb-0"><i class="fas fa-chart-line"></i> Appeal Progress Timeline</h6>
                          </div>
-                         <div class="card-body">
+                         <div class="p-4 sm:p-5">
                              <div class="timeline">
                                  <div class="timeline-item">
                                      <div class="timeline-marker bg-primary"></div>
@@ -309,7 +309,7 @@
                                  </div>
 
                                  <div class="timeline-item">
-                                     <div class="timeline-marker bg-warning"></div>
+                                     <div class="timeline-marker bg-amber-100"></div>
                                      <div class="timeline-content">
                                          <h6 class="timeline-title">Evidence Requested</h6>
                                          <p class="timeline-text">Cetsy support team requested evidence from both parties</p>
@@ -340,7 +340,7 @@
                                  @if($evidenceRequest->appeal->buyerEvidenceRequest && $evidenceRequest->appeal->buyerEvidenceRequest->status === 'submitted' && 
                                      $evidenceRequest->appeal->sellerEvidenceRequest && $evidenceRequest->appeal->sellerEvidenceRequest->status === 'submitted')
                                      <div class="timeline-item">
-                                         <div class="timeline-marker bg-info"></div>
+                                         <div class="timeline-marker bg-sky-100"></div>
                                          <div class="timeline-content">
                                              <h6 class="timeline-title">All Evidence Received</h6>
                                              <p class="timeline-text">Both parties have submitted evidence. Cetsy support team is now reviewing.</p>
@@ -484,3 +484,7 @@ document.getElementById('evidence_files').addEventListener('change', function(e)
 </script>
 @endpush
 @endsection
+
+
+
+

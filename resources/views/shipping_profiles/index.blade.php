@@ -1,24 +1,24 @@
-{{-- resources/views/shipping_profiles/index.blade.php --}}
+﻿{{-- resources/views/shipping_profiles/index.blade.php --}}
 
-@extends('layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
-@section('content')
+@section('main')
 <div class="content">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="flex justify-between items-center mb-3">
         <h2>Shipping Profiles</h2>
-        <a href="{{ route('seller.shipping_profiles.create') }}" class="btn btn-primary">Add Shipping Profile</a>
+        <a href="{{ route('seller.shipping_profiles.create') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Add Shipping Profile</a>
     </div>
 
     @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+        <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">{{ session('success') }}</div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
+        <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">{{ session('error') }}</div>
     @endif
 
     @if($profiles->count())
-        <div class="table-responsive">
-        <table class="table table-bordered table-hover mb-0">
+        <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm border border-slate-200 mb-0">
             <thead>
                 <tr>
                     <th>Name</th>
@@ -47,20 +47,20 @@
                         </td>
                         <td>
                             @if($profile->pickup_available)
-                                <span class="badge bg-success">Yes</span>
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-success">Yes</span>
                             @else
-                                <span class="badge bg-secondary">No</span>
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200">No</span>
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('seller.shipping_profiles.edit', $profile) }}" class="btn btn-sm btn-warning">Edit</a>
+                            <a href="{{ route('seller.shipping_profiles.edit', $profile) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-amber-500 text-slate-900 hover:bg-amber-400">Edit</a>
                             <form action="{{ route('seller.shipping_profiles.destroy', $profile) }}"
                                   method="POST"
-                                  class="d-inline-block"
+                                  class="inline-block"
                                   onsubmit="return confirm('Delete this shipping profile?');">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger">
+                                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-rose-600 text-white hover:bg-rose-500">
                                     Delete
                                 </button>
                             </form>
@@ -71,9 +71,11 @@
         </table>
         </div>
 
-        {{ $profiles->onEachSide(1)->links('pagination::bootstrap-5') }}
+        {{ $profiles->onEachSide(1)->links('pagination::tailwind') }}
     @else
         <p>No shipping profiles found. <a href="{{ route('seller.shipping_profiles.create') }}">Create one now.</a></p>
     @endif
 </div>
 @endsection
+
+
