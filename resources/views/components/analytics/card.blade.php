@@ -7,25 +7,21 @@
   'delta' => null,        // numeric delta percent (positive/negative)
   'sparkId' => null,      // optional canvas id for sparkline
 ])
-<div class="col-12 col-sm-6 col-xl-4">
-    <div class="card h-100 shadow-sm border-0 rounded-3 glass text-center">
-        <div class="card-body py-4 d-flex flex-column align-items-center w-100">
-            <div class="d-inline-flex align-items-center justify-content-center rounded-circle analytics-icon mb-3 flex-shrink-0">
-                <i class="{{ $icon }} fs-4"></i>
-            </div>
-            <h6 class="text-muted mb-1">{{ $title }}</h6>
-            <p class="fs-3 fw-semibold mb-1">{{ $value }}</p>
-            @if(!is_null($delta))
-                @php $up = $delta >= 0; $cls = $up ? 'text-success' : 'text-danger'; @endphp
-                <div class="small {{ $cls }} mb-2">
-                    <i class="fas {{ $up ? 'fa-arrow-up' : 'fa-arrow-down' }} me-1"></i>{{ number_format($delta, 1) }}%
-                </div>
-            @endif
-            @if($sparkId)
-                <div class="w-100" style="height:36px">
-                    <canvas id="{{ $sparkId }}" height="36"></canvas>
-                </div>
-            @endif
+<article class="glass h-full rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+    <div class="mx-auto mb-3 inline-flex items-center justify-center rounded-full analytics-icon">
+        <i class="{{ $icon }} text-xl"></i>
+    </div>
+    <h3 class="text-sm font-medium text-slate-500">{{ $title }}</h3>
+    <p class="mt-1 text-2xl font-semibold text-slate-900">{{ $value }}</p>
+    @if(!is_null($delta))
+        @php $up = $delta >= 0; $cls = $up ? 'text-emerald-600' : 'text-rose-600'; @endphp
+        <div class="mt-1 text-xs font-semibold {{ $cls }}">
+            <i class="fas {{ $up ? 'fa-arrow-up' : 'fa-arrow-down' }} mr-1"></i>{{ number_format($delta, 1) }}%
         </div>
-    </div>
-    </div>
+    @endif
+    @if($sparkId)
+        <div class="mt-3 h-9 w-full">
+            <canvas id="{{ $sparkId }}" height="36"></canvas>
+        </div>
+    @endif
+</article>
