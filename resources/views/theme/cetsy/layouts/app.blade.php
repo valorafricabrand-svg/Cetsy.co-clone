@@ -16,9 +16,19 @@
         $topNavCategories = collect();
         try {
             $topNavCategories = \App\Models\Category::whereNull('parent_id')
+                ->with([
+                    'children' => function ($query) {
+                        $query->orderBy('name')
+                            ->with([
+                                'children' => function ($childQuery) {
+                                    $childQuery->orderBy('name');
+                                }
+                            ]);
+                    }
+                ])
                 ->orderBy('name')
                 ->take(10)
-                ->get(['name', 'slug']);
+                ->get(['id', 'name', 'slug']);
         } catch (\Throwable $e) {
             $topNavCategories = collect();
         }
@@ -142,11 +152,56 @@
 
             <div class="mx-auto hidden w-full max-w-7xl px-4 pb-3 lg:block sm:px-6">
                 @if ($topNavCategories->isNotEmpty())
-                    <div class="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1">
+                    <div class="flex flex-wrap items-center gap-2 pb-1">
                         @foreach ($topNavCategories as $cat)
-                            <a href="{{ route('category.show', $cat->slug) }}" class="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
-                                {{ $cat->name }}
-                            </a>
+                            @php $children = collect($cat->children ?? []); @endphp
+                            <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @focusin="open = true" @focusout="open = false">
+                                <a href="{{ route('category.show', $cat->slug) }}" class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+                                    <span>{{ $cat->name }}</span>
+                                    @if ($children->isNotEmpty())
+                                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                                    @endif
+                                </a>
+
+                                @if ($children->isNotEmpty())
+                                    <div x-show="open" x-cloak x-transition class="absolute left-0 top-full z-50 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                                        <a href="{{ route('category.show', $cat->slug) }}" class="mb-1 block rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">
+                                            All {{ $cat->name }}
+                                        </a>
+
+                                        <ul class="space-y-1">
+                                            @foreach ($children as $child)
+                                                @php $grandChildren = collect($child->children ?? []); @endphp
+                                                <li class="relative" x-data="{ openChild: false }" @mouseenter="openChild = true" @mouseleave="openChild = false" @focusin="openChild = true" @focusout="openChild = false">
+                                                    <a href="{{ route('category.show', $child->slug) }}" class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+                                                        <span class="truncate">{{ $child->name }}</span>
+                                                        @if ($grandChildren->isNotEmpty())
+                                                            <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+                                                        @endif
+                                                    </a>
+
+                                                    @if ($grandChildren->isNotEmpty())
+                                                        <div x-show="openChild" x-cloak x-transition class="absolute left-full top-0 ml-2 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                                                            <a href="{{ route('category.show', $child->slug) }}" class="mb-1 block rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">
+                                                                All {{ $child->name }}
+                                                            </a>
+                                                            <ul class="space-y-1">
+                                                                @foreach ($grandChildren as $grand)
+                                                                    <li>
+                                                                        <a href="{{ route('category.show', $grand->slug) }}" class="block rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+                                                                            {{ $grand->name }}
+                                                                        </a>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        </div>
+                                                    @endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+                            </div>
                         @endforeach
                     </div>
                 @endif
@@ -171,11 +226,53 @@
                     </nav>
 
                     @if ($topNavCategories->isNotEmpty())
-                        <div class="grid grid-cols-2 gap-2">
-                            @foreach ($topNavCategories->take(6) as $cat)
-                                <a href="{{ route('category.show', $cat->slug) }}" class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700">
-                                    {{ $cat->name }}
-                                </a>
+                        <div class="space-y-2">
+                            @foreach ($topNavCategories as $cat)
+                                @php $children = collect($cat->children ?? []); @endphp
+                                @if ($children->isNotEmpty())
+                                    <details class="rounded-xl border border-slate-200 bg-slate-50">
+                                        <summary class="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-semibold text-slate-700">
+                                            <span>{{ $cat->name }}</span>
+                                            <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+                                        </summary>
+
+                                        <div class="space-y-1 border-t border-slate-200 px-2 py-2">
+                                            <a href="{{ route('category.show', $cat->slug) }}" class="block rounded-lg px-2 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
+                                                All {{ $cat->name }}
+                                            </a>
+
+                                            @foreach ($children as $child)
+                                                @php $grandChildren = collect($child->children ?? []); @endphp
+                                                @if ($grandChildren->isNotEmpty())
+                                                    <details class="rounded-lg border border-slate-200 bg-white">
+                                                        <summary class="flex cursor-pointer list-none items-center justify-between px-2 py-2 text-xs font-semibold text-slate-700">
+                                                            <span>{{ $child->name }}</span>
+                                                            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                                                        </summary>
+                                                        <div class="space-y-1 border-t border-slate-200 px-2 py-2">
+                                                            <a href="{{ route('category.show', $child->slug) }}" class="block rounded-md px-2 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
+                                                                All {{ $child->name }}
+                                                            </a>
+                                                            @foreach ($grandChildren as $grand)
+                                                                <a href="{{ route('category.show', $grand->slug) }}" class="block rounded-md px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-100">
+                                                                    {{ $grand->name }}
+                                                                </a>
+                                                            @endforeach
+                                                        </div>
+                                                    </details>
+                                                @else
+                                                    <a href="{{ route('category.show', $child->slug) }}" class="block rounded-lg px-2 py-2 text-xs text-slate-700 hover:bg-slate-100">
+                                                        {{ $child->name }}
+                                                    </a>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </details>
+                                @else
+                                    <a href="{{ route('category.show', $cat->slug) }}" class="block rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+                                        {{ $cat->name }}
+                                    </a>
+                                @endif
                             @endforeach
                         </div>
                     @endif
