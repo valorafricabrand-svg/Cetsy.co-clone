@@ -50,6 +50,33 @@
 
         $settings = \App\Models\Setting::first();
         $hideMarketplaceCategories = auth()->check() && $isSellerArea;
+
+        $headerUnreadNotifications = 0;
+        $headerRecentNotifications = collect();
+        if (auth()->check() && \Illuminate\Support\Facades\Route::has('notifications.index')) {
+            try {
+                $headerUser = auth()->user();
+                $notificationQuery = \App\Models\Activity::query();
+                if (method_exists($headerUser, 'isAdmin') && $headerUser->isAdmin()) {
+                    $notificationQuery->where(function ($query) use ($headerUser) {
+                        $query->where('user_id', $headerUser->id)->orWhereNull('user_id');
+                    });
+                } else {
+                    $notificationQuery->where('user_id', $headerUser->id);
+                }
+
+                $headerUnreadNotifications = (clone $notificationQuery)
+                    ->where('is_read', false)
+                    ->count();
+                $headerRecentNotifications = (clone $notificationQuery)
+                    ->orderBy('created_at', 'desc')
+                    ->limit(6)
+                    ->get();
+            } catch (\Throwable $e) {
+                $headerUnreadNotifications = 0;
+                $headerRecentNotifications = collect();
+            }
+        }
     @endphp
 
     <meta charset="utf-8">
@@ -232,24 +259,76 @@
                 <div class="ml-auto flex items-center gap-2">
                     @auth
                         @if (\Illuminate\Support\Facades\Route::has('notifications.index'))
-                            @php
-                                $headerUnreadNotifications = 0;
-                                try {
-                                    $headerUnreadNotifications = \App\Models\Activity::where('user_id', auth()->id())
-                                        ->where('is_read', false)
-                                        ->count();
-                                } catch (\Throwable $e) {
-                                    $headerUnreadNotifications = 0;
-                                }
-                            @endphp
-                            <a href="{{ route('notifications.index') }}" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50" aria-label="Notifications">
-                                <i class="fas fa-bell text-sm"></i>
-                                @if ($headerUnreadNotifications > 0)
-                                    <span class="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
-                                        {{ $headerUnreadNotifications > 99 ? '99+' : $headerUnreadNotifications }}
-                                    </span>
-                                @endif
-                            </a>
+                            <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false">
+                                <button type="button" @click="open = !open" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50" aria-label="Notifications" :aria-expanded="open ? 'true' : 'false'">
+                                    <i class="fas fa-bell text-sm"></i>
+                                    @if ($headerUnreadNotifications > 0)
+                                        <span class="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
+                                            {{ $headerUnreadNotifications > 99 ? '99+' : $headerUnreadNotifications }}
+                                        </span>
+                                    @endif
+                                </button>
+
+                                <div x-show="open" x-cloak x-transition @click.outside="open = false" class="absolute right-0 z-50 mt-2 w-[22rem] max-w-[90vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                                    <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                                        <div>
+                                            <h3 class="text-sm font-semibold text-slate-900">Notifications</h3>
+                                            <p class="text-xs text-slate-500">Latest updates from your account</p>
+                                        </div>
+                                        <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                                            {{ $headerUnreadNotifications }} unread
+                                        </span>
+                                    </div>
+
+                                    <div class="max-h-80 overflow-y-auto">
+                                        @forelse ($headerRecentNotifications as $notification)
+                                            @php
+                                                $notificationHref = \Illuminate\Support\Facades\Route::has('notifications.open')
+                                                    ? route('notifications.open', $notification->id)
+                                                    : route('notifications.index');
+                                                $notificationTitle = trim((string) ($notification->title ?: $notification->description ?: $notification->message ?: 'Notification'));
+                                                $notificationAge = optional($notification->created_at)->diffForHumans();
+                                                $notificationAction = 'Open';
+                                                try {
+                                                    $notificationAction = \App\Services\NotificationRouteService::getLinkText($notification, auth()->user()) ?: 'Open';
+                                                } catch (\Throwable $e) {
+                                                    $notificationAction = 'Open';
+                                                }
+                                            @endphp
+                                            <div class="border-b border-slate-100 px-4 py-3 last:border-b-0">
+                                                <div class="flex items-start gap-3">
+                                                    <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full {{ $notification->is_read ? 'bg-slate-100 text-slate-500' : 'bg-emerald-100 text-emerald-700' }}">
+                                                        <i class="fas fa-bell text-xs"></i>
+                                                    </span>
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="truncate text-sm {{ $notification->is_read ? 'text-slate-700' : 'font-semibold text-slate-900' }}">{{ $notificationTitle }}</p>
+                                                        <div class="mt-1 flex items-center justify-between gap-2">
+                                                            <p class="text-xs text-slate-500">{{ $notificationAge }}</p>
+                                                            @if (!$notification->is_read)
+                                                                <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">New</span>
+                                                            @endif
+                                                        </div>
+                                                        <a href="{{ $notificationHref }}" class="mt-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100" @click="open = false">
+                                                            {{ $notificationAction }}
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <div class="px-4 py-8 text-center text-sm text-slate-500">
+                                                <i class="far fa-bell-slash mb-2 block text-2xl text-slate-300"></i>
+                                                No notifications yet.
+                                            </div>
+                                        @endforelse
+                                    </div>
+
+                                    <div class="border-t border-slate-200 p-3">
+                                        <a href="{{ route('notifications.index') }}" class="inline-flex w-full items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500" @click="open = false">
+                                            View all notifications
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         @endif
                         <a href="{{ url('/dashboard') }}" class="hidden rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 sm:inline-flex">Dashboard</a>
                         @if (Route::has('logout'))
