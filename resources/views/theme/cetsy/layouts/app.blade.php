@@ -12,7 +12,21 @@
         $metaRobots = trim($__env->yieldContent('meta_robots', 'index, follow'));
         $favicon = favicon_url();
         $isSellerArea = request()->is('seller*') || request()->routeIs('products.*');
-        $legacyBootstrapCompat = (bool) config('theme.legacy_bootstrap_compat', true) && !$isSellerArea;
+        $isTailwindPrimaryArea = request()->is('buyer*')
+            || request()->is('account*')
+            || request()->is('wallet*')
+            || request()->is('orders*')
+            || request()->is('notifications*')
+            || request()->is('profile*')
+            || request()->routeIs('buyer.*')
+            || request()->routeIs('account.*')
+            || request()->routeIs('orders.*')
+            || request()->routeIs('wallet.*')
+            || request()->routeIs('notifications.*')
+            || request()->routeIs('profile.*');
+        $legacyBootstrapCompat = (bool) config('theme.legacy_bootstrap_compat', true)
+            && !$isSellerArea
+            && !$isTailwindPrimaryArea;
 
         $topNavCategories = collect();
         try {
