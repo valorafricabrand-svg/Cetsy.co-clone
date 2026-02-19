@@ -61,8 +61,10 @@
                                                 {{ $typeLabel }}
                                             </td>
                                             <td class="px-4 py-3">
-                                                @php($ok = in_array($pay->payment_status, ['successful','completed'], true))
-                                                @php($statusClass = $ok ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800')
+                                                @php
+                                                    $ok = in_array($pay->payment_status, ['successful', 'completed'], true);
+                                                    $statusClass = $ok ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800';
+                                                @endphp
                                                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusClass }}">
                                                     {{ ucfirst($pay->payment_status) }}
                                                 </span>
