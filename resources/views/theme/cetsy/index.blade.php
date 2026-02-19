@@ -1,4 +1,4 @@
-@extends('theme.'.theme().'.layouts.app')
+﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Cetsy | Handmade products, services, and digital goods')
 @section('meta_description', 'Discover handmade products, services, and digital goods from creators across Africa on Cetsy.')
@@ -24,6 +24,7 @@
         : collect($categories ?? [])->take(6);
 
     $heroImageFallback = asset('assets/images/illustrator.webp');
+    $productThumbFallback = asset('assets/images/default-og-image-cetsy.jpg');
     $slides = isset($heroSlides) && $heroSlides instanceof \Illuminate\Support\Collection
         ? $heroSlides
         : collect();
@@ -62,7 +63,14 @@
                         $sub = $slide->subtitle ?: 'Discover limited-time offers across the Cetsy marketplace.';
                         $btnLabel = $slide->button_label ?: 'Shop deals';
                         $btnUrl = $slide->resolved_button_url;
-                        $img = $slide->image_path ? asset('storage/' . $slide->image_path) : $heroImageFallback;
+                        $slideImagePath = (string) ($slide->image_path ?? '');
+                        if ($slideImagePath !== '' && Str::startsWith($slideImagePath, ['http://', 'https://', '//', 'data:'])) {
+                            $img = $slideImagePath;
+                        } elseif ($slideImagePath !== '') {
+                            $img = media_url($slideImagePath);
+                        } else {
+                            $img = $heroImageFallback;
+                        }
                     @endphp
                     <article class="home-hero-slide {{ $index === 0 ? 'is-active' : '' }} rounded-3xl bg-gradient-to-br from-white via-rose-500 to-red-600 p-4 shadow-2xl sm:p-6 lg:p-8" data-home-hero-slide="{{ $index }}">
                         <div class="grid items-center gap-6 lg:grid-cols-2">
@@ -240,7 +248,7 @@
                                 @if((($item->type ?? '') === 'physical') && (int)($item->stock ?? 0) === 1 && (($item->is_reserved ?? false)) )
                                     <span class="absolute right-2 top-2 z-10 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold text-white">Reserved</span>
                                 @endif
-                                <img src="{{ $card['thumb'] }}" alt="{{ $item->name }}" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async">
+                                <img src="{{ $card['thumb'] }}" alt="{{ $item->name }}" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=@json($productThumbFallback);">
                             </div>
                             <div class="flex flex-1 flex-col p-3">
                                 <h3 class="line-clamp-2 text-sm font-semibold text-slate-900">{{ $item->name }}</h3>
@@ -297,10 +305,10 @@
                     <a href="{{ route('shop.show', $shop->slug) }}" class="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                         <div class="flex items-center gap-3">
                             <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100">
-                                <img src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . ltrim($shop->logo, '/'))) : (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg')) }}"
+                                <img src="{{ !empty($shop->logo_url) ? $shop->logo_url : (!empty($shop->logo) ? (Str::startsWith((string) $shop->logo, ['http://', 'https://', '//']) ? $shop->logo : media_url($shop->logo)) : (setting('favicon_url') ?: $productThumbFallback)) }}"
                                      alt="{{ $shop->name }} logo"
                                      class="h-full w-full object-cover"
-                                     onerror="this.onerror=null;this.src=@json(setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'));">
+                                     onerror="this.onerror=null;this.src=@json(setting('favicon_url') ?: $productThumbFallback);">
                             </div>
                             <div>
                                 <h3 class="text-sm font-bold text-slate-900">{{ $shop->name }}</h3>
@@ -327,7 +335,7 @@
             <div class="mx-auto max-w-3xl text-center">
                 <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Since 2021 - Global Marketplace</span>
                 <h2 class="mt-3 text-3xl font-extrabold text-slate-900">Who is Cetsy?</h2>
-                <p class="mt-3 text-base text-slate-600"><span class="font-semibold text-emerald-700">"Cetsy"</span> is a Malagasy word that means <em>"that�s it"</em>.</p>
+                <p class="mt-3 text-base text-slate-600"><span class="font-semibold text-emerald-700">"Cetsy"</span> is a Malagasy word that means <em>"that’s it"</em>.</p>
                 <p class="mt-2 text-sm text-slate-500 md:text-base">Your global marketplace where anyone can find almost everything from everyone, everywhere.</p>
 
                 <div class="mt-4 flex flex-wrap justify-center gap-2">
@@ -427,3 +435,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
+

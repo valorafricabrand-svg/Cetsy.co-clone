@@ -64,6 +64,7 @@
     <img src="{{ $thumb }}"
          alt="{{ $item->name }}"
          class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]"
+         onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));"
          @if($dataVideoSrc) data-video-src="{{ $dataVideoSrc }}" style="opacity:.01;filter:blur(8px);transition:opacity .35s ease,filter .35s ease;" @endif
          loading="lazy" decoding="async">
   </div>

@@ -3,10 +3,92 @@
 @section('main')
 @php
   $__about = App\Models\PolicySection::where('slug','about-cetsy')->first();
+  $__aboutRaw = trim((string) optional($__about)->content);
+  $__aboutHasHtml = $__aboutRaw !== '' && $__aboutRaw !== strip_tags($__aboutRaw);
+  $__aboutBlocks = $__aboutRaw !== '' ? preg_split("/(\r\n|\n|\r){2,}/", $__aboutRaw) : [];
 @endphp
 
-@if($__about && trim((string)$__about->content) !== '')
-{!! $__about->content !!}
+@if($__aboutRaw !== '')
+  @push('styles')
+  <style>
+    .about-rich h1, .about-rich h2, .about-rich h3, .about-rich h4 {
+      color: #0f172a;
+      font-weight: 800;
+      letter-spacing: -.01em;
+      margin-top: 1.25rem;
+      margin-bottom: .55rem;
+      line-height: 1.25;
+    }
+
+    .about-rich h1 { font-size: 1.85rem; }
+    .about-rich h2 { font-size: 1.4rem; }
+    .about-rich h3 { font-size: 1.1rem; }
+    .about-rich p {
+      color: #334155;
+      font-size: 1.03rem;
+      line-height: 1.85;
+      margin: .8rem 0;
+    }
+    .about-rich ul, .about-rich ol {
+      margin: .8rem 0 1rem 1.25rem;
+      color: #334155;
+      line-height: 1.8;
+    }
+    .about-rich li { margin: .25rem 0; }
+    .about-rich strong { color: #0f172a; font-weight: 700; }
+    .about-rich a { color: #047857; font-weight: 600; text-decoration: none; }
+    .about-rich a:hover { color: #059669; text-decoration: underline; }
+  </style>
+  @endpush
+
+  <section class="relative overflow-x-clip bg-slate-50 py-10 sm:py-12">
+    <div class="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-200/35 blur-3xl"></div>
+    <div class="pointer-events-none absolute -left-20 top-[18rem] h-72 w-72 rounded-full bg-cyan-200/25 blur-3xl"></div>
+
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="mb-4 rounded-3xl border border-emerald-100 bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white shadow-lg">
+        <span class="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em]">
+          <i class="fas fa-circle-info"></i> About Cetsy
+        </span>
+        <h1 class="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">Who We Are</h1>
+        <p class="mt-2 max-w-3xl text-sm text-emerald-50 sm:text-base">Learn about our mission, marketplace model, and how we connect buyers and sellers globally.</p>
+      </div>
+
+      <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 lg:p-10">
+        @if($__aboutHasHtml)
+          <div class="about-rich">
+            {!! $__aboutRaw !!}
+          </div>
+        @else
+          <div class="space-y-4">
+            @foreach($__aboutBlocks as $__block)
+              @php
+                $__text = trim((string) $__block);
+                $__plain = trim(preg_replace('/\s+/', ' ', $__text));
+                $__isHeading = (bool) preg_match('/^(\d+(\.\d+)*)\.?\s+[A-Z]/', $__plain)
+                  || (bool) preg_match('/^[A-Z][A-Za-z0-9 ,&()\'"\/\-]{2,90}:$/', $__plain);
+              @endphp
+
+              @if($__isHeading)
+                <h2 class="text-xl font-extrabold leading-tight text-slate-900">{!! nl2br(e($__text)) !!}</h2>
+              @else
+                <p class="text-[1.03rem] leading-8 text-slate-700">{!! nl2br(e($__text)) !!}</p>
+              @endif
+            @endforeach
+          </div>
+        @endif
+
+        <div class="mt-8 flex flex-wrap gap-2 border-t border-slate-200 pt-5">
+          <a href="{{ route('listings') }}" class="inline-flex items-center rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+            <i class="fas fa-compass mr-2"></i> Explore Listings
+          </a>
+          <a href="{{ route('become-seller') }}" class="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-5 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+            <i class="fas fa-store mr-2"></i> Become a Seller
+          </a>
+        </div>
+      </article>
+    </div>
+  </section>
 @else
   @push('styles')
   <style>
