@@ -10,7 +10,7 @@
 @if(session('success'))
   <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800" role="alert">
     {{ session('success') }}
-    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="alert" aria-label="Close"></button>
+    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert" aria-label="Close">&times;</button>
   </div>
 @endif
 @if ($errors->any())
@@ -21,14 +21,14 @@
         <li>{{ $error }}</li>
       @endforeach
     </ul>
-    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="alert" aria-label="Close"></button>
+    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert" aria-label="Close">&times;</button>
   </div>
 @endif
 
 {{-- HEADER --}}
 <div class="mb-4 flex justify-between items-center">
   <h3 class="mb-0">Variations</h3>
-  <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-toggle="modal" data-target="#manageVariationsModal">
+  <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-toggle="modal" data-ui-target="#manageVariationsModal">
     Manage variation types
   </button>
 </div>
@@ -36,7 +36,7 @@
 {{-- QUICK OVERVIEW OF TYPES --}}
 <div class="mb-4">
   @forelse($variationTypes as $type)
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-2 shadow-sm">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-2">
       <div class="p-4 sm:p-5 flex justify-between items-center">
         <div class="mr-3">
           <h6 class="mb-1">{{ $type->name }}</h6>
@@ -57,8 +57,8 @@
           {{-- Open the per-type modal for this type --}}
           <button
             class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
-            data-toggle="modal"
-            data-target="#typeOptionsModal{{ $type->id }}">
+            data-ui-toggle="modal"
+            data-ui-target="#typeOptionsModal{{ $type->id }}">
             Manage
           </button>
 
@@ -87,7 +87,7 @@
     <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
       <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900">Manage Variation Types</h5>
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="modal"></button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal">&times;</button>
       </div>
 
       <div class="px-4 py-4">
@@ -116,9 +116,9 @@
                 @csrf
                 @method('PATCH')
                 <div class="col-auto">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="1" id="ap_{{ $type->id }}" name="affects_price" {{ $type->affects_price ? 'checked' : '' }}>
-                    <label class="form-check-label" for="ap_{{ $type->id }}">
+                  <div class="flex items-center gap-2">
+                    <input class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" type="checkbox" value="1" id="ap_{{ $type->id }}" name="affects_price" {{ $type->affects_price ? 'checked' : '' }}>
+                    <label class="text-sm text-slate-700" for="ap_{{ $type->id }}">
                       Affects price
                     </label>
                   </div>
@@ -147,13 +147,13 @@
             <div class="md:col-span-8">
               <label class="mb-1 block text-sm font-medium text-slate-700">Options</label>
               <input name="options" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="Red,Blue,Green" required>
-              <small class="mt-1 text-xs text-slate-500 text-slate-500">Separate options with commas.</small>
+              <small class="mt-1 text-xs text-slate-500">Separate options with commas.</small>
             </div>
           </div>
           <div class="mt-3 flex items-center gap-3">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" value="1" id="affects_price_new" name="affects_price">
-              <label class="form-check-label" for="affects_price_new">Affects price</label>
+            <div class="flex items-center gap-2">
+              <input class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" type="checkbox" value="1" id="affects_price_new" name="affects_price">
+              <label class="text-sm text-slate-700" for="affects_price_new">Affects price</label>
             </div>
             <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Add Type</button>
           </div>
@@ -161,7 +161,7 @@
       </div>
 
       <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-dismiss="modal">Close</button>
+        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -182,7 +182,7 @@
       <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900">Manage: {{ $type->name }}</h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="modal"></button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal">&times;</button>
         </div>
 
         <div class="px-4 py-4">
@@ -294,7 +294,7 @@
 
               @if($variantsForType->count())
                 <div class="overflow-x-auto">
-                  <table class="min-w-full divide-y divide-slate-200 text-sm table-sm align-middle">
+                  <table class="min-w-full divide-y divide-slate-200 text-sm align-middle">
                     <thead class="bg-slate-50">
                       <tr>
                         <th>Combination</th>
@@ -356,7 +356,7 @@
         </div>
 
         <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-dismiss="modal">Close</button>
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Close</button>
         </div>
       </div>
     </div>

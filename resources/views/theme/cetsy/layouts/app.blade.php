@@ -91,6 +91,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <style>
+        [x-cloak] { display: none !important; }
         .tw-modal {
             position: fixed;
             inset: 0;
@@ -187,10 +188,10 @@
     @stack('structured-data')
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
-    <div class="flex min-h-screen flex-col">
-        <header x-data="{ open: false }" class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <div x-data="{ mobileDrawerOpen: false }" x-init="$watch('mobileDrawerOpen', value => document.body.classList.toggle('overflow-hidden', value))" class="flex min-h-screen flex-col">
+        <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
             <div class="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
-                <button @click="open = !open" class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 lg:hidden" type="button" aria-label="Toggle menu">
+                <button @click="mobileDrawerOpen = true" class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 lg:hidden" type="button" aria-label="Open menu">
                     <i class="fas fa-bars"></i>
                 </button>
 
@@ -292,82 +293,136 @@
                 @endif
             </div>
 
-            <div x-show="open" x-cloak x-transition class="border-t border-slate-200 bg-white lg:hidden">
-                <div class="space-y-3 px-4 py-4 sm:px-6">
-                    <form method="GET" action="{{ route('search') }}">
-                        <label for="mobileSearch" class="sr-only">Search products</label>
-                        <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2">
-                            <i class="fas fa-search text-slate-400"></i>
-                            <input id="mobileSearch" name="q" type="search" value="{{ request('q') }}" placeholder="Search products" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
-                            <button type="submit" class="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white">Go</button>
-                        </div>
-                    </form>
-
-                    <nav class="grid grid-cols-2 gap-2">
-                        <a href="{{ route('listings') }}" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Listings</a>
-                        <a href="{{ route('shops.index') }}" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Shops</a>
-                        <a href="{{ route('become-seller') }}" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Sell</a>
-                        <a href="{{ route('contact') }}" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Support</a>
-                    </nav>
-
-                    @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
-                        <div class="space-y-2">
-                            @foreach ($topNavCategories as $cat)
-                                @php $children = collect($cat->children ?? []); @endphp
-                                @if ($children->isNotEmpty())
-                                    <details class="rounded-xl border border-slate-200 bg-slate-50">
-                                        <summary class="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-semibold text-slate-700">
-                                            <span>{{ $cat->name }}</span>
-                                            <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
-                                        </summary>
-
-                                        <div class="space-y-1 border-t border-slate-200 px-2 py-2">
-                                            <a href="{{ route('category.show', $cat->slug) }}" class="block rounded-lg px-2 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
-                                                All {{ $cat->name }}
-                                            </a>
-
-                                            @foreach ($children as $child)
-                                                @php $grandChildren = collect($child->children ?? []); @endphp
-                                                @if ($grandChildren->isNotEmpty())
-                                                    <details class="rounded-lg border border-slate-200 bg-white">
-                                                        <summary class="flex cursor-pointer list-none items-center justify-between px-2 py-2 text-xs font-semibold text-slate-700">
-                                                            <span>{{ $child->name }}</span>
-                                                            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
-                                                        </summary>
-                                                        <div class="space-y-1 border-t border-slate-200 px-2 py-2">
-                                                            <a href="{{ route('category.show', $child->slug) }}" class="block rounded-md px-2 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
-                                                                All {{ $child->name }}
-                                                            </a>
-                                                            @foreach ($grandChildren as $grand)
-                                                                <a href="{{ route('category.show', $grand->slug) }}" class="block rounded-md px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-100">
-                                                                    {{ $grand->name }}
-                                                                </a>
-                                                            @endforeach
-                                                        </div>
-                                                    </details>
-                                                @else
-                                                    <a href="{{ route('category.show', $child->slug) }}" class="block rounded-lg px-2 py-2 text-xs text-slate-700 hover:bg-slate-100">
-                                                        {{ $child->name }}
-                                                    </a>
-                                                @endif
-                                            @endforeach
-                                        </div>
-                                    </details>
-                                @else
-                                    <a href="{{ route('category.show', $cat->slug) }}" class="block rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
-                                        {{ $cat->name }}
-                                    </a>
-                                @endif
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-            </div>
         </header>
 
-        <main class="flex-1">
+        <div x-show="mobileDrawerOpen" x-cloak x-transition.opacity class="fixed inset-0 z-50 bg-slate-900/50 lg:hidden" @click="mobileDrawerOpen = false"></div>
+
+        <aside x-show="mobileDrawerOpen" x-cloak x-transition:enter="transform transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transform transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full" class="fixed right-0 top-0 z-50 h-full w-[88%] max-w-sm overflow-y-auto border-l border-slate-200 bg-white shadow-2xl lg:hidden">
+            <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                <h3 class="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Menu</h3>
+                <button @click="mobileDrawerOpen = false" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-100" type="button" aria-label="Close menu">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 px-4 py-4">
+                <form method="GET" action="{{ route('search') }}">
+                    <label for="mobileDrawerSearch" class="sr-only">Search products</label>
+                    <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2">
+                        <i class="fas fa-search text-slate-400"></i>
+                        <input id="mobileDrawerSearch" name="q" type="search" value="{{ request('q') }}" placeholder="Search products" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
+                        <button type="submit" class="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white">Go</button>
+                    </div>
+                </form>
+
+                <nav class="grid grid-cols-2 gap-2">
+                    <a href="{{ route('listings') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Listings</a>
+                    <a href="{{ route('shops.index') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Shops</a>
+                    <a href="{{ route('become-seller') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Sell</a>
+                    <a href="{{ route('contact') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Support</a>
+                </nav>
+
+                @auth
+                    <div class="rounded-xl border border-slate-200 p-3">
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Account</div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <a href="{{ url('/dashboard') }}" @click="mobileDrawerOpen = false" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Dashboard</a>
+                            <a href="{{ url('/cart') }}" @click="mobileDrawerOpen = false" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Cart</a>
+                        </div>
+                    </div>
+                @else
+                    <div class="rounded-xl border border-slate-200 p-3">
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Account</div>
+                        <div class="grid grid-cols-2 gap-2">
+                            @if (Route::has('login'))
+                                <a href="{{ route('login') }}" @click="mobileDrawerOpen = false" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Login</a>
+                            @endif
+                            @if (Route::has('register'))
+                                <a href="{{ route('register') }}" @click="mobileDrawerOpen = false" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white">Register</a>
+                            @endif
+                        </div>
+                    </div>
+                @endauth
+
+                @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
+                    <div class="space-y-2">
+                        <div class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Categories</div>
+                        @foreach ($topNavCategories as $cat)
+                            @php $children = collect($cat->children ?? []); @endphp
+                            @if ($children->isNotEmpty())
+                                <details class="rounded-xl border border-slate-200 bg-slate-50">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-semibold text-slate-700">
+                                        <span>{{ $cat->name }}</span>
+                                        <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+                                    </summary>
+                                    <div class="space-y-1 border-t border-slate-200 px-2 py-2">
+                                        <a href="{{ route('category.show', $cat->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-lg px-2 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
+                                            All {{ $cat->name }}
+                                        </a>
+                                        @foreach ($children as $child)
+                                            @php $grandChildren = collect($child->children ?? []); @endphp
+                                            @if ($grandChildren->isNotEmpty())
+                                                <details class="rounded-lg border border-slate-200 bg-white">
+                                                    <summary class="flex cursor-pointer list-none items-center justify-between px-2 py-2 text-xs font-semibold text-slate-700">
+                                                        <span>{{ $child->name }}</span>
+                                                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                                                    </summary>
+                                                    <div class="space-y-1 border-t border-slate-200 px-2 py-2">
+                                                        <a href="{{ route('category.show', $child->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-md px-2 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
+                                                            All {{ $child->name }}
+                                                        </a>
+                                                        @foreach ($grandChildren as $grand)
+                                                            <a href="{{ route('category.show', $grand->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-md px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-100">
+                                                                {{ $grand->name }}
+                                                            </a>
+                                                        @endforeach
+                                                    </div>
+                                                </details>
+                                            @else
+                                                <a href="{{ route('category.show', $child->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-lg px-2 py-2 text-xs text-slate-700 hover:bg-slate-100">
+                                                    {{ $child->name }}
+                                                </a>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </details>
+                            @else
+                                <a href="{{ route('category.show', $cat->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+                                    {{ $cat->name }}
+                                </a>
+                            @endif
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </aside>
+
+        <main class="flex-1 pb-20 lg:pb-0">
             @yield('main')
         </main>
+
+        @if (!$isSellerArea)
+            <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur lg:hidden" aria-label="Mobile Bottom Navigation">
+                <div class="mx-auto grid w-full max-w-7xl grid-cols-4 gap-2">
+                    <a href="{{ route('home') }}" class="inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold {{ request()->routeIs('home') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                        <i class="fas fa-house mb-1 text-sm"></i>
+                        Home
+                    </a>
+                    <a href="{{ route('listings') }}" class="inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold {{ request()->routeIs('listings') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                        <i class="fas fa-list-ul mb-1 text-sm"></i>
+                        Listings
+                    </a>
+                    <a href="{{ url('/cart') }}" class="inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold {{ request()->is('cart*') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                        <i class="fas fa-shopping-cart mb-1 text-sm"></i>
+                        Cart
+                    </a>
+                    <button type="button" @click="mobileDrawerOpen = true" class="inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100" aria-label="Open side menu">
+                        <i class="fas fa-bars mb-1 text-sm"></i>
+                        Menu
+                    </button>
+                </div>
+            </nav>
+        @endif
 
         <footer class="mt-12 bg-slate-950 text-slate-200">
             <div class="mx-auto grid w-full max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
@@ -553,3 +608,4 @@
     @stack('scripts')
 </body>
 </html>
+

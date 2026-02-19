@@ -87,15 +87,15 @@
                 </div>
 
                 <div class="sm:col-span-4">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="apply_all"
+                    <div class="flex items-center gap-2">
+                        <input class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" type="checkbox" id="apply_all"
                                @change="setAll(true)" :checked="applyAll">
-                        <label class="form-check-label" for="apply_all">Apply to ALL filtered products</label>
+                        <label class="text-sm text-slate-700" for="apply_all">Apply to ALL filtered products</label>
                     </div>
-                    <div class="form-check mt-1">
-                        <input class="form-check-input" type="checkbox" id="apply_selected"
+                    <div class="flex items-center gap-2 mt-1">
+                        <input class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" type="checkbox" id="apply_selected"
                                @change="setAll(false)" :checked="!applyAll">
-                        <label class="form-check-label" for="apply_selected">Apply only to selected rows</label>
+                        <label class="text-sm text-slate-700" for="apply_selected">Apply only to selected rows</label>
                     </div>
                     <div class="mt-1 text-xs text-slate-500">When "Apply to ALL" is on, row checkboxes are disabled.</div>
                 </div>
@@ -145,7 +145,7 @@
                             <tr>
                                 <td>
                                     <input type="checkbox"
-                                           class="form-check-input"
+                                           class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                                            name="product_ids[]"
                                            value="{{ $p->id }}"
                                            :disabled="applyAll"
@@ -177,14 +177,14 @@
         <div class="mt-3 flex flex-col lg:flex-row justify-between items-start gap-3">
             @isset($history)
                 <div class="flex-grow-1">
-                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-0">
+                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
                         <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 font-semibold">Recent Bulk Updates</div>
                         <div class="p-4 sm:p-5 p-0">
                             @if($history->isEmpty())
                                 <p class="text-xs text-slate-500 m-3">No bulk edits recorded yet.</p>
                             @else
                                 <div class="overflow-x-auto">
-                                    <table class="min-w-full divide-y divide-slate-200 text-sm table-sm mb-0 align-middle">
+                                    <table class="min-w-full divide-y divide-slate-200 text-sm mb-0 align-middle">
                                         <thead class="bg-slate-50">
                                             <tr>
                                                 <th>When</th>

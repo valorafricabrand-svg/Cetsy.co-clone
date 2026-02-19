@@ -1,4 +1,4 @@
-﻿{{-- resources/views/shipping_profiles/_create_modal.blade.php --}}
+{{-- resources/views/shipping_profiles/_create_modal.blade.php --}}
 
 <div class="modal" id="newProfileModal" tabindex="-1"
      aria-labelledby="newProfileLabel" aria-hidden="true">
@@ -9,7 +9,7 @@
 
       <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900" id="newProfileLabel">Add Shipping Profile</h5>
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal">&times;</button>
       </div>
 
       <div class="px-4 py-4">
@@ -89,10 +89,12 @@
       </div>
 
       <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">Cancel</button>
         <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Create Profile</button>
       </div>
     </form>
   </div>
 </div>
+
+
 

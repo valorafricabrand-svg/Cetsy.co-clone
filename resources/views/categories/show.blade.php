@@ -1,4 +1,4 @@
-﻿{{-- resources/views/admin/categories/show.blade.php --}}
+{{-- resources/views/admin/categories/show.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('header')
@@ -17,7 +17,7 @@
         @if(session()->has($msg))
           <div class="alert alert-{{ $msg }} alert-dismissible fade show" role="alert">
             {{ session($msg) }}
-            <button class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert"></button>
+            <button class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert">&times;</button>
           </div>
         @endif
       @endforeach
@@ -25,12 +25,12 @@
       {{-- NAV BUTTONS --}}
       <div class="flex justify-between items-center mb-4">
         <a href="{{ route('admin.categories.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">
-          â† Back to list
+          ← Back to list
         </a>
 
         {{-- NEW: Edit Category button --}}
         <a href="{{ route('admin.categories.edit', $category) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
-          âœŽ Edit Category
+          ✎ Edit Category
         </a>
       </div>
 
@@ -48,7 +48,7 @@
             <table class="min-w-full divide-y divide-slate-200 text-sm table-borderless mb-0">
             <tbody>
               <tr><th>Slug</th><td>{{ $category->slug }}</td></tr>
-              <tr><th>Parent</th><td>{{ $category->parent?->name ?? 'â€”' }}</td></tr>
+              <tr><th>Parent</th><td>{{ $category->parent?->name ?? '—' }}</td></tr>
               <tr><th>Listing fee</th><td>{{ get_currency() }} {{ number_format($category->listing_fee,2) }}</td></tr>
               <tr><th>Listing frequency</th><td>{{ $category->listing_frequency }} month{{ $category->listing_frequency == 1 ? '' : 's' }}</td></tr>
               <tr><th>Created</th><td>{{ $category->created_at }}</td></tr>
@@ -58,7 +58,7 @@
         </div>
       </div>
 
-      {{-- OPTIONS / â€œVARIATIONSâ€ TEMPLATE ------------------------------------------------ --}}
+      {{-- OPTIONS / “VARIATIONS” TEMPLATE ------------------------------------------------ --}}
       <div class="flex justify-between items-center mb-2">
         <h4 class="mb-0">Option Template (Variations)</h4>
         <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500" @click="openAddModal">
@@ -86,7 +86,7 @@
                     @forelse($attr->values as $val)
                       <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200 mr-1">{{ $val->value }}</span>
                     @empty
-                      <span class="text-slate-500">â€”</span>
+                      <span class="text-slate-500">—</span>
                     @endforelse
                   </td>
                   <td class="text-right">
@@ -119,7 +119,7 @@
 
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900" x-text="modal.title"></h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal">&times;</button>
         </div>
 
         <div class="px-4 py-4">
@@ -142,7 +142,7 @@
 
         <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
           <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" type="submit" x-text="modal.button"></button>
-          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">
             Cancel
           </button>
         </div>
@@ -154,7 +154,13 @@
 @push('scripts')
 <script>
 function attributeManager() {
-  const modal = new bootstrap.Modal(document.getElementById('attributeModal'));
+  const modalEl = document.getElementById('attributeModal');
+  const showModal = () => {
+    if (!modalEl) return;
+    modalEl.classList.add('is-open');
+    document.body.classList.add('overflow-hidden');
+    modalEl.dispatchEvent(new Event('shown.bs.modal'));
+  };
   return {
     modal: {title:'',button:'',action:'#',method:'POST'},
     form: {name:'',values:''},
@@ -167,7 +173,7 @@ function attributeManager() {
         method:'POST'
       };
       this.form = {name:'',values:''};
-      modal.show();
+      showModal();
     },
 
     openEditModal(id,name,values){
@@ -178,12 +184,14 @@ function attributeManager() {
         method:'PUT'
       };
       this.form = {name:name,values: values.join(', ')};
-      modal.show();
+      showModal();
     }
   }
 }
 </script>
 @endpush
 @endsection
+
+
 
 

@@ -1,4 +1,4 @@
-﻿{{-- resources/views/profile/index.blade.php --}}
+{{-- resources/views/profile/index.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('main')
@@ -8,7 +8,7 @@
     {{-- ================== GRID ================== --}}
     <div class="grid grid-cols-12 gap-4 gap-4">
 
-      {{-- 1ï¸âƒ£  Update profile information --}}
+      {{-- 1️⃣  Update profile information --}}
       <div class="col-span-12">
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-light-subtle rounded-3">
           <div class="border-b border-slate-200 px-4 py-3 bg-white border-0">
@@ -20,7 +20,7 @@
         </div>
       </div>
 
-      {{-- 2ï¸âƒ£  Change password --}}
+      {{-- 2️⃣  Change password --}}
       <div class="col-span-12">
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-light-subtle rounded-3">
           <div class="border-b border-slate-200 px-4 py-3 bg-white border-0">
@@ -32,7 +32,7 @@
         </div>
       </div>
 
-      {{-- 3ï¸âƒ£  Delete account --}}
+      {{-- 3️⃣  Delete account --}}
       <div class="col-span-12">
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-danger-subtle border-2 rounded-3">
           <div class="border-b border-slate-200 px-4 py-3 bg-white border-0">
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
     alertDiv.innerHTML = `
       <i class="fas fa-${type === 'danger' ? 'exclamation-triangle' : 'info-circle'} mr-2"></i>
       ${message}
-      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
+      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert" aria-label="Close"></button>
     `;
     
     // Insert at the top of the form
@@ -178,5 +178,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 @endsection
+
 
 

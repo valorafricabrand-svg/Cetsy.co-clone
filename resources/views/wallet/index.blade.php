@@ -1,4 +1,4 @@
-ï»¿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Wallet Transactions')
 @push('styles')
@@ -49,8 +49,8 @@
 
         @if(auth()->user()->isSeller())
           <button class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
-                  data-bs-toggle="modal"
-                  data-bs-target="#payoutModal"
+                  data-ui-toggle="modal"
+                  data-ui-target="#payoutModal"
                   @disabled($balance < $minAmount || ($paymentMethods?->count() ?? 0) === 0)>
               Request&nbsp;Payout
           </button>
@@ -127,7 +127,7 @@
 
     <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900">Request Payout</h5>
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close">&times;</button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
     </div>
 
     <div class="px-4 py-4">
@@ -191,7 +191,7 @@
 
         {{-- Add new payout method (separate modal trigger) --}}
         <div class="mb-3">
-          <button type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" data-bs-toggle="modal" data-bs-target="#addPayoutMethodModal">
+          <button type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" data-ui-toggle="modal" data-ui-target="#addPayoutMethodModal">
             <i class="bi bi-plus-lg"></i> Add Payout Method
           </button>
           <small class="text-slate-500 ml-2">After saving, this page refreshes and you can submit the payout.</small>
@@ -250,7 +250,7 @@
       <input type="hidden" name="open_payout" value="1">
       <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900">Add Payout Method</h5>
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close">&times;</button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
       </div>
       <div class="px-4 py-4">
         <div class="grid grid-cols-12 gap-4 gap-3">
@@ -369,23 +369,23 @@
                                                     if ($status === 'pending') {
                                                         $message = 'Awaiting buyer payment';
                                                     } elseif ($status === 'processing') {
-                                                        $message = 'Paid â€“ waiting for shipment';
+                                                        $message = 'Paid – waiting for shipment';
                                                     } elseif ($status === 'shipped') {
                                                         if ($eta) {
-                                                            $message = 'Shipped â€“ auto-release '.$autoReleaseDays.' days after shipment';
+                                                            $message = 'Shipped – auto-release '.$autoReleaseDays.' days after shipment';
                                                         } else {
-                                                            $message = 'Shipped â€“ awaiting buyer confirmation';
+                                                            $message = 'Shipped – awaiting buyer confirmation';
                                                         }
                                                     } elseif ($status === 'delivered') {
-                                                        $message = 'Delivered â€“ releasing shortly';
+                                                        $message = 'Delivered – releasing shortly';
                                                     } elseif ($status === 'completed') {
                                                         $message = 'Funds released for this order';
                                                     } elseif ($status === 'refunded') {
-                                                        $message = 'Order refunded â€“ payout reversed';
+                                                        $message = 'Order refunded – payout reversed';
                                                     } elseif ($status === 'cancelled') {
-                                                        $message = 'Order cancelled â€“ no payout due';
+                                                        $message = 'Order cancelled – no payout due';
                                                     } elseif ($status === 'returned') {
-                                                        $message = 'Order returned â€“ resolving payout';
+                                                        $message = 'Order returned – resolving payout';
                                                     }
                                                 @endphp
                                                 @if($eta && $status === 'shipped')
@@ -457,13 +457,13 @@
       }
     };
     window.openWalletModal = openModal;
-    document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target]').forEach((trigger) => {
+    document.querySelectorAll('[data-ui-toggle="modal"][data-ui-target]').forEach((trigger) => {
       trigger.addEventListener('click', function(event){
         event.preventDefault();
-        openModal(this.getAttribute('data-bs-target'));
+        openModal(this.getAttribute('data-ui-target'));
       });
     });
-    document.querySelectorAll('[data-bs-dismiss="modal"]').forEach((button) => {
+    document.querySelectorAll('[data-ui-dismiss="modal"]').forEach((button) => {
       button.addEventListener('click', function(){
         closeModal(this.closest('.wallet-modal'));
       });
@@ -548,6 +548,7 @@
   @endif
 </script>
 @endpush
+
 
 
 

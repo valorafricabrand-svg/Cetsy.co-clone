@@ -1,4 +1,4 @@
-﻿{{-- resources/views/shops/create.blade.php --}}
+{{-- resources/views/shops/create.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('main')
@@ -15,7 +15,7 @@
           @if(session('success'))
             <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 alert-dismissible" role="alert">
               {{ session('success') }}
-              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
+              <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert" aria-label="Close">&times;</button>
             </div>
           @endif
 
@@ -227,5 +227,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 @endsection
+
 
 

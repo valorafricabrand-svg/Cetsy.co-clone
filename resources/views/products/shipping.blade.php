@@ -245,7 +245,7 @@
         <div class="mb-3">
           <label class="mb-1 block text-sm font-medium text-slate-700">Service</label>
           @php $couriers = couriers_list(); @endphp
-          <select name="row[service]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 service-select" id="add-service-select" data-target="#add-service-other-wrap" required>
+          <select name="row[service]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 service-select" id="add-service-select" data-ui-target="#add-service-other-wrap" required>
             @if(!empty($couriers))
               <optgroup label="Common Couriers">
                 @foreach($couriers as $c)
@@ -352,7 +352,7 @@
 
           <div class="mb-3">
             <label class="mb-1 block text-sm font-medium text-slate-700">Location type</label>
-            <select name="row[location_type]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 edit-location-type" data-target="#country-wrap-{{ $row->id }}" required>
+            <select name="row[location_type]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 edit-location-type" data-ui-target="#country-wrap-{{ $row->id }}" required>
               <option value="country" @selected($row->dest_location_type==='country')>Country</option>
               <option value="everywhere_else" @selected($row->dest_location_type==='everywhere_else')>Everywhere</option>
             </select>
@@ -371,7 +371,7 @@
 
           <div class="mb-3">
             <label class="mb-1 block text-sm font-medium text-slate-700">Service</label>
-            <select name="row[service]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 edit-service-select" data-target="#service-other-wrap-{{ $row->id }}" required>
+            <select name="row[service]" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 edit-service-select" data-ui-target="#service-other-wrap-{{ $row->id }}" required>
               @if(!empty($couriers))
                 <optgroup label="Common Couriers">
                   @foreach($couriers as $c)
@@ -473,7 +473,7 @@ function toggleCountry(selectEl, wrapSelector){
 /** Bind edit-row location choosers */
 (function bindEditLocations(){
   $$('.edit-location-type').forEach(sel => {
-    const target = sel.getAttribute('data-target'); // e.g. #country-wrap-123
+    const target = sel.getAttribute('data-ui-target'); // e.g. #country-wrap-123
     toggleCountry(sel, target);
     sel.addEventListener('change', e => toggleCountry(e.target, target));
   });
@@ -481,7 +481,7 @@ function toggleCountry(selectEl, wrapSelector){
 
 /** Toggle "Other/Manual" courier free text input */
 function bindServiceToggle(select){
-  const targetSel = select.getAttribute('data-target');
+  const targetSel = select.getAttribute('data-ui-target');
   const wrap = targetSel ? $(targetSel) : null;
   const toggle = () => {
     const v = (select.value || '').toLowerCase();

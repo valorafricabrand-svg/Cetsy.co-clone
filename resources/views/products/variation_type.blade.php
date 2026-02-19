@@ -31,15 +31,15 @@
             <li class="breadcrumb-item active" aria-current="page">Manage: {{ $type->name ?? 'Variation Type' }}</li>
           </ol>
         </nav>
-        <h1 class="text-lg font-semibold mt-2 mb-0">Manage: <span class="text-primary">{{ $type->name ?? 'Variation Type' }}</span></h1>
+        <h1 class="text-lg font-semibold mt-2 mb-0">Manage: <span class="text-emerald-600">{{ $type->name ?? 'Variation Type' }}</span></h1>
       </div>
       <div class="flex gap-2 items-center">
         <form method="POST" action="{{ route('variationTypes.affects_price', $type) }}" class="flex items-center gap-2">
           @csrf
           @method('PATCH')
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="ap_header" name="affects_price" value="1" {{ $type->affects_price ? 'checked' : '' }}>
-            <label class="form-check-label" for="ap_header">Affects price</label>
+          <div class="flex items-center gap-2">
+            <input class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" type="checkbox" id="ap_header" name="affects_price" value="1" {{ $type->affects_price ? 'checked' : '' }}>
+            <label class="text-sm text-slate-700" for="ap_header">Affects price</label>
           </div>
           <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500">Save</button>
         </form>
@@ -51,13 +51,13 @@
     @if (session('status'))
       <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800" role="alert">
         {{ session('status') }}
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert" aria-label="Close">&times;</button>
       </div>
     @endif
     @if (session('success'))
       <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800" role="alert">
         {{ session('success') }}
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert" aria-label="Close">&times;</button>
       </div>
     @endif
     @if ($errors->any())
@@ -71,10 +71,10 @@
       </div>
     @endif
 
-    <div class="grid grid-cols-12 gap-4 gap-4">
+    <div class="grid grid-cols-12 gap-4">
       {{-- LEFT: Options --}}
       <div class="lg:col-span-5">
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm card-rounded shadow-sm">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm card-rounded">
           <div class="p-4 sm:p-5">
             <h5 class="text-lg font-semibold text-slate-900 mb-3">Options <small class="text-slate-500">for “{{ $type->name }}”</small></h5>
 
@@ -124,7 +124,7 @@
 
       {{-- RIGHT: Add Variant + existing variants --}}
       <div class="lg:col-span-7">
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm card-rounded shadow-sm mb-4">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm card-rounded mb-4">
           <div class="p-4 sm:p-5">
             <h5 class="text-lg font-semibold text-slate-900 mb-3">Add Variant</h5>
 
@@ -188,13 +188,13 @@
           </div>
         </div>
 
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm card-rounded shadow-sm">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm card-rounded">
           <div class="p-4 sm:p-5">
             <h5 class="text-lg font-semibold text-slate-900 mb-3">Variants with “{{ $type->name }}”</h5>
 
             @if($variantsForType->count())
               <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 text-sm table-sm align-middle">
+                <table class="min-w-full divide-y divide-slate-200 text-sm align-middle">
                   <thead class="bg-slate-50">
                     <tr>
                       <th>Combination</th>

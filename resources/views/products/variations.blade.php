@@ -143,7 +143,7 @@
               <div class="md:col-span-8">
                 <label class="mb-1 block text-sm font-medium text-slate-700">Options</label>
                 <input name="options" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="Red,Blue,Green" required>
-                <small class="mt-1 text-xs text-slate-500 text-slate-500">Separate options with commas.</small>
+                <small class="mt-1 text-xs text-slate-500">Separate options with commas.</small>
               </div>
             </div>
             <div class="mt-3">

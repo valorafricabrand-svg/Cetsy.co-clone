@@ -1,4 +1,4 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Notifications')
 
@@ -646,7 +646,7 @@
                                             <i class="far fa-clock"></i>
                                             {{ $notification->created_at->format('M d, Y \a\t g:i A') }}
                                         </div>
-                                        <span class="text-slate-500">â€¢</span>
+                                        <span class="text-slate-500">•</span>
                                         <span>{{ $notification->created_at->diffForHumans() }}</span>
                                     </div>
 
@@ -707,7 +707,7 @@
                         <h5 class="text-base font-semibold text-slate-900" id="markReadModalLabel">
                             <i class="fas fa-check-circle mr-2"></i>Mark as Read
                         </h5>
-                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
                     </div>
                     <div class="px-4 py-4">
                         <p class="mb-3">Are you sure you want to mark this notification as read?</p>
@@ -717,7 +717,7 @@
                         </div>
                     </div>
                     <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">
                             <i class="fas fa-times mr-1"></i>Cancel
                         </button>
                         <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
@@ -744,6 +744,23 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentNotificationId = null;
     let currentButton = null;
     let currentListItem = null;
+    const markReadModal = document.getElementById('markReadModal');
+
+    const openMarkReadModal = () => {
+        if (!markReadModal) return;
+        markReadModal.classList.add('is-open');
+        document.body.classList.add('overflow-hidden');
+        markReadModal.dispatchEvent(new Event('shown.bs.modal'));
+    };
+
+    const closeMarkReadModal = () => {
+        if (!markReadModal) return;
+        markReadModal.classList.remove('is-open');
+        if (!document.querySelector('.modal.is-open, .tw-modal.is-open')) {
+            document.body.classList.remove('overflow-hidden');
+        }
+        markReadModal.dispatchEvent(new Event('hidden.bs.modal'));
+    };
     
     // Success toast function
     function showSuccessToast(message = 'Notification marked as read successfully!') {
@@ -773,8 +790,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('notificationDescription').textContent = this.dataset.notificationDescription;
             document.getElementById('markReadForm').action = `{{ url('/notifications') }}/${currentNotificationId}/mark-read`;
             
-            const modal = new bootstrap.Modal(document.getElementById('markReadModal'));
-            modal.show();
+            openMarkReadModal();
         });
     });
     
@@ -815,8 +831,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentListItem.querySelector('.notification-icon')?.classList.remove('unread');
                 currentListItem.classList.remove('unread');
                 
-                const modal = bootstrap.Modal.getInstance(document.getElementById('markReadModal'));
-                modal?.hide();
+                closeMarkReadModal();
                 
                 showSuccessToast();
                 
@@ -890,6 +905,8 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
+
+
 
 
 

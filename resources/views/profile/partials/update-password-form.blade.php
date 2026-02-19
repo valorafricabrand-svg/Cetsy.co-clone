@@ -1,4 +1,4 @@
-﻿{{-- resources/views/profile/partials/update-password-form.blade.php --}}
+{{-- resources/views/profile/partials/update-password-form.blade.php --}}
 <section>
 
   {{-- ===== Header ===== --}}
@@ -26,7 +26,7 @@
     <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 alert-dismissible" role="alert">
       <i class="fas fa-check-circle mr-2"></i>
       <strong>Success!</strong> Your password has been updated successfully.
-      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
+      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert" aria-label="Close"></button>
     </div>
   @endif
 
@@ -35,7 +35,7 @@
     <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800 alert-dismissible" role="alert">
       <i class="fas fa-exclamation-triangle mr-2"></i>
       <strong>Error!</strong> {{ session('error') }}
-      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
+      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert" aria-label="Close"></button>
     </div>
   @endif
 
@@ -49,7 +49,7 @@
           <li>{{ $error }}</li>
         @endforeach
       </ul>
-      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
+      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert" aria-label="Close"></button>
     </div>
   @endif
 
@@ -151,4 +151,5 @@
   </form>
 
 </section>
+
 

@@ -73,7 +73,7 @@
                      aria-label="Search categories">
               <input type="hidden" name="category_id" :value="categoryId || ''">
               <div id="details-category-suggestion-list"
-                   class="absolute z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl "
+                   class="absolute z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
                    
                    style="max-height: 16rem; overflow-y: auto;"
                    x-cloak
@@ -96,11 +96,11 @@
                 </template>
               </div>
             </div>
-            <div class="mt-1 text-xs text-slate-500 text-slate-500 mt-1" x-show="categoryId && !showCatSuggestions">
+            <div class="mt-1 text-xs text-slate-500" x-show="categoryId && !showCatSuggestions">
               Selected: <span class="font-semibold" x-text="currentCategoryLabel()"></span>
             </div>
-            <div x-show="loading" class="mt-1 text-xs text-slate-500 text-slate-500 mt-1">Loading categories...</div>
-            <div x-show="!loading && categorySearch && !catsFiltered.length" class="mt-1 text-xs text-slate-500 text-slate-500 mt-1" x-cloak>
+            <div x-show="loading" class="mt-1 text-xs text-slate-500">Loading categories...</div>
+            <div x-show="!loading && categorySearch && !catsFiltered.length" class="mt-1 text-xs text-slate-500" x-cloak>
               No categories match your search.
             </div>
             <div x-show="fallback && !loading" class="mt-1 text-xs text-slate-500 text-amber-600">Showing all categories (fallback). Ask admin to tag categories by type.</div>
@@ -138,7 +138,7 @@
 
   {{-- Existing Digital Files (if any) --}}
   @if($product->digitalFiles->count())
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4 shadow-sm">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4">
       <div class="border-b border-slate-200 px-4 py-3 bg-slate-100"><h5 class="mb-0">Current Digital Files</h5></div>
       <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
         @foreach($product->digitalFiles as $file)

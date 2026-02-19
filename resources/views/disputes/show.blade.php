@@ -1,4 +1,4 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Dispute Details')
 
@@ -23,7 +23,7 @@
                             <p class="text-slate-500 mb-0">
                                 <i class="bi bi-calendar3"></i> Created {{ $dispute->created_at->diffForHumans() }}
                                 @if($dispute->isResolved())
-                                    â€¢ <i class="bi bi-check-circle text-emerald-600"></i> Resolved {{ $dispute->resolved_at->diffForHumans() }}
+                                    • <i class="bi bi-check-circle text-emerald-600"></i> Resolved {{ $dispute->resolved_at->diffForHumans() }}
                                 @endif
                             </p>
                         </div>
@@ -161,7 +161,7 @@
                         <span class="ml-2 text-xs text-slate-500">Deadline: {{ $req->deadline->format('M d, Y') }}</span>
                     @endif
                 </div>
-                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50" data-bs-toggle="collapse" data-bs-target="#evidenceRespond-{{ $req->id }}">
+                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50" data-ui-toggle="collapse" data-ui-target="#evidenceRespond-{{ $req->id }}">
                     Provide Info
                 </button>
             </div>
@@ -537,10 +537,10 @@
                               $fullRefundLabel = $isAdmin ? 'Issue Full Refund (100%)' : 'Accept Full Refund (100%)';
                               $partialRefundLabel = $isAdmin ? 'Propose Partial Refund' : 'Offer Partial Refund';
                           @endphp
-                          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500" data-bs-toggle="modal" data-bs-target="#fullRefundModal-{{ $dispute->id }}">
+                          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500" data-ui-toggle="modal" data-ui-target="#fullRefundModal-{{ $dispute->id }}">
                             <i class="bi bi-check2-circle"></i> {{ $fullRefundLabel }}
                           </button>
-                          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-slate-900 text-white hover:bg-slate-700" data-bs-toggle="modal" data-bs-target="#refundModal-{{ $dispute->id }}">
+                          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-slate-900 text-white hover:bg-slate-700" data-ui-toggle="modal" data-ui-target="#refundModal-{{ $dispute->id }}">
                             <i class="bi bi-sliders"></i> {{ $partialRefundLabel }}
                           </button>
                         </div>
@@ -562,7 +562,7 @@
                       @csrf
                       <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                         <h5 class="text-base font-semibold text-slate-900" id="refundModalLabel-{{ $dispute->id }}">Confirm Refund</h5>
-                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
                       </div>
                       <div class="px-4 py-4">
                         @php $orderTotal = (float)($dispute->order->total_amount ?? 0); @endphp
@@ -579,7 +579,7 @@
                         <p class="text-xs text-slate-500 mb-0">This will credit the buyer's wallet and debit the seller's wallet. This action cannot be undone.</p>
                       </div>
                       <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">Cancel</button>
                         <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400">
                           <i class="bi bi-check2-circle"></i> Confirm Refund
                         </button>
@@ -596,14 +596,14 @@
                       <input type="hidden" name="refund_percent" value="100">
                       <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                         <h5 class="text-base font-semibold text-slate-900" id="fullRefundModalLabel-{{ $dispute->id }}">Confirm Full Refund</h5>
-                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
                       </div>
                       <div class="px-4 py-4">
                         @php $fullVerb = $isAdmin ? 'issue' : 'accept'; @endphp
                         Are you sure you want to {{ $fullVerb }} a full refund (100%)? This will credit the buyer and debit the seller's wallet.
                       </div>
                       <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">Cancel</button>
                         <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                           <i class="bi bi-check2-circle"></i> Confirm Full Refund
                         </button>
@@ -1223,7 +1223,7 @@
                             $disputeClosedOrResolved = $dispute->isClosed() || $dispute->isResolved() || $dispute->isMutuallyResolved();
                         @endphp
                         @if($viewerIsBuyer && $orderIsShipped && $disputeClosedOrResolved)
-                            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400" data-bs-toggle="modal" data-bs-target="#deliverModal-{{ $order->id }}">
+                            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400" data-ui-toggle="modal" data-ui-target="#deliverModal-{{ $order->id }}">
                                 <i class="bi bi-check2-circle"></i> Mark Delivered
                             </button>
                         @endif
@@ -1235,7 +1235,7 @@
                         @endif
                         
                         @if($dispute->status !== 'resolved' && $dispute->status !== 'closed' && $dispute->status !== 'final' && (auth()->id() === $dispute->created_by || auth()->user()->isAdmin()))
-                            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" data-bs-toggle="modal" data-bs-target="#closeDisputeModal">
+                            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" data-ui-toggle="modal" data-ui-target="#closeDisputeModal">
                                 <i class="bi bi-check-circle"></i> 
                                 @if(auth()->user()->isAdmin())
                                     Close Dispute (Admin)
@@ -1419,7 +1419,7 @@
                 <h5 class="text-base font-semibold text-slate-900" id="appealModalLabel">
                     <i class="bi bi-gavel"></i> Submit Appeal
                 </h5>
-                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
             </div>
             <form action="{{ route('disputes.appeal.store', $dispute->id) }}" method="POST" enctype="multipart/form-data" id="appealForm">
                 @csrf
@@ -1505,7 +1505,7 @@
                     @endif
                 </div>
                 <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Cancel</button>
                     <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400">
                         <i class="bi bi-gavel"></i> Submit Appeal
                     </button>
@@ -1527,7 +1527,7 @@
                             <h5 class="text-base font-semibold text-slate-900" id="evidenceResponseModalLabel-{{ $evidenceRequest->id }}">
                                 <i class="bi bi-upload"></i> Submit Evidence Response
                             </h5>
-                            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
                         </div>
                         <form action="{{ route('disputes.evidence-requests.respond', $evidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf
@@ -1565,7 +1565,7 @@
                                 </div>
                             </div>
                             <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-                                <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Cancel</button>
                                 <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                                     <i class="bi bi-upload"></i> Submit Evidence Response
                                 </button>
@@ -1990,7 +1990,7 @@ function openImageModal(imageSrc, imageAlt) {
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
                     <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                         <h5 class="text-base font-semibold text-slate-900" id="imageModalLabel">${imageAlt}</h5>
-                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
                     </div>
                     <div class="px-4 py-4 text-center">
                         <img src="${imageSrc}" alt="${imageAlt}" class="img-fluid" style="max-height: 70vh;">
@@ -2002,7 +2002,7 @@ function openImageModal(imageSrc, imageAlt) {
                         <a href="${imageSrc}" download="${imageAlt}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500">
                             <i class="bi bi-download"></i> Download
                         </a>
-                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
@@ -2018,14 +2018,17 @@ function openImageModal(imageSrc, imageAlt) {
     // Add modal to body
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
-    modal.show();
+    // Show modal with shared UI handlers (no Bootstrap runtime required)
+    const modal = document.getElementById('imageModal');
+    if (!modal) return;
+    modal.classList.add('is-open');
+    document.body.classList.add('overflow-hidden');
+    modal.dispatchEvent(new Event('shown.bs.modal'));
 
     // Clean up modal after it's hidden
-    document.getElementById('imageModal').addEventListener('hidden.bs.modal', function() {
+    modal.addEventListener('hidden.bs.modal', function() {
         this.remove();
-    });
+    }, { once: true });
 }
 
 // Add CSS animations
@@ -2089,7 +2092,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h5 class="text-base font-semibold text-slate-900" id="appealModalLabel">
                     <i class="bi bi-gavel"></i> Appeal to Support Team
                 </h5>
-                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
             </div>
             <form action="{{ route('disputes.appeal.store', $dispute->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
@@ -2118,7 +2121,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Cancel</button>
                     <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400">
                         <i class="bi bi-gavel"></i> Submit Appeal
                     </button>
@@ -2148,7 +2151,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <h5 class="text-base font-semibold text-slate-900" id="submitEvidenceModalLabel">
                             <i class="bi bi-upload"></i> Submit Evidence
                         </h5>
-                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
                     </div>
                     <form action="{{ route('evidence-requests.submit', $userEvidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
                         @csrf
@@ -2217,7 +2220,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                         <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-                            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Cancel</button>
                             <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                                 <i class="bi bi-upload"></i> Submit Evidence
                             </button>
@@ -2251,7 +2254,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h5 class="text-base font-semibold text-slate-900" id="closeDisputeModalLabel">
                     <i class="bi bi-check-circle"></i> Close Dispute
                 </h5>
-                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 text-white hover:bg-white/20 hover:text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 text-white hover:bg-white/20 hover:text-white" data-ui-dismiss="modal" aria-label="Close">&times;</button>
             </div>
             <form action="{{ route('disputes.close', $dispute->id) }}" method="POST">
                 @csrf
@@ -2283,7 +2286,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Cancel</button>
                     <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                         <i class="bi bi-check-circle"></i> Confirm Close Dispute
                     </button>
@@ -2293,6 +2296,8 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 @endsection
+
+
 
 
 

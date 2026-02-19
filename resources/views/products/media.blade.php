@@ -63,7 +63,7 @@
           </button>
           <span class="text-slate-500 text-xs" x-show="selectedExisting.length" x-text="`${selectedExisting.length} selected`"></span>
           <button type="button"
-                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50 flex items-center gap-2"
+                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50 flex gap-2"
                   :disabled="selectedExisting.length === 0 || deletingExisting"
                   @click="confirmBulkDelete()">
             <template x-if="!deletingExisting">

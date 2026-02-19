@@ -35,7 +35,7 @@
 <div x-data="modernUploader()" x-init="init()">
 
   {{-- ------------------ Current Media (with Crop button) ------------------ --}}
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4 shadow-sm">
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
     <div class="border-b border-slate-200 px-4 py-3 bg-slate-100"><h5>Current Media</h5></div>
     <div class="p-4 sm:p-5">
       @if($product->media->count())
@@ -43,7 +43,7 @@
           <div class="text-xs text-slate-500" x-cloak x-text="selectedExisting.length ? `${selectedExisting.length} selected` : ''"></div>
           <div class="ms-auto">
             <button type="button"
-                    class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-rose-600 text-rose-700 hover:bg-rose-50 px-3 py-1.5 text-xs inline-flex items-center"
+                    class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-rose-600 text-rose-700 hover:bg-rose-50 px-3 py-1.5 text-xs"
                     x-cloak
                     x-show="selectedExisting.length"
                     :disabled="deletingExisting"
@@ -53,7 +53,7 @@
               </template>
               <template x-if="deletingExisting">
                 <span class="inline-flex items-center">
-                  <span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
+                  <span class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent align-[-0.125em] mr-2" role="status" aria-hidden="true"></span>
                   Deleting...
                 </span>
               </template>
@@ -63,11 +63,11 @@
         <div class="grid grid-cols-12 gap-4 gap-3" x-show="existingCount > 0">
           @foreach($product->media as $media)
             <div class="col-span-6 sm:col-span-4 md:col-span-3" data-media-id="{{ $media->id }}">
-              <div class="rounded-2xl border border-slate-200 bg-white shadow-sm position-relative h-full"
+              <div class="rounded-2xl border border-slate-200 bg-white shadow-sm relative h-full"
                    :class="selectedExisting.includes('{{ (string) $media->id }}') ? 'border-danger border-2 shadow' : ''">
-                <div class="position-absolute top-0 start-0 m-2">
-                  <div class="form-check">
-                    <input class="form-check-input"
+                <div class="absolute top-0 left-0 m-2">
+                  <div class="flex items-center gap-2">
+                    <input class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                            type="checkbox"
                            value="{{ $media->id }}"
                            x-model="selectedExisting"
@@ -75,11 +75,11 @@
                   </div>
                 </div>
                 @if($media->type === 'video')
-                  <video src="{{ asset('storage/'.$media->url) }}" class="card-img-top" style="height:140px;object-fit:cover;" controls></video>
+                  <video src="{{ asset('storage/'.$media->url) }}" class="w-full" style="height:140px;object-fit:cover;" controls></video>
                 @else
                   <img src="{{ asset('storage/'.$media->url) }}"
                        id="media-img-{{ $media->id }}"
-                       class="card-img-top"
+                       class="w-full"
                        style="height:140px;object-fit:cover;">
                 @endif
                 <div class="border-t border-slate-200 px-4 py-3 text-center py-2">
@@ -91,7 +91,7 @@
                     @csrf @method('PATCH')
                     <input type="hidden" name="featured_image" value="{{ $media->url }}">
                     <button type="submit"
-                            class="btn btn-sm {{ $isFeatured?'btn-outline-warning':'btn-outline-success' }}">
+                            class="inline-flex items-center justify-center rounded-xl px-2.5 py-1.5 text-xs font-semibold transition {{ $isFeatured ? 'border border-amber-500 text-amber-700 hover:bg-amber-50' : 'border border-emerald-600 text-emerald-700 hover:bg-emerald-50' }}">
                       {{ $isFeatured?'Featured':'Make as primary image' }}
                     </button>
                   </form>
@@ -125,7 +125,7 @@
   </div>
 
   {{-- ------------------ Upload New Media ------------------ --}}
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm mb-5">
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-5">
     <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 flex justify-between items-center">
       <h5 class="mb-0"><i class="fa-regular fa-images mr-2"></i>Upload Media</h5>
       <small class="text-slate-500" x-text="items.length ? `${items.length} selected` : ''"></small>
@@ -164,14 +164,14 @@
         <div class="grid grid-cols-12 gap-4 gap-3 mb-4" id="previewList">
           <template x-for="(it,i) in items" :key="it.id">
             <div class="col-span-6 sm:col-span-4 md:col-span-3">
-              <div class="position-relative border rounded thumb overflow-hidden shadow-sm">
+              <div class="relative border rounded thumb overflow-hidden shadow-sm">
                 <template x-if="it.type==='video'">
                   <video :src="it.url" class="w-full h-full" controls></video>
                 </template>
                 <template x-if="it.type==='image'">
                   <img :src="it.url" draggable="false">
                 </template>
-                <div class="position-absolute top-0 end-0 m-1 flex flex-col gap-1">
+                <div class="absolute top-0 right-0 m-1 flex flex-col gap-1">
                   <template x-if="it.type==='image'">
                     <button type="button"
                             class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-amber-500 text-slate-900 hover:bg-amber-400 toolbar-btn"
@@ -187,10 +187,10 @@
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
-                <div class="position-absolute bottom-0 start-0 m-1">
-                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-dark bg-opacity-75 text-xs" x-text="i+1"></span>
+                <div class="absolute bottom-0 left-0 m-1">
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-dark bg-opacity-75" x-text="i+1"></span>
                 </div>
-                <div class="position-absolute bottom-0 start-0 end-0" x-show="it.progress !== undefined">
+                <div class="absolute bottom-0 left-0 right-0" x-show="it.progress !== undefined">
                   <div class="progress-mini"><div :style="`width:${it.progress}%;`"></div></div>
                 </div>
               </div>
@@ -205,7 +205,7 @@
         <div class="grid">
           <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 rounded-full" @click.prevent="submit">
             <span x-show="!loading"><i class="fas fa-upload mr-1"></i> Upload Media</span>
-            <span x-show="loading" class="spinner-border spinner-border-sm"></span>
+            <span x-show="loading" class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent align-[-0.125em]"></span>
           </button>
         </div>
       </template>
@@ -220,7 +220,7 @@
           <h5 class="text-base font-semibold text-slate-900 flex items-center">
             <i class="fas fa-crop mr-2"></i> Crop Image
           </h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-dismiss="modal"></button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal">&times;</button>
         </div>
         <div class="px-4 py-4">
           {{-- Aspect chips --}}
@@ -252,10 +252,10 @@
             <label class="text-xs mr-2">Quality</label>
             <input type="range" min="60" max="100" step="2" x-model="quality" style="width:120px">
           </div>
-          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-dismiss="modal">Cancel</button>
+          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Cancel</button>
           <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" id="cropApplyBtn">
             <span x-show="!cropSaving">Apply</span>
-            <span x-show="cropSaving" class="spinner-border spinner-border-sm"></span>
+            <span x-show="cropSaving" class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent align-[-0.125em]"></span>
           </button>
         </div>
       </div>

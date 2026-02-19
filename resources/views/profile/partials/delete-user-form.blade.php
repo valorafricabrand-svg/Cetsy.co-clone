@@ -1,5 +1,5 @@
-﻿{{-- =======================================================================
-|  DELETE ACCOUNT SECTION â€“ Bootstrap 5
+{{-- =======================================================================
+|  DELETE ACCOUNT SECTION – Bootstrap 5
 |  Replaces Tailwind section with a card + Bootstrap modal
 ============================================================================== --}}
 
@@ -15,8 +15,8 @@
     </p>
     <button type="button"
             class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-rose-600 text-white hover:bg-rose-500"
-            data-bs-toggle="modal"
-            data-bs-target="#confirmUserDeletionModal">
+            data-ui-toggle="modal"
+            data-ui-target="#confirmUserDeletionModal">
       <i class="fas fa-trash-alt mr-1"></i>
       Delete Account
     </button>
@@ -35,7 +35,7 @@
           Confirm Account Deletion
         </h5>
         <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 text-white hover:bg-white/20 hover:text-white"
-                data-bs-dismiss="modal" aria-label="Close"></button>
+                data-ui-dismiss="modal" aria-label="Close">&times;</button>
       </div>
 
       {{-- Modal form --}}
@@ -66,7 +66,7 @@
         <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
           <button type="button"
                   class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500"
-                  data-bs-dismiss="modal">
+                  data-ui-dismiss="modal">
             Cancel
           </button>
           <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-rose-600 text-white hover:bg-rose-500">
@@ -78,4 +78,5 @@
     </div>
   </div>
 </div>
+
 

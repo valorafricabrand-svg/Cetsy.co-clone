@@ -1,4 +1,4 @@
-﻿{{-- resources/views/orders/show.blade.php --}}
+{{-- resources/views/orders/show.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Order Details')
@@ -132,14 +132,14 @@
       }
     };
 
-    document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target]').forEach((trigger) => {
+    document.querySelectorAll('[data-ui-toggle="modal"][data-ui-target]').forEach((trigger) => {
       trigger.addEventListener('click', function (event) {
         event.preventDefault();
-        openModal(this.getAttribute('data-bs-target'));
+        openModal(this.getAttribute('data-ui-target'));
       });
     });
 
-    document.querySelectorAll('[data-bs-dismiss="modal"]').forEach((button) => {
+    document.querySelectorAll('[data-ui-dismiss="modal"]').forEach((button) => {
       button.addEventListener('click', function () {
         closeModal(this.closest('.modal'));
       });
@@ -151,7 +151,7 @@
       });
     });
 
-    document.querySelectorAll('[data-bs-dismiss="alert"]').forEach((button) => {
+    document.querySelectorAll('[data-ui-dismiss="alert"]').forEach((button) => {
       button.addEventListener('click', function () {
         const alertEl = this.closest('[role="alert"]');
         if (alertEl) alertEl.remove();
@@ -223,7 +223,7 @@
             @else
               <button type="button"
                       class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-emerald-500"
-                      data-bs-toggle="modal" data-bs-target="#downloadAllModal"
+                      data-ui-toggle="modal" data-ui-target="#downloadAllModal"
                       title="Download your digital files">
                 <i class="bi bi-cloud-download text-lg"></i>
                 <span>Download Files</span>
@@ -264,8 +264,8 @@
 
           @if(in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PROCESSING]))
             <button class="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-600 px-5 py-2.5 text-base font-semibold text-rose-700 transition hover:bg-rose-50"
-                    data-bs-toggle="modal"
-                    data-bs-target="#cancelModal-{{ $order->id }}"
+                    data-ui-toggle="modal"
+                    data-ui-target="#cancelModal-{{ $order->id }}"
                     title="Cancel this order">
               <i class="bi bi-x-circle text-lg"></i>
               <span>Cancel&nbsp;Order</span>
@@ -275,8 +275,8 @@
           @if($order->status === \App\Models\Order::STATUS_SHIPPED)
             <button class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-600 px-5 py-2.5 text-base font-semibold text-emerald-700 transition hover:bg-emerald-50 has-tooltip"
                     title="Confirm you received the order"
-                    data-bs-toggle="modal"
-                    data-bs-target="#deliverModal-{{ $order->id }}">
+                    data-ui-toggle="modal"
+                    data-ui-target="#deliverModal-{{ $order->id }}">
               <i class="bi bi-check2-circle text-lg"></i>
               <span>Mark&nbsp;Delivered</span>
             </button>
@@ -284,8 +284,8 @@
 
             <button class="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-500 px-5 py-2.5 text-base font-semibold text-amber-700 transition hover:bg-amber-50 has-tooltip"
                     title="Assess the shipped product or report a problem"
-                    data-bs-toggle="modal"
-                    data-bs-target="#assessModal-{{ $order->id }}">
+                    data-ui-toggle="modal"
+                    data-ui-target="#assessModal-{{ $order->id }}">
               <i class="bi bi-clipboard-check text-lg"></i>
               <span>Asses&nbsp;Delivery</span>
             </button>
@@ -303,7 +303,7 @@
               <a href="{{ route('pay_now', $order->id) }}" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500">
                 <i class="bi bi-credit-card"></i> Pay Now
               </a>
-              <button type="button" class="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="alert" aria-label="Close"></button>
+              <button type="button" class="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert" aria-label="Close">&times;</button>
             </div>
           </div>
         @endif
@@ -316,7 +316,7 @@
           @csrf
           <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <h5 class="text-base font-semibold text-slate-900" id="cancelModalLabel-{{ $order->id }}">Cancel Order #{{ $order->id }}</h5>
-            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
           </div>
           <div class="px-4 py-4">
             <p class="mb-3">Are you sure you want to cancel this order? This action cannot be undone.</p>
@@ -326,7 +326,7 @@
             </div>
           </div>
           <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Keep Order</button>
+            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">Keep Order</button>
             <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-rose-600 text-white hover:bg-rose-500">Confirm Cancel</button>
           </div>
         </form>
@@ -340,7 +340,7 @@
         <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
           <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <h5 class="text-base font-semibold text-slate-900" id="assessModalLabel-{{ $order->id }}">Assess Delivered Item</h5>
-            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
           </div>
           <div class="px-4 py-4">
             <div class="grid grid-cols-12 gap-4 gap-3">
@@ -385,7 +385,7 @@
             </div>
           </div>
           <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -616,7 +616,7 @@
               <div class="text-xs">Share feedback with the seller by leaving a quick review.</div>
             </div>
           </div>
-          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400" data-bs-toggle="modal" data-bs-target="#{{ $pendingReviewModalId }}">
+          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400" data-ui-toggle="modal" data-ui-target="#{{ $pendingReviewModalId }}">
             <i class="bi bi-pencil-square"></i> Leave a Review
           </button>
         </div>
@@ -869,7 +869,7 @@
                             {{ $item->review->rating }} &#9733;
                           </span>
                           @php $editModalId = 'editReview_'.$item->id; @endphp
-                          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" data-bs-toggle="modal" data-bs-target="#{{ $editModalId }}">
+                          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" data-ui-toggle="modal" data-ui-target="#{{ $editModalId }}">
                             <i class="bi bi-pencil"></i> Edit
                           </button>
                         </div>
@@ -878,7 +878,7 @@
                         @if($product && $product->type === 'digital' && ! $downloaded)
                           <span class="text-slate-500 text-xs">Download required to review</span>
                         @else
-                          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-amber-500 text-amber-700 hover:bg-amber-50 px-3 py-1.5 text-xs" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
+                          <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-amber-500 text-amber-700 hover:bg-amber-50 px-3 py-1.5 text-xs" data-ui-toggle="modal" data-ui-target="#{{ $modalId }}">
                             <i class="bi bi-star"></i> Review
                           </button>
                         @endif
@@ -1015,7 +1015,7 @@
                               <i class="bi bi-check-circle"></i> Reviewed
                             </span>
                           @elseif(($order->status === \App\Models\Order::STATUS_DELIVERED) || ($isDigital && (($order->status === \App\Models\Order::STATUS_COMPLETED) || ($order->status === \App\Models\Order::STATUS_DELIVERED)) && !empty($item->downloaded_at)))
-                            <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-3 py-1.5 text-xs" data-bs-toggle="modal" data-bs-target="#{{ $modalId }}">
+                            <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-3 py-1.5 text-xs" data-ui-toggle="modal" data-ui-target="#{{ $modalId }}">
                               <i class="bi bi-star"></i> Review
                             </button>
                           @else
@@ -1137,7 +1137,7 @@
       <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900">Your Downloads</h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
         </div>
         <div class="px-4 py-4 p-0">
           <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
@@ -1155,7 +1155,7 @@
           </ul>
         </div>
         <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
@@ -1178,7 +1178,7 @@
           @csrf
           <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <h5 class="text-base font-semibold text-slate-900">Review &mdash; {{ optional($item->product)->name }}</h5>
-            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
+            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal">&times;</button>
           </div>
 
           <div class="px-4 py-4">
@@ -1220,7 +1220,7 @@
           @method('PATCH')
           <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <h5 class="text-base font-semibold text-slate-900">Edit Review - {{ optional($item->product)->name }}</h5>
-            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-bs-dismiss="modal"></button>
+            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal">&times;</button>
           </div>
           <div class="px-4 py-4">
             <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 text-xs">
@@ -1270,6 +1270,9 @@
   @endif
 @endforeach
 @endsection
+
+
+
 
 
 

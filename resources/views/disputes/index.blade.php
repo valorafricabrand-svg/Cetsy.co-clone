@@ -1,4 +1,4 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'My Disputes')
 
@@ -25,22 +25,22 @@
                     @endphp
                     <ul class="nav flex flex-wrap gap-2 border-b border-slate-200" id="disputeTabs" role="tablist">
                         <li class="" role="presentation">
-                            <button class="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                            <button class="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 active" id="all-tab" data-ui-toggle="tab" data-ui-target="#all" type="button" role="tab">
                                 All <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200">{{ $allVisibleCount }}</span>
                             </button>
                         </li>
                         <li class="" role="presentation">
-                            <button class="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+                            <button class="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900" id="pending-tab" data-ui-toggle="tab" data-ui-target="#pending" type="button" role="tab">
                                 Pending <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100">{{ $statusCounts['pending'] ?? 0 }}</span>
                             </button>
                         </li>
                         <li class="" role="presentation">
-                            <button class="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900" id="under-review-tab" data-bs-toggle="tab" data-bs-target="#under_review" type="button" role="tab">
+                            <button class="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900" id="under-review-tab" data-ui-toggle="tab" data-ui-target="#under_review" type="button" role="tab">
                                 Under Review <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-sky-100">{{ $statusCounts['under_review'] ?? 0 }}</span>
                             </button>
                         </li>
                         <li class="" role="presentation">
-                            <button class="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900" id="closed-tab" data-bs-toggle="tab" data-bs-target="#closed" type="button" role="tab">
+                            <button class="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900" id="closed-tab" data-ui-toggle="tab" data-ui-target="#closed" type="button" role="tab">
                                 Closed <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200">{{ $statusCounts['closed'] ?? 0 }}</span>
                             </button>
                         </li>
@@ -113,28 +113,49 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle tab navigation with URL hash
-    const hash = window.location.hash;
-    if (hash) {
-        const tab = document.querySelector(`[data-bs-target="${hash}"]`);
-        if (tab) {
-            const tabInstance = new bootstrap.Tab(tab);
-            tabInstance.show();
-        }
-    }
+    const tabs = document.querySelectorAll('[data-ui-toggle="tab"]');
+    const panels = document.querySelectorAll('#disputeTabsContent > [role="tabpanel"]');
 
-    // Update URL hash when tabs are clicked
-    const tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
+    const activateTab = (targetSelector, updateHash = true) => {
+        if (!targetSelector) return;
+        const targetPanel = document.querySelector(targetSelector);
+        if (!targetPanel) return;
+
+        tabs.forEach(tab => {
+            const isActive = tab.getAttribute('data-ui-target') === targetSelector;
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        panels.forEach(panel => {
+            const isActive = `#${panel.id}` === targetSelector;
+            panel.classList.toggle('active', isActive);
+            panel.classList.toggle('hidden', !isActive);
+        });
+
+        if (updateHash) {
+            window.location.hash = targetSelector;
+        }
+    };
+
     tabs.forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function(e) {
-            const target = e.target.getAttribute('data-bs-target');
-            window.location.hash = target;
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            activateTab(this.getAttribute('data-ui-target'));
         });
     });
+
+    const hash = window.location.hash;
+    if (hash && document.querySelector(`[data-ui-target="${hash}"]`)) {
+        activateTab(hash, false);
+    } else {
+        activateTab('#all', false);
+    }
 });
 </script>
 @endpush
 @endsection
+
 
 
 

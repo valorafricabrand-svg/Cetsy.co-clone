@@ -4,7 +4,7 @@
 
 @section('main')
 <div class="content flex justify-center">
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm" style="max-width:480px;">
+  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm" style="max-width:480px;">
     <div class="border-b border-slate-200 px-4 py-3 bg-success text-white">
       <h4 class="mb-0 text-white">Payment Received!</h4>
     </div>
