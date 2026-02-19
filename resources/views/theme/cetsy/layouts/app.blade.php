@@ -227,11 +227,30 @@
                     <a href="{{ route('listings') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Listings</a>
                     <a href="{{ route('shops.index') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Shops</a>
                     <a href="{{ route('become-seller') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Sell</a>
-                    <a href="{{ route('contact') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Support</a>
                 </nav>
 
                 <div class="ml-auto flex items-center gap-2">
                     @auth
+                        @if (\Illuminate\Support\Facades\Route::has('notifications.index'))
+                            @php
+                                $headerUnreadNotifications = 0;
+                                try {
+                                    $headerUnreadNotifications = \App\Models\Activity::where('user_id', auth()->id())
+                                        ->where('is_read', false)
+                                        ->count();
+                                } catch (\Throwable $e) {
+                                    $headerUnreadNotifications = 0;
+                                }
+                            @endphp
+                            <a href="{{ route('notifications.index') }}" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50" aria-label="Notifications">
+                                <i class="fas fa-bell text-sm"></i>
+                                @if ($headerUnreadNotifications > 0)
+                                    <span class="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
+                                        {{ $headerUnreadNotifications > 99 ? '99+' : $headerUnreadNotifications }}
+                                    </span>
+                                @endif
+                            </a>
+                        @endif
                         <a href="{{ url('/dashboard') }}" class="hidden rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 sm:inline-flex">Dashboard</a>
                         @if (Route::has('logout'))
                             <form method="POST" action="{{ route('logout') }}">
