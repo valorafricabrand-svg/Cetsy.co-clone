@@ -9,6 +9,11 @@
 @section('main')
 <div class="py-8">
     <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-12 lg:col-span-3">
+                @include('buyer.partials.sidebar')
+            </div>
+            <div class="col-span-12 lg:col-span-9">
         <div class="mb-4">
             <h3 class="mb-1 text-2xl font-semibold text-slate-900">Favorites</h3>
             <p class="text-sm text-slate-500">Here are all the products you've added to your favorites.</p>
@@ -33,6 +38,8 @@
                         @endforeach
                     </div>
                 @endif
+            </div>
+        </div>
             </div>
         </div>
     </div>

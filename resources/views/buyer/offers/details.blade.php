@@ -12,6 +12,11 @@
 @endphp
 <div class="py-8">
 <div class="mx-auto w-full max-w-6xl px-4 sm:px-6">
+    <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-12 lg:col-span-3">
+            @include('buyer.partials.sidebar')
+        </div>
+        <div class="col-span-12 lg:col-span-9">
     <div class="mb-3 flex items-center justify-between">
         <h2 class="mb-0 text-base font-semibold">Offer Details</h2>
         <div class="flex gap-2">
@@ -187,6 +192,8 @@
             </div>
             @endif
 
+        </div>
+    </div>
         </div>
     </div>
 </div>

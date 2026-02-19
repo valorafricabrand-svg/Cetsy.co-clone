@@ -12,8 +12,11 @@
 @section('main')
 <div class="py-8">
     <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <div class="mx-auto grid max-w-5xl grid-cols-12 gap-4">
-            <div class="col-span-12">
+        <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-12 lg:col-span-3">
+                @include('buyer.partials.sidebar')
+            </div>
+            <div class="col-span-12 lg:col-span-9">
                 @if($product)
                 <div class="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div class="p-4 sm:p-5">

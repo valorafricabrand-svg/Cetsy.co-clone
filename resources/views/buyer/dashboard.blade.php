@@ -51,6 +51,11 @@
     </style>
 
     <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-12 lg:col-span-3">
+                @include('buyer.partials.sidebar')
+            </div>
+            <div class="col-span-12 lg:col-span-9">
         @if (session('status') === 'verification-link-sent')
             <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="alert">
                 A new verification link was sent to your email.
@@ -168,6 +173,8 @@
                 @else
                     <div class="text-xs text-slate-500">You haven't left any reviews yet.</div>
                 @endif
+            </div>
+        </div>
             </div>
         </div>
     </div>

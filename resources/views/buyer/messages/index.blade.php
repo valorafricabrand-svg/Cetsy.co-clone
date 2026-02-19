@@ -9,8 +9,11 @@
 @section('main')
 <div class="py-8">
     <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <div class="mx-auto grid max-w-6xl grid-cols-12 gap-4">
-            <div class="col-span-12">
+        <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-12 lg:col-span-3">
+                @include('buyer.partials.sidebar')
+            </div>
+            <div class="col-span-12 lg:col-span-9">
                 @if(session('success'))
                     <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                         {{ session('success') }}

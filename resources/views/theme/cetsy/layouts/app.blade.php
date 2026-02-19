@@ -322,6 +322,53 @@
                     <a href="{{ route('contact') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Support</a>
                 </nav>
 
+                @if(auth()->check() && auth()->user()->isBuyer())
+                    @php
+                        $buyerUnreadMessages = \App\Models\Message::where('receiver_id', auth()->id())->where('is_read', false)->count();
+                        $buyerPendingOffers = \App\Models\Offer::where('buyer_id', auth()->id())->where('status', 'pending')->count();
+                    @endphp
+                    <div class="rounded-xl border border-slate-200 p-3">
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Buyer Menu</div>
+                        <div class="space-y-1.5">
+                            <a href="{{ route('buyer.dashboard') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                <span><i class="fas fa-gauge mr-2"></i>Dashboard</span>
+                            </a>
+                            <a href="{{ route('account.orders') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                <span><i class="fas fa-receipt mr-2"></i>Orders</span>
+                            </a>
+                            @if(\Illuminate\Support\Facades\Route::has('buyer.offers'))
+                                <a href="{{ route('buyer.offers') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                    <span><i class="fas fa-hand-holding-dollar mr-2"></i>Offers</span>
+                                    @if($buyerPendingOffers > 0)
+                                        <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">{{ $buyerPendingOffers }}</span>
+                                    @endif
+                                </a>
+                            @endif
+                            @if(\Illuminate\Support\Facades\Route::has('buyer.messages.index'))
+                                <a href="{{ route('buyer.messages.index') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                    <span><i class="fas fa-comments mr-2"></i>Messages</span>
+                                    @if($buyerUnreadMessages > 0)
+                                        <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">{{ $buyerUnreadMessages }}</span>
+                                    @endif
+                                </a>
+                            @endif
+                            @if(\Illuminate\Support\Facades\Route::has('buyer.favorites'))
+                                <a href="{{ route('buyer.favorites') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                    <span><i class="fas fa-heart mr-2"></i>Favorites</span>
+                                </a>
+                            @endif
+                            @if(\Illuminate\Support\Facades\Route::has('wishlist'))
+                                <a href="{{ route('wishlist') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                    <span><i class="fas fa-bookmark mr-2"></i>Wishlist</span>
+                                </a>
+                            @endif
+                            <a href="{{ route('wallet.index') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                <span><i class="fas fa-wallet mr-2"></i>Wallet</span>
+                            </a>
+                        </div>
+                    </div>
+                @endif
+
                 @auth
                     <div class="rounded-xl border border-slate-200 p-3">
                         <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Account</div>
