@@ -10,6 +10,7 @@ use App\Models\HeroSlide;
 use App\Models\Order;
 use App\Services\Recommendation\ProductRecommendationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -32,33 +33,16 @@ class HomeController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Personalized/trending picks
-        $featuredProducts = $this->recommendations->trendingForUser(Auth::user(), 8);
+        // Randomized mixed-category pool so homepage sections can rotate through
+        // current listings until richer real-world activity data is available.
+        $allListingsPool = $this->randomMixedListings(0);
+        $featuredProducts = $allListingsPool->shuffle()->values();
+        $justForYouProducts = $allListingsPool->shuffle()->values();
 
-        $featuredDigitals = Product::where('is_active', 1)
-            ->where('type', 'digital')
-            ->latest()
-            ->with([
-                'media',
-                'shop' => function ($q) {
-                    $q->withCount('reviews')->withAvg('reviews', 'rating');
-                },
-            ])
-            ->take(8)
-            ->get();
+        $featuredDigitals = $this->randomMixedListings(64, 'digital');
 
-        // Latest service offerings for inspiration
-        $services = Product::where('is_active', 1)
-            ->where('type', 'service')
-            ->latest()
-            ->with([
-                'media',
-                'shop' => function ($q) {
-                    $q->withCount('reviews')->withAvg('reviews', 'rating');
-                },
-            ])
-            ->take(8)
-            ->get();
+        // Services pool for rotating "Most Trending Services" (all active services)
+        $services = $this->randomMixedListings(0, 'service');
 
         // Top sellers (shops with completed/delivered orders)
         $topShopCounts = Order::select('shop_id', DB::raw('COUNT(*) as completed_orders_count'))
@@ -107,11 +91,72 @@ class HomeController extends Controller
         return themed_view('index', [
             'categories'        => $categories,
             'featuredProducts'  => $featuredProducts,
+            'justForYouProducts'=> $justForYouProducts,
             'featuredDigitals'  => $featuredDigitals,
             'services'          => $services,
             'shops'             => $shops,
             'activeDeals'       => $activeDeals,
             'heroSlides'        => $heroSlides,
         ]);
+    }
+
+    private function randomMixedListings(int $limit = 96, ?string $type = null): Collection
+    {
+        $query = Product::query()
+            ->where('is_active', 1)
+            ->with([
+                'media',
+                'shop' => function ($q) {
+                    $q->withCount('reviews')->withAvg('reviews', 'rating');
+                },
+            ]);
+
+        if (!empty($type)) {
+            $query->where('type', $type);
+        }
+
+        $products = $query
+            ->latest('id')
+            ->get();
+
+        if ($products->isEmpty()) {
+            return collect();
+        }
+
+        $buckets = $products
+            ->shuffle()
+            ->groupBy(function ($product) {
+                return (int) ($product->category_id ?? 0);
+            })
+            ->map(function ($group) {
+                return $group->shuffle()->values();
+            })
+            ->values();
+
+        $targetLimit = $limit > 0 ? $limit : $products->count();
+        $mixed = collect();
+        while ($mixed->count() < $targetLimit) {
+            $added = false;
+
+            foreach ($buckets as $idx => $bucket) {
+                if ($bucket->isEmpty()) {
+                    continue;
+                }
+
+                $mixed->push($bucket->shift());
+                $buckets[$idx] = $bucket;
+                $added = true;
+
+                if ($mixed->count() >= $targetLimit) {
+                    break;
+                }
+            }
+
+            if (!$added) {
+                break;
+            }
+        }
+
+        return $mixed->unique('id')->values();
     }
 }

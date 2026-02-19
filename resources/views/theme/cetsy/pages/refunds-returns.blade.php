@@ -24,8 +24,8 @@
 
         <h2 class="mt-8 text-lg font-bold text-slate-900">2) Timeframes</h2>
         <ul class="mt-3 list-disc space-y-2 pl-6 text-slate-700">
-          <li><strong>Physical items:</strong> request a return/refund within <strong>14 days</strong> of delivery.</li>
-          <li><strong>Damaged / incorrect items:</strong> report within <strong>7 days</strong> of delivery.</li>
+          <li><strong>Physical items:</strong> request a return/refund within <strong>12 hours</strong> of delivery.</li>
+          <li><strong>Damaged / incorrect items:</strong> report within <strong>12 hours</strong> of delivery.</li>
           <li><strong>Digital items (if offered):</strong> refunds may be limited once a download is delivered, except where required by law or if the file is defective/not as described.</li>
         </ul>
 

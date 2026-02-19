@@ -221,14 +221,16 @@
                 'items' => $featuredProducts,
                 'seeMoreUrl' => route('listings', ['sort' => 'popular']),
                 'seeMoreLabel' => 'Browse all products',
+                'autoRotate' => true,
             ],
             [
                 'title' => 'Just for You',
                 'subtitle' => auth()->check() ? 'Curated from your favorites, orders, and recent views.' : 'Sign in to personalize picks from your favorites and recent views.',
                 'eyebrow' => 'Recommended',
-                'items' => $featuredProducts,
+                'items' => $justForYouProducts ?? $featuredProducts,
                 'seeMoreUrl' => route('listings', ['sort' => 'popular']),
                 'seeMoreLabel' => 'See more picks',
+                'autoRotate' => true,
             ],
             [
                 'title' => 'Most Trending Services',
@@ -237,6 +239,7 @@
                 'items' => $services,
                 'seeMoreUrl' => route('listings', ['type' => 'service']),
                 'seeMoreLabel' => 'View all services',
+                'autoRotate' => true,
             ],
             [
                 'title' => 'Featured Digital Downloads for You',
@@ -245,6 +248,7 @@
                 'items' => $featuredDigitals,
                 'seeMoreUrl' => route('listings', ['type' => 'digital']),
                 'seeMoreLabel' => 'View all digitals',
+                'autoRotate' => true,
             ],
         ];
     @endphp
@@ -252,10 +256,15 @@
     @foreach($sections as $section)
         @php
             $itemsCollection = $section['items'] instanceof \Illuminate\Support\Collection
-                ? $section['items']->take(8)
-                : collect($section['items'] ?? [])->take(8);
+                ? $section['items']->values()
+                : collect($section['items'] ?? [])->values();
+            $autoRotate = (bool) ($section['autoRotate'] ?? false);
+            $chunkSize = 8;
+            $pages = ($autoRotate ? $itemsCollection : $itemsCollection->take($chunkSize))
+                ->chunk($chunkSize)
+                ->values();
         @endphp
-        @if($itemsCollection->isNotEmpty())
+        @if($pages->isNotEmpty())
             <section class="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
                 <div class="mb-4 flex items-end justify-between gap-3">
                     <div>
@@ -266,46 +275,67 @@
                     <a href="{{ $section['seeMoreUrl'] }}" class="hidden rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 md:inline-flex">{{ $section['seeMoreLabel'] }}</a>
                 </div>
 
-                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    @foreach($itemsCollection as $item)
-                        @php($card = $renderProductCard($item))
-                        <a href="{{ route('listing.show', $item->slug) }}" class="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                            <div class="relative aspect-square overflow-hidden bg-slate-100">
-                                @if((($item->type ?? '') === 'physical') && (int)($item->stock ?? 0) === 1 && (($item->is_reserved ?? false)) )
-                                    <span class="absolute right-2 top-2 z-10 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold text-white">Reserved</span>
-                                @endif
-                                <img src="{{ $card['thumb'] }}" alt="{{ $item->name }}" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=@json($productThumbFallback);">
-                            </div>
-                            <div class="flex flex-1 flex-col p-3">
-                                <h3 class="line-clamp-2 text-sm font-semibold text-slate-900">{{ $item->name }}</h3>
-
-                                <div class="mt-2 flex items-center gap-1 text-[11px] text-amber-500">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <i class="fa-star {{ $i <= $card['avg'] ? 'fa-solid' : 'fa-regular text-slate-300' }}"></i>
-                                    @endfor
-                                    @if($card['reviewsCnt'])
-                                        <span class="ml-1 text-slate-400">({{ $card['reviewsCnt'] }})</span>
-                                    @endif
-                                </div>
-
-                                <div class="mt-3">
-                                    @if($card['isService'])
-                                        <p class="text-[11px] uppercase tracking-[0.12em] text-slate-400">Priced From</p>
-                                        <p class="text-sm font-bold text-emerald-700">{{ money($card['salePrice']) }}</p>
-                                    @else
-                                        @if($card['salePrice'] < $card['basePrice'])
-                                            <div class="flex items-center gap-2">
-                                                <p class="text-sm font-bold text-emerald-700">{{ money($card['salePrice']) }}</p>
-                                                <p class="text-xs text-slate-400 line-through">{{ money($card['basePrice']) }}</p>
-                                            </div>
-                                        @else
-                                            <p class="text-sm font-bold text-emerald-700">{{ money($card['basePrice']) }}</p>
+                <div class="relative" @if($autoRotate && $pages->count() > 1) data-home-listing-rotator data-interval="5000" @endif>
+                    @foreach($pages as $pageIndex => $pageItems)
+                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 {{ $pageIndex === 0 ? '' : 'hidden' }}" data-rotator-page="{{ $pageIndex }}">
+                            @foreach($pageItems as $item)
+                                @php($card = $renderProductCard($item))
+                                <a href="{{ route('listing.show', $item->slug) }}" class="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                                    <div class="relative aspect-square overflow-hidden bg-slate-100">
+                                        @if((($item->type ?? '') === 'physical') && (int)($item->stock ?? 0) === 1 && (($item->is_reserved ?? false)) )
+                                            <span class="absolute right-2 top-2 z-10 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold text-white">Reserved</span>
                                         @endif
-                                    @endif
-                                </div>
-                            </div>
-                        </a>
+                                        <img src="{{ $card['thumb'] }}" alt="{{ $item->name }}" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=@json($productThumbFallback);">
+                                    </div>
+                                    <div class="flex flex-1 flex-col p-3">
+                                        <h3 class="line-clamp-2 text-sm font-semibold text-slate-900">{{ $item->name }}</h3>
+
+                                        <div class="mt-2 flex items-center gap-1 text-[11px] text-amber-500">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                <i class="fa-star {{ $i <= $card['avg'] ? 'fa-solid' : 'fa-regular text-slate-300' }}"></i>
+                                            @endfor
+                                            @if($card['reviewsCnt'])
+                                                <span class="ml-1 text-slate-400">({{ $card['reviewsCnt'] }})</span>
+                                            @endif
+                                        </div>
+
+                                        <div class="mt-3">
+                                            @if($card['isService'])
+                                                <p class="text-[11px] uppercase tracking-[0.12em] text-slate-400">Priced From</p>
+                                                <p class="text-sm font-bold text-emerald-700">{{ money($card['salePrice']) }}</p>
+                                            @else
+                                                @if($card['salePrice'] < $card['basePrice'])
+                                                    <div class="flex items-center gap-2">
+                                                        <p class="text-sm font-bold text-emerald-700">{{ money($card['salePrice']) }}</p>
+                                                        <p class="text-xs text-slate-400 line-through">{{ money($card['basePrice']) }}</p>
+                                                    </div>
+                                                @else
+                                                    <p class="text-sm font-bold text-emerald-700">{{ money($card['basePrice']) }}</p>
+                                                @endif
+                                            @endif
+                                        </div>
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
                     @endforeach
+
+                    @if($autoRotate && $pages->count() > 1)
+                        <div class="mt-3 flex items-center justify-between">
+                            <p class="text-xs font-medium text-slate-500">
+                                Rotating every 5s:
+                                <span class="font-semibold text-emerald-700" data-rotator-counter>1 / {{ $pages->count() }}</span>
+                            </p>
+                            <div class="flex items-center gap-2">
+                                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:border-emerald-300 hover:text-emerald-700" data-rotator-prev aria-label="Show previous items">
+                                    <i class="fas fa-chevron-left text-xs"></i>
+                                </button>
+                                <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:border-emerald-300 hover:text-emerald-700" data-rotator-next aria-label="Show next items">
+                                    <i class="fas fa-chevron-right text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="mt-4 md:hidden">
@@ -384,80 +414,154 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const slider = document.querySelector('[data-home-hero]');
-    if (!slider) return;
+    const initHero = () => {
+        const slider = document.querySelector('[data-home-hero]');
+        if (!slider) return;
 
-    const slides = Array.from(slider.querySelectorAll('[data-home-hero-slide]'));
-    if (!slides.length) return;
+        const slides = Array.from(slider.querySelectorAll('[data-home-hero-slide]'));
+        if (!slides.length) return;
 
-    const prevBtn = slider.querySelector('[data-home-hero-prev]');
-    const nextBtn = slider.querySelector('[data-home-hero-next]');
-    const dots = Array.from(slider.querySelectorAll('[data-home-hero-dot]'));
+        const prevBtn = slider.querySelector('[data-home-hero-prev]');
+        const nextBtn = slider.querySelector('[data-home-hero-next]');
+        const dots = Array.from(slider.querySelectorAll('[data-home-hero-dot]'));
 
-    let current = 0;
-    let timer = null;
+        let current = 0;
+        let timer = null;
 
-    const show = (index) => {
-        if (!slides[index]) return;
-        slides[current].classList.remove('is-active');
-        if (dots[current]) {
-            dots[current].classList.remove('w-7', 'bg-slate-900');
-            dots[current].classList.add('w-2.5', 'bg-slate-300');
+        const show = (index) => {
+            if (!slides[index]) return;
+            slides[current].classList.remove('is-active');
+            if (dots[current]) {
+                dots[current].classList.remove('w-7', 'bg-slate-900');
+                dots[current].classList.add('w-2.5', 'bg-slate-300');
+            }
+
+            current = index;
+            slides[current].classList.add('is-active');
+            if (dots[current]) {
+                dots[current].classList.remove('w-2.5', 'bg-slate-300');
+                dots[current].classList.add('w-7', 'bg-slate-900');
+            }
+        };
+
+        const next = () => show((current + 1) % slides.length);
+        const prev = () => show((current - 1 + slides.length) % slides.length);
+
+        const startAuto = () => {
+            if (slides.length < 2 || timer) return;
+            timer = setInterval(next, 5000);
+        };
+
+        const stopAuto = () => {
+            if (!timer) return;
+            clearInterval(timer);
+            timer = null;
+        };
+
+        dots.forEach((dot) => {
+            dot.addEventListener('click', () => {
+                const idx = parseInt(dot.getAttribute('data-home-hero-dot'), 10);
+                if (Number.isNaN(idx)) return;
+                stopAuto();
+                show(idx);
+                startAuto();
+            });
+        });
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                stopAuto();
+                prev();
+                startAuto();
+            });
         }
 
-        current = index;
-        slides[current].classList.add('is-active');
-        if (dots[current]) {
-            dots[current].classList.remove('w-2.5', 'bg-slate-300');
-            dots[current].classList.add('w-7', 'bg-slate-900');
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                stopAuto();
+                next();
+                startAuto();
+            });
         }
+
+        slider.addEventListener('mouseenter', stopAuto);
+        slider.addEventListener('mouseleave', startAuto);
+
+        show(0);
+        startAuto();
     };
 
-    const next = () => show((current + 1) % slides.length);
-    const prev = () => show((current - 1 + slides.length) % slides.length);
+    const initListingRotators = () => {
+        const rotators = Array.from(document.querySelectorAll('[data-home-listing-rotator]'));
+        if (!rotators.length) return;
 
-    const startAuto = () => {
-        if (slides.length < 2 || timer) return;
-        timer = setInterval(next, 5000);
+        rotators.forEach((rotator) => {
+            const pages = Array.from(rotator.querySelectorAll('[data-rotator-page]'));
+            if (pages.length < 2) return;
+
+            const prevBtn = rotator.querySelector('[data-rotator-prev]');
+            const nextBtn = rotator.querySelector('[data-rotator-next]');
+            const counter = rotator.querySelector('[data-rotator-counter]');
+            const intervalAttr = parseInt(rotator.getAttribute('data-interval') || '5000', 10);
+            const interval = Number.isNaN(intervalAttr) ? 5000 : Math.max(intervalAttr, 1000);
+
+            let current = 0;
+            let timer = null;
+
+            const updateCounter = () => {
+                if (counter) counter.textContent = `${current + 1} / ${pages.length}`;
+            };
+
+            const show = (index) => {
+                if (!pages[index]) return;
+                pages[current].classList.add('hidden');
+                current = index;
+                pages[current].classList.remove('hidden');
+                updateCounter();
+            };
+
+            const next = () => show((current + 1) % pages.length);
+            const prev = () => show((current - 1 + pages.length) % pages.length);
+
+            const startAuto = () => {
+                if (timer) return;
+                timer = setInterval(next, interval);
+            };
+
+            const stopAuto = () => {
+                if (!timer) return;
+                clearInterval(timer);
+                timer = null;
+            };
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    stopAuto();
+                    prev();
+                    startAuto();
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    stopAuto();
+                    next();
+                    startAuto();
+                });
+            }
+
+            rotator.addEventListener('mouseenter', stopAuto);
+            rotator.addEventListener('mouseleave', startAuto);
+            rotator.addEventListener('touchstart', stopAuto, { passive: true });
+            rotator.addEventListener('touchend', startAuto, { passive: true });
+
+            show(0);
+            startAuto();
+        });
     };
 
-    const stopAuto = () => {
-        if (!timer) return;
-        clearInterval(timer);
-        timer = null;
-    };
-
-    dots.forEach((dot) => {
-        dot.addEventListener('click', () => {
-            const idx = parseInt(dot.getAttribute('data-home-hero-dot'), 10);
-            if (Number.isNaN(idx)) return;
-            stopAuto();
-            show(idx);
-            startAuto();
-        });
-    });
-
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            stopAuto();
-            prev();
-            startAuto();
-        });
-    }
-
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-            stopAuto();
-            next();
-            startAuto();
-        });
-    }
-
-    slider.addEventListener('mouseenter', stopAuto);
-    slider.addEventListener('mouseleave', startAuto);
-
-    show(0);
-    startAuto();
+    initHero();
+    initListingRotators();
 });
 </script>
 @endpush

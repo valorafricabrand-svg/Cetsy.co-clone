@@ -177,9 +177,10 @@ Route::get('/user-agreement', function () {
 Route::get('/cetsyip_policy', function () {
     return themed_view('pages.cetsyip_policy');
 })->name('cetsyip_policy');
-Route::get('/payment_policy', function () {
+Route::get('/payment-policy', function () {
     return themed_view('pages.payment_policy');
 })->name('payment_policy');
+Route::redirect('/payment_policy', '/payment-policy', 301);
 
 // Restricted / Prohibited items
 Route::get('/restricted_for_sale', function () {

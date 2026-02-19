@@ -45,7 +45,7 @@
 
         <h2 class="mt-8 text-lg font-bold text-slate-900">5) Fees, Payouts &amp; Refunds</h2>
         <ul class="mt-3 list-disc space-y-2 pl-6 text-slate-700">
-          <li>Platform fees may apply. See <a href="{{ url('/payment_policy') }}" class="font-semibold text-emerald-700 hover:text-emerald-600">Fees &amp; Payments</a> for details.</li>
+          <li>Platform fees may apply. See <a href="{{ route('payment_policy') }}" class="font-semibold text-emerald-700 hover:text-emerald-600">Fees &amp; Payments</a> for details.</li>
           <li>Refunds must be handled promptly and are returned to the buyer's original payment method where applicable.</li>
           <li>Chargebacks and payment disputes may result in reversals or additional fees, and you may be asked to provide evidence.</li>
         </ul>
