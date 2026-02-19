@@ -176,8 +176,13 @@
 @endpush
 
 @section('main')
-<div class="content">
-  <div class="container-xxl">
+<div class="py-8">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid grid-cols-12 gap-4">
+      <div class="col-span-12 lg:col-span-3">
+        @include('buyer.partials.sidebar')
+      </div>
+      <div class="col-span-12 lg:col-span-9">
 
     {{-- ===== HEADER ===== --}}
     <div class="border-bottom pb-3 mb-4">
@@ -1114,6 +1119,8 @@
       </div>
     @endif
 
+</div>
+</div>
 </div>
 </div>
 

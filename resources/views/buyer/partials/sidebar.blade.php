@@ -16,14 +16,14 @@
     <aside class="hidden lg:block">
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div class="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Overview</div>
-            <a href="{{ route('buyer.dashboard') }}" class="mb-4 flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active('buyer.dashboard') ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'text-slate-700 hover:bg-slate-100' }}">
+            <a href="{{ route('buyer.dashboard') }}" class="mb-4 flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active(['buyer.dashboard', 'account.dashboard']) ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'text-slate-700 hover:bg-slate-100' }}">
                 <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700"><i class="fas fa-gauge"></i></span>
                 <span>Dashboard</span>
             </a>
 
             <div class="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Shopping</div>
             <div class="space-y-1.5 mb-4">
-                <a href="{{ route('account.orders') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active('account.orders') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
+                <a href="{{ route('account.orders') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active(['account.orders', 'buyer.orders.*', 'pay_now']) ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-receipt"></i></span>
                     <span>Orders</span>
                 </a>
@@ -64,12 +64,25 @@
                 @endif
             </div>
 
-            <div class="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Wallet</div>
-            <a href="{{ route('wallet.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active(['wallet.index', 'wallet.*']) ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-wallet"></i></span>
-                <span>Wallet</span>
-            </a>
+            <div class="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Wallet & Account</div>
+            <div class="space-y-1.5">
+                <a href="{{ route('wallet.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active(['wallet.index', 'wallet.*']) ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-wallet"></i></span>
+                    <span>Wallet</span>
+                </a>
+                <a href="{{ route('account.payments') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active('account.payments') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-credit-card"></i></span>
+                    <span>Payments</span>
+                </a>
+                <a href="{{ route('account.details') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active('account.details') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-user"></i></span>
+                    <span>Account</span>
+                </a>
+                <a href="{{ route('account.addresses') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active('account.addresses') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-location-dot"></i></span>
+                    <span>Addresses</span>
+                </a>
+            </div>
         </div>
     </aside>
 @endif
-

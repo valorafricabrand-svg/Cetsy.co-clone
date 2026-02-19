@@ -365,6 +365,15 @@
                             <a href="{{ route('wallet.index') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                                 <span><i class="fas fa-wallet mr-2"></i>Wallet</span>
                             </a>
+                            <a href="{{ route('account.payments') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                <span><i class="fas fa-credit-card mr-2"></i>Payments</span>
+                            </a>
+                            <a href="{{ route('account.details') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                <span><i class="fas fa-user mr-2"></i>Account</span>
+                            </a>
+                            <a href="{{ route('account.addresses') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                <span><i class="fas fa-location-dot mr-2"></i>Addresses</span>
+                            </a>
                         </div>
                     </div>
                 @endif

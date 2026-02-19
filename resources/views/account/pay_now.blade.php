@@ -296,10 +296,14 @@
 |  MAIN CONTENT
 ---------------------------------------------- --}}
 @section('main')
-<div class="content checkout-page flex items-center">
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 paynow-shell">
-    <div class="grid grid-cols-12 gap-4 justify-center">
-      <div class="lg:col-span-9 xl:col-span-8">
+<div class="checkout-page">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 paynow-shell">
+    <div class="grid grid-cols-12 gap-4">
+      <div class="col-span-12 lg:col-span-3">
+        @include('buyer.partials.sidebar')
+      </div>
+      <div class="col-span-12 lg:col-span-9">
+        <div class="mx-auto w-full max-w-4xl">
 
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 paynow-card">
           <div class="p-5">
@@ -462,6 +466,7 @@
           </div>
         </div>
 
+        </div>
       </div>
     </div>
   </div>
