@@ -39,7 +39,7 @@ class HomeController extends Controller
         $featuredProducts = $allListingsPool->shuffle()->values();
         $justForYouProducts = $allListingsPool->shuffle()->values();
 
-        $featuredDigitals = $this->randomMixedListings(64, 'digital');
+        $featuredDigitals = $this->randomMixedListings(0, 'digital');
 
         // Services pool for rotating "Most Trending Services" (all active services)
         $services = $this->randomMixedListings(0, 'service');
