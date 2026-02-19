@@ -80,11 +80,11 @@
                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-credit-card"></i></span>
                     <span>Payments</span>
                 </a>
-                <a href="{{ route('account.details') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active('account.details') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
+                <a href="{{ route('account.details') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active(['account.details', 'account.updateDetails']) ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-user"></i></span>
                     <span>Account</span>
                 </a>
-                <a href="{{ route('account.addresses') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active('account.addresses') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
+                <a href="{{ route('account.addresses') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active('account.addresses*') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-location-dot"></i></span>
                     <span>Addresses</span>
                 </a>

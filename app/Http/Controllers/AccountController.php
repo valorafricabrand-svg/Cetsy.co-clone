@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Order;
 use App\Models\Address;
+use App\Models\Country;
 use App\Models\Payment;
 use App\Models\Wishlist;
 use App\Models\WalletTransaction;
@@ -254,8 +255,147 @@ public function orderDetails(Order $order)
 
     public function addresses()
     {
-        $addresses = Address::where('user_id', Auth::id())->get();
+        $addresses = Address::where('user_id', Auth::id())
+            ->orderByDesc('is_default')
+            ->latest()
+            ->get();
         return view('account.addresses', compact('addresses'));
+    }
+
+    public function createAddress()
+    {
+        $address = new Address([
+            'type' => 'shipping',
+            'is_default' => true,
+        ]);
+
+        $countries = Country::query()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('account.address_form', [
+            'address' => $address,
+            'countries' => $countries,
+            'formMode' => 'create',
+        ]);
+    }
+
+    public function storeAddress(Request $request)
+    {
+        $data = $this->validateAddressData($request);
+        $data['user_id'] = Auth::id();
+        $data['is_default'] = $request->boolean('is_default');
+
+        $data = $this->normalizeAddressData($data);
+
+        if ($data['is_default']) {
+            Address::where('user_id', Auth::id())
+                ->where('type', $data['type'])
+                ->update(['is_default' => false]);
+        }
+
+        Address::create($data);
+
+        return redirect()
+            ->route('account.addresses')
+            ->with('success', 'Address added successfully.');
+    }
+
+    public function editAddress(Address $address)
+    {
+        abort_if($address->user_id !== Auth::id(), 404);
+
+        $countries = Country::query()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('account.address_form', [
+            'address' => $address,
+            'countries' => $countries,
+            'formMode' => 'edit',
+        ]);
+    }
+
+    public function updateAddress(Request $request, Address $address)
+    {
+        abort_if($address->user_id !== Auth::id(), 404);
+
+        $data = $this->validateAddressData($request);
+        $data['is_default'] = $request->boolean('is_default');
+        $data = $this->normalizeAddressData($data);
+
+        if ($data['is_default']) {
+            Address::where('user_id', Auth::id())
+                ->where('type', $data['type'])
+                ->where('id', '!=', $address->id)
+                ->update(['is_default' => false]);
+        }
+
+        $address->update($data);
+
+        return redirect()
+            ->route('account.addresses')
+            ->with('success', 'Address updated successfully.');
+    }
+
+    public function destroyAddress(Address $address)
+    {
+        abort_if($address->user_id !== Auth::id(), 404);
+
+        $address->delete();
+
+        return redirect()
+            ->route('account.addresses')
+            ->with('success', 'Address deleted successfully.');
+    }
+
+    private function validateAddressData(Request $request): array
+    {
+        return $request->validate([
+            'type' => ['required', 'in:shipping,billing'],
+            'label' => ['nullable', 'string', 'max:100'],
+            'full_name' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:40'],
+            'country_id' => ['nullable', 'integer', 'exists:countries,id'],
+            'country' => ['nullable', 'string', 'max:120'],
+            'address_1' => ['nullable', 'string', 'max:255'],
+            'address_2' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:120'],
+            'state' => ['nullable', 'string', 'max:120'],
+            'zip' => ['nullable', 'string', 'max:40'],
+        ]);
+    }
+
+    private function normalizeAddressData(array $data): array
+    {
+        $countryId = isset($data['country_id']) && $data['country_id'] !== ''
+            ? (int) $data['country_id']
+            : null;
+
+        $countryName = trim((string) ($data['country'] ?? ''));
+        if ($countryId) {
+            $countryName = (string) (optional(Country::find($countryId))->name ?? $countryName);
+        }
+
+        $line1 = trim((string) ($data['address_1'] ?? ''));
+        $line2 = trim((string) ($data['address_2'] ?? ''));
+        $combinedAddress = trim($line1 . ' ' . $line2);
+
+        $data['country_id'] = $countryId;
+        $data['country'] = $countryName !== '' ? $countryName : null;
+        $data['address_1'] = $line1 !== '' ? $line1 : null;
+        $data['address_2'] = $line2 !== '' ? $line2 : null;
+        $data['address'] = $combinedAddress !== '' ? $combinedAddress : null;
+        $data['city'] = !empty($data['city']) ? trim((string) $data['city']) : null;
+        $data['state'] = !empty($data['state']) ? trim((string) $data['state']) : null;
+        $data['zip'] = !empty($data['zip']) ? trim((string) $data['zip']) : null;
+        $data['label'] = !empty($data['label']) ? trim((string) $data['label']) : null;
+        $data['full_name'] = !empty($data['full_name']) ? trim((string) $data['full_name']) : null;
+        $data['email'] = !empty($data['email']) ? trim((string) $data['email']) : null;
+        $data['phone'] = !empty($data['phone']) ? trim((string) $data['phone']) : null;
+
+        return $data;
     }
 
     public function logout()

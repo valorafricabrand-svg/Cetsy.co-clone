@@ -463,6 +463,11 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/details', [AccountController::class, 'details'])->name('details');
         Route::post('/details/update', [AccountController::class, 'updateDetails'])->name('updateDetails');
         Route::get('/addresses', [AccountController::class, 'addresses'])->name('addresses');
+        Route::get('/addresses/create', [AccountController::class, 'createAddress'])->name('addresses.create');
+        Route::post('/addresses', [AccountController::class, 'storeAddress'])->name('addresses.store');
+        Route::get('/addresses/{address}/edit', [AccountController::class, 'editAddress'])->name('addresses.edit');
+        Route::put('/addresses/{address}', [AccountController::class, 'updateAddress'])->name('addresses.update');
+        Route::delete('/addresses/{address}', [AccountController::class, 'destroyAddress'])->name('addresses.destroy');
         Route::get('/logout', [AccountController::class, 'logout'])->name('logout');
     });
 

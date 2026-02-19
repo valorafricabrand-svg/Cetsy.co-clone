@@ -54,11 +54,11 @@
  </div>
  <div class="inline-flex items-center gap-1 rounded-xl border border-slate-300 p-1" role="group">
  <a href="{{ request()->fullUrlWithQuery(['filter' => '']) }}"
- class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ request('filter') === '' || !request('filter') ? 'border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700' : border-slate-300 text-slate-700 hover:bg-slate-100' }}">
+ class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ request('filter') === '' || !request('filter') ? 'border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700' : 'border-slate-300 text-slate-700 hover:bg-slate-100' }}">
  All Conversations
  </a>
  <a href="{{ request()->fullUrlWithQuery(['filter' => 'unread']) }}"
- class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ request('filter') === 'unread' ? 'border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700' : border-slate-300 text-slate-700 hover:bg-slate-100' }}">
+ class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition {{ request('filter') === 'unread' ? 'border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700' : 'border-slate-300 text-slate-700 hover:bg-slate-100' }}">
  <i class="fa-solid fa-circle mr-1 text-[8px]"></i>Unread Only
  </a>
  </div>
