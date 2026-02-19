@@ -34,16 +34,18 @@
                 ->with([
                     'children' => function ($query) {
                         $query->orderBy('name')
+                            ->select(['id', 'parent_id', 'name', 'slug', 'image'])
                             ->with([
                                 'children' => function ($childQuery) {
-                                    $childQuery->orderBy('name');
+                                    $childQuery->orderBy('name')
+                                        ->select(['id', 'parent_id', 'name', 'slug', 'image']);
                                 }
                             ]);
                     }
                 ])
                 ->orderBy('name')
                 ->take(10)
-                ->get(['id', 'name', 'slug']);
+                ->get(['id', 'name', 'slug', 'image']);
         } catch (\Throwable $e) {
             $topNavCategories = collect();
         }
@@ -352,9 +354,25 @@
                 @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
                     <div class="flex flex-wrap items-center gap-2 pb-1">
                         @foreach ($topNavCategories as $cat)
-                            @php $children = collect($cat->children ?? []); @endphp
+                            @php
+                                $children = collect($cat->children ?? []);
+                                $catThumb = null;
+                                if (!empty($cat->image)) {
+                                    $catImagePath = (string) $cat->image;
+                                    $catThumb = \Illuminate\Support\Str::startsWith($catImagePath, ['http://', 'https://', '//'])
+                                        ? $catImagePath
+                                        : media_url($catImagePath);
+                                }
+                            @endphp
                             <div class="relative" x-data="{ open: false, pinned: false }" @mouseenter="open = true" @mouseleave="if (!pinned) open = false" @focusin="open = true" @focusout="if (!pinned) open = false" @click.outside="open = false; pinned = false">
-                                <a href="{{ route('category.show', $cat->slug) }}" class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700" @if ($children->isNotEmpty()) @click.prevent="pinned = !pinned; open = pinned" @endif>
+                                <a href="{{ route('category.show', $cat->slug) }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700" @if ($children->isNotEmpty()) @click.prevent="pinned = !pinned; open = pinned" @endif>
+                                    @if ($catThumb)
+                                        <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-4 w-4 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
+                                    @else
+                                        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[9px] text-emerald-700">
+                                            <i class="fa-solid fa-folder"></i>
+                                        </span>
+                                    @endif
                                     <span>{{ $cat->name }}</span>
                                     @if ($children->isNotEmpty())
                                         <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
@@ -521,11 +539,29 @@
                     <div class="space-y-2">
                         <div class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Categories</div>
                         @foreach ($topNavCategories as $cat)
-                            @php $children = collect($cat->children ?? []); @endphp
+                            @php
+                                $children = collect($cat->children ?? []);
+                                $catThumb = null;
+                                if (!empty($cat->image)) {
+                                    $catImagePath = (string) $cat->image;
+                                    $catThumb = \Illuminate\Support\Str::startsWith($catImagePath, ['http://', 'https://', '//'])
+                                        ? $catImagePath
+                                        : media_url($catImagePath);
+                                }
+                            @endphp
                             @if ($children->isNotEmpty())
                                 <details class="rounded-xl border border-slate-200 bg-slate-50">
                                     <summary class="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-semibold text-slate-700">
-                                        <span>{{ $cat->name }}</span>
+                                        <span class="flex items-center gap-2">
+                                            @if ($catThumb)
+                                                <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-4 w-4 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
+                                            @else
+                                                <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[9px] text-emerald-700">
+                                                    <i class="fa-solid fa-folder"></i>
+                                                </span>
+                                            @endif
+                                            <span>{{ $cat->name }}</span>
+                                        </span>
                                         <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
                                     </summary>
                                     <div class="space-y-1 border-t border-slate-200 px-2 py-2">
@@ -561,7 +597,16 @@
                                 </details>
                             @else
                                 <a href="{{ route('category.show', $cat->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
-                                    {{ $cat->name }}
+                                    <span class="flex items-center gap-2">
+                                        @if ($catThumb)
+                                            <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-4 w-4 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
+                                        @else
+                                            <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[9px] text-emerald-700">
+                                                <i class="fa-solid fa-folder"></i>
+                                            </span>
+                                        @endif
+                                        <span>{{ $cat->name }}</span>
+                                    </span>
                                 </a>
                             @endif
                         @endforeach
