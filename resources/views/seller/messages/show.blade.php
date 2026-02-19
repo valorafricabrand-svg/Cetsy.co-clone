@@ -8,9 +8,9 @@
  @include('seller.partials.sidebar')
  <div class="space-y-6">
 <div class="content">
- <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
- <div class="grid grid-cols-1 gap-4 md:grid-cols-12 justify-center">
- <div class="col-span-12 lg:col-span-10 xl:col-span-8">
+ <div class="w-full">
+ <div class="grid grid-cols-1 gap-4">
+ <div class="col-span-1">
  @if(session('success'))
  <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 mb-4" role="alert">
  <i class="fa-solid fa-circle-check mr-2"></i>
