@@ -119,7 +119,27 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
+    @php
+        $viteFallbackCss = null;
+        try {
+            $isViteHot = app(\Illuminate\Foundation\Vite::class)->isRunningHot();
+            $isLocalEnv = app()->environment(['local', 'development']);
+            if ($isViteHot && !$isLocalEnv) {
+                $manifestPath = public_path('build/manifest.json');
+                if (is_file($manifestPath)) {
+                    $manifest = json_decode((string) file_get_contents($manifestPath), true) ?: [];
+                    $viteFallbackCss = $manifest['resources/css/app.css']['file'] ?? null;
+                }
+            }
+        } catch (\Throwable $e) {
+            $viteFallbackCss = null;
+        }
+    @endphp
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @if (!empty($viteFallbackCss))
+        <link rel="stylesheet" href="{{ asset('build/' . ltrim($viteFallbackCss, '/')) }}">
+    @endif
 
     @if ($legacyBootstrapCompat)
         <link href="{{ asset('assets/css/theme.min.css') }}" rel="stylesheet">
