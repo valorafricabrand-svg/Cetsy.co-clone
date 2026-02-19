@@ -259,8 +259,8 @@
                 <div class="ml-auto flex items-center gap-2">
                     @auth
                         @if (\Illuminate\Support\Facades\Route::has('notifications.index'))
-                            <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false">
-                                <button type="button" @click="open = !open" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50" aria-label="Notifications" :aria-expanded="open ? 'true' : 'false'">
+                            <div class="relative">
+                                <button type="button" data-ui-toggle="dropdown" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50" aria-label="Notifications" aria-expanded="false">
                                     <i class="fas fa-bell text-sm"></i>
                                     @if ($headerUnreadNotifications > 0)
                                         <span class="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
@@ -269,7 +269,7 @@
                                     @endif
                                 </button>
 
-                                <div x-show="open" x-cloak x-transition @click.outside="open = false" class="absolute right-0 z-50 mt-2 w-[22rem] max-w-[90vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                                <div class="tw-dropdown-menu right-0 w-[22rem] max-w-[90vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
                                     <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
                                         <div>
                                             <h3 class="text-sm font-semibold text-slate-900">Notifications</h3>
@@ -323,7 +323,7 @@
                                     </div>
 
                                     <div class="border-t border-slate-200 p-3">
-                                        <a href="{{ route('notifications.index') }}" class="inline-flex w-full items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500" @click="open = false">
+                                        <a href="{{ route('notifications.index') }}" class="inline-flex w-full items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
                                             View all notifications
                                         </a>
                                     </div>
@@ -683,7 +683,11 @@
 
         function openModal(modal) {
             if (!modal) return;
-            if (modal.classList.contains('tw-modal') || modal.classList.contains('modal')) {
+            if (modal.classList.contains('tw-modal')) {
+                modal.classList.add('is-open');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } else if (modal.classList.contains('modal')) {
                 modal.classList.add('is-open');
             } else {
                 modal.classList.remove('hidden');
@@ -695,7 +699,11 @@
 
         function closeModal(modal) {
             if (!modal) return;
-            if (modal.classList.contains('tw-modal') || modal.classList.contains('modal')) {
+            if (modal.classList.contains('tw-modal')) {
+                modal.classList.remove('is-open');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            } else if (modal.classList.contains('modal')) {
                 modal.classList.remove('is-open');
             } else {
                 modal.classList.add('hidden');
@@ -708,6 +716,15 @@
         }
 
         document.addEventListener('click', function (event) {
+            const twTrigger = event.target.closest('[data-tw-modal-open]');
+            if (twTrigger) {
+                event.preventDefault();
+                const id = twTrigger.getAttribute('data-tw-modal-open');
+                const modal = id ? document.getElementById(id) : null;
+                openModal(modal);
+                return;
+            }
+
             const trigger = event.target.closest('[data-ui-toggle], [data-toggle]');
             if (trigger) {
                 const kind = trigger.getAttribute('data-ui-toggle') || trigger.getAttribute('data-toggle');
@@ -738,6 +755,12 @@
             }
 
             const dismiss = event.target.closest('[data-ui-dismiss], [data-dismiss]');
+            const twDismiss = event.target.closest('[data-tw-modal-close]');
+            if (twDismiss) {
+                event.preventDefault();
+                closeModal(twDismiss.closest('.tw-modal, .modal'));
+                return;
+            }
             if (dismiss) {
                 const kind = dismiss.getAttribute('data-ui-dismiss') || dismiss.getAttribute('data-dismiss');
                 if (kind === 'alert') {
