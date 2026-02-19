@@ -69,7 +69,7 @@
     background:var(--card-soft);
     animation:fadeIn .65s ease both;
   }
-  .summary-list .list-group-item{
+  .summary-list li{
     border-color:rgba(15,23,42,.08);
     background:transparent;
     font-weight:500;

@@ -38,7 +38,7 @@
                             <label for="order_id" class="mb-1 block text-sm font-medium text-slate-700">Select Order *</label>
                             @if($order)
                                 <input type="hidden" name="order_id" value="{{ $order->id }}">
-                                <div class="form-control-plaintext">
+                                <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                                     <strong>Order #{{ $order->order_number }}</strong>
                                     <br>
                                     <small class="text-slate-500">
@@ -84,7 +84,7 @@
                             <label for="description" class="mb-1 block text-sm font-medium text-slate-700">Description *</label>
                             <textarea name="description" id="description" rows="5" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('description') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" 
                                 placeholder="Please provide a detailed description of the issue..." required>{{ old('description') }}</textarea>
-                            <div class="mt-1 text-xs text-slate-500">
+                            <div class="mt-1 text-xs text-slate-500" id="description-counter">
                                 Be specific about what went wrong and provide as much detail as possible.
                             </div>
                             @error('description')
@@ -171,9 +171,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     description.addEventListener('input', function() {
         const remaining = maxLength - this.value.length;
-        const counter = this.parentNode.querySelector('.form-text');
+        const counter = document.getElementById('description-counter');
+        if (!counter) return;
         if (remaining < 100) {
-            counter.innerHTML = `<span class="text-${remaining < 0 ? 'danger' : 'warning'}">${remaining} characters remaining</span>`;
+            counter.innerHTML = `<span class="${remaining < 0 ? 'text-rose-600' : 'text-amber-600'}">${remaining} characters remaining</span>`;
+        } else {
+            counter.textContent = 'Be specific about what went wrong and provide as much detail as possible.';
         }
     });
 });

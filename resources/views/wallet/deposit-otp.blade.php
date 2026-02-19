@@ -3,9 +3,26 @@
 @section('title', 'Verify Deposit')
 
 @section('main')
-<div class="content">
-  <div class="grid grid-cols-12 gap-4 justify-center">
-    <div class="md:col-span-6 lg:col-span-5">
+@php
+  $showBuyerSidebar = auth()->check() && auth()->user()->isBuyer();
+  $showSellerSidebar = auth()->check() && auth()->user()->isSeller();
+  $hasSidebar = $showBuyerSidebar || $showSellerSidebar;
+@endphp
+<div class="py-8">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid grid-cols-12 gap-4">
+      @if($hasSidebar)
+        <div class="col-span-12 lg:col-span-3">
+          @if($showBuyerSidebar)
+            @include('buyer.partials.sidebar')
+          @elseif($showSellerSidebar)
+            @include('seller.partials.sidebar')
+          @endif
+        </div>
+      @endif
+
+      <div class="{{ $hasSidebar ? 'col-span-12 lg:col-span-9' : 'col-span-12' }}">
+        <div class="mx-auto w-full max-w-xl">
       <div class="mt-5 rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="p-4 sm:p-5">
           <h2 class="mb-3 text-center text-base font-semibold">Two-Step Verification</h2>
@@ -38,6 +55,8 @@
               <small class="text-slate-500">Please wait {{ $cooldown }}s to resend.</small>
             @endif
           </form>
+        </div>
+      </div>
         </div>
       </div>
     </div>

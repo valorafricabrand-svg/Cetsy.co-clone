@@ -584,7 +584,24 @@
 @endsection
 
 @section('main')
-<div class="content">
+@php
+    $showBuyerSidebar = auth()->check() && auth()->user()->isBuyer();
+    $showSellerSidebar = auth()->check() && auth()->user()->isSeller();
+    $hasSidebar = $showBuyerSidebar || $showSellerSidebar;
+@endphp
+<div class="py-8">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <div class="grid grid-cols-12 gap-4">
+            @if($hasSidebar)
+                <div class="col-span-12 lg:col-span-3">
+                    @if($showBuyerSidebar)
+                        @include('buyer.partials.sidebar')
+                    @elseif($showSellerSidebar)
+                        @include('seller.partials.sidebar')
+                    @endif
+                </div>
+            @endif
+            <div class="{{ $hasSidebar ? 'col-span-12 lg:col-span-9' : 'col-span-12' }}">
     <div class="notifications-container">
         <!-- Page Header -->
         <div class="page-header">
@@ -594,7 +611,7 @@
                     Notifications
                 </h1>
                 @if($notifications->where('is_read', false)->count() > 0)
-                    <form method="POST" action="{{ route('notifications.mark-all-read') }}" class="d-inline mark-all-form">
+                    <form method="POST" action="{{ route('notifications.mark-all-read') }}" class="inline-block mark-all-form">
                         @csrf
                         <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition mark-all-btn">
                             <i class="fas fa-check-double mr-1"></i>
@@ -632,7 +649,7 @@
                                         $href = $route;
                                     @endphp
                                     @if($href && $href !== route('notifications.index'))
-                                        <a href="{{ $href }}" class="notification-text {{ !$notification->is_read ? 'unread' : '' }} text-decoration-none block">
+                                        <a href="{{ $href }}" class="notification-text {{ !$notification->is_read ? 'unread' : '' }} no-underline block">
                                             {{ $notification->description }}
                                         </a>
                                     @else
@@ -735,6 +752,10 @@
         <span id="toastMessage">Notification marked as read successfully!</span>
     </div>
 
+</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 

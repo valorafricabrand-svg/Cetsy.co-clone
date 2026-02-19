@@ -1,4 +1,3 @@
-{{-- resources/views/theme/{{ theme() }}/partials/_details.blade.php --}}
 @php
   $basePrice       = (float) ($product->price ?? 0);
   $finalPrice      = (float) ($product->discounted_price ?? $basePrice);
@@ -35,99 +34,92 @@
   }
 @endphp
 
-<div class="position-lg-sticky" style="top: 1rem;">
-  <h1 class="h2 fw-bold">{{ $product->name }}</h1>
+<div class="space-y-4 lg:sticky lg:top-4">
+  <h1 class="text-2xl font-bold text-slate-900">{{ $product->name }}</h1>
 
-  {{-- Ratings (shop-wide) --}}
-  <div class="mb-2">
+  <div>
     @php
       $shop = $product->shop;
       $avg  = round((float) ($shop->reviews_avg_rating ?? $shop->reviews()->avg('rating') ?? 0));
       $cnt  = (int) ($shop->reviews_count ?? $shop->reviews()->count() ?? 0);
     @endphp
     @for($i = 1; $i <= 5; $i++)
-      <i class="fa-star{{ $i <= $avg ? ' fa-solid text-warning' : ' fa-regular text-muted' }}"></i>
+      <i class="fa-star{{ $i <= $avg ? ' fa-solid text-amber-500' : ' fa-regular text-slate-300' }}"></i>
     @endfor
-    <small class="ms-1 text-muted">({{ $cnt }} reviews)</small>
+    <small class="ml-1 text-slate-500">({{ $cnt }} reviews)</small>
   </div>
 
-  {{-- Price --}}
   @if ($finalPrice < $basePrice)
-    <div class="d-flex align-items-baseline gap-3 mb-3">
-      <span class="fw-bold text-success">{{ money($finalPrice, null) }}</span>
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="text-2xl font-bold text-emerald-700">{{ money($finalPrice, null) }}</span>
       @if ($discountPercent > 0)
-        <span class="badge bg-danger bg-opacity-10 text-danger">-{{ $discountPercent }}%</span>
+        <span class="inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">-{{ $discountPercent }}%</span>
       @endif
-      <span class="text-muted text-decoration-line-through">{{ money($basePrice, null) }}</span>
+      <span class="text-sm text-slate-400 line-through">{{ money($basePrice, null) }}</span>
     </div>
   @else
-    <p class="fw-bold text-success mb-3">{{ money($basePrice, null) }}</p>
+    <p class="text-2xl font-bold text-emerald-700">{{ money($basePrice, null) }}</p>
   @endif
 
-  {{-- Shop & Stock badges --}}
-  <div class="mb-3 d-flex flex-wrap gap-2">
-    <span class="badge bg-success bg-opacity-10 text-success">
-      <i class="fa-solid fa-store me-1"></i>
-      <a href="{{ route('shop.show', $product->shop->slug) }}"
-         class="text-success text-decoration-none">
+  <div class="flex flex-wrap gap-2">
+    <span class="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+      <i class="fa-solid fa-store"></i>
+      <a href="{{ route('shop.show', $product->shop->slug) }}" class="hover:text-emerald-800">
         {{ $product->shop->name }}
       </a>
     </span>
     @if (! $isDigital)
-      <span class="badge {{ $isOutOfStock ? 'bg-danger bg-opacity-10 text-danger' : 'bg-primary bg-opacity-10 text-primary' }}">
+      <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {{ $isOutOfStock ? 'bg-rose-50 text-rose-700' : 'bg-sky-50 text-sky-700' }}">
         {{ $isOutOfStock ? 'Out of Stock' : 'In Stock' }}
         @if (! $isOutOfStock && ! is_null($stockCount))
-          <span class="ms-1">({{ $stockCount }})</span>
+          <span class="ml-1">({{ $stockCount }})</span>
         @endif
       </span>
     @endif
   </div>
 
-  {{-- Quick-actions --}}
-  <div class="d-flex flex-wrap gap-2 mb-4">
+  <div class="flex flex-wrap gap-2">
     <form method="POST" action="{{ route('favorites.toggle') }}">
       @csrf
       <input type="hidden" name="product_id" value="{{ $product->id }}">
-      <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Add to favourites">
-        <i class="fa-regular fa-heart{{ $isFavorited ? ' text-danger fa-solid' : '' }}"></i>
+      <button class="inline-flex items-center gap-1 rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50" title="Add to favourites">
+        <i class="fa-regular fa-heart{{ $isFavorited ? ' fa-solid text-rose-600' : '' }}"></i>
         Favourites
       </button>
     </form>
-    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#offerModal">
-      <i class="fa-solid fa-hand-holding-dollar me-1"></i>Make an offer
+    <button class="inline-flex items-center gap-1 rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-ui-toggle="modal" data-ui-target="#offerModal">
+      <i class="fa-solid fa-hand-holding-dollar"></i>Make an offer
     </button>
-    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#messageModal">
-      <i class="fa-regular fa-comments me-1"></i>Message seller
+    <button class="inline-flex items-center gap-1 rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-ui-toggle="modal" data-ui-target="#messageModal">
+      <i class="fa-regular fa-comments"></i>Message seller
     </button>
   </div>
 
-  {{-- Highlights --}}
   @if ($product->highlights)
-    <ul class="list-unstyled mb-4 small">
+    <ul class="space-y-1 text-sm text-slate-600">
       @foreach ($product->highlights as $highlight)
-        <li class="d-flex mb-1">
-          <i class="fa-solid fa-check text-success me-2"></i>
+        <li class="flex items-start gap-2">
+          <i class="fa-solid fa-check mt-0.5 text-emerald-600"></i>
           <span>{{ $highlight }}</span>
         </li>
       @endforeach
     </ul>
   @endif
 
-  {{-- Category & Country --}}
-  <p class="mb-2">
-    <strong class="me-1">Category:</strong>
+  <div class="text-sm">
+    <strong class="mr-1 text-slate-700">Category:</strong>
     @if ($product->category)
-      <a href="{{ route('category.show', $product->category->slug) }}"
-         class="badge bg-success bg-opacity-25 text-success text-decoration-none">
+      <a href="{{ route('category.show', $product->category->slug) }}" class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
         {{ $product->category->name }}
       </a>
     @else
-      <span class="badge bg-secondary">Uncategorised</span>
+      <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">Uncategorised</span>
     @endif
-  </p>
+  </div>
+
   @if ($product->country && (($product->type ?? '') === 'physical'))
-    <p class="mb-4 small text-muted">
-      <i class="fa-solid fa-globe-africa me-1"></i>
+    <p class="text-xs text-slate-500">
+      <i class="fa-solid fa-globe-africa mr-1"></i>
       Ship from {{ $product->country->name }}
     </p>
   @endif

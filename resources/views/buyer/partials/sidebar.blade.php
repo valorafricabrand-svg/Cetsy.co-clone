@@ -23,7 +23,7 @@
 
             <div class="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Shopping</div>
             <div class="space-y-1.5 mb-4">
-                <a href="{{ route('account.orders') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active(['account.orders', 'buyer.orders.*', 'pay_now']) ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
+                <a href="{{ route('account.orders') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active(['account.orders', 'orders.*', 'buyer.orders.*', 'pay_now']) ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-receipt"></i></span>
                     <span>Orders</span>
                 </a>
@@ -70,6 +70,12 @@
                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-wallet"></i></span>
                     <span>Wallet</span>
                 </a>
+                @if(\Illuminate\Support\Facades\Route::has('notifications.index'))
+                    <a href="{{ route('notifications.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active('notifications.*') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
+                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-bell"></i></span>
+                        <span>Notifications</span>
+                    </a>
+                @endif
                 <a href="{{ route('account.payments') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition {{ $active('account.payments') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100' }}">
                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700"><i class="fas fa-credit-card"></i></span>
                     <span>Payments</span>

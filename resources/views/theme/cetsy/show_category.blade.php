@@ -61,7 +61,7 @@
             <h1 class="mt-3 text-3xl font-extrabold leading-tight text-white md:text-5xl">{{ $catName }}</h1>
             <p class="mt-3 max-w-2xl text-sm text-white/90 md:text-base">{{ $desc }}</p>
 
-            <nav class="mt-4 text-xs text-white/80" aria-label="breadcrumb">
+            <nav class="mt-4 text-xs text-white/80" aria-label="Breadcrumb">
               <ol class="flex flex-wrap items-center gap-2">
                 <li><a class="hover:text-white" href="{{ url('/') }}">Home</a></li>
                 <li>/</li>

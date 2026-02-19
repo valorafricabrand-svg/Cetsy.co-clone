@@ -7,13 +7,14 @@
   <div class="mx-auto max-w-7xl px-4 sm:px-6">
     <div class="grid grid-cols-12 gap-4 items-center">
       <div class="md:col-span-8">
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="{{ route('shop.show', $shop) }}" class="no-underline">{{ $shop->name }}</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Reviews</li>
+        <nav class="text-xs text-slate-500" aria-label="Breadcrumb">
+          <ol class="flex flex-wrap items-center gap-2">
+            <li><a href="{{ route('shop.show', $shop) }}" class="no-underline hover:text-slate-700">{{ $shop->name }}</a></li>
+            <li>/</li>
+            <li class="font-semibold text-slate-700" aria-current="page">Reviews</li>
           </ol>
         </nav>
-        <h1 class="text-xl font-semibold font-bold mt-2 mb-1">Reviews for {{ $shop->name }}</h1>
+        <h1 class="mb-1 mt-2 text-xl font-bold text-slate-900">Reviews for {{ $shop->name }}</h1>
         
         <!-- Rating Summary -->
         <div class="flex items-center gap-3 mt-3">
@@ -29,7 +30,7 @@
             @endfor
           </div>
           <div>
-            <span class="font-bold fs-4">{{ number_format($averageRating, 1) }}</span>
+            <span class="text-xl font-bold text-slate-900">{{ number_format($averageRating, 1) }}</span>
             <span class="text-slate-500">out of 5</span>
           </div>
           <div class="text-slate-500">
@@ -38,7 +39,7 @@
         </div>
       </div>
       
-      <div class="md:col-span-4 text-md-end">
+      <div class="md:col-span-4 md:text-right">
         <a href="{{ route('shop.show', $shop) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
           <i class="fas fa-arrow-left mr-1"></i> Back to Shop
         </a>
@@ -61,7 +62,7 @@
         <div class="lg:col-span-8">
           <!-- Reviews -->
           @foreach($reviews as $review)
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-0 mb-4">
+            <div class="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div class="p-4 sm:p-5">
                 <div class="flex justify-between items-start mb-3">
                   <div class="flex items-center gap-3">
@@ -97,7 +98,7 @@
                         } catch (\Throwable $e) {}
                       }
                     @endphp
-                    <div class="text-right flex flex-col items-end">
+                    <div class="flex flex-col items-end text-right">
                       <small class="text-slate-500">Reviewed item</small>
                       <div class="flex items-center mt-1">
                         @if($thumbUrl)
@@ -139,8 +140,8 @@
         
         <!-- Sidebar -->
         <div class="lg:col-span-4">
-          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm border-0">
-            <div class="border-b border-slate-200 px-4 py-3 bg-white font-semibold border-bottom">
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="border-b border-slate-200 bg-white px-4 py-3 font-semibold text-slate-900">
               Shop Information
             </div>
             <div class="p-4 sm:p-5">

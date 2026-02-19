@@ -15,7 +15,7 @@
       {{-- Flash --}}
       @foreach(['success','info','warning','danger'] as $msg)
         @if(session()->has($msg))
-          <div class="alert alert-{{ $msg }} alert-dismissible fade show" role="alert">
+          <div class="mb-3 rounded-xl border px-4 py-3 text-sm {{ $msg === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : ($msg === 'warning' ? 'border-amber-200 bg-amber-50 text-amber-800' : ($msg === 'danger' ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-sky-200 bg-sky-50 text-sky-800')) }}" role="alert">
             {{ session($msg) }}
             <button class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="alert">&times;</button>
           </div>

@@ -48,26 +48,26 @@
 @endphp
 
 @if(!$hideNav)
-<nav class="mobile-bottom-nav navbar fixed-bottom bg-white border-top d-md-none" role="navigation" aria-label="Primary">
-  <div class="container px-2">
-    <ul class="nav nav-justified w-100">
-      <li class="nav-item">
-        <a href="{{ route('home') }}" class="nav-link mobile-bottom-nav__item {{ $isHome ? 'active' : '' }}" aria-current="{{ $isHome ? 'page' : 'false' }}">
+<nav class="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white lg:hidden" role="navigation" aria-label="Primary">
+  <div class="mx-auto w-full max-w-7xl px-2">
+    <ul class="grid w-full grid-cols-5">
+      <li>
+        <a href="{{ route('home') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isHome ? 'active' : '' }}" aria-current="{{ $isHome ? 'page' : 'false' }}">
           <i class="fa-solid fa-house"></i>
-          <span class="label d-block">Home</span>
+          <span class="label">Home</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a href="{{ route('search') }}" class="nav-link mobile-bottom-nav__item {{ $isSearch ? 'active' : '' }}" aria-current="{{ $isSearch ? 'page' : 'false' }}">
+      <li>
+        <a href="{{ route('search') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isSearch ? 'active' : '' }}" aria-current="{{ $isSearch ? 'page' : 'false' }}">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <span class="label d-block">Search</span>
+          <span class="label">Search</span>
         </a>
       </li>
-      <li class="nav-item">
+      <li>
         @if($isSeller)
-          <a href="{{ route('seller.orders.index') }}" class="nav-link mobile-bottom-nav__item {{ $isOrders ? 'active' : '' }}" aria-current="{{ $isOrders ? 'page' : 'false' }}">
+          <a href="{{ route('seller.orders.index') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isOrders ? 'active' : '' }}" aria-current="{{ $isOrders ? 'page' : 'false' }}">
             <i class="fa-solid fa-box"></i>
-            <span class="label d-block">Orders</span>
+            <span class="label">Orders</span>
             @if($openOrdersCount > 0)
               <span class="mobile-bottom-nav__badge" aria-label="{{ $openOrdersCount }} open orders">{{ $openOrdersCount }}</span>
             @endif
@@ -78,37 +78,37 @@
               ? route('buyer.orders.created')
               : (Rt::has('account.orders') ? route('account.orders') : (Rt::has('orders.index') ? route('orders.index') : url('/buyer/orders')));
           @endphp
-          <a href="{{ $buyerOrdersUrl }}" class="nav-link mobile-bottom-nav__item {{ $isOrders ? 'active' : '' }}" aria-current="{{ $isOrders ? 'page' : 'false' }}">
+          <a href="{{ $buyerOrdersUrl }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isOrders ? 'active' : '' }}" aria-current="{{ $isOrders ? 'page' : 'false' }}">
             <i class="fa-solid fa-box"></i>
-            <span class="label d-block">Orders</span>
+            <span class="label">Orders</span>
             @if($openOrdersCount > 0)
               <span class="mobile-bottom-nav__badge" aria-label="{{ $openOrdersCount }} open orders">{{ $openOrdersCount }}</span>
             @endif
           </a>
         @endif
       </li>
-      <li class="nav-item">
-        <a href="{{ route('cart.view') }}" class="nav-link mobile-bottom-nav__item {{ $isCart ? 'active' : '' }}" aria-current="{{ $isCart ? 'page' : 'false' }}">
+      <li>
+        <a href="{{ route('cart.view') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isCart ? 'active' : '' }}" aria-current="{{ $isCart ? 'page' : 'false' }}">
           <i class="fa-solid fa-cart-shopping"></i>
-          <span class="label d-block">Cart</span>
+          <span class="label">Cart</span>
           @if($cartCount > 0)
             <span class="mobile-bottom-nav__badge" aria-label="{{ $cartCount }} items in cart">{{ $cartCount }}</span>
           @endif
         </a>
       </li>
-      <li class="nav-item">
+      <li>
         @if($isSeller)
-          <a href="{{ route('seller.dashboard') }}" class="nav-link mobile-bottom-nav__item {{ $isSellTab ? 'active' : '' }}" aria-current="{{ $isSellTab ? 'page' : 'false' }}">
+          <a href="{{ route('seller.dashboard') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isSellTab ? 'active' : '' }}" aria-current="{{ $isSellTab ? 'page' : 'false' }}">
             <i class="fa-solid fa-store"></i>
-            <span class="label d-block">Sell</span>
+            <span class="label">Sell</span>
             @if($unreadMessages > 0)
               <span class="mobile-bottom-nav__badge" aria-label="{{ $unreadMessages }} unread messages">{{ $unreadMessages }}</span>
             @endif
           </a>
         @else
-          <a href="{{ route('dashboard') }}" class="nav-link mobile-bottom-nav__item {{ $isAccount ? 'active' : '' }}" aria-current="{{ $isAccount ? 'page' : 'false' }}">
+          <a href="{{ route('dashboard') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isAccount ? 'active' : '' }}" aria-current="{{ $isAccount ? 'page' : 'false' }}">
             <i class="fa-regular fa-user"></i>
-            <span class="label d-block">{{ $user ? 'Account' : 'Sign in' }}</span>
+            <span class="label">{{ $user ? 'Account' : 'Sign in' }}</span>
           </a>
         @endif
       </li>
@@ -174,10 +174,10 @@
         if (!hasCurrencyList && !isCurrencyMenu) return;
         var sel = document.createElement('select');
         sel.id = 'currencySelectTop';
-        sel.className = 'form-select form-select-sm mb-2';
+        sel.className = 'mb-2 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none';
         var defLabel = 'System Default';
         var siteDefault = (document.querySelector('meta[name="default-currency"]')?.getAttribute('content')||'USD').toUpperCase();
-        var opt0 = document.createElement('option'); opt0.value = ''; opt0.disabled = true; opt0.selected = true; opt0.textContent = 'Select currency…'; sel.appendChild(opt0);
+        var opt0 = document.createElement('option'); opt0.value = ''; opt0.disabled = true; opt0.selected = true; opt0.textContent = 'Select currency...'; sel.appendChild(opt0);
         var optDef = document.createElement('option'); optDef.value = '__default__'; optDef.textContent = defLabel + ' ('+ siteDefault +')'; sel.appendChild(optDef);
         var current = (trigger && trigger.textContent) ? trigger.textContent.trim().toUpperCase() : '';
         items.forEach(function(a){ var code=a.getAttribute('data-currency-code'); if(!code) return; var o=document.createElement('option'); o.value=code; o.textContent=code; if(current===code) o.selected=true; sel.appendChild(o); });

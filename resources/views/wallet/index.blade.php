@@ -29,9 +29,24 @@
 </style>
 @endpush
 @section('main')
-<div class="content">
-    <div class="grid grid-cols-12 gap-4">
-        <div class="col-span-12">
+@php
+    $showBuyerSidebar = auth()->check() && auth()->user()->isBuyer();
+    $showSellerSidebar = auth()->check() && auth()->user()->isSeller();
+    $hasSidebar = $showBuyerSidebar || $showSellerSidebar;
+@endphp
+<div class="py-8">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <div class="grid grid-cols-12 gap-4">
+            @if($hasSidebar)
+                <div class="col-span-12 lg:col-span-3">
+                    @if($showBuyerSidebar)
+                        @include('buyer.partials.sidebar')
+                    @elseif($showSellerSidebar)
+                        @include('seller.partials.sidebar')
+                    @endif
+                </div>
+            @endif
+            <div class="{{ $hasSidebar ? 'col-span-12 lg:col-span-9' : 'col-span-12' }}">
 
             {{-- Header --}}
 <div class="flex items-center justify-between mb-2">
@@ -369,23 +384,23 @@
                                                     if ($status === 'pending') {
                                                         $message = 'Awaiting buyer payment';
                                                     } elseif ($status === 'processing') {
-                                                        $message = 'Paid – waiting for shipment';
+                                                        $message = 'Paid â€“ waiting for shipment';
                                                     } elseif ($status === 'shipped') {
                                                         if ($eta) {
-                                                            $message = 'Shipped – auto-release '.$autoReleaseDays.' days after shipment';
+                                                            $message = 'Shipped â€“ auto-release '.$autoReleaseDays.' days after shipment';
                                                         } else {
-                                                            $message = 'Shipped – awaiting buyer confirmation';
+                                                            $message = 'Shipped â€“ awaiting buyer confirmation';
                                                         }
                                                     } elseif ($status === 'delivered') {
-                                                        $message = 'Delivered – releasing shortly';
+                                                        $message = 'Delivered â€“ releasing shortly';
                                                     } elseif ($status === 'completed') {
                                                         $message = 'Funds released for this order';
                                                     } elseif ($status === 'refunded') {
-                                                        $message = 'Order refunded – payout reversed';
+                                                        $message = 'Order refunded â€“ payout reversed';
                                                     } elseif ($status === 'cancelled') {
-                                                        $message = 'Order cancelled – no payout due';
+                                                        $message = 'Order cancelled â€“ no payout due';
                                                     } elseif ($status === 'returned') {
-                                                        $message = 'Order returned – resolving payout';
+                                                        $message = 'Order returned â€“ resolving payout';
                                                     }
                                                 @endphp
                                                 @if($eta && $status === 'shipped')
@@ -434,6 +449,7 @@
                   {{ $transactions->links('pagination::tailwind') }}
             </div>
 
+            </div>
         </div>
     </div>
 </div>

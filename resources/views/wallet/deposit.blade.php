@@ -102,7 +102,7 @@
         margin-bottom: 1.25rem;
         animation: fadeIn 0.65s ease both;
     }
-    .deposit-amount .form-control {
+    .deposit-amount input[type="number"] {
         border-radius: 10px;
         border: 1px solid rgba(15, 23, 42, 0.18);
         padding: 0.75rem 0.9rem;
@@ -293,9 +293,25 @@
 @endsection
 
 @section('main')
-<div class="content wallet-deposit">
-    <div class="grid grid-cols-12 gap-4 justify-center deposit-shell">
-        <div class="md:col-span-9 lg:col-span-9 xl:col-span-8">
+@php
+    $showBuyerSidebar = auth()->check() && auth()->user()->isBuyer();
+    $showSellerSidebar = auth()->check() && auth()->user()->isSeller();
+    $hasSidebar = $showBuyerSidebar || $showSellerSidebar;
+@endphp
+<div class="wallet-deposit">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 deposit-shell">
+        <div class="grid grid-cols-12 gap-4">
+            @if($hasSidebar)
+                <div class="col-span-12 lg:col-span-3">
+                    @if($showBuyerSidebar)
+                        @include('buyer.partials.sidebar')
+                    @elseif($showSellerSidebar)
+                        @include('seller.partials.sidebar')
+                    @endif
+                </div>
+            @endif
+            <div class="{{ $hasSidebar ? 'col-span-12 lg:col-span-9' : 'col-span-12' }}">
+                <div class="mx-auto w-full max-w-4xl">
 
             <div class="mt-3 rounded-2xl border border-slate-200 bg-white shadow-sm wallet-deposit__card">
                 <div class="p-4 sm:p-5">
@@ -459,6 +475,8 @@
                 </div>
             </div>
 
+                </div>
+            </div>
         </div>
     </div>
 </div>

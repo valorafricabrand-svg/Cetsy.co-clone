@@ -88,7 +88,7 @@
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12px; }
 
     /* Hide nav/footer/UI chrome and actions */
-    nav, .navbar, footer, .footer, .btn-toolbar, .btn, .alert, .modal, .chip, .stepper, .no-print { display: none !important; }
+    nav, footer, [role="alert"], .tw-modal, .chip, .stepper, .no-print { display: none !important; }
 
     /* Expand content */
     .container, .container-xxl, .content { max-width: 100% !important; padding: 0 !important; }

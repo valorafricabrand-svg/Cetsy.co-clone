@@ -365,6 +365,11 @@
                             <a href="{{ route('wallet.index') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                                 <span><i class="fas fa-wallet mr-2"></i>Wallet</span>
                             </a>
+                            @if(\Illuminate\Support\Facades\Route::has('notifications.index'))
+                                <a href="{{ route('notifications.index') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                    <span><i class="fas fa-bell mr-2"></i>Notifications</span>
+                                </a>
+                            @endif
                             <a href="{{ route('account.payments') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                                 <span><i class="fas fa-credit-card mr-2"></i>Payments</span>
                             </a>
