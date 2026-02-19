@@ -3,13 +3,21 @@
 @section('title', 'My Orders')
 
 @section('main')
-<div class="content">
-  <div class="mx-auto max-w-7xl px-4 sm:px-6">
+<div class="py-8">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid grid-cols-12 gap-4">
+      <div class="col-span-12 lg:col-span-3">
+        @include('buyer.partials.sidebar')
+      </div>
+      <div class="col-span-12 lg:col-span-9">
     {{-- Header with title and filters --}}
     <div class="mb-3">
+      <div class="mb-3">
+        <h3 class="mb-1 text-2xl font-semibold text-slate-900">My Orders</h3>
+        <p class="text-sm text-slate-500">Track status, payment progress and shipping updates for all your orders.</p>
+      </div>
       <div class="flex flex-col lg:flex-row gap-3 lg:items-end justify-between">
-        <h3 class="text-slate-900 mb-0">My Orders</h3>
-        <form method="GET" action="{{ url()->current() }}" class="w-full">
+        <form method="GET" action="{{ url()->current() }}" class="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div class="grid grid-cols-12 gap-2 items-end">
             <div class="col-span-12 md:col-span-4">
               <label class="mb-1 block text-xs font-medium text-slate-500">Search</label>
@@ -58,7 +66,7 @@
 
     @if($orders->isNotEmpty())
       {{-- Orders List (Desktop/Tablet) --}}
-      <div class="overflow-x-auto mb-4 hidden md:block">
+      <div class="overflow-x-auto mb-4 hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
         <table class="min-w-full divide-y divide-slate-200 text-sm align-middle">
           <thead class="bg-slate-50">
             <tr>
@@ -72,9 +80,17 @@
           </thead>
           <tbody>
             @foreach($orders as $order)
-              <tr class="js-order-row cursor-pointer" data-href="{{ route('buyer.orders.show', $order->id) }}" tabindex="0">
+              <tr class="js-order-row cursor-pointer hover:bg-slate-50" data-href="{{ route('buyer.orders.show', $order->id) }}" tabindex="0">
                 <td>#{{ $order->id }}</td>
-                <td><a target="_blank" href="{{ route('shop.show', $order->shop) }}"> {{ optional($order->shop)->name ?? 'N/A' }}</a></td>
+                <td>
+                  @if($order->shop)
+                    <a target="_blank" href="{{ route('shop.show', $order->shop) }}" class="font-medium text-slate-800 hover:text-emerald-700">
+                      {{ optional($order->shop)->name ?? 'N/A' }}
+                    </a>
+                  @else
+                    <span class="text-slate-500">N/A</span>
+                  @endif
+                </td>
                 <td>{{ $order->created_at->format('d M Y') }}</td>
                 <td>
                   <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $order->getStatusBadgeClass() }}">
@@ -156,8 +172,8 @@
       </div>
 
       {{-- Orders List (Mobile Cards) --}}
-      <div class="block md:hidden mb-4">
-        <div class="divide-y divide-slate-200 rounded-xl border border-slate-200">
+      <div class="mb-4 block md:hidden">
+        <div class="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white shadow-sm">
           @foreach($orders as $order)
             @php
               $minDays = null; $maxDays = null;
@@ -261,13 +277,15 @@
       </div>
     @else
       {{-- Empty state --}}
-      <div class="text-center py-5">
+      <div class="rounded-2xl border border-slate-200 bg-white py-8 text-center shadow-sm">
         <i class="bi bi-cart-x text-5xl text-slate-400"></i>
         <h4 class="mt-3 text-xl font-semibold text-slate-900">No orders found</h4>
         <p class="mb-4 text-slate-500">You have no orders at the moment.</p>
         <a href="{{ route('listings') }}" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-emerald-500">Start Shopping</a>
       </div>
     @endif
+      </div>
+    </div>
   </div>
 </div>
 @endsection
