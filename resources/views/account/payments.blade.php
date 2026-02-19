@@ -62,7 +62,8 @@
                                             </td>
                                             <td class="px-4 py-3">
                                                 @php($ok = in_array($pay->payment_status, ['successful','completed'], true))
-                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $ok ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800' }}">
+                                                @php($statusClass = $ok ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800')
+                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusClass }}">
                                                     {{ ucfirst($pay->payment_status) }}
                                                 </span>
                                             </td>
@@ -84,12 +85,13 @@
                                   ];
                                   $typeLabel = $labelMap[$pay->payment_name ?? ''] ?? ($pay->order_id ? 'Order Payment' : 'Payment');
                                   $ok = in_array($pay->payment_status, ['successful','completed'], true);
+                                  $statusClass = $ok ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800';
                                 @endphp
 
                                 <div class="rounded-xl border border-slate-200 p-4">
                                     <div class="mb-2 flex items-center justify-between">
                                         <div class="text-sm font-semibold text-slate-900">Payment #{{ $pay->id }}</div>
-                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $ok ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800' }}">{{ ucfirst($pay->payment_status) }}</span>
+                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusClass }}">{{ ucfirst($pay->payment_status) }}</span>
                                     </div>
 
                                     <div class="space-y-1 text-sm text-slate-700">
