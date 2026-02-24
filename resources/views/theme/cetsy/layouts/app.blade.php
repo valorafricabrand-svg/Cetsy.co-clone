@@ -385,7 +385,7 @@
 
             <div class="mx-auto hidden w-full max-w-7xl px-4 pb-3 lg:block sm:px-6">
                 @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
-                    <div class="top-category-scroll pb-1" data-top-category-scroll data-scroll-speed="200">
+                    <div class="top-category-scroll pb-1" data-top-category-scroll data-scroll-speed="80">
                         <div class="flex w-max min-w-full flex-nowrap items-center gap-2" data-top-category-track>
                         @foreach ($topNavCategories as $cat)
                             @php
@@ -758,7 +758,7 @@
 
         // Desktop top-category rail as a continuous marquee (right-to-left).
         document.querySelectorAll('[data-top-category-scroll]').forEach(function (scroller) {
-            const speed = Number(scroller.getAttribute('data-scroll-speed') || 200); // px/s
+            const speed = Number(scroller.getAttribute('data-scroll-speed') || 80); // px/s
             let paused = false;
             let rafId = null;
             let lastTs = null;
@@ -828,6 +828,8 @@
             scroller.addEventListener('pointerdown', pause);
             window.addEventListener('pointerup', resume);
             scroller.addEventListener('pointercancel', resume);
+            scroller.addEventListener('mouseenter', pause);
+            scroller.addEventListener('mouseleave', resume);
             scroller.addEventListener('focusin', pause);
             scroller.addEventListener('focusout', resume);
             scroller.addEventListener('touchstart', pause, { passive: true });
