@@ -546,18 +546,18 @@
         $statusMessage = (string) ($optimizerStatus['message'] ?? 'No optimization has been queued yet.');
       @endphp
 
-      <div id="imageOptimizerStatusBox" class="alert alert-light border">
+      <div id="imageOptimizerStatusBox" class="border rounded-3 p-3 bg-white" style="color:#1f2937;">
         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-          <span class="fw-semibold">Background Job Status</span>
+          <span class="fw-semibold text-dark">Background Job Status</span>
           <span id="imageOptimizerStateBadge" class="badge {{ $stateBadgeClass }}">{{ $stateLabel }}</span>
-          <small id="imageOptimizerUpdatedAt" class="text-muted">
+          <small id="imageOptimizerUpdatedAt" class="text-secondary">
             @if(!empty($optimizerStatus['updated_at']))
               Updated {{ \Illuminate\Support\Carbon::parse($optimizerStatus['updated_at'])->diffForHumans() }}
             @endif
           </small>
         </div>
-        <div id="imageOptimizerMessage" class="small">{{ $statusMessage }}</div>
-        <div id="imageOptimizerWarnings" class="small text-warning mt-2">
+        <div id="imageOptimizerMessage" class="small text-dark">{{ $statusMessage }}</div>
+        <div id="imageOptimizerWarnings" class="small mt-2" style="color:#b45309;">
           @if($optimizerWarnings)
             <ul class="mb-0 ps-3">
               @foreach($optimizerWarnings as $warning)
@@ -566,12 +566,12 @@
             </ul>
           @endif
         </div>
-        <div id="imageOptimizerMeta" class="small text-muted mt-2">
+        <div id="imageOptimizerMeta" class="small text-secondary mt-2">
           @if(!empty($optimizerStatus['run_id']))
             Run ID: <code>{{ $optimizerStatus['run_id'] }}</code>
           @endif
         </div>
-        <div id="imageOptimizerSummary" class="small mt-2">
+        <div id="imageOptimizerSummary" class="small mt-2 text-dark">
           @if($optimizerSummary)
             Scanned: <strong>{{ (int) ($optimizerSummary['scanned'] ?? 0) }}</strong> |
             Unique files: <strong>{{ (int) ($optimizerSummary['unique_paths'] ?? 0) }}</strong> |
