@@ -54,6 +54,12 @@
     transform: translateY(-2px);
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
   }
+  @media (max-width: 430px) {
+    .shop-grid-compact {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+  }
 </style>
 @endpush
 
@@ -233,7 +239,7 @@
           </div>
         </div>
 
-        <div id="gridView" class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <div id="gridView" class="shop-grid-compact grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
           @forelse($products as $product)
             <div class="product-item shop-product-item" data-price="{{ (float) ($product->price ?? 0) }}" data-type="{{ $product->type }}" data-rating="{{ $shop->reviews_avg_rating ?? ($shop->average_rating ?? 0) }}">
               @include('theme.'.theme().'.partials.product-card', ['item' => $product])

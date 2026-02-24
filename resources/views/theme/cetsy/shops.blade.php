@@ -17,6 +17,12 @@
     border: 2px dashed rgba(16, 185, 129, 0.35);
     background: rgba(16, 185, 129, 0.04);
   }
+  @media (max-width: 430px) {
+    .shops-grid-compact {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+  }
 </style>
 @endpush
 
@@ -122,28 +128,28 @@
         of <strong>{{ $shops->total() }}</strong> shops
       </p>
 
-      <div id="shopsList" class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
+      <div id="shopsList" class="shops-grid-compact grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
         @forelse($shops as $shop)
           @php
             $shopLogo = $shop->logo ? ($shop->logo_url ?? asset('storage/' . ltrim($shop->logo, '/'))) : setting('favicon_url');
             $countryName = optional($countries->get($shop->country))->name;
           @endphp
-          <article class="group rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+          <article class="group rounded-xl border border-slate-200 bg-white p-2 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg sm:rounded-2xl sm:p-3">
             <a href="{{ route('shop.show', $shop->slug) }}" class="block">
               <img
                 src="{{ $shopLogo }}"
                 alt="{{ $shop->name }} logo"
-                class="mx-auto h-20 w-20 rounded-full border border-slate-200 object-cover"
+                class="mx-auto h-14 w-14 rounded-full border border-slate-200 object-cover sm:h-20 sm:w-20"
                 loading="lazy"
                 decoding="async"
               >
-              <h3 class="mt-3 line-clamp-1 text-sm font-semibold text-slate-900 group-hover:text-emerald-700">{{ $shop->name }}</h3>
-              <p class="mt-1 text-xs text-slate-500">
+              <h3 class="mt-2 line-clamp-1 text-[12px] font-semibold text-slate-900 group-hover:text-emerald-700 sm:mt-3 sm:text-sm">{{ $shop->name }}</h3>
+              <p class="mt-1 hidden text-xs text-slate-500 sm:block">
                 <span class="font-semibold text-amber-500"><i class="fas fa-star"></i> {{ number_format($shop->reviews_avg_rating ?? 0, 1) }}</span>
                 <span>({{ $shop->reviews_count }})</span>
               </p>
-              <p class="mt-1 line-clamp-1 text-xs text-slate-500">{{ $countryName ?: 'Global' }}</p>
-              <span class="mt-3 inline-flex rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-700 transition group-hover:border-emerald-300 group-hover:text-emerald-700">
+              <p class="mt-1 line-clamp-1 text-[11px] text-slate-500 sm:text-xs">{{ $countryName ?: 'Global' }}</p>
+              <span class="mt-2 inline-flex rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-semibold text-slate-700 transition group-hover:border-emerald-300 group-hover:text-emerald-700 sm:mt-3 sm:px-3 sm:text-[11px]">
                 Visit Shop
               </span>
             </a>
