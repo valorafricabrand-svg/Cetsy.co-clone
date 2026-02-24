@@ -15,7 +15,7 @@
             <div class="flex items-center gap-3">
                 <a href="{{ route('home') }}" class="flex items-center gap-2">
                     <img src="{{ logo_url() }}" alt="{{ config('app.name', 'Cetsy') }}" class="h-10 w-10 rounded-xl object-contain"
-                        onerror="this.onerror=null;this.src=@json(asset('assets/images/cetsylogmain.png'));">
+                        onerror='this.onerror=null;this.src=@json(asset("assets/images/cetsylogmain.png"));'>
                     <span>
                         <span class="block text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-700">Marketplace</span>
                         <span class="block text-lg font-extrabold text-slate-900">{{ config('app.name', 'Cetsy') }}</span>

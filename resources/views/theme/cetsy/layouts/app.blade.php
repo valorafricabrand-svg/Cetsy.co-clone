@@ -260,7 +260,7 @@
 
                 <a href="{{ route('home') }}" class="inline-flex items-center gap-2">
                     <img src="{{ logo_url() }}" alt="{{ $siteName }}" class="h-10 w-auto"
-                         onerror="this.onerror=null;this.src=@json(asset('assets/images/cetsylogmain.png'));">
+                         onerror='this.onerror=null;this.src=@json(asset("assets/images/cetsylogmain.png"));'>
                 </a>
 
                 <form method="GET" action="{{ route('search') }}" class="hidden flex-1 lg:block">

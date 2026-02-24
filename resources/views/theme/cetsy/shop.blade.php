@@ -76,7 +76,7 @@
             src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg')) }}"
             alt="{{ $shop->name }} logo"
             class="h-20 w-20 rounded-full border border-slate-200 object-cover shadow-sm"
-            onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));"
+            onerror='this.onerror=null;this.src=@json(asset("assets/images/default-og-image-cetsy.jpg"));'
           >
 
           <div class="min-w-0 flex-1">

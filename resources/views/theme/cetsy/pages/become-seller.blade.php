@@ -64,7 +64,7 @@
           src="{{ $imgUrl }}"
           alt="Become a Seller"
           class="mx-auto h-auto w-full max-w-sm"
-          onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));"
+          onerror='this.onerror=null;this.src=@json(asset("assets/images/default-og-image-cetsy.jpg"));'
         >
 
         <div class="mt-5 rounded-2xl border border-emerald-200 bg-white/90 p-4">

@@ -122,7 +122,7 @@
                                 </form>
                             </div>
                             <div class="text-center">
-                                <img src="{{ $img }}" alt="{{ $title }}" class="mx-auto max-h-[360px] w-auto rounded-2xl shadow-2xl" onerror="this.onerror=null;this.src=@json($heroImageFallback);">
+                                <img src="{{ $img }}" alt="{{ $title }}" class="mx-auto max-h-[360px] w-auto rounded-2xl shadow-2xl" onerror='this.onerror=null;this.src=@json($heroImageFallback);'>
                             </div>
                         </div>
                     </article>
@@ -157,7 +157,7 @@
                         </div>
                     </div>
                     <div class="text-center">
-                        <img src="{{ $heroImageFallback }}" alt="Featured Cetsy deals" class="mx-auto max-h-[360px] w-auto rounded-2xl shadow-2xl" onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
+                        <img src="{{ $heroImageFallback }}" alt="Featured Cetsy deals" class="mx-auto max-h-[360px] w-auto rounded-2xl shadow-2xl" onerror='this.onerror=null;this.src=@json(asset("assets/images/default-og-image-cetsy.jpg"));'>
                     </div>
                 </div>
             </article>
@@ -287,7 +287,9 @@
                 : collect($section['items'] ?? [])->values();
             $autoRotate = (bool) ($section['autoRotate'] ?? false);
             $chunkSize = 8;
-            $pages = ($autoRotate ? $itemsCollection : $itemsCollection->take($chunkSize))
+            $maxRotatorPages = 3;
+            $maxItemsToRender = $autoRotate ? ($chunkSize * $maxRotatorPages) : $chunkSize;
+            $pages = $itemsCollection->take($maxItemsToRender)
                 ->chunk($chunkSize)
                 ->values();
         @endphp
@@ -312,7 +314,7 @@
                                         @if((($item->type ?? '') === 'physical') && (int)($item->stock ?? 0) === 1 && (($item->is_reserved ?? false)) )
                                             <span class="absolute right-1.5 top-1.5 z-10 rounded-full bg-red-600 px-1.5 py-0.5 text-[9px] font-semibold text-white sm:right-2 sm:top-2 sm:px-2 sm:text-[10px]">Reserved</span>
                                         @endif
-                                        <img src="{{ $card['thumb'] }}" alt="{{ $item->name }}" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=@json($productThumbFallback);">
+                                        <img src="{{ $card['thumb'] }}" alt="{{ $item->name }}" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async" onerror='this.onerror=null;this.src=@json($productThumbFallback);'>
                                     </div>
                                     <div class="flex flex-1 flex-col p-2 sm:p-3">
                                         <h3 class="line-clamp-1 text-[12px] font-semibold text-slate-900 sm:line-clamp-2 sm:text-sm">{{ $item->name }}</h3>
@@ -391,7 +393,7 @@
                                 <img src="{{ !empty($shop->logo_url) ? $shop->logo_url : (!empty($shop->logo) ? (Str::startsWith((string) $shop->logo, ['http://', 'https://', '//']) ? $shop->logo : media_url($shop->logo)) : (setting('favicon_url') ?: $productThumbFallback)) }}"
                                      alt="{{ $shop->name }} logo"
                                      class="h-full w-full object-cover"
-                                     onerror="this.onerror=null;this.src=@json(setting('favicon_url') ?: $productThumbFallback);">
+                                     onerror='this.onerror=null;this.src=@json(setting("favicon_url") ?: $productThumbFallback);'>
                             </div>
                             <div>
                                 <h3 class="text-sm font-bold text-slate-900">{{ $shop->name }}</h3>
