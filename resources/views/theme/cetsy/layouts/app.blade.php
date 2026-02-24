@@ -236,7 +236,8 @@
         .table-sm > :not(caption) > * > * { padding-top: 0.4rem; padding-bottom: 0.4rem; }
 
         .top-category-scroll {
-            overflow-x: hidden;
+            overflow: visible;
+            overflow-x: clip;
             overflow-y: visible;
             position: relative;
             -ms-overflow-style: none;
@@ -847,6 +848,9 @@
                     });
                     guard += 1;
                 }
+
+                // Ensure dropdown fallback handlers also exist on original items.
+                bindCloneDropdowns(track);
             }
 
             function tick(ts) {
