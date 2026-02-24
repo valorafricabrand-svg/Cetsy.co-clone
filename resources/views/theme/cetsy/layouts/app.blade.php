@@ -384,7 +384,7 @@
             <div class="mx-auto hidden w-full max-w-7xl px-4 pb-3 lg:block sm:px-6">
                 @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
                     <div class="top-category-scroll pb-1" data-top-category-scroll data-scroll-speed="60">
-                        <div class="flex w-max min-w-full flex-nowrap items-center gap-2">
+                        <div class="flex w-max min-w-full flex-nowrap items-center gap-2" data-top-category-track>
                         @foreach ($topNavCategories as $cat)
                             @php
                                 $children = collect($cat->children ?? []);
@@ -762,6 +762,29 @@
             let rafId = null;
             let carry = 0;
             let lastTs = null;
+            let cycleWidth = 0;
+
+            const track = scroller.querySelector('[data-top-category-track]');
+            if (track) {
+                const originalItems = Array.from(track.children);
+                cycleWidth = Math.floor(track.scrollWidth);
+
+                // Build enough content so the loop has a seamless runway.
+                if (cycleWidth > 0 && originalItems.length > 0) {
+                    let guard = 0;
+                    while (track.scrollWidth < (scroller.clientWidth + cycleWidth) && guard < 8) {
+                        originalItems.forEach(function (item) {
+                            const clone = item.cloneNode(true);
+                            clone.setAttribute('data-loop-clone', '1');
+                            track.appendChild(clone);
+                            if (window.Alpine && typeof window.Alpine.initTree === 'function') {
+                                window.Alpine.initTree(clone);
+                            }
+                        });
+                        guard += 1;
+                    }
+                }
+            }
 
             function maxScroll() {
                 return Math.max(0, scroller.scrollWidth - scroller.clientWidth);
@@ -781,8 +804,12 @@
                         const step = Math.floor(carry);
                         if (step > 0) {
                             carry -= step;
-                            const next = scroller.scrollLeft + step;
-                            scroller.scrollLeft = next >= max ? 0 : next;
+                            const wrapAt = cycleWidth > 0 ? cycleWidth : max;
+                            let next = scroller.scrollLeft + step;
+                            if (wrapAt > 0 && next >= wrapAt) {
+                                next -= wrapAt;
+                            }
+                            scroller.scrollLeft = next;
                         }
                     }
                 }
@@ -794,8 +821,9 @@
                 paused = false;
                 lastTs = null;
             };
-            scroller.addEventListener('mouseenter', pause);
-            scroller.addEventListener('mouseleave', resume);
+            scroller.addEventListener('pointerdown', pause);
+            scroller.addEventListener('pointerup', resume);
+            scroller.addEventListener('pointercancel', resume);
             scroller.addEventListener('focusin', pause);
             scroller.addEventListener('focusout', resume);
             scroller.addEventListener('touchstart', pause, { passive: true });
