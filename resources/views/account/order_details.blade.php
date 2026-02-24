@@ -220,6 +220,7 @@
           @if($__canDownloadAll)
             @if(count($__digitalFiles) === 1)
               <a href="{{ route('digital-files.download', $__digitalFiles[0]) }}"
+                 target="_blank" rel="noopener"
                  class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-emerald-500"
                  title="Download your digital file">
                 <i class="bi bi-cloud-download text-lg"></i>
@@ -900,7 +901,7 @@
                             @foreach($product->digitalFiles as $file)
                               <li class="px-4 py-3 flex justify-between items-center">
                                 <a href="{{ route('digital-files.download', $file) }}"
-                                   target="_blank"
+                                   target="_blank" rel="noopener"
                                    class="inline-flex items-center">
                                   <i class="fas fa-file-download mr-2"></i> {{ $file->filename }}
                                 </a>
@@ -1036,7 +1037,7 @@
                             <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
                               @foreach($product->digitalFiles as $file)
                                 <li class="px-4 py-3 flex justify-between items-center">
-                                  <a href="{{ route('digital-files.download', $file) }}" target="_blank" class="inline-flex items-center">
+                                  <a href="{{ route('digital-files.download', $file) }}" target="_blank" rel="noopener" class="inline-flex items-center">
                                     <i class="fas fa-file-download mr-2"></i> {{ $file->filename }}
                                   </a>
                                 </li>
@@ -1154,7 +1155,7 @@
                   <i class="bi bi-file-earmark-arrow-down mr-2"></i>
                   <span class="inline-block max-w-72 truncate" title="{{ $__file->filename }}">{{ $__file->filename }}</span>
                 </div>
-                <a href="{{ route('digital-files.download', $__file) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500">
+                <a href="{{ route('digital-files.download', $__file) }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500">
                   <i class="bi bi-download"></i> Download
                 </a>
               </li>

@@ -1,5 +1,5 @@
 /* Basic PWA service worker for offline support */
-const CACHE_NAME = 'cetsy-pwa-v1';
+const CACHE_NAME = 'cetsy-pwa-v2';
 const OFFLINE_URL = '/offline.html';
 
 self.addEventListener('install', (event) => {
@@ -29,6 +29,16 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  const requestUrl = new URL(request.url);
+
+  // IMPORTANT: Never intercept authenticated digital file downloads.
+  // Mobile/PWA contexts can fail to save attachments when a SW handles navigation.
+  if (
+    requestUrl.origin === self.location.origin &&
+    requestUrl.pathname.startsWith('/downloads/')
+  ) {
+    return;
+  }
 
   // App shell-style navigation requests
   if (request.mode === 'navigate') {
@@ -65,4 +75,3 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
-
