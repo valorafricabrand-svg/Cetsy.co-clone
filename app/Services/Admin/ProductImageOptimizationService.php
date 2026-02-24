@@ -16,7 +16,12 @@ class ProductImageOptimizationService
      *
      * @return array<string,int|string>
      */
-    public function optimizeAll(int $maxWidth = 1600, int $maxHeight = 1600, int $quality = 82): array
+    public function optimizeAll(
+        int $maxWidth = 1600,
+        int $maxHeight = 1600,
+        int $quality = 82,
+        ?callable $onProgress = null
+    ): array
     {
         $maxWidth = max(320, min(4096, $maxWidth));
         $maxHeight = max(320, min(4096, $maxHeight));
@@ -42,7 +47,7 @@ class ProductImageOptimizationService
         $seen = [];
         $manager = new ImageManager(new Driver());
 
-        $consumePath = function (?string $rawPath, string $source) use (&$seen, &$stats, $manager, $maxWidth, $maxHeight, $quality): void {
+        $consumePath = function (?string $rawPath, string $source) use (&$seen, &$stats, $manager, $maxWidth, $maxHeight, $quality, $onProgress): void {
             if (!is_string($rawPath) || trim($rawPath) === '') {
                 return;
             }
@@ -93,6 +98,10 @@ class ProductImageOptimizationService
             $stats['before_bytes'] += $before;
             $stats['after_bytes'] += $after;
             $stats['saved_bytes'] += max(0, $before - $after);
+
+            if (is_callable($onProgress)) {
+                $onProgress($stats);
+            }
         };
 
         // Primary source: media table images.
@@ -278,4 +287,3 @@ class ProductImageOptimizationService
         return $host;
     }
 }
-

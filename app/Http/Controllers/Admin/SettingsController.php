@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\Admin\RunProductImageOptimization;
 use App\Models\Setting;
-use App\Services\Admin\ProductImageOptimizationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +29,14 @@ class SettingsController extends Controller
             // ignore (DB might not be ready during install)
         }
         $settings = $settings ?: Setting::first();
-        return view('admin.settings.index', compact('settings'));
+        $imageOptimizerStatus = null;
+        if ($settings) {
+            $imageOptimizerStatus = Cache::get($this->imageOptimizerStatusCacheKey($settings->id), [
+                'state' => 'idle',
+            ]);
+        }
+
+        return view('admin.settings.index', compact('settings', 'imageOptimizerStatus'));
     }
 
     /**
@@ -248,7 +255,7 @@ class SettingsController extends Controller
     /**
      * Bulk optimize product images and resize oversized files.
      */
-    public function optimizeProductImages(Request $request, Setting $setting, ProductImageOptimizationService $optimizer)
+    public function optimizeProductImages(Request $request, Setting $setting)
     {
         $validated = $request->validate([
             'optimizer_max_width' => ['nullable', 'integer', 'min:320', 'max:4096'],
@@ -260,25 +267,82 @@ class SettingsController extends Controller
         $maxHeight = (int) ($validated['optimizer_max_height'] ?? 1600);
         $quality = (int) ($validated['optimizer_quality'] ?? 82);
 
-        @set_time_limit(0);
-        @ini_set('memory_limit', '768M');
+        $cacheKey = $this->imageOptimizerStatusCacheKey($setting->id);
+        $currentStatus = Cache::get($cacheKey);
+        $currentState = (string) ($currentStatus['state'] ?? 'idle');
 
-        $summary = $optimizer->optimizeAll($maxWidth, $maxHeight, $quality);
+        if (in_array($currentState, ['queued', 'running'], true)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'An optimization run is already in progress.',
+                    'status' => $currentStatus,
+                ], 409);
+            }
 
-        $savedMb = round(((int) ($summary['saved_bytes'] ?? 0)) / 1048576, 2);
-        $message = sprintf(
-            'Image optimization finished: %d optimized (%d resized), %d skipped, %d missing, %d errors. Saved ~%s MB.',
-            (int) ($summary['optimized'] ?? 0),
-            (int) ($summary['resized'] ?? 0),
-            (int) ($summary['skipped'] ?? 0),
-            (int) ($summary['missing'] ?? 0),
-            (int) ($summary['errors'] ?? 0),
-            number_format($savedMb, 2)
+            return back()->with('warning', 'Image optimization is already running.');
+        }
+
+        $runId = (string) Str::uuid();
+        $status = [
+            'run_id' => $runId,
+            'state' => 'queued',
+            'requested_at' => now()->toIso8601String(),
+            'started_at' => null,
+            'finished_at' => null,
+            'updated_at' => now()->toIso8601String(),
+            'requested_by' => auth()->id(),
+            'params' => [
+                'max_width' => $maxWidth,
+                'max_height' => $maxHeight,
+                'quality' => $quality,
+            ],
+            'summary' => null,
+            'message' => 'Optimization queued. Processing will start shortly.',
+            'error' => null,
+        ];
+        Cache::put($cacheKey, $status, now()->addHours(12));
+
+        RunProductImageOptimization::dispatch(
+            (int) $setting->id,
+            $runId,
+            $maxWidth,
+            $maxHeight,
+            $quality,
+            auth()->id()
         );
 
-        return back()
-            ->with('success', $message)
-            ->with('image_optimizer_summary', $summary);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Image optimization queued.',
+                'status' => $status,
+                'status_url' => route('admin.settings.optimize-product-images.status', $setting->id),
+            ]);
+        }
+
+        return back()->with('success', 'Image optimization queued and will run in the background.');
+    }
+
+    /**
+     * Return latest optimizer run status for AJAX polling.
+     */
+    public function optimizeProductImagesStatus(Request $request, Setting $setting)
+    {
+        $status = Cache::get($this->imageOptimizerStatusCacheKey($setting->id), [
+            'state' => 'idle',
+            'message' => 'No optimization has been queued yet.',
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'status' => $status,
+        ]);
+    }
+
+    private function imageOptimizerStatusCacheKey(int $settingId): string
+    {
+        return 'admin:settings:' . $settingId . ':image-optimizer';
     }
 
 

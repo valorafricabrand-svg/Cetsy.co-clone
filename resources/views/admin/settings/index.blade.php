@@ -516,25 +516,64 @@
         Resize and recompress all locally stored product images to reduce page weight and improve loading speed.
       </p>
 
-      @if(session('image_optimizer_summary'))
-        @php($summary = session('image_optimizer_summary'))
-        <div class="alert alert-info">
-          <div class="fw-semibold mb-1">Last run summary</div>
-          <div class="small">
-            Scanned: <strong>{{ (int) ($summary['scanned'] ?? 0) }}</strong> |
-            Unique files: <strong>{{ (int) ($summary['unique_paths'] ?? 0) }}</strong> |
-            Optimized: <strong>{{ (int) ($summary['optimized'] ?? 0) }}</strong> |
-            Resized: <strong>{{ (int) ($summary['resized'] ?? 0) }}</strong> |
-            Skipped: <strong>{{ (int) ($summary['skipped'] ?? 0) }}</strong> |
-            Missing: <strong>{{ (int) ($summary['missing'] ?? 0) }}</strong> |
-            Errors: <strong>{{ (int) ($summary['errors'] ?? 0) }}</strong>
-            <br>
-            Saved: <strong>{{ number_format(((int) ($summary['saved_bytes'] ?? 0)) / 1048576, 2) }} MB</strong>
-          </div>
-        </div>
-      @endif
+      @php
+        $optimizerStatus = is_array($imageOptimizerStatus ?? null) ? $imageOptimizerStatus : ['state' => 'idle'];
+        $optimizerState = strtolower((string) ($optimizerStatus['state'] ?? 'idle'));
+        $optimizerSummary = is_array($optimizerStatus['summary'] ?? null) ? $optimizerStatus['summary'] : null;
 
-      <form action="{{ route('admin.settings.optimize-product-images', $settings->id) }}" method="POST" class="row g-3 align-items-end">
+        $stateBadgeClass = match ($optimizerState) {
+          'queued' => 'bg-secondary',
+          'running' => 'bg-primary',
+          'completed' => 'bg-success',
+          'failed' => 'bg-danger',
+          default => 'bg-light text-dark',
+        };
+        $stateLabel = match ($optimizerState) {
+          'queued' => 'Queued',
+          'running' => 'Running',
+          'completed' => 'Completed',
+          'failed' => 'Failed',
+          default => 'Idle',
+        };
+        $statusMessage = (string) ($optimizerStatus['message'] ?? 'No optimization has been queued yet.');
+      @endphp
+
+      <div id="imageOptimizerStatusBox" class="alert alert-light border">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+          <span class="fw-semibold">Background Job Status</span>
+          <span id="imageOptimizerStateBadge" class="badge {{ $stateBadgeClass }}">{{ $stateLabel }}</span>
+          <small id="imageOptimizerUpdatedAt" class="text-muted">
+            @if(!empty($optimizerStatus['updated_at']))
+              Updated {{ \Illuminate\Support\Carbon::parse($optimizerStatus['updated_at'])->diffForHumans() }}
+            @endif
+          </small>
+        </div>
+        <div id="imageOptimizerMessage" class="small">{{ $statusMessage }}</div>
+        <div id="imageOptimizerMeta" class="small text-muted mt-2">
+          @if(!empty($optimizerStatus['run_id']))
+            Run ID: <code>{{ $optimizerStatus['run_id'] }}</code>
+          @endif
+        </div>
+        <div id="imageOptimizerSummary" class="small mt-2">
+          @if($optimizerSummary)
+            Scanned: <strong>{{ (int) ($optimizerSummary['scanned'] ?? 0) }}</strong> |
+            Unique files: <strong>{{ (int) ($optimizerSummary['unique_paths'] ?? 0) }}</strong> |
+            Optimized: <strong>{{ (int) ($optimizerSummary['optimized'] ?? 0) }}</strong> |
+            Resized: <strong>{{ (int) ($optimizerSummary['resized'] ?? 0) }}</strong> |
+            Skipped: <strong>{{ (int) ($optimizerSummary['skipped'] ?? 0) }}</strong> |
+            Missing: <strong>{{ (int) ($optimizerSummary['missing'] ?? 0) }}</strong> |
+            Errors: <strong>{{ (int) ($optimizerSummary['errors'] ?? 0) }}</strong>
+            <br>
+            Saved: <strong>{{ number_format(((int) ($optimizerSummary['saved_bytes'] ?? 0)) / 1048576, 2) }} MB</strong>
+          @endif
+        </div>
+      </div>
+
+      <form id="imageOptimizerForm"
+            action="{{ route('admin.settings.optimize-product-images', $settings->id) }}"
+            method="POST"
+            class="row g-3 align-items-end"
+            data-status-url="{{ route('admin.settings.optimize-product-images.status', $settings->id) }}">
         @csrf
         <div class="col-md-3">
           <label class="form-label">Max Width (px)</label>
@@ -555,13 +594,15 @@
           @error('optimizer_quality') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
         <div class="col-md-3">
-          <button type="submit" class="btn btn-warning w-100"
-                  onclick="return confirm('Optimize all product images now? This may take a while on large catalogs.');">
+          <button id="imageOptimizerSubmit" type="submit" class="btn btn-warning w-100">
             Optimize All Product Images
           </button>
         </div>
       </form>
-      <div class="form-text mt-2">Processes product media, featured images, and legacy image paths on the public disk.</div>
+      <div class="form-text mt-2">
+        Processes product media, featured images, and legacy image paths on the public disk.
+        This now runs in the background via queue.
+      </div>
     </div>
   </div>
 </div>
@@ -580,6 +621,167 @@
       form.classList.add('was-validated');
     }, false);
   });
+})();
+</script>
+<script>
+(() => {
+  'use strict';
+
+  const form = document.getElementById('imageOptimizerForm');
+  if (!form) return;
+
+  const submitButton = document.getElementById('imageOptimizerSubmit');
+  const stateBadge = document.getElementById('imageOptimizerStateBadge');
+  const messageBox = document.getElementById('imageOptimizerMessage');
+  const metaBox = document.getElementById('imageOptimizerMeta');
+  const summaryBox = document.getElementById('imageOptimizerSummary');
+  const updatedAtBox = document.getElementById('imageOptimizerUpdatedAt');
+  const statusUrl = form.getAttribute('data-status-url');
+  const csrf = form.querySelector('input[name="_token"]')?.value || '';
+
+  let pollingTimer = null;
+
+  const stateMap = {
+    queued: { cls: 'bg-secondary', label: 'Queued' },
+    running: { cls: 'bg-primary', label: 'Running' },
+    completed: { cls: 'bg-success', label: 'Completed' },
+    failed: { cls: 'bg-danger', label: 'Failed' },
+    idle: { cls: 'bg-light text-dark', label: 'Idle' },
+  };
+
+  function summarize(summary) {
+    if (!summary || typeof summary !== 'object') return '';
+    const savedBytes = Number(summary.saved_bytes || 0);
+    const savedMb = (savedBytes / 1048576).toFixed(2);
+
+    return `
+      Scanned: <strong>${Number(summary.scanned || 0).toLocaleString()}</strong> |
+      Unique files: <strong>${Number(summary.unique_paths || 0).toLocaleString()}</strong> |
+      Optimized: <strong>${Number(summary.optimized || 0).toLocaleString()}</strong> |
+      Resized: <strong>${Number(summary.resized || 0).toLocaleString()}</strong> |
+      Skipped: <strong>${Number(summary.skipped || 0).toLocaleString()}</strong> |
+      Missing: <strong>${Number(summary.missing || 0).toLocaleString()}</strong> |
+      Errors: <strong>${Number(summary.errors || 0).toLocaleString()}</strong>
+      <br>
+      Saved: <strong>${savedMb} MB</strong>
+    `;
+  }
+
+  function renderStatus(status) {
+    const state = String(status?.state || 'idle').toLowerCase();
+    const config = stateMap[state] || stateMap.idle;
+
+    stateBadge.className = `badge ${config.cls}`;
+    stateBadge.textContent = config.label;
+
+    messageBox.textContent = String(status?.message || '');
+
+    if (status?.run_id) {
+      metaBox.innerHTML = `Run ID: <code>${status.run_id}</code>`;
+    } else {
+      metaBox.innerHTML = '';
+    }
+
+    if (status?.updated_at) {
+      updatedAtBox.textContent = `Updated ${new Date(status.updated_at).toLocaleString()}`;
+    } else {
+      updatedAtBox.textContent = '';
+    }
+
+    summaryBox.innerHTML = summarize(status?.summary);
+  }
+
+  function setSubmitting(isSubmitting) {
+    submitButton.disabled = isSubmitting;
+    submitButton.textContent = isSubmitting ? 'Queuing...' : 'Optimize All Product Images';
+  }
+
+  function stopPolling() {
+    if (pollingTimer) {
+      clearInterval(pollingTimer);
+      pollingTimer = null;
+    }
+  }
+
+  async function pollStatus() {
+    if (!statusUrl) return;
+    try {
+      const response = await fetch(statusUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin',
+      });
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const status = data?.status || {};
+      renderStatus(status);
+
+      const state = String(status?.state || '').toLowerCase();
+      if (state === 'completed' || state === 'failed' || state === 'idle') {
+        stopPolling();
+      }
+    } catch (_) {
+      // Ignore intermittent network errors and keep polling.
+    }
+  }
+
+  function startPolling() {
+    stopPolling();
+    pollStatus();
+    pollingTimer = setInterval(pollStatus, 3000);
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const confirmed = window.confirm('Queue image optimization in background now? You can leave this page while it runs.');
+    if (!confirmed) return;
+
+    setSubmitting(true);
+
+    try {
+      const formData = new FormData(form);
+      const response = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': csrf,
+        },
+        body: formData,
+        credentials: 'same-origin',
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const fallback = response.status === 409
+          ? 'An optimization run is already in progress.'
+          : 'Unable to queue optimization.';
+        messageBox.textContent = data?.message || fallback;
+        return;
+      }
+
+      if (data?.status) {
+        renderStatus(data.status);
+      }
+      startPolling();
+    } catch (error) {
+      messageBox.textContent = 'Network error while queuing optimization.';
+    } finally {
+      setSubmitting(false);
+    }
+  });
+
+  const initialState = String(stateBadge.textContent || '').toLowerCase();
+  if (initialState === 'queued' || initialState === 'running') {
+    startPolling();
+  }
 })();
 </script>
 @endpush
