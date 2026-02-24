@@ -2,10 +2,26 @@
 
 @php
   use Illuminate\Support\Str;
+  use Illuminate\Support\Facades\Storage;
 
-  $banner = $category->image
-    ? asset('storage/' . $category->image)
-    : asset('assets/img/default-category.jpg');
+  $banner = null;
+  $rawBanner = trim((string) ($category->image ?? ''));
+  if ($rawBanner !== '') {
+    if (Str::startsWith($rawBanner, ['http://', 'https://', '//'])) {
+      $banner = $rawBanner;
+    } else {
+      $bannerPath = ltrim($rawBanner, '/');
+      if (Str::startsWith($bannerPath, 'public/')) {
+        $bannerPath = Str::after($bannerPath, 'public/');
+      }
+      if (Str::startsWith($bannerPath, 'storage/')) {
+        $bannerPath = Str::after($bannerPath, 'storage/');
+      }
+      if (Storage::disk('public')->exists($bannerPath)) {
+        $banner = Storage::disk('public')->url($bannerPath);
+      }
+    }
+  }
 
   $catName = html_entity_decode($category->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
   $desc = $category->description
@@ -79,9 +95,11 @@
           </div>
 
           <div>
-            <div class="overflow-hidden rounded-2xl bg-white/10 p-1 shadow-lg">
-              <img src="{{ $banner }}" alt="{{ $catName }} banner" class="h-56 w-full rounded-xl object-cover md:h-64">
-            </div>
+            @if($banner)
+              <div class="category-banner-media overflow-hidden rounded-2xl bg-white/10 p-1 shadow-lg">
+                <img src="{{ $banner }}" alt="{{ $catName }} banner" class="h-56 w-full rounded-xl object-cover md:h-64" onerror="this.parentElement.style.display='none';">
+              </div>
+            @endif
 
             <form class="mt-4" method="GET" action="{{ url()->current() }}" role="search">
               <label for="categoryHeroSearch" class="sr-only">Search in {{ $catName }}</label>

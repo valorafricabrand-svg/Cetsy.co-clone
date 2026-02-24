@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\EnsureSellerKycIsVerified;
 use App\Http\Middleware\EnsureUserIsSeller;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Cache;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -45,10 +46,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withSchedule(function (Schedule $schedule) {
         // Shared-hosting friendly queue processing (works with cron + schedule:run).
-        $schedule->command('queue:work --stop-when-empty --queue=default --tries=1 --timeout=7200')
+        $schedule->command('queue:work --stop-when-empty --tries=1 --timeout=7200')
             ->everyMinute()
-            ->withoutOverlapping(120)
-            ->runInBackground();
+            ->withoutOverlapping(120);
+
+        // Heartbeat used by admin status panel diagnostics.
+        $schedule->call(function (): void {
+            Cache::put('system:scheduler:heartbeat', now()->toIso8601String(), now()->addMinutes(10));
+        })->everyMinute();
 
         // Define your scheduled tasks here
         $schedule->command('products:pause-expired')->everyMinute();
@@ -64,7 +69,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
-
 
 
 

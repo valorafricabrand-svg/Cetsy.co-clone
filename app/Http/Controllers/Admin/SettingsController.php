@@ -416,6 +416,7 @@ class SettingsController extends Controller
         $requestedAt = $this->parseIsoTimestamp($status['requested_at'] ?? null);
         $startedAt = $this->parseIsoTimestamp($status['started_at'] ?? null);
         $updatedAt = $this->parseIsoTimestamp($status['updated_at'] ?? null);
+        $schedulerHeartbeatAt = $this->parseIsoTimestamp(Cache::get($this->schedulerHeartbeatCacheKey()));
 
         if ($state === 'failed') {
             $health = 'error';
@@ -433,6 +434,14 @@ class SettingsController extends Controller
             $warnings[] = 'Running near the 2-hour timeout. Consider canceling and rerunning with lower limits.';
         }
 
+        if (in_array($state, ['queued', 'running', 'cancel_requested'], true)) {
+            if (!$schedulerHeartbeatAt || $schedulerHeartbeatAt->diffInSeconds($now) > 150) {
+                $warnings[] = 'Scheduler heartbeat is stale. Cron for "php artisan schedule:run" may not be running every minute.';
+            } elseif ($state === 'queued' && $requestedAt && $requestedAt->diffInSeconds($now) > 120) {
+                $warnings[] = 'Scheduler is alive but queue remains queued. Run "php artisan queue:work --stop-when-empty --tries=1 --timeout=7200" manually and check failed jobs.';
+            }
+        }
+
         if (!empty($warnings) && $health !== 'error') {
             $health = 'warning';
         }
@@ -441,6 +450,11 @@ class SettingsController extends Controller
         $status['health'] = $health;
 
         return $status;
+    }
+
+    private function schedulerHeartbeatCacheKey(): string
+    {
+        return 'system:scheduler:heartbeat';
     }
 
     private function parseIsoTimestamp(mixed $value): ?Carbon
