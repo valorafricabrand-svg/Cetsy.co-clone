@@ -12,6 +12,7 @@ use App\Services\Recommendation\ProductRecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
@@ -28,6 +29,8 @@ class HomeController extends Controller
      */
     public function index()
     {
+        $listingCacheTtl = $this->homeListingsCacheTtlMinutes();
+
         // Top-level categories (no parent)
         $categories = Category::whereNull('parent_id')
             ->orderBy('name')
@@ -35,14 +38,14 @@ class HomeController extends Controller
 
         // Randomized mixed-category pool so homepage sections can rotate through
         // current listings until richer real-world activity data is available.
-        $allListingsPool = $this->randomMixedListings(0);
-        $featuredProducts = $allListingsPool->shuffle()->values();
-        $justForYouProducts = $allListingsPool->shuffle()->values();
+        $allListingsPool = $this->cachedMixedListings('all', 0, null, $listingCacheTtl);
+        $featuredProducts = $allListingsPool->values();
+        $justForYouProducts = $this->rotateCollection($allListingsPool, 8);
 
-        $featuredDigitals = $this->randomMixedListings(0, 'digital');
+        $featuredDigitals = $this->cachedMixedListings('digital', 0, 'digital', $listingCacheTtl);
 
         // Services pool for rotating "Most Trending Services" (all active services)
-        $services = $this->randomMixedListings(0, 'service');
+        $services = $this->cachedMixedListings('service', 0, 'service', $listingCacheTtl);
 
         // Top sellers (shops with completed/delivered orders)
         $topShopCounts = Order::select('shop_id', DB::raw('COUNT(*) as completed_orders_count'))
@@ -100,10 +103,20 @@ class HomeController extends Controller
         ]);
     }
 
-    private function randomMixedListings(int $limit = 96, ?string $type = null): Collection
+    private function cachedMixedListings(string $scope, int $limit = 0, ?string $type = null, int $cacheMinutes = 10): Collection
     {
+        $cacheKey = 'home:mixed-listing-ids:' . $scope . ':v1';
+        $ids = Cache::remember($cacheKey, now()->addMinutes($cacheMinutes), function () use ($type) {
+            return $this->buildMixedListingIds($type);
+        });
+
+        if (empty($ids) || !is_array($ids)) {
+            return collect();
+        }
+
         $query = Product::query()
             ->where('is_active', 1)
+            ->whereIn('id', $ids)
             ->with([
                 'media',
                 'shop' => function ($q) {
@@ -115,7 +128,32 @@ class HomeController extends Controller
             $query->where('type', $type);
         }
 
+        $productsById = $query->get()->keyBy('id');
+        $ordered = collect($ids)
+            ->map(function ($id) use ($productsById) {
+                return $productsById->get((int) $id);
+            })
+            ->filter()
+            ->values();
+
+        if ($limit > 0) {
+            $ordered = $ordered->take($limit)->values();
+        }
+
+        return $ordered;
+    }
+
+    private function buildMixedListingIds(?string $type = null): array
+    {
+        $query = Product::query()
+            ->where('is_active', 1);
+
+        if (!empty($type)) {
+            $query->where('type', $type);
+        }
+
         $products = $query
+            ->select(['id', 'category_id'])
             ->latest('id')
             ->get();
 
@@ -133,7 +171,7 @@ class HomeController extends Controller
             })
             ->values();
 
-        $targetLimit = $limit > 0 ? $limit : $products->count();
+        $targetLimit = $products->count();
         $mixed = collect();
         while ($mixed->count() < $targetLimit) {
             $added = false;
@@ -157,6 +195,42 @@ class HomeController extends Controller
             }
         }
 
-        return $mixed->unique('id')->values();
+        return $mixed
+            ->pluck('id')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function rotateCollection(Collection $items, int $offset): Collection
+    {
+        $count = $items->count();
+        if ($count < 2) {
+            return $items->values();
+        }
+
+        $normalized = $offset % $count;
+        if ($normalized === 0) {
+            $normalized = 1;
+        }
+
+        return $items
+            ->slice($normalized)
+            ->concat($items->take($normalized))
+            ->values();
+    }
+
+    private function homeListingsCacheTtlMinutes(): int
+    {
+        $raw = 10;
+        try {
+            $raw = (int) (function_exists('setting')
+                ? setting('home_listings_cache_ttl_minutes', 10)
+                : 10);
+        } catch (\Throwable $e) {
+            $raw = 10;
+        }
+
+        return max(1, min(1440, $raw));
     }
 }

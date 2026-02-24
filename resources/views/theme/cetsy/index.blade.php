@@ -12,6 +12,27 @@
     .home-hero-slide.is-active { display: block; }
     .hide-scrollbar { scrollbar-width: none; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .listing-rotator-enter-next { animation: listingRotatorEnterNext .28s ease both; }
+    .listing-rotator-exit-next { animation: listingRotatorExitNext .28s ease both; }
+    .listing-rotator-enter-prev { animation: listingRotatorEnterPrev .28s ease both; }
+    .listing-rotator-exit-prev { animation: listingRotatorExitPrev .28s ease both; }
+
+    @keyframes listingRotatorEnterNext {
+        from { opacity: 0; transform: translateX(18px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes listingRotatorExitNext {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(-18px); }
+    }
+    @keyframes listingRotatorEnterPrev {
+        from { opacity: 0; transform: translateX(-18px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes listingRotatorExitPrev {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(18px); }
+    }
 </style>
 @endpush
 
@@ -507,25 +528,109 @@ document.addEventListener('DOMContentLoaded', function() {
 
             let current = 0;
             let timer = null;
+            let autoQueue = [];
+            let autoCursor = 0;
+            let animationTimer = null;
+            let isAnimating = false;
+            let touchStartX = null;
+            let touchStartY = null;
 
             const updateCounter = () => {
                 if (counter) counter.textContent = `${current + 1} / ${pages.length}`;
             };
 
-            const show = (index) => {
-                if (!pages[index]) return;
-                pages[current].classList.add('hidden');
-                current = index;
-                pages[current].classList.remove('hidden');
-                updateCounter();
+            const clearAnimClasses = (el) => {
+                if (!el) return;
+                el.classList.remove(
+                    'listing-rotator-enter-next',
+                    'listing-rotator-exit-next',
+                    'listing-rotator-enter-prev',
+                    'listing-rotator-exit-prev'
+                );
             };
 
-            const next = () => show((current + 1) % pages.length);
-            const prev = () => show((current - 1 + pages.length) % pages.length);
+            const show = (index, options = {}) => {
+                const animate = options.animate !== false;
+                const direction = options.direction === 'prev' ? 'prev' : 'next';
+                if (!pages[index]) return;
+                if (index === current) return;
+                if (isAnimating) return;
+
+                const fromPage = pages[current];
+                const toPage = pages[index];
+
+                if (!animate) {
+                    fromPage.classList.add('hidden');
+                    clearAnimClasses(fromPage);
+                    clearAnimClasses(toPage);
+                    current = index;
+                    toPage.classList.remove('hidden');
+                    updateCounter();
+                    return;
+                }
+
+                isAnimating = true;
+                clearTimeout(animationTimer);
+
+                fromPage.classList.remove('hidden');
+                toPage.classList.remove('hidden');
+                clearAnimClasses(fromPage);
+                clearAnimClasses(toPage);
+
+                fromPage.classList.add(direction === 'prev' ? 'listing-rotator-exit-prev' : 'listing-rotator-exit-next');
+                toPage.classList.add(direction === 'prev' ? 'listing-rotator-enter-prev' : 'listing-rotator-enter-next');
+
+                current = index;
+                updateCounter();
+
+                animationTimer = setTimeout(() => {
+                    pages.forEach((page, idx) => {
+                        clearAnimClasses(page);
+                        if (idx !== current) page.classList.add('hidden');
+                    });
+                    isAnimating = false;
+                }, 300);
+            };
+
+            const next = () => show((current + 1) % pages.length, { direction: 'next' });
+            const prev = () => show((current - 1 + pages.length) % pages.length, { direction: 'prev' });
+
+            const buildAutoQueue = (excludeFirst = null) => {
+                const order = pages.map((_, idx) => idx);
+                for (let i = order.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [order[i], order[j]] = [order[j], order[i]];
+                }
+
+                // Keep loop transitions smooth: avoid the first queued page being
+                // exactly the same as the currently visible page.
+                if (
+                    excludeFirst !== null &&
+                    order.length > 1 &&
+                    order[0] === excludeFirst
+                ) {
+                    [order[0], order[1]] = [order[1], order[0]];
+                }
+
+                return order;
+            };
+
+            const autoNext = () => {
+                if (!autoQueue.length || autoCursor >= autoQueue.length) {
+                    autoQueue = buildAutoQueue(current);
+                    autoCursor = 0;
+                }
+                const target = autoQueue[autoCursor];
+                const forwardSteps = (target - current + pages.length) % pages.length;
+                const backwardSteps = (current - target + pages.length) % pages.length;
+                const direction = forwardSteps <= backwardSteps ? 'next' : 'prev';
+                show(target, { direction });
+                autoCursor += 1;
+            };
 
             const startAuto = () => {
                 if (timer) return;
-                timer = setInterval(next, interval);
+                timer = setInterval(autoNext, interval);
             };
 
             const stopAuto = () => {
@@ -538,6 +643,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 prevBtn.addEventListener('click', () => {
                     stopAuto();
                     prev();
+                    autoQueue = [];
                     startAuto();
                 });
             }
@@ -546,6 +652,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 nextBtn.addEventListener('click', () => {
                     stopAuto();
                     next();
+                    autoQueue = [];
                     startAuto();
                 });
             }
@@ -555,7 +662,40 @@ document.addEventListener('DOMContentLoaded', function() {
             rotator.addEventListener('touchstart', stopAuto, { passive: true });
             rotator.addEventListener('touchend', startAuto, { passive: true });
 
-            show(0);
+            // Mobile swipe: left -> next, right -> previous.
+            rotator.addEventListener('touchstart', (event) => {
+                if (!event.touches || !event.touches.length) return;
+                touchStartX = event.touches[0].clientX;
+                touchStartY = event.touches[0].clientY;
+            }, { passive: true });
+
+            rotator.addEventListener('touchend', (event) => {
+                if (touchStartX === null || touchStartY === null) return;
+                const touch = event.changedTouches && event.changedTouches[0] ? event.changedTouches[0] : null;
+                if (!touch) return;
+
+                const deltaX = touch.clientX - touchStartX;
+                const deltaY = touch.clientY - touchStartY;
+                touchStartX = null;
+                touchStartY = null;
+
+                const absX = Math.abs(deltaX);
+                const absY = Math.abs(deltaY);
+                if (absX < 36 || absX < (absY * 1.2)) return;
+
+                stopAuto();
+                if (deltaX < 0) {
+                    next();
+                } else {
+                    prev();
+                }
+                autoQueue = [];
+                startAuto();
+            }, { passive: true });
+
+            show(0, { animate: false });
+            autoQueue = buildAutoQueue(current);
+            autoCursor = 0;
             startAuto();
         });
     };

@@ -393,6 +393,7 @@
         $graceDaysSetting = function_exists('setting') ? setting('subscription_grace_days', 5) : 5;
         $trialEnabledSetting = function_exists('setting') ? setting('subscription_trial_enabled', 1) : 1;
         $trialDaysSetting = function_exists('setting') ? setting('subscription_trial_days', 30) : 30;
+        $homeListingsCacheTtlSetting = function_exists('setting') ? setting('home_listings_cache_ttl_minutes', 10) : 10;
         $trialEnabledValue = (bool) (int) old('subscription_trial_enabled', $trialEnabledSetting);
       @endphp
       <div class="col-md-4">
@@ -426,6 +427,17 @@
                step="1" min="1" max="365" placeholder="30">
         <div class="form-text">Used when a new seller starts a trial.</div>
         @error('subscription_trial_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Homepage Listings Cache TTL (minutes)</label>
+        <input type="number"
+               name="home_listings_cache_ttl_minutes"
+               class="form-control @error('home_listings_cache_ttl_minutes') is-invalid @enderror"
+               value="{{ old('home_listings_cache_ttl_minutes', $homeListingsCacheTtlSetting) }}"
+               step="1" min="1" max="1440" placeholder="10">
+        <div class="form-text">Controls how often homepage listing pools are refreshed.</div>
+        @error('home_listings_cache_ttl_minutes') <div class="invalid-feedback">{{ $message }}</div> @enderror
       </div>
 
     </div>

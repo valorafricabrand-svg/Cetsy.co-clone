@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;   // ← add this
@@ -92,6 +93,7 @@ class SettingsController extends Controller
         // Subscription trial
         'subscription_trial_enabled' => 'nullable|boolean',
         'subscription_trial_days' => 'nullable|integer|min:1|max:365',
+        'home_listings_cache_ttl_minutes' => 'nullable|integer|min:1|max:1440',
 
         // Shipping defaults
         'couriers'          => 'nullable|string',
@@ -134,6 +136,8 @@ class SettingsController extends Controller
         $validated['couriers_json'] = json_encode($lines);
         unset($validated['couriers']);
     }
+    // Persisted via key-value fallback below; keep it out of mass update.
+    unset($validated['home_listings_cache_ttl_minutes']);
 
     $setting->update($validated);
 
@@ -167,6 +171,9 @@ class SettingsController extends Controller
         }
         if ($request->filled('subscription_trial_days')) {
             $putSetting('subscription_trial_days', $request->input('subscription_trial_days'));
+        }
+        if ($request->has('home_listings_cache_ttl_minutes')) {
+            $putSetting('home_listings_cache_ttl_minutes', (int) $request->input('home_listings_cache_ttl_minutes'));
         }
 
         // Payout scheduling
@@ -215,6 +222,16 @@ class SettingsController extends Controller
         $putSetting('payments_stripe_enabled', $stripeEnabled);
         $putSetting('payments_paystack_enabled', $paystackEnabled);
         $putSetting('payments_default_gateway', $defaultGateway);
+
+        if ($request->has('home_listings_cache_ttl_minutes')) {
+            foreach ([
+                'home:mixed-listing-ids:all:v1',
+                'home:mixed-listing-ids:digital:v1',
+                'home:mixed-listing-ids:service:v1',
+            ] as $cacheKey) {
+                Cache::forget($cacheKey);
+            }
+        }
 
         if ($setting->isDirty()) $setting->save();
     } catch (\Throwable $e) {

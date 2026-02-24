@@ -24,7 +24,7 @@ class ProductListScreen extends StatefulWidget {
   State<ProductListScreen> createState() => _ProductListScreenState();
 }
 
-  class _ProductListScreenState extends State<ProductListScreen> {
+class _ProductListScreenState extends State<ProductListScreen> {
   // Brand color
   static const Color cetsyGreen = Color(0xFF198754);
 
@@ -33,11 +33,11 @@ class ProductListScreen extends StatefulWidget {
   final _minCtl = TextEditingController();
   final _maxCtl = TextEditingController();
   final _scrollCtl = ScrollController();
-  
-    int _page = 1;
-    bool _showTopFab = false;
-    Timer? _debounce;
-    String? _selectedType; // null = All, 'physical' | 'service' | 'digital'
+
+  int _page = 1;
+  bool _showTopFab = false;
+  Timer? _debounce;
+  String? _selectedType; // null = All, 'physical' | 'service' | 'digital'
 
   @override
   void initState() {
@@ -64,18 +64,18 @@ class ProductListScreen extends StatefulWidget {
     final show = _scrollCtl.offset > 400;
     if (show != _showTopFab) setState(() => _showTopFab = show);
   }
-  
-    void _fetch() {
-      setState(() {
-        _products = ProductService.fetchProducts(
-          page: _page,
-          keyword: _keywordCtl.text.trim(),
-          minPrice: double.tryParse(_minCtl.text),
-          maxPrice: double.tryParse(_maxCtl.text),
-          type: _selectedType,
-        );
-      });
-    }
+
+  void _fetch() {
+    setState(() {
+      _products = ProductService.fetchProducts(
+        page: _page,
+        keyword: _keywordCtl.text.trim(),
+        minPrice: double.tryParse(_minCtl.text),
+        maxPrice: double.tryParse(_maxCtl.text),
+        type: _selectedType,
+      );
+    });
+  }
 
   void _applyDebounced() {
     _debounce?.cancel();
@@ -131,6 +131,8 @@ class ProductListScreen extends StatefulWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compactMobile = _isCompactMobile(context);
+    final activeChips = _activeFilterChips();
     const bgGradient = LinearGradient(
       colors: [Color(0xFFEFF7F3), Color(0xFFEAF5F0)],
       begin: Alignment.topLeft,
@@ -191,20 +193,25 @@ class ProductListScreen extends StatefulWidget {
                 ],
               ),
               // Active filter chips (keyword/min/max)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _activeFilterChips(),
+              if (activeChips.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding:
+                        EdgeInsets.fromLTRB(12, compactMobile ? 6 : 8, 12, 0),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: activeChips,
+                    ),
                   ),
                 ),
-              ),
               // Type selector (All, Products, Services, Digital)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: compactMobile ? 10 : 12,
+                    vertical: compactMobile ? 6 : 8,
+                  ),
                   child: _buildTypeSelector(),
                 ),
               ),
@@ -272,16 +279,6 @@ class ProductListScreen extends StatefulWidget {
         _applyDebounced();
       }));
     }
-    if (chips.isEmpty) {
-      chips.add(
-        Chip(
-          label: const Text('Tip: Tap Filters to refine results'),
-          backgroundColor: Colors.grey.shade200,
-          labelStyle: TextStyle(color: Colors.grey.shade700),
-          avatar: const Icon(Icons.info_outline, size: 18),
-        ),
-      );
-    }
     return chips;
   }
 
@@ -316,20 +313,36 @@ class ProductListScreen extends StatefulWidget {
               text: 'No products found.',
             );
           }
+          final compact = _isCompactMobile(context);
+          final spacing = compact ? 8.0 : 12.0;
           return SliverPadding(
-            padding: const EdgeInsets.all(12),
-            sliver: SliverMasonryGrid.count(
-              crossAxisCount: _columnCount(context),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childCount: products.length,
-              itemBuilder: (_, i) => _buildCard(products[i]),
-            ),
+            padding: EdgeInsets.all(spacing),
+            sliver: compact
+                ? SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: _columnCount(context),
+                      mainAxisSpacing: spacing,
+                      crossAxisSpacing: spacing,
+                      childAspectRatio: 0.74,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (_, i) => _buildCard(products[i]),
+                      childCount: products.length,
+                    ),
+                  )
+                : SliverMasonryGrid.count(
+                    crossAxisCount: _columnCount(context),
+                    mainAxisSpacing: spacing,
+                    crossAxisSpacing: spacing,
+                    childCount: products.length,
+                    itemBuilder: (_, i) => _buildCard(products[i]),
+                  ),
           );
         },
       );
 
   Widget _buildCard(Product p) {
+    final compact = _isCompactMobile(context);
     final url = _imageUrlFrom(p.image);
     final hasDiscount = p.discountPrice != null && p.discountPrice! < p.price;
     final displayPrice = hasDiscount ? p.discountPrice! : p.price;
@@ -353,7 +366,7 @@ class ProductListScreen extends StatefulWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AspectRatio(
-                  aspectRatio: 4 / 3,
+                  aspectRatio: compact ? 1 : 4 / 3,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -401,8 +414,10 @@ class ProductListScreen extends StatefulWidget {
                           top: 0,
                           left: 0,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: compact ? 7 : 10,
+                              vertical: compact ? 4 : 6,
+                            ),
                             decoration: const BoxDecoration(
                               color: Colors.redAccent,
                               borderRadius: BorderRadius.only(
@@ -413,7 +428,7 @@ class ProductListScreen extends StatefulWidget {
                               '-${(((p.price - displayPrice) / p.price) * 100).round()}%',
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -424,7 +439,10 @@ class ProductListScreen extends StatefulWidget {
                           top: 0,
                           right: 0,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: compact ? 7 : 10,
+                              vertical: compact ? 4 : 6,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.black87.withValues(alpha: 0.7),
                               borderRadius: const BorderRadius.only(
@@ -433,15 +451,18 @@ class ProductListScreen extends StatefulWidget {
                             ),
                             child: Text(
                               p.type == 'service' ? 'Service' : 'Digital',
-                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700),
                             ),
                           ),
                         ),
 
                       // 👉 Quick action: Add to cart
                       Positioned(
-                        top: 8,
-                        right: 8,
+                        top: compact ? 5 : 8,
+                        right: compact ? 5 : 8,
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.95),
@@ -457,7 +478,8 @@ class ProductListScreen extends StatefulWidget {
                             tooltip: 'Add to cart',
                             onPressed: () {
                               context.read<CartProvider>().add(p);
-                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context)
+                                  .hideCurrentSnackBar();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Added "${p.name}" to cart'),
@@ -466,8 +488,11 @@ class ProductListScreen extends StatefulWidget {
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.add_shopping_cart),
-                            splashRadius: 20,
+                            icon: Icon(Icons.add_shopping_cart,
+                                size: compact ? 18 : 22),
+                            splashRadius: compact ? 16 : 20,
+                            padding: EdgeInsets.all(compact ? 6 : 8),
+                            constraints: const BoxConstraints(),
                             color: Colors.grey.shade800,
                           ),
                         ),
@@ -476,8 +501,10 @@ class ProductListScreen extends StatefulWidget {
                   ),
                 ),
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: compact ? 8 : 12,
+                    vertical: compact ? 8 : 10,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -486,38 +513,40 @@ class ProductListScreen extends StatefulWidget {
                         p.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Description
-                      Text(
-                        stripHtmlTags(p.description ?? 'No description'),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 13,
-                          height: 1.35,
+                          fontWeight: FontWeight.w700,
+                          fontSize: compact ? 13.5 : 15.5,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      if (!compact) ...[
+                        const SizedBox(height: 4),
+                        // Description
+                        Text(
+                          stripHtmlTags(p.description ?? 'No description'),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ] else
+                        const SizedBox(height: 4),
 
                       // Price row
                       Row(
                         children: [
                           Text(
                             context.money(displayPrice),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w800,
-                              fontSize: 16,
+                              fontSize: compact ? 14 : 16,
                               color: cetsyGreen,
                             ),
                           ),
-                          if (hasDiscount) ...[
+                          if (!compact && hasDiscount) ...[
                             const SizedBox(width: 8),
                             Text(
                               context.money(p.price),
@@ -542,23 +571,45 @@ class ProductListScreen extends StatefulWidget {
   }
 
   SliverPadding _shimmerGrid() => SliverPadding(
-        padding: const EdgeInsets.all(12),
-        sliver: SliverMasonryGrid.count(
-          crossAxisCount: _columnCount(context),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childCount: 8,
-          itemBuilder: (_, __) => Shimmer.fromColors(
-            baseColor: Colors.grey.shade300,
-            highlightColor: Colors.grey.shade100,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
+        padding: EdgeInsets.all(_isCompactMobile(context) ? 8 : 12),
+        sliver: _isCompactMobile(context)
+            ? SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: _columnCount(context),
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 0.74,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (_, __) => Shimmer.fromColors(
+                    baseColor: Colors.grey.shade300,
+                    highlightColor: Colors.grey.shade100,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  childCount: 9,
+                ),
+              )
+            : SliverMasonryGrid.count(
+                crossAxisCount: _columnCount(context),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childCount: 8,
+                itemBuilder: (_, __) => Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
       );
 
   SliverToBoxAdapter _sliverMessage({
@@ -732,7 +783,13 @@ class ProductListScreen extends StatefulWidget {
     final w = MediaQuery.of(context).size.width;
     if (w >= 1100) return 4;
     if (w >= 700) return 3;
+    if (w < 430) return 3;
     return 2;
+  }
+
+  bool _isCompactMobile(BuildContext context) {
+    final w = MediaQuery.of(context).size.width;
+    return w < 430;
   }
 
   Widget _buildTypeSelector() {
@@ -772,19 +829,5 @@ class ProductListScreen extends StatefulWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // ignore_for_file: prefer_const_constructors
