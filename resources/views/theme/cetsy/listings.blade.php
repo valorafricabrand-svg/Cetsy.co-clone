@@ -20,6 +20,12 @@
     border: 2px dashed rgba(16, 185, 129, 0.35);
     background: rgba(16, 185, 129, 0.04);
   }
+  @media (max-width: 430px) {
+    .listings-grid-compact {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+  }
 </style>
 @endpush
 
@@ -164,7 +170,7 @@
       </div>
 
       @if($view === 'grid')
-        <div id="listing-items" class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <div id="listing-items" class="listings-grid-compact grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
           @forelse ($products as $item)
             <div>
               @include('theme.'.theme().'.partials.product-card', ['item' => $item])

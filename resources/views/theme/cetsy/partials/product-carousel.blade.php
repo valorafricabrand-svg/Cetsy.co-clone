@@ -29,7 +29,10 @@
                 .pc-track::-webkit-scrollbar { display: none; }
                 .pc-item { flex: 0 0 auto; width: 260px; scroll-snap-align: start; }
                 .pc-btn.is-disabled { opacity: .35; pointer-events: none; }
-                @media (max-width: 640px) { .pc-item { width: 220px; } }
+                @media (max-width: 640px) {
+                    .pc-item { width: 176px; }
+                    .pc-track { gap: .5rem; }
+                }
             </style>
         @endpush
 

@@ -48,16 +48,16 @@
 @endphp
 
 <a href="{{ route('listing.show', $item->slug) }}"
-   class="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg">
+   class="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg sm:rounded-2xl">
 
-  <div class="relative aspect-square overflow-hidden bg-slate-100">
+  <div class="relative aspect-[4/3] overflow-hidden bg-slate-100 sm:aspect-square">
     @if($isReserved)
-      <span class="absolute right-2 top-2 z-10 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-semibold text-white">Reserved</span>
+      <span class="absolute right-1.5 top-1.5 z-10 rounded-full bg-red-600 px-1.5 py-0.5 text-[9px] font-semibold text-white sm:right-2 sm:top-2 sm:px-2 sm:text-[10px]">Reserved</span>
     @endif
 
     @if($hasVideo)
-      <span class="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-md bg-slate-900/80 px-2 py-0.5 text-[10px] font-semibold text-white">
-        <i class="fas fa-play text-[9px]"></i> Video
+      <span class="absolute left-1.5 top-1.5 z-10 inline-flex items-center gap-1 rounded-md bg-slate-900/80 px-1.5 py-0.5 text-[9px] font-semibold text-white sm:left-2 sm:top-2 sm:px-2 sm:text-[10px]">
+        <i class="fas fa-play text-[8px] sm:text-[9px]"></i> Video
       </span>
     @endif
 
@@ -69,13 +69,12 @@
          loading="lazy" decoding="async">
   </div>
 
-  <div class="flex flex-1 flex-col p-3">
-    <h3 class="text-sm font-semibold text-slate-900"
-        style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+  <div class="flex flex-1 flex-col p-2 sm:p-3">
+    <h3 class="line-clamp-1 text-[12px] font-semibold text-slate-900 sm:line-clamp-2 sm:text-sm">
       {{ $item->name }}
     </h3>
 
-    <div class="mt-2 flex items-center gap-1 text-[11px] text-amber-500">
+    <div class="mt-1.5 hidden items-center gap-1 text-[11px] text-amber-500 sm:mt-2 sm:flex">
       @for($i = 1; $i <= 5; $i++)
         <i class="fa-star {{ $i <= $avg ? 'fa-solid' : 'fa-regular text-slate-300' }}"></i>
       @endfor
@@ -84,24 +83,24 @@
       @endif
     </div>
 
-    <div class="mt-3">
+    <div class="mt-1.5 sm:mt-3">
       @if ($isService)
-        <p class="text-[11px] uppercase tracking-[0.12em] text-slate-400">Priced From</p>
-        <p class="text-sm font-bold text-emerald-700">
+        <p class="hidden text-[11px] uppercase tracking-[0.12em] text-slate-400 sm:block">Priced From</p>
+        <p class="text-[13px] font-bold text-emerald-700 sm:text-sm">
           {{ $formatMoney($hasVariantPricing ? $lowestVariantPrice : ($salePrice < $basePrice ? $salePrice : $basePrice)) }}
         </p>
       @else
         @if ($hasVariantPricing)
-          <p class="text-[11px] uppercase tracking-[0.12em] text-slate-400">From</p>
-          <p class="text-sm font-bold text-emerald-700">{{ $formatMoney($lowestVariantPrice) }}</p>
+          <p class="hidden text-[11px] uppercase tracking-[0.12em] text-slate-400 sm:block">From</p>
+          <p class="text-[13px] font-bold text-emerald-700 sm:text-sm">{{ $formatMoney($lowestVariantPrice) }}</p>
         @else
           @if ($salePrice < $basePrice)
             <div class="flex items-center gap-2">
-              <span class="text-sm font-bold text-emerald-700">{{ $formatMoney($salePrice) }}</span>
-              <span class="text-xs text-slate-400 line-through">{{ $formatMoney($basePrice) }}</span>
+              <span class="text-[13px] font-bold text-emerald-700 sm:text-sm">{{ $formatMoney($salePrice) }}</span>
+              <span class="hidden text-xs text-slate-400 line-through sm:inline">{{ $formatMoney($basePrice) }}</span>
             </div>
           @else
-            <p class="text-sm font-bold text-emerald-700">{{ $formatMoney($basePrice) }}</p>
+            <p class="text-[13px] font-bold text-emerald-700 sm:text-sm">{{ $formatMoney($basePrice) }}</p>
           @endif
         @endif
       @endif
