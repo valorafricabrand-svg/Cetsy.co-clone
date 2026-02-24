@@ -774,6 +774,49 @@
             });
             if (originalItems.length === 0) return;
 
+            function bindCloneDropdowns(cloneRoot) {
+                if (!cloneRoot) return;
+
+                // If Alpine does not hydrate this clone, x-cloak would keep menus hidden forever.
+                Array.from(cloneRoot.querySelectorAll('[x-cloak]')).forEach(function (el) {
+                    el.removeAttribute('x-cloak');
+                });
+
+                const candidates = [cloneRoot].concat(Array.from(cloneRoot.querySelectorAll('.relative')));
+                candidates.forEach(function (node) {
+                    if (node.getAttribute('data-js-dd-bound') === '1') return;
+
+                    const children = Array.from(node.children || []);
+                    const trigger = children.find(function (ch) { return ch.tagName === 'A'; });
+                    const menu = children.find(function (ch) {
+                        return ch.tagName === 'DIV' && ch.classList.contains('absolute');
+                    });
+                    if (!trigger || !menu) return;
+
+                    node.setAttribute('data-js-dd-bound', '1');
+                    let pinned = false;
+                    menu.style.display = 'none';
+
+                    const openMenu = function () { menu.style.display = 'block'; };
+                    const closeMenu = function () { if (!pinned) menu.style.display = 'none'; };
+
+                    node.addEventListener('mouseenter', openMenu);
+                    node.addEventListener('mouseleave', closeMenu);
+                    node.addEventListener('focusin', openMenu);
+                    node.addEventListener('focusout', function (evt) {
+                        if (!node.contains(evt.relatedTarget)) {
+                            closeMenu();
+                        }
+                    });
+                    trigger.addEventListener('click', function (evt) {
+                        evt.preventDefault();
+                        pinned = !pinned;
+                        if (pinned) openMenu();
+                        else menu.style.display = 'none';
+                    });
+                });
+            }
+
             function ensureLoopContent() {
                 // Remove previous clones before recalculating.
                 Array.from(track.querySelectorAll('[data-loop-clone="1"]')).forEach(function (node) {
@@ -794,8 +837,13 @@
                         clone.setAttribute('data-loop-clone', '1');
                         track.appendChild(clone);
                         if (window.Alpine && typeof window.Alpine.initTree === 'function') {
-                            window.Alpine.initTree(clone);
+                            try {
+                                window.Alpine.initTree(clone);
+                            } catch (_) {
+                                // Fallback handlers below keep clone dropdowns working.
+                            }
                         }
+                        bindCloneDropdowns(clone);
                     });
                     guard += 1;
                 }
