@@ -52,6 +52,7 @@
 
         $settings = \App\Models\Setting::first();
         $hideMarketplaceCategories = auth()->check() && $isSellerArea;
+        $pauseTopCategoryMarquee = request()->routeIs('category.show') || request()->is('category/*');
 
         $headerUnreadNotifications = 0;
         $headerRecentNotifications = collect();
@@ -248,6 +249,9 @@
             will-change: transform;
             transform: translate3d(0, 0, 0);
         }
+        .top-category-scroll[data-top-category-paused="1"] {
+            overflow-x: auto;
+        }
     </style>
 
     @yield('styles')
@@ -386,7 +390,10 @@
 
             <div class="mx-auto hidden w-full max-w-7xl px-4 pb-3 lg:block sm:px-6">
                 @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
-                    <div class="top-category-scroll pb-1" data-top-category-scroll data-scroll-speed="80">
+                    <div class="top-category-scroll pb-1"
+                         data-top-category-scroll
+                         data-top-category-paused="{{ $pauseTopCategoryMarquee ? '1' : '0' }}"
+                         data-scroll-speed="{{ $pauseTopCategoryMarquee ? '0' : '80' }}">
                         <div class="flex w-max min-w-full flex-nowrap items-center gap-2" data-top-category-track>
                         @foreach ($topNavCategories as $cat)
                             @php
@@ -759,6 +766,11 @@
 
         // Desktop top-category rail as a continuous marquee (right-to-left).
         document.querySelectorAll('[data-top-category-scroll]').forEach(function (scroller) {
+            const pausedByPage = scroller.getAttribute('data-top-category-paused') === '1';
+            if (pausedByPage) {
+                return;
+            }
+
             const speed = Number(scroller.getAttribute('data-scroll-speed') || 80); // px/s
             let paused = false;
             let rafId = null;
