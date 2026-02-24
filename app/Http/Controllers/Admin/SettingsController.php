@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;   // ← add this
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class SettingsController extends Controller
@@ -31,9 +32,7 @@ class SettingsController extends Controller
         $settings = $settings ?: Setting::first();
         $imageOptimizerStatus = null;
         if ($settings) {
-            $imageOptimizerStatus = Cache::get($this->imageOptimizerStatusCacheKey($settings->id), [
-                'state' => 'idle',
-            ]);
+            $imageOptimizerStatus = $this->currentImageOptimizerStatus((int) $settings->id);
         }
 
         return view('admin.settings.index', compact('settings', 'imageOptimizerStatus'));
@@ -267,20 +266,24 @@ class SettingsController extends Controller
         $maxHeight = (int) ($validated['optimizer_max_height'] ?? 1600);
         $quality = (int) ($validated['optimizer_quality'] ?? 82);
 
-        $cacheKey = $this->imageOptimizerStatusCacheKey($setting->id);
-        $currentStatus = Cache::get($cacheKey);
+        $cacheKey = $this->imageOptimizerStatusCacheKey((int) $setting->id);
+        $currentStatus = $this->currentImageOptimizerStatus((int) $setting->id);
         $currentState = (string) ($currentStatus['state'] ?? 'idle');
 
-        if (in_array($currentState, ['queued', 'running'], true)) {
+        if (in_array($currentState, ['queued', 'running', 'cancel_requested'], true)) {
+            $busyMessage = $currentState === 'cancel_requested'
+                ? 'Cancellation is already in progress for the active run.'
+                : 'An optimization run is already in progress.';
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'ok' => false,
-                    'message' => 'An optimization run is already in progress.',
+                    'message' => $busyMessage,
                     'status' => $currentStatus,
                 ], 409);
             }
 
-            return back()->with('warning', 'Image optimization is already running.');
+            return back()->with('warning', $busyMessage);
         }
 
         $runId = (string) Str::uuid();
@@ -302,6 +305,7 @@ class SettingsController extends Controller
             'error' => null,
         ];
         Cache::put($cacheKey, $status, now()->addHours(12));
+        $status = $this->decorateImageOptimizerStatus($status);
 
         RunProductImageOptimization::dispatch(
             (int) $setting->id,
@@ -318,6 +322,7 @@ class SettingsController extends Controller
                 'message' => 'Image optimization queued.',
                 'status' => $status,
                 'status_url' => route('admin.settings.optimize-product-images.status', $setting->id),
+                'cancel_url' => route('admin.settings.optimize-product-images.cancel', $setting->id),
             ]);
         }
 
@@ -329,15 +334,119 @@ class SettingsController extends Controller
      */
     public function optimizeProductImagesStatus(Request $request, Setting $setting)
     {
-        $status = Cache::get($this->imageOptimizerStatusCacheKey($setting->id), [
-            'state' => 'idle',
-            'message' => 'No optimization has been queued yet.',
-        ]);
+        $status = $this->currentImageOptimizerStatus((int) $setting->id);
 
         return response()->json([
             'ok' => true,
             'status' => $status,
         ]);
+    }
+
+    /**
+     * Request cancellation for current background optimization run.
+     */
+    public function cancelOptimizeProductImages(Request $request, Setting $setting)
+    {
+        $cacheKey = $this->imageOptimizerStatusCacheKey((int) $setting->id);
+        $status = Cache::get($cacheKey, $this->defaultImageOptimizerStatus());
+        if (!is_array($status)) {
+            $status = $this->defaultImageOptimizerStatus();
+        }
+        $state = strtolower((string) ($status['state'] ?? 'idle'));
+
+        if (!in_array($state, ['queued', 'running', 'cancel_requested'], true)) {
+            $status = $this->decorateImageOptimizerStatus($status);
+
+            return response()->json([
+                'ok' => false,
+                'message' => 'No active optimization run to cancel.',
+                'status' => $status,
+            ], 409);
+        }
+
+        if ($state !== 'cancel_requested') {
+            $status['state'] = 'cancel_requested';
+            $status['cancel_requested_at'] = now()->toIso8601String();
+            $status['updated_at'] = now()->toIso8601String();
+            $status['message'] = 'Cancellation requested. Waiting for the worker to stop safely.';
+            Cache::put($cacheKey, $status, now()->addHours(12));
+        }
+
+        $status = $this->decorateImageOptimizerStatus($status);
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Cancellation requested.',
+            'status' => $status,
+        ]);
+    }
+
+    private function defaultImageOptimizerStatus(): array
+    {
+        return [
+            'state' => 'idle',
+            'message' => 'No optimization has been queued yet.',
+        ];
+    }
+
+    private function currentImageOptimizerStatus(int $settingId): array
+    {
+        $status = Cache::get($this->imageOptimizerStatusCacheKey($settingId), $this->defaultImageOptimizerStatus());
+        if (!is_array($status)) {
+            $status = $this->defaultImageOptimizerStatus();
+        }
+
+        return $this->decorateImageOptimizerStatus($status);
+    }
+
+    private function decorateImageOptimizerStatus(array $status): array
+    {
+        $state = strtolower((string) ($status['state'] ?? 'idle'));
+        $warnings = [];
+        $health = 'ok';
+        $now = now();
+
+        $requestedAt = $this->parseIsoTimestamp($status['requested_at'] ?? null);
+        $startedAt = $this->parseIsoTimestamp($status['started_at'] ?? null);
+        $updatedAt = $this->parseIsoTimestamp($status['updated_at'] ?? null);
+
+        if ($state === 'failed') {
+            $health = 'error';
+        }
+
+        if ($state === 'queued' && $requestedAt && $requestedAt->diffInSeconds($now) > 120) {
+            $warnings[] = 'Still queued for over 2 minutes. Queue worker may be offline.';
+        }
+
+        if (in_array($state, ['running', 'cancel_requested'], true) && $updatedAt && $updatedAt->diffInSeconds($now) > 180) {
+            $warnings[] = 'No progress heartbeat in over 3 minutes. The worker may be stuck.';
+        }
+
+        if (in_array($state, ['running', 'cancel_requested'], true) && $startedAt && $startedAt->diffInSeconds($now) > 6600) {
+            $warnings[] = 'Running near the 2-hour timeout. Consider canceling and rerunning with lower limits.';
+        }
+
+        if (!empty($warnings) && $health !== 'error') {
+            $health = 'warning';
+        }
+
+        $status['warnings'] = $warnings;
+        $status['health'] = $health;
+
+        return $status;
+    }
+
+    private function parseIsoTimestamp(mixed $value): ?Carbon
+    {
+        if (!is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function imageOptimizerStatusCacheKey(int $settingId): string

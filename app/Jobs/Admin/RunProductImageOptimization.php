@@ -14,6 +14,8 @@ class RunProductImageOptimization implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    private const CANCEL_EXCEPTION = '__IMAGE_OPTIMIZER_CANCELLED__';
+
     public int $tries = 1;
 
     /**
@@ -36,9 +38,27 @@ class RunProductImageOptimization implements ShouldQueue
         $cacheKey = $this->cacheKey();
 
         $status = Cache::get($cacheKey, []);
+        if (!is_array($status)) {
+            $status = [];
+        }
+        if (($status['run_id'] ?? null) !== $this->runId) {
+            // Ignore stale jobs if a newer run replaced the cache payload.
+            return;
+        }
+
+        if ($this->isCancellationRequested($status)) {
+            $this->markCancelled(
+                $cacheKey,
+                $status,
+                'Optimization canceled before processing started.'
+            );
+            return;
+        }
+
         $status['state'] = 'running';
         $status['started_at'] = now()->toIso8601String();
         $status['updated_at'] = now()->toIso8601String();
+        $status['message'] = 'Optimization is running in the background.';
         Cache::put($cacheKey, $status, now()->addHours(12));
 
         try {
@@ -52,6 +72,20 @@ class RunProductImageOptimization implements ShouldQueue
                 $this->quality,
                 function (array $stats) use ($cacheKey, &$status, &$tick): void {
                     $tick++;
+
+                    $latest = Cache::get($cacheKey, []);
+                    if (!is_array($latest)) {
+                        $latest = [];
+                    }
+                    if ($this->isCancellationRequested($latest)) {
+                        $status = array_merge($status, $latest);
+                        $status['summary'] = $stats;
+                        $status['updated_at'] = now()->toIso8601String();
+                        Cache::put($cacheKey, $status, now()->addHours(12));
+
+                        throw new \RuntimeException(self::CANCEL_EXCEPTION);
+                    }
+
                     if ($tick % 20 !== 0) {
                         return;
                     }
@@ -79,13 +113,37 @@ class RunProductImageOptimization implements ShouldQueue
 
             Cache::put($cacheKey, $status, now()->addDays(2));
         } catch (\Throwable $e) {
+            if ($e instanceof \RuntimeException && $e->getMessage() === self::CANCEL_EXCEPTION) {
+                $status = Cache::get($cacheKey, $status);
+                if (!is_array($status)) {
+                    $status = [];
+                }
+                $this->markCancelled($cacheKey, $status, 'Optimization canceled by admin request.');
+                return;
+            }
+
             $status['state'] = 'failed';
             $status['finished_at'] = now()->toIso8601String();
             $status['updated_at'] = now()->toIso8601String();
+            $status['message'] = 'Optimization failed.';
             $status['error'] = $e->getMessage();
             Cache::put($cacheKey, $status, now()->addDays(2));
             throw $e;
         }
+    }
+
+    private function isCancellationRequested(array $status): bool
+    {
+        return strtolower((string) ($status['state'] ?? '')) === 'cancel_requested';
+    }
+
+    private function markCancelled(string $cacheKey, array $status, string $message): void
+    {
+        $status['state'] = 'cancelled';
+        $status['finished_at'] = now()->toIso8601String();
+        $status['updated_at'] = now()->toIso8601String();
+        $status['message'] = $message;
+        Cache::put($cacheKey, $status, now()->addDays(2));
     }
 
     private function cacheKey(): string
@@ -93,4 +151,3 @@ class RunProductImageOptimization implements ShouldQueue
         return 'admin:settings:' . $this->settingId . ':image-optimizer';
     }
 }
-

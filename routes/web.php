@@ -595,6 +595,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('settings/{setting}', [AdminSetting::class, 'update'])->name('settings.update');
     Route::post('settings/{setting}/optimize-product-images', [AdminSetting::class, 'optimizeProductImages'])->name('settings.optimize-product-images');
     Route::get('settings/{setting}/optimize-product-images/status', [AdminSetting::class, 'optimizeProductImagesStatus'])->name('settings.optimize-product-images.status');
+    Route::post('settings/{setting}/optimize-product-images/cancel', [AdminSetting::class, 'cancelOptimizeProductImages'])->name('settings.optimize-product-images.cancel');
     Route::get('reports', [AdminReport::class, 'index'])->name('reports');
     Route::get('reports/mrr', [AdminSubscriptionController::class, 'mrr'])->name('reports.mrr');
     Route::get('reports/mrr/{ym}/shops', [AdminSubscriptionController::class, 'mrrShops'])->name('reports.mrr.shops');

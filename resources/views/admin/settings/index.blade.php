@@ -520,10 +520,16 @@
         $optimizerStatus = is_array($imageOptimizerStatus ?? null) ? $imageOptimizerStatus : ['state' => 'idle'];
         $optimizerState = strtolower((string) ($optimizerStatus['state'] ?? 'idle'));
         $optimizerSummary = is_array($optimizerStatus['summary'] ?? null) ? $optimizerStatus['summary'] : null;
+        $optimizerWarnings = array_values(array_filter(
+          is_array($optimizerStatus['warnings'] ?? null) ? $optimizerStatus['warnings'] : [],
+          fn ($warning) => is_string($warning) && trim($warning) !== ''
+        ));
 
         $stateBadgeClass = match ($optimizerState) {
           'queued' => 'bg-secondary',
           'running' => 'bg-primary',
+          'cancel_requested' => 'bg-warning text-dark',
+          'cancelled' => 'bg-dark',
           'completed' => 'bg-success',
           'failed' => 'bg-danger',
           default => 'bg-light text-dark',
@@ -531,6 +537,8 @@
         $stateLabel = match ($optimizerState) {
           'queued' => 'Queued',
           'running' => 'Running',
+          'cancel_requested' => 'Cancel Requested',
+          'cancelled' => 'Cancelled',
           'completed' => 'Completed',
           'failed' => 'Failed',
           default => 'Idle',
@@ -549,6 +557,15 @@
           </small>
         </div>
         <div id="imageOptimizerMessage" class="small">{{ $statusMessage }}</div>
+        <div id="imageOptimizerWarnings" class="small text-warning mt-2">
+          @if($optimizerWarnings)
+            <ul class="mb-0 ps-3">
+              @foreach($optimizerWarnings as $warning)
+                <li>{{ $warning }}</li>
+              @endforeach
+            </ul>
+          @endif
+        </div>
         <div id="imageOptimizerMeta" class="small text-muted mt-2">
           @if(!empty($optimizerStatus['run_id']))
             Run ID: <code>{{ $optimizerStatus['run_id'] }}</code>
@@ -573,7 +590,8 @@
             action="{{ route('admin.settings.optimize-product-images', $settings->id) }}"
             method="POST"
             class="row g-3 align-items-end"
-            data-status-url="{{ route('admin.settings.optimize-product-images.status', $settings->id) }}">
+            data-status-url="{{ route('admin.settings.optimize-product-images.status', $settings->id) }}"
+            data-cancel-url="{{ route('admin.settings.optimize-product-images.cancel', $settings->id) }}">
         @csrf
         <div class="col-md-3">
           <label class="form-label">Max Width (px)</label>
@@ -594,9 +612,14 @@
           @error('optimizer_quality') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
         <div class="col-md-3">
-          <button id="imageOptimizerSubmit" type="submit" class="btn btn-warning w-100">
-            Optimize All Product Images
-          </button>
+          <div class="d-grid gap-2">
+            <button id="imageOptimizerSubmit" type="submit" class="btn btn-warning w-100">
+              Optimize All Product Images
+            </button>
+            <button id="imageOptimizerCancel" type="button" class="btn btn-outline-danger w-100">
+              Cancel Current Optimization
+            </button>
+          </div>
         </div>
       </form>
       <div class="form-text mt-2">
@@ -631,23 +654,45 @@
   if (!form) return;
 
   const submitButton = document.getElementById('imageOptimizerSubmit');
+  const cancelButton = document.getElementById('imageOptimizerCancel');
   const stateBadge = document.getElementById('imageOptimizerStateBadge');
   const messageBox = document.getElementById('imageOptimizerMessage');
+  const warningsBox = document.getElementById('imageOptimizerWarnings');
   const metaBox = document.getElementById('imageOptimizerMeta');
   const summaryBox = document.getElementById('imageOptimizerSummary');
   const updatedAtBox = document.getElementById('imageOptimizerUpdatedAt');
   const statusUrl = form.getAttribute('data-status-url');
+  const cancelUrl = form.getAttribute('data-cancel-url');
   const csrf = form.querySelector('input[name="_token"]')?.value || '';
 
   let pollingTimer = null;
+  let isQueueing = false;
+  let isCancelling = false;
+  let currentState = 'idle';
+  const activeStates = new Set(['queued', 'running', 'cancel_requested']);
 
   const stateMap = {
     queued: { cls: 'bg-secondary', label: 'Queued' },
     running: { cls: 'bg-primary', label: 'Running' },
+    cancel_requested: { cls: 'bg-warning text-dark', label: 'Cancel Requested' },
+    cancelled: { cls: 'bg-dark', label: 'Cancelled' },
     completed: { cls: 'bg-success', label: 'Completed' },
     failed: { cls: 'bg-danger', label: 'Failed' },
     idle: { cls: 'bg-light text-dark', label: 'Idle' },
   };
+
+  function normalizeState(value) {
+    return String(value || 'idle').trim().toLowerCase().replace(/\s+/g, '_');
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
   function summarize(summary) {
     if (!summary || typeof summary !== 'object') return '';
@@ -667,17 +712,49 @@
     `;
   }
 
+  function renderWarnings(warnings) {
+    if (!warningsBox) return;
+
+    if (!Array.isArray(warnings) || warnings.length === 0) {
+      warningsBox.innerHTML = '';
+      return;
+    }
+
+    const items = warnings
+      .map(item => String(item || '').trim())
+      .filter(Boolean)
+      .map(item => `<li>${escapeHtml(item)}</li>`)
+      .join('');
+
+    warningsBox.innerHTML = items ? `<ul class="mb-0 ps-3">${items}</ul>` : '';
+  }
+
+  function syncButtons() {
+    const hasActiveRun = activeStates.has(currentState);
+
+    if (submitButton) {
+      submitButton.disabled = isQueueing || isCancelling || hasActiveRun;
+      submitButton.textContent = isQueueing ? 'Queuing...' : 'Optimize All Product Images';
+    }
+
+    if (cancelButton) {
+      cancelButton.disabled = isQueueing || isCancelling || !hasActiveRun;
+      cancelButton.textContent = isCancelling ? 'Cancelling...' : 'Cancel Current Optimization';
+    }
+  }
+
   function renderStatus(status) {
-    const state = String(status?.state || 'idle').toLowerCase();
-    const config = stateMap[state] || stateMap.idle;
+    currentState = normalizeState(status?.state || 'idle');
+    const config = stateMap[currentState] || stateMap.idle;
 
     stateBadge.className = `badge ${config.cls}`;
     stateBadge.textContent = config.label;
 
     messageBox.textContent = String(status?.message || '');
+    renderWarnings(status?.warnings);
 
     if (status?.run_id) {
-      metaBox.innerHTML = `Run ID: <code>${status.run_id}</code>`;
+      metaBox.innerHTML = `Run ID: <code>${escapeHtml(status.run_id)}</code>`;
     } else {
       metaBox.innerHTML = '';
     }
@@ -689,11 +766,7 @@
     }
 
     summaryBox.innerHTML = summarize(status?.summary);
-  }
-
-  function setSubmitting(isSubmitting) {
-    submitButton.disabled = isSubmitting;
-    submitButton.textContent = isSubmitting ? 'Queuing...' : 'Optimize All Product Images';
+    syncButtons();
   }
 
   function stopPolling() {
@@ -721,8 +794,8 @@
       const status = data?.status || {};
       renderStatus(status);
 
-      const state = String(status?.state || '').toLowerCase();
-      if (state === 'completed' || state === 'failed' || state === 'idle') {
+      const state = normalizeState(status?.state || '');
+      if (state === 'completed' || state === 'failed' || state === 'idle' || state === 'cancelled') {
         stopPolling();
       }
     } catch (_) {
@@ -742,7 +815,8 @@
     const confirmed = window.confirm('Queue image optimization in background now? You can leave this page while it runs.');
     if (!confirmed) return;
 
-    setSubmitting(true);
+    isQueueing = true;
+    syncButtons();
 
     try {
       const formData = new FormData(form);
@@ -764,6 +838,12 @@
           ? 'An optimization run is already in progress.'
           : 'Unable to queue optimization.';
         messageBox.textContent = data?.message || fallback;
+        if (data?.status) {
+          renderStatus(data.status);
+          if (activeStates.has(normalizeState(data.status.state || ''))) {
+            startPolling();
+          }
+        }
         return;
       }
 
@@ -774,12 +854,56 @@
     } catch (error) {
       messageBox.textContent = 'Network error while queuing optimization.';
     } finally {
-      setSubmitting(false);
+      isQueueing = false;
+      syncButtons();
     }
   });
 
-  const initialState = String(stateBadge.textContent || '').toLowerCase();
-  if (initialState === 'queued' || initialState === 'running') {
+  if (cancelButton) {
+    cancelButton.addEventListener('click', async () => {
+      if (!cancelUrl) return;
+
+      const confirmed = window.confirm('Cancel the currently running optimization job?');
+      if (!confirmed) return;
+
+      isCancelling = true;
+      syncButtons();
+
+      try {
+        const response = await fetch(cancelUrl, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': csrf,
+          },
+          credentials: 'same-origin',
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (data?.status) {
+          renderStatus(data.status);
+        }
+
+        if (!response.ok) {
+          messageBox.textContent = data?.message || 'Unable to cancel optimization.';
+          return;
+        }
+
+        startPolling();
+      } catch (_) {
+        messageBox.textContent = 'Network error while requesting cancellation.';
+      } finally {
+        isCancelling = false;
+        syncButtons();
+      }
+    });
+  }
+
+  currentState = normalizeState(stateBadge.textContent || 'idle');
+  syncButtons();
+  if (activeStates.has(currentState)) {
     startPolling();
   }
 })();
