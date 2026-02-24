@@ -226,7 +226,13 @@ class NotificationRouteService
             }
             return route('orders.index');
         } elseif ($user->isAdmin()) {
-            return route('admin.dashboard'); // Admin doesn't have specific order route
+            if ($orderId > 0 && \Illuminate\Support\Facades\Route::has('admin.orders.show')) {
+                return route('admin.orders.show', $orderId);
+            }
+            if (\Illuminate\Support\Facades\Route::has('admin.orders.index')) {
+                return route('admin.orders.index');
+            }
+            return route('admin.dashboard');
         } else {
             if ($orderId > 0 && \Illuminate\Support\Facades\Route::has('buyer.orders.show')) {
                 return route('buyer.orders.show', $orderId);

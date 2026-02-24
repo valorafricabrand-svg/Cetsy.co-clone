@@ -37,6 +37,7 @@ use App\Http\Controllers\{
 use App\Http\Controllers\Admin\{
     AdminMessageController,
     DashboardController as AdminDashboard,
+    OrderController as AdminOrderController,
     SubscriptionController as AdminSubscriptionController,
     UserController,
     AdminReportController as AdminReport,
@@ -538,6 +539,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 */
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
+    Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
 
     // Admin Wallets: enable create/store so admins can top up sellers
     Route::resource('wallets', AdminWalletController::class);

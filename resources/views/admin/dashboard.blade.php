@@ -70,6 +70,9 @@
                     </div>
                     <div class="display-6 fw-semibold">{{ number_format($metrics['ordersTotal'] ?? 0) }}</div>
                     <small class="text-muted">{{ number_format($metrics['ordersThisMonth'] ?? 0) }} this month</small>
+                    <div class="mt-2">
+                        <a href="{{ $ordersIndexRoute }}" class="small text-decoration-none">View all orders</a>
+                    </div>
                 </div>
             </div>
         </div>

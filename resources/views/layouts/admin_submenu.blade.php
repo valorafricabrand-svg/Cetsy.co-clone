@@ -5,6 +5,13 @@
       $pendingPayouts = \App\Models\PayoutRequest::where('status','pending')->count();
     } catch (\Throwable $e) { $pendingPayouts = 0; }
     try {
+      $openOrders = \App\Models\Order::whereIn('status', [
+        \App\Models\Order::STATUS_PENDING,
+        \App\Models\Order::STATUS_PROCESSING,
+        \App\Models\Order::STATUS_SHIPPED,
+      ])->count();
+    } catch (\Throwable $e) { $openOrders = 0; }
+    try {
       $openDisputes = \App\Models\Dispute::whereIn('status', [\App\Models\Dispute::STATUS_PENDING, \App\Models\Dispute::STATUS_UNDER_REVIEW])->count();
     } catch (\Throwable $e) { $openDisputes = 0; }
     try {
@@ -60,6 +67,7 @@
       [
         'title' => 'Orders & Disputes',
         'items' => array_values(array_filter([
+          ['label' => 'Orders', 'icon' => 'fas fa-shopping-bag', 'url' => route('admin.orders.index'), 'match' => ['admin.orders.*'], 'count' => $openOrders],
           ['label' => 'Disputes', 'icon' => 'fas fa-gavel',         'url' => route('admin.admin-disputes.index'), 'match' => ['admin.admin-disputes.*'], 'count' => $openDisputes],
           config('disputes.enable_appeals') ? ['label' => 'Appeals',  'icon' => 'fas fa-balance-scale', 'url' => route('admin.appeals.index'), 'match' => ['admin.appeals.*'], 'count' => ($openAppeals ?? 0)] : null,
         ])),
@@ -116,4 +124,3 @@
     </div>
   </div>
 @endif
-
