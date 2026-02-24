@@ -134,7 +134,7 @@ class RunProductImageOptimization implements ShouldQueue
 
     private function isCancellationRequested(array $status): bool
     {
-        return strtolower((string) ($status['state'] ?? '')) === 'cancel_requested';
+        return in_array(strtolower((string) ($status['state'] ?? '')), ['cancel_requested', 'cancelled'], true);
     }
 
     private function markCancelled(string $cacheKey, array $status, string $message): void

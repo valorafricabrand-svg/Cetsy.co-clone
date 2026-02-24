@@ -364,7 +364,14 @@ class SettingsController extends Controller
             ], 409);
         }
 
-        if ($state !== 'cancel_requested') {
+        if ($state === 'queued') {
+            $status['state'] = 'cancelled';
+            $status['cancel_requested_at'] = now()->toIso8601String();
+            $status['finished_at'] = now()->toIso8601String();
+            $status['updated_at'] = now()->toIso8601String();
+            $status['message'] = 'Queued optimization canceled before starting.';
+            Cache::put($cacheKey, $status, now()->addDays(2));
+        } elseif ($state !== 'cancel_requested') {
             $status['state'] = 'cancel_requested';
             $status['cancel_requested_at'] = now()->toIso8601String();
             $status['updated_at'] = now()->toIso8601String();
@@ -415,7 +422,7 @@ class SettingsController extends Controller
         }
 
         if ($state === 'queued' && $requestedAt && $requestedAt->diffInSeconds($now) > 120) {
-            $warnings[] = 'Still queued for over 2 minutes. Queue worker may be offline.';
+            $warnings[] = 'Still queued for over 2 minutes. Ensure a queue worker is running, or cron executes "php artisan schedule:run" every minute.';
         }
 
         if (in_array($state, ['running', 'cancel_requested'], true) && $updatedAt && $updatedAt->diffInSeconds($now) > 180) {

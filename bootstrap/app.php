@@ -44,6 +44,12 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Console\Commands\AutoCancelPendingOrders::class,
     ])
     ->withSchedule(function (Schedule $schedule) {
+        // Shared-hosting friendly queue processing (works with cron + schedule:run).
+        $schedule->command('queue:work --stop-when-empty --queue=default --tries=1 --timeout=7200')
+            ->everyMinute()
+            ->withoutOverlapping(120)
+            ->runInBackground();
+
         // Define your scheduled tasks here
         $schedule->command('products:pause-expired')->everyMinute();
         // Ship-by reminders daily
@@ -58,7 +64,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
-
 
 
 
