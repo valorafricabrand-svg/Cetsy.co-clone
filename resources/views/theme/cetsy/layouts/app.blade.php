@@ -234,6 +234,17 @@
         .table-hover tbody tr:hover { background: #f8fafc; }
         .table-striped tbody tr:nth-child(odd) { background: #f8fafc; }
         .table-sm > :not(caption) > * > * { padding-top: 0.4rem; padding-bottom: 0.4rem; }
+
+        .top-category-scroll {
+            overflow-x: auto;
+            overflow-y: visible;
+            scroll-behavior: smooth;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .top-category-scroll::-webkit-scrollbar { display: none; }
+        .top-category-scroll:hover,
+        .top-category-scroll:focus-within { overflow: visible; }
     </style>
 
     @yield('styles')
@@ -372,7 +383,8 @@
 
             <div class="mx-auto hidden w-full max-w-7xl px-4 pb-3 lg:block sm:px-6">
                 @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
-                    <div class="flex flex-wrap items-center gap-2 pb-1">
+                    <div class="top-category-scroll pb-1" data-top-category-scroll data-scroll-speed="0.45">
+                        <div class="flex w-max min-w-full flex-nowrap items-center gap-2">
                         @foreach ($topNavCategories as $cat)
                             @php
                                 $children = collect($cat->children ?? []);
@@ -384,12 +396,12 @@
                                         : media_url($catImagePath);
                                 }
                             @endphp
-                            <div class="relative" x-data="{ open: false, pinned: false }" @mouseenter="open = true" @mouseleave="if (!pinned) open = false" @focusin="open = true" @focusout="if (!pinned) open = false" @click.outside="open = false; pinned = false">
+                            <div class="relative shrink-0" x-data="{ open: false, pinned: false }" @mouseenter="open = true" @mouseleave="if (!pinned) open = false" @focusin="open = true" @focusout="if (!pinned) open = false" @click.outside="open = false; pinned = false">
                                 <a href="{{ route('category.show', $cat->slug) }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700" @if ($children->isNotEmpty()) @click.prevent="pinned = !pinned; open = pinned" @endif>
                                     @if ($catThumb)
-                                        <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-6 w-6 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
+                                        <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-8 w-8 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
                                     @else
-                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-700">
+                                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-xs text-emerald-700">
                                             <i class="fa-solid fa-folder"></i>
                                         </span>
                                     @endif
@@ -439,6 +451,7 @@
                                 @endif
                             </div>
                         @endforeach
+                        </div>
                     </div>
                 @endif
             </div>
@@ -574,9 +587,9 @@
                                     <summary class="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-semibold text-slate-700">
                                         <span class="flex items-center gap-2">
                                             @if ($catThumb)
-                                                <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-6 w-6 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
+                                                <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-8 w-8 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
                                             @else
-                                                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-700">
+                                                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-xs text-emerald-700">
                                                     <i class="fa-solid fa-folder"></i>
                                                 </span>
                                             @endif
@@ -619,9 +632,9 @@
                                 <a href="{{ route('category.show', $cat->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
                                     <span class="flex items-center gap-2">
                                         @if ($catThumb)
-                                            <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-6 w-6 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
+                                            <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-8 w-8 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
                                         @else
-                                            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-700">
+                                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-xs text-emerald-700">
                                                 <i class="fa-solid fa-folder"></i>
                                             </span>
                                         @endif
@@ -738,8 +751,50 @@
 
     <script src="{{ asset('assets/js/pwa-install.js') }}" defer></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function () {
         const body = document.body;
+
+        // Desktop top-category rail auto-scrolls leftward (right-to-left motion).
+        document.querySelectorAll('[data-top-category-scroll]').forEach(function (scroller) {
+            const speed = Number(scroller.getAttribute('data-scroll-speed') || 0.45);
+            let paused = false;
+            let rafId = null;
+
+            function maxScroll() {
+                return Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+            }
+
+            function tick() {
+                if (!paused) {
+                    const max = maxScroll();
+                    if (max > 0) {
+                        scroller.scrollLeft += speed;
+                        if (scroller.scrollLeft >= max) {
+                            scroller.scrollLeft = 0;
+                        }
+                    }
+                }
+                rafId = window.requestAnimationFrame(tick);
+            }
+
+            const pause = function () { paused = true; };
+            const resume = function () { paused = false; };
+            scroller.addEventListener('mouseenter', pause);
+            scroller.addEventListener('mouseleave', resume);
+            scroller.addEventListener('focusin', pause);
+            scroller.addEventListener('focusout', resume);
+            scroller.addEventListener('touchstart', pause, { passive: true });
+            scroller.addEventListener('touchend', resume, { passive: true });
+
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                rafId = window.requestAnimationFrame(tick);
+            }
+            window.addEventListener('beforeunload', function () {
+                if (rafId) {
+                    window.cancelAnimationFrame(rafId);
+                }
+            });
+        });
 
         function resolveTarget(trigger) {
             const selector = trigger.getAttribute('data-ui-target') || trigger.getAttribute('data-target');
