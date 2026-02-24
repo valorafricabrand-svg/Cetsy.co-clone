@@ -383,7 +383,7 @@
 
             <div class="mx-auto hidden w-full max-w-7xl px-4 pb-3 lg:block sm:px-6">
                 @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
-                    <div class="top-category-scroll pb-1" data-top-category-scroll data-scroll-speed="0.45">
+                    <div class="top-category-scroll pb-1" data-top-category-scroll data-scroll-speed="30">
                         <div class="flex w-max min-w-full flex-nowrap items-center gap-2">
                         @foreach ($topNavCategories as $cat)
                             @php
@@ -756,21 +756,33 @@
 
         // Desktop top-category rail auto-scrolls leftward (right-to-left motion).
         document.querySelectorAll('[data-top-category-scroll]').forEach(function (scroller) {
-            const speed = Number(scroller.getAttribute('data-scroll-speed') || 0.45);
+            // pixels per second
+            const speed = Number(scroller.getAttribute('data-scroll-speed') || 30);
             let paused = false;
             let rafId = null;
+            let carry = 0;
+            let lastTs = null;
 
             function maxScroll() {
                 return Math.max(0, scroller.scrollWidth - scroller.clientWidth);
             }
 
-            function tick() {
+            function tick(ts) {
+                if (lastTs === null) {
+                    lastTs = ts;
+                }
+                const dt = Math.max(0, (ts - lastTs) / 1000);
+                lastTs = ts;
+
                 if (!paused) {
                     const max = maxScroll();
                     if (max > 0) {
-                        scroller.scrollLeft += speed;
-                        if (scroller.scrollLeft >= max) {
-                            scroller.scrollLeft = 0;
+                        carry += speed * dt;
+                        const step = Math.floor(carry);
+                        if (step > 0) {
+                            carry -= step;
+                            const next = scroller.scrollLeft + step;
+                            scroller.scrollLeft = next >= max ? 0 : next;
                         }
                     }
                 }
@@ -778,7 +790,10 @@
             }
 
             const pause = function () { paused = true; };
-            const resume = function () { paused = false; };
+            const resume = function () {
+                paused = false;
+                lastTs = null;
+            };
             scroller.addEventListener('mouseenter', pause);
             scroller.addEventListener('mouseleave', resume);
             scroller.addEventListener('focusin', pause);
