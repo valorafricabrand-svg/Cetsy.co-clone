@@ -129,10 +129,10 @@
                 @endforeach
 
                 @if($slides->count() > 1)
-                    <button class="absolute top-1/2 z-20 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-red-600 shadow hover:bg-slate-100 md:-left-4 md:flex lg:-left-5" data-home-hero-prev type="button" aria-label="Previous slide">
+                    <button class="absolute top-1/2 z-20 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-red-600 shadow hover:bg-slate-100 md:-left-4 md:flex lg:-left-7" data-home-hero-prev type="button" aria-label="Previous slide">
                         <i class="fas fa-chevron-left"></i>
                     </button>
-                    <button class="absolute top-1/2 z-20 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-red-600 shadow hover:bg-slate-100 md:-right-4 md:flex lg:-right-5" data-home-hero-next type="button" aria-label="Next slide">
+                    <button class="absolute top-1/2 z-20 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-red-600 shadow hover:bg-slate-100 md:-right-4 md:flex lg:-right-7" data-home-hero-next type="button" aria-label="Next slide">
                         <i class="fas fa-chevron-right"></i>
                     </button>
                     <div class="mt-3 flex items-center justify-center gap-2" data-home-hero-dots>
