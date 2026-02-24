@@ -236,15 +236,17 @@
         .table-sm > :not(caption) > * > * { padding-top: 0.4rem; padding-bottom: 0.4rem; }
 
         .top-category-scroll {
-            overflow-x: auto;
+            overflow-x: hidden;
             overflow-y: visible;
-            scroll-behavior: smooth;
+            position: relative;
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
         .top-category-scroll::-webkit-scrollbar { display: none; }
-        .top-category-scroll:hover,
-        .top-category-scroll:focus-within { overflow: visible; }
+        .top-category-scroll [data-top-category-track] {
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
+        }
     </style>
 
     @yield('styles')
@@ -754,40 +756,49 @@
         document.addEventListener('DOMContentLoaded', function () {
         const body = document.body;
 
-        // Desktop top-category rail auto-scrolls leftward (right-to-left motion).
+        // Desktop top-category rail as a continuous marquee (right-to-left).
         document.querySelectorAll('[data-top-category-scroll]').forEach(function (scroller) {
-            // pixels per second
-            const speed = Number(scroller.getAttribute('data-scroll-speed') || 200);
+            const speed = Number(scroller.getAttribute('data-scroll-speed') || 200); // px/s
             let paused = false;
             let rafId = null;
-            let carry = 0;
             let lastTs = null;
+            let offset = 0;
             let cycleWidth = 0;
+            let resizeTimer = null;
 
             const track = scroller.querySelector('[data-top-category-track]');
-            if (track) {
-                const originalItems = Array.from(track.children);
+            if (!track) return;
+
+            const originalItems = Array.from(track.children).filter(function (item) {
+                return !item.hasAttribute('data-loop-clone');
+            });
+            if (originalItems.length === 0) return;
+
+            function ensureLoopContent() {
+                // Remove previous clones before recalculating.
+                Array.from(track.querySelectorAll('[data-loop-clone="1"]')).forEach(function (node) {
+                    node.remove();
+                });
+
+                offset = 0;
+                track.style.transform = 'translate3d(0, 0, 0)';
                 cycleWidth = Math.floor(track.scrollWidth);
 
-                // Build enough content so the loop has a seamless runway.
-                if (cycleWidth > 0 && originalItems.length > 0) {
-                    let guard = 0;
-                    while (track.scrollWidth < (scroller.clientWidth + cycleWidth) && guard < 8) {
-                        originalItems.forEach(function (item) {
-                            const clone = item.cloneNode(true);
-                            clone.setAttribute('data-loop-clone', '1');
-                            track.appendChild(clone);
-                            if (window.Alpine && typeof window.Alpine.initTree === 'function') {
-                                window.Alpine.initTree(clone);
-                            }
-                        });
-                        guard += 1;
-                    }
-                }
-            }
+                if (cycleWidth <= 0) return;
 
-            function maxScroll() {
-                return Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+                let guard = 0;
+                // Ensure enough repeated content for seamless looping.
+                while (track.scrollWidth < (scroller.clientWidth + cycleWidth) && guard < 10) {
+                    originalItems.forEach(function (item) {
+                        const clone = item.cloneNode(true);
+                        clone.setAttribute('data-loop-clone', '1');
+                        track.appendChild(clone);
+                        if (window.Alpine && typeof window.Alpine.initTree === 'function') {
+                            window.Alpine.initTree(clone);
+                        }
+                    });
+                    guard += 1;
+                }
             }
 
             function tick(ts) {
@@ -797,22 +808,14 @@
                 const dt = Math.max(0, (ts - lastTs) / 1000);
                 lastTs = ts;
 
-                if (!paused) {
-                    const max = maxScroll();
-                    if (max > 0) {
-                        carry += speed * dt;
-                        const step = Math.floor(carry);
-                        if (step > 0) {
-                            carry -= step;
-                            const wrapAt = cycleWidth > 0 ? cycleWidth : max;
-                            let next = scroller.scrollLeft + step;
-                            if (wrapAt > 0 && next >= wrapAt) {
-                                next -= wrapAt;
-                            }
-                            scroller.scrollLeft = next;
-                        }
+                if (!paused && cycleWidth > 0) {
+                    offset += speed * dt;
+                    if (offset >= cycleWidth) {
+                        offset = offset % cycleWidth;
                     }
+                    track.style.transform = 'translate3d(' + (-offset) + 'px, 0, 0)';
                 }
+
                 rafId = window.requestAnimationFrame(tick);
             }
 
@@ -821,17 +824,25 @@
                 paused = false;
                 lastTs = null;
             };
+
             scroller.addEventListener('pointerdown', pause);
-            scroller.addEventListener('pointerup', resume);
+            window.addEventListener('pointerup', resume);
             scroller.addEventListener('pointercancel', resume);
             scroller.addEventListener('focusin', pause);
             scroller.addEventListener('focusout', resume);
             scroller.addEventListener('touchstart', pause, { passive: true });
-            scroller.addEventListener('touchend', resume, { passive: true });
+            window.addEventListener('touchend', resume, { passive: true });
 
+            window.addEventListener('resize', function () {
+                window.clearTimeout(resizeTimer);
+                resizeTimer = window.setTimeout(ensureLoopContent, 120);
+            });
+
+            ensureLoopContent();
             if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
                 rafId = window.requestAnimationFrame(tick);
             }
+
             window.addEventListener('beforeunload', function () {
                 if (rafId) {
                     window.cancelAnimationFrame(rafId);
