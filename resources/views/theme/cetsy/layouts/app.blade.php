@@ -383,7 +383,7 @@
 
             <div class="mx-auto hidden w-full max-w-7xl px-4 pb-3 lg:block sm:px-6">
                 @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
-                    <div class="top-category-scroll pb-1" data-top-category-scroll data-scroll-speed="60">
+                    <div class="top-category-scroll pb-1" data-top-category-scroll data-scroll-speed="120">
                         <div class="flex w-max min-w-full flex-nowrap items-center gap-2" data-top-category-track>
                         @foreach ($topNavCategories as $cat)
                             @php
@@ -757,7 +757,7 @@
         // Desktop top-category rail auto-scrolls leftward (right-to-left motion).
         document.querySelectorAll('[data-top-category-scroll]').forEach(function (scroller) {
             // pixels per second
-            const speed = Number(scroller.getAttribute('data-scroll-speed') || 60);
+            const speed = Number(scroller.getAttribute('data-scroll-speed') || 120);
             let paused = false;
             let rafId = null;
             let carry = 0;
