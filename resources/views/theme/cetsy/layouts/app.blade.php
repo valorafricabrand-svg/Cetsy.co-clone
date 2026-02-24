@@ -387,9 +387,9 @@
                             <div class="relative" x-data="{ open: false, pinned: false }" @mouseenter="open = true" @mouseleave="if (!pinned) open = false" @focusin="open = true" @focusout="if (!pinned) open = false" @click.outside="open = false; pinned = false">
                                 <a href="{{ route('category.show', $cat->slug) }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700" @if ($children->isNotEmpty()) @click.prevent="pinned = !pinned; open = pinned" @endif>
                                     @if ($catThumb)
-                                        <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-4 w-4 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
+                                        <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-6 w-6 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
                                     @else
-                                        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[9px] text-emerald-700">
+                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-700">
                                             <i class="fa-solid fa-folder"></i>
                                         </span>
                                     @endif
@@ -574,9 +574,9 @@
                                     <summary class="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-semibold text-slate-700">
                                         <span class="flex items-center gap-2">
                                             @if ($catThumb)
-                                                <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-4 w-4 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
+                                                <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-6 w-6 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
                                             @else
-                                                <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[9px] text-emerald-700">
+                                                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-700">
                                                     <i class="fa-solid fa-folder"></i>
                                                 </span>
                                             @endif
@@ -619,9 +619,9 @@
                                 <a href="{{ route('category.show', $cat->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
                                     <span class="flex items-center gap-2">
                                         @if ($catThumb)
-                                            <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-4 w-4 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
+                                            <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-6 w-6 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
                                         @else
-                                            <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[9px] text-emerald-700">
+                                            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-700">
                                                 <i class="fa-solid fa-folder"></i>
                                             </span>
                                         @endif

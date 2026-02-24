@@ -507,6 +507,63 @@
       <a href="{{ url()->previous() }}" class="btn btn-outline-secondary ms-2">Cancel</a>
     </div>
   </form>
+
+  <!-- ========== PRODUCT IMAGE OPTIMIZER ========== -->
+  <div class="card shadow-sm mt-4">
+    <div class="card-header bg-light fw-semibold">Product Image Optimizer</div>
+    <div class="card-body">
+      <p class="text-muted mb-3">
+        Resize and recompress all locally stored product images to reduce page weight and improve loading speed.
+      </p>
+
+      @if(session('image_optimizer_summary'))
+        @php($summary = session('image_optimizer_summary'))
+        <div class="alert alert-info">
+          <div class="fw-semibold mb-1">Last run summary</div>
+          <div class="small">
+            Scanned: <strong>{{ (int) ($summary['scanned'] ?? 0) }}</strong> |
+            Unique files: <strong>{{ (int) ($summary['unique_paths'] ?? 0) }}</strong> |
+            Optimized: <strong>{{ (int) ($summary['optimized'] ?? 0) }}</strong> |
+            Resized: <strong>{{ (int) ($summary['resized'] ?? 0) }}</strong> |
+            Skipped: <strong>{{ (int) ($summary['skipped'] ?? 0) }}</strong> |
+            Missing: <strong>{{ (int) ($summary['missing'] ?? 0) }}</strong> |
+            Errors: <strong>{{ (int) ($summary['errors'] ?? 0) }}</strong>
+            <br>
+            Saved: <strong>{{ number_format(((int) ($summary['saved_bytes'] ?? 0)) / 1048576, 2) }} MB</strong>
+          </div>
+        </div>
+      @endif
+
+      <form action="{{ route('admin.settings.optimize-product-images', $settings->id) }}" method="POST" class="row g-3 align-items-end">
+        @csrf
+        <div class="col-md-3">
+          <label class="form-label">Max Width (px)</label>
+          <input type="number" name="optimizer_max_width" class="form-control @error('optimizer_max_width') is-invalid @enderror"
+                 value="{{ old('optimizer_max_width', 1600) }}" min="320" max="4096" step="1">
+          @error('optimizer_max_width') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Max Height (px)</label>
+          <input type="number" name="optimizer_max_height" class="form-control @error('optimizer_max_height') is-invalid @enderror"
+                 value="{{ old('optimizer_max_height', 1600) }}" min="320" max="4096" step="1">
+          @error('optimizer_max_height') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Quality (JPEG/WEBP)</label>
+          <input type="number" name="optimizer_quality" class="form-control @error('optimizer_quality') is-invalid @enderror"
+                 value="{{ old('optimizer_quality', 82) }}" min="40" max="95" step="1">
+          @error('optimizer_quality') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-warning w-100"
+                  onclick="return confirm('Optimize all product images now? This may take a while on large catalogs.');">
+            Optimize All Product Images
+          </button>
+        </div>
+      </form>
+      <div class="form-text mt-2">Processes product media, featured images, and legacy image paths on the public disk.</div>
+    </div>
+  </div>
 </div>
 
 @push('scripts')

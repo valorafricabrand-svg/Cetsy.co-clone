@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\Admin\ProductImageOptimizationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -242,6 +243,42 @@ class SettingsController extends Controller
      | 4. Redirect with flash                                    |
      ---------------------------------------------------------- */
     return back()->with('success', 'Settings updated successfully.');
+    }
+
+    /**
+     * Bulk optimize product images and resize oversized files.
+     */
+    public function optimizeProductImages(Request $request, Setting $setting, ProductImageOptimizationService $optimizer)
+    {
+        $validated = $request->validate([
+            'optimizer_max_width' => ['nullable', 'integer', 'min:320', 'max:4096'],
+            'optimizer_max_height' => ['nullable', 'integer', 'min:320', 'max:4096'],
+            'optimizer_quality' => ['nullable', 'integer', 'min:40', 'max:95'],
+        ]);
+
+        $maxWidth = (int) ($validated['optimizer_max_width'] ?? 1600);
+        $maxHeight = (int) ($validated['optimizer_max_height'] ?? 1600);
+        $quality = (int) ($validated['optimizer_quality'] ?? 82);
+
+        @set_time_limit(0);
+        @ini_set('memory_limit', '768M');
+
+        $summary = $optimizer->optimizeAll($maxWidth, $maxHeight, $quality);
+
+        $savedMb = round(((int) ($summary['saved_bytes'] ?? 0)) / 1048576, 2);
+        $message = sprintf(
+            'Image optimization finished: %d optimized (%d resized), %d skipped, %d missing, %d errors. Saved ~%s MB.',
+            (int) ($summary['optimized'] ?? 0),
+            (int) ($summary['resized'] ?? 0),
+            (int) ($summary['skipped'] ?? 0),
+            (int) ($summary['missing'] ?? 0),
+            (int) ($summary['errors'] ?? 0),
+            number_format($savedMb, 2)
+        );
+
+        return back()
+            ->with('success', $message)
+            ->with('image_optimizer_summary', $summary);
     }
 
 
