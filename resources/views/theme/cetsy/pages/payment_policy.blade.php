@@ -86,6 +86,12 @@
                   <td class="px-4 py-3 text-slate-600">Method availability differs by country and bank.</td>
                 </tr>
                 <tr>
+                  <td class="px-4 py-3 font-semibold text-slate-900">South Africa</td>
+                  <td class="px-4 py-3 text-slate-700">International card rails</td>
+                  <td class="px-4 py-3 text-slate-700">Local bank transfer, SWIFT, Wise</td>
+                  <td class="px-4 py-3 text-slate-600">Bank corridor support depends on provider coverage and verification tier.</td>
+                </tr>
+                <tr>
                   <td class="px-4 py-3 font-semibold text-slate-900">Europe / UK</td>
                   <td class="px-4 py-3 text-slate-700">International card rails</td>
                   <td class="px-4 py-3 text-slate-700">Wise, SWIFT, PayPal (eligible countries)</td>
@@ -96,6 +102,18 @@
                   <td class="px-4 py-3 text-slate-700">International card rails</td>
                   <td class="px-4 py-3 text-slate-700">SWIFT, Wise, PayPal (where enabled)</td>
                   <td class="px-4 py-3 text-slate-600">Provider corridor and sanctions checks apply.</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-semibold text-slate-900">South &amp; Central America</td>
+                  <td class="px-4 py-3 text-slate-700">International card rails</td>
+                  <td class="px-4 py-3 text-slate-700">SWIFT, Wise, PayPal (eligible countries)</td>
+                  <td class="px-4 py-3 text-slate-600">Availability varies by country, currency corridor, and payout partner rules.</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-semibold text-slate-900">Australia</td>
+                  <td class="px-4 py-3 text-slate-700">International card rails</td>
+                  <td class="px-4 py-3 text-slate-700">SWIFT, Wise, PayPal (where enabled)</td>
+                  <td class="px-4 py-3 text-slate-600">Provider limits and compliance checks apply before payout.</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 font-semibold text-slate-900">Asia-Pacific</td>

@@ -606,12 +606,16 @@ document.addEventListener('DOMContentLoaded',()=>{
           @foreach([
             'facebook_url'  => 'fab fa-facebook-f',
             'instagram_url' => 'fab fa-instagram',
+            'youtube_url'   => 'fab fa-youtube',
             'x_url'         => 'fab fa-twitter',
             'linkedin_url'  => 'fab fa-linkedin-in',
             'tiktok_url'    => 'fab fa-tiktok',
           ] as $key => $icon)
-            @if(!empty($settings->{$key}))
-              <a href="{{ $settings->{$key} }}" target="_blank" aria-label="{{ ucfirst(str_replace('_url','',$key)) }}"
+            @php
+              $socialUrl = trim((string) (data_get($settings, $key) ?? setting($key, '')));
+            @endphp
+            @if($socialUrl !== '')
+              <a href="{{ $socialUrl }}" target="_blank" aria-label="{{ ucfirst(str_replace('_url','',$key)) }}"
                  class="footer-link social-icon">
                 <i class="{{ $icon }}"></i>
               </a>
