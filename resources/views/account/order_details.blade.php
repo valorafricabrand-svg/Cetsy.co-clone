@@ -349,8 +349,8 @@
             <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
           </div>
           <div class="px-4 py-4">
-            <div class="grid grid-cols-12 gap-4 gap-3">
-              <div class="md:col-span-6">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+              <div class="col-span-12 md:col-span-6">
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-full border-success">
                   <div class="p-4 sm:p-5 flex flex-col">
                     <div class="flex items-center gap-2 mb-2">
@@ -369,7 +369,7 @@
                   </div>
                 </div>
               </div>
-              <div class="md:col-span-6">
+              <div class="col-span-12 md:col-span-6">
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-full border-danger">
                   <div class="p-4 sm:p-5 flex flex-col">
                     <div class="flex items-center gap-2 mb-2">
@@ -652,9 +652,9 @@
       </div>
     @endif
 
-    <div class="grid grid-cols-12 gap-4">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
       {{-- ===== ORDER SUMMARY ===== --}}
-      <div class="md:col-span-6">
+      <div class="col-span-12 md:col-span-6">
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 h-full">
           <div class="border-b border-slate-200 px-4 py-3 bg-white font-semibold flex items-center gap-2">
             <i class="bi bi-clipboard-data text-primary"></i> Order&nbsp;Summary
@@ -712,7 +712,7 @@
       </div>
 
       {{-- ===== CUSTOMER INFO ===== --}}
-      <div class="md:col-span-6">
+      <div class="col-span-12 md:col-span-6">
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 h-full">
           <div class="border-b border-slate-200 px-4 py-3 bg-white font-semibold flex items-center gap-2">
             <i class="bi bi-person-vcard text-primary"></i> Customer&nbsp;Info
