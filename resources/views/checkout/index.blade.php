@@ -257,18 +257,29 @@
                   }
                 @endphp
                 <li class="flex items-start justify-between gap-3 px-4 py-3">
-                  <div class="min-w-0">
-                    <p class="truncate text-sm font-semibold text-slate-900">
-                      {{ $row['name'] }}
-                      @if($isDigital)
-                        <span class="ml-1 rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">Digital</span>
+                  <div class="flex min-w-0 items-start gap-3">
+                    <div class="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                      @if(!empty($row['photo']))
+                        <img src="{{ $row['photo'] }}" alt="{{ $row['name'] ?? 'Product image' }}" class="h-full w-full object-cover">
+                      @else
+                        <div class="flex h-full w-full items-center justify-center text-slate-300">
+                          <i class="bi bi-image text-sm"></i>
+                        </div>
                       @endif
-                    </p>
-                    @if (!empty($row['variation_summary']))
-                      <p class="mt-1 text-xs text-slate-500">{{ $row['variation_summary'] }}</p>
-                    @endif
-                    <p class="mt-1 text-xs text-slate-600">{{ $label }} ({{ $currency }} {{ number_format($shipTotal,2) }})</p>
-                    <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">x {{ $qty }}</p>
+                    </div>
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-semibold text-slate-900">
+                        {{ $row['name'] }}
+                        @if($isDigital)
+                          <span class="ml-1 rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">Digital</span>
+                        @endif
+                      </p>
+                      @if (!empty($row['variation_summary']))
+                        <p class="mt-1 text-xs text-slate-500">{{ $row['variation_summary'] }}</p>
+                      @endif
+                      <p class="mt-1 text-xs text-slate-600">{{ $label }} ({{ $currency }} {{ number_format($shipTotal,2) }})</p>
+                      <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">x {{ $qty }}</p>
+                    </div>
                   </div>
                   <div class="whitespace-nowrap text-sm font-semibold text-slate-900">{{ $currency }} {{ number_format($lineTotal,2) }}</div>
                 </li>

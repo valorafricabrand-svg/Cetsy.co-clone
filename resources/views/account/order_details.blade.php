@@ -12,7 +12,19 @@
 
   /* Order item mobile cards */
   .order-item-card .label { color:#6c757d; font-size:.8125rem; }
-  .order-item__thumb { width:72px; height:72px; object-fit:cover; border-radius:.5rem; flex:0 0 72px; }
+  .order-item__thumb-wrap {
+    width:72px;
+    height:72px;
+    min-width:72px;
+    min-height:72px;
+    max-width:72px;
+    max-height:72px;
+    flex:0 0 72px;
+    border-radius:.5rem;
+    overflow:hidden;
+    display:block;
+  }
+  .order-item__thumb { width:100%; height:100%; object-fit:cover; object-position:center; display:block; }
   .order-item__thumb.placeholder { background:#f1f3f5; color:#adb5bd; display:flex; align-items:center; justify-content:center; }
   .order-item__row { display:flex; justify-content:space-between; align-items:center; margin-top:.5rem; }
   .order-item__total { font-weight:700; }
@@ -34,6 +46,25 @@
   .form-check { display: flex; align-items: center; gap: .5rem; }
   .form-check-input { width: 1rem; height: 1rem; border-radius: .25rem; border: 1px solid #cbd5e1; }
   .form-check-label { font-size: .875rem; color: #334155; }
+  .order-actions { width: 100%; }
+  .order-actions > * { max-width: 100%; }
+  @media (max-width: 640px) {
+    .order-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .5rem;
+    }
+    .order-actions > * {
+      width: 100%;
+      min-width: 0;
+      justify-content: center;
+    }
+    .order-actions > * span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
 
   /* Bootstrap-free modal behavior */
   .modal {
@@ -199,7 +230,7 @@
   </h2>
 
         {{-- Action buttons --}}
-        <div class="flex flex-wrap gap-2">
+        <div class="order-actions flex flex-wrap gap-2">
           @php
             // Collect all downloadable files across digital items in this order
             $__digitalFiles = [];
@@ -242,7 +273,7 @@
                class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-emerald-500"
                title="Proceed to payment for this order">
               <i class="bi bi-credit-card text-lg"></i>
-              <span>Pay&nbsp;Now</span>
+              <span>Pay Now</span>
             </a>
           @endif
 
@@ -274,7 +305,7 @@
                     data-ui-target="#cancelModal-{{ $order->id }}"
                     title="Cancel this order">
               <i class="bi bi-x-circle text-lg"></i>
-              <span>Cancel&nbsp;Order</span>
+              <span>Cancel Order</span>
             </button>
           @endif
 
@@ -284,7 +315,7 @@
                     data-ui-toggle="modal"
                     data-ui-target="#deliverModal-{{ $order->id }}">
               <i class="bi bi-check2-circle text-lg"></i>
-              <span>Mark&nbsp;Delivered</span>
+              <span>Mark Delivered</span>
             </button>
             @include('seller.orders.modals.delivered')
 
@@ -293,7 +324,7 @@
                     data-ui-toggle="modal"
                     data-ui-target="#assessModal-{{ $order->id }}">
               <i class="bi bi-clipboard-check text-lg"></i>
-              <span>Asses&nbsp;Delivery</span>
+              <span>Assess Delivery</span>
             </button>
           @endif
 
@@ -955,12 +986,14 @@
                 <div class="p-4 sm:p-5">
                   <div class="flex items-start gap-3">
                     @if($thumbUrl)
-                      <a href="{{ $product ? route('listing.show', $product->slug) : '#' }}" target="_blank">
+                      <a href="{{ $product ? route('listing.show', $product->slug) : '#' }}" target="_blank" class="order-item__thumb-wrap">
                         <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product image' }}" class="order-item__thumb">
                       </a>
                     @else
-                      <div class="order-item__thumb placeholder rounded">
-                        <i class="bi bi-image"></i>
+                      <div class="order-item__thumb-wrap">
+                        <div class="order-item__thumb placeholder">
+                          <i class="bi bi-image"></i>
+                        </div>
                       </div>
                     @endif
                     <div class="grow">
@@ -1064,7 +1097,47 @@
           <i class="bi bi-wallet2 text-primary"></i> Payments
         </div>
         <div class="p-4 sm:p-5 p-0">
-          <div class="overflow-x-auto">
+          {{-- Mobile: stacked cards --}}
+          <div class="block p-2 md:hidden">
+            <div class="space-y-2">
+              @foreach($order->payments as $pay)
+                @php
+                  $statusStr   = strtolower((string)$pay->status);
+                  $isCompleted = (string)$pay->status === '3' || $statusStr === 'success' || $statusStr === 'completed';
+                  $statusLabel = $isCompleted ? 'Completed' : (is_numeric($pay->status) ? $pay->status : ucfirst((string)$pay->status));
+                @endphp
+                <div class="rounded-xl border border-slate-200 bg-white p-3">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="text-xs text-slate-500">Payment #{{ $loop->iteration }}</div>
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700' }}">
+                      {{ $statusLabel }}
+                    </span>
+                  </div>
+                  <div class="mt-2 space-y-1 text-sm">
+                    <div class="flex items-start justify-between gap-3">
+                      <span class="text-slate-500">Reference</span>
+                      <span class="min-w-0 break-all text-right font-medium text-slate-900">{{ $pay->local_transaction_id ?: '-' }}</span>
+                    </div>
+                    <div class="flex items-start justify-between gap-3">
+                      <span class="text-slate-500">Method</span>
+                      <span class="text-right text-slate-900">{{ ucfirst((string)$pay->payment_method) ?: '-' }}</span>
+                    </div>
+                    <div class="flex items-start justify-between gap-3">
+                      <span class="text-slate-500">Amount</span>
+                      <span class="font-semibold text-slate-900">{{ money((float)($pay->total_amount ?? 0)) }}</span>
+                    </div>
+                    <div class="flex items-start justify-between gap-3">
+                      <span class="text-slate-500">Paid On</span>
+                      <span class="text-right text-slate-900">{{ optional($pay->created_at)->format('d M Y, h:i A') ?: '-' }}</span>
+                    </div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          {{-- Desktop/Tablet: table --}}
+          <div class="hidden overflow-x-auto md:block">
             <table class="min-w-full divide-y divide-slate-200 text-sm mb-0 align-middle">
               <thead class="bg-slate-50 text-nowrap">
                 <tr>
@@ -1085,7 +1158,7 @@
                   @endphp
                   <tr>
                     <td>{{ $loop->iteration }}</td>
-                    <td>{{ $pay->local_transaction_id }}</td>
+                    <td class="max-w-[260px] break-all">{{ $pay->local_transaction_id }}</td>
                     <td>{{ ucfirst($pay->payment_method) }}</td>
                     <td>{{ money((float)($pay->total_amount ?? 0)) }}</td>
                     <td>

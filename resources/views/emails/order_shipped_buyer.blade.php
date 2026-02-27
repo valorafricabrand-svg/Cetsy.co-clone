@@ -74,6 +74,49 @@
             color: #28a745;
             font-weight: bold;
         }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+        .items-table td {
+            padding: 8px 0;
+            vertical-align: top;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .item-thumb-cell {
+            width: 56px;
+            padding-right: 10px;
+        }
+        .item-thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: 6px;
+            object-fit: cover;
+            display: block;
+            border: 1px solid #e9ecef;
+        }
+        .item-fallback {
+            width: 48px;
+            height: 48px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            background: #f8f9fa;
+            color: #adb5bd;
+            text-align: center;
+            line-height: 48px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .item-name {
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 2px;
+        }
+        .item-meta {
+            color: #495057;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -110,11 +153,32 @@
         </div>
 
         <h4>Order Items:</h4>
-        <ul>
+        <table class="items-table" role="presentation" cellpadding="0" cellspacing="0">
+            <tbody>
             @foreach($order->items as $item)
-                <li><strong>{{ $item->product->name }}</strong> - Qty: {{ $item->quantity }} - Price: {{ get_currency() }} {{ number_format($item->price, 2) }}</li>
+                @php
+                    $product = optional($item->product);
+                    $thumbRaw = product_thumb_url($product);
+                    $thumb = is_string($thumbRaw) && str_starts_with($thumbRaw, 'http')
+                        ? $thumbRaw
+                        : url($thumbRaw);
+                @endphp
+                <tr>
+                    <td class="item-thumb-cell">
+                        @if(!empty($thumb))
+                            <img src="{{ $thumb }}" alt="{{ $product->name ?? 'Item' }}" class="item-thumb">
+                        @else
+                            <div class="item-fallback">IMG</div>
+                        @endif
+                    </td>
+                    <td>
+                        <div class="item-name">{{ $product->name ?? 'Product item' }}</div>
+                        <div class="item-meta">Qty: {{ $item->quantity }} &nbsp;|&nbsp; Price: {{ get_currency() }} {{ number_format($item->price, 2) }}</div>
+                    </td>
+                </tr>
             @endforeach
-        </ul>
+            </tbody>
+        </table>
 
         <h4>Shipping Address:</h4>
         <p>{{ $order->shipping_address_1 }}</p>

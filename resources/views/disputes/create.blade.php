@@ -2,10 +2,21 @@
 
 @section('title', 'Create New Dispute')
 
+@push('styles')
+<style>
+  .create-dispute-page { overflow-x: hidden; }
+  .create-dispute-page .tox,
+  .create-dispute-page .tox-tinymce,
+  .create-dispute-page .tox-editor-container {
+    max-width: 100% !important;
+  }
+</style>
+@endpush
+
 @section('main')
-<div class="content">
-    <div class="grid grid-cols-12 gap-4 justify-center">
-        <div class="md:col-span-8">
+<div class="create-dispute-page mx-auto w-full max-w-5xl px-3 sm:px-4">
+    <div class="grid w-full grid-cols-1 gap-4 md:grid-cols-12">
+        <div class="col-span-12 w-full md:col-span-8 md:col-start-3">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-4 py-3">
                     <h4 class="mb-0">Create New Dispute</h4>
@@ -38,13 +49,44 @@
                             <label for="order_id" class="mb-1 block text-sm font-medium text-slate-700">Select Order *</label>
                             @if($order)
                                 <input type="hidden" name="order_id" value="{{ $order->id }}">
-                                <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                                    <strong>Order #{{ $order->order_number }}</strong>
-                                    <br>
-                                    <small class="text-slate-500">
-                                        {{ $order->items->count() }} item(s) - 
-                                        Total: ${{ number_format($order->total_amount, 2) }}
-                                    </small>
+                                <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <strong>Order #{{ $order->order_number ?: $order->id }}</strong>
+                                        <span class="text-xs text-slate-500">{{ $order->items->count() }} item(s)</span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-500">
+                                        Total: ${{ number_format((float) $order->total_amount, 2) }}
+                                    </div>
+
+                                    @if($order->items->isNotEmpty())
+                                        <div class="mt-3 space-y-2">
+                                            @foreach($order->items as $item)
+                                                @php
+                                                    $product = optional($item->product);
+                                                    $thumb = product_thumb_url($product);
+                                                @endphp
+                                                <div class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2">
+                                                    <div class="h-10 w-10 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100">
+                                                        @if(!empty($thumb))
+                                                            <img src="{{ $thumb }}" alt="{{ $product->name ?? 'Item' }}" class="h-full w-full object-cover">
+                                                        @else
+                                                            <div class="flex h-full w-full items-center justify-center text-slate-300">
+                                                                <i class="bi bi-image"></i>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                    <div class="min-w-0 grow">
+                                                        <div class="truncate text-xs font-semibold text-slate-800">{{ $product->name ?? 'Product item' }}</div>
+                                                        <div class="text-[11px] text-slate-500">
+                                                            Qty: {{ (int)($item->quantity ?? 1) }}
+                                                            <span class="mx-1">|</span>
+                                                            ${{ number_format((float)($item->price ?? 0), 2) }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                             @else
                                 <select name="order_id" id="order_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('order_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" required>
@@ -107,16 +149,16 @@
                         </div>
 
                         <!-- Return / Exchange Option -->
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="request_return_exchange" name="request_return_exchange" value="1" {{ old('request_return_exchange') ? 'checked' : '' }}>
-                                <label class="form-check-label font-bold text-amber-600" for="request_return_exchange">
+                        <div class="mb-3 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
+                            <label for="request_return_exchange" class="flex items-start gap-3">
+                                <input class="mt-1 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500" type="checkbox" id="request_return_exchange" name="request_return_exchange" value="1" {{ old('request_return_exchange') ? 'checked' : '' }}>
+                                <span class="text-sm font-semibold leading-6 text-amber-700">
                                     Request a return/exchange (reset order to Processing)
-                                </label>
-                            </div>
-                            <div class="text-xs text-amber-600 font-semibold mt-1">
-                                If selected, we will reset the order status to <strong class="text-amber-600">Processing</strong> so the seller can ship a replacement and update tracking details. Previous tracking info (if any) will be cleared.
-                            </div>
+                                </span>
+                            </label>
+                            <p class="mt-2 text-xs font-medium leading-5 text-amber-700">
+                                If selected, we will reset the order status to <strong>Processing</strong> so the seller can ship a replacement and update tracking details. Previous tracking info (if any) will be cleared.
+                            </p>
                         </div>
 
                         <!-- Important Information -->
@@ -132,7 +174,7 @@
                             </ul>
                         </div>
 
-                        <div class="flex justify-between">
+                        <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-between">
                             <a href="{{ route('disputes.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500">
                                 <i class="fas fa-arrow-left"></i> Back to Disputes
                             </a>
@@ -154,19 +196,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('evidence');
     const maxSize = 10 * 1024 * 1024; // 10MB
 
-    fileInput.addEventListener('change', function() {
-        const files = this.files;
-        for (let i = 0; i < files.length; i++) {
-            if (files[i].size > maxSize) {
-                alert(`File "${files[i].name}" is too large. Maximum size is 10MB.`);
-                this.value = '';
-                return;
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            const files = this.files;
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].size > maxSize) {
+                    alert(`File "${files[i].name}" is too large. Maximum size is 10MB.`);
+                    this.value = '';
+                    return;
+                }
             }
-        }
-    });
+        });
+    }
 
     // Character counter for description
     const description = document.getElementById('description');
+    if (!description) return;
     const maxLength = 2000;
     
     description.addEventListener('input', function() {
@@ -191,14 +236,23 @@ document.addEventListener('DOMContentLoaded', function() {
   onReady(function(){
     const el = document.getElementById('description');
     if(!el) return;
+
+    // TinyMCE can overflow on mobile; keep native textarea for small screens.
+    if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
+      el.setAttribute('rows', '8');
+      return;
+    }
+
     const start = function(){
       try{ const i=tinymce.get('description'); if(i) i.remove(); }catch(_){}
       tinymce.init({
         selector:'#description',
-        height:300,
+        min_height:240,
+        max_height:420,
         menubar:false,
         plugins: 'advlist autolink lists link charmap preview anchor searchreplace visualblocks code fullscreen help wordcount quickbars autoresize',
         toolbar: 'undo redo | bold italic underline | bullist numlist | link | code',
+        toolbar_mode: 'sliding',
         branding:false,
         browser_spellcheck:true,
         gecko_spellcheck:true,
