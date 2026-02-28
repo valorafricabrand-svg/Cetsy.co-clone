@@ -129,8 +129,8 @@
     </div>
   @endif
 
-  <div class="grid grid-cols-12 gap-4 gap-4">
-    <div class="lg:col-span-8">
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+    <div class="col-span-12 lg:col-span-8">
 
       {{-- Shop Rating --}}
       @if($shop->hasReviews())
@@ -245,7 +245,7 @@
 
     </div>
 
-    <div class="lg:col-span-4">
+    <div class="col-span-12 lg:col-span-4">
 
       {{-- Preferences --}}
       <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
