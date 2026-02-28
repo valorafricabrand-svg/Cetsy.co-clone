@@ -10,7 +10,7 @@
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
                 <div class="p-4 sm:p-5">
                     <div class="grid grid-cols-12 gap-4 items-center">
-                        <div class="md:col-span-8">
+                        <div class="col-span-12 md:col-span-8">
                             <div class="flex items-center mb-2">
                                 <h2 class="mb-0 mr-3">
                                     <i class="bi bi-exclamation-triangle text-amber-600"></i>
@@ -27,7 +27,7 @@
                                 @endif
                             </p>
                         </div>
-                        <div class="md:col-span-4 text-md-end">
+                        <div class="col-span-12 md:col-span-4 text-md-end">
                             <div class="flex flex-col sm:flex-row gap-2 justify-content-md-end">
                                 <a href="{{ route('disputes.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs">
                                     <i class="bi bi-arrow-left"></i> Back to Disputes
@@ -187,7 +187,7 @@
 
     {{-- Dispute Statistics --}}
     <div class="grid grid-cols-12 gap-4 mb-4">
-        <div class="md:col-span-3 sm:col-span-6 mb-3">
+        <div class="col-span-12 md:col-span-3 sm:col-span-6 mb-3">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 bg-primary text-white">
                 <div class="p-4 sm:p-5 text-center">
                     <i class="bi bi-chat-dots fs-1 mb-2"></i>
@@ -196,7 +196,7 @@
                 </div>
             </div>
         </div>
-        <div class="md:col-span-3 sm:col-span-6 mb-3">
+        <div class="col-span-12 md:col-span-3 sm:col-span-6 mb-3">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 bg-sky-100 text-white">
                 <div class="p-4 sm:p-5 text-center">
                     <i class="bi bi-chat fs-1 mb-2"></i>
@@ -205,7 +205,7 @@
                 </div>
             </div>
         </div>
-        <div class="md:col-span-3 sm:col-span-6 mb-3">
+        <div class="col-span-12 md:col-span-3 sm:col-span-6 mb-3">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 bg-amber-100 text-slate-900">
                 <div class="p-4 sm:p-5 text-center">
                     <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
@@ -214,7 +214,7 @@
                 </div>
             </div>
         </div>
-        <div class="md:col-span-3 sm:col-span-6 mb-3">
+        <div class="col-span-12 md:col-span-3 sm:col-span-6 mb-3">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 bg-success text-white">
                 <div class="p-4 sm:p-5 text-center">
                     <i class="bi bi-paperclip fs-1 mb-2"></i>
@@ -261,7 +261,7 @@
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 bg-slate-100">
                     <div class="p-4 sm:p-5">
                         <div class="grid grid-cols-12 gap-4 items-center">
-                            <div class="md:col-span-8">
+                            <div class="col-span-12 md:col-span-8">
                                 <h5 class="mb-2">
                                     <i class="bi bi-files text-primary"></i> 
                                     Evidence Files Overview
@@ -270,7 +270,7 @@
                                     Total {{ $totalEvidenceFiles }} files ({{ number_format($totalEvidenceSize / 1024 / 1024, 2) }} MB) available for review
                                 </p>
                             </div>
-                            <div class="md:col-span-4 text-md-end">
+                            <div class="col-span-12 md:col-span-4 text-md-end">
                                 <div class="flex gap-2 justify-content-md-end">
                                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary fs-6 px-3 py-2">
                                         <i class="bi bi-paperclip"></i> {{ $dispute->evidence ? count($dispute->evidence) : 0 }} Initial
@@ -309,7 +309,7 @@
     @endif
 
     <div class="grid grid-cols-12 gap-4">
-        <div class="md:col-span-8">
+        <div class="col-span-12 md:col-span-8">
             <!-- Order Context Header -->
             @if($order)
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
@@ -340,7 +340,7 @@
                 </div>
                 <div class="p-4 sm:p-5">
                     <div class="grid grid-cols-12 gap-4">
-                        <div class="md:col-span-6">
+                        <div class="col-span-12 md:col-span-6">
                             <h6>Order Details</h6>
                             <p class="mb-2">
                                 <strong>Order #:</strong> {{ $order->id }}<br>
@@ -351,7 +351,7 @@
                                 </span>
                             </p>
                         </div>
-                        <div class="md:col-span-6">
+                        <div class="col-span-12 md:col-span-6">
                             <h6>Order Items</h6>
                             @if($orderItems->isNotEmpty())
                                 @foreach($orderItems->take(3) as $item)
@@ -469,7 +469,7 @@
                     </div>
 
                     <div class="grid grid-cols-12 gap-4">
-                        <div class="md:col-span-6">
+                        <div class="col-span-12 md:col-span-6">
                             <h6>Dispute Type</h6>
                             <p class="mb-3">{{ $dispute->getTypeLabel() }}</p>
                             
@@ -488,7 +488,7 @@
                                 </a>
                             </p>
                         </div>
-                        <div class="md:col-span-6">
+                        <div class="col-span-12 md:col-span-6">
                             <h6>Created</h6>
                             <p class="mb-3">{{ $dispute->created_at->format('M d, Y \a\t g:i A') }}</p>
                             
@@ -657,7 +657,7 @@
 
                             {{-- Show agreement status --}}
                             <div class="grid grid-cols-12 gap-4 mb-3">
-                                <div class="md:col-span-6">
+                                <div class="col-span-12 md:col-span-6">
                                     <div class="flex items-center">
                                         <i class="bi bi-person-circle mr-2"></i>
                                         <span>Buyer ({{ $dispute->buyer->name }})</span>
@@ -672,7 +672,7 @@
                                         @endif
                                     </div>
                                 </div>
-                                <div class="md:col-span-6">
+                                <div class="col-span-12 md:col-span-6">
                                     <div class="flex items-center">
                                         <i class="bi bi-shop mr-2"></i>
                                         <span>Seller ({{ $dispute->seller->name }})</span>
@@ -845,10 +845,10 @@
                         <div class="mt-4 p-3 bg-slate-100 rounded">
                             <h6 class="mb-2">Attachments Summary</h6>
                             <div class="grid grid-cols-12 gap-4">
-                                <div class="md:col-span-6">
+                                <div class="col-span-12 md:col-span-6">
                                     <strong>Total Files:</strong> {{ $allAttachments->count() }}
                                 </div>
-                                <div class="md:col-span-6">
+                                <div class="col-span-12 md:col-span-6">
                                     <strong>Total Size:</strong> {{ number_format($allAttachments->sum('size') / 1024 / 1024, 2) }} MB
                                 </div>
                             </div>
@@ -1200,7 +1200,7 @@
             </div>
         </div>
 
-        <div class="md:col-span-4">
+        <div class="col-span-12 md:col-span-4">
             <!-- Quick Actions -->
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
                 <div class="border-b border-slate-200 px-4 py-3">
@@ -2162,13 +2162,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             
                             <div class="grid grid-cols-12 gap-4 mb-3">
-                                <div class="md:col-span-6">
+                                <div class="col-span-12 md:col-span-6">
                                     <h6>Required Evidence Types</h6>
                                     @foreach($userEvidenceRequest->getRequiredEvidenceTypesList() as $evidenceType)
                                         <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary mr-2 mb-2">{{ $evidenceType }}</span>
                                     @endforeach
                                 </div>
-                                <div class="md:col-span-6">
+                                <div class="col-span-12 md:col-span-6">
                                     <h6>Deadline Information</h6>
                                     <p class="mb-1"><strong>Deadline:</strong> {{ $userEvidenceRequest->deadline->format('M d, Y \a\t g:i A') }}</p>
                                     <p class="mb-0">

@@ -40,7 +40,7 @@
 
         {{-- BASE RATE & DELIVERY DAYS --}}
         <div class="grid grid-cols-12 gap-4 gap-3">
-          <div class="md:col-span-6">
+          <div class="col-span-12 md:col-span-6">
             <label class="mb-1 block text-sm font-medium text-slate-700">
               Base Rate ({{ get_currency() }}) <span class="text-rose-600">*</span>
             </label>
@@ -49,7 +49,7 @@
                     class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('base_rate') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" required>
             @error('base_rate') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
           </div>
-          <div class="md:col-span-6">
+          <div class="col-span-12 md:col-span-6">
             <label class="mb-1 block text-sm font-medium text-slate-700">Delivery Days <span class="text-rose-600">*</span></label>
             <input  type="number" name="delivery_days" min="0"
                     value="{{ old('delivery_days') }}"

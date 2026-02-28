@@ -1,4 +1,4 @@
-﻿{{-- resources/views/products/variations.blade.php --}}
+{{-- resources/views/products/variations.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Manage Variations - ' . ($type->name ?? 'Variation Type'))
@@ -160,11 +160,11 @@
               @endforeach
 
               <div class="grid grid-cols-12 gap-3">
-                <div class="md:col-span-6">
+                <div class="col-span-12 md:col-span-6">
                   <label class="mb-1 block text-sm font-medium text-slate-700">Price</label>
                   <input type="number" step="0.01" min="0" name="price" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
                 </div>
-                <div class="md:col-span-6">
+                <div class="col-span-12 md:col-span-6">
                   <label class="mb-1 block text-sm font-medium text-slate-700">Stock</label>
                   <input
                     type="number"
@@ -216,7 +216,7 @@
                       <tr>
                         <td>
                           <small class="text-slate-500">
-                            {{ $v->options->map(fn($o) => $o->variationType->name . ': ' . $o->value)->join(' • ') }}
+                            {{ $v->options->map(fn($o) => $o->variationType->name . ': ' . $o->value)->join(' � ') }}
                           </small>
                         </td>
                         <td>

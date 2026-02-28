@@ -1,4 +1,4 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('main')
 <div class="content">
@@ -44,7 +44,7 @@
       <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
         <div class="border-b border-slate-200 px-4 py-3 font-semibold">1. Shop Preferences</div>
         <div class="p-4 sm:p-5 grid grid-cols-12 gap-4 gap-3">
-          <div class="md:col-span-4">
+          <div class="col-span-12 md:col-span-4">
             <label for="language" class="mb-1 block text-sm font-medium text-slate-700">Language <span class="text-rose-600">*</span></label>
             <select name="language" id="language" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
               <option value="" disabled selected>Select language</option>
@@ -53,7 +53,7 @@
             </select>
             <div class="mt-1 text-xs text-rose-600">Please select a language.</div>
           </div>
-          <div class="md:col-span-4">
+          <div class="col-span-12 md:col-span-4">
             <label for="country" class="mb-1 block text-sm font-medium text-slate-700">Country <span class="text-rose-600">*</span></label>
             <select name="country" id="country" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
               <option value="" disabled selected>Select country</option>
@@ -63,7 +63,7 @@
             </select>
             <div class="mt-1 text-xs text-rose-600">Please select a country.</div>
           </div>
-          <div class="md:col-span-4">
+          <div class="col-span-12 md:col-span-4">
             <label for="currency" class="mb-1 block text-sm font-medium text-slate-700">
               Currency <span class="text-rose-600">*</span>
             </label>
@@ -161,11 +161,11 @@
             <input type="text" id="address" name="address" value="{{ old('address', $shop->address) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
           </div>
           <div class="grid grid-cols-12 gap-4 gap-3">
-            <div class="md:col-span-6">
+            <div class="col-span-12 md:col-span-6">
               <label for="city" class="mb-1 block text-sm font-medium text-slate-700">City <span class="text-rose-600">*</span></label>
               <input type="text" id="city" name="city" value="{{ old('city', $shop->city) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
             </div>
-            <div class="md:col-span-6">
+            <div class="col-span-12 md:col-span-6">
               <label for="postal" class="mb-1 block text-sm font-medium text-slate-700">Postal Code <span class="text-rose-600">*</span></label>
               <input type="text" id="postal" name="postal" value="{{ old('postal', $shop->postal) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
             </div>

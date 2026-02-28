@@ -5,7 +5,7 @@
 @section('main')
 <div class="content">
     <div class="grid grid-cols-12 gap-4">
-        <div class="md:col-span-12">
+        <div class="col-span-12 md:col-span-12">
             <div class="flex justify-between items-center mb-4">
                 <h1 class="text-xl font-semibold mb-0">My Disputes</h1>
                 <a href="{{ route('disputes.create') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
@@ -58,7 +58,7 @@
                     @if($orderedDisputes->count() > 0)
                         <div class="grid grid-cols-12 gap-4">
                             @foreach($orderedDisputes as $dispute)
-                                <div class="md:col-span-6 lg:col-span-4 mb-4">
+                                <div class="col-span-12 md:col-span-6 lg:col-span-4 mb-4">
                                     @include('disputes.partials.dispute-card', ['dispute' => $dispute])
                                 </div>
                             @endforeach
@@ -91,7 +91,7 @@
                         @if($filteredDisputes->count() > 0)
                             <div class="grid grid-cols-12 gap-4">
                                 @foreach($filteredDisputes as $dispute)
-                                    <div class="md:col-span-6 lg:col-span-4 mb-4">
+                                    <div class="col-span-12 md:col-span-6 lg:col-span-4 mb-4">
                                         @include('disputes.partials.dispute-card', ['dispute' => $dispute])
                                     </div>
                                 @endforeach

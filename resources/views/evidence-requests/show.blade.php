@@ -1,9 +1,9 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('main')
 <div class="content">
     <div class="grid grid-cols-12 gap-4 justify-center">
-        <div class="md:col-span-10">
+        <div class="col-span-12 md:col-span-10">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-4 py-3">
                     <div class="flex justify-between items-center">
@@ -32,7 +32,7 @@
                 <div class="p-4 sm:p-5">
                     <!-- Appeal Information -->
                     <div class="grid grid-cols-12 gap-4 mb-4">
-                        <div class="md:col-span-6">
+                        <div class="col-span-12 md:col-span-6">
                             <h6>Appeal Information</h6>
                             <p><strong>Appeal ID:</strong> #{{ $evidenceRequest->appeal->id }}</p>
                             <p><strong>Dispute ID:</strong> 
@@ -43,7 +43,7 @@
                             <p><strong>Appealed By:</strong> {{ $evidenceRequest->appeal->appealedBy->name }}</p>
                             <p><strong>Appeal Reason:</strong> {{ $evidenceRequest->appeal->reason }}</p>
                         </div>
-                        <div class="md:col-span-6">
+                        <div class="col-span-12 md:col-span-6">
                             <h6>Evidence Request Details</h6>
                             <p><strong>Status:</strong> 
                                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $evidenceRequest->getStatusBadgeClass() }}">
@@ -78,7 +78,7 @@
                         <div class="p-4 sm:p-5">
                             <div class="grid grid-cols-12 gap-4">
                                 @foreach($evidenceRequest->getRequiredEvidenceTypesList() as $evidenceType)
-                                    <div class="md:col-span-4 mb-2">
+                                    <div class="col-span-12 md:col-span-4 mb-2">
                                         <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-primary mr-2">{{ $evidenceType }}</span>
                                     </div>
                                 @endforeach
@@ -157,7 +157,7 @@
                                 </div>
 
                                 <div class="grid grid-cols-12 gap-4">
-                                    <div class="md:col-span-6">
+                                    <div class="col-span-12 md:col-span-6">
                                         <h6>Submission Details</h6>
                                         <p><strong>Submitted At:</strong> {{ $evidenceRequest->submitted_at->format('M d, Y \a\t g:i A') }}</p>
                                         <p><strong>Description:</strong> {{ $evidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
@@ -165,7 +165,7 @@
                                             <p><strong>Additional Notes:</strong> {{ $evidenceRequest->submitted_evidence['additional_notes'] }}</p>
                                         @endif
                                     </div>
-                                    <div class="md:col-span-6">
+                                    <div class="col-span-12 md:col-span-6">
                                         <h6>Submitted Files</h6>
                                         @if(isset($evidenceRequest->submitted_evidence['files']))
                                             <div class="evidence-files">
@@ -207,7 +207,7 @@
                          </div>
                          <div class="p-4 sm:p-5">
                              <div class="grid grid-cols-12 gap-4">
-                                 <div class="md:col-span-6">
+                                 <div class="col-span-12 md:col-span-6">
                                      <h6 class="mb-3">
                                          <i class="fas fa-user text-primary"></i> Buyer Evidence
                                          @if($evidenceRequest->appeal->buyerEvidenceRequest)
@@ -248,7 +248,7 @@
                                      @endif
                                  </div>
                                  
-                                 <div class="md:col-span-6">
+                                 <div class="col-span-12 md:col-span-6">
                                      <h6 class="mb-3">
                                          <i class="fas fa-shop text-emerald-600"></i> Seller Evidence
                                          @if($evidenceRequest->appeal->sellerEvidenceRequest)

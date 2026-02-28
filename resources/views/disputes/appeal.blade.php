@@ -1,11 +1,11 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Submit Appeal')
 
 @section('main')
 <div class="content">
     <div class="grid grid-cols-12 gap-4 justify-center">
-        <div class="md:col-span-8">
+        <div class="col-span-12 md:col-span-8">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-4 py-3">
                     <h4 class="mb-0">Submit Appeal</h4>

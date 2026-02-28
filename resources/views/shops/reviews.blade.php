@@ -1,4 +1,4 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('main')
 
@@ -6,7 +6,7 @@
 <section class="py-5 bg-white border-bottom">
   <div class="mx-auto max-w-7xl px-4 sm:px-6">
     <div class="grid grid-cols-12 gap-4 items-center">
-      <div class="md:col-span-8">
+      <div class="col-span-12 md:col-span-8">
         <nav class="text-xs text-slate-500" aria-label="Breadcrumb">
           <ol class="flex flex-wrap items-center gap-2">
             <li><a href="{{ route('shop.show', $shop) }}" class="no-underline hover:text-slate-700">{{ $shop->name }}</a></li>
@@ -39,7 +39,7 @@
         </div>
       </div>
       
-      <div class="md:col-span-4 md:text-right">
+      <div class="col-span-12 md:col-span-4 md:text-right">
         <a href="{{ route('shop.show', $shop) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
           <i class="fas fa-arrow-left mr-1"></i> Back to Shop
         </a>

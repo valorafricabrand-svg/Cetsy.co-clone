@@ -146,7 +146,7 @@
           </div>
           <div class="p-4 sm:p-5">
             <div class="grid grid-cols-12 gap-4 items-center gap-y-3">
-              <div class="md:col-span-4 text-center">
+              <div class="col-span-12 md:col-span-4 text-center">
                 <div class="mb-2 flex justify-center">
                   @for($i = 1; $i <= 5; $i++)
                     @if($i <= $shop->average_rating)
@@ -167,7 +167,7 @@
                 </div>
               </div>
 
-              <div class="md:col-span-8">
+              <div class="col-span-12 md:col-span-8">
                 <div class="rating-bars">
                   @for($i = 5; $i >= 1; $i--)
                     @php

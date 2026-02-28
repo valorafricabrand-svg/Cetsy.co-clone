@@ -81,7 +81,7 @@
 
             {{-- Summary Card --}}
             <div class="grid grid-cols-12 gap-4 mb-4">
-                <div class="md:col-span-4">
+                <div class="col-span-12 md:col-span-4">
                     <div class="h-full rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div class="p-4 sm:p-5 flex items-center">
                             <i class="fas fa-wallet text-3xl text-emerald-600 mr-3"></i>
@@ -94,7 +94,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="md:col-span-4">
+                <div class="col-span-12 md:col-span-4">
                     <div class="h-full rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div class="p-4 sm:p-5 flex items-center justify-between">
                             <div class="flex items-center">
@@ -231,12 +231,12 @@
     <div class="p-4 sm:p-5">
       <form method="POST" action="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.submit') ? route('seller.payouts.otp.submit', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/verify')) }}" class="grid grid-cols-12 gap-4 gap-3 items-end">
         @csrf
-        <div class="md:col-span-6">
+        <div class="col-span-12 md:col-span-6">
           <label class="mb-1 block text-sm font-medium text-slate-700">Verification Code</label>
           <input type="text" name="code" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('code') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" placeholder="6-digit code" required>
           @error('code') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
         </div>
-        <div class="md:col-span-6 flex gap-2">
+        <div class="col-span-12 md:col-span-6 flex gap-2">
           <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" type="submit">Verify &amp; Submit</button>
           <a href="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.verify') ? route('seller.payouts.otp.verify', $otpPendingPayout) : url('/seller/payouts/'.$otpPendingPayout->id.'/verify')) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">Open full verify page</a>
         </div>
@@ -269,7 +269,7 @@
       </div>
       <div class="px-4 py-4">
         <div class="grid grid-cols-12 gap-4 gap-3">
-          <div class="md:col-span-6">
+          <div class="col-span-12 md:col-span-6">
             <label class="mb-1 block text-sm font-medium text-slate-700">Type</label>
             <select name="payment_type_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500" required>
               <option hidden value="">Choose&hellip;</option>
@@ -278,7 +278,7 @@
               @endforeach
             </select>
           </div>
-          <div class="md:col-span-6">
+          <div class="col-span-12 md:col-span-6">
             <label class="mb-1 block text-sm font-medium text-slate-700">Account Name</label>
             <input type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" name="account_name" required>
           </div>
@@ -298,27 +298,27 @@
 
             {{-- Filters --}}
             <form method="GET" action="{{ route('wallet.index') }}" class="grid grid-cols-12 gap-4 gap-3 mb-4">
-                <div class="md:col-span-3">
+                <div class="col-span-12 md:col-span-3">
                     <select name="type" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
                         <option value="">All Types</option>
                         <option value="credit" {{ request('type') === 'credit' ? 'selected' : '' }}>Credit</option>
                         <option value="debit" {{ request('type') === 'debit' ? 'selected' : '' }}>Debit</option>
             </select>
         </div>
-                <div class="md:col-span-3">
+                <div class="col-span-12 md:col-span-3">
                     <select name="status" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
                         <option value="">All Statuses</option>
                         <option value="on_hold" {{ request('status') === 'on_hold' ? 'selected' : '' }}>On Hold</option>
                         <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
                     </select>
                 </div>
-                <div class="md:col-span-3">
+                <div class="col-span-12 md:col-span-3">
                     <input type="date" name="from" value="{{ request('from') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="From date">
                 </div>
-                <div class="md:col-span-3">
+                <div class="col-span-12 md:col-span-3">
                     <input type="date" name="to" value="{{ request('to') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="To date">
                 </div>
-                <div class="md:col-span-3">
+                <div class="col-span-12 md:col-span-3">
                     <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                         <i class="fas fa-filter mr-1"></i> Filter
                     </button>

@@ -1,4 +1,4 @@
-﻿{{-- resources/views/shops/posts/create.blade.php --}}
+{{-- resources/views/shops/posts/create.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('main')
@@ -33,7 +33,7 @@
       <form action="{{ route('seller.shop-posts.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
         <div class="grid grid-cols-12 gap-4">
-          <div class="md:col-span-7">
+          <div class="col-span-12 md:col-span-7">
             <div class="mb-3">
               <label for="title" class="mb-1 block text-sm font-medium text-slate-700">Title <span class="text-rose-600">*</span></label>
               <input type="text" name="title" id="title" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ old('title') }}" required>
@@ -43,7 +43,7 @@
               <textarea name="description" id="description" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="6" required>{{ old('description') }}</textarea>
             </div>
           </div>
-          <div class="md:col-span-5">
+          <div class="col-span-12 md:col-span-5">
             <div class="mb-3">
               <label for="image" class="mb-1 block text-sm font-medium text-slate-700">Image</label>
               <input type="file" name="image" id="image" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" accept="image/*">
@@ -56,11 +56,11 @@
               </select>
             </div>
             <div class="grid grid-cols-12 gap-4">
-              <div class="md:col-span-6 mb-3">
+              <div class="col-span-12 md:col-span-6 mb-3">
                 <label for="published_at" class="mb-1 block text-sm font-medium text-slate-700">Published At</label>
                 <input type="date" name="published_at" id="published_at" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ old('published_at') }}">
               </div>
-              <div class="md:col-span-6 mb-3">
+              <div class="col-span-12 md:col-span-6 mb-3">
                 <label for="expired_at" class="mb-1 block text-sm font-medium text-slate-700">Expired At</label>
                 <input type="date" name="expired_at" id="expired_at" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ old('expired_at') }}">
               </div>

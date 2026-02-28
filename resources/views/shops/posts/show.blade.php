@@ -1,4 +1,4 @@
-﻿{{-- resources/views/shops/posts/show.blade.php --}}
+{{-- resources/views/shops/posts/show.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('main')
@@ -26,11 +26,11 @@
         <div class="mt-2">{!! nl2br(e($shopPost->description)) !!}</div>
       </div>
       <div class="grid grid-cols-12 gap-4 mt-4">
-        <div class="md:col-span-6 mb-2">
+        <div class="col-span-12 md:col-span-6 mb-2">
           <strong>Published At:</strong>
           <div>{{ $shopPost->published_at ? $shopPost->published_at->format('Y-m-d') : '-' }}</div>
         </div>
-        <div class="md:col-span-6 mb-2">
+        <div class="col-span-12 md:col-span-6 mb-2">
           <strong>Expired At:</strong>
           <div>{{ $shopPost->expired_at ? $shopPost->expired_at->format('Y-m-d') : '-' }}</div>
         </div>

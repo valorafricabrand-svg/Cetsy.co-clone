@@ -1,4 +1,4 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Deposit Funds')
 
@@ -439,12 +439,12 @@
                               </div>
 
                               <div class="grid grid-cols-12 gap-3">
-                                  <div class="md:col-span-7">
+                                  <div class="col-span-12 md:col-span-7">
                                       <label for="mpesa_phone" class="mb-1 block text-sm font-medium text-slate-700">M-Pesa Phone (Safaricom)</label>
                                       <input type="text" id="mpesa_phone" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="e.g. 07XXXXXXXX, 7XXXXXXXX, or 2547XXXXXXXX" maxlength="13">
                                       <div class="mt-1 text-xs text-slate-500">We'll normalize to <code>2547XXXXXXXX</code>.</div>
                                   </div>
-                                  <div class="md:col-span-5">
+                                  <div class="col-span-12 md:col-span-5">
                                       <label class="mb-1 block text-sm font-medium text-slate-700">KES Amount (auto)</label>
                                       <input type="text" id="mpesa_kes_preview" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" disabled value="KES 0.00">
                                       <div class="mt-1 text-xs text-slate-500">Calculated from USD amount x rate.</div>

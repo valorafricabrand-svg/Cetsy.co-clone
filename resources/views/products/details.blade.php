@@ -31,7 +31,7 @@
         @csrf @method('PATCH')
 
         <div class="grid grid-cols-12 gap-4 gap-3">
-          <div class="md:col-span-8">
+          <div class="col-span-12 md:col-span-8">
             <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Listing Name</label>
             <input type="text" name="name" id="name" spellcheck="true" autocapitalize="sentences" autocomplete="on"
                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('name') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
@@ -39,7 +39,7 @@
             @error('name') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
           </div>
 
-          <div class="md:col-span-4">
+          <div class="col-span-12 md:col-span-4">
             <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Listing Type</label>
             <select name="type" x-model="type" @change="loadCategories()"
                     class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('type') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" required>
@@ -51,7 +51,7 @@
             @error('type') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
           </div>
 
-          <div class="md:col-span-6">
+          <div class="col-span-12 md:col-span-6">
             <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Category</label>
             <div class="relative">
               <input type="text"
@@ -118,7 +118,7 @@
           </div>
 
           {{-- Digital-only file upload (optional) --}}
-          <div class="md:col-span-6" x-show="type==='digital'">
+          <div class="col-span-12 md:col-span-6" x-show="type==='digital'">
             <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Digital File</label>
             <input type="file" name="digital_file"
                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('digital_file') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"

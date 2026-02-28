@@ -1,9 +1,9 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('main')
 <div class="mx-auto max-w-7xl px-4 sm:px-6">
     <div class="grid grid-cols-12 gap-4 justify-center">
-        <div class="md:col-span-12">
+        <div class="col-span-12 md:col-span-12">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-4 py-3">
                     <h4 class="mb-0">
@@ -14,7 +14,7 @@
                     @if($evidenceRequests->count() > 0)
                         <div class="grid grid-cols-12 gap-4">
                             @foreach($evidenceRequests as $evidenceRequest)
-                                <div class="md:col-span-6 mb-4">
+                                <div class="col-span-12 md:col-span-6 mb-4">
                                     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-100 border-{{ $evidenceRequest->getStatusBadgeClass() }}">
                                         <div class="border-b border-slate-200 px-4 py-3 flex justify-between items-center">
                                             <h6 class="mb-0">

@@ -1,4 +1,4 @@
-﻿{{-- resources/views/shipping_profiles/edit.blade.php --}}
+{{-- resources/views/shipping_profiles/edit.blade.php --}}
 
 @extends('theme.'.theme().'.layouts.app')
 
@@ -51,7 +51,7 @@
 
         {{-- Base Rate & Delivery Days --}}
         <div class="grid grid-cols-12 gap-4 gap-3">
-            <div class="md:col-span-6">
+            <div class="col-span-12 md:col-span-6">
                 <label for="base_rate" class="mb-1 block text-sm font-medium text-slate-700">Base Rate ({{ get_currency() }}) <span class="text-rose-600">*</span></label>
                 <input
                   type="number"
@@ -67,7 +67,7 @@
                     <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
                 @enderror
             </div>
-            <div class="md:col-span-6">
+            <div class="col-span-12 md:col-span-6">
                 <label for="delivery_days" class="mb-1 block text-sm font-medium text-slate-700">Delivery Days <span class="text-rose-600">*</span></label>
                 <input
                   type="number"

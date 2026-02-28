@@ -227,7 +227,7 @@
  {{-- SUMMARY & CUSTOMER --}}
  <div class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-4">
  {{-- Order Summary --}}
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-full">
  <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex items-center gap-2">
  <i class="fa-solid fa-list-check"></i> Order Summary
@@ -324,7 +324,7 @@
  </div>
 
  {{-- Customer Info --}}
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm h-full">
  <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex items-center gap-2">
  <i class="fa-solid fa-user"></i> Customer Info
@@ -706,7 +706,7 @@
  $showOther = $isCustomCourier || in_array(strtolower((string)$courierValue), ['manual','other'], true);
  @endphp
  <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 mb-3">
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="form-floating">
  <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editCourierSelect" name="courier" required>
  <option value="" disabled {{ $courierValue ? '' : 'selected' }}>Select courier...</option>
@@ -725,7 +725,7 @@
  </div>
  </div>
 
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="form-floating">
  <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editTrackingInput" name="tracking_no" placeholder="ABC123" value="{{ old('tracking_no', $order->tracking_no) }}" required>
  <label for="editTrackingInput">Tracking number *</label>
@@ -733,21 +733,21 @@
  </div>
  </div>
 
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="form-floating">
  <input type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editTrackingUrlInput" name="tracking_url" value="{{ old('tracking_url', $order->tracking_url) }}" placeholder="https://carrier.example/track/ABC123">
  <label for="editTrackingUrlInput">Tracking URL (optional)</label>
  </div>
  </div>
 
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="form-floating">
  <input type="date" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editShipDateInput" name="shipped_at" value="{{ old('shipped_at', optional($order->shipped_at)->toDateString() ?? now()->toDateString()) }}">
  <label for="editShipDateInput">Shipping date</label>
  </div>
  </div>
 
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="form-floating">
  <textarea class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="editShipNotes" name="ship_notes" style="height: 100px;">{{ old('ship_notes', $order->ship_notes) }}</textarea>
  <label for="editShipNotes">Notes (optional)</label>
@@ -816,7 +816,7 @@
  @endphp
 
  <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 mb-4">
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="form-floating">
  <select class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="courierSelect" name="courier" data-target="#courierOtherWrap" required>
  <option value="" disabled {{ $courierValue ? '' : 'selected' }}>Select courier...</option>
@@ -841,7 +841,7 @@
  </div>
  </div>
 
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="form-floating">
  <input type="text" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="trackingInput" name="tracking_no" placeholder="ABC123" required>
  <label for="trackingInput">Tracking number *</label>
@@ -849,7 +849,7 @@
  </div>
  </div>
 
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="form-floating">
  <input type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="trackingUrlInput" name="tracking_url" placeholder="https://carrier.example/track/ABC123" required>
  <label for="trackingUrlInput">Tracking URL *</label>
@@ -858,14 +858,14 @@
  </div>
  </div>
 
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="form-floating">
  <input type="date" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="shipDateInput" name="shipped_at" value="{{ old('shipped_at', now()->toDateString()) }}">
  <label for="shipDateInput">Shipping date</label>
  </div>
  </div>
 
- <div class="md:col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="form-floating">
  <textarea class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" id="shipNotes" name="ship_notes" style="height: 100px;"></textarea>
  <label for="shipNotes">Notes (optional)</label>
