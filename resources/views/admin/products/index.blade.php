@@ -131,17 +131,24 @@
                                 </th>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        @if($product->media->count() > 0)
-                                            <img src="{{ Storage::url($product->media->first()->url) }}"
+                                        @php
+                                            $thumbUrl = function_exists('product_thumb_url')
+                                                ? product_thumb_url($product)
+                                                : (!empty(optional($product->media->first())->url)
+                                                    ? asset('storage/' . ltrim(optional($product->media->first())->url, '/'))
+                                                    : asset('storage/placeholder.jpg'));
+                                        @endphp
+                                        <div class="position-relative me-3 flex-shrink-0" style="width: 50px; height: 50px;">
+                                            <img src="{{ $thumbUrl }}"
                                                  alt="{{ $product->name }}"
-                                                 class="rounded me-3"
-                                                 style="width: 50px; height: 50px; object-fit: cover;">
-                                        @else
-                                            <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center"
+                                                 class="rounded"
+                                                 style="width: 50px; height: 50px; object-fit: cover;"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none'); this.nextElementSibling.style.display='flex';">
+                                            <div class="bg-light rounded d-none align-items-center justify-content-center position-absolute top-0 start-0"
                                                  style="width: 50px; height: 50px;">
                                                 <i class="fas fa-image text-muted"></i>
                                             </div>
-                                        @endif
+                                        </div>
                                         <div>
                                             <h6 class="mb-0">{{ Str::limit($product->name, 40) }}</h6>
                                             <small class="text-muted">
@@ -424,4 +431,3 @@
 })();
 </script>
 @endpush
-

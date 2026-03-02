@@ -97,17 +97,21 @@ class RunProductImageOptimization implements ShouldQueue
             );
 
             $savedMb = round(((int) ($summary['saved_bytes'] ?? 0)) / 1048576, 2);
+            $orientationCorrected = (int) ($summary['orientation_corrected'] ?? 0);
+            $exifGuardSkipped = (int) ($summary['exif_guard_skipped'] ?? 0);
             $status['state'] = 'completed';
             $status['finished_at'] = now()->toIso8601String();
             $status['updated_at'] = now()->toIso8601String();
             $status['summary'] = $summary;
             $status['message'] = sprintf(
-                'Image optimization finished: %d optimized (%d resized), %d skipped, %d missing, %d errors. Saved ~%s MB.',
+                'Image optimization finished: %d optimized (%d resized), %d skipped, %d missing, %d errors. Orientation corrected: %d. EXIF-guard skipped: %d. Saved ~%s MB.',
                 (int) ($summary['optimized'] ?? 0),
                 (int) ($summary['resized'] ?? 0),
                 (int) ($summary['skipped'] ?? 0),
                 (int) ($summary['missing'] ?? 0),
                 (int) ($summary['errors'] ?? 0),
+                $orientationCorrected,
+                $exifGuardSkipped,
                 number_format($savedMb, 2)
             );
 

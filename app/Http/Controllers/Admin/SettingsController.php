@@ -416,6 +416,7 @@ class SettingsController extends Controller
         $warnings = [];
         $health = 'ok';
         $now = now();
+        $summary = is_array($status['summary'] ?? null) ? $status['summary'] : null;
 
         $requestedAt = $this->parseIsoTimestamp($status['requested_at'] ?? null);
         $startedAt = $this->parseIsoTimestamp($status['started_at'] ?? null);
@@ -443,6 +444,20 @@ class SettingsController extends Controller
                 $warnings[] = 'Scheduler heartbeat is stale. Cron for "php artisan schedule:run" may not be running every minute.';
             } elseif ($state === 'queued' && $requestedAt && $requestedAt->diffInSeconds($now) > 120) {
                 $warnings[] = 'Scheduler is alive but queue remains queued. Run "php artisan queue:work --stop-when-empty --tries=1 --timeout=7200" manually and check failed jobs.';
+            }
+        }
+
+        if (!function_exists('exif_read_data')) {
+            $warnings[] = 'PHP EXIF extension is not enabled in this runtime. JPEG files may be skipped by orientation safety guard.';
+        }
+
+        if ($summary) {
+            $exifGuardSkipped = (int) ($summary['exif_guard_skipped'] ?? 0);
+            if ($exifGuardSkipped > 0) {
+                $warnings[] = sprintf(
+                    'Orientation safety guard skipped %d JPEG image(s). Ensure EXIF is enabled for queue workers to optimize these safely.',
+                    $exifGuardSkipped
+                );
             }
         }
 

@@ -592,6 +592,8 @@
             Unique files: <strong>{{ (int) ($optimizerSummary['unique_paths'] ?? 0) }}</strong> |
             Optimized: <strong>{{ (int) ($optimizerSummary['optimized'] ?? 0) }}</strong> |
             Resized: <strong>{{ (int) ($optimizerSummary['resized'] ?? 0) }}</strong> |
+            Orientation corrected: <strong>{{ (int) ($optimizerSummary['orientation_corrected'] ?? 0) }}</strong> |
+            EXIF-guard skipped: <strong>{{ (int) ($optimizerSummary['exif_guard_skipped'] ?? 0) }}</strong> |
             Skipped: <strong>{{ (int) ($optimizerSummary['skipped'] ?? 0) }}</strong> |
             Missing: <strong>{{ (int) ($optimizerSummary['missing'] ?? 0) }}</strong> |
             Errors: <strong>{{ (int) ($optimizerSummary['errors'] ?? 0) }}</strong>
@@ -719,6 +721,8 @@
       Unique files: <strong>${Number(summary.unique_paths || 0).toLocaleString()}</strong> |
       Optimized: <strong>${Number(summary.optimized || 0).toLocaleString()}</strong> |
       Resized: <strong>${Number(summary.resized || 0).toLocaleString()}</strong> |
+      Orientation corrected: <strong>${Number(summary.orientation_corrected || 0).toLocaleString()}</strong> |
+      EXIF-guard skipped: <strong>${Number(summary.exif_guard_skipped || 0).toLocaleString()}</strong> |
       Skipped: <strong>${Number(summary.skipped || 0).toLocaleString()}</strong> |
       Missing: <strong>${Number(summary.missing || 0).toLocaleString()}</strong> |
       Errors: <strong>${Number(summary.errors || 0).toLocaleString()}</strong>

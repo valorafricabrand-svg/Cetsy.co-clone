@@ -36,6 +36,8 @@ class ProductImageOptimizationService
             'unique_paths' => 0,
             'optimized' => 0,
             'resized' => 0,
+            'orientation_corrected' => 0,
+            'exif_guard_skipped' => 0,
             'skipped' => 0,
             'missing' => 0,
             'errors' => 0,
@@ -91,6 +93,13 @@ class ProductImageOptimizationService
                 }
             } else {
                 $stats['skipped']++;
+                if (($result['skip_reason'] ?? null) === 'exif_guard') {
+                    $stats['exif_guard_skipped']++;
+                }
+            }
+
+            if (!empty($result['orientation_corrected'])) {
+                $stats['orientation_corrected']++;
             }
 
             $before = (int) ($result['before_bytes'] ?? 0);
@@ -138,7 +147,7 @@ class ProductImageOptimizationService
     }
 
     /**
-     * @return array{status:string,before_bytes:int,after_bytes:int,resized:bool}
+     * @return array{status:string,before_bytes:int,after_bytes:int,resized:bool,orientation_corrected:bool,skip_reason:?string}
      */
     private function optimizeSinglePath(
         string $publicPath,
@@ -149,26 +158,47 @@ class ProductImageOptimizationService
     ): array {
         $disk = Storage::disk('public');
         if (!$disk->exists($publicPath)) {
-            return ['status' => 'missing', 'before_bytes' => 0, 'after_bytes' => 0, 'resized' => false];
+            return ['status' => 'missing', 'before_bytes' => 0, 'after_bytes' => 0, 'resized' => false, 'orientation_corrected' => false, 'skip_reason' => null];
         }
 
         $absolutePath = $disk->path($publicPath);
         if (!is_file($absolutePath)) {
-            return ['status' => 'missing', 'before_bytes' => 0, 'after_bytes' => 0, 'resized' => false];
+            return ['status' => 'missing', 'before_bytes' => 0, 'after_bytes' => 0, 'resized' => false, 'orientation_corrected' => false, 'skip_reason' => null];
         }
 
         $ext = strtolower((string) pathinfo($absolutePath, PATHINFO_EXTENSION));
         if (!$this->canProcessExtension($ext)) {
-            return ['status' => 'skipped', 'before_bytes' => 0, 'after_bytes' => 0, 'resized' => false];
+            return ['status' => 'skipped', 'before_bytes' => 0, 'after_bytes' => 0, 'resized' => false, 'orientation_corrected' => false, 'skip_reason' => 'unsupported_extension'];
         }
 
         $beforeBytes = (int) @filesize($absolutePath);
+        $isJpeg = in_array($ext, ['jpg', 'jpeg'], true);
+        if ($isJpeg && !function_exists('exif_read_data')) {
+            // Safety guard: without EXIF support, orientation tags cannot be trusted on rewrite.
+            return [
+                'status' => 'skipped',
+                'before_bytes' => max(0, $beforeBytes),
+                'after_bytes' => max(0, $beforeBytes),
+                'resized' => false,
+                'orientation_corrected' => false,
+                'skip_reason' => 'exif_guard',
+            ];
+        }
+
+        $orientation = $isJpeg ? $this->readExifOrientation($absolutePath) : null;
         $image = $manager->read($absolutePath);
+        $orientationCorrected = false;
+        if ($orientation !== null && $orientation >= 2 && $orientation <= 8) {
+            $image = $this->applyExifOrientation($image, $orientation);
+            $orientationCorrected = true;
+        } else {
+            $image->orient();
+        }
 
         $beforeWidth = $image->width();
         $beforeHeight = $image->height();
 
-        $image->orient()->scaleDown($maxWidth, $maxHeight);
+        $image->scaleDown($maxWidth, $maxHeight);
 
         $afterWidth = $image->width();
         $afterHeight = $image->height();
@@ -185,6 +215,8 @@ class ProductImageOptimizationService
                 'before_bytes' => $beforeBytes,
                 'after_bytes' => $beforeBytes,
                 'resized' => false,
+                'orientation_corrected' => $orientationCorrected,
+                'skip_reason' => 'not_smaller',
             ];
         }
 
@@ -197,7 +229,57 @@ class ProductImageOptimizationService
             'before_bytes' => max(0, $beforeBytes),
             'after_bytes' => $storedBytes > 0 ? $storedBytes : max(0, $afterBytes),
             'resized' => $resized,
+            'orientation_corrected' => $orientationCorrected,
+            'skip_reason' => null,
         ];
+    }
+
+    private function readExifOrientation(string $absolutePath): ?int
+    {
+        if (!function_exists('exif_read_data')) {
+            return null;
+        }
+
+        try {
+            $exif = @exif_read_data($absolutePath, 'IFD0');
+            $orientation = is_array($exif) ? ($exif['Orientation'] ?? null) : null;
+            $orientation = is_numeric($orientation) ? (int) $orientation : null;
+            if ($orientation !== null && $orientation >= 1 && $orientation <= 8) {
+                return $orientation;
+            }
+        } catch (\Throwable $e) {
+            // fallback to full EXIF payload parse below
+        }
+
+        try {
+            $exif = @exif_read_data($absolutePath, null, true);
+            if (!is_array($exif)) {
+                return null;
+            }
+
+            $orientation = $exif['IFD0']['Orientation'] ?? $exif['Orientation'] ?? null;
+            $orientation = is_numeric($orientation) ? (int) $orientation : null;
+
+            return ($orientation !== null && $orientation >= 1 && $orientation <= 8)
+                ? $orientation
+                : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function applyExifOrientation($image, int $orientation)
+    {
+        return match ($orientation) {
+            2 => $image->flop(),
+            3 => $image->rotate(180),
+            4 => $image->rotate(180)->flop(),
+            5 => $image->rotate(270)->flop(),
+            6 => $image->rotate(270),
+            7 => $image->rotate(90)->flop(),
+            8 => $image->rotate(90),
+            default => $image,
+        };
     }
 
     private function canProcessExtension(string $ext): bool
