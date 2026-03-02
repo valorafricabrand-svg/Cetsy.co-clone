@@ -395,6 +395,10 @@
         $trialDaysSetting = function_exists('setting') ? setting('subscription_trial_days', 30) : 30;
         $homeListingsCacheTtlSetting = function_exists('setting') ? setting('home_listings_cache_ttl_minutes', 10) : 10;
         $trialEnabledValue = (bool) (int) old('subscription_trial_enabled', $trialEnabledSetting);
+        $sellerAutoApproveSetting = function_exists('setting_bool')
+          ? setting_bool('seller_signup_auto_approve', true)
+          : ((bool) (int) (function_exists('setting') ? setting('seller_signup_auto_approve', 1) : 1));
+        $sellerAutoApproveValue = (bool) (int) old('seller_signup_auto_approve', $sellerAutoApproveSetting ? 1 : 0);
       @endphp
       <div class="col-md-4">
         <label class="form-label">Subscription Grace Period (days)</label>
@@ -416,6 +420,17 @@
           <label class="form-check-label" for="subscription-trial-enabled">Enabled</label>
         </div>
         <div class="form-text">Applies to new sellers only.</div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Auto-approve Seller Signups</label>
+        <input type="hidden" name="seller_signup_auto_approve" value="0">
+        <div class="form-check form-switch mt-1">
+          <input class="form-check-input" type="checkbox" role="switch" id="seller-signup-auto-approve"
+                 name="seller_signup_auto_approve" value="1" {{ $sellerAutoApproveValue ? 'checked' : '' }}>
+          <label class="form-check-label" for="seller-signup-auto-approve">Enabled</label>
+        </div>
+        <div class="form-text">When enabled, new sellers are activated immediately without manual admin approval.</div>
       </div>
 
       <div class="col-md-4">

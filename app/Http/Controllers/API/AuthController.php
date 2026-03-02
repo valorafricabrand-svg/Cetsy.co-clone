@@ -26,6 +26,11 @@ class AuthController extends Controller
             'country_id'=> 'nullable|exists:countries,id',
         ]);
 
+        $isSeller = $request->user_type === User::TYPE_SELLER;
+        $autoApproveSellerSignups = function_exists('setting_bool')
+            ? setting_bool('seller_signup_auto_approve', (bool) env('SELLER_SIGNUP_AUTO_APPROVE', true))
+            : (bool) env('SELLER_SIGNUP_AUTO_APPROVE', true);
+
         $user = User::create([
             'name'       => $request->name,
             'email'      => $request->email,
@@ -33,7 +38,7 @@ class AuthController extends Controller
             'user_type'  => $request->user_type,
             'phone'      => $request->phone,
             'country_id' => $request->country_id,
-            'is_active'  => true,
+            'is_active'  => $isSeller ? $autoApproveSellerSignups : true,
         ]);
 
         // Auto-create a basic shop for sellers so they can list products via API.

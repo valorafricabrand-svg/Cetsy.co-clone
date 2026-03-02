@@ -45,14 +45,24 @@ class RegisteredUserController extends Controller
             'terms'    => ['accepted'],
         ]);
 
-        $user = User::create([
+        $autoApproveSellerSignups = function_exists('setting_bool')
+            ? setting_bool('seller_signup_auto_approve', (bool) env('SELLER_SIGNUP_AUTO_APPROVE', true))
+            : (bool) env('SELLER_SIGNUP_AUTO_APPROVE', true);
+
+        $payload = [
             'user_type'     => $request->role,
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
             'country_id' => $request->country_id,
             'phone' => $request->phone,
-        ]);
+        ];
+
+        if ($request->role === User::TYPE_SELLER) {
+            $payload['is_active'] = $autoApproveSellerSignups;
+        }
+
+        $user = User::create($payload);
 
         event(new Registered($user));
         Auth::login($user);

@@ -444,6 +444,39 @@ if (! function_exists('setting')) {
     }
 }
 
+if (! function_exists('setting_bool')) {
+    /**
+     * Read a setting and normalize it to boolean.
+     */
+    function setting_bool(string $key, bool $default = false): bool
+    {
+        if (! function_exists('setting')) {
+            return $default;
+        }
+
+        $raw = setting($key, null);
+        if ($raw === null || $raw === '') {
+            return $default;
+        }
+        if (is_bool($raw)) {
+            return $raw;
+        }
+        if (is_numeric($raw)) {
+            return ((int) $raw) === 1;
+        }
+
+        $raw = strtolower(trim((string) $raw));
+        if (in_array($raw, ['1', 'true', 'yes', 'on', 'enabled', 'active'], true)) {
+            return true;
+        }
+        if (in_array($raw, ['0', 'false', 'no', 'off', 'disabled', 'inactive'], true)) {
+            return false;
+        }
+
+        return $default;
+    }
+}
+
 if (! function_exists('payment_gateway_enabled')) {
     function payment_gateway_enabled(string $gateway): bool
     {

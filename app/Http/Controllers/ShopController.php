@@ -35,6 +35,8 @@ class ShopController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+
         $data = $request->validate([
             // 1) Shop preferences
             'language'         => 'required|string|in:English,Swahili',
@@ -86,9 +88,17 @@ class ShopController extends Controller
         $data['enable_2fa'] = !empty($data['enable_2fa']);
 
         // Create the shop via the one-to-one relationship
-        $shop = Auth::user()->shop()->create($data);
+        $shop = $user->shop()->create($data);
 
-        $subscription = Subscription::where('user_id', Auth::id())
+        // Optional auto-approval for seller onboarding (removes manual admin approval bottleneck).
+        $autoApproveSellerSignups = function_exists('setting_bool')
+            ? setting_bool('seller_signup_auto_approve', (bool) env('SELLER_SIGNUP_AUTO_APPROVE', true))
+            : (bool) env('SELLER_SIGNUP_AUTO_APPROVE', true);
+        if ($user->isSeller() && $autoApproveSellerSignups && !((bool) $user->is_active)) {
+            $user->forceFill(['is_active' => true])->save();
+        }
+
+        $subscription = Subscription::where('user_id', $user->id)
             ->where('status', 'active')
             ->orderByDesc('end_date')
             ->first();
@@ -99,7 +109,7 @@ class ShopController extends Controller
 
         // Create activity record for the seller
         Activity::create([
-            'user_id' => Auth::id(),
+            'user_id' => $user->id,
             'is_read' => false,
             'description' => 'You created a new shop',
             'type' => \App\Models\Activity::TYPE_SHOP,
