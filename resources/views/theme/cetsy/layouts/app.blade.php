@@ -235,6 +235,11 @@
         .table-striped tbody tr:nth-child(odd) { background: #f8fafc; }
         .table-sm > :not(caption) > * > * { padding-top: 0.4rem; padding-bottom: 0.4rem; }
 
+        .top-category-carousel {
+            position: relative;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
         .top-category-scroll {
             overflow: visible;
             overflow-x: clip;
@@ -245,8 +250,58 @@
         }
         .top-category-scroll::-webkit-scrollbar { display: none; }
         .top-category-scroll [data-top-category-track] {
+            display: flex;
+            min-width: 100%;
+            align-items: center;
+            gap: 0.5rem;
+            transition: transform 0.45s ease;
             will-change: transform;
             transform: translate3d(0, 0, 0);
+        }
+        .top-category-item {
+            flex: 0 0 calc((100% - 2.5rem) / 6);
+            min-width: 0;
+        }
+        .top-category-item > a {
+            width: 100%;
+            max-width: 100%;
+        }
+        .top-category-item > a > span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .top-category-nav {
+            position: absolute;
+            top: 50%;
+            z-index: 30;
+            display: inline-flex;
+            height: 2.15rem;
+            width: 2.15rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #64748b;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
+            transform: translateY(-50%);
+            transition: all 0.2s ease;
+        }
+        .top-category-nav:hover {
+            border-color: #a7f3d0;
+            color: #047857;
+        }
+        .top-category-nav:focus-visible {
+            outline: 2px solid #10b981;
+            outline-offset: 2px;
+        }
+        .top-category-nav-prev { left: 0; }
+        .top-category-nav-next { right: 0; }
+        .top-category-nav.is-disabled {
+            opacity: 0;
+            pointer-events: none;
         }
     </style>
 
@@ -386,10 +441,15 @@
 
             <div class="mx-auto hidden w-full max-w-7xl px-4 pb-3 lg:block sm:px-6">
                 @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
-                    <div class="top-category-scroll pb-1"
-                         data-top-category-scroll
-                         data-scroll-speed="80">
-                        <div class="flex w-max min-w-full flex-nowrap items-center gap-2" data-top-category-track>
+                    <div class="top-category-carousel pb-1"
+                         data-top-category-carousel
+                         data-visible-count="6"
+                         data-autoplay-ms="5000">
+                        <button type="button" class="top-category-nav top-category-nav-prev" data-top-category-prev aria-label="Previous categories">
+                            <i class="fa-solid fa-chevron-left text-[11px]"></i>
+                        </button>
+                        <div class="top-category-scroll">
+                        <div class="flex min-w-full flex-nowrap items-center" data-top-category-track>
                         @foreach ($topNavCategories as $cat)
                             @php
                                 $children = collect($cat->children ?? []);
@@ -401,8 +461,8 @@
                                         : media_url($catImagePath);
                                 }
                             @endphp
-                            <div class="relative shrink-0" x-data="{ open: false, pinned: false }" @mouseenter="open = true" @mouseleave="if (!pinned) open = false" @focusin="open = true" @focusout="if (!pinned) open = false" @click.outside="open = false; pinned = false">
-                                <a href="{{ route('category.show', $cat->slug) }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700" @if ($children->isNotEmpty()) @click.prevent="pinned = !pinned; open = pinned" @endif>
+                            <div class="relative top-category-item" data-top-category-item x-data="{ open: false, pinned: false }" @mouseenter="open = true" @mouseleave="if (!pinned) open = false" @focusin="open = true" @focusout="if (!pinned) open = false" @click.outside="open = false; pinned = false">
+                                <a href="{{ route('category.show', $cat->slug) }}" class="inline-flex min-w-0 items-center justify-start gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700" @if ($children->isNotEmpty()) @click.prevent="pinned = !pinned; open = pinned" @endif>
                                     @if ($catThumb)
                                         <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-8 w-8 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
                                     @else
@@ -410,7 +470,7 @@
                                             <i class="fa-solid fa-folder"></i>
                                         </span>
                                     @endif
-                                    <span>{{ $cat->name }}</span>
+                                    <span class="truncate">{{ $cat->name }}</span>
                                     @if ($children->isNotEmpty())
                                         <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
                                     @endif
@@ -457,6 +517,10 @@
                             </div>
                         @endforeach
                         </div>
+                        </div>
+                        <button type="button" class="top-category-nav top-category-nav-next" data-top-category-next aria-label="Next categories">
+                            <i class="fa-solid fa-chevron-right text-[11px]"></i>
+                        </button>
                     </div>
                 @endif
             </div>
@@ -761,151 +825,124 @@
         document.addEventListener('DOMContentLoaded', function () {
         const body = document.body;
 
-        // Desktop top-category rail as a continuous marquee (right-to-left).
-        document.querySelectorAll('[data-top-category-scroll]').forEach(function (scroller) {
-            const speed = Number(scroller.getAttribute('data-scroll-speed') || 80); // px/s
-            let paused = false;
-            let rafId = null;
-            let lastTs = null;
-            let offset = 0;
-            let cycleWidth = 0;
+        // Desktop top-category rail as a paged carousel (6 categories per slide).
+        document.querySelectorAll('[data-top-category-carousel]').forEach(function (carousel) {
+            const scroller = carousel.querySelector('.top-category-scroll');
+            const track = carousel.querySelector('[data-top-category-track]');
+            const prevBtn = carousel.querySelector('[data-top-category-prev]');
+            const nextBtn = carousel.querySelector('[data-top-category-next]');
+            if (!scroller || !track) return;
+
+            const itemSelector = '[data-top-category-item]';
+            const visibleCount = Math.max(1, Number(carousel.getAttribute('data-visible-count') || 6));
+            const autoplayMs = Math.max(0, Number(carousel.getAttribute('data-autoplay-ms') || 0));
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            let pageIndex = 0;
+            let pageOffsets = [0];
+            let maxPageIndex = 0;
+            let autoTimer = null;
             let resizeTimer = null;
 
-            const track = scroller.querySelector('[data-top-category-track]');
-            if (!track) return;
+            function getItems() {
+                return Array.from(track.querySelectorAll(itemSelector));
+            }
 
-            const originalItems = Array.from(track.children).filter(function (item) {
-                return !item.hasAttribute('data-loop-clone');
-            });
-            if (originalItems.length === 0) return;
-
-            function bindCloneDropdowns(cloneRoot) {
-                if (!cloneRoot) return;
-
-                // If Alpine does not hydrate this clone, x-cloak would keep menus hidden forever.
-                Array.from(cloneRoot.querySelectorAll('[x-cloak]')).forEach(function (el) {
-                    el.removeAttribute('x-cloak');
-                });
-
-                const candidates = [cloneRoot].concat(Array.from(cloneRoot.querySelectorAll('.relative')));
-                candidates.forEach(function (node) {
-                    if (node.getAttribute('data-js-dd-bound') === '1') return;
-
-                    const children = Array.from(node.children || []);
-                    const trigger = children.find(function (ch) { return ch.tagName === 'A'; });
-                    const menu = children.find(function (ch) {
-                        return ch.tagName === 'DIV' && ch.classList.contains('absolute');
-                    });
-                    if (!trigger || !menu) return;
-
-                    node.setAttribute('data-js-dd-bound', '1');
-                    let pinned = false;
-                    menu.style.display = 'none';
-
-                    const openMenu = function () { menu.style.display = 'block'; };
-                    const closeMenu = function () { if (!pinned) menu.style.display = 'none'; };
-
-                    node.addEventListener('mouseenter', openMenu);
-                    node.addEventListener('mouseleave', closeMenu);
-                    node.addEventListener('focusin', openMenu);
-                    node.addEventListener('focusout', function (evt) {
-                        if (!node.contains(evt.relatedTarget)) {
-                            closeMenu();
-                        }
-                    });
-                    trigger.addEventListener('click', function (evt) {
-                        evt.preventDefault();
-                        pinned = !pinned;
-                        if (pinned) openMenu();
-                        else menu.style.display = 'none';
-                    });
+            function updateNavState() {
+                const isDisabled = maxPageIndex === 0;
+                [prevBtn, nextBtn].forEach(function (btn) {
+                    if (!btn) return;
+                    btn.classList.toggle('is-disabled', isDisabled);
+                    btn.setAttribute('aria-hidden', isDisabled ? 'true' : 'false');
                 });
             }
 
-            function ensureLoopContent() {
-                // Remove previous clones before recalculating.
-                Array.from(track.querySelectorAll('[data-loop-clone="1"]')).forEach(function (node) {
-                    node.remove();
-                });
-
-                offset = 0;
-                track.style.transform = 'translate3d(0, 0, 0)';
-                cycleWidth = Math.floor(track.scrollWidth);
-
-                if (cycleWidth <= 0) return;
-
-                let guard = 0;
-                // Ensure enough repeated content for seamless looping.
-                while (track.scrollWidth < (scroller.clientWidth + cycleWidth) && guard < 10) {
-                    originalItems.forEach(function (item) {
-                        const clone = item.cloneNode(true);
-                        clone.setAttribute('data-loop-clone', '1');
-                        track.appendChild(clone);
-                        if (window.Alpine && typeof window.Alpine.initTree === 'function') {
-                            try {
-                                window.Alpine.initTree(clone);
-                            } catch (_) {
-                                // Fallback handlers below keep clone dropdowns working.
-                            }
-                        }
-                        bindCloneDropdowns(clone);
+            function applyPage(animate) {
+                const offset = pageOffsets[pageIndex] || 0;
+                track.style.transition = animate ? 'transform 0.45s ease' : 'none';
+                track.style.transform = 'translate3d(' + (-offset) + 'px, 0, 0)';
+                if (!animate) {
+                    window.requestAnimationFrame(function () {
+                        track.style.transition = 'transform 0.45s ease';
                     });
-                    guard += 1;
                 }
-
-                // Ensure dropdown fallback handlers also exist on original items.
-                bindCloneDropdowns(track);
             }
 
-            function tick(ts) {
-                if (lastTs === null) {
-                    lastTs = ts;
-                }
-                const dt = Math.max(0, (ts - lastTs) / 1000);
-                lastTs = ts;
+            function rebuildPages() {
+                const items = getItems();
+                pageOffsets = [0];
 
-                if (!paused && cycleWidth > 0) {
-                    offset += speed * dt;
-                    if (offset >= cycleWidth) {
-                        offset = offset % cycleWidth;
+                if (items.length > visibleCount) {
+                    for (let index = visibleCount; index < items.length; index += visibleCount) {
+                        pageOffsets.push(items[index].offsetLeft);
                     }
-                    track.style.transform = 'translate3d(' + (-offset) + 'px, 0, 0)';
                 }
 
-                rafId = window.requestAnimationFrame(tick);
+                maxPageIndex = Math.max(0, pageOffsets.length - 1);
+                if (pageIndex > maxPageIndex) {
+                    pageIndex = maxPageIndex;
+                }
+
+                applyPage(false);
+                updateNavState();
             }
 
-            const pause = function () { paused = true; };
-            const resume = function () {
-                paused = false;
-                lastTs = null;
-            };
+            function goNext() {
+                if (maxPageIndex === 0) return;
+                pageIndex = pageIndex >= maxPageIndex ? 0 : pageIndex + 1;
+                applyPage(true);
+            }
 
-            scroller.addEventListener('pointerdown', pause);
-            window.addEventListener('pointerup', resume);
-            scroller.addEventListener('pointercancel', resume);
-            scroller.addEventListener('mouseenter', pause);
-            scroller.addEventListener('mouseleave', resume);
-            scroller.addEventListener('focusin', pause);
-            scroller.addEventListener('focusout', resume);
-            scroller.addEventListener('touchstart', pause, { passive: true });
-            window.addEventListener('touchend', resume, { passive: true });
+            function goPrev() {
+                if (maxPageIndex === 0) return;
+                pageIndex = pageIndex <= 0 ? maxPageIndex : pageIndex - 1;
+                applyPage(true);
+            }
+
+            function stopAuto() {
+                if (!autoTimer) return;
+                window.clearInterval(autoTimer);
+                autoTimer = null;
+            }
+
+            function startAuto() {
+                stopAuto();
+                if (prefersReducedMotion || autoplayMs < 1200 || maxPageIndex === 0) return;
+                autoTimer = window.setInterval(goNext, autoplayMs);
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function () {
+                    goPrev();
+                    startAuto();
+                });
+            }
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function () {
+                    goNext();
+                    startAuto();
+                });
+            }
+
+            carousel.addEventListener('mouseenter', stopAuto);
+            carousel.addEventListener('mouseleave', startAuto);
+            carousel.addEventListener('focusin', stopAuto);
+            carousel.addEventListener('focusout', function (event) {
+                if (!carousel.contains(event.relatedTarget)) {
+                    startAuto();
+                }
+            });
+            carousel.addEventListener('touchstart', stopAuto, { passive: true });
+            carousel.addEventListener('touchend', startAuto, { passive: true });
 
             window.addEventListener('resize', function () {
                 window.clearTimeout(resizeTimer);
-                resizeTimer = window.setTimeout(ensureLoopContent, 120);
+                resizeTimer = window.setTimeout(rebuildPages, 140);
             });
 
-            ensureLoopContent();
-            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                rafId = window.requestAnimationFrame(tick);
-            }
-
-            window.addEventListener('beforeunload', function () {
-                if (rafId) {
-                    window.cancelAnimationFrame(rafId);
-                }
-            });
+            rebuildPages();
+            startAuto();
+            window.addEventListener('beforeunload', stopAuto);
         });
 
         function resolveTarget(trigger) {
