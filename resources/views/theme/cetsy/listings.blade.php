@@ -190,25 +190,24 @@
         <div id="listing-items" class="space-y-3">
           @forelse ($products as $item)
             @php
-              if (!empty($item->featured_image)) {
-                $thumb = str_starts_with($item->featured_image, 'http')
-                    ? $item->featured_image
-                    : asset('storage/'.ltrim($item->featured_image,'/'));
-              } else {
-                $firstImage = (isset($item->media) && method_exists($item->media, 'firstWhere'))
-                    ? $item->media->firstWhere('type','image')
-                    : null;
-                if ($firstImage && !empty($firstImage->url)) {
-                  $thumb = asset('storage/'.ltrim($firstImage->url,'/'));
-                } else {
-                  $firstVideo = (isset($item->media) && method_exists($item->media,'firstWhere'))
-                      ? $item->media->firstWhere('type','video')
-                      : null;
-                  $thumb = ($item->shop && $item->shop->logo)
-                      ? asset('storage/'.ltrim($item->shop->logo,'/'))
-                      : (setting('favicon_url') ?: asset('assets/img/placeholder.svg'));
-                }
-              }
+              $thumb = product_thumb_url($item);
+
+              $mediaItems = $item->media ?? collect();
+              $firstImage = optional($mediaItems)->first(function ($media) {
+                $url = (string) ($media->url ?? '');
+                if ($url === '') return false;
+                $type = strtolower((string) ($media->type ?? ''));
+                if ($type === 'image') return true;
+                if ($type === 'video') return false;
+                return function_exists('is_video_media_path') ? !is_video_media_path($url) : true;
+              });
+              $firstVideo = optional($mediaItems)->first(function ($media) {
+                $url = (string) ($media->url ?? '');
+                if ($url === '') return false;
+                $type = strtolower((string) ($media->type ?? ''));
+                if ($type === 'video') return true;
+                return function_exists('is_video_media_path') ? is_video_media_path($url) : false;
+              });
 
               $shop = $item->shop ?? null;
               $avg  = round((float) ($shop?->reviews_avg_rating ?? ($shop ? $shop->reviews()->avg('rating') : 0)));
@@ -216,10 +215,17 @@
               $basePrice  = $item->price;
               $finalPrice = $item->discounted_price;
 
-              $hasVideo = (isset($item->media) && method_exists($item->media,'firstWhere') && $item->media->firstWhere('type','video'));
+              $featuredMedia = (string) ($item->featured_image ?? '');
+              $featuredIsVideo = ($featuredMedia !== '')
+                  && function_exists('is_video_media_path')
+                  && is_video_media_path($featuredMedia);
+
+              $hasVideo = (bool) $firstVideo || $featuredIsVideo;
               $vid = null;
-              if ((!isset($firstImage) || !$firstImage) && isset($firstVideo) && $firstVideo && !empty($firstVideo->url)) {
-                $vid = asset('storage/'.ltrim($firstVideo->url,'/'));
+              if ($firstVideo && !empty($firstVideo->url) && !$firstImage) {
+                $vid = media_url($firstVideo->url);
+              } elseif ($featuredIsVideo && !$firstImage) {
+                $vid = media_url($featuredMedia);
               }
             @endphp
 

@@ -54,6 +54,31 @@ if (! function_exists('media_url')) {
     }
 }
 
+if (! function_exists('is_video_media_path')) {
+    /**
+     * Determine whether a media path/URL points to a video file.
+     */
+    function is_video_media_path(?string $path): bool
+    {
+        if (!$path) return false;
+
+        $candidate = trim($path);
+        if ($candidate === '') return false;
+
+        if (str_starts_with($candidate, 'http://') || str_starts_with($candidate, 'https://') || str_starts_with($candidate, '//')) {
+            $parsedPath = parse_url($candidate, PHP_URL_PATH);
+            if (is_string($parsedPath) && $parsedPath !== '') {
+                $candidate = $parsedPath;
+            }
+        }
+
+        $candidate = (string) preg_replace('/[?#].*$/', '', $candidate);
+        $ext = strtolower((string) pathinfo($candidate, PATHINFO_EXTENSION));
+
+        return in_array($ext, ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv', 'wmv', 'flv', 'ogv', 'ogg', '3gp'], true);
+    }
+}
+
 function logo_url(){
     try {
         $logo = function_exists('setting') ? (string) setting('logo_url', '') : '';
@@ -740,9 +765,9 @@ if (! function_exists('product_thumb_url')) {
             return $rel;
         };
 
-        // 1) Featured image
+        // 1) Featured image (skip video files for <img> thumbnails)
         $fi = $product->featured_image ?? null;
-        if (!empty($fi)) {
+        if (!empty($fi) && !is_video_media_path($fi)) {
             if (str_starts_with($fi, 'http')) {
                 return $fi;
             }
@@ -751,12 +776,36 @@ if (! function_exists('product_thumb_url')) {
             catch (\Throwable $e) { return asset('storage/' . ltrim($rel ?: $fi, '/')); }
         }
 
-        // 2) First media
-        $firstMedia = method_exists($product, 'media') ? $product->media->first() : null;
-        if ($firstMedia && !empty($firstMedia->url)) {
-            $rel = $resolvePublic($firstMedia->url);
+        // 2) First image-like media (never return video URL as image thumb)
+        $mediaItems = collect();
+        try {
+            if (method_exists($product, 'relationLoaded') && $product->relationLoaded('media')) {
+                $mediaItems = collect($product->media ?? []);
+            } elseif (isset($product->media)) {
+                $mediaItems = collect($product->media ?? []);
+                if ($mediaItems->isEmpty() && method_exists($product, 'media')) {
+                    $mediaItems = $product->media()->get();
+                }
+            } elseif (method_exists($product, 'media')) {
+                $mediaItems = $product->media()->get();
+            }
+        } catch (\Throwable $e) {
+            $mediaItems = collect();
+        }
+
+        $firstImageMedia = $mediaItems->first(function ($media) {
+            $url = (string) ($media->url ?? '');
+            if ($url === '') return false;
+            $type = strtolower((string) ($media->type ?? ''));
+            if ($type === 'video') return false;
+            if ($type === 'image') return true;
+            return !is_video_media_path($url);
+        });
+
+        if ($firstImageMedia && !empty($firstImageMedia->url)) {
+            $rel = $resolvePublic($firstImageMedia->url);
             try { return \Storage::disk('public')->url($rel); }
-            catch (\Throwable $e) { return asset('storage/' . ltrim($rel ?: $firstMedia->url, '/')); }
+            catch (\Throwable $e) { return asset('storage/' . ltrim($rel ?: $firstImageMedia->url, '/')); }
         }
 
         // 3) Shop logo

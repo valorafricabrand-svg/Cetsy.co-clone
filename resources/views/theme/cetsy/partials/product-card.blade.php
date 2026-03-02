@@ -26,18 +26,41 @@
       && (($item->is_reserved ?? false));
 
   $thumb = product_thumb_url($item);
-  $firstImage = $item->relationLoaded('media')
-      ? $item->media->firstWhere('type', 'image')
-      : optional($item->media)->firstWhere('type', 'image');
-  $firstVideo = $item->relationLoaded('media')
-      ? $item->media->firstWhere('type', 'video')
-      : optional($item->media)->firstWhere('type', 'video');
-  $hasVideo = (bool) ($item->relationLoaded('media')
-      ? optional($item->media)->firstWhere('type', 'video')
-      : optional($item->media)->firstWhere('type', 'video'));
+  $mediaItems = $item->media ?? collect();
 
-  $dataVideoSrc = (isset($firstVideo) && $firstVideo && empty($firstImage) && empty($item->featured_image))
-      ? media_url($firstVideo->url)
+  $firstImage = optional($mediaItems)->first(function ($media) {
+      $url = (string) ($media->url ?? '');
+      if ($url === '') return false;
+      $type = strtolower((string) ($media->type ?? ''));
+      if ($type === 'image') return true;
+      if ($type === 'video') return false;
+      return function_exists('is_video_media_path') ? !is_video_media_path($url) : true;
+  });
+
+  $firstVideo = optional($mediaItems)->first(function ($media) {
+      $url = (string) ($media->url ?? '');
+      if ($url === '') return false;
+      $type = strtolower((string) ($media->type ?? ''));
+      if ($type === 'video') return true;
+      return function_exists('is_video_media_path') ? is_video_media_path($url) : false;
+  });
+
+  $featuredMedia = (string) ($item->featured_image ?? '');
+  $featuredIsVideo = ($featuredMedia !== '')
+      && function_exists('is_video_media_path')
+      && is_video_media_path($featuredMedia);
+
+  $hasVideo = (bool) $firstVideo || $featuredIsVideo;
+
+  $videoSrc = null;
+  if ($firstVideo && !empty($firstVideo->url)) {
+      $videoSrc = media_url($firstVideo->url);
+  } elseif ($featuredIsVideo) {
+      $videoSrc = media_url($featuredMedia);
+  }
+
+  $dataVideoSrc = (empty($firstImage) && !empty($videoSrc))
+      ? $videoSrc
       : null;
 
   $shop = $item->shop;
