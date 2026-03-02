@@ -752,6 +752,8 @@
                         <li><a class="hover:text-white" href="{{ url('/about') }}">About Us</a></li>
                         <li><a class="hover:text-white" href="{{ route('contact') }}">Contact Us</a></li>
                         <li><a class="hover:text-white" href="{{ route('payment_policy') }}">Payments & Payouts</a></li>
+                        <li><a class="hover:text-white" href="{{ route('user-agreement') }}">User Agreement</a></li>
+                        <li><a class="hover:text-white" href="{{ route('user-agreement') }}#fees">Fees Schedule</a></li>
                         <li><a class="hover:text-white" href="{{ url('/refunds-returns') }}">Refund & Returns</a></li>
                         <li><a class="hover:text-white" href="{{ url('/shipping-delivery') }}">Shipping & Delivery</a></li>
                     </ul>
