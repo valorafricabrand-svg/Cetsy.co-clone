@@ -58,4 +58,8 @@ return [
         'profile_id' => env('WISE_PROFILE_ID'),
     ],
 
+    'tawk' => [
+        'embed_url' => env('TAWK_TO_EMBED_URL'),
+    ],
+
 ];

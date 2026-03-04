@@ -149,7 +149,12 @@
                         <tr class="border-t border-slate-100">
                           <td class="px-4 py-3">
                             <div class="flex items-center gap-2">
-                              <img src="{{ $p->thumbnail_url ?? asset('storage/placeholder.jpg') }}" class="rounded" width="40" height="40" alt="">
+                              <div class="relative h-10 w-10 shrink-0">
+                                <img src="{{ $p->thumbnail_url ?? asset('storage/placeholder.jpg') }}" class="h-10 w-10 rounded object-cover" alt="{{ $p->name ?? 'Product' }}" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+                                <div class="absolute inset-0 hidden items-center justify-center rounded border border-slate-200 bg-slate-100 text-slate-400">
+                                  <i class="fa-solid fa-image"></i>
+                                </div>
+                              </div>
                               <span>{{ Str::limit($p->name, 30) }}</span>
                             </div>
                           </td>

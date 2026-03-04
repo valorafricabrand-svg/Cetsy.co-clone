@@ -202,7 +202,12 @@
  @php
  $thumb = product_thumb_url($offer->product);
  @endphp
- <img src="{{ $thumb }}" class="rounded" style="width:40px;height:40px;object-fit:cover;" alt="{{ $offer->product->name }}">
+ <div class="relative h-10 w-10 shrink-0">
+ <img src="{{ $thumb }}" class="h-10 w-10 rounded object-cover" alt="{{ $offer->product->name }}" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+ <div class="absolute inset-0 hidden items-center justify-center rounded border border-slate-200 bg-slate-100 text-slate-400">
+ <i class="fa-solid fa-image"></i>
+ </div>
+ </div>
  <div class="flex-1">
  <span class="font-semibold text-slate-900 block" title="{{ $offer->product->name ?? '-' }}">
  {{ \Illuminate\Support\Str::limit($offer->product->name ?? '-', 25) }}

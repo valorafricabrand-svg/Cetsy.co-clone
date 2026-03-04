@@ -80,17 +80,24 @@
                                             <td>#{{ $report->id }}</td>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    @if($report->product->featured_image)
-                                                        <img src="{{ asset('storage/' . $report->product->featured_image) }}" 
-                                                             alt="{{ $report->product->name }}" 
-                                                             class="rounded me-2" 
-                                                             style="width: 40px; height: 40px; object-fit: cover;">
-                                                    @else
-                                                        <div class="bg-light rounded me-2 d-flex align-items-center justify-content-center" 
+                                                    @php
+                                                        $productThumb = function_exists('product_thumb_url')
+                                                            ? product_thumb_url($report->product)
+                                                            : (!empty($report->product->featured_image)
+                                                                ? asset('storage/' . ltrim($report->product->featured_image, '/'))
+                                                                : asset('storage/placeholder.jpg'));
+                                                    @endphp
+                                                    <div class="position-relative me-2 flex-shrink-0" style="width: 40px; height: 40px;">
+                                                        <img src="{{ $productThumb }}"
+                                                             alt="{{ $report->product->name }}"
+                                                             class="rounded"
+                                                             style="width: 40px; height: 40px; object-fit: cover;"
+                                                             onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none'); this.nextElementSibling.style.display='flex';">
+                                                        <div class="bg-light rounded d-none align-items-center justify-content-center position-absolute top-0 start-0"
                                                              style="width: 40px; height: 40px;">
                                                             <i class="fa-solid fa-image text-muted"></i>
                                                         </div>
-                                                    @endif
+                                                    </div>
                                                     <div>
                                                         <div class="fw-semibold">{{ $report->product->name }}</div>
                                                         <small class="text-muted">by {{ $report->product->shop->name }}</small>

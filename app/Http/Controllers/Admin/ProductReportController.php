@@ -14,7 +14,7 @@ class ProductReportController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ProductReport::with(['product', 'user']);
+        $query = ProductReport::with(['product.shop', 'product.media', 'user']);
 
         // Filter by status
         if ($request->filled('status')) {
