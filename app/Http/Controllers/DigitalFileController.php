@@ -45,7 +45,7 @@ class DigitalFileController extends Controller
         // contains a product linked to this file.  Adjust as needed.
         $ownsFile = Order::query()
             ->where('user_id', $user->id)
-            ->whereIn('status', [Order::STATUS_PROCESSING, Order::STATUS_COMPLETED])
+            ->whereIn('status', [Order::STATUS_PROCESSING, Order::STATUS_COMPLETED, Order::STATUS_DELIVERED])
             ->whereHas('items', function ($q) use ($file) {
                 $q->where('product_id', $file->product_id);
             })

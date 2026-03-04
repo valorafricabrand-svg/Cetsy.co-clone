@@ -232,11 +232,21 @@
         {{-- Action buttons --}}
         <div class="order-actions flex flex-wrap gap-2">
           @php
+            $downloadableStatuses = [
+              \App\Models\Order::STATUS_PROCESSING,
+              \App\Models\Order::STATUS_COMPLETED,
+              \App\Models\Order::STATUS_DELIVERED,
+            ];
+            $orderItemsCollection = collect($order->items ?? []);
+            $__digitalItems = $orderItemsCollection->filter(function ($__it) {
+              return strtolower((string) (optional($__it->product)->type ?? '')) === 'digital';
+            });
+
             // Collect all downloadable files across digital items in this order
             $__digitalFiles = [];
-            foreach (($order->items ?? []) as $__it) {
+            foreach ($orderItemsCollection as $__it) {
               $p = optional($__it->product);
-              if ($p && ($p->type === 'digital')) {
+              if ($p && strtolower((string) ($p->type ?? '')) === 'digital') {
                 foreach (($p->digitalFiles ?? collect()) as $__df) {
                   $__digitalFiles[] = $__df;
                 }
@@ -244,8 +254,12 @@
             }
             $__canDownloadAll = in_array(
               $order->status,
-              [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED]
+              $downloadableStatuses,
+              true
             ) && count($__digitalFiles) > 0;
+            $__showNoFilesDownloadHint = in_array($order->status, $downloadableStatuses, true)
+              && $__digitalItems->isNotEmpty()
+              && count($__digitalFiles) === 0;
           @endphp
 
           @if($__canDownloadAll)
@@ -266,6 +280,11 @@
                 <span>Download Files</span>
               </button>
             @endif
+          @elseif($__showNoFilesDownloadHint)
+            <span class="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800">
+              <i class="bi bi-exclamation-triangle"></i>
+              <span>Digital file not uploaded yet</span>
+            </span>
           @endif
 
           @if($order->status === \App\Models\Order::STATUS_PENDING)
@@ -431,6 +450,15 @@
 
   {{-- Processing timeline & ship-by notice --}}
   @php
+    $timelineItems = collect($order->items ?? []);
+    $timelineDigitalItems = $timelineItems->filter(function ($it) {
+      return strtolower((string) (optional($it->product)->type ?? '')) === 'digital';
+    });
+    $isDigitalOnlyOrder = $timelineDigitalItems->isNotEmpty() && $timelineDigitalItems->count() === $timelineItems->count();
+    $timelineDigitalFilesCount = $timelineDigitalItems->sum(function ($it) {
+      return (int) collect(optional($it->product)->digitalFiles ?? [])->count();
+    });
+
     $minDays = null; $maxDays = null;
     foreach (($order->items ?? []) as $it) {
       $sp = $it->shippingProfile; // may be null (digital)
@@ -554,7 +582,15 @@
           <div class="col-span-12 md:col-span-6">
             <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 mb-0">
               <i class="bi bi-info-circle mr-2"></i>
-              @if($stepCompleted && $completedAt)
+              @if($isDigitalOnlyOrder)
+                @if($status === \App\Models\Order::STATUS_PENDING)
+                  Complete payment to unlock your digital downloads.
+                @elseif($timelineDigitalFilesCount > 0)
+                  Your digital files are ready to download below.
+                @else
+                  Digital order confirmed. Download file has not been uploaded yet.
+                @endif
+              @elseif($stepCompleted && $completedAt)
                 Completed on <strong>{{ $formatDateTime($completedAt) }}</strong>
               @elseif($stepDelivered && $deliveredAt)
                 Delivered on <strong>{{ $formatDateTime($deliveredAt) }}</strong>
@@ -601,7 +637,9 @@
 
       @php
         $isPending = ($order->status === \App\Models\Order::STATUS_PENDING);
-        $hasDigitalPending = $order->items->contains(function($it){ return optional($it->product)->type === 'digital'; });
+        $hasDigitalPending = $order->items->contains(function ($it) {
+          return strtolower((string) (optional($it->product)->type ?? '')) === 'digital';
+        });
       @endphp
       @if($hasDigitalPending && $isPending)
         <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 mt-3 mb-0" role="alert">
@@ -611,8 +649,13 @@
       @endif
 
       @php
-        $hasDigital = $order->items->contains(function($it){ return optional($it->product)->type === 'digital'; });
-        $needsDownload = $order->items->contains(function($it){ return optional($it->product)->type === 'digital' && empty($it->downloaded_at); });
+        $hasDigital = $order->items->contains(function ($it) {
+          return strtolower((string) (optional($it->product)->type ?? '')) === 'digital';
+        });
+        $needsDownload = $order->items->contains(function ($it) {
+          $isDigitalItem = strtolower((string) (optional($it->product)->type ?? '')) === 'digital';
+          return $isDigitalItem && empty($it->downloaded_at);
+        });
       @endphp
       @if($hasDigital && $needsDownload)
         <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 mt-3 mb-0" role="alert">
@@ -632,7 +675,7 @@
           }
 
           $product    = optional($item->product);
-          $isDigital  = $product && $product->type === 'digital';
+          $isDigital  = $product && strtolower((string) ($product->type ?? '')) === 'digital';
           $downloaded = !empty($item->downloaded_at);
 
           if ($isDigital) {
@@ -820,7 +863,7 @@
                     $product    = optional($item->product);
                     $reviewed   = $item->review !== null;
                     $modalId    = 'reviewModal_'.$item->id;
-                    $isDigital  = $product && $product->type === 'digital';
+                    $isDigital  = $product && strtolower((string) ($product->type ?? '')) === 'digital';
 
                     // Shipping label + cost (hidden/zero for digital)
                     if ($isDigital) {
@@ -845,8 +888,9 @@
                     // Downloads: allow on Processing/Completed for digital products
                     $canDownload = in_array(
                                       $order->status,
-                                      [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED]
-                                   ) && $product && $product->type === 'digital';
+                                      [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED, \App\Models\Order::STATUS_DELIVERED],
+                                      true
+                                   ) && $isDigital;
                   @endphp
 
                   <tr @if($reviewed && $item->review) id="review-{{ $item->review->id }}" @endif>
@@ -910,9 +954,9 @@
                             <i class="bi bi-pencil"></i> Edit
                           </button>
                         </div>
-                      @elseif($canReviewDelivered || ($product && $product->type === 'digital' && $canReviewDigitalIfCompleted))
+                      @elseif($canReviewDelivered || ($isDigital && $canReviewDigitalIfCompleted))
                         @php $downloaded = !empty($item->downloaded_at); @endphp
-                        @if($product && $product->type === 'digital' && ! $downloaded)
+                        @if($isDigital && ! $downloaded)
                           <span class="text-slate-500 text-xs">Download required to review</span>
                         @else
                           <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-amber-500 text-amber-700 hover:bg-amber-50 px-3 py-1.5 text-xs" data-ui-toggle="modal" data-ui-target="#{{ $modalId }}">
@@ -926,20 +970,26 @@
 
                     {{-- Downloads (digital + allowed statuses) --}}
                     <td>
-                      @if($canDownload && $product && $product->digitalFiles->count())
-                        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-0">
-                          <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
-                            @foreach($product->digitalFiles as $file)
-                              <li class="px-4 py-3 flex justify-between items-center">
-                                <a href="{{ route('digital-files.download', $file) }}"
-                                   target="_blank" rel="noopener"
-                                   class="inline-flex items-center">
-                                  <i class="fas fa-file-download mr-2"></i> {{ $file->filename }}
-                                </a>
-                              </li>
-                            @endforeach
-                          </ul>
-                        </div>
+                      @if($isDigital && $canDownload)
+                        @if($product && $product->digitalFiles->count())
+                          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-0">
+                            <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
+                              @foreach($product->digitalFiles as $file)
+                                <li class="px-4 py-3 flex justify-between items-center">
+                                  <a href="{{ route('digital-files.download', $file) }}"
+                                     target="_blank" rel="noopener"
+                                     class="inline-flex items-center">
+                                    <i class="fas fa-file-download mr-2"></i> {{ $file->filename }}
+                                  </a>
+                                </li>
+                              @endforeach
+                            </ul>
+                          </div>
+                        @else
+                          <span class="text-amber-700 text-xs">No digital file uploaded yet</span>
+                        @endif
+                      @elseif($isDigital && $order->status === \App\Models\Order::STATUS_PENDING)
+                        <span class="text-slate-500 text-xs">Unlocks after payment</span>
                       @else
                         <span class="text-slate-500">&mdash;</span>
                       @endif
@@ -957,7 +1007,7 @@
                 $product    = optional($item->product);
                 $reviewed   = $item->review !== null;
                 $modalId    = 'reviewModal_'.$item->id;
-                $isDigital  = $product && $product->type === 'digital';
+                $isDigital  = $product && strtolower((string) ($product->type ?? '')) === 'digital';
 
                 // Shipping label + cost (hidden/zero for digital)
                 if ($isDigital) {
@@ -978,8 +1028,9 @@
                 $thumbUrl     = product_thumb_url($product);
                 $canDownload  = in_array(
                                   $order->status,
-                                  [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED]
-                                ) && $product && $product->type === 'digital';
+                                  [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED, \App\Models\Order::STATUS_DELIVERED],
+                                  true
+                                ) && $isDigital;
               @endphp
 
               <div class="rounded-2xl border border-slate-200 bg-white shadow-sm order-item-card mb-3" @if($reviewed && $item->review) id="review-{{ $item->review->id }}" @endif>
@@ -1063,20 +1114,28 @@
                         </div>
                       </div>
 
-                      @if($canDownload && $product && $product->digitalFiles->count())
+                      @if($isDigital)
                         <div class="mt-3">
                           <div class="label mb-1">Downloads</div>
-                          <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-0">
-                            <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
-                              @foreach($product->digitalFiles as $file)
-                                <li class="px-4 py-3 flex justify-between items-center">
-                                  <a href="{{ route('digital-files.download', $file) }}" target="_blank" rel="noopener" class="inline-flex items-center">
-                                    <i class="fas fa-file-download mr-2"></i> {{ $file->filename }}
-                                  </a>
-                                </li>
-                              @endforeach
-                            </ul>
-                          </div>
+                          @if($canDownload && $product && $product->digitalFiles->count())
+                            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-0">
+                              <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
+                                @foreach($product->digitalFiles as $file)
+                                  <li class="px-4 py-3 flex justify-between items-center">
+                                    <a href="{{ route('digital-files.download', $file) }}" target="_blank" rel="noopener" class="inline-flex items-center">
+                                      <i class="fas fa-file-download mr-2"></i> {{ $file->filename }}
+                                    </a>
+                                  </li>
+                                @endforeach
+                              </ul>
+                            </div>
+                          @elseif($order->status === \App\Models\Order::STATUS_PENDING)
+                            <div class="text-xs text-slate-500">Unlocks after payment</div>
+                          @elseif($canDownload)
+                            <div class="text-xs text-amber-700">No digital file uploaded yet</div>
+                          @else
+                            <div class="text-xs text-slate-500">Downloads become available after payment processing.</div>
+                          @endif
                         </div>
                       @endif
 
@@ -1203,13 +1262,13 @@
   $__dlFiles = [];
   foreach (($order->items ?? []) as $__it) {
     $p = optional($__it->product);
-    if ($p && ($p->type === 'digital')) {
+    if ($p && strtolower((string) ($p->type ?? '')) === 'digital') {
       foreach (($p->digitalFiles ?? collect()) as $__df) {
         $__dlFiles[] = $__df;
       }
     }
   }
-  $__showDownloadModal = in_array($order->status, [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED])
+  $__showDownloadModal = in_array($order->status, [\App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_COMPLETED, \App\Models\Order::STATUS_DELIVERED], true)
                         && count($__dlFiles) > 1;
 @endphp
 @if($__showDownloadModal)
@@ -1246,7 +1305,7 @@
 {{-- ===== REVIEW MODALS (Delivered for physical; Completed/Delivered + download for digital) ===== --}}
 @foreach($order->items as $item)
   @php
-    $isDigital = optional($item->product)->type === 'digital';
+    $isDigital = strtolower((string) (optional($item->product)->type ?? '')) === 'digital';
     $allowReviewModal = $isDigital
       ? ($canReviewDigitalIfCompleted && !empty($item->downloaded_at))
       : $canReviewDelivered;
