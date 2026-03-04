@@ -1082,8 +1082,72 @@
     @if ($tawkEmbedUrl !== '')
         <!-- Start of Tawk.to Script -->
         <script type="text/javascript">
-            var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+            window.Tawk_API = window.Tawk_API || {};
+            window.Tawk_LoadStart = new Date();
+
             (function () {
+                var mobileQuery = window.matchMedia('(max-width: 1023.98px)');
+
+                function getMobileBottomOffset() {
+                    if (!mobileQuery.matches) return null;
+                    var mobileNav = document.querySelector('nav[aria-label="Mobile Bottom Navigation"]');
+                    if (!mobileNav) return null;
+
+                    var navHeight = Math.ceil(mobileNav.getBoundingClientRect().height || 0);
+                    if (navHeight <= 0) return null;
+
+                    return 'calc(' + (navHeight + 8) + 'px + env(safe-area-inset-bottom, 0px))';
+                }
+
+                function applyTawkMobileOffset() {
+                    var bottomOffset = getMobileBottomOffset();
+                    if (!bottomOffset) return;
+
+                    var selectors = [
+                        'iframe[src*="tawk"]',
+                        'iframe[src*="Tawk"]',
+                        'iframe[title*="chat"]',
+                        'iframe[title*="Chat"]',
+                        '[id*="tawk"]',
+                        '[id*="Tawk"]',
+                        '[class*="tawk"]',
+                        '[class*="Tawk"]'
+                    ].join(',');
+
+                    document.querySelectorAll(selectors).forEach(function (node) {
+                        var style = window.getComputedStyle(node);
+                        if (style.position !== 'fixed') return;
+                        node.style.setProperty('bottom', bottomOffset, 'important');
+                    });
+                }
+
+                var applyQueued = false;
+                function queueApply() {
+                    if (applyQueued) return;
+                    applyQueued = true;
+                    window.requestAnimationFrame(function () {
+                        applyQueued = false;
+                        applyTawkMobileOffset();
+                    });
+                }
+
+                var previousOnLoad = window.Tawk_API.onLoad;
+                window.Tawk_API.onLoad = function () {
+                    if (typeof previousOnLoad === 'function') {
+                        try { previousOnLoad(); } catch (_) {}
+                    }
+                    queueApply();
+                };
+
+                document.addEventListener('DOMContentLoaded', queueApply);
+                window.addEventListener('resize', queueApply, { passive: true });
+                window.addEventListener('orientationchange', queueApply, { passive: true });
+
+                var observer = new MutationObserver(queueApply);
+                observer.observe(document.documentElement, { childList: true, subtree: true });
+
+                queueApply();
+
                 var s1 = document.createElement('script'), s0 = document.getElementsByTagName('script')[0];
                 s1.async = true;
                 s1.src = @json($tawkEmbedUrl);
