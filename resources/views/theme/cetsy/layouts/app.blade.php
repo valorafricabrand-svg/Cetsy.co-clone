@@ -418,7 +418,13 @@
                 </form>
 
                 <nav class="ml-2 hidden items-center gap-2 lg:flex">
-                    @php $headerCartCount = (int) ($cartCount ?? 0); @endphp
+                    @php
+                        $headerCartCount = isset($cartCount)
+                            ? (int) $cartCount
+                            : (int) collect(session('cart', []))->sum(function ($row) {
+                                return is_array($row) ? (int) ($row['quantity'] ?? 0) : 0;
+                            });
+                    @endphp
                     <a href="{{ route('listings') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Listings</a>
                     <a href="{{ route('shops.index') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Shops</a>
                     <a href="{{ route('become-seller') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Sell</a>
