@@ -67,6 +67,7 @@ class Shop extends Model
         'bio',
         'logo',
         'is_active',
+        'is_holiday_mode',
         'featured_image',
         'announcement',
         'policies',
@@ -119,6 +120,7 @@ class Shop extends Model
     protected $casts = [
         'enable_2fa' => 'boolean',
         'is_active' => 'boolean',
+        'is_holiday_mode' => 'boolean',
     ];
 
     public function isActive(): bool

@@ -132,7 +132,7 @@ class ShopController extends Controller
         // Holiday mode logic
         $activeProducts = $shop->products()->where('is_active', 1)->count();
         $pausedProducts = $shop->products()->where('is_active', 2)->count();
-        $isHolidayMode = $pausedProducts > 0 && $activeProducts == 0;
+        $isHolidayMode = (bool) ($shop->is_holiday_mode ?? false);
         return view('shops.show', compact('shop', 'paymentMethods', 'subscription', 'isHolidayMode', 'activeProducts', 'pausedProducts'));
     }
 

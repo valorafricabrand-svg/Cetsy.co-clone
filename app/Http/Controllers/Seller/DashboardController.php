@@ -75,7 +75,7 @@ public function index()
     // Check holiday mode status
     $activeProducts = Product::where('shop_id', $shopId)->where('is_active', 1)->count();
     $pausedProducts = Product::where('shop_id', $shopId)->where('is_active', 2)->count();
-    $isHolidayMode = $pausedProducts > 0 && $activeProducts == 0;
+    $isHolidayMode = (bool) ($user->shop->is_holiday_mode ?? false);
 
     // Recent reviews for this shop (from delivered/completed orders)
     $recentReviews = Review::with(['order:id,user_id,status,created_at', 'orderItem.product:id,name'])
@@ -117,6 +117,8 @@ public function enableHolidayMode(Request $request)
     $updatedCount = Product::where('shop_id', $shopId)
         ->where('is_active', 1)
         ->update(['is_active' => 2]);
+
+    $user->shop->forceFill(['is_holiday_mode' => true])->save();
     
     return redirect()->route('seller.shops.show', $user->shop)
         ->with('success', "Holiday mode enabled! {$updatedCount} active products have been paused.");
@@ -143,6 +145,8 @@ public function disableHolidayMode(Request $request)
     $updatedCount = Product::where('shop_id', $shopId)
         ->where('is_active', 2)
         ->update(['is_active' => 1]);
+
+    $user->shop->forceFill(['is_holiday_mode' => false])->save();
     
     return redirect()->route('seller.shops.show', $user->shop)
         ->with('success', "Holiday mode disabled! {$updatedCount} paused products have been reactivated.");

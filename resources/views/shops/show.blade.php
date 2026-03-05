@@ -91,15 +91,22 @@
 
   {{-- Holiday Mode Quick Action --}}
   @if(Auth::id() === $shop->user_id)
-    <div class="mb-4">
+    <div class="mb-4 flex flex-wrap items-center gap-2">
       @if($isHolidayMode)
-        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" data-ui-toggle="modal" data-ui-target="#disableHolidayModeModal">
-          <i class="fas fa-play mr-2"></i>Disable Holiday Mode
-        </button>
+        <form action="{{ route('seller.holiday-mode.disable') }}" method="POST" class="d-inline" onsubmit="return confirm('Disable holiday mode and reactivate all paused listings?');">
+          @csrf
+          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+            <i class="fas fa-play mr-2"></i>Disable Holiday Mode
+          </button>
+        </form>
+        <span class="text-xs text-slate-500">Holiday mode is currently active.</span>
       @else
-        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400" data-ui-toggle="modal" data-ui-target="#enableHolidayModeModal">
-          <i class="fas fa-umbrella-beach mr-2"></i>Enable Holiday Mode
-        </button>
+        <form action="{{ route('seller.holiday-mode.enable') }}" method="POST" class="d-inline" onsubmit="return confirm('Enable holiday mode and pause all active listings?');">
+          @csrf
+          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400">
+            <i class="fas fa-umbrella-beach mr-2"></i>Enable Holiday Mode
+          </button>
+        </form>
       @endif
     </div>
   @endif
@@ -410,76 +417,9 @@
     </div>
   </div>
 
-  {{-- Enable Holiday Mode Modal --}}
-  <div class="modal" id="enableHolidayModeModal" tabindex="-1" aria-labelledby="enableHolidayModeModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="rounded-2xl border border-slate-200 bg-white shadow-xl rounded-4">
-        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h5 class="text-base font-semibold text-slate-900" id="enableHolidayModeModalLabel">
-            <i class="fas fa-umbrella-beach text-amber-600 mr-2"></i>Enable Holiday Mode
-          </h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
-        </div>
-        <div class="px-4 py-4">
-          <p class="mb-3">This action will pause all your active products, effectively putting your shop in holiday mode.</p>
-          <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
-            <i class="fas fa-exclamation-triangle mr-2"></i>
-            <strong>Warning:</strong> All active products will be paused and won’t be visible to buyers until you reactivate them.
-          </div>
-          <p class="text-slate-500 text-xs mb-0">
-            <i class="fas fa-info-circle mr-1"></i>
-            You can reactivate individual products from your product listings page.
-          </p>
-        </div>
-        <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">Cancel</button>
-          <form action="{{ route('seller.holiday-mode.enable') }}" method="POST" class="d-inline">
-            @csrf
-            <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-amber-500 text-slate-900 hover:bg-amber-400">
-              <i class="fas fa-umbrella-beach mr-2"></i>Enable Holiday Mode
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {{-- Disable Holiday Mode Modal --}}
-  <div class="modal" id="disableHolidayModeModal" tabindex="-1" aria-labelledby="disableHolidayModeModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="rounded-2xl border border-slate-200 bg-white shadow-xl rounded-4">
-        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h5 class="text-base font-semibold text-slate-900" id="disableHolidayModeModalLabel">
-            <i class="fas fa-play text-emerald-600 mr-2"></i>Disable Holiday Mode
-          </h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
-        </div>
-        <div class="px-4 py-4">
-          <p class="mb-3">This action will reactivate all your paused products, bringing your shop back online.</p>
-          <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">
-            <i class="fas fa-check-circle mr-2"></i>
-            <strong>Great!</strong> All paused products will be reactivated and visible to buyers again.
-          </div>
-          <p class="text-slate-500 text-xs mb-0">
-            <i class="fas fa-info-circle mr-1"></i>
-            Your shop will be fully operational once holiday mode is disabled.
-          </p>
-        </div>
-        <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-          <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">Cancel</button>
-          <form action="{{ route('seller.holiday-mode.disable') }}" method="POST" class="d-inline">
-            @csrf
-            <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
-              <i class="fas fa-play mr-2"></i>Disable Holiday Mode
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
 </div>
 @endsection
+
 
 
 
