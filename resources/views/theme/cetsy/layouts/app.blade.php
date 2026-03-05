@@ -418,9 +418,19 @@
                 </form>
 
                 <nav class="ml-2 hidden items-center gap-2 lg:flex">
+                    @php $headerCartCount = (int) ($cartCount ?? 0); @endphp
                     <a href="{{ route('listings') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Listings</a>
                     <a href="{{ route('shops.index') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Shops</a>
                     <a href="{{ route('become-seller') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Sell</a>
+                    <a href="{{ url('/cart') }}" class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold {{ request()->is('cart*') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
+                        <i class="fas fa-shopping-cart text-sm"></i>
+                        <span>Cart</span>
+                        @if ($headerCartCount > 0)
+                            <span class="inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
+                                {{ $headerCartCount > 99 ? '99+' : $headerCartCount }}
+                            </span>
+                        @endif
+                    </a>
                 </nav>
 
                 <div class="ml-auto flex items-center gap-2">
