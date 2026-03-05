@@ -137,6 +137,56 @@
         }
     @endphp
 
+    <style id="renderGuardStyle">
+        html.css-pending body {
+            opacity: 0;
+        }
+    </style>
+    <script>
+        (function () {
+            var root = document.documentElement;
+            root.classList.add('css-pending');
+
+            var released = false;
+            var maxWaitMs = 2200;
+            var pollEveryMs = 60;
+
+            function releaseRenderGuard() {
+                if (released) return;
+                released = true;
+                root.classList.remove('css-pending');
+                var guardStyle = document.getElementById('renderGuardStyle');
+                if (guardStyle) guardStyle.remove();
+            }
+
+            function isAppCssApplied() {
+                if (!document.body) return false;
+                var probe = document.createElement('div');
+                probe.className = 'hidden';
+                probe.style.position = 'absolute';
+                probe.style.pointerEvents = 'none';
+                document.body.appendChild(probe);
+                var applied = window.getComputedStyle(probe).display === 'none';
+                probe.remove();
+                return applied;
+            }
+
+            window.__releaseRenderGuard = releaseRenderGuard;
+
+            document.addEventListener('DOMContentLoaded', function () {
+                var startedAt = Date.now();
+                var timer = window.setInterval(function () {
+                    if (isAppCssApplied() || (Date.now() - startedAt) >= maxWaitMs) {
+                        window.clearInterval(timer);
+                        releaseRenderGuard();
+                    }
+                }, pollEveryMs);
+            });
+
+            window.addEventListener('load', releaseRenderGuard, { once: true });
+        })();
+    </script>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @if (!empty($viteFallbackCss))
         <link rel="stylesheet" href="{{ asset('build/' . ltrim($viteFallbackCss, '/')) }}">
