@@ -46,7 +46,7 @@
 @endphp
 
 <div class="col-span-12 md:col-span-6 lg:col-span-4">
-    <article class="js-product-card relative h-full cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+    <article class="js-product-card relative h-full cursor-pointer overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
              data-href="{{ route('products.show', $product) }}"
              tabindex="0"
              aria-label="Open {{ $product->name }} details">
@@ -58,13 +58,13 @@
 
         @if ($thumb)
             @if ($mediaType === 'video')
-                <video src="{{ $thumb }}" class="h-56 w-full object-cover" controls></video>
+                <video src="{{ $thumb }}" class="h-56 w-full rounded-t-2xl object-cover" controls></video>
             @else
-                <img src="{{ $thumb }}" class="h-56 w-full object-cover" alt="{{ $product->name }}"
+                <img src="{{ $thumb }}" class="h-56 w-full rounded-t-2xl object-cover" alt="{{ $product->name }}"
                      onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
             @endif
         @else
-            <div class="flex h-56 w-full items-center justify-center bg-slate-100">
+            <div class="flex h-56 w-full items-center justify-center rounded-t-2xl bg-slate-100">
                 <span class="text-sm text-slate-500">No Media</span>
             </div>
         @endif

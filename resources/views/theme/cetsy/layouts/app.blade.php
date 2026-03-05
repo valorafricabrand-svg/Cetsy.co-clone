@@ -27,6 +27,7 @@
         $legacyBootstrapCompat = (bool) config('theme.legacy_bootstrap_compat', true)
             && !$isSellerArea
             && !$isTailwindPrimaryArea;
+        $isSellerUser = auth()->check() && method_exists(auth()->user(), 'isSeller') && auth()->user()->isSeller();
 
         $topNavCategories = collect();
         try {
@@ -303,6 +304,76 @@
             opacity: 0;
             pointer-events: none;
         }
+
+        .page-transition-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 120;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.16s ease, visibility 0s linear 0.16s;
+        }
+        .page-transition-loader.is-active {
+            opacity: 1;
+            visibility: visible;
+            transition-delay: 0s;
+        }
+        .page-transition-loader__bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            overflow: hidden;
+            background: rgba(16, 185, 129, 0.16);
+        }
+        .page-transition-loader__bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: min(42vw, 14rem);
+            background: linear-gradient(90deg, #10b981 0%, #34d399 55%, #6ee7b7 100%);
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.45);
+            animation: page-loader-slide 1.05s ease-in-out infinite;
+        }
+        .page-transition-loader__pulse {
+            position: absolute;
+            top: 0.7rem;
+            right: 1rem;
+            width: 0.55rem;
+            height: 0.55rem;
+            border-radius: 9999px;
+            background: #10b981;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35);
+            animation: page-loader-pulse 1.3s ease-out infinite;
+        }
+        body.is-transitioning, body.is-transitioning a {
+            cursor: progress;
+        }
+        @keyframes page-loader-slide {
+            0% { transform: translateX(-120%); }
+            55% { transform: translateX(150%); }
+            100% { transform: translateX(240%); }
+        }
+        @keyframes page-loader-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); }
+            80% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .page-transition-loader__bar::after,
+            .page-transition-loader__pulse {
+                animation: none;
+            }
+            .page-transition-loader__bar::after {
+                width: 100%;
+                transform: translateX(0);
+                opacity: 0.75;
+            }
+        }
     </style>
 
     @yield('styles')
@@ -320,6 +391,11 @@
     @stack('structured-data')
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+    <div id="pageTransitionLoader" class="page-transition-loader" aria-hidden="true">
+        <span class="page-transition-loader__bar"></span>
+        <span class="page-transition-loader__pulse"></span>
+    </div>
+
     <div x-data="{ mobileDrawerOpen: false }" x-init="$watch('mobileDrawerOpen', value => document.body.classList.toggle('overflow-hidden', value))" class="flex min-h-screen flex-col">
         <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
             <div class="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
@@ -527,9 +603,9 @@
 
         </header>
 
-        <div x-show="mobileDrawerOpen" x-cloak x-transition.opacity class="fixed inset-0 z-50 bg-slate-900/50 lg:hidden" @click="mobileDrawerOpen = false"></div>
+        <div x-show="mobileDrawerOpen" x-cloak x-transition.opacity class="fixed inset-0 z-[68] bg-slate-900/50 lg:hidden" @click="mobileDrawerOpen = false"></div>
 
-        <aside x-show="mobileDrawerOpen" x-cloak x-transition:enter="transform transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transform transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full" class="fixed right-0 top-0 z-50 h-full w-[88%] max-w-sm overflow-y-auto border-l border-slate-200 bg-white shadow-2xl lg:hidden">
+        <aside x-show="mobileDrawerOpen" x-cloak x-transition:enter="transform transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transform transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full" class="fixed right-0 top-0 z-[69] h-full w-[88%] max-w-sm overflow-y-auto border-l border-slate-200 bg-white shadow-2xl lg:hidden">
             <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                 <h3 class="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Menu</h3>
                 <button @click="mobileDrawerOpen = false" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-100" type="button" aria-label="Close menu">
@@ -537,7 +613,7 @@
                 </button>
             </div>
 
-            <div class="space-y-4 px-4 py-4">
+            <div class="space-y-4 px-4 py-4 pb-8">
                 <form method="GET" action="{{ route('search') }}">
                     <label for="mobileDrawerSearch" class="sr-only">Search products</label>
                     <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2">
@@ -611,6 +687,34 @@
                             <a href="{{ route('account.addresses') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                                 <span><i class="fas fa-location-dot mr-2"></i>Addresses</span>
                             </a>
+                        </div>
+                    </div>
+                @endif
+
+                @if($isSellerUser)
+                    @php
+                        $sellerDrawerLinks = [
+                            ['route' => 'seller.dashboard', 'icon' => 'fas fa-tachometer-alt', 'label' => 'Seller Dashboard'],
+                            ['route' => 'products.index', 'icon' => 'fas fa-box-open', 'label' => 'Listings'],
+                            ['route' => 'seller.orders.index', 'icon' => 'fas fa-receipt', 'label' => 'Orders'],
+                            ['route' => 'seller.messages.index', 'icon' => 'fas fa-comments', 'label' => 'Messages'],
+                            ['route' => 'seller.offers.index', 'icon' => 'fas fa-handshake', 'label' => 'Offers'],
+                            ['route' => 'seller.analytics.index', 'icon' => 'fas fa-chart-line', 'label' => 'Analytics'],
+                            ['route' => 'seller.payouts.index', 'icon' => 'fas fa-money-bill-wave', 'label' => 'Payouts'],
+                            ['route' => 'seller.subscription', 'icon' => 'fas fa-file-invoice', 'label' => 'Subscription'],
+                            ['route' => 'seller.kyc', 'icon' => 'fas fa-id-card', 'label' => 'KYC'],
+                            ['route' => 'wallet.index', 'icon' => 'fas fa-wallet', 'label' => 'Wallet'],
+                        ];
+                    @endphp
+                    <div class="rounded-xl border border-slate-200 p-3">
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Seller Menu</div>
+                        <div class="space-y-1.5">
+                            @foreach($sellerDrawerLinks as $sellerItem)
+                                @continue(!\Illuminate\Support\Facades\Route::has($sellerItem['route']))
+                                <a href="{{ route($sellerItem['route']) }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                    <span><i class="{{ $sellerItem['icon'] }} mr-2"></i>{{ $sellerItem['label'] }}</span>
+                                </a>
+                            @endforeach
                         </div>
                     </div>
                 @endif
@@ -826,6 +930,69 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
         const body = document.body;
+        const pageLoader = document.getElementById('pageTransitionLoader');
+        let pageLoaderIsVisible = false;
+        let pageLoaderDelayTimer = null;
+
+        function showPageLoader() {
+            if (!pageLoader || pageLoaderIsVisible) return;
+            pageLoaderIsVisible = true;
+            pageLoader.classList.add('is-active');
+            body.classList.add('is-transitioning');
+        }
+
+        function hidePageLoader() {
+            if (!pageLoader) return;
+            pageLoaderIsVisible = false;
+            window.clearTimeout(pageLoaderDelayTimer);
+            pageLoader.classList.remove('is-active');
+            body.classList.remove('is-transitioning');
+        }
+
+        function shouldTrackLinkNavigation(link, event) {
+            if (!link || event.defaultPrevented) return false;
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
+
+            const target = (link.getAttribute('target') || '').trim().toLowerCase();
+            if (target && target !== '_self') return false;
+            if (link.hasAttribute('download') || link.hasAttribute('data-no-page-loader')) return false;
+            if (link.closest('[data-ui-toggle], [data-toggle], [data-ui-dismiss], [data-dismiss], [data-tw-modal-open], [data-tw-modal-close]')) return false;
+
+            const hrefAttr = (link.getAttribute('href') || '').trim();
+            if (!hrefAttr || hrefAttr === '#') return false;
+            if (/^(javascript|mailto|tel):/i.test(hrefAttr)) return false;
+
+            let destinationUrl;
+            try {
+                destinationUrl = new URL(link.href, window.location.href);
+            } catch (_) {
+                return false;
+            }
+
+            const isSameDocumentHash =
+                destinationUrl.pathname === window.location.pathname &&
+                destinationUrl.search === window.location.search &&
+                destinationUrl.hash;
+
+            return !isSameDocumentHash;
+        }
+
+        window.addEventListener('pageshow', hidePageLoader);
+        window.addEventListener('beforeunload', showPageLoader);
+
+        document.addEventListener('click', function (event) {
+            const eventTarget = event.target;
+            if (!(eventTarget instanceof Element)) return;
+
+            const link = eventTarget.closest('a[href]');
+            if (!shouldTrackLinkNavigation(link, event)) return;
+
+            window.clearTimeout(pageLoaderDelayTimer);
+            pageLoaderDelayTimer = window.setTimeout(function () {
+                if (event.defaultPrevented) return;
+                showPageLoader();
+            }, 80);
+        }, true);
 
         // Desktop top-category rail as a paged carousel (6 categories per slide).
         document.querySelectorAll('[data-top-category-carousel]').forEach(function (carousel) {
