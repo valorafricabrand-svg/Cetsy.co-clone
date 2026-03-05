@@ -842,6 +842,13 @@
         </main>
 
         @if (!$isSellerArea)
+            @php
+                $mobileCartCount = isset($headerCartCount)
+                    ? (int) $headerCartCount
+                    : (int) collect(session('cart', []))->sum(function ($row) {
+                        return is_array($row) ? (int) ($row['quantity'] ?? 0) : 0;
+                    });
+            @endphp
             <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur lg:hidden" aria-label="Mobile Bottom Navigation">
                 <div class="mx-auto grid w-full max-w-7xl grid-cols-4 gap-2">
                     <a href="{{ route('home') }}" class="inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold {{ request()->routeIs('home') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100' }}">
@@ -852,9 +859,14 @@
                         <i class="fas fa-list-ul mb-1 text-sm"></i>
                         Listings
                     </a>
-                    <a href="{{ url('/cart') }}" class="inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold {{ request()->is('cart*') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                    <a href="{{ url('/cart') }}" class="relative inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold {{ request()->is('cart*') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100' }}">
                         <i class="fas fa-shopping-cart mb-1 text-sm"></i>
                         Cart
+                        @if ($mobileCartCount > 0)
+                            <span class="absolute right-3 top-0 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
+                                {{ $mobileCartCount > 99 ? '99+' : $mobileCartCount }}
+                            </span>
+                        @endif
                     </a>
                     <button type="button" @click="mobileDrawerOpen = true" class="inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100" aria-label="Open side menu">
                         <i class="fas fa-bars mb-1 text-sm"></i>
