@@ -50,7 +50,7 @@
     <div class="col-span-12 md:col-span-4">
       <label class="mb-1 block text-sm font-medium text-slate-700">Postal code</label>
       <input type="text" name="origin_postal_code" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('origin_postal_code') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
-             value="{{ old('origin_postal_code', $currentProfile->origin_postal_code) }}" autocomplete="postal-code">
+             value="{{ old('origin_postal_code', $currentProfile->origin_postal_code) }}" autocomplete="postal-code" required>
       @error('origin_postal_code')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
     </div>
 
@@ -200,7 +200,6 @@
       </table>
     </div>
   @endif
-</div>
 
 {{-- ADD ROW MODAL --}}
 <div x-cloak x-show="addRowOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -210,7 +209,7 @@
       @csrf
       <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900">Add shipping row</h5>
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="addRowOpen = false" aria-label="Close">×</button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="addRowOpen = false" aria-label="Close">&times;</button>
       </div>
 
       <div class="px-4 py-4">
@@ -337,7 +336,7 @@
 
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900">Edit shipping row</h5>
-          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="editRowOpen = null" aria-label="Close">×</button>
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="editRowOpen = null" aria-label="Close">&times;</button>
         </div>
 
         <div class="px-4 py-4">
@@ -442,6 +441,7 @@
     </div>
   </div>
 @endforeach
+      </div>
       </div>
     </div>
   </div>

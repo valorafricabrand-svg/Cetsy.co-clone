@@ -17,6 +17,7 @@ class UserController extends Controller
     {
         $status     = $request->query('status'); // active|inactive|all
         $kycStatus  = $request->query('kyc_status');
+        $platform   = $request->query('platform'); // app|web
         $q          = trim((string) $request->query('q'));
         // role selector: 'seller' (default) or 'buyer'
         $role       = $request->query('role');
@@ -26,11 +27,18 @@ class UserController extends Controller
 
         $users = User::query()
             ->where('user_type', $role)
-            ->with(['shop:id,user_id,name', 'kyc:id,user_id,status'])
+            ->with([
+                'shop:id,user_id,name',
+                'kyc:id,user_id,status',
+                'platformStat:id,user_id,last_platform,last_seen_at,web_hits,app_hits',
+            ])
             ->when($status === 'active', fn($q) => $q->where('is_active', 1))
             ->when($status === 'inactive', fn($q) => $q->where('is_active', 0))
             ->when($kycStatus, function ($query) use ($kycStatus) {
                 $query->whereHas('kyc', fn($k) => $k->where('status', $kycStatus));
+            })
+            ->when(in_array($platform, ['app', 'web'], true), function ($query) use ($platform) {
+                $query->whereHas('platformStat', fn($p) => $p->where('last_platform', $platform));
             })
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {
@@ -58,7 +66,7 @@ class UserController extends Controller
             });
         }
 
-        return view('admin.users.index', compact('users', 'status', 'kycStatus', 'q', 'role'));
+        return view('admin.users.index', compact('users', 'status', 'kycStatus', 'platform', 'q', 'role'));
     }
 
     /**

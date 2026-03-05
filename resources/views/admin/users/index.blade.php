@@ -23,7 +23,7 @@
     </div>
 
     <form method="GET" class="row g-3 mb-3">
-        <div class="col-md-3">
+        <div class="col-md-2">
             <label class="form-label">Status</label>
             <select name="status" class="form-select">
                 <option value="">All</option>
@@ -32,7 +32,7 @@
             </select>
         </div>
         @if(($role ?? 'seller') === 'seller')
-        <div class="col-md-3">
+        <div class="col-md-2">
             <label class="form-label">KYC Status</label>
             <select name="kyc_status" class="form-select">
                 <option value="">Any</option>
@@ -45,6 +45,14 @@
         <div class="col-md-4">
             <label class="form-label">Search</label>
             <input type="text" class="form-control" name="q" value="{{ request('q') }}" placeholder="Name, email, or shop name">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Platform</label>
+            <select name="platform" class="form-select">
+                <option value="">Any</option>
+                <option value="web" {{ request('platform')==='web' ? 'selected' : '' }}>Web</option>
+                <option value="app" {{ request('platform')==='app' ? 'selected' : '' }}>App</option>
+            </select>
         </div>
         <div class="col-md-2 d-grid">
             <label class="form-label">&nbsp;</label>
@@ -64,6 +72,9 @@
                           <th scope="col">Shop</th>
                           <th scope="col">KYC</th>
                         @endif
+                        <th scope="col">Last Platform</th>
+                        <th scope="col">Last Seen</th>
+                        <th scope="col">Hits (App/Web)</th>
                         <th scope="col">Status</th>
                         <th scope="col" class="text-end">Wallet</th>
                         <th scope="col" class="text-end">Actions</th>
@@ -78,7 +89,7 @@
                             <td>{{ $user->name }}</td>
                             <td>{{ $user->email }}</td>
                             @if(($role ?? 'seller') === 'seller')
-                              <td>{{ optional($user->shop)->name ?? '–' }}</td>
+                              <td>{{ optional($user->shop)->name ?? '-' }}</td>
                               <td>
                                   @php($kyc = optional($user->kyc)->status)
                                   @if($kyc==='approved')
@@ -92,6 +103,18 @@
                                   @endif
                               </td>
                             @endif
+                            <td>
+                                @php($platformLabel = optional($user->platformStat)->last_platform)
+                                @if($platformLabel === 'app')
+                                    <span class="badge bg-primary">App</span>
+                                @elseif($platformLabel === 'web')
+                                    <span class="badge bg-info text-dark">Web</span>
+                                @else
+                                    <span class="badge bg-secondary">Unknown</span>
+                                @endif
+                            </td>
+                            <td>{{ optional(optional($user->platformStat)->last_seen_at)->diffForHumans() ?? '-' }}</td>
+                            <td>{{ (int) optional($user->platformStat)->app_hits }}/{{ (int) optional($user->platformStat)->web_hits }}</td>
                             <td>
                                 <span class="badge {{ $user->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $user->is_active ? 'Active' : 'Inactive' }}</span>
                             </td>
@@ -141,9 +164,7 @@
 
         {{-- Pagination --}}
         <div class="mt-3">
-      
-
-               {{ $users->links('pagination::bootstrap-5') }}
+            {{ $users->links('pagination::bootstrap-5') }}
         </div>
     @else
         <div class="alert alert-info">

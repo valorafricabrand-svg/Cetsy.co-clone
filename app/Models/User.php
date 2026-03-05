@@ -14,6 +14,7 @@ use App\Models\Order;
 use App\Models\WishlistItem;
 use App\Models\Kyc;
 use App\Models\Subscription;
+use App\Models\UserPlatformStat;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -218,5 +219,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function appeals()
     {
         return $this->hasMany(Appeal::class, 'appealed_by');
+    }
+
+    public function platformStat()
+    {
+        return $this->hasOne(UserPlatformStat::class);
     }
 }

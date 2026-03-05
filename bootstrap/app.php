@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\EnsureSellerKycIsVerified;
 use App\Http\Middleware\EnsureUserIsSeller;
+use App\Http\Middleware\TrackUserPlatform;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Cache;
 
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Global middlewares you already had
         $middleware->append(\App\Http\Middleware\ApplyCurrency::class);
         $middleware->append(\App\Http\Middleware\AttachCurrencyToRequest::class);
+        $middleware->append(TrackUserPlatform::class);
     })
     ->withCommands([
         \App\Console\Commands\DeactivateExpiredSubscriptions::class,
@@ -69,7 +71,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
-
 
 
 
