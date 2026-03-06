@@ -19,19 +19,25 @@
                                         <div class="border-b border-slate-200 px-4 py-3 flex justify-between items-center">
                                             <h6 class="mb-0">
                                                 <i class="fas fa-balance-scale"></i> 
-                                                Appeal #{{ $evidenceRequest->appeal->id }}
+                                                @if($evidenceRequest->appeal)
+                                                    Appeal #{{ $evidenceRequest->appeal->id }}
+                                                @else
+                                                    Evidence Request #{{ $evidenceRequest->id }}
+                                                @endif
                                             </h6>
                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $evidenceRequest->getStatusBadgeClass() }}">
-                                                {{ ucfirst($evidenceRequest->status) }}
+                                                {{ $evidenceRequest->getStatusLabel() }}
                                             </span>
                                         </div>
                                         <div class="p-4 sm:p-5">
-                                            <div class="mb-3">
-                                                <strong>Dispute:</strong> 
-                                                <a href="{{ route('disputes.show', $evidenceRequest->appeal->dispute_id) }}" class="no-underline">
-                                                    Dispute #{{ $evidenceRequest->appeal->dispute_id }}
-                                                </a>
-                                            </div>
+                                            @if($evidenceRequest->resolveDisputeId())
+                                                <div class="mb-3">
+                                                    <strong>Dispute:</strong> 
+                                                    <a href="{{ route('disputes.show', $evidenceRequest->resolveDisputeId()) }}" class="no-underline">
+                                                        Dispute #{{ $evidenceRequest->resolveDisputeId() }}
+                                                    </a>
+                                                </div>
+                                            @endif
                                             
                                             <div class="mb-3">
                                                 <strong>Request Message:</strong>
@@ -64,7 +70,7 @@
                                                 </small>
                                             </div>
                                             
-                                            @if($evidenceRequest->status === 'submitted')
+                                            @if($evidenceRequest->isSubmitted())
                                                 <div class="mb-3">
                                                     <strong>Submitted Evidence:</strong>
                                                     <p class="mb-1 mt-1">{{ $evidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
@@ -75,11 +81,11 @@
                                             @endif
                                             
                                             <div class="d-grid">
-                                                @if($evidenceRequest->status === 'pending' && !$evidenceRequest->isDeadlineExpired())
+                                                @if($evidenceRequest->isPending() && !$evidenceRequest->isDeadlineExpired())
                                                     <a href="{{ route('evidence-requests.show', $evidenceRequest->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
                                                         <i class="fas fa-upload"></i> Submit Evidence
                                                     </a>
-                                                @elseif($evidenceRequest->status === 'submitted')
+                                                @elseif($evidenceRequest->isSubmitted())
                                                     <a href="{{ route('evidence-requests.show', $evidenceRequest->id) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                                                         <i class="fas fa-eye"></i> View Submitted Evidence
                                                     </a>

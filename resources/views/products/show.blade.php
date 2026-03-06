@@ -118,6 +118,17 @@
 
             <p class="mb-2 text-sm text-slate-600"><i class="fas fa-box mr-1"></i><strong>Type:</strong> {{ ucfirst($product->type) }}</p>
 
+            @if($product->type === 'digital')
+              <div class="mb-4 rounded-xl border px-4 py-3 text-sm {{ $product->digitalFiles->count() ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-900' }}">
+                <i class="fas {{ $product->digitalFiles->count() ? 'fa-cloud-check' : 'fa-cloud-arrow-down' }} mr-2"></i>
+                @if($product->digitalFiles->count())
+                  {{ $product->digitalFiles->count() }} digital delivery asset{{ $product->digitalFiles->count() === 1 ? '' : 's' }} configured.
+                @else
+                  Buyers cannot download this listing yet. Add an uploaded file or external link in the Details tab before publishing.
+                @endif
+              </div>
+            @endif
+
             @if((int)$product->is_active === 1)
               <ul class="mb-4 space-y-1 text-xs text-slate-500">
                 <li><i class="fas fa-hashtag mr-1"></i><strong>Listing ID:</strong> {{ $product->id }}</li>

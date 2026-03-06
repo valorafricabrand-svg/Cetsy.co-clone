@@ -538,7 +538,7 @@ class DisputeController extends Controller
         $order = $dispute->order;
         $orderItems = $order ? $order->items()->with('product')->get() : collect();
         // Load evidence requests for the dispute (for admin display and party responses)
-        $evidenceRequests = EvidenceRequest::where('dispute_id', $dispute->id)
+        $evidenceRequests = EvidenceRequest::forDispute($dispute->id)
             ->latest('created_at')
             ->get();
 
@@ -760,14 +760,22 @@ class DisputeController extends Controller
 
         $requestedFrom = $data['for'] === 'buyer' ? $dispute->buyer_id : $dispute->seller_id;
 
-        $evidence = EvidenceRequest::create([
+        if (EvidenceRequest::usesLegacySchema() && ! $dispute->appeal) {
+            return back()->withErrors([
+                'error' => 'An appeal must exist before additional evidence can be requested on this installation.',
+            ]);
+        }
+
+        $evidence = EvidenceRequest::createForRecipient([
             'dispute_id' => $dispute->id,
-            'appeal_id'  => null,
-            'requested_from' => $requestedFrom,
-            'requested_by'   => $user->id,
-            'message'        => $data['message'],
-            'status'         => EvidenceRequest::STATUS_PENDING,
-            'deadline'       => $data['deadline'] ?? now()->addDays(3),
+            'appeal_id' => $dispute->appeal?->id,
+            'recipient_id' => $requestedFrom,
+            'requester_id' => $user->id,
+            'party_type' => $data['for'],
+            'message' => $data['message'],
+            'status' => EvidenceRequest::STATUS_PENDING,
+            'deadline' => $data['deadline'] ?? now()->addDays(3),
+            'required_evidence_types' => [],
         ]);
 
         // Public system message
@@ -1787,9 +1795,9 @@ class DisputeController extends Controller
                           "**Additional Evidence Request:**\n" .
                           "If you have any additional evidence to support your appeal, please submit it within 24 hours.\n\n" .
                           "**What to Submit:**\n" .
-                          "• Additional documentation\n" .
-                          "• Updated information\n" .
-                          "• Any new evidence discovered\n\n" .
+                          "- Additional documentation\n" .
+                          "- Updated information\n" .
+                          "- Any new evidence discovered\n\n" .
                           "**Deadline:** {$deadline->format('M d, Y \a\t g:i A')}\n\n" .
                           "**Note:** Both parties have been notified and requested to provide evidence.";
                 
@@ -1799,16 +1807,16 @@ class DisputeController extends Controller
                 $message = "**URGENT: Evidence Request for Appeal #{$appeal->id}**\n\n" .
                           "**{$otherPartyName}** has submitted an appeal for dispute #{$dispute->id} ({$disputeType}).\n\n" .
                           "**Appeal Details:**\n" .
-                          "• **Reason:** {$appeal->getReasonCategoryLabel()}\n" .
-                          "• **Explanation:** {$appeal->reason}\n" .
-                          "• **Evidence Submitted:** " . count($appeal->new_evidence) . " file(s)\n\n" .
+                          "- **Reason:** {$appeal->getReasonCategoryLabel()}\n" .
+                          "- **Explanation:** {$appeal->reason}\n" .
+                          "- **Evidence Submitted:** " . count((array) ($appeal->new_evidence ?? [])) . " file(s)\n\n" .
                           "**ACTION REQUIRED:**\n" .
                           "You have **24 hours** to provide evidence to support your position.\n\n" .
                           "**What to Submit:**\n" .
-                          "• Payment proof (if applicable)\n" .
-                          "• Communication logs\n" .
-                          "• Shipping documentation\n" .
-                          "• Any other relevant evidence\n\n" .
+                          "- Payment proof (if applicable)\n" .
+                          "- Communication logs\n" .
+                          "- Shipping documentation\n" .
+                          "- Any other relevant evidence\n\n" .
                           "**Deadline:** {$deadline->format('M d, Y \a\t g:i A')}\n\n" .
                           "**Important:** Failure to provide evidence may result in the appeal being decided in favor of the appealing party.";
                 
@@ -1821,15 +1829,18 @@ class DisputeController extends Controller
             ]);
             
             // Create the evidence request record
-            $evidenceRequest = EvidenceRequest::create([
+            $partyType = (int) $recipient->id === (int) $dispute->buyer_id ? 'buyer' : 'seller';
+
+            $evidenceRequest = EvidenceRequest::createForRecipient([
                 'appeal_id' => $appeal->id,
                 'dispute_id' => $dispute->id,
-                'requested_from' => $recipient->id,
-                'requested_by' => 1, // System user ID
+                'recipient_id' => $recipient->id,
+                'requester_id' => 1,
+                'party_type' => $partyType,
                 'message' => $message,
                 'status' => EvidenceRequest::STATUS_PENDING,
                 'deadline' => $deadline,
-                'required_evidence_types' => $requiredEvidenceTypes
+                'required_evidence_types' => $requiredEvidenceTypes,
             ]);
             
             \Log::info('Evidence request created successfully', [
@@ -1964,3 +1975,5 @@ class DisputeController extends Controller
         }
     }
 }
+
+

@@ -1184,7 +1184,7 @@
         {{-- Evidence Response Modals --}}
         @if($dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
             @foreach($dispute->appeal->evidenceRequests as $evidenceRequest)
-                @if($evidenceRequest->status === 'pending' && $evidenceRequest->requested_from === auth()->id())
+                @if($evidenceRequest->isPending() && $evidenceRequest->isOwnedBy(auth()->id()))
                     <div class="modal fade" id="evidenceResponseModal-{{ $evidenceRequest->id }}" tabindex="-1" aria-labelledby="evidenceResponseModalLabel-{{ $evidenceRequest->id }}" aria-hidden="true">
                         <div class="modal-dialog modal-lg">
                             <div class="modal-content">
@@ -1194,7 +1194,7 @@
                                     </h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
-                                <form action="{{ route('disputes.disputes.evidence-requests.respond', $evidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
+                                <form action="{{ route('evidence-requests.respond', $evidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
                                     @csrf
                                     <div class="modal-body">
                                         <div class="alert alert-info">

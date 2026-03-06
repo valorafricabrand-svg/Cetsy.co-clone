@@ -11,11 +11,11 @@
                             <i class="fas fa-file-alt"></i> Evidence Request
                         </h4>
                         @php
-                            // Determine if current user is buyer or seller and redirect accordingly
                             $currentUser = auth()->user();
-                            $dispute = $evidenceRequest->appeal->dispute;
-                            $isBuyer = $currentUser->id === $dispute->buyer_id;
-                            $isSeller = $currentUser->id === $dispute->seller_id;
+                            $appeal = $evidenceRequest->appeal;
+                            $dispute = $appeal?->dispute;
+                            $isBuyer = $dispute && $currentUser && $currentUser->id === $dispute->buyer_id;
+                            $isSeller = $dispute && $currentUser && $currentUser->id === $dispute->seller_id;
                         @endphp
                         
                         @if($isBuyer || $isSeller)
@@ -30,24 +30,25 @@
                     </div>
                 </div>
                 <div class="p-4 sm:p-5">
+                    @if($appeal)
                     <!-- Appeal Information -->
                     <div class="grid grid-cols-12 gap-4 mb-4">
                         <div class="col-span-12 md:col-span-6">
                             <h6>Appeal Information</h6>
-                            <p><strong>Appeal ID:</strong> #{{ $evidenceRequest->appeal->id }}</p>
+                            <p><strong>Appeal ID:</strong> #{{ $appeal->id }}</p>
                             <p><strong>Dispute ID:</strong> 
-                                <a href="{{ route('disputes.show', $evidenceRequest->appeal->dispute_id) }}" class="no-underline">
-                                    #{{ $evidenceRequest->appeal->dispute_id }}
+                                <a href="{{ route('disputes.show', $appeal->dispute_id) }}" class="no-underline">
+                                    #{{ $appeal->dispute_id }}
                                 </a>
                             </p>
-                            <p><strong>Appealed By:</strong> {{ $evidenceRequest->appeal->appealedBy->name }}</p>
-                            <p><strong>Appeal Reason:</strong> {{ $evidenceRequest->appeal->reason }}</p>
+                            <p><strong>Appealed By:</strong> {{ $appeal->appealedBy->name }}</p>
+                            <p><strong>Appeal Reason:</strong> {{ $appeal->reason }}</p>
                         </div>
                         <div class="col-span-12 md:col-span-6">
                             <h6>Evidence Request Details</h6>
                             <p><strong>Status:</strong> 
                                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $evidenceRequest->getStatusBadgeClass() }}">
-                                    {{ ucfirst($evidenceRequest->status) }}
+                                    {{ $evidenceRequest->getStatusLabel() }}
                                 </span>
                             </p>
                             <p><strong>Party Type:</strong> {{ $evidenceRequest->getPartyTypeLabel() }}</p>
@@ -63,6 +64,25 @@
                             </p>
                         </div>
                     </div>
+                    @else
+                    <div class="grid grid-cols-12 gap-4 mb-4">
+                        <div class="col-span-12">
+                            <h6>Evidence Request Details</h6>
+                            <p><strong>Request ID:</strong> #{{ $evidenceRequest->id }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $evidenceRequest->getStatusBadgeClass() }}">
+                                    {{ $evidenceRequest->getStatusLabel() }}
+                                </span>
+                            </p>
+                            <p><strong>Party Type:</strong> {{ $evidenceRequest->getPartyTypeLabel() }}</p>
+                            <p><strong>Deadline:</strong> 
+                                <span class="text-{{ $evidenceRequest->isDeadlineExpired() ? 'danger' : 'primary' }}">
+                                    {{ $evidenceRequest->deadline->format('M d, Y \a\t g:i A') }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    @endif
 
                     <!-- Request Message -->
                     <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">
@@ -87,13 +107,13 @@
                     </div>
 
                     <!-- Evidence Submission Form -->
-                    @if($evidenceRequest->status === 'pending' && !$evidenceRequest->isDeadlineExpired())
+                    @if($evidenceRequest->isPending() && !$evidenceRequest->isDeadlineExpired())
                         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                             <div class="border-b border-slate-200 px-4 py-3">
                                 <h6 class="mb-0"><i class="fas fa-upload"></i> Submit Evidence</h6>
                             </div>
                             <div class="p-4 sm:p-5">
-                                <form action="{{ route('evidence-requests.submit', $evidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
+                                <form action="{{ route('evidence-requests.respond', $evidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
                                     @csrf
                                     
                                     <div class="mb-3">
@@ -144,7 +164,7 @@
                                 </form>
                             </div>
                         </div>
-                    @elseif($evidenceRequest->status === 'submitted')
+                    @elseif($evidenceRequest->isSubmitted())
                         <!-- Submitted Evidence Display -->
                         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                             <div class="border-b border-slate-200 px-4 py-3">
@@ -200,7 +220,8 @@
                         </div>
                     @endif
 
-                                         <!-- Both Parties Evidence Status -->
+                    @if($appeal)
+                    <!-- Both Parties Evidence Status -->
                      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4">
                          <div class="border-b border-slate-200 px-4 py-3">
                              <h6 class="mb-0"><i class="fas fa-users"></i> Both Parties Evidence Status</h6>
@@ -210,27 +231,27 @@
                                  <div class="col-span-12 md:col-span-6">
                                      <h6 class="mb-3">
                                          <i class="fas fa-user text-primary"></i> Buyer Evidence
-                                         @if($evidenceRequest->appeal->buyerEvidenceRequest)
-                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $evidenceRequest->appeal->buyerEvidenceRequest->getStatusBadgeClass() }} ml-2">
-                                                 {{ ucfirst($evidenceRequest->appeal->buyerEvidenceRequest->status) }}
+                                         @if($appeal->buyerEvidenceRequest)
+                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $appeal->buyerEvidenceRequest->getStatusBadgeClass() }} ml-2">
+                                                 {{ $appeal->buyerEvidenceRequest->getStatusLabel() }}
                                              </span>
                                          @else
                                              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200 ml-2">Pending</span>
                                          @endif
                                      </h6>
                                      
-                                     @if($evidenceRequest->appeal->buyerEvidenceRequest && $evidenceRequest->appeal->buyerEvidenceRequest->status === 'submitted')
+                                     @if($appeal->buyerEvidenceRequest && $appeal->buyerEvidenceRequest->isSubmitted())
                                          <div class="evidence-submission-card border rounded p-3 mb-3">
                                              <div class="flex justify-between items-start mb-2">
                                                  <strong>Submitted:</strong>
-                                                 <small class="text-slate-500">{{ $evidenceRequest->appeal->buyerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</small>
+                                                 <small class="text-slate-500">{{ $appeal->buyerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</small>
                                              </div>
-                                             <p class="mb-2"><strong>Description:</strong> {{ $evidenceRequest->appeal->buyerEvidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
+                                             <p class="mb-2"><strong>Description:</strong> {{ $appeal->buyerEvidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
                                              
-                                             @if(isset($evidenceRequest->appeal->buyerEvidenceRequest->submitted_evidence['files']))
+                                             @if(isset($appeal->buyerEvidenceRequest->submitted_evidence['files']))
                                                  <div class="submitted-files">
                                                      <strong>Files:</strong>
-                                                     @foreach($evidenceRequest->appeal->buyerEvidenceRequest->submitted_evidence['files'] as $file)
+                                                     @foreach($appeal->buyerEvidenceRequest->submitted_evidence['files'] as $file)
                                                          <div class="file-item flex justify-between items-center mt-1">
                                                              <small class="text-truncate">{{ $file['filename'] }}</small>
                                                              <a href="{{ Storage::url($file['path']) }}" target="_blank" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
@@ -251,27 +272,27 @@
                                  <div class="col-span-12 md:col-span-6">
                                      <h6 class="mb-3">
                                          <i class="fas fa-shop text-emerald-600"></i> Seller Evidence
-                                         @if($evidenceRequest->appeal->sellerEvidenceRequest)
-                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $evidenceRequest->appeal->sellerEvidenceRequest->getStatusBadgeClass() }} ml-2">
-                                                 {{ ucfirst($evidenceRequest->appeal->sellerEvidenceRequest->status) }}
+                                         @if($appeal->sellerEvidenceRequest)
+                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $appeal->sellerEvidenceRequest->getStatusBadgeClass() }} ml-2">
+                                                 {{ $appeal->sellerEvidenceRequest->getStatusLabel() }}
                                              </span>
                                          @else
                                              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-200 ml-2">Pending</span>
                                          @endif
                                      </h6>
                                      
-                                     @if($evidenceRequest->appeal->sellerEvidenceRequest && $evidenceRequest->appeal->sellerEvidenceRequest->status === 'submitted')
+                                     @if($appeal->sellerEvidenceRequest && $appeal->sellerEvidenceRequest->isSubmitted())
                                          <div class="evidence-submission-card border rounded p-3 mb-3">
                                              <div class="flex justify-between items-start mb-2">
                                                  <strong>Submitted:</strong>
-                                                 <small class="text-slate-500">{{ $evidenceRequest->appeal->sellerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</small>
+                                                 <small class="text-slate-500">{{ $appeal->sellerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</small>
                                              </div>
-                                             <p class="mb-2"><strong>Description:</strong> {{ $evidenceRequest->appeal->sellerEvidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
+                                             <p class="mb-2"><strong>Description:</strong> {{ $appeal->sellerEvidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
                                              
-                                             @if(isset($evidenceRequest->appeal->sellerEvidenceRequest->submitted_evidence['files']))
+                                             @if(isset($appeal->sellerEvidenceRequest->submitted_evidence['files']))
                                                  <div class="submitted-files">
                                                      <strong>Files:</strong>
-                                                     @foreach($evidenceRequest->appeal->sellerEvidenceRequest->submitted_evidence['files'] as $file)
+                                                     @foreach($appeal->sellerEvidenceRequest->submitted_evidence['files'] as $file)
                                                          <div class="file-item flex justify-between items-center mt-1">
                                                              <small class="text-truncate">{{ $file['filename'] }}</small>
                                                              <a href="{{ Storage::url($file['path']) }}" target="_blank" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
@@ -303,8 +324,8 @@
                                      <div class="timeline-marker bg-primary"></div>
                                      <div class="timeline-content">
                                          <h6 class="timeline-title">Appeal Submitted</h6>
-                                         <p class="timeline-text">{{ $evidenceRequest->appeal->created_at->format('M d, Y \a\t g:i A') }}</p>
-                                         <p class="timeline-text">{{ $evidenceRequest->appeal->appealedBy->name }} submitted an appeal</p>
+                                          <p class="timeline-text">{{ $appeal->created_at->format('M d, Y \a\t g:i A') }}</p>
+                                          <p class="timeline-text">{{ $appeal->appealedBy->name }} submitted an appeal</p>
                                      </div>
                                  </div>
 
@@ -317,28 +338,28 @@
                                      </div>
                                  </div>
 
-                                 @if($evidenceRequest->appeal->buyerEvidenceRequest && $evidenceRequest->appeal->buyerEvidenceRequest->status === 'submitted')
+                                 @if($appeal->buyerEvidenceRequest && $appeal->buyerEvidenceRequest->isSubmitted())
                                      <div class="timeline-item">
                                          <div class="timeline-marker bg-success"></div>
                                          <div class="timeline-content">
                                              <h6 class="timeline-title">Buyer Evidence Submitted</h6>
-                                             <p class="timeline-text">Buyer submitted evidence on {{ $evidenceRequest->appeal->buyerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</p>
+                                             <p class="timeline-text">Buyer submitted evidence on {{ $appeal->buyerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</p>
                                          </div>
                                      </div>
                                  @endif
 
-                                 @if($evidenceRequest->appeal->sellerEvidenceRequest && $evidenceRequest->appeal->sellerEvidenceRequest->status === 'submitted')
+                                 @if($appeal->sellerEvidenceRequest && $appeal->sellerEvidenceRequest->isSubmitted())
                                      <div class="timeline-item">
                                          <div class="timeline-marker bg-success"></div>
                                          <div class="timeline-content">
                                              <h6 class="timeline-title">Seller Evidence Submitted</h6>
-                                             <p class="timeline-text">Seller submitted evidence on {{ $evidenceRequest->appeal->sellerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</p>
+                                             <p class="timeline-text">Seller submitted evidence on {{ $appeal->sellerEvidenceRequest->submitted_at->format('M d, Y g:i A') }}</p>
                                          </div>
                                      </div>
                                  @endif
 
-                                 @if($evidenceRequest->appeal->buyerEvidenceRequest && $evidenceRequest->appeal->buyerEvidenceRequest->status === 'submitted' && 
-                                     $evidenceRequest->appeal->sellerEvidenceRequest && $evidenceRequest->appeal->sellerEvidenceRequest->status === 'submitted')
+                                 @if($appeal->buyerEvidenceRequest && $appeal->buyerEvidenceRequest->isSubmitted() && 
+                                     $appeal->sellerEvidenceRequest && $appeal->sellerEvidenceRequest->isSubmitted())
                                      <div class="timeline-item">
                                          <div class="timeline-marker bg-sky-100"></div>
                                          <div class="timeline-content">
@@ -348,14 +369,14 @@
                                      </div>
                                  @endif
 
-                                 @if($evidenceRequest->appeal->status === 'approved' || $evidenceRequest->appeal->status === 'rejected')
+                                 @if($appeal->status === 'approved' || $appeal->status === 'rejected')
                                      <div class="timeline-item">
-                                         <div class="timeline-marker bg-{{ $evidenceRequest->appeal->status === 'approved' ? 'success' : 'danger' }}"></div>
+                                         <div class="timeline-marker bg-{{ $appeal->status === 'approved' ? 'success' : 'danger' }}"></div>
                                          <div class="timeline-content">
-                                             <h6 class="timeline-title">Appeal {{ ucfirst($evidenceRequest->appeal->status) }}</h6>
-                                             <p class="timeline-text">{{ $evidenceRequest->appeal->reviewed_at->format('M d, Y g:i A') }}</p>
-                                             @if($evidenceRequest->appeal->review_notes)
-                                                 <p class="timeline-text">{{ $evidenceRequest->appeal->review_notes }}</p>
+                                             <h6 class="timeline-title">Appeal {{ ucfirst($appeal->status) }}</h6>
+                                             <p class="timeline-text">{{ $appeal->reviewed_at->format('M d, Y g:i A') }}</p>
+                                             @if($appeal->review_notes)
+                                                 <p class="timeline-text">{{ $appeal->review_notes }}</p>
                                              @endif
                                          </div>
                                      </div>
@@ -363,6 +384,7 @@
                              </div>
                          </div>
                      </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -450,21 +472,24 @@
 @push('scripts')
 <script>
 // File input validation
-document.getElementById('evidence_files').addEventListener('change', function(e) {
-    const files = e.target.files;
-    const maxSize = 50 * 1024 * 1024; // 50MB
-    
-    for (let i = 0; i < files.length; i++) {
-        if (files[i].size > maxSize) {
-            alert(`File "${files[i].name}" is too large. Maximum size is 50MB.`);
-            e.target.value = '';
-            return;
+const evidenceFilesInput = document.getElementById('evidence_files');
+if (evidenceFilesInput) {
+    evidenceFilesInput.addEventListener('change', function(e) {
+        const files = e.target.files;
+        const maxSize = 50 * 1024 * 1024; // 50MB
+
+        for (let i = 0; i < files.length; i++) {
+            if (files[i].size > maxSize) {
+                alert(`File "${files[i].name}" is too large. Maximum size is 50MB.`);
+                e.target.value = '';
+                return;
+            }
         }
-    }
-});
+    });
+}
 
 // Countdown timer for deadline
-@if($evidenceRequest->status === 'pending' && !$evidenceRequest->isDeadlineExpired())
+@if($evidenceRequest->isPending() && !$evidenceRequest->isDeadlineExpired())
     const deadline = new Date('{{ $evidenceRequest->deadline }}').getTime();
     
     const countdown = setInterval(function() {

@@ -86,13 +86,13 @@
                         <div class="row">
                             <!-- Buyer Evidence -->
                             <div class="col-md-6">
-                                <div class="card border-{{ $appeal->buyerEvidenceRequest ? ($appeal->buyerEvidenceRequest->status === 'submitted' ? 'success' : 'warning') : 'secondary' }}">
+                                <div class="card border-{{ $appeal->buyerEvidenceRequest ? ($appeal->buyerEvidenceRequest->isSubmitted() ? 'success' : 'warning') : 'secondary' }}">
                                     <div class="card-header">
                                         <h6 class="mb-0">
                                             <i class="fas fa-user"></i> Buyer Evidence
                                             @if($appeal->buyerEvidenceRequest)
                                                 <span class="badge {{ $appeal->buyerEvidenceRequest->getStatusBadgeClass() }} ms-2">
-                                                    {{ ucfirst($appeal->buyerEvidenceRequest->status) }}
+                                                    {{ $appeal->buyerEvidenceRequest->getStatusLabel() }}
                                                 </span>
                                             @endif
                                         </h6>
@@ -102,7 +102,7 @@
                                             <p><strong>Deadline:</strong> {{ $appeal->buyerEvidenceRequest->deadline->format('M d, Y \a\t g:i A') }}</p>
                                             <p><strong>Days Left:</strong> {{ $appeal->buyerEvidenceRequest->getDaysUntilDeadline() }}</p>
                                             
-                                            @if($appeal->buyerEvidenceRequest->status === 'submitted')
+                                            @if($appeal->buyerEvidenceRequest->isSubmitted())
                                                 <div class="mt-3">
                                                     <h6>Submitted Evidence</h6>
                                                     <p><strong>Description:</strong> {{ $appeal->buyerEvidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
@@ -139,13 +139,13 @@
 
                             <!-- Seller Evidence -->
                             <div class="col-md-6">
-                                <div class="card border-{{ $appeal->sellerEvidenceRequest ? ($appeal->sellerEvidenceRequest->status === 'submitted' ? 'success' : 'warning') : 'secondary' }}">
+                                <div class="card border-{{ $appeal->sellerEvidenceRequest ? ($appeal->sellerEvidenceRequest->isSubmitted() ? 'success' : 'warning') : 'secondary' }}">
                                     <div class="card-header">
                                         <h6 class="mb-0">
                                             <i class="fas fa-shop"></i> Seller Evidence
                                             @if($appeal->sellerEvidenceRequest)
                                                 <span class="badge {{ $appeal->sellerEvidenceRequest->getStatusBadgeClass() }} ms-2">
-                                                    {{ ucfirst($appeal->sellerEvidenceRequest->status) }}
+                                                    {{ $appeal->sellerEvidenceRequest->getStatusLabel() }}
                                                 </span>
                                             @endif
                                         </h6>
@@ -155,7 +155,7 @@
                                             <p><strong>Deadline:</strong> {{ $appeal->sellerEvidenceRequest->deadline->format('M d, Y \a\t g:i A') }}</p>
                                             <p><strong>Days Left:</strong> {{ $appeal->sellerEvidenceRequest->getDaysUntilDeadline() }}</p>
                                             
-                                            @if($appeal->sellerEvidenceRequest->status === 'submitted')
+                                            @if($appeal->sellerEvidenceRequest->isSubmitted())
                                                 <div class="mt-3">
                                                     <h6>Submitted Evidence</h6>
                                                     <p><strong>Description:</strong> {{ $appeal->sellerEvidenceRequest->submitted_evidence['description'] ?? 'N/A' }}</p>
@@ -269,9 +269,9 @@
                         @php
                             $buyerEvidence = $appeal->buyerEvidenceRequest;
                             $sellerEvidence = $appeal->sellerEvidenceRequest;
-                            $bothSubmitted = $buyerEvidence && $sellerEvidence && 
-                                           $buyerEvidence->status === 'submitted' && 
-                                           $sellerEvidence->status === 'submitted';
+                            $bothSubmitted = $buyerEvidence && $sellerEvidence &&
+                                           $buyerEvidence->isSubmitted() &&
+                                           $sellerEvidence->isSubmitted();
                         @endphp
                         
                         @if($bothSubmitted)

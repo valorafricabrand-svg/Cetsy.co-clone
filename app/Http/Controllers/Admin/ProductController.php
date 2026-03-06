@@ -113,7 +113,7 @@ class ProductController extends Controller
 
         // Delete digital files if any
         foreach ($product->digitalFiles as $file) {
-            \Storage::disk('local')->delete($file->filepath);
+            $file->deleteStoredAsset();
             $file->delete();
         }
 

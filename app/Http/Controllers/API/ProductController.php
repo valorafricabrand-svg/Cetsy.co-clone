@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
@@ -225,13 +226,50 @@ class ProductController extends Controller
     public function uploadDigitalFile(Request $request, Product $product)
     {
         $this->authorizeProduct($request, $product);
-        $request->validate(['digital_file' => 'required|file|max:20480']); // 20MB
+        $data = $request->validate([
+            'digital_file'      => 'nullable|file|max:51200',
+            'external_url'      => 'nullable|url|max:2048',
+            'filename'          => 'nullable|string|max:190',
+            'delivery_method'   => ['nullable', Rule::in([
+                DigitalFile::SOURCE_UPLOAD,
+                DigitalFile::SOURCE_EXTERNAL_URL,
+            ])],
+        ]);
+
+        $method = (string) ($data['delivery_method'] ?? ($request->hasFile('digital_file')
+            ? DigitalFile::SOURCE_UPLOAD
+            : DigitalFile::SOURCE_EXTERNAL_URL));
+
+        if ($method === DigitalFile::SOURCE_EXTERNAL_URL) {
+            $url = $this->normalizeDigitalExternalUrl($data['external_url'] ?? null);
+            if (! $url) {
+                return response()->json(['message' => 'Provide a valid external download URL.'], 422);
+            }
+
+            $df = $product->digitalFiles()->create([
+                'filename'     => !empty($data['filename']) ? $data['filename'] : $this->defaultExternalDigitalFilename($product, $url),
+                'source_type'  => DigitalFile::SOURCE_EXTERNAL_URL,
+                'external_url' => $url,
+            ]);
+
+            return response()->json(['message' => 'Digital link saved', 'file' => $df]);
+        }
+
+        if (! $request->hasFile('digital_file')) {
+            return response()->json(['message' => 'Provide a digital file or switch to an external link.'], 422);
+        }
+
         $file = $request->file('digital_file');
         $path = $file->store('digital-files', 'private');
         $df = $product->digitalFiles()->create([
-            'filename' => $file->getClientOriginalName(),
-            'filepath' => $path,
+            'filename'    => $file->getClientOriginalName(),
+            'filepath'    => $path,
+            'disk'        => 'private',
+            'filesize'    => (int) $file->getSize(),
+            'filetype'    => $file->getClientMimeType(),
+            'source_type' => DigitalFile::SOURCE_UPLOAD,
         ]);
+
         return response()->json(['message' => 'Digital file uploaded', 'file' => $df]);
     }
 
@@ -428,6 +466,31 @@ class ProductController extends Controller
     {
         $user = $request->user();
         abort_if(!$user || !$user->shop || $user->shop->id !== $product->shop_id, 403, 'Unauthorized');
+    }
+
+    private function normalizeDigitalExternalUrl(?string $url): ?string
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            return null;
+        }
+
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        if (! in_array($scheme, ['http', 'https'], true)) {
+            throw ValidationException::withMessages([
+                'external_url' => 'Digital link must start with http:// or https://.',
+            ]);
+        }
+
+        return $url;
+    }
+
+    private function defaultExternalDigitalFilename(Product $product, string $url): string
+    {
+        $host = preg_replace('/^www\./i', '', (string) parse_url($url, PHP_URL_HOST));
+        $base = trim((string) ($product->name ?: 'Digital download'));
+
+        return trim($base . ' link' . ($host ? ' (' . $host . ')' : ''));
     }
 
     /**

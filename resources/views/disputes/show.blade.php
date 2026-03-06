@@ -150,7 +150,7 @@
 
     {{-- Pending evidence requests for current user --}}
     @if(isset($evidenceRequests) && auth()->check())
-        @php $myPendingReqs = $evidenceRequests->where('requested_from', auth()->id())->where('status','pending'); @endphp
+        @php $myPendingReqs = $evidenceRequests->filter(fn($req) => $req->isOwnedBy(auth()->id()) && $req->isPending()); @endphp
         @foreach($myPendingReqs as $req)
             <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 flex justify-between items-center">
                 <div>
@@ -1519,7 +1519,7 @@
 {{-- Evidence Response Modals --}}
 @if(config('disputes.enable_appeals') && $dispute->appeal && $dispute->appeal->evidenceRequests->isNotEmpty())
     @foreach($dispute->appeal->evidenceRequests as $evidenceRequest)
-        @if($evidenceRequest->status === 'pending' && $evidenceRequest->requested_from === auth()->id())
+        @if($evidenceRequest->isPending() && $evidenceRequest->isOwnedBy(auth()->id()))
             <div class="modal" id="evidenceResponseModal-{{ $evidenceRequest->id }}" tabindex="-1" aria-labelledby="evidenceResponseModalLabel-{{ $evidenceRequest->id }}" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
                     <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
@@ -2143,7 +2143,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     @endphp
     
-    @if($userEvidenceRequest && $userEvidenceRequest->status !== 'submitted')
+    @if($userEvidenceRequest && ! $userEvidenceRequest->isSubmitted())
         <div class="modal" id="submitEvidenceModal" tabindex="-1" aria-labelledby="submitEvidenceModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
@@ -2153,7 +2153,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </h5>
                         <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
                     </div>
-                    <form action="{{ route('evidence-requests.submit', $userEvidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('evidence-requests.respond', $userEvidenceRequest->id) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="px-4 py-4">
                             <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800">

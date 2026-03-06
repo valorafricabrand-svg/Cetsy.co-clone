@@ -336,16 +336,24 @@
                                 <thead>
                                     <tr>
                                         <th>File Name</th>
-                                        <th>Size</th>
-                                        <th>Type</th>
+                                        <th>Source</th>
+                                        <th>Details</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($product->digitalFiles as $file)
                                         <tr>
                                             <td>{{ $file->filename }}</td>
-                                            <td>{{ number_format($file->filesize / 1024, 2) }} KB</td>
-                                            <td>{{ $file->filetype }}</td>
+                                            <td>{{ $file->isExternalUrl() ? 'External link' : 'Uploaded file' }}</td>
+                                            <td>
+                                                @if($file->isExternalUrl() && $file->external_url)
+                                                    <a href="{{ $file->external_url }}" target="_blank" rel="noopener">{{ preg_replace('/^www\\./i', '', (string) parse_url($file->external_url, PHP_URL_HOST)) }}</a>
+                                                @elseif($file->filesize)
+                                                    {{ number_format($file->filesize / 1024 / 1024, 2) }} MB
+                                                @else
+                                                    {{ $file->filetype ?: '-' }}
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -462,4 +470,3 @@ function deleteProduct() {
 }
 </script>
 @endsection
-

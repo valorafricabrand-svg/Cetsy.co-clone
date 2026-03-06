@@ -588,7 +588,7 @@
                 @elseif($timelineDigitalFilesCount > 0)
                   Your digital files are ready to download below.
                 @else
-                  Digital order confirmed. Download file has not been uploaded yet.
+                  Digital order confirmed. The seller has not added a download file or access link yet.
                 @endif
               @elseif($stepCompleted && $completedAt)
                 Completed on <strong>{{ $formatDateTime($completedAt) }}</strong>
@@ -979,14 +979,14 @@
                                   <a href="{{ route('digital-files.download', $file) }}"
                                      target="_blank" rel="noopener"
                                      class="inline-flex items-center">
-                                    <i class="fas fa-file-download mr-2"></i> {{ $file->filename }}
+                                    <i class="fas {{ $file->isExternalUrl() ? 'fa-link' : 'fa-file-download' }} mr-2"></i> {{ $file->filename }}
                                   </a>
                                 </li>
                               @endforeach
                             </ul>
                           </div>
                         @else
-                          <span class="text-amber-700 text-xs">No digital file uploaded yet</span>
+                          <span class="text-amber-700 text-xs">No digital delivery asset added yet</span>
                         @endif
                       @elseif($isDigital && $order->status === \App\Models\Order::STATUS_PENDING)
                         <span class="text-slate-500 text-xs">Unlocks after payment</span>
@@ -1123,7 +1123,7 @@
                                 @foreach($product->digitalFiles as $file)
                                   <li class="px-4 py-3 flex justify-between items-center">
                                     <a href="{{ route('digital-files.download', $file) }}" target="_blank" rel="noopener" class="inline-flex items-center">
-                                      <i class="fas fa-file-download mr-2"></i> {{ $file->filename }}
+                                      <i class="fas {{ $file->isExternalUrl() ? 'fa-link' : 'fa-file-download' }} mr-2"></i> {{ $file->filename }}
                                     </a>
                                   </li>
                                 @endforeach
@@ -1132,7 +1132,7 @@
                           @elseif($order->status === \App\Models\Order::STATUS_PENDING)
                             <div class="text-xs text-slate-500">Unlocks after payment</div>
                           @elseif($canDownload)
-                            <div class="text-xs text-amber-700">No digital file uploaded yet</div>
+                            <div class="text-xs text-amber-700">No digital delivery asset added yet</div>
                           @else
                             <div class="text-xs text-slate-500">Downloads become available after payment processing.</div>
                           @endif
@@ -1288,7 +1288,7 @@
                   <span class="inline-block max-w-72 truncate" title="{{ $__file->filename }}">{{ $__file->filename }}</span>
                 </div>
                 <a href="{{ route('digital-files.download', $__file) }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500">
-                  <i class="bi bi-download"></i> Download
+                  <i class="bi {{ $__file->isExternalUrl() ? 'bi-link-45deg' : 'bi-download' }}"></i> {{ $__file->isExternalUrl() ? 'Open link' : 'Download' }}
                 </a>
               </li>
             @endforeach

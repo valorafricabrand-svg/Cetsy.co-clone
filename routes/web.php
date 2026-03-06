@@ -483,6 +483,12 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
 
+    Route::prefix('evidence-requests')->name('evidence-requests.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\EvidenceRequestController::class, 'index'])->name('index');
+        Route::get('/{evidenceRequest}', [\App\Http\Controllers\EvidenceRequestController::class, 'show'])->name('show');
+        Route::post('/{evidenceRequest}/respond', [\App\Http\Controllers\EvidenceRequestController::class, 'respond'])->name('respond');
+    });
+
     // Disputes - Keep only this to test
     Route::prefix('disputes')->name('disputes.')->group(function () {
         Route::get('/', [\App\Http\Controllers\DisputeController::class, 'index'])->name('index');

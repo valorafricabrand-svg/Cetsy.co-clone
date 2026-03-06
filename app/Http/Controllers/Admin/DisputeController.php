@@ -542,27 +542,29 @@ class DisputeController extends Controller
         try {
             DB::transaction(function () use ($appeal, $data, $deadline) {
                 // Create evidence request for buyer
-                $buyerEvidenceRequest = EvidenceRequest::create([
+                $buyerEvidenceRequest = EvidenceRequest::createForRecipient([
                     'appeal_id' => $appeal->id,
                     'dispute_id' => $appeal->dispute_id,
-                    'requested_from' => $appeal->dispute->buyer_id,
-                    'requested_by' => auth()->id(),
+                    'recipient_id' => $appeal->dispute->buyer_id,
+                    'requester_id' => auth()->id(),
+                    'party_type' => 'buyer',
                     'message' => $data['message'],
                     'required_evidence_types' => $data['evidence_types'],
                     'deadline' => $deadline,
-                    'status' => 'pending'
+                    'status' => EvidenceRequest::STATUS_PENDING,
                 ]);
 
                 // Create evidence request for seller
-                $sellerEvidenceRequest = EvidenceRequest::create([
+                $sellerEvidenceRequest = EvidenceRequest::createForRecipient([
                     'appeal_id' => $appeal->id,
                     'dispute_id' => $appeal->dispute_id,
-                    'requested_from' => $appeal->dispute->seller_id,
-                    'requested_by' => auth()->id(),
+                    'recipient_id' => $appeal->dispute->seller_id,
+                    'requester_id' => auth()->id(),
+                    'party_type' => 'seller',
                     'message' => $data['message'],
                     'required_evidence_types' => $data['evidence_types'],
                     'deadline' => $deadline,
-                    'status' => 'pending'
+                    'status' => EvidenceRequest::STATUS_PENDING,
                 ]);
 
                 // Send notifications to both parties

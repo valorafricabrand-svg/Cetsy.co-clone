@@ -68,12 +68,14 @@ class Appeal extends Model
 
     public function buyerEvidenceRequest(): HasOne
     {
-        return $this->hasOne(EvidenceRequest::class)->where('requested_from', $this->dispute->buyer_id);
+        return $this->hasOne(EvidenceRequest::class)
+            ->where(EvidenceRequest::recipientColumn(), $this->dispute->buyer_id);
     }
 
     public function sellerEvidenceRequest(): HasOne
     {
-        return $this->hasOne(EvidenceRequest::class)->where('requested_from', $this->dispute->seller_id);
+        return $this->hasOne(EvidenceRequest::class)
+            ->where(EvidenceRequest::recipientColumn(), $this->dispute->seller_id);
     }
 
     // Scopes

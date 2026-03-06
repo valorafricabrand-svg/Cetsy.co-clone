@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DigitalFile;
 use App\Models\Product;
 use App\Models\Payment;
 use App\Models\Category;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request; 
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +30,7 @@ use Illuminate\Support\Facades\Session;
 
 
 use Illuminate\Support\Arr;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -95,6 +98,67 @@ class ProductController extends Controller
                 'error'      => $e->getMessage(),
             ]);
         }
+    }
+
+    private function normalizeDigitalExternalUrl(?string $url): ?string
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            return null;
+        }
+
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        if (! in_array($scheme, ['http', 'https'], true)) {
+            throw ValidationException::withMessages([
+                'digital_link_url' => 'Digital link must start with http:// or https://.',
+            ]);
+        }
+
+        return $url;
+    }
+
+    private function defaultExternalDigitalFilename(Product $product, string $url): string
+    {
+        $host = preg_replace('/^www\./i', '', (string) parse_url($url, PHP_URL_HOST));
+        $base = trim((string) ($product->name ?: 'Digital download'));
+
+        return trim($base . ' link' . ($host ? ' (' . $host . ')' : ''));
+    }
+
+    private function attachUploadedDigitalFile(Product $product, UploadedFile $file, string $disk = 'local'): void
+    {
+        $path = $file->store('digital-files', $disk);
+
+        $product->digitalFiles()->create([
+            'filename'    => $file->getClientOriginalName(),
+            'filepath'    => $path,
+            'disk'        => $disk,
+            'filesize'    => (int) $file->getSize(),
+            'filetype'    => $file->getClientMimeType(),
+            'source_type' => DigitalFile::SOURCE_UPLOAD,
+        ]);
+    }
+
+    private function attachExternalDigitalLink(Product $product, string $url, ?string $filename = null): void
+    {
+        $label = trim((string) $filename);
+
+        $product->digitalFiles()->create([
+            'filename'     => $label !== '' ? $label : $this->defaultExternalDigitalFilename($product, $url),
+            'source_type'  => DigitalFile::SOURCE_EXTERNAL_URL,
+            'external_url' => $url,
+        ]);
+    }
+
+    private function purgeDigitalFiles(Product $product): void
+    {
+        $product->loadMissing('digitalFiles');
+
+        foreach ($product->digitalFiles as $digitalFile) {
+            $digitalFile->deleteStoredAsset();
+        }
+
+        $product->digitalFiles()->delete();
     }
 
     public function index(Request $request)
@@ -459,20 +523,10 @@ public function update(Request $request, Product $product)
 
     // 4) Digital files logic
     if ($data['type'] === 'digital' && $request->hasFile('digital_file')) {
-        Storage::disk('local')
-            ->delete($product->digitalFiles->pluck('filepath')->all());
-        $product->digitalFiles()->delete();
-
-        $file = $request->file('digital_file');
-        $path = $file->store('digital-files','local');
-        $product->digitalFiles()->create([
-            'filename' => $file->getClientOriginalName(),
-            'filepath' => $path,
-        ]);
+        $this->purgeDigitalFiles($product);
+        $this->attachUploadedDigitalFile($product, $request->file('digital_file'), 'local');
     } elseif ($data['type'] !== 'digital') {
-        Storage::disk('local')
-            ->delete($product->digitalFiles->pluck('filepath')->all());
-        $product->digitalFiles()->delete();
+        $this->purgeDigitalFiles($product);
     }
 
     // 5) Sync manual variations
@@ -676,6 +730,18 @@ public function update(Request $request, Product $product)
             // 4) Digital files: copy physical file and create fresh rows
             try {
                 foreach ($product->digitalFiles as $df) {
+                    if ($df->isExternalUrl()) {
+                        $newProduct->digitalFiles()->create([
+                            'filename'     => $df->filename ? ('Copy of '.$df->filename) : $this->defaultExternalDigitalFilename($newProduct, (string) $df->external_url),
+                            'disk'         => $df->disk,
+                            'filesize'     => $df->filesize,
+                            'filetype'     => $df->filetype,
+                            'source_type'  => DigitalFile::SOURCE_EXTERNAL_URL,
+                            'external_url' => $df->external_url,
+                        ]);
+                        continue;
+                    }
+
                     $src = (string) ($df->filepath ?? '');
                     if (!$src) { // nothing to copy; fall back to replicate
                         $newProduct->digitalFiles()->create($df->replicate()->toArray());
@@ -702,16 +768,14 @@ public function update(Request $request, Product $product)
                         } catch (\Throwable $e) { /* ignore */ }
                     }
 
-                    $newRow = $newProduct->digitalFiles()->create([
-                        'filename' => $df->filename ? ('Copy of '.$df->filename) : basename($src),
-                        'filepath' => $copied ? $dest : $src,
+                    $newProduct->digitalFiles()->create([
+                        'filename'    => $df->filename ? ('Copy of '.$df->filename) : basename($src),
+                        'filepath'    => $copied ? $dest : $src,
+                        'disk'        => $diskName,
+                        'filesize'    => $df->filesize,
+                        'filetype'    => $df->filetype,
+                        'source_type' => DigitalFile::SOURCE_UPLOAD,
                     ]);
-                    try {
-                        if ($copied && \Illuminate\Support\Facades\Schema::hasColumn($newRow->getTable(), 'disk')) {
-                            $newRow->disk = $diskName;
-                            $newRow->save();
-                        }
-                    } catch (\Throwable $e) { /* ignore */ }
                 }
             } catch (\Throwable $e) { /* non-fatal */ }
 
@@ -806,7 +870,7 @@ public function update(Request $request, Product $product)
             return redirect()->route('listing.show', $product->slug ?? $product->getRouteKey());
         }
 
-        $product->load('media');
+        $product->load(['media', 'digitalFiles']);
         return view('products.show', compact('product'));
     }
 
@@ -1356,6 +1420,7 @@ public function updateRenewal(Request $request, Product $product)
     public function details(Product $product)
     {
         // These match what your old monolithic edit view expected
+        $product->loadMissing('digitalFiles');
         $countries       = Country::orderBy('name')->get();
         $processingTimes = ProcessingTime::orderBy('days')->get();
 
@@ -1584,34 +1649,55 @@ public function shipping(Product $product, Request $request)
     public function updateDetails(Request $request, Product $product)
     {
         $before = $this->captureOnly($product, ['name','type','category_id','short_description','description']);
+        $beforeDigitalFiles = $product->digitalFiles()->count();
         $data = $request->validate([
-            'name'              => ['required','string','max:190'],
-            'type'              => ['required','string','in:physical,digital,service'],
-            'category_id'       => ['required','integer','exists:categories,id'],
-            'short_description' => ['nullable','string','max:500'],
-            'description'       => ['nullable','string'],
+            'name'                    => ['required','string','max:190'],
+            'type'                    => ['required','string','in:physical,digital,service'],
+            'category_id'             => ['required','integer','exists:categories,id'],
+            'short_description'       => ['nullable','string','max:500'],
+            'description'             => ['nullable','string'],
+            'digital_delivery_method' => ['nullable', Rule::in([
+                DigitalFile::SOURCE_UPLOAD,
+                DigitalFile::SOURCE_EXTERNAL_URL,
+            ])],
+            'digital_file'            => ['nullable','file','max:51200'],
+            'digital_link_url'        => ['nullable','url','max:2048'],
+            'digital_link_name'       => ['nullable','string','max:190'],
             // 'digital_file'    => ['nullable','file','max:20480'], // 20MB – enable if you handle upload here
         ]);
 
         $product->update($data);
+        if ($product->type !== 'digital') {
+            $this->purgeDigitalFiles($product);
+        } elseif ($product->type === 'digital') {
+            $deliveryMethod = (string) ($data['digital_delivery_method'] ?? DigitalFile::SOURCE_UPLOAD);
+
+            if ($deliveryMethod === DigitalFile::SOURCE_EXTERNAL_URL) {
+                $externalUrl = $this->normalizeDigitalExternalUrl($data['digital_link_url'] ?? null);
+
+                if ($externalUrl) {
+                    $this->attachExternalDigitalLink($product, $externalUrl, $data['digital_link_name'] ?? null);
+                } elseif (! empty(trim((string) ($data['digital_link_name'] ?? '')))) {
+                    throw ValidationException::withMessages([
+                        'digital_link_url' => 'Add a valid digital link or switch the delivery method back to file upload.',
+                    ]);
+                }
+            } elseif ($request->hasFile('digital_file') && $request->file('digital_file')->isValid()) {
+                $this->attachUploadedDigitalFile($product, $request->file('digital_file'), 'local');
+            }
+        }
+
         $product->refresh();
         $after   = $this->captureOnly($product, array_keys($before));
         $changes = $this->computeChanges($before, $after);
-        $this->recordProductActivity($product, 'details', $changes);
-
-        // If you want to handle digital file upload here, uncomment and adapt:
-    
-        if ($request->hasFile('digital_file') && $request->file('digital_file')->isValid()) {
-            $path = $request->file('digital_file')->store('digital-files');
-            // Persist to your DigitalFile model / media library as needed
-            $product->digitalFiles()->create([
-                'filename' => $request->file('digital_file')->getClientOriginalName(),
-                'filepath'     => $path,
-                'size'     => $request->file('digital_file')->getSize(),
-                'mime'     => $request->file('digital_file')->getClientMimeType(),
-            ]);
+        $afterDigitalFiles = $product->digitalFiles()->count();
+        $extra = [];
+        if ($beforeDigitalFiles !== $afterDigitalFiles) {
+            $extra['counters'] = [
+                'digital_files' => ['from' => $beforeDigitalFiles, 'to' => $afterDigitalFiles],
+            ];
         }
-    
+        $this->recordProductActivity($product, 'details', $changes, $extra);
 
         return back()->with('success', 'Details updated.');
     }
