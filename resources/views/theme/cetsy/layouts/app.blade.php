@@ -763,6 +763,7 @@
                             ['route' => 'seller.dashboard', 'icon' => 'fas fa-tachometer-alt', 'label' => 'Seller Dashboard'],
                             ['route' => 'products.index', 'icon' => 'fas fa-box-open', 'label' => 'Listings'],
                             ['route' => 'seller.orders.index', 'icon' => 'fas fa-receipt', 'label' => 'Orders'],
+                            ['route' => 'account.orders', 'icon' => 'fas fa-bag-shopping', 'label' => 'My Orders'],
                             ['route' => 'seller.messages.index', 'icon' => 'fas fa-comments', 'label' => 'Messages'],
                             ['route' => 'seller.offers.index', 'icon' => 'fas fa-handshake', 'label' => 'Offers'],
                             ['route' => 'seller.analytics.index', 'icon' => 'fas fa-chart-line', 'label' => 'Analytics'],
