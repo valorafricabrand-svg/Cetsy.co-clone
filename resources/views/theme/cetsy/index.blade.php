@@ -304,7 +304,7 @@
                     <a href="{{ $section['seeMoreUrl'] }}" class="hidden rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 md:inline-flex">{{ $section['seeMoreLabel'] }}</a>
                 </div>
 
-                <div class="relative" @if($autoRotate && $pages->count() > 1) data-home-listing-rotator data-interval="5000" @endif>
+                <div class="relative" @if($autoRotate && $pages->count() > 1) data-home-listing-rotator data-interval="20000" @endif>
                     @foreach($pages as $pageIndex => $pageItems)
                         <div class="home-listing-grid-compact grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4 {{ $pageIndex === 0 ? '' : 'hidden' }}" data-rotator-page="{{ $pageIndex }}">
                             @foreach($pageItems as $item)
@@ -352,7 +352,7 @@
                     @if($autoRotate && $pages->count() > 1)
                         <div class="mt-3 flex items-center justify-between">
                             <p class="text-xs font-medium text-slate-500">
-                                Rotating every 5s:
+                                Rotating every 20s:
                                 <span class="font-semibold text-emerald-700" data-rotator-counter>1 / {{ $pages->count() }}</span>
                             </p>
                             <div class="flex items-center gap-2">
@@ -531,8 +531,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const prevBtn = rotator.querySelector('[data-rotator-prev]');
             const nextBtn = rotator.querySelector('[data-rotator-next]');
             const counter = rotator.querySelector('[data-rotator-counter]');
-            const intervalAttr = parseInt(rotator.getAttribute('data-interval') || '5000', 10);
-            const interval = Number.isNaN(intervalAttr) ? 5000 : Math.max(intervalAttr, 1000);
+            const intervalAttr = parseInt(rotator.getAttribute('data-interval') || '20000', 10);
+            const interval = Number.isNaN(intervalAttr) ? 20000 : Math.max(intervalAttr, 1000);
 
             let current = 0;
             let timer = null;
