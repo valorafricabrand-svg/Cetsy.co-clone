@@ -17,7 +17,11 @@ use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
+    private const HOME_ROTATOR_PAGE_SIZE = 8;
+    private const HOME_ROTATOR_PAGES_PER_LOAD = 3;
+
     protected ProductRecommendationService $recommendations;
+    private array $homeSectionOffsets = [];
 
     public function __construct(ProductRecommendationService $recommendations)
     {
@@ -30,22 +34,20 @@ class HomeController extends Controller
     public function index()
     {
         $listingCacheTtl = $this->homeListingsCacheTtlMinutes();
+        $windowSize = self::HOME_ROTATOR_PAGE_SIZE * self::HOME_ROTATOR_PAGES_PER_LOAD;
 
         // Top-level categories (no parent)
         $categories = Category::whereNull('parent_id')
             ->orderBy('name')
             ->get();
 
-        // Randomized mixed-category pool so homepage sections can rotate through
-        // current listings until richer real-world activity data is available.
-        $allListingsPool = $this->cachedMixedListings('all', 0, null, $listingCacheTtl);
-        $featuredProducts = $allListingsPool->values();
-        $justForYouProducts = $this->rotateCollection($allListingsPool, 8);
-
-        $featuredDigitals = $this->cachedMixedListings('digital', 0, 'digital', $listingCacheTtl);
-
-        // Services pool for rotating "Most Trending Services" (all active services)
-        $services = $this->cachedMixedListings('service', 0, 'service', $listingCacheTtl);
+        // Keep the homepage payload small: show a rotating 24-item window per
+        // section and advance that window across visits so additional listings
+        // appear without rendering the full marketplace on every page load.
+        $featuredProducts = $this->homeSectionWindow('all', null, $windowSize, 0, $listingCacheTtl);
+        $justForYouProducts = $this->homeSectionWindow('all', null, $windowSize, self::HOME_ROTATOR_PAGE_SIZE, $listingCacheTtl);
+        $featuredDigitals = $this->homeSectionWindow('digital', 'digital', $windowSize, 0, $listingCacheTtl);
+        $services = $this->homeSectionWindow('service', 'service', $windowSize, 0, $listingCacheTtl);
 
         // Top sellers (shops with completed/delivered orders)
         $topShopCounts = Order::select('shop_id', DB::raw('COUNT(*) as completed_orders_count'))
@@ -103,14 +105,34 @@ class HomeController extends Controller
         ]);
     }
 
-    private function cachedMixedListings(string $scope, int $limit = 0, ?string $type = null, int $cacheMinutes = 10): Collection
+    private function homeSectionWindow(string $scope, ?string $type, int $limit, int $extraOffset = 0, int $cacheMinutes = 10): Collection
+    {
+        $ids = $this->cachedMixedListingIds($scope, $type, $cacheMinutes);
+        if (empty($ids)) {
+            return collect();
+        }
+
+        $total = count($ids);
+        $start = ($this->baseSectionOffset($scope, $total, $limit) + $extraOffset) % $total;
+        $windowIds = $this->sliceRotatingIds($ids, $start, $limit);
+
+        return $this->hydrateListings($windowIds, $type);
+    }
+
+    private function cachedMixedListingIds(string $scope, ?string $type = null, int $cacheMinutes = 10): array
     {
         $cacheKey = 'home:mixed-listing-ids:' . $scope . ':v1';
+
         $ids = Cache::remember($cacheKey, now()->addMinutes($cacheMinutes), function () use ($type) {
             return $this->buildMixedListingIds($type);
         });
 
-        if (empty($ids) || !is_array($ids)) {
+        return is_array($ids) ? $ids : [];
+    }
+
+    private function hydrateListings(array $ids, ?string $type = null): Collection
+    {
+        if (empty($ids)) {
             return collect();
         }
 
@@ -129,18 +151,51 @@ class HomeController extends Controller
         }
 
         $productsById = $query->get()->keyBy('id');
-        $ordered = collect($ids)
+
+        return collect($ids)
             ->map(function ($id) use ($productsById) {
                 return $productsById->get((int) $id);
             })
             ->filter()
             ->values();
+    }
 
-        if ($limit > 0) {
-            $ordered = $ordered->take($limit)->values();
+    private function baseSectionOffset(string $scope, int $total, int $step): int
+    {
+        if ($total < 1) {
+            return 0;
         }
 
-        return $ordered;
+        if (array_key_exists($scope, $this->homeSectionOffsets)) {
+            return $this->homeSectionOffsets[$scope];
+        }
+
+        $session = request()->session();
+        $current = (int) $session->get("home_section_offsets.$scope", 0);
+        $normalized = $current % $total;
+        $next = ($normalized + max(1, $step)) % $total;
+
+        $session->put("home_section_offsets.$scope", $next);
+        $this->homeSectionOffsets[$scope] = $normalized;
+
+        return $normalized;
+    }
+
+    private function sliceRotatingIds(array $ids, int $offset, int $limit): array
+    {
+        $count = count($ids);
+        if ($count < 1 || $limit < 1 || $count <= $limit) {
+            return array_values($ids);
+        }
+
+        $offset = $offset % $count;
+        $slice = array_slice($ids, $offset, $limit);
+
+        if (count($slice) < $limit) {
+            $slice = array_merge($slice, array_slice($ids, 0, $limit - count($slice)));
+        }
+
+        return array_values($slice);
     }
 
     private function buildMixedListingIds(?string $type = null): array
@@ -158,7 +213,7 @@ class HomeController extends Controller
             ->get();
 
         if ($products->isEmpty()) {
-            return collect();
+            return [];
         }
 
         $buckets = $products
@@ -200,24 +255,6 @@ class HomeController extends Controller
             ->unique()
             ->values()
             ->all();
-    }
-
-    private function rotateCollection(Collection $items, int $offset): Collection
-    {
-        $count = $items->count();
-        if ($count < 2) {
-            return $items->values();
-        }
-
-        $normalized = $offset % $count;
-        if ($normalized === 0) {
-            $normalized = 1;
-        }
-
-        return $items
-            ->slice($normalized)
-            ->concat($items->take($normalized))
-            ->values();
     }
 
     private function homeListingsCacheTtlMinutes(): int
