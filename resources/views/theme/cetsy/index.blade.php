@@ -287,9 +287,7 @@
                 : collect($section['items'] ?? [])->values();
             $autoRotate = (bool) ($section['autoRotate'] ?? false);
             $chunkSize = 8;
-            $maxRotatorPages = 3;
-            $maxItemsToRender = $autoRotate ? ($chunkSize * $maxRotatorPages) : $chunkSize;
-            $pages = $itemsCollection->take($maxItemsToRender)
+            $pages = ($autoRotate ? $itemsCollection : $itemsCollection->take($chunkSize))
                 ->chunk($chunkSize)
                 ->values();
         @endphp
