@@ -151,9 +151,10 @@
     const body = document.body;
     const openModal = (selector) => {
       const modal = document.querySelector(selector);
-      if (!modal) return;
+      if (!modal) return null;
       modal.classList.add('is-open');
       body.classList.add('overflow-hidden');
+      return modal;
     };
     const closeModal = (modal) => {
       if (!modal) return;
@@ -195,6 +196,18 @@
         if (topModal) closeModal(topModal);
       }
     });
+
+    const params = new URLSearchParams(window.location.search);
+    const reviewItemId = params.get('review_item');
+    if (reviewItemId && /^\d+$/.test(reviewItemId)) {
+      const modal = openModal(`#reviewModal_${reviewItemId}`);
+      if (modal && window.history.replaceState) {
+        params.delete('review_item');
+        const nextQuery = params.toString();
+        const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash}`;
+        window.history.replaceState({}, document.title, nextUrl);
+      }
+    }
   });
   // Allow quick Ctrl/Cmd+P to show clean print
   window.addEventListener('keydown', function(e){

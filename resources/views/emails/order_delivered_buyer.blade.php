@@ -68,6 +68,34 @@
             font-weight: bold;
         }
     </style>
+    @php($order->loadMissing(['items.product', 'items.review']))
+    @php
+        $statusNow = strtolower((string) ($order->status ?? ''));
+        $canReviewPhysicalNow = in_array($statusNow, ['delivered', 'completed'], true);
+        $canReviewDigitalNow = in_array($statusNow, ['completed', 'delivered'], true);
+
+        $reviewableItem = $order->items->first(function ($item) use ($canReviewPhysicalNow, $canReviewDigitalNow) {
+            if ($item->review) {
+                return false;
+            }
+
+            $product = optional($item->product);
+            $isDigital = strtolower((string) ($product->type ?? '')) === 'digital';
+
+            if ($isDigital) {
+                return $canReviewDigitalNow && !empty($item->downloaded_at);
+            }
+
+            return $canReviewPhysicalNow;
+        });
+
+        $reviewUrl = \Illuminate\Support\Facades\Route::has('buyer.orders.show')
+            ? route('buyer.orders.show', array_filter([
+                'order' => $order->id,
+                'review_item' => optional($reviewableItem)->id,
+            ]))
+            : null;
+    @endphp
 </head>
 <body>
     <div class="header">
@@ -138,7 +166,16 @@
         </ol>
 
         <p><strong>Review Your Purchase:</strong></p>
-        <p>Your feedback helps other customers make informed decisions and helps sellers improve their products and service. Consider leaving a review for your experience!</p>
+        <p>
+            Your feedback helps other customers make informed decisions and helps sellers improve their products and service.
+            Consider leaving a
+            @if($reviewUrl)
+                <a href="{{ $reviewUrl }}" style="color: #28a745; font-weight: 700; text-decoration: underline;">review</a>
+            @else
+                <strong style="color: #28a745;">review</strong>
+            @endif
+            for your experience!
+        </p>
 
         <p><strong>Need help?</strong> If you have any questions about your delivered order or need to report an issue, you can:</p>
         <ul>
