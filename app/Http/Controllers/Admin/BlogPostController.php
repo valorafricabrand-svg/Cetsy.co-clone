@@ -171,6 +171,10 @@ class BlogPostController extends Controller
         }
 
         if ($status === BlogPost::STATUS_PUBLISHED) {
+            if ($publishedAt && $publishedAt->greaterThan(now())) {
+                $publishedAt = now();
+            }
+
             $data['published_at'] = $publishedAt ?? ($existing?->published_at ?? now());
         } elseif ($status === BlogPost::STATUS_SCHEDULED) {
             $data['published_at'] = $publishedAt;
@@ -219,4 +223,3 @@ class BlogPostController extends Controller
         return $query->exists();
     }
 }
-

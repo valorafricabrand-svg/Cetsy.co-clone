@@ -53,11 +53,14 @@ class BlogPost extends Model
 
     public function scopeLive($query)
     {
-        return $query->where('status', self::STATUS_PUBLISHED)
-            ->where(function ($q) {
-                $q->whereNull('published_at')
-                    ->orWhere('published_at', '<=', now());
-            });
+        return $query->where(function ($q) {
+            $q->where('status', self::STATUS_PUBLISHED)
+                ->orWhere(function ($scheduledQuery) {
+                    $scheduledQuery->where('status', self::STATUS_SCHEDULED)
+                        ->whereNotNull('published_at')
+                        ->where('published_at', '<=', now());
+                });
+        });
     }
 
     public function author()
@@ -88,4 +91,3 @@ class BlogPost extends Model
         return Storage::disk('public')->url($path);
     }
 }
-
