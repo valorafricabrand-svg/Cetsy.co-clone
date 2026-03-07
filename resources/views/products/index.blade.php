@@ -3,6 +3,29 @@
 
 @section('title', 'My Listings')
 
+@push('styles')
+<style>
+    .listing-card-shell {
+        position: relative;
+        overflow: visible;
+        z-index: 1;
+    }
+
+    .listing-card-shell.is-menu-open,
+    .listing-card-shell:focus-within {
+        z-index: 80;
+    }
+
+    .listing-card-menu {
+        position: relative;
+    }
+
+    .listing-card-menu-panel {
+        z-index: 90;
+    }
+</style>
+@endpush
+
 @section('main')
 <section class="bg-slate-50 py-8 md:py-10">
     <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
@@ -218,12 +241,60 @@
             });
 
             card.addEventListener('keydown', function(e) {
+                if (isInteractive(e.target)) return;
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     var href = card.getAttribute('data-href');
                     if (href) window.location.href = href;
                 }
             });
+        });
+
+        var menus = Array.from(document.querySelectorAll('.listing-card-menu'));
+
+        function closeMenu(menu) {
+            if (!menu) return;
+            menu.removeAttribute('open');
+            var card = menu.closest('.listing-card-shell');
+            if (card) {
+                card.classList.remove('is-menu-open');
+            }
+        }
+
+        menus.forEach(function(menu) {
+            menu.addEventListener('toggle', function() {
+                var card = menu.closest('.listing-card-shell');
+
+                if (menu.open) {
+                    menus.forEach(function(otherMenu) {
+                        if (otherMenu !== menu) {
+                            closeMenu(otherMenu);
+                        }
+                    });
+
+                    if (card) {
+                        card.classList.add('is-menu-open');
+                    }
+                    return;
+                }
+
+                if (card) {
+                    card.classList.remove('is-menu-open');
+                }
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            menus.forEach(function(menu) {
+                if (menu.open && !menu.contains(e.target)) {
+                    closeMenu(menu);
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== 'Escape') return;
+            menus.forEach(closeMenu);
         });
     });
 </script>

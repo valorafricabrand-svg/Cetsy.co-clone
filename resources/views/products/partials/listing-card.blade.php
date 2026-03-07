@@ -46,7 +46,7 @@
 @endphp
 
 <div class="col-span-12 md:col-span-6 lg:col-span-4">
-    <article class="js-product-card relative h-full cursor-pointer overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+    <article class="js-product-card listing-card-shell relative h-full cursor-pointer overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
              data-href="{{ route('products.show', $product) }}"
              tabindex="0"
              aria-label="Open {{ $product->name }} details">
@@ -140,11 +140,11 @@
                     <i class="fas fa-eye mr-1"></i> View
                 </a>
 
-                <details class="relative ml-auto">
+                <details class="listing-card-menu relative ml-auto">
                     <summary class="inline-flex list-none items-center rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </summary>
-                    <div class="absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                    <div class="listing-card-menu-panel absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
                         <form action="{{ route('products.duplicate', $product) }}" method="POST">
                             @csrf
                             <button type="submit" class="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100">
