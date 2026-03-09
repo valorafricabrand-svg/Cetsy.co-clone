@@ -144,6 +144,10 @@ class ProductController extends Controller
                 ->filter()
                 ->implode(', ');
         }
+        $hasBillingHistory = !empty($product->listing_paid_at) || !empty($product->next_due_date);
+        if ((int) ($data['is_active'] ?? 0) !== 1) {
+            $data['is_active'] = $hasBillingHistory ? 2 : 0;
+        }
         $product->update($data);
         return response()->json(['message' => 'Settings updated', 'product' => $product->fresh()]);
     }

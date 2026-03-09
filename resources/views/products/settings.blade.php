@@ -2,7 +2,9 @@
 @section('title', $product->name . ' | Edit Settings')
 
 @section('main')
-@php $current = \Illuminate\Support\Facades\Route::currentRouteName(); @endphp
+@php
+  $current = \Illuminate\Support\Facades\Route::currentRouteName();
+@endphp
 
 <section class="bg-slate-50 py-8 md:py-10">
   <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
@@ -41,18 +43,27 @@
               <div class="col-span-12 md:col-span-4">
                 <label class="mb-1 block text-sm font-medium text-slate-700">Listing Status</label>
                 @php
-                  $isActive = (int) old('is_active', $product->is_active);
-                  $hasFeatured = !empty($product->featured_image);
-                  $eligibleToActivate = !empty($product->listing_paid_at)
-                                        && (empty($product->next_due_date) || \Carbon\Carbon::parse($product->next_due_date)->isFuture());
+                  $rawStatus = (int) old('is_active', $product->is_active);
+                  $hasPaid = !empty($product->listing_paid_at);
+                  $hasBillingHistory = $hasPaid || !empty($product->next_due_date);
+                  try {
+                    $nextDueDate = $product->next_due_date ? \Carbon\Carbon::parse($product->next_due_date) : null;
+                  } catch (\Throwable $e) {
+                    $nextDueDate = null;
+                  }
+                  $hasFeatured = !empty($product->featured_image) || $product->media()->exists();
+                  $eligibleToActivate = $hasPaid && (empty($nextDueDate) || $nextDueDate->isFuture());
+                  $inactiveStatus = $hasBillingHistory ? 2 : 0;
+                  $inactiveLabel = $inactiveStatus === 2 ? 'Paused' : 'Pending';
+                  $isActive = $rawStatus === 1 ? 1 : $inactiveStatus;
                   $canToggleOn = $eligibleToActivate && $hasFeatured;
                 @endphp
                 <label class="inline-flex items-center gap-2 text-sm text-slate-700">
                   <input class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" type="checkbox" id="statusToggle"
                          {{ $isActive===1 ? 'checked' : '' }} {{ $canToggleOn || $isActive===1 ? '' : 'disabled' }}>
-                  <span id="statusToggleLabel">{{ $isActive===1 ? 'Active' : 'Paused' }}</span>
+                  <span id="statusToggleLabel">{{ $isActive===1 ? 'Active' : $inactiveLabel }}</span>
                 </label>
-                <input type="hidden" name="is_active" id="is_active" value="{{ $isActive===1 ? 1 : 2 }}">
+                <input type="hidden" name="is_active" id="is_active" value="{{ $isActive===1 ? 1 : $inactiveStatus }}" data-inactive-status="{{ $inactiveStatus }}" data-inactive-label="{{ $inactiveLabel }}">
                 <div class="mt-1 text-xs text-slate-500">
                   @if(!$hasFeatured)
                     Add a featured image to enable activation.
@@ -68,6 +79,8 @@
                     @else
                       <div class="mt-1">Renew your listing to activate.</div>
                     @endif
+                  @elseif($isActive !== 1 && $inactiveStatus === 2)
+                    <div class="mt-1">This listing is paused. Toggle it back on when you're ready.</div>
                   @endif
                 </div>
                 @error('is_active') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
@@ -137,9 +150,11 @@ document.addEventListener('DOMContentLoaded', function(){
   var hidden = document.getElementById('is_active');
   var label = document.getElementById('statusToggleLabel');
   if(cb && hidden){
+    var inactiveStatus = hidden.dataset.inactiveStatus || '0';
+    var inactiveLabel = hidden.dataset.inactiveLabel || 'Pending';
     cb.addEventListener('change', function(){
-      hidden.value = cb.checked ? 1 : 2;
-      if (label) label.textContent = cb.checked ? 'Active' : 'Paused';
+      hidden.value = cb.checked ? 1 : inactiveStatus;
+      if (label) label.textContent = cb.checked ? 'Active' : inactiveLabel;
     });
   }
 });

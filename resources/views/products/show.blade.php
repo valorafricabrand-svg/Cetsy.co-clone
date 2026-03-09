@@ -6,6 +6,19 @@
 @section('main')
 @php
     $current = \Illuminate\Support\Facades\Route::currentRouteName();
+    $now = \Carbon\Carbon::now();
+    $hasPaid = !empty($product->listing_paid_at);
+    $hasBillingHistory = $hasPaid || !empty($product->next_due_date);
+    try {
+        $nextDueDate = $product->next_due_date ? \Carbon\Carbon::parse($product->next_due_date) : null;
+    } catch (\Throwable $e) {
+        $nextDueDate = null;
+    }
+    $isExpired = $hasPaid && $nextDueDate && $nextDueDate->lte($now);
+    $isWithinPaidCycle = $hasPaid && (! $nextDueDate || $nextDueDate->gt($now));
+    $hasFeatured = !empty($product->featured_image) || ($product->media && $product->media->count() > 0);
+    $showStatusToggle = (int) $product->is_active === 1 || ((int) $product->is_active === 2 && $isWithinPaidCycle);
+    $effectiveStatus = ((int) $product->is_active === 2 && ! $hasBillingHistory) ? 0 : (int) $product->is_active;
 @endphp
 
 <section class="bg-slate-50 py-8 md:py-10">
@@ -94,7 +107,7 @@
             <div class="mb-3 flex items-center justify-between gap-3">
               <h2 class="text-xl font-bold text-slate-900">{{ $product->name }}</h2>
               @php
-                switch((int)$product->is_active) {
+                switch($effectiveStatus) {
                   case 0: $label='Pending'; $badge='border-amber-200 bg-amber-100 text-amber-800'; break;
                   case 1: $label='Active'; $badge='border-emerald-200 bg-emerald-100 text-emerald-800'; break;
                   case 2: $label='Paused'; $badge='border-slate-200 bg-slate-100 text-slate-700'; break;
@@ -105,7 +118,7 @@
               <span class="inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold {{ $badge }}">{{ $label }}</span>
             </div>
 
-            @if(in_array((int)$product->is_active, [1,2], true))
+            @if($showStatusToggle)
               <form method="POST" action="{{ route('products.changeStatus', $product) }}" class="mb-4">
                 @csrf
                 <input type="hidden" name="status" value="{{ (int)$product->is_active === 1 ? 2 : 1 }}">
@@ -186,10 +199,28 @@
               </div>
 
             @elseif((int)$product->is_active === 2)
-              @if($product->next_due_date && \Carbon\Carbon::parse($product->next_due_date)->lte(\Carbon\Carbon::now()))
+              @if(! $hasPaid)
                 <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   <i class="fas fa-exclamation-triangle mr-2"></i>
-                  Your subscription expired on {{ \Carbon\Carbon::parse($product->next_due_date)->format('M d, Y') }}. Renew below to reactivate your listing.
+                  This listing is not live yet. Pay the fee below to activate it.
+                </div>
+
+                <div class="mb-4 flex flex-wrap gap-2">
+                  @foreach($planButtons as $planKey => $option)
+                    <form method="POST" action="{{ route('products.pay-fee', $product) }}">
+                      @csrf
+                      <input type="hidden" name="plan" value="{{ $planKey }}">
+                      <button class="inline-flex flex-col items-start rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500">
+                        <span>Pay {{ $option['label'] }}</span>
+                        <small>{{ money($option['amount']) }}</small>
+                      </button>
+                    </form>
+                  @endforeach
+                </div>
+              @elseif($isExpired)
+                <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <i class="fas fa-exclamation-triangle mr-2"></i>
+                  Your subscription expired on {{ $nextDueDate ? $nextDueDate->format('M d, Y') : '-' }}. Renew below to reactivate your listing.
                 </div>
 
                 <div class="mb-4 flex flex-wrap gap-2">
@@ -207,15 +238,13 @@
               @else
                 <div class="mb-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
                   <i class="fas fa-pause mr-2"></i>
-                  This listing is paused. It will automatically become eligible for renewal on {{ $product->next_due_date ? \Carbon\Carbon::parse($product->next_due_date)->format('M d, Y') : '-' }}.
+                  This listing is paused. You can publish it again whenever you're ready{{ $nextDueDate ? ' before ' . $nextDueDate->format('M d, Y') : '' }}.
                 </div>
               @endif
 
             @elseif((int)$product->is_active !== 1)
               @php
-                $hasPaid     = !empty($product->listing_paid_at);
-                $dueFuture   = $product->next_due_date && \Carbon\Carbon::parse($product->next_due_date)->isFuture();
-                $hasFeatured = !empty($product->featured_image) || ($product->media && $product->media->count() > 0);
+                $dueFuture = $isWithinPaidCycle;
               @endphp
 
               @if($hasPaid && $dueFuture)

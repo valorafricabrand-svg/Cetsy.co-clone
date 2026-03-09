@@ -1372,7 +1372,7 @@ public function changeStatus(Request $request, Product $product)
     }
 
     // If trying to publish (1) but next_due_date is past, block:
-    if ($data['status']==1 && Carbon::now()->gt($product->next_due_date)) {
+    if ($data['status'] == 1 && ! empty($product->next_due_date) && Carbon::now()->gt(Carbon::parse($product->next_due_date))) {
         return back()
              ->with('warning', 'Your listing has expired — please renew before publishing.');
     }
@@ -1973,6 +1973,11 @@ public function shipping(Product $product, Request $request)
                 ->map(fn($t) => trim($t))
                 ->filter()
                 ->implode(', ');
+        }
+
+        $hasBillingHistory = !empty($product->listing_paid_at) || !empty($product->next_due_date);
+        if (isset($data['is_active']) && (int) $data['is_active'] !== 1) {
+            $data['is_active'] = $hasBillingHistory ? 2 : 0;
         }
 
         // Enforce publish eligibility from settings as well
