@@ -555,7 +555,7 @@ function detailsForm(){
       try { const inst = tinymce.get('description'); if (inst) inst.remove(); } catch(_) {}
       tinymce.init({
         selector:'#description',
-        height: 400,
+        height: 260,
         menubar:true,
         plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
         toolbar:'undo redo | styles | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code',

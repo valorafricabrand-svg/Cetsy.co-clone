@@ -172,16 +172,18 @@
               </div>
             </div>
 
-            <div class="mb-4">
-              <label class="mb-1 block text-sm font-semibold text-slate-700" x-text="type==='service' ? 'Response Time (optional)' : 'Processing Time'">Processing Time</label>
-              <select name="processing_time_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_time_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">
-                <option value="" x-text="type==='service' ? 'Choose a response time' : 'Choose a processing time'">Choose a processing time</option>
-                @foreach($processingTimes as $pt)
-                  <option value="{{ $pt->id }}" @selected(old('processing_time_id')==$pt->id)>{{ $pt->name }} ({{ $pt->days }} days)</option>
-                @endforeach
-              </select>
-              @error('processing_time_id')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
-            </div>
+            <template x-if="type !== 'digital'">
+              <div class="mb-4">
+                <label class="mb-1 block text-sm font-semibold text-slate-700" x-text="type==='service' ? 'Response Time (optional)' : 'Processing Time'">Processing Time</label>
+                <select name="processing_time_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('processing_time_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">
+                  <option value="" x-text="type==='service' ? 'Choose a response time' : 'Choose a processing time'">Choose a processing time</option>
+                  @foreach($processingTimes as $pt)
+                    <option value="{{ $pt->id }}" @selected(old('processing_time_id')==$pt->id)>{{ $pt->name }} ({{ $pt->days }} days)</option>
+                  @endforeach
+                </select>
+                @error('processing_time_id')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+              </div>
+            </template>
 
             <div>
               <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-emerald-500 sm:w-auto">
@@ -424,8 +426,8 @@ if (document.compatMode !== 'CSS1Compat') {
 } else {
 if (window.tinymce) tinymce.init({
   selector: '#description',
-  height: 400,
-  min_height: 400,
+  height: 260,
+  min_height: 220,
   menubar: true,
 
   /* Enable extra plugins for styling */
@@ -462,7 +464,8 @@ if (window.tinymce) tinymce.init({
   gecko_spellcheck: true,
   elementpath: false,
   branding: false,
-  content_style: 'body { min-height:400px !important; }',
+  autoresize_bottom_margin: 16,
+  content_style: 'body { min-height:220px !important; }',
   base_url: '{{ asset('assets/js/tinymce') }}',
 
   setup(editor) {
@@ -483,8 +486,8 @@ if (window.tinymce) tinymce.init({
       try { const inst = tinymce.get('description'); if (inst) inst.remove(); } catch(_) {}
       tinymce.init({
         selector: '#description',
-        height: 400,
-        min_height: 400,
+        height: 260,
+        min_height: 220,
         menubar: true,
         plugins: [
           'advlist autolink lists link image charmap preview anchor',
@@ -512,7 +515,8 @@ if (window.tinymce) tinymce.init({
         gecko_spellcheck: true,
         elementpath: false,
         branding: false,
-        content_style: 'body { min-height:400px !important; }',
+        autoresize_bottom_margin: 16,
+        content_style: 'body { min-height:220px !important; }',
         base_url: '{{ asset('assets/js/tinymce') }}',
         setup(editor) {
           editor.on('change', () => editor.save());
