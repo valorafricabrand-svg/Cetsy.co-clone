@@ -1565,6 +1565,7 @@ public function shipping(Product $product, Request $request)
     public function updatePricing(Request $request, Product $product)
     {
         $before = $this->captureOnly($product, ['price','discount_percent','stock','sku']);
+        $tracksStock = $product->type === 'physical';
         // Your form posts: price, discount_percent, stock, sku
         $validated = $request->validate([
             'price'            => ['required','numeric','min:0'],
@@ -1574,7 +1575,7 @@ public function shipping(Product $product, Request $request)
         ]);
 
         // Normalize stock: blank => null (unlimited)
-        if ($request->filled('stock') === false) {
+        if (! $tracksStock || $request->filled('stock') === false) {
             $validated['stock'] = null;
         }
 

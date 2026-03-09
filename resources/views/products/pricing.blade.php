@@ -2,7 +2,10 @@
 @section('title', $product->name . ' | Edit Price & Inventory')
 
 @section('main')
-@php $current = \Illuminate\Support\Facades\Route::currentRouteName(); @endphp
+@php
+  $current = \Illuminate\Support\Facades\Route::currentRouteName();
+  $tracksStock = $product->type === 'physical';
+@endphp
 
 <section class="bg-slate-50 py-8 md:py-10">
   <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
@@ -14,7 +17,7 @@
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Price & Inventory</h1>
-              <p class="mt-1 text-sm text-slate-500">Update listing price, discount, stock, and SKU.</p>
+              <p class="mt-1 text-sm text-slate-500">{{ $tracksStock ? 'Update listing price, discount, stock, and SKU.' : 'Update listing price, discount, and SKU.' }}</p>
             </div>
             <a href="{{ route('products.show', $product) }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
               <i class="fas fa-arrow-left mr-2"></i> Back to Listing
@@ -36,7 +39,7 @@
             @csrf @method('PATCH')
 
             <div class="grid grid-cols-12 gap-3">
-              <div class="col-span-12 md:col-span-4">
+              <div class="col-span-12 md:col-span-{{ $tracksStock ? '4' : '6' }}">
                 <label class="mb-1 block text-sm font-medium text-slate-700"
                        x-data="{ t: '{{ $product->type }}' }"
                        x-text="t==='service' ? 'Priced From ({{ get_currency() }})' : 'Price ({{ get_currency() }})'">
@@ -47,7 +50,7 @@
                 @error('price') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
               </div>
 
-              <div class="col-span-12 md:col-span-4">
+              <div class="col-span-12 md:col-span-{{ $tracksStock ? '4' : '6' }}">
                 <label class="mb-1 block text-sm font-medium text-slate-700">% Discount</label>
                 <input type="number" step="1" min="0" max="100" name="discount_percent"
                        class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('discount_percent') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
@@ -56,12 +59,14 @@
                 <div class="mt-1 text-xs text-slate-500">Final: <strong x-text="formattedFinal()"></strong></div>
               </div>
 
-              <div class="col-span-12 md:col-span-4">
-                <label class="mb-1 block text-sm font-medium text-slate-700">Stock</label>
-                <input type="number" step="1" min="0" name="stock" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('stock') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
-                       value="{{ old('stock', $product->stock) }}">
-                @error('stock') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
-              </div>
+              @if($tracksStock)
+                <div class="col-span-12 md:col-span-4">
+                  <label class="mb-1 block text-sm font-medium text-slate-700">Stock</label>
+                  <input type="number" step="1" min="0" name="stock" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('stock') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                         value="{{ old('stock', $product->stock) }}">
+                  @error('stock') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
+                </div>
+              @endif
 
               <div class="col-span-12 md:col-span-6">
                 <label class="mb-1 block text-sm font-medium text-slate-700">SKU (optional)</label>

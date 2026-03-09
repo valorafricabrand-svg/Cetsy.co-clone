@@ -34,7 +34,9 @@
                 <div class="p-4">
                     <h4 class="text-base font-bold text-slate-900 mb-3">Product Information</h4>
                     <p><strong>Price:</strong> <span class="text-emerald-600">{{ $product->currency_code ?? '$' }} {{ number_format($product->price, 2) }}</span></p>
-                    <p><strong>Stock:</strong> {{ $product->stock }}</p>
+                    @if(($product->type ?? null) === 'physical' && !is_null($product->stock))
+                        <p><strong>Stock:</strong> {{ $product->stock }}</p>
+                    @endif
                     <p><strong>Status:</strong> 
                         @if($product->status)
                             <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-emerald-100 text-emerald-800 border-emerald-200">Active</span>

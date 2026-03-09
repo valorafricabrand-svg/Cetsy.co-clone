@@ -25,7 +25,9 @@ class VariationController extends Controller
      */
     public function store(Request $request, Product $product): RedirectResponse
     {
-        if ($request->has('stock') && $request->filled('stock') === false) {
+        $tracksStock = $product->type === 'physical';
+
+        if (! $tracksStock || ($request->has('stock') && $request->filled('stock') === false)) {
             $request->merge(['stock' => null]);
         }
 
@@ -40,7 +42,7 @@ class VariationController extends Controller
             'price' => $data['price'],
             // If your table has these columns and they are NOT NULL, keep the safe defaults:
             'sku'   => null,
-            'stock' => array_key_exists('stock', $data) ? $data['stock'] : null,
+            'stock' => $tracksStock && array_key_exists('stock', $data) ? $data['stock'] : null,
         ]);
 
         $variant->options()->sync($data['values']);
@@ -57,6 +59,8 @@ class VariationController extends Controller
      */
     public function bulkStore(Request $request, Product $product): RedirectResponse
     {
+        $tracksStock = $product->type === 'physical';
+
         if ($request->has('variations') && is_array($request->input('variations'))) {
             $normalized = collect($request->input('variations'))->map(function ($row) {
                 if (array_key_exists('stock', $row) && ($row['stock'] === '' || $row['stock'] === null)) {
@@ -98,7 +102,7 @@ class VariationController extends Controller
             $variant = $product->variations()->create([
                 'price' => $row['price'],
                 'sku'   => null,
-                'stock' => array_key_exists('stock', $row) ? ($row['stock'] ?? null) : null,
+                'stock' => $tracksStock && array_key_exists('stock', $row) ? ($row['stock'] ?? null) : null,
             ]);
 
             $variant->options()->sync($optionIds);
@@ -115,7 +119,10 @@ class VariationController extends Controller
      */
     public function update(Request $request, Variant $variation): RedirectResponse
     {
-        if ($request->has('stock') && $request->filled('stock') === false) {
+        $variation->loadMissing('product');
+        $tracksStock = optional($variation->product)->type === 'physical';
+
+        if (! $tracksStock || ($request->has('stock') && $request->filled('stock') === false)) {
             $request->merge(['stock' => null]);
         }
 
@@ -128,8 +135,10 @@ class VariationController extends Controller
             'price' => $data['price'],
         ];
 
-        if (array_key_exists('stock', $data)) {
+        if ($tracksStock && array_key_exists('stock', $data)) {
             $payload['stock'] = $data['stock'];
+        } else {
+            $payload['stock'] = null;
         }
 
         $variation->update($payload);

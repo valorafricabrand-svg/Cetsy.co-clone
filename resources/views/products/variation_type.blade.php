@@ -13,6 +13,7 @@
 @endpush
 
 @section('main')
+@php $tracksStock = $product->type === 'physical'; @endphp
 <div class="content">
   <div class="mx-auto w-full px-4 sm:px-6">
 
@@ -160,21 +161,23 @@
               @endforeach
 
               <div class="grid grid-cols-12 gap-3">
-                <div class="col-span-12 md:col-span-6">
+                <div class="col-span-12 md:col-span-{{ $tracksStock ? '6' : '12' }}">
                   <label class="mb-1 block text-sm font-medium text-slate-700">Price</label>
                   <input type="number" step="0.01" min="0" name="price" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
                 </div>
-                <div class="col-span-12 md:col-span-6">
-                  <label class="mb-1 block text-sm font-medium text-slate-700">Stock</label>
-                  <input
-                    type="number"
-                    step="1"
-                    min="0"
-                    name="stock"
-                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
-                    value="{{ old('stock', 0) }}"
-                    placeholder="Unlimited">
-                </div>
+                @if($tracksStock)
+                  <div class="col-span-12 md:col-span-6">
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Stock</label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      name="stock"
+                      class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
+                      value="{{ old('stock', 0) }}"
+                      placeholder="Unlimited">
+                  </div>
+                @endif
               </div>
 
               {{-- This container will be filled with values[] by JS on submit --}}
@@ -198,7 +201,9 @@
                     <tr>
                       <th>Combination</th>
                       <th style="width:160px;">Price</th>
-                      <th style="width:140px;">Stock</th>
+                      @if($tracksStock)
+                        <th style="width:140px;">Stock</th>
+                      @endif
                       <th class="text-right" style="width:160px;">Actions</th>
                     </tr>
                   </thead>
@@ -216,7 +221,7 @@
                       <tr>
                         <td>
                           <small class="text-slate-500">
-                            {{ $v->options->map(fn($o) => $o->variationType->name . ': ' . $o->value)->join(' • ') }}
+                            {{ $v->options->map(fn($o) => $o->variationType->name . ': ' . $o->value)->join(' | ') }}
                           </small>
                         </td>
                         <td>
@@ -230,17 +235,19 @@
                             form="{{ $formId }}"
                             required>
                         </td>
-                        <td>
-                          <input
-                            type="number"
-                            step="1"
-                            min="0"
-                            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs"
-                            name="stock"
-                            value="{{ $v->stock ?? '' }}"
-                            placeholder="Unlimited"
-                            form="{{ $formId }}">
-                        </td>
+                        @if($tracksStock)
+                          <td>
+                            <input
+                              type="number"
+                              step="1"
+                              min="0"
+                              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs"
+                              name="stock"
+                              value="{{ $v->stock ?? '' }}"
+                              placeholder="Unlimited"
+                              form="{{ $formId }}">
+                          </td>
+                        @endif
                         <td class="text-right">
                           <button class="mr-1 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500" form="{{ $formId }}">Save</button>
                           <button class="inline-flex items-center justify-center rounded-xl border border-rose-600 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50"

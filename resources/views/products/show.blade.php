@@ -154,7 +154,7 @@
               @endif
             </div>
 
-            @if(! is_null($product->stock))
+            @if($product->type === 'physical' && ! is_null($product->stock))
               <p class="mb-4 text-sm text-slate-600"><i class="fas fa-layer-group mr-1"></i><strong>Stock:</strong> {{ $product->stock }}</p>
             @endif
 

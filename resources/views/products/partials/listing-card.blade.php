@@ -102,7 +102,7 @@
 
             <p class="mb-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                 <span>{{ ucfirst($product->type ?? 'Listing') }}</span>
-                @if (! is_null($product->stock))
+                @if (($product->type ?? null) === 'physical' && ! is_null($product->stock))
                     <span>| Stock: {{ $product->stock }}</span>
                 @endif
                 @if ($hasVariants)
