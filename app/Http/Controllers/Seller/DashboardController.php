@@ -41,7 +41,7 @@ public function index()
 
     $orders = Order::where('shop_id', $shopId)
         ->orderBy('id', 'desc')
-        ->with(['customer', 'payment', 'items.shippingProfile.processingTime'])
+        ->with(['customer', 'payment', 'items.product', 'items.shippingProfile.processingTime'])
         ->take(5)
         ->get();
 

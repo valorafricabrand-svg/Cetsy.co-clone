@@ -153,7 +153,7 @@
                                         </td>
                                         <td class="text-center">
                                             <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $order->getStatusBadgeClass() }}">
-                                                {{ ucfirst($order->status) }}
+                                                {{ $order->getSellerStatusLabel() }}
                                             </span>
                                         </td>
                                         <td class="text-center">

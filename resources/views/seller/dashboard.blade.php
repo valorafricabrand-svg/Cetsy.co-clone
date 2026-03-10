@@ -68,6 +68,48 @@
             default => 'border-slate-200 bg-slate-100 text-slate-700',
         };
     };
+
+    $progressMessage = static function ($order): string {
+        $items = collect($order->items ?? []);
+        $digitalItems = $items->filter(function ($item) {
+            return strtolower((string) (optional($item->product)->type ?? '')) === 'digital';
+        });
+        $isDigitalOnly = $items->isNotEmpty() && $digitalItems->count() === $items->count();
+
+        if ($isDigitalOnly) {
+            $allDownloaded = $digitalItems->every(function ($item) {
+                return ! empty($item->downloaded_at);
+            });
+
+            return $allDownloaded ? 'Downloaded' : 'Digital delivery';
+        }
+
+        $minDays = null;
+        $maxDays = null;
+
+        foreach ($items as $item) {
+            $sp = $item->shippingProfile;
+            $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
+            $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
+
+            if (is_numeric($pMin)) {
+                $minDays = is_null($minDays) ? (int) $pMin : min($minDays, (int) $pMin);
+            }
+            if (is_numeric($pMax)) {
+                $maxDays = is_null($maxDays) ? (int) $pMax : max($maxDays, (int) $pMax);
+            }
+        }
+
+        $placedAt = $order->created_at instanceof \Carbon\Carbon
+            ? $order->created_at
+            : ($order->created_at ? \Carbon\Carbon::parse($order->created_at) : null);
+
+        $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
+        $shipEnd = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
+        $dispatchBy = $shipEnd?->format('M j') ?? $shipStart?->format('M j');
+
+        return $dispatchBy ? 'Dispatch by '.$dispatchBy : 'Dispatch soon';
+    };
 @endphp
 
 <section class="bg-slate-50 py-8 md:py-10">
@@ -180,30 +222,16 @@
                                     </thead>
                                     <tbody class="divide-y divide-slate-200">
                                         @foreach($orders as $o)
-                                            @php
-                                                $minDays = null; $maxDays = null;
-                                                foreach (($o->items ?? []) as $it) {
-                                                    $sp = $it->shippingProfile;
-                                                    $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
-                                                    $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
-                                                    if (is_numeric($pMin)) $minDays = is_null($minDays) ? (int)$pMin : min($minDays, (int)$pMin);
-                                                    if (is_numeric($pMax)) $maxDays = is_null($maxDays) ? (int)$pMax : max($maxDays, (int)$pMax);
-                                                }
-                                                $placedAt = $o->created_at instanceof \Carbon\Carbon ? $o->created_at : ($o->created_at ? \Carbon\Carbon::parse($o->created_at) : null);
-                                                $shipStart = $placedAt && is_numeric($minDays) ? $placedAt->copy()->addDays($minDays) : null;
-                                                $shipEnd = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
-                                                $dispatchBy = $shipEnd?->format('M j') ?? $shipStart?->format('M j');
-                                            @endphp
                                             <tr>
                                                 <td class="px-3 py-2 text-slate-900">#{{ $o->id }}</td>
                                                 <td class="px-3 py-2 text-slate-700">{{ optional($o->customer)->name ?? '-' }}</td>
                                                 <td class="px-3 py-2 text-right font-semibold text-slate-900">{{ $currency }} {{ number_format((float)($o->total ?? $o->total_amount ?? 0), 2) }}</td>
                                                 <td class="px-3 py-2">
                                                     <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusTone($o->status) }}">
-                                                        {{ ucfirst($o->status) }}
+                                                        {{ $o->getSellerStatusLabel() }}
                                                     </span>
                                                     <p class="mt-1 text-[11px] text-slate-500">
-                                                        {{ $dispatchBy ? 'Dispatch by '.$dispatchBy : 'Dispatch soon' }}
+                                                        {{ $progressMessage($o) }}
                                                     </p>
                                                 </td>
                                                 <td class="px-3 py-2 text-slate-500">{{ optional($o->created_at)->format('d M Y') }}</td>
@@ -219,7 +247,7 @@
                                         <div class="flex items-center justify-between">
                                             <p class="text-sm font-semibold text-slate-900">#{{ $o->id }}</p>
                                             <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusTone($o->status) }}">
-                                                {{ ucfirst($o->status) }}
+                                                {{ $o->getSellerStatusLabel() }}
                                             </span>
                                         </div>
                                         <p class="mt-1 text-xs text-slate-500">{{ optional($o->customer)->name ?? '-' }}</p>

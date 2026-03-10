@@ -303,7 +303,7 @@
  <span class="font-semibold">Status:</span>
  <span>
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $order->getStatusBadgeClass() }} capitalize">
- {{ $order->status }}
+ {{ $order->getSellerStatusLabel() }}
  </span>
  </span>
  </div>

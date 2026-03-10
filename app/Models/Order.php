@@ -62,6 +62,47 @@ class Order extends Model
         };
     }
 
+    public function isDigitalOnlyOrder(): bool
+    {
+        $items = $this->relationLoaded('items')
+            ? $this->items
+            : $this->items()->with('product')->get();
+
+        if (method_exists($items, 'loadMissing')) {
+            $items->loadMissing('product');
+        }
+
+        if ($items->isEmpty()) {
+            return false;
+        }
+
+        return $items->every(function ($item) {
+            return strtolower((string) (optional($item->product)->type ?? '')) === 'digital';
+        });
+    }
+
+    public function isDownloadedDigitalOrder(): bool
+    {
+        if (! $this->isDigitalOnlyOrder()) {
+            return false;
+        }
+
+        $items = $this->items;
+
+        return $items->isNotEmpty() && $items->every(function ($item) {
+            return ! empty($item->downloaded_at);
+        });
+    }
+
+    public function getSellerStatusLabel(): string
+    {
+        if ($this->isDownloadedDigitalOrder()) {
+            return 'Downloaded';
+        }
+
+        return ucfirst(str_replace('_', ' ', (string) $this->status));
+    }
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');

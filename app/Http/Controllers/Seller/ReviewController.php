@@ -30,7 +30,7 @@ class ReviewController extends Controller
 
         $baseQuery = Review::with([
                 // Load related order and listing product
-                'order',
+                'order.items.product',
                 'orderItem.product' => function ($query) {
                     $query->select('id', 'name', 'type', 'slug');
                 },

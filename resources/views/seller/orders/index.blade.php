@@ -39,10 +39,24 @@
  };
 
  $progressMessage = static function ($order): string {
+ $items = collect($order->items ?? []);
+ $digitalItems = $items->filter(function ($item) {
+ return strtolower((string) (optional($item->product)->type ?? '')) === 'digital';
+ });
+ $isDigitalOnly = $items->isNotEmpty() && $digitalItems->count() === $items->count();
+
+ if ($isDigitalOnly) {
+ $allDownloaded = $digitalItems->every(function ($item) {
+ return ! empty($item->downloaded_at);
+ });
+
+ return $allDownloaded ? 'Downloaded' : 'Digital delivery';
+ }
+
  $minDays = null;
  $maxDays = null;
 
- foreach (($order->items ?? []) as $item) {
+ foreach ($items as $item) {
  $sp = $item->shippingProfile;
  $pMin = $sp?->processing_custom_min ?? optional($sp?->processingTime)->start_day;
  $pMax = $sp?->processing_custom_max ?? optional($sp?->processingTime)->end_day;
@@ -210,7 +224,7 @@
  </div>
 
  <div class="mt-2 flex flex-wrap items-center gap-2">
- <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }}">{{ ucfirst($order->status) }}</span>
+ <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }}">{{ $order->getSellerStatusLabel() }}</span>
  @if($order->status === \App\Models\Order::STATUS_PENDING)
  <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Pending payment</span>
  @endif
@@ -274,7 +288,7 @@
  <td class="px-4 py-3 text-center text-slate-700">{{ $qtyTotal }}</td>
  <td class="px-4 py-3 text-right font-semibold text-slate-900">{{ shop_currency($order->shop ?? null) }} {{ number_format((float)$order->total_amount,2) }}</td>
  <td class="px-4 py-3">
- <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }}">{{ ucfirst($order->status) }}</span>
+ <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }}">{{ $order->getSellerStatusLabel() }}</span>
  @if($order->status === \App\Models\Order::STATUS_PENDING)
  <p class="mt-1 text-[11px] font-semibold text-amber-700">Pending payment</p>
  @endif

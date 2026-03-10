@@ -151,7 +151,7 @@
  <td>
  <div class="font-semibold">{{ $orderNumber }}</div>
  @if($status)
- <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusBadge }} capitalize">{{ str_replace('_', ' ', $status) }}</span>
+ <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusBadge }} capitalize">{{ $order->getSellerStatusLabel() }}</span>
  @endif
  </td>
  <td>
