@@ -20,6 +20,16 @@ use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
+    private function resolveRequestedProductType(array $data): string
+    {
+        $resolved = Product::resolveTypeForCategory(
+            $data['type'] ?? null,
+            $data['category_id'] ?? null
+        );
+
+        return $resolved ?: Product::TYPE_PHYSICAL;
+    }
+
     /**
      * Display a listing of products.
      * Accepts: search|keyword, min_price, max_price
@@ -41,7 +51,7 @@ class ProductController extends Controller
         if ($request->filled('type')) {
             $type = $request->get('type');
             if (in_array($type, ['physical', 'digital', 'service'], true)) {
-                $query->where('type', $type);
+                $query->whereDisplayType($type);
             }
         }
 
@@ -99,7 +109,12 @@ class ProductController extends Controller
 
         $data = $validator->validated();
         $data['shop_id'] = $user->shop->id;
-        $data['type'] = $data['type'] ?? 'physical';
+        $data['type'] = $this->resolveRequestedProductType($data + [
+            'type' => $data['type'] ?? Product::TYPE_PHYSICAL,
+        ]);
+        if ($data['type'] !== Product::TYPE_PHYSICAL) {
+            $data['stock'] = null;
+        }
 
         // Compute discounted_price if only percent given
         if (!isset($data['discount_price']) && isset($data['discount_percent'])) {
@@ -162,6 +177,7 @@ class ProductController extends Controller
             'category_id'       => ['nullable','integer','exists:categories,id'],
             'description'       => ['nullable','string'],
         ]);
+        $data['type'] = $this->resolveRequestedProductType($data);
         $product->update($data);
         return response()->json(['message' => 'Details updated', 'product' => $product->fresh()]);
     }

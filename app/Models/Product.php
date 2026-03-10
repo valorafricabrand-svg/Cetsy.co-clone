@@ -4,12 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
 
 class Product extends Model
 {
     use HasFactory;
+
+    public const TYPE_PHYSICAL = 'physical';
+    public const TYPE_DIGITAL = 'digital';
+    public const TYPE_SERVICE = 'service';
 
     // Ensure computed price (after deals or product discount) appears in JSON
     protected $appends = ['discounted_price'];
@@ -74,6 +79,84 @@ class Product extends Model
     protected $casts = [
         'pickup_available' => 'boolean',
     ];
+
+    public static function mapCategoryListingTypeToProductType(?string $listingType): ?string
+    {
+        return match (strtolower((string) $listingType)) {
+            'products' => self::TYPE_PHYSICAL,
+            'services' => self::TYPE_SERVICE,
+            'digital' => self::TYPE_DIGITAL,
+            default => null,
+        };
+    }
+
+    public static function mapProductTypeToCategoryListingType(?string $type): ?string
+    {
+        return match (strtolower((string) $type)) {
+            self::TYPE_PHYSICAL => 'products',
+            self::TYPE_SERVICE => 'services',
+            self::TYPE_DIGITAL => 'digital',
+            default => null,
+        };
+    }
+
+    public static function resolveTypeForCategory(?string $type, Category|int|null $category = null): ?string
+    {
+        $normalizedType = strtolower((string) $type);
+        $normalizedType = in_array($normalizedType, [
+            self::TYPE_PHYSICAL,
+            self::TYPE_DIGITAL,
+            self::TYPE_SERVICE,
+        ], true) ? $normalizedType : null;
+
+        $categoryModel = null;
+        if ($category instanceof Category) {
+            $categoryModel = $category;
+        } elseif (! empty($category)) {
+            $categoryModel = Category::query()
+                ->select(['id', 'listing_type'])
+                ->find((int) $category);
+        }
+
+        return self::mapCategoryListingTypeToProductType($categoryModel->listing_type ?? null) ?? $normalizedType;
+    }
+
+    public function getEffectiveTypeAttribute(): ?string
+    {
+        $category = $this->relationLoaded('category') ? $this->category : $this->category_id;
+
+        return self::resolveTypeForCategory($this->type, $category);
+    }
+
+    public function scopeWhereDisplayType(Builder $query, string $type): Builder
+    {
+        $type = strtolower(trim($type));
+        if (! in_array($type, [self::TYPE_PHYSICAL, self::TYPE_DIGITAL, self::TYPE_SERVICE], true)) {
+            return $query;
+        }
+
+        $listingType = self::mapProductTypeToCategoryListingType($type);
+
+        return $query->where(function (Builder $outer) use ($type, $listingType) {
+            if ($listingType) {
+                $outer->whereHas('category', function (Builder $categoryQuery) use ($listingType) {
+                    $categoryQuery->where('listing_type', $listingType);
+                });
+            }
+
+            $outer->orWhere(function (Builder $fallback) use ($type) {
+                $fallback->where('type', $type)
+                    ->where(function (Builder $categoryFallback) {
+                        $categoryFallback->whereNull('category_id')
+                            ->orWhereDoesntHave('category')
+                            ->orWhereHas('category', function (Builder $categoryQuery) {
+                                $categoryQuery->whereNull('listing_type')
+                                    ->orWhere('listing_type', '');
+                            });
+                    });
+            });
+        });
+    }
 
     /**
      * Determine if the product should be considered reserved:

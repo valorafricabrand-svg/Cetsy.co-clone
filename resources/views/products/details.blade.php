@@ -229,7 +229,7 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script src="{{ asset('assets/js/tinymce/tinymce.min.js') }}"></script>
-@php($__ALL_CATS = \App\Models\Category::select('id','name','listing_type')->orderBy('name')->get(['id','name','listing_type']))
+@php($__ALL_CATS = \App\Models\Category::select('id','name','parent_id','listing_type')->orderBy('name')->get(['id','name','parent_id','listing_type']))
 <script>
 // Local cache of categories for robust fallback when API fails/redirects
 window.__ALL_CATEGORIES__ = @json($__ALL_CATS);
@@ -256,7 +256,7 @@ function detailsForm(){
     catHighlightIndex: -1,
     digitalDeliveryMethod: @json(old('digital_delivery_method', \App\Models\DigitalFile::SOURCE_UPLOAD)),
 
-    init(){ if(!this.type && this.categoryId){ const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : []; const cat = all.find(x => String(x.id)===String(this.categoryId)); if (cat && cat.listing_type){ const rev = {products:'physical', services:'service', digital:'digital'}; this.type = rev[String(cat.listing_type)] || this.type; } } this.loadCategories(); },
+    init(){ const all = Array.isArray(window.__ALL_CATEGORIES__) ? window.__ALL_CATEGORIES__ : []; if(this.categoryId){ const cat = all.find(x => String(x.id)===String(this.categoryId)); if (cat && cat.listing_type){ const rev = {products:'physical', services:'service', digital:'digital'}; const mapped = rev[String(cat.listing_type)] || null; if (mapped) this.type = mapped; } } this.loadCategories(); },
 
     filterLocalByType(tp){
 

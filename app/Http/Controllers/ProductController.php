@@ -161,6 +161,16 @@ class ProductController extends Controller
         $product->digitalFiles()->delete();
     }
 
+    private function resolveRequestedProductType(array $data): string
+    {
+        $resolved = Product::resolveTypeForCategory(
+            $data['type'] ?? null,
+            $data['category_id'] ?? null
+        );
+
+        return $resolved ?: Product::TYPE_PHYSICAL;
+    }
+
     public function index(Request $request)
     {
         // Resolve shop
@@ -171,7 +181,7 @@ class ProductController extends Controller
         $shopId = $shop->id;
 
         // Base query (include variations to show "From" price and variation badges on dashboard)
-        $query = Product::with(['media','shop','variations.options'])
+        $query = Product::with(['media','shop','category','variations.options'])
             ->where('shop_id', $shopId);
 
         $filters = [
@@ -226,7 +236,7 @@ class ProductController extends Controller
         if ($request->filled('type')) {
             $type = $request->input('type');
             if (in_array($type, ['physical','digital','service'], true)) {
-                $query->where('type', $type);
+                $query->whereDisplayType($type);
             } else {
                 $filters['type'] = null;
             }
@@ -252,7 +262,7 @@ class ProductController extends Controller
 
         $groupedProducts = $products->getCollection()
             ->groupBy(function ($product) {
-                return $product->type ?? 'other';
+                return $product->effective_type ?? $product->type ?? 'other';
             });
 
         // Build counts for each status
@@ -355,6 +365,8 @@ public function store(Request $request)
 
     ]);
 
+    $resolvedType = $this->resolveRequestedProductType($data);
+
  
 
     // 1. Create the product
@@ -362,7 +374,7 @@ public function store(Request $request)
     $product->shop_id                     = $user->shop->id;
     $product->name                        = $data['name'];
     $product->slug                        = Str::slug($data['name']).'-'.uniqid();
-    $product->type                        = $data['type'];
+    $product->type                        = $resolvedType;
     $product->category_id                 = $data['category_id'] ?? null;
     $product->country_id                  = $data['country_id'] ?? null;
     $product->origin_postal_code          = $data['origin_postal_code'] ?? null;
@@ -370,7 +382,7 @@ public function store(Request $request)
     $product->description                 = $data['description'] ?? null;
     $product->price                       = $data['price'];
     $product->discount_percent              = $data['discount_percent'] ?? null;
-    $product->stock                       = $data['type']==='physical' ? ($data['stock'] ?? 0) : null;
+    $product->stock                       = $resolvedType === Product::TYPE_PHYSICAL ? ($data['stock'] ?? 0) : null;
     $product->is_active                   = false;
     $product->save();
 
@@ -485,11 +497,13 @@ public function update(Request $request, Product $product)
         'variations.*.stock'             => 'required_with:variations|integer|min:0',
     ]);
 
+    $resolvedType = $this->resolveRequestedProductType($data);
+
     // 1) Update core product
     $product->update([
         'name'                        => $data['name'],
         'slug'                        => Str::slug($data['name']).'-'.uniqid(),
-        'type'                        => $data['type'],
+        'type'                        => $resolvedType,
         'category_id'                 => $data['category_id'],
         'country_id'                  => $data['country_id'] ?? null,
         'origin_postal_code'          => $data['origin_postal_code'] ?? null,
@@ -497,13 +511,13 @@ public function update(Request $request, Product $product)
         'description'                 => $data['description'] ?? null,
         'price'                       => $data['price'],
         'discount_percent'              => $data['discount_percent'] ?? null,
-        'stock'                       => $data['type'] === 'physical'
+        'stock'                       => $resolvedType === Product::TYPE_PHYSICAL
                                             ? ($data['stock'] ?? 0)
                                             : null,
     ]);
 
     // 2) Sync shipping profiles
-    if ($data['type'] === 'physical') {
+    if ($resolvedType === Product::TYPE_PHYSICAL) {
         $sync = [];
         foreach ($data['shipping_profiles'] as $pid) {
             $sync[$pid] = ['is_default' => $pid == $data['default_shipping_profile']];
@@ -522,10 +536,10 @@ public function update(Request $request, Product $product)
     }
 
     // 4) Digital files logic
-    if ($data['type'] === 'digital' && $request->hasFile('digital_file')) {
+    if ($resolvedType === Product::TYPE_DIGITAL && $request->hasFile('digital_file')) {
         $this->purgeDigitalFiles($product);
         $this->attachUploadedDigitalFile($product, $request->file('digital_file'), 'local');
-    } elseif ($data['type'] !== 'digital') {
+    } elseif ($resolvedType !== Product::TYPE_DIGITAL) {
         $this->purgeDigitalFiles($product);
     }
 
@@ -1131,7 +1145,7 @@ public function listings(Request $request)
         ];
         $type = $map[$request->input('type')] ?? $request->input('type');
         if (in_array($type, ['physical', 'service', 'digital'], true)) {
-            $query->where('type', $type);
+            $query->whereDisplayType($type);
         }
     }
 
@@ -1667,10 +1681,11 @@ public function shipping(Product $product, Request $request)
             // 'digital_file'    => ['nullable','file','max:20480'], // 20MB – enable if you handle upload here
         ]);
 
-        $product->update($data);
-        if ($product->type !== 'digital') {
+        $resolvedType = $this->resolveRequestedProductType($data);
+        $product->update($data + ['type' => $resolvedType]);
+        if ($resolvedType !== Product::TYPE_DIGITAL) {
             $this->purgeDigitalFiles($product);
-        } elseif ($product->type === 'digital') {
+        } elseif ($resolvedType === Product::TYPE_DIGITAL) {
             $deliveryMethod = (string) ($data['digital_delivery_method'] ?? DigitalFile::SOURCE_UPLOAD);
 
             if ($deliveryMethod === DigitalFile::SOURCE_EXTERNAL_URL) {

@@ -121,7 +121,7 @@ class HomeController extends Controller
 
     private function cachedMixedListingIds(string $scope, ?string $type = null, int $cacheMinutes = 10): array
     {
-        $cacheKey = 'home:mixed-listing-ids:' . $scope . ':v1';
+        $cacheKey = 'home:mixed-listing-ids:' . $scope . ':v2';
 
         $ids = Cache::remember($cacheKey, now()->addMinutes($cacheMinutes), function () use ($type) {
             return $this->buildMixedListingIds($type);
@@ -147,7 +147,7 @@ class HomeController extends Controller
             ]);
 
         if (!empty($type)) {
-            $query->where('type', $type);
+            $query->whereDisplayType($type);
         }
 
         $productsById = $query->get()->keyBy('id');
@@ -204,7 +204,7 @@ class HomeController extends Controller
             ->where('is_active', 1);
 
         if (!empty($type)) {
-            $query->where('type', $type);
+            $query->whereDisplayType($type);
         }
 
         $products = $query
