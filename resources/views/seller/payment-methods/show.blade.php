@@ -202,7 +202,7 @@
  <div class="mb-3">
  <h6 class="text-emerald-600">Payment Processing</h6>
  <p class="text-xs text-slate-500 mb-0">
- This payment method will be used to receive payments from your customers.
+ This payment method will be used to deposit funds into and withdraw funds from your digital wallet.
  </p>
  </div>
  <div class="mb-3">

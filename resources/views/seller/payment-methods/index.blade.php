@@ -132,7 +132,7 @@
  <i class="fas fa-info-circle mr-2"></i>Payment Method Information
  </h6>
  <p class="mb-0">
- These are the payment methods you've configured to receive payments from your customers. 
+ These are the payment methods you've configured to deposit funds into and withdraw funds from your digital wallet.
  Make sure to keep your account information up to date for smooth transactions.
  </p>
  </div>
