@@ -91,6 +91,11 @@
     <meta name="robots" content="{{ $metaRobots }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="{{ $metaDescription }}">
+    @auth
+        @if (\Illuminate\Support\Facades\Route::has('notifications.pulse'))
+            <meta name="cetsy-notifications-pulse-url" content="{{ route('notifications.pulse') }}">
+        @endif
+    @endauth
 
     <title>{{ $metaTitle }}</title>
     <link rel="canonical" href="{{ $canonicalUrl }}">
@@ -493,10 +498,10 @@
                     @auth
                         @if (\Illuminate\Support\Facades\Route::has('notifications.index'))
                             <div class="relative">
-                                <button type="button" data-ui-toggle="dropdown" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50" aria-label="Notifications" aria-expanded="false">
+                                <button type="button" data-ui-toggle="dropdown" data-live-notification-bell class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50" aria-label="Notifications" aria-expanded="false">
                                     <i class="fas fa-bell text-sm"></i>
                                     @if ($headerUnreadNotifications > 0)
-                                        <span class="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
+                                        <span data-live-notification-count class="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
                                             {{ $headerUnreadNotifications > 99 ? '99+' : $headerUnreadNotifications }}
                                         </span>
                                     @endif
@@ -508,7 +513,7 @@
                                             <h3 class="text-sm font-semibold text-slate-900">Notifications</h3>
                                             <p class="text-xs text-slate-500">Latest updates from your account</p>
                                         </div>
-                                        <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                                        <span data-live-notification-unread-label class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
                                             {{ $headerUnreadNotifications }} unread
                                         </span>
                                     </div>
@@ -556,9 +561,14 @@
                                     </div>
 
                                     <div class="border-t border-slate-200 p-3">
-                                        <a href="{{ route('notifications.index') }}" class="inline-flex w-full items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
-                                            View all notifications
-                                        </a>
+                                        <div class="flex flex-col gap-2 sm:flex-row">
+                                            <button type="button" data-ui-toggle="modal" data-ui-target="#liveNotificationPrefsModal" data-notify-settings-trigger class="inline-flex w-full items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto">
+                                                Alert settings
+                                            </button>
+                                            <a href="{{ route('notifications.index') }}" class="inline-flex w-full items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+                                                View all notifications
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

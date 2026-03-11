@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Activity;
+use App\Models\Message;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class NotificationController extends Controller
 {
@@ -147,5 +149,107 @@ class NotificationController extends Controller
             'notif' => (int) $notif,
             'msg'   => (int) $msg,
         ]);
+    }
+
+    /**
+     * Polling payload for in-app alerts.
+     */
+    public function pulse()
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $notificationQuery = Activity::query();
+        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+            $notificationQuery->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)->orWhereNull('user_id');
+            });
+        } else {
+            $notificationQuery->where('user_id', $user->id);
+        }
+
+        $unreadNotificationsQuery = (clone $notificationQuery)->where('is_read', false);
+        $unreadMessagesQuery = Message::query()
+            ->where('receiver_id', $user->id)
+            ->where('is_read', false);
+
+        $latestNotificationModel = (clone $unreadNotificationsQuery)
+            ->latest('id')
+            ->first();
+        $latestMessageModel = (clone $unreadMessagesQuery)
+            ->with(['sender:id,name'])
+            ->latest('id')
+            ->first();
+
+        return response()->json([
+            'notif' => (int) (clone $unreadNotificationsQuery)->count(),
+            'msg' => (int) (clone $unreadMessagesQuery)->count(),
+            'latest_notification' => $this->serializeActivityForPulse($latestNotificationModel, $user),
+            'latest_message' => $this->serializeMessageForPulse($latestMessageModel, $user),
+            'server_time' => now()->toIso8601String(),
+        ]);
+    }
+
+    private function serializeActivityForPulse(?Activity $activity, $user): ?array
+    {
+        if (! $activity) {
+            return null;
+        }
+
+        $title = trim((string) ($activity->title ?: $activity->description ?: $activity->message ?: 'Notification'));
+        $description = trim((string) ($activity->description ?: $activity->message ?: $activity->title ?: ''));
+        $link = route('notifications.index');
+        $action = 'Open';
+
+        try {
+            $link = \App\Services\NotificationRouteService::getRouteForNotification($activity, $user) ?: $link;
+        } catch (\Throwable $e) {
+            $link = route('notifications.index');
+        }
+
+        try {
+            $action = \App\Services\NotificationRouteService::getLinkText($activity, $user) ?: $action;
+        } catch (\Throwable $e) {
+            $action = 'Open';
+        }
+
+        return [
+            'id' => (int) $activity->id,
+            'type' => (string) ($activity->type ?? ''),
+            'title' => $title,
+            'description' => $description,
+            'link' => $link,
+            'action' => $action,
+            'created_at' => optional($activity->created_at)->toIso8601String(),
+        ];
+    }
+
+    private function serializeMessageForPulse(?Message $message, $user): ?array
+    {
+        if (! $message) {
+            return null;
+        }
+
+        $activity = new Activity([
+            'type' => Activity::TYPE_MESSAGE,
+            'related_id' => $message->id,
+        ]);
+
+        $link = route('notifications.index');
+        try {
+            $link = \App\Services\NotificationRouteService::getRouteForNotification($activity, $user) ?: $link;
+        } catch (\Throwable $e) {
+            $link = route('notifications.index');
+        }
+
+        return [
+            'id' => (int) $message->id,
+            'sender_name' => trim((string) (optional($message->sender)->name ?: 'New message')),
+            'body_preview' => Str::limit(trim((string) ($message->body ?? '')), 120),
+            'link' => $link,
+            'created_at' => optional($message->created_at)->toIso8601String(),
+        ];
     }
 }

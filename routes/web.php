@@ -292,6 +292,8 @@ Route::middleware(['auth','seller'])->group(function () {
 
 // Allow all authenticated users to access dashboard (show alert if unverified)
 Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+Route::middleware(['auth'])->get('/nav/pulse', [\App\Http\Controllers\NotificationController::class, 'pulse'])
+    ->name('notifications.pulse');
 
 Route::middleware(['auth','verified'])->group(function () {
 
