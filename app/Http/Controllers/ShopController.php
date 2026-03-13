@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\Country;
 use App\Models\Activity;
 use App\Models\Subscription;
+use Illuminate\Validation\Rule;
 
 class ShopController extends Controller
 {
@@ -55,9 +56,11 @@ class ShopController extends Controller
 
 
 
-            // Optional logo
-            'logo'             => 'nullable|image|max:2048',
+            // Sellers must upload a unique shop logo during onboarding.
+            'logo'             => 'required|image|max:2048',
             'featured_image'   => 'nullable|image|max:2048',
+        ], [
+            'logo.required'    => 'Please upload your shop logo.',
         ]);
 
         // Auto-generate slug if blank
@@ -230,10 +233,17 @@ class ShopController extends Controller
             'postal'         => 'required|string|max:20',
             'password'       => ['required', 'current_password'],
             'enable_2fa'     => ['required', 'boolean'],
-            'logo'           => ['nullable', 'image', 'max:2048'],
+            'logo'           => [
+                Rule::requiredIf(empty($shop->logo)),
+                'nullable',
+                'image',
+                'max:2048',
+            ],
             'featured_image' => ['nullable', 'image', 'max:2048'],
             'announcement'   => ['nullable', 'string'],
             'policies'       => ['nullable', 'string'],
+        ], [
+            'logo.required'  => 'Please upload your shop logo.',
         ]);
 
         // Slug uniqueness fallback if someone cleared it
