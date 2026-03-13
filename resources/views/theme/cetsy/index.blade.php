@@ -1,7 +1,7 @@
 ﻿@extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Cetsy | Handmade products, services, and digital goods')
-@section('meta_description', 'Discover handmade products, services, and digital goods from creators across Africa on Cetsy.')
+@section('meta_description', 'Discover handmade products, services, and digital goods from creators across the globe on Cetsy.')
 @section('canonical_url', route('home'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
 @section('meta_robots', 'index, follow')

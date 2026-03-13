@@ -8,11 +8,13 @@ use App\Models\Order;
 use App\Models\Address;
 use App\Models\Country;
 use App\Models\Payment;
+use App\Models\User;
 use App\Models\Wishlist;
 use App\Models\WalletTransaction;
 use App\Models\Wallet;
 use App\Mail\OrderCancelledShopOwnerMail;
 use App\Mail\OrderCancelledBuyerMail;
+use App\Support\RecentAccountSwitcher;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
@@ -238,9 +240,29 @@ public function orderDetails(Order $order)
         return view('account.payments', compact('payments'));
     }
 
-    public function details()
+    public function details(Request $request)
     {
-        return view('account.details');
+        $user = $request->user();
+        $switchAccounts = collect();
+
+        if ($user) {
+            $switchIds = collect(RecentAccountSwitcher::ids($request->session()));
+
+            if (! $switchIds->contains((int) $user->id)) {
+                $switchIds->prepend((int) $user->id);
+            }
+
+            if ($switchIds->isNotEmpty()) {
+                $switchAccounts = User::query()
+                    ->with('shop:id,user_id,name,logo')
+                    ->whereIn('id', $switchIds->all())
+                    ->get()
+                    ->sortBy(fn ($account) => $switchIds->search((int) $account->id))
+                    ->values();
+            }
+        }
+
+        return view('account.details', compact('switchAccounts'));
     }
 
     public function updateDetails(Request $request)
