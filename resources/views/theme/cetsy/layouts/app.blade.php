@@ -710,7 +710,6 @@
                                 </div>
                             </div>
                         </div>
-                        <a href="{{ url('/dashboard') }}" class="hidden rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 sm:inline-flex">Dashboard</a>
                         @if (Route::has('logout'))
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
