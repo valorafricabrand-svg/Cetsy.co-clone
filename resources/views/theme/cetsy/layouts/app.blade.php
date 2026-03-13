@@ -707,15 +707,17 @@
                                     <a href="{{ route('account.details') }}#account-switching" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                                         Account settings
                                     </a>
+                                    @if (Route::has('logout'))
+                                        <form method="POST" action="{{ route('logout') }}">
+                                            @csrf
+                                            <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+                                                Logout
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </div>
                         </div>
-                        @if (Route::has('logout'))
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">Logout</button>
-                            </form>
-                        @endif
                     @else
                         @if (Route::has('login'))
                             <a href="{{ route('login') }}" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300">Login</a>
