@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Activity;
+use App\Models\Message;
+use App\Observers\ActivityObserver;
+use App\Observers\MessageObserver;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
@@ -20,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191); // <-- THIS is correct
+        Activity::observe(ActivityObserver::class);
+        Message::observe(MessageObserver::class);
 
         VerifyEmail::createUrlUsing(function (object $notifiable): string {
             $relativeSignedUrl = URL::temporarySignedRoute(

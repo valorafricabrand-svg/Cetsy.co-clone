@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -79,6 +80,69 @@ class DigitalDownloadLinkTest extends TestCase
         $response = $this->actingAs($seller)->get(route('digital-files.download', $file));
 
         $response->assertRedirect('https://example.com/downloads/lesson-video');
+    }
+
+    public function test_buyer_can_download_uploaded_jpeg_digital_file(): void
+    {
+        Storage::fake('local');
+
+        [$seller, $product] = $this->makeDigitalProduct();
+        $buyer = User::factory()->create(['user_type' => User::TYPE_BUYER]);
+
+        $order = Order::create([
+            'user_id' => $buyer->id,
+            'shop_id' => $product->shop_id,
+            'full_name' => 'Buyer Example',
+            'email' => $buyer->email,
+            'phone' => '123456789',
+            'shipping_country_id' => 1,
+            'shipping_address_1' => '123 Main St',
+            'shipping_city' => 'Town',
+            'shipping_state' => 'State',
+            'shipping_postal_code' => '10001',
+            'billing_same_as_shipping' => true,
+            'shipping_method' => 'digital',
+            'payment_method' => 'wallet',
+            'subtotal' => 15,
+            'total_amount' => 15,
+            'status' => Order::STATUS_DELIVERED,
+        ]);
+
+        $item = OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price' => 15,
+            'download_count' => 0,
+        ]);
+
+        $fixturePath = base_path('public/assets/img/generic/1.jpg');
+        $jpegBytes = file_get_contents($fixturePath);
+
+        $this->assertNotFalse($jpegBytes, 'JPEG fixture must be readable for this test.');
+
+        $storedPath = 'digital-files/test-image.jpeg';
+        Storage::disk('local')->put($storedPath, $jpegBytes);
+
+        $file = DigitalFile::create([
+            'product_id' => $product->id,
+            'filename' => 'African Woman in My Heart 2.jpeg',
+            'filepath' => $storedPath,
+            'disk' => 'local',
+            'filesize' => strlen($jpegBytes),
+            'filetype' => 'image/jpeg',
+            'source_type' => DigitalFile::SOURCE_UPLOAD,
+        ]);
+
+        $response = $this->actingAs($buyer)->get(route('digital-files.download', $file));
+
+        $response->assertOk();
+        $response->assertDownload('African Woman in My Heart 2.jpeg');
+        $this->assertSame(md5($jpegBytes), md5($response->streamedContent()));
+
+        $item->refresh();
+        $this->assertEquals(1, $item->download_count);
+        $this->assertNotNull($item->downloaded_at);
     }
 
     private function makeDigitalProduct(): array

@@ -45,6 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Console\Commands\SendSubscriptionExpiryReminders::class,
         \App\Console\Commands\BackfillSubscriptionShop::class,
         \App\Console\Commands\AutoCancelPendingOrders::class,
+        \App\Console\Commands\GenerateWebPushVapidKeys::class,
     ])
     ->withSchedule(function (Schedule $schedule) {
         // Shared-hosting friendly queue processing (works with cron + schedule:run).
@@ -71,7 +72,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
-
 
 
 

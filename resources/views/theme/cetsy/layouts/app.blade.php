@@ -95,6 +95,14 @@
         @if (\Illuminate\Support\Facades\Route::has('notifications.pulse'))
             <meta name="cetsy-notifications-pulse-url" content="{{ route('notifications.pulse') }}">
         @endif
+        @if (\Illuminate\Support\Facades\Route::has('push-subscriptions.store'))
+            <meta name="cetsy-push-subscribe-url" content="{{ route('push-subscriptions.store') }}">
+        @endif
+        @if (\Illuminate\Support\Facades\Route::has('push-subscriptions.destroy'))
+            <meta name="cetsy-push-unsubscribe-url" content="{{ route('push-subscriptions.destroy') }}">
+        @endif
+        <meta name="cetsy-push-public-key" content="{{ (string) config('webpush.vapid.public_key') }}">
+        <meta name="cetsy-push-enabled" content="{{ config('webpush.enabled') ? '1' : '0' }}">
     @endauth
 
     <title>{{ $metaTitle }}</title>

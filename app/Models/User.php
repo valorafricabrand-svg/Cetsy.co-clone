@@ -15,6 +15,7 @@ use App\Models\WishlistItem;
 use App\Models\Kyc;
 use App\Models\Subscription;
 use App\Models\UserPlatformStat;
+use App\Models\PushSubscription;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -224,5 +225,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function platformStat()
     {
         return $this->hasOne(UserPlatformStat::class);
+    }
+
+    public function pushSubscriptions()
+    {
+        return $this->hasMany(PushSubscription::class);
     }
 }

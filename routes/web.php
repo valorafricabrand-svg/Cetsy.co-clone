@@ -294,6 +294,10 @@ Route::middleware(['auth','seller'])->group(function () {
 Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 Route::middleware(['auth'])->get('/nav/pulse', [\App\Http\Controllers\NotificationController::class, 'pulse'])
     ->name('notifications.pulse');
+Route::middleware(['auth'])->post('/push/subscriptions', [\App\Http\Controllers\PushSubscriptionController::class, 'store'])
+    ->name('push-subscriptions.store');
+Route::middleware(['auth'])->post('/push/subscriptions/remove', [\App\Http\Controllers\PushSubscriptionController::class, 'destroy'])
+    ->name('push-subscriptions.destroy');
 
 Route::middleware(['auth','verified'])->group(function () {
 
