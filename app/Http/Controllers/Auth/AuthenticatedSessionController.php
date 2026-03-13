@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use App\Services\SubscriptionService;
+use App\Support\RecentAccountSwitcher;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -30,6 +31,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         $user = Auth::user();
+        RecentAccountSwitcher::remember($request->session(), $user);
 
         // If seller and no active subscription, start trial or redirect to subscription
         if ($user->isSeller() && !$user->hasActiveSubscription()) {

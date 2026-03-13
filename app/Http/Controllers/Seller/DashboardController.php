@@ -39,7 +39,11 @@ public function index()
     //     ->take(5)
     //     ->get();
 
-    $orders = Order::where('shop_id', $shopId)
+    $ordersQuery = Order::where('shop_id', $shopId);
+
+    $total_orders = (clone $ordersQuery)->count();
+
+    $orders = (clone $ordersQuery)
         ->orderBy('id', 'desc')
         ->with(['customer', 'payment', 'items.product', 'items.shippingProfile.processingTime'])
         ->take(5)
@@ -52,7 +56,6 @@ public function index()
         ->with('category')
         ->get();
 
-    $total_orders = $orders->count();
     $total_products = $products->count();
 
     // Offer counts for this seller's products

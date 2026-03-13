@@ -27,7 +27,34 @@
         $legacyBootstrapCompat = (bool) config('theme.legacy_bootstrap_compat', true)
             && !$isSellerArea
             && !$isTailwindPrimaryArea;
-        $isSellerUser = auth()->check() && method_exists(auth()->user(), 'isSeller') && auth()->user()->isSeller();
+        $headerUser = auth()->user();
+        if ($headerUser) {
+            try {
+                $headerUser->loadMissing('shop');
+            } catch (\Throwable $e) {
+                // Ignore eager-load errors in the layout.
+            }
+        }
+
+        $isSellerUser = $headerUser && method_exists($headerUser, 'isSeller') && $headerUser->isSeller();
+        $headerUserShop = $headerUser?->shop;
+        $headerAccountName = trim((string) ($headerUserShop?->name ?: $headerUser?->name ?: $headerUser?->email ?: 'Account'));
+        $headerAccountSubtitle = $headerUser?->email;
+        $headerAccountAvatarUrl = null;
+        if (!empty($headerUserShop?->logo_url)) {
+            $headerAccountAvatarUrl = $headerUserShop->logo_url;
+        } elseif (!empty($headerUserShop?->logo)) {
+            $headerAccountAvatarUrl = asset('storage/' . ltrim((string) $headerUserShop->logo, '/'));
+        } elseif (!empty($headerUser?->photo)) {
+            $headerAccountAvatarUrl = asset('storage/' . ltrim((string) $headerUser->photo, '/'));
+        }
+        $headerAccountInitial = \Illuminate\Support\Str::upper(
+            \Illuminate\Support\Str::substr($headerAccountName !== '' ? $headerAccountName : 'A', 0, 1)
+        );
+        $headerSwitchAccounts = collect();
+        $headerQuickSwitchAccounts = collect();
+        $accountSwitchErrors = $errors->getBag('accountSwitch');
+        $accountSwitchHasErrors = $accountSwitchErrors->any();
 
         $topNavCategories = collect();
         try {
@@ -56,9 +83,8 @@
 
         $headerUnreadNotifications = 0;
         $headerRecentNotifications = collect();
-        if (auth()->check() && \Illuminate\Support\Facades\Route::has('notifications.index')) {
+        if ($headerUser && \Illuminate\Support\Facades\Route::has('notifications.index')) {
             try {
-                $headerUser = auth()->user();
                 $notificationQuery = \App\Models\Activity::query();
                 if (method_exists($headerUser, 'isAdmin') && $headerUser->isAdmin()) {
                     $notificationQuery->where(function ($query) use ($headerUser) {
@@ -78,6 +104,36 @@
             } catch (\Throwable $e) {
                 $headerUnreadNotifications = 0;
                 $headerRecentNotifications = collect();
+            }
+        }
+
+        if ($headerUser) {
+            try {
+                $switchIds = collect((array) session(\App\Support\RecentAccountSwitcher::SESSION_KEY, []))
+                    ->map(fn ($id) => (int) $id)
+                    ->filter(fn ($id) => $id > 0)
+                    ->unique()
+                    ->values();
+
+                if (! $switchIds->contains((int) $headerUser->id)) {
+                    $switchIds->prepend((int) $headerUser->id);
+                }
+
+                if ($switchIds->isNotEmpty()) {
+                    $headerSwitchAccounts = \App\Models\User::query()
+                        ->with('shop:id,user_id,name,logo')
+                        ->whereIn('id', $switchIds->all())
+                        ->get()
+                        ->sortBy(fn ($account) => $switchIds->search((int) $account->id))
+                        ->values();
+
+                    $headerQuickSwitchAccounts = $headerSwitchAccounts
+                        ->filter(fn ($account) => (int) $account->id !== (int) $headerUser->id)
+                        ->values();
+                }
+            } catch (\Throwable $e) {
+                $headerSwitchAccounts = collect();
+                $headerQuickSwitchAccounts = collect();
             }
         }
     @endphp
@@ -581,6 +637,108 @@
                                 </div>
                             </div>
                         @endif
+                        <div class="relative">
+                            <button type="button" data-ui-toggle="dropdown" class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-2 text-slate-700 hover:border-slate-300 hover:bg-slate-50 sm:px-3" aria-label="Account menu" aria-expanded="{{ $accountSwitchHasErrors ? 'true' : 'false' }}">
+                                @if ($headerAccountAvatarUrl)
+                                    <span class="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
+                                        <img src="{{ $headerAccountAvatarUrl }}" alt="{{ $headerAccountName }}" class="h-full w-full object-cover" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');">
+                                        <span class="hidden inline-flex h-full w-full items-center justify-center bg-emerald-100 text-xs font-bold text-emerald-700">{{ $headerAccountInitial }}</span>
+                                    </span>
+                                @else
+                                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">{{ $headerAccountInitial }}</span>
+                                @endif
+                                <span class="hidden max-w-[8rem] truncate text-sm font-semibold sm:inline">{{ $headerAccountName }}</span>
+                                <i class="fas fa-chevron-down hidden text-[10px] text-slate-400 sm:inline"></i>
+                            </button>
+
+                            <div class="tw-dropdown-menu right-0 w-[22rem] max-w-[92vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl {{ $accountSwitchHasErrors ? 'show' : '' }}">
+                                <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                                    <div class="flex items-center gap-3">
+                                        @if ($headerAccountAvatarUrl)
+                                            <span class="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                                <img src="{{ $headerAccountAvatarUrl }}" alt="{{ $headerAccountName }}" class="h-full w-full object-cover" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');">
+                                                <span class="hidden inline-flex h-full w-full items-center justify-center bg-emerald-100 text-sm font-bold text-emerald-700">{{ $headerAccountInitial }}</span>
+                                            </span>
+                                        @else
+                                            <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-sm font-bold text-emerald-700">{{ $headerAccountInitial }}</span>
+                                        @endif
+                                        <div class="min-w-0 flex-1">
+                                            <p class="truncate text-sm font-semibold text-slate-900">{{ $headerAccountName }}</p>
+                                            <p class="truncate text-xs text-slate-500">{{ $headerAccountSubtitle }}</p>
+                                        </div>
+                                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                                            {{ $isSellerUser ? 'Seller' : ucfirst((string) ($headerUser->user_type ?? 'Account')) }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-4 p-4">
+                                    <div>
+                                        <div class="mb-2 flex items-center justify-between gap-2">
+                                            <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Switch account</p>
+                                            <span class="text-[11px] text-slate-400">{{ $headerSwitchAccounts->count() }} saved</span>
+                                        </div>
+                                        @if ($headerQuickSwitchAccounts->isNotEmpty())
+                                            <div class="space-y-2">
+                                                @foreach ($headerQuickSwitchAccounts as $switchAccount)
+                                                    @php
+                                                        $switchShop = $switchAccount->shop;
+                                                        $switchName = trim((string) ($switchShop?->name ?: $switchAccount->name ?: $switchAccount->email));
+                                                        $switchMeta = trim((string) ($switchAccount->email ?: ucfirst((string) $switchAccount->user_type)));
+                                                        $switchAvatar = $switchShop?->logo_url ?: (!empty($switchShop?->logo) ? asset('storage/' . ltrim((string) $switchShop->logo, '/')) : (!empty($switchAccount->photo) ? asset('storage/' . ltrim((string) $switchAccount->photo, '/')) : null));
+                                                        $switchInitial = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($switchName !== '' ? $switchName : 'A', 0, 1));
+                                                    @endphp
+                                                    <form method="POST" action="{{ route('account.switch', $switchAccount) }}">
+                                                        @csrf
+                                                        <button type="submit" class="flex w-full items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 text-left transition hover:bg-slate-50">
+                                                            @if ($switchAvatar)
+                                                                <span class="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                                                    <img src="{{ $switchAvatar }}" alt="{{ $switchName }}" class="h-full w-full object-cover" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');">
+                                                                    <span class="hidden inline-flex h-full w-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-700">{{ $switchInitial }}</span>
+                                                                </span>
+                                                            @else
+                                                                <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-700">{{ $switchInitial }}</span>
+                                                            @endif
+                                                            <span class="min-w-0 flex-1">
+                                                                <span class="block truncate text-sm font-semibold text-slate-900">{{ $switchName }}</span>
+                                                                <span class="block truncate text-xs text-slate-500">{{ $switchMeta }}</span>
+                                                            </span>
+                                                            <span class="text-xs font-semibold text-emerald-700">Switch</span>
+                                                        </button>
+                                                    </form>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <p class="text-xs text-slate-500">No other accounts added yet. Use another account below once to enable one-tap switching.</p>
+                                        @endif
+                                    </div>
+
+                                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                                        <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Use another account</p>
+                                        <form method="POST" action="{{ route('account.switch.authenticate') }}" class="mt-3 space-y-3">
+                                            @csrf
+                                            <div>
+                                                <label for="switch_email" class="mb-1 block text-xs font-semibold text-slate-600">Email</label>
+                                                <input id="switch_email" name="switch_email" type="email" value="{{ old('switch_email') }}" autocomplete="username" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none">
+                                                @if ($accountSwitchErrors->has('switch_email'))
+                                                    <p class="mt-1 text-xs font-medium text-rose-600">{{ $accountSwitchErrors->first('switch_email') }}</p>
+                                                @endif
+                                            </div>
+                                            <div>
+                                                <label for="switch_password" class="mb-1 block text-xs font-semibold text-slate-600">Password</label>
+                                                <input id="switch_password" name="switch_password" type="password" autocomplete="current-password" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none">
+                                                @if ($accountSwitchErrors->has('switch_password'))
+                                                    <p class="mt-1 text-xs font-medium text-rose-600">{{ $accountSwitchErrors->first('switch_password') }}</p>
+                                                @endif
+                                            </div>
+                                            <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+                                                Add and switch
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <a href="{{ url('/dashboard') }}" class="hidden rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 sm:inline-flex">Dashboard</a>
                         @if (Route::has('logout'))
                             <form method="POST" action="{{ route('logout') }}">

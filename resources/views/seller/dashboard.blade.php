@@ -6,6 +6,7 @@
 @section('main')
 @php
     $shop = auth()->user()->shop;
+    $shopLogoUrl = $shop?->logo_url ?: (!empty($shop?->logo) ? asset('storage/' . ltrim((string) $shop->logo, '/')) : null);
     $brandColor = optional($shop)->primary_color;
     if (!is_string($brandColor) || !preg_match('/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/', $brandColor)) {
         $brandColor = '#0f766e';
@@ -145,9 +146,18 @@
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-center gap-3">
-                            <span class="inline-flex h-12 w-12 items-center justify-center rounded-xl text-white" style="background-color: {{ $brandColor }}">
-                                <i class="fas fa-store"></i>
-                            </span>
+                            @if($shopLogoUrl)
+                                <span class="inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                                    <img src="{{ $shopLogoUrl }}" alt="{{ $shop->name ?? 'Shop logo' }}" class="h-full w-full object-cover" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');">
+                                    <span class="hidden inline-flex h-full w-full items-center justify-center text-white" style="background-color: {{ $brandColor }}">
+                                        <i class="fas fa-store"></i>
+                                    </span>
+                                </span>
+                            @else
+                                <span class="inline-flex h-12 w-12 items-center justify-center rounded-xl text-white" style="background-color: {{ $brandColor }}">
+                                    <i class="fas fa-store"></i>
+                                </span>
+                            @endif
                             <div>
                                 <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Seller Dashboard</h1>
                                 <p class="text-sm text-slate-500">

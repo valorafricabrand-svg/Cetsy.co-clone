@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\AccountSwitchController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
@@ -36,6 +37,12 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::post('account-switch/authenticate', [AccountSwitchController::class, 'authenticate'])
+        ->name('account.switch.authenticate');
+
+    Route::post('account-switch/{user}', [AccountSwitchController::class, 'switch'])
+        ->name('account.switch');
+
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 
