@@ -125,6 +125,14 @@
                 $headerSwitchAccounts = collect();
             }
         }
+
+        $accountSwitchModalAccounts = collect($switchAccounts ?? $headerSwitchAccounts ?? [])
+            ->filter()
+            ->values();
+
+        if ($accountSwitchModalAccounts->isEmpty()) {
+            $accountSwitchModalAccounts = $headerSwitchAccounts;
+        }
     @endphp
 
     <meta charset="utf-8">
@@ -685,7 +693,7 @@
                                         <span class="min-w-0 flex-1">
                                             <span class="block truncate text-sm font-semibold text-slate-900">Switch Account</span>
                                             <span class="block truncate text-xs text-slate-500">
-                                                {{ $headerSwitchAccounts->count() === 1 ? 'Current account only' : $headerSwitchAccounts->count() . ' saved in this session' }}
+                                                {{ $accountSwitchModalAccounts->count() === 1 ? 'Current account only' : $accountSwitchModalAccounts->count() . ' saved in this session' }}
                                             </span>
                                         </span>
                                         <i class="fas fa-chevron-right text-sm text-slate-400"></i>
@@ -1070,7 +1078,7 @@
 
                         <div class="max-h-[70vh] overflow-y-auto">
                             <div class="divide-y divide-slate-200 px-4">
-                                @foreach ($headerSwitchAccounts as $switchAccount)
+                                @forelse ($accountSwitchModalAccounts as $switchAccount)
                                     @php
                                         $switchShop = $switchAccount->shop;
                                         $switchName = trim((string) ($switchShop?->name ?: $switchAccount->name ?: $switchAccount->email));
@@ -1119,7 +1127,11 @@
                                             </button>
                                         </form>
                                     @endif
-                                @endforeach
+                                @empty
+                                    <div class="py-4 text-sm text-slate-500">
+                                        No saved accounts are available yet. Add another account from Account Settings first.
+                                    </div>
+                                @endforelse
                             </div>
 
                             <div class="border-t border-slate-200 px-4 py-3">
