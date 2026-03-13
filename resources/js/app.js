@@ -337,22 +337,22 @@ function initLiveNotificationPulse() {
         }
 
         const modal = document.createElement("div");
-        modal.className = "modal";
+        modal.className = "tw-modal hidden";
         modal.id = "liveNotificationPrefsModal";
         modal.tabIndex = -1;
         modal.setAttribute("aria-labelledby", "liveNotificationPrefsTitle");
         modal.setAttribute("aria-hidden", "true");
         modal.innerHTML = `
-            <div class="modal-dialog">
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
-                    <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+            <div class="tw-modal-dialog tw-modal-lg">
+                <div class="tw-modal-content">
+                    <div class="tw-modal-header">
                         <div>
                             <h5 id="liveNotificationPrefsTitle" class="text-base font-semibold text-slate-900">Alert settings</h5>
                             <p class="mt-1 text-xs text-slate-500">Control sounds, toasts, browser popups, and true push notifications for new messages and sales.</p>
                         </div>
                         <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
                     </div>
-                    <div class="space-y-4 px-4 py-4">
+                    <div class="tw-modal-body space-y-4">
                         <label class="live-alert-pref">
                             <span>
                                 <span class="live-alert-pref__title">Enable in-app alerts</span>
@@ -420,7 +420,7 @@ function initLiveNotificationPulse() {
                             <button type="button" class="inline-flex items-center justify-center rounded-xl border border-emerald-300 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50" data-test-live-sound="sale">Test sale sound</button>
                         </div>
                     </div>
-                    <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                    <div class="tw-modal-footer">
                         <button type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">Close</button>
                     </div>
                 </div>
