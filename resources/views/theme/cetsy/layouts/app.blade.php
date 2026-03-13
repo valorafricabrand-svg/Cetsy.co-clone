@@ -52,7 +52,6 @@
             \Illuminate\Support\Str::substr($headerAccountName !== '' ? $headerAccountName : 'A', 0, 1)
         );
         $headerSwitchAccounts = collect();
-        $headerQuickSwitchAccounts = collect();
 
         $topNavCategories = collect();
         try {
@@ -121,13 +120,9 @@
                         ->sortBy(fn ($account) => $switchIds->search((int) $account->id))
                         ->values();
 
-                    $headerQuickSwitchAccounts = $headerSwitchAccounts
-                        ->filter(fn ($account) => (int) $account->id !== (int) $headerUser->id)
-                        ->values();
                 }
             } catch (\Throwable $e) {
                 $headerSwitchAccounts = collect();
-                $headerQuickSwitchAccounts = collect();
             }
         }
     @endphp
@@ -298,6 +293,22 @@
         .tw-modal-footer { justify-content: flex-end; border-top: 1px solid #e2e8f0; }
         .tw-modal-body { padding: 1rem; }
         .tw-modal-title { margin: 0; font-size: 1rem; font-weight: 600; color: #0f172a; }
+        .account-switch-sheet-dialog { max-width: 30rem; }
+        .account-switch-sheet-content { overflow: hidden; }
+        @media (max-width: 640px) {
+            .account-switch-sheet-dialog {
+                display: flex;
+                min-height: 100%;
+                max-width: 100%;
+                align-items: flex-end;
+            }
+            .account-switch-sheet-content {
+                width: 100%;
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+                max-height: min(84vh, 46rem);
+            }
+        }
 
         .tw-dropdown-menu {
             position: absolute;
@@ -666,46 +677,27 @@
                                     </div>
                                 </div>
 
-                                <div class="space-y-3 p-4">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Switch account</p>
-                                        <span class="text-[11px] text-slate-400">{{ $headerSwitchAccounts->count() }} saved</span>
-                                    </div>
-                                    @if ($headerQuickSwitchAccounts->isNotEmpty())
-                                        <div class="space-y-2">
-                                            @foreach ($headerQuickSwitchAccounts->take(2) as $switchAccount)
-                                                @php
-                                                    $switchShop = $switchAccount->shop;
-                                                    $switchName = trim((string) ($switchShop?->name ?: $switchAccount->name ?: $switchAccount->email));
-                                                    $switchMeta = trim((string) ($switchAccount->email ?: ucfirst((string) $switchAccount->user_type)));
-                                                    $switchAvatar = $switchShop?->logo_url ?: (!empty($switchShop?->logo) ? asset('storage/' . ltrim((string) $switchShop->logo, '/')) : (!empty($switchAccount->photo) ? asset('storage/' . ltrim((string) $switchAccount->photo, '/')) : null));
-                                                    $switchInitial = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($switchName !== '' ? $switchName : 'A', 0, 1));
-                                                @endphp
-                                                <form method="POST" action="{{ route('account.switch', $switchAccount) }}">
-                                                    @csrf
-                                                    <button type="submit" class="flex w-full items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 text-left transition hover:bg-slate-50">
-                                                        @if ($switchAvatar)
-                                                            <span class="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                                                <img src="{{ $switchAvatar }}" alt="{{ $switchName }}" class="h-full w-full object-cover" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');">
-                                                                <span class="hidden inline-flex h-full w-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-700">{{ $switchInitial }}</span>
-                                                            </span>
-                                                        @else
-                                                            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-700">{{ $switchInitial }}</span>
-                                                        @endif
-                                                        <span class="min-w-0 flex-1">
-                                                            <span class="block truncate text-sm font-semibold text-slate-900">{{ $switchName }}</span>
-                                                            <span class="block truncate text-xs text-slate-500">{{ $switchMeta }}</span>
-                                                        </span>
-                                                        <span class="text-xs font-semibold text-emerald-700">Switch</span>
-                                                    </button>
-                                                </form>
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <p class="text-xs text-slate-500">Go to Account Settings to add another account for one-tap switching.</p>
-                                    @endif
-                                    <a href="{{ route('account.details') }}#account-switching" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                        Account settings
+                                <div class="space-y-2 p-4">
+                                    <button type="button" data-ui-toggle="modal" data-ui-target="#accountSwitchModal" class="flex w-full items-center gap-3 rounded-xl border border-slate-200 px-3 py-3 text-left transition hover:bg-slate-50">
+                                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                                            <i class="fas fa-repeat"></i>
+                                        </span>
+                                        <span class="min-w-0 flex-1">
+                                            <span class="block truncate text-sm font-semibold text-slate-900">Switch Account</span>
+                                            <span class="block truncate text-xs text-slate-500">
+                                                {{ $headerSwitchAccounts->count() === 1 ? 'Current account only' : $headerSwitchAccounts->count() . ' saved in this session' }}
+                                            </span>
+                                        </span>
+                                        <i class="fas fa-chevron-right text-sm text-slate-400"></i>
+                                    </button>
+                                    <a href="{{ route('account.details') }}#account-switching" class="flex w-full items-center gap-3 rounded-xl border border-slate-200 px-3 py-3 text-left transition hover:bg-slate-50">
+                                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                                            <i class="fas fa-gear"></i>
+                                        </span>
+                                        <span class="min-w-0 flex-1">
+                                            <span class="block truncate text-sm font-semibold text-slate-900">Account settings</span>
+                                            <span class="block truncate text-xs text-slate-500">Manage profile details and add another account.</span>
+                                        </span>
                                     </a>
                                     @if (Route::has('logout'))
                                         <form method="POST" action="{{ route('logout') }}">
@@ -854,9 +846,9 @@
                                     <p class="truncate text-xs text-slate-500">{{ $headerAccountSubtitle }}</p>
                                 </div>
                             </div>
-                            <a href="{{ route('account.details') }}#account-switching" @click="mobileDrawerOpen = false" class="inline-flex shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-                                Account Settings
-                            </a>
+                            <button type="button" data-ui-toggle="modal" data-ui-target="#accountSwitchModal" @click="mobileDrawerOpen = false" class="inline-flex shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                                Switch Account
+                            </button>
                         </div>
                     </div>
                 @endauth
@@ -1059,6 +1051,93 @@
                 @endif
             </div>
         </aside>
+
+        @auth
+            <div id="accountSwitchModal" class="tw-modal hidden" aria-hidden="true">
+                <div class="tw-modal-dialog account-switch-sheet-dialog">
+                    <div class="tw-modal-content account-switch-sheet-content">
+                        <div class="tw-modal-header">
+                            <div class="flex items-center gap-3">
+                                <button type="button" data-ui-dismiss="modal" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-100" aria-label="Close switch account">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                <div>
+                                    <h3 class="tw-modal-title">Switch Account</h3>
+                                    <p class="text-xs text-slate-500">Stay signed in and jump between your saved accounts.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="max-h-[70vh] overflow-y-auto">
+                            <div class="divide-y divide-slate-200 px-4">
+                                @foreach ($headerSwitchAccounts as $switchAccount)
+                                    @php
+                                        $switchShop = $switchAccount->shop;
+                                        $switchName = trim((string) ($switchShop?->name ?: $switchAccount->name ?: $switchAccount->email));
+                                        $switchMeta = trim((string) ($switchAccount->email ?: ucfirst((string) $switchAccount->user_type)));
+                                        $switchAvatar = $switchShop?->logo_url ?: (!empty($switchShop?->logo) ? asset('storage/' . ltrim((string) $switchShop->logo, '/')) : (!empty($switchAccount->photo) ? asset('storage/' . ltrim((string) $switchAccount->photo, '/')) : null));
+                                        $switchInitial = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($switchName !== '' ? $switchName : 'A', 0, 1));
+                                        $isCurrentSwitchAccount = (int) $switchAccount->id === (int) $headerUser->id;
+                                    @endphp
+                                    @if ($isCurrentSwitchAccount)
+                                        <div class="flex items-center gap-3 py-4">
+                                            @if ($switchAvatar)
+                                                <span class="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                                    <img src="{{ $switchAvatar }}" alt="{{ $switchName }}" class="h-full w-full object-cover" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');">
+                                                    <span class="hidden inline-flex h-full w-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-700">{{ $switchInitial }}</span>
+                                                </span>
+                                            @else
+                                                <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-sm font-bold text-slate-700">{{ $switchInitial }}</span>
+                                            @endif
+                                            <div class="min-w-0 flex-1">
+                                                <p class="truncate text-base font-semibold text-slate-900">{{ $switchName }}</p>
+                                                <p class="truncate text-sm text-slate-500">{{ $switchMeta }}</p>
+                                            </div>
+                                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                                                <i class="fas fa-check"></i>
+                                            </span>
+                                        </div>
+                                    @else
+                                        <form method="POST" action="{{ route('account.switch', $switchAccount) }}">
+                                            @csrf
+                                            <button type="submit" class="flex w-full items-center gap-3 py-4 text-left transition hover:bg-slate-50">
+                                                @if ($switchAvatar)
+                                                    <span class="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                                        <img src="{{ $switchAvatar }}" alt="{{ $switchName }}" class="h-full w-full object-cover" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');">
+                                                        <span class="hidden inline-flex h-full w-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-700">{{ $switchInitial }}</span>
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-sm font-bold text-slate-700">{{ $switchInitial }}</span>
+                                                @endif
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="truncate text-base font-semibold text-slate-900">{{ $switchName }}</p>
+                                                    <p class="truncate text-sm text-slate-500">{{ $switchMeta }}</p>
+                                                </div>
+                                                <span class="inline-flex items-center justify-center rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700">
+                                                    Switch
+                                                </span>
+                                            </button>
+                                        </form>
+                                    @endif
+                                @endforeach
+                            </div>
+
+                            <div class="border-t border-slate-200 px-4 py-3">
+                                <a href="{{ route('account.details') }}#account-switching" class="flex items-center gap-3 rounded-2xl px-1 py-2 text-left text-slate-900 hover:bg-slate-50">
+                                    <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                                        <i class="fas fa-plus text-lg"></i>
+                                    </span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="block text-base font-semibold">Add Account</span>
+                                        <span class="block text-sm text-slate-500">Use Account Settings to add another login for quick switching.</span>
+                                    </span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endauth
 
         <main class="flex-1 pb-20 lg:pb-0">
             @yield('main')
@@ -1424,6 +1503,12 @@
                 const kind = trigger.getAttribute('data-ui-toggle') || trigger.getAttribute('data-toggle');
                 if (kind === 'modal') {
                     event.preventDefault();
+                    const openMenu = trigger.closest('.tw-dropdown-menu.show, .dropdown-menu.show');
+                    if (openMenu) {
+                        openMenu.classList.remove('show');
+                        const toggle = openMenu.previousElementSibling;
+                        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+                    }
                     openModal(resolveTarget(trigger));
                     return;
                 }
