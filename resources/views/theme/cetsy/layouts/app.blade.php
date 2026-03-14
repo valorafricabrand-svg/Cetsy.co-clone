@@ -104,9 +104,11 @@
             }
         }
 
-        if ($headerUser) {
+        $accountSwitchSession = request()->hasSession() ? request()->session() : null;
+
+        if ($headerUser && $accountSwitchSession) {
             try {
-                $switchIds = collect(\App\Support\RecentAccountSwitcher::ids(session()));
+                $switchIds = collect(\App\Support\RecentAccountSwitcher::ids($accountSwitchSession));
 
                 if (! $switchIds->contains((int) $headerUser->id)) {
                     $switchIds->prepend((int) $headerUser->id);
@@ -124,6 +126,10 @@
             } catch (\Throwable $e) {
                 $headerSwitchAccounts = collect();
             }
+        }
+
+        if ($headerSwitchAccounts->isEmpty() && isset($switchAccounts) && collect($switchAccounts)->isNotEmpty()) {
+            $headerSwitchAccounts = collect($switchAccounts)->values();
         }
 
         $accountSwitchModalAccounts = collect($switchAccounts ?? $headerSwitchAccounts ?? [])
