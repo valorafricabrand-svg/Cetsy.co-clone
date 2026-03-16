@@ -1,4 +1,4 @@
-{{-- resources/views/products/variations.blade.php --}}
+{{-- resources/views/products/variation_type.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Manage Variations - ' . ($type->name ?? 'Variation Type'))
@@ -13,9 +13,20 @@
 @endpush
 
 @section('main')
-@php $tracksStock = $product->type === 'physical'; @endphp
-<div class="content">
-  <div class="mx-auto w-full px-4 sm:px-6">
+@php
+  $tracksStock = $product->type === 'physical';
+  $current = \Illuminate\Support\Facades\Route::currentRouteName();
+@endphp
+<section class="bg-slate-50 py-8 md:py-10">
+  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      @include('seller.partials.sidebar')
+
+      <div class="space-y-6">
+        @include('products.partials.edit-tabs', ['product' => $product, 'current' => $current])
+
+        <div class="content">
+          <div class="w-full">
 
     {{-- Page header / breadcrumbs --}}
     <div class="page-header mb-3 flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:justify-between">
@@ -334,13 +345,17 @@
 
     {{-- Bottom actions --}}
     <div class="sticky-actions mt-4">
-      <div class="mx-auto flex w-full px-4 sm:px-6 sm:justify-end">
+      <div class="flex w-full sm:justify-end">
         <a href="{{ route('products.variations', $product) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-slate-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-500 sm:w-auto">Close</a>
       </div>
     </div>
 
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+</section>
 @endsection
 
 @push('scripts')
@@ -377,5 +392,4 @@
   }
 </script>
 @endpush
-
 
