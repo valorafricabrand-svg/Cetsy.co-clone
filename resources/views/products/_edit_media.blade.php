@@ -14,8 +14,71 @@
   .thumb{height:170px}
   .thumb img{width:100%;height:100%;object-fit:cover;user-select:none}
   .toolbar-btn{min-width:34px}
+  .crop-modal-panel{
+    display:flex;
+    flex-direction:column;
+    width:100%;
+    height:100vh;
+    height:100dvh;
+    max-height:100vh;
+    max-height:100dvh;
+    overflow:hidden;
+    border-radius:0;
+  }
+  .crop-body{
+    display:flex;
+    flex:1 1 auto;
+    min-height:0;
+    flex-direction:column;
+    gap:1rem;
+    padding:1rem;
+  }
+  .crop-toolbar{
+    display:flex;
+    align-items:flex-start;
+    gap:.75rem;
+  }
+  .crop-toolbar__ratios{
+    display:flex;
+    flex:1 1 auto;
+    flex-wrap:wrap;
+    gap:.5rem;
+  }
+  .crop-toolbar__actions{
+    display:flex;
+    flex:0 0 auto;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    gap:.5rem;
+  }
+  .crop-stage{flex:1 1 auto;min-height:0;}
+  .crop-footer{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:.75rem;
+    flex-wrap:wrap;
+  }
+  .crop-footer__meta{
+    display:flex;
+    align-items:center;
+    flex:1 1 16rem;
+    flex-wrap:wrap;
+    gap:.75rem;
+    margin-right:auto;
+  }
+  .crop-quality{display:flex;align-items:center;gap:.5rem;}
   #cropWrapper{
-    position:relative;width:100%;height:72vh;max-height:calc(100vh - 220px);background:#111;overflow:hidden;
+    position:relative;
+    width:100%;
+    height:min(58vh, 520px);
+    height:min(58dvh, 520px);
+    min-height:300px;
+    max-height:calc(100vh - 280px);
+    max-height:calc(100dvh - 280px);
+    background:#111;
+    overflow:hidden;
+    border-radius:1rem;
   }
   #cropWrapper img{max-width:100%;display:block}
   .cropper-container,.cropper-wrap-box,.cropper-canvas,.cropper-drag-box{
@@ -28,6 +91,64 @@
   .progress-mini{height:4px;background:#e9ecef;border-radius:2px;overflow:hidden}
   .progress-mini > div{height:100%;background:var(--accent);width:0;transition:width .2s}
   [x-cloak]{display:none!important;}
+
+  @media (min-width: 640px){
+    .crop-modal-panel{
+      max-width:72rem;
+      height:auto;
+      max-height:92vh;
+      border-radius:1rem;
+    }
+  }
+
+  @media (max-width: 639.98px){
+    #cropModal .tw-modal-dialog{
+      margin:0;
+      width:100%;
+      max-width:none;
+      height:100vh;
+      height:100dvh;
+      max-height:100vh;
+      max-height:100dvh;
+      align-items:flex-end;
+    }
+    .crop-toolbar{
+      margin-inline:-1rem;
+      padding-inline:1rem;
+      overflow-x:auto;
+      overflow-y:hidden;
+      flex-wrap:nowrap;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .crop-toolbar::-webkit-scrollbar{display:none;}
+    .crop-toolbar__ratios,.crop-toolbar__actions{flex-wrap:nowrap;flex:0 0 auto;}
+    .crop-toolbar__actions{justify-content:flex-start;}
+    .crop-footer{
+      padding-bottom:calc(.75rem + env(safe-area-inset-bottom));
+    }
+    .crop-footer__meta{
+      width:100%;
+      margin-right:0;
+      justify-content:space-between;
+    }
+    .crop-quality{
+      width:100%;
+      justify-content:space-between;
+    }
+    .crop-quality input[type="range"]{
+      width:auto!important;
+      min-width:0;
+      flex:1 1 auto;
+    }
+    #cropWrapper{
+      height:clamp(260px, 46vh, 420px);
+      height:clamp(260px, 46dvh, 420px);
+      min-height:260px;
+      max-height:none;
+      border-radius:.875rem;
+    }
+  }
 </style>
 @endpush
 
@@ -138,26 +259,25 @@
       @csrf
 
       {{-- Drop zone --}}
-      <div class="dropzone rounded-3 py-5 text-center mb-4"
-           :class="{'drag':dragging}"
-           @click="$refs.file.click()"
-           @dragenter.prevent="dragging=true"
-           @dragover.prevent="dragging=true"
-           @dragleave.prevent="dragging=false"
-           @drop.prevent="handleDrop($event)"
-           style="cursor:pointer;">
+      <label class="dropzone relative mb-4 block rounded-3 py-5 text-center"
+             :class="{'drag':dragging}"
+             @dragenter.prevent="dragging=true"
+             @dragover.prevent="dragging=true"
+             @dragleave.prevent="dragging=false"
+             @drop.prevent="handleDrop($event)"
+             style="cursor:pointer;">
         <p class="mb-1">
           <i class="fa-solid fa-cloud-arrow-up text-2xl block mb-2"></i>
           Drag & drop images or videos here or click to browse
         </p>
         <small class="text-slate-500">Images up to 5MB ------ Videos up to 50MB</small>
         <input type="file"
-               class="hidden"
+               class="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                multiple
                accept="image/*,video/*"
                x-ref="file"
                @change="addFiles($event.target.files)">
-      </div>
+      </label>
 
       {{-- Preview grid --}}
       <template x-if="items.length">
@@ -215,24 +335,26 @@
   {{-- ------------------ Crop Modal (shared) ------------------ --}}
   <div class="tw-modal" id="cropModal" tabindex="-1" aria-hidden="true">
     <div class="tw-modal-dialog tw-modal-dialog-centered tw-modal-lg">
-      <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+      <div class="border border-slate-200 bg-white shadow-xl crop-modal-panel">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900 flex items-center">
             <i class="fas fa-crop mr-2"></i> Crop Image
           </h5>
           <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal">&times;</button>
         </div>
-        <div class="px-4 py-4">
+        <div class="crop-body">
           {{-- Aspect chips --}}
-          <div class="mb-3 flex flex-wrap gap-2">
-            <template x-for="r in ratios" :key="r.label">
-              <span class="ratio-chip"
-                    :class="{'active':activeRatio===r.value}"
-                    @click="setRatio(r.value)">
-                <span x-text="r.label"></span>
-              </span>
-            </template>
-            <div class="ms-auto flex gap-2">
+          <div class="crop-toolbar">
+            <div class="crop-toolbar__ratios">
+              <template x-for="r in ratios" :key="r.label">
+                <span class="ratio-chip"
+                      :class="{'active':activeRatio===r.value}"
+                      @click="setRatio(r.value)">
+                  <span x-text="r.label"></span>
+                </span>
+              </template>
+            </div>
+            <div class="crop-toolbar__actions">
               <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="zoom(0.1)"  title="Zoom In"><i class="fas fa-search-plus"></i></button>
               <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="zoom(-0.1)" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
               <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="rotate(-45)" title="Rotate Left"><i class="fas fa-undo"></i></button>
@@ -242,15 +364,20 @@
               <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs" @click="reset()"     title="Reset"><i class="fas fa-sync"></i></button>
             </div>
           </div>
-          <div id="cropWrapper">
-            <img id="cropImage" src="">
+          <div class="text-xs text-slate-500">Drag the image, pinch to zoom, or use the controls to fine-tune the crop.</div>
+          <div class="crop-stage">
+            <div id="cropWrapper">
+              <img id="cropImage" src="">
+            </div>
           </div>
         </div>
-        <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-          <div class="me-auto text-xs text-slate-500" x-text="dimText"></div>
-          <div class="flex items-center mr-3">
+        <div class="crop-footer border-t border-slate-200 px-4 py-3">
+          <div class="crop-footer__meta">
+            <div class="text-xs text-slate-500" x-text="dimText"></div>
+            <div class="crop-quality">
             <label class="text-xs mr-2">Quality</label>
             <input type="range" min="60" max="100" step="2" x-model="quality" style="width:120px">
+            </div>
           </div>
           <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Cancel</button>
           <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" id="cropApplyBtn">
@@ -318,6 +445,15 @@ function modernUploader(){
           modalEl.dispatchEvent(new Event('hidden.bs.modal'));
         }
       };
+      modalEl.addEventListener('hidden.bs.modal', ()=>{
+        if(this.cropper){
+          this.cropper.destroy();
+          this.cropper = null;
+        }
+        this.cropSaving = false;
+        this.currentIndex = null;
+        this.existingMediaId = null;
+      });
       document.getElementById('cropApplyBtn').addEventListener('click', ()=> this.applyCrop());
     },
 
@@ -415,8 +551,13 @@ function modernUploader(){
     },
 
     // ------------ Open cropper ------------
-    openNewCrop(i){ this.currentIndex = i; this.openCropper(this.items[i].url); },
+    openNewCrop(i){
+      this.existingMediaId = null;
+      this.currentIndex = i;
+      this.openCropper(this.items[i].url);
+    },
     openExistingCrop(id, url){
+      this.currentIndex = null;
       this.existingMediaId = id;
       this.openCropper(url);
     },
@@ -430,13 +571,20 @@ function modernUploader(){
       document.getElementById('cropModal').addEventListener('shown.bs.modal', ()=>{
         if(this.cropper) this.cropper.destroy();
         this.cropper = new Cropper(img,{
-          viewMode:1,
-          autoCropArea:1,
+          viewMode:2,
+          autoCropArea:0.88,
           responsive:true,
           background:false,
           movable:true,
           zoomable:true,
           rotatable:true,
+          scalable:true,
+          dragMode:'move',
+          cropBoxMovable:true,
+          cropBoxResizable:true,
+          guides:false,
+          center:true,
+          toggleDragModeOnDblclick:false,
           crop:(e)=>{ this.dimText = `${Math.round(e.detail.width)} x ${Math.round(e.detail.height)} px`; }
         });
       },{once:true});
@@ -528,5 +676,3 @@ function modernUploader(){
   }
 }
 </script>
-
-

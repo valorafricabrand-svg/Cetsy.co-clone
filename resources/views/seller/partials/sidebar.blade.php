@@ -28,6 +28,12 @@
         ->where('status', \App\Models\Dispute::STATUS_PENDING)
         ->count();
     $unreadNotifications = \App\Models\Activity::where('user_id', auth()->id())->where('is_read', false)->count();
+    $myShopUrl = '#';
+    if ($shop && \Illuminate\Support\Facades\Route::has('shop.show')) {
+        $myShopUrl = route('shop.show', $shop->slug ?: $shop->getKey());
+    } elseif (\Illuminate\Support\Facades\Route::has('seller.shop.create')) {
+        $myShopUrl = route('seller.shop.create');
+    }
 
     $groups = [
         'Overview' => [
@@ -35,7 +41,7 @@
         ],
         'Listings' => [
             ['route' => 'products.index', 'icon' => 'fas fa-box-open', 'label' => 'My Listings'],
-            ['route' => 'seller.deals.index', 'icon' => 'fas fa-percent', 'label' => 'Deals'],
+            ['route' => 'seller.deals.index', 'icon' => 'fas fa-percent', 'label' => '%Deals'],
         ],
         'Sales' => [
             ['route' => 'seller.orders.index', 'icon' => 'fas fa-shopping-cart', 'label' => 'Shop Orders'],
@@ -45,7 +51,7 @@
         ],
         'Engagement' => [
             ['route' => 'seller.messages.index', 'icon' => 'fas fa-comments', 'label' => 'Messages', 'badge' => $unreadMessages],
-            ['route' => 'seller.offers.index', 'icon' => 'fas fa-hand-holding-usd', 'label' => 'Offers', 'badge' => $pendingOffers],
+            ['route' => 'seller.offers.index', 'icon' => 'fas fa-handshake', 'label' => 'Offers', 'badge' => $pendingOffers],
             ['route' => 'buyer.favorites', 'icon' => 'fas fa-heart', 'label' => 'Favorites', 'badge' => $myFavoritesCount],
             ['route' => 'seller.favorites.index', 'icon' => 'fas fa-store', 'label' => 'Shop Favorites', 'badge' => $shopFavoritesCount],
             ['route' => 'seller.notifications.index', 'icon' => 'fas fa-bell', 'label' => 'Notifications', 'badge' => $unreadNotifications],
@@ -54,7 +60,7 @@
             ['route' => 'disputes.index', 'icon' => 'fas fa-exclamation-triangle', 'label' => 'Disputes', 'badge' => $disputesCount],
         ],
         'Shop & Settings' => [
-            ['route' => 'seller.shop.create', 'icon' => 'fas fa-store', 'label' => 'My Shop'],
+            ['href' => $myShopUrl, 'icon' => 'fas fa-store', 'label' => 'My Shop', 'activePatterns' => ['shop.show', 'seller.shops.*', 'seller.shop.create']],
             ['route' => 'seller.analytics.index', 'icon' => 'fas fa-chart-line', 'label' => 'Analytics'],
             ['route' => 'seller.reports.inventory', 'icon' => 'fas fa-boxes-stacked', 'label' => 'Inventory Report'],
             ['route' => 'seller.subscription', 'icon' => 'fas fa-file-invoice', 'label' => 'Subscription'],
@@ -141,12 +147,15 @@
                 <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">{{ $groupTitle }}</p>
                 <div class="space-y-1">
                     @foreach($items as $item)
-                        @continue(!\Illuminate\Support\Facades\Route::has($item['route']))
                         @php
-                            $isActive = request()->routeIs($item['route']);
+                            $routeName = $item['route'] ?? null;
+                            $href = $item['href'] ?? ($routeName && \Illuminate\Support\Facades\Route::has($routeName) ? route($routeName) : null);
+                            $activePatterns = (array) ($item['activePatterns'] ?? ($routeName ? [$routeName] : []));
+                            $isActive = !empty($activePatterns) ? request()->routeIs(...$activePatterns) : false;
                             $badge = (int)($item['badge'] ?? 0);
                         @endphp
-                        <a href="{{ route($item['route']) }}"
+                        @continue(!$href)
+                        <a href="{{ $href }}"
                            class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ $isActive ? 'text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' }}"
                            @if($isActive) style="background-color: {{ $brandColor }}" @endif>
                             <i class="{{ $item['icon'] }} w-4 text-center {{ $isActive ? 'text-white' : 'text-slate-500' }}"></i>
@@ -236,12 +245,15 @@
                         <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">{{ $groupTitle }}</p>
                         <div class="space-y-1">
                             @foreach($items as $item)
-                                @continue(!\Illuminate\Support\Facades\Route::has($item['route']))
                                 @php
-                                    $isActive = request()->routeIs($item['route']);
+                                    $routeName = $item['route'] ?? null;
+                                    $href = $item['href'] ?? ($routeName && \Illuminate\Support\Facades\Route::has($routeName) ? route($routeName) : null);
+                                    $activePatterns = (array) ($item['activePatterns'] ?? ($routeName ? [$routeName] : []));
+                                    $isActive = !empty($activePatterns) ? request()->routeIs(...$activePatterns) : false;
                                     $badge = (int)($item['badge'] ?? 0);
                                 @endphp
-                                <a href="{{ route($item['route']) }}"
+                                @continue(!$href)
+                                <a href="{{ $href }}"
                                    class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ $isActive ? 'text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' }}"
                                    @if($isActive) style="background-color: {{ $brandColor }}" @endif>
                                     <i class="{{ $item['icon'] }} w-4 text-center {{ $isActive ? 'text-white' : 'text-slate-500' }}"></i>
@@ -306,4 +318,3 @@
         }
     })();
 </script>
-

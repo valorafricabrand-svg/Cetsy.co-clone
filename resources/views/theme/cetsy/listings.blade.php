@@ -76,7 +76,10 @@
           <div class="md:col-span-4">
             <div class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2">
               <i class="fas fa-search text-slate-400"></i>
-              <input type="search" name="q" value="{{ $q }}" placeholder="Search listings..." aria-label="Search listings" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
+              <input type="search" name="q" value="{{ $q }}" placeholder="Search listings..." aria-label="Search listings" class="min-w-0 w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none" enterkeyhint="search">
+              <button type="submit" class="shrink-0 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500" aria-label="Search listings">
+                Search
+              </button>
             </div>
           </div>
 
@@ -360,23 +363,34 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!form) return;
 
   const viewInput = form.querySelector('input[name="view"]');
+  const searchInput = form.querySelector('input[type="search"][name="q"]');
+  const submitFilters = () => {
+    const pageInput = form.querySelector('input[name="page"]');
+    if (pageInput) pageInput.value = 1;
+    if (typeof form.requestSubmit === 'function') form.requestSubmit();
+    else form.submit();
+  };
 
   document.querySelectorAll('.view-toggle-btn[data-view]').forEach(btn => {
     btn.addEventListener('click', () => {
       viewInput.value = btn.getAttribute('data-view');
-      const pageInput = form.querySelector('input[name="page"]');
-      if (pageInput) pageInput.value = 1;
-      form.submit();
+      submitFilters();
     });
   });
 
   form.querySelectorAll('select').forEach(sel => {
     sel.addEventListener('change', () => {
-      const pageInput = form.querySelector('input[name="page"]');
-      if (pageInput) pageInput.value = 1;
-      form.submit();
+      submitFilters();
     });
   });
+
+  if (searchInput) {
+    searchInput.addEventListener('keydown', event => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      submitFilters();
+    });
+  }
 
   const loadMoreBtn = document.getElementById('load-more');
   if (loadMoreBtn) {

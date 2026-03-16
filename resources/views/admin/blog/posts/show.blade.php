@@ -2,6 +2,66 @@
 
 @section('title', 'View Blog Post')
 
+@push('styles')
+<style>
+    .blog-post-content {
+        color: #344054;
+        line-height: 1.75;
+        overflow-wrap: anywhere;
+    }
+
+    .blog-post-content > :first-child {
+        margin-top: 0;
+    }
+
+    .blog-post-content > :last-child {
+        margin-bottom: 0;
+    }
+
+    .blog-post-content h1,
+    .blog-post-content h2,
+    .blog-post-content h3,
+    .blog-post-content h4,
+    .blog-post-content h5,
+    .blog-post-content h6 {
+        color: #101828;
+        font-weight: 700;
+        line-height: 1.3;
+        margin: 1.5rem 0 0.75rem;
+    }
+
+    .blog-post-content p,
+    .blog-post-content ul,
+    .blog-post-content ol,
+    .blog-post-content blockquote,
+    .blog-post-content table {
+        margin-bottom: 1rem;
+    }
+
+    .blog-post-content ul,
+    .blog-post-content ol {
+        padding-left: 1.5rem;
+    }
+
+    .blog-post-content blockquote {
+        border-left: 4px solid #d0d5dd;
+        color: #667085;
+        margin-left: 0;
+        padding-left: 1rem;
+    }
+
+    .blog-post-content img {
+        border-radius: 0.75rem;
+        height: auto;
+        max-width: 100%;
+    }
+
+    .blog-post-content table {
+        width: 100%;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="content">
   <div class="container-xxl">
@@ -23,8 +83,8 @@
                     @if($blogPost->featured_image_url)
                         <img src="{{ $blogPost->featured_image_url }}" class="img-fluid rounded mb-3" alt="Featured image">
                     @endif
-                    <article class="prose">
-                        {!! nl2br(e($blogPost->body)) !!}
+                    <article class="blog-post-content">
+                        {!! $blogPost->body !!}
                     </article>
                 </div>
             </div>
@@ -43,13 +103,13 @@
                         <dd class="col-7 text-capitalize">{{ $blogPost->status }}</dd>
 
                         <dt class="col-5 text-muted">Category</dt>
-                        <dd class="col-7">{{ optional($blogPost->category)->name ?? '—' }}</dd>
+                        <dd class="col-7">{{ optional($blogPost->category)->name ?? '-' }}</dd>
 
                         <dt class="col-5 text-muted">Author</dt>
                         <dd class="col-7">{{ optional($blogPost->author)->name ?? 'System' }}</dd>
 
                         <dt class="col-5 text-muted">Published At</dt>
-                        <dd class="col-7">{{ $blogPost->published_at?->format('d M Y, H:i') ?? '—' }}</dd>
+                        <dd class="col-7">{{ $blogPost->published_at?->format('d M Y, H:i') ?? '-' }}</dd>
 
                         <dt class="col-5 text-muted">Created</dt>
                         <dd class="col-7">{{ $blogPost->created_at?->format('d M Y, H:i') }}</dd>
@@ -77,6 +137,5 @@
   </div>
 </div>
 @endsection
-
 
 

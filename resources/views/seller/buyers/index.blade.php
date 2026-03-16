@@ -24,7 +24,8 @@
                 </a>
             </div>
         </div>
-    @endif`r`n<div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-x-4 gap-y-4">
+    @endif
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-x-4 gap-y-4">
         <div class="col-span-12">
             {{-- Page Header --}}
             <div class="flex items-center justify-between mb-4">
@@ -108,19 +109,29 @@
                             </thead>
                             <tbody>
                                 @forelse ($buyers as $buyerData)
+                                    @php
+                                        $buyer = $buyerData['customer'];
+                                        $buyerThumb = $buyer?->avatarOrLogoUrl();
+                                    @endphp
                                     <tr>
                                         <td class="pl-4">
                                             <div class="flex items-center">
-                                                <div class="avatar avatar-sm mr-3">
-                                                    <img src="{{ $buyerData['customer']->get_gravatar(40) }}" 
-                                                         alt="{{ $buyerData['customer']->name }}" 
-                                                         class="rounded-full" 
-                                                         width="40" 
-                                                         height="40">
+                                                <div class="mr-3 shrink-0">
+                                                    @if ($buyerThumb)
+                                                        <img src="{{ $buyerThumb }}"
+                                                             alt="{{ $buyer->name }}"
+                                                             class="h-11 w-11 rounded-full object-cover ring-1 ring-slate-200"
+                                                             width="44"
+                                                             height="44">
+                                                    @else
+                                                        <div class="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold tracking-wide text-emerald-700 ring-1 ring-emerald-200">
+                                                            {{ $buyer?->avatarInitials() }}
+                                                        </div>
+                                                    @endif
                                                 </div>
                                                 <div>
-                                                    <div class="font-semibold">{{ $buyerData['customer']->name }}</div>
-                                                    <div class="text-slate-500 text-xs">{{ $buyerData['customer']->email }}</div>
+                                                    <div class="font-semibold">{{ $buyer->name }}</div>
+                                                    <div class="text-slate-500 text-xs">{{ $buyer->email }}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -137,7 +148,7 @@
                                             <span class="text-slate-500">{{ $buyerData['last_order_date']->format('M d, Y') }}</span>
                                         </td>
                                         <td class="text-center">
-                                            <a href="{{ route('seller.buyers.show', $buyerData['customer']->id) }}" 
+                                            <a href="{{ route('seller.buyers.show', $buyer->id) }}" 
                                                class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                                                 <i class="fas fa-eye mr-1"></i>
                                                 View Details
@@ -168,8 +179,6 @@
   </div>
 </section>
 @endsection 
-
-
 
 
 

@@ -24,6 +24,12 @@
     $disputesCount  = \App\Models\Dispute::where('seller_id', Auth::id())
                         ->where('status', \App\Models\Dispute::STATUS_PENDING)
                         ->count();
+    $unreadNotifications = \App\Models\Activity::where('user_id', Auth::id())
+        ->where('is_read', false)
+        ->count();
+    $myShopUrl = $shop && \Illuminate\Support\Facades\Route::has('shop.show')
+        ? route('shop.show', $shop->slug ?: $shop->getKey())
+        : route('seller.shop.create');
 
     // Grouped navigation
     $groups = [
@@ -32,7 +38,7 @@
         ],
         'Listings' => [
             ['route'=>'products.index','icon'=>'fas fa-box-open','label'=>'My Listings'],
-            ['route'=>'seller.deals.index','icon'=>'fas fa-percent','label'=>'Deals'],
+            ['route'=>'seller.deals.index','icon'=>'fas fa-percent','label'=>'%Deals'],
             // Shipping profiles removed from side menu per request
         ],
         'Sales' => [
@@ -43,19 +49,19 @@
         ],
         'Engagement' => [
             ['route'=>'seller.messages.index','icon'=>'fas fa-comments','label'=>'Messages','badge'=>$unreadMessages],
-            ['route'=>'seller.offers.index','icon'=>'fas fa-hand-holding-usd','label'=>'Offers','badge'=>$pendingOffers],
+            ['route'=>'seller.offers.index','icon'=>'fas fa-handshake','label'=>'Offers','badge'=>$pendingOffers],
             ['route'=>'buyer.favorites','icon'=>'fas fa-heart','label'=>'Favorites','badge'=>$myFavoritesCount],
             ['route'=>'seller.favorites.index','icon'=>'fas fa-store','label'=>'Shop Favorites','badge'=>$shopFavoritesCount],
-            ['route'=>'seller.notifications.index','icon'=>'fas fa-bell','label'=>'Notifications','badge'=>(\App\Models\Activity::where('user_id', Auth::id())->where('is_read', false)->count())],
+            ['route'=>'seller.notifications.index','icon'=>'fas fa-bell','label'=>'Notifications','badge'=>$unreadNotifications],
         ],
-         'Dispute' => [
-            ['route'=>'disputes.index','icon'=>'fas fa-exclamation-triangle','label'=>'Dispute','badge'=>$disputesCount],
+         'Disputes' => [
+            ['route'=>'disputes.index','icon'=>'fas fa-exclamation-triangle','label'=>'Disputes','badge'=>$disputesCount],
         ],
         'Shop & Settings' => [
-            ['route'=>'seller.shop.create','icon'=>'fas fa-store','label'=>'My Shop'],
+            ['href'=>$myShopUrl,'icon'=>'fas fa-store','label'=>'My Shop','activePatterns'=>['shop.show', 'seller.shops.*', 'seller.shop.create']],
             ['route'=>'seller.analytics.index','icon'=>'fas fa-chart-line','label'=>'Analytics'],
             ['route'=>'seller.reports.inventory','icon'=>'fas fa-boxes-stacked','label'=>'Inventory Report'],
-            ['route'=>'seller.subscription','icon'=>'fas fa-file-invoice','label'=>'Subscriptions'],
+            ['route'=>'seller.subscription','icon'=>'fas fa-file-invoice','label'=>'Subscription'],
             ['route'=>'seller.kyc','icon'=>'fas fa-id-card','label'=>'KYC'],
         ],
     ];
@@ -102,10 +108,13 @@
       <ul class="list-group mb-2">
         @foreach($items as $item)
           @php
-            $url = route($item['route']);
-            $isActive = str_starts_with($currentUrl, $url);
+            $routeName = $item['route'] ?? null;
+            $url = $item['href'] ?? ($routeName && \Illuminate\Support\Facades\Route::has($routeName) ? route($routeName) : null);
+            $activePatterns = (array) ($item['activePatterns'] ?? ($routeName ? [$routeName] : []));
+            $isActive = !empty($activePatterns) ? request()->routeIs(...$activePatterns) : ($url ? str_starts_with($currentUrl, $url) : false);
             $badge = $item['badge'] ?? null;
           @endphp
+          @continue(!$url)
           <li class="list-group-item {{ $isActive ? 'active' : '' }}">
             <a href="{{ $url }}" class="nav-item-link">
               <span class="icon"><i class="{{ $item['icon'] }}"></i></span>

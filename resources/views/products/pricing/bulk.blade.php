@@ -25,7 +25,7 @@
     @endif
 
     {{-- Filter/search (optional) --}}
-    <form method="GET" class="grid grid-cols-12 gap-4 gap-2 mb-3">
+    <form method="GET" class="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-12 sm:gap-4">
         <div class="sm:col-span-4">
             <input type="text" name="q" value="{{ request('q') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="Search product name">
         </div>
@@ -40,8 +40,8 @@
                 @endforeach
             </select>
         </div> --}}
-        <div class="col-auto">
-            <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">
+        <div class="sm:col-span-2 sm:self-end">
+            <button class="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto">
                 <i class="fa-solid fa-filter"></i> Filter
             </button>
         </div>
@@ -54,7 +54,7 @@
         {{-- Settings card --}}
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-3">
             <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 font-semibold">Update Settings</div>
-            <div class="p-4 sm:p-5 grid grid-cols-12 gap-4 gap-3 items-end">
+            <div class="grid grid-cols-1 gap-4 p-4 items-end sm:grid-cols-12 sm:p-5">
 
                 <div class="sm:col-span-2">
                     <label class="mb-1 block text-sm font-medium text-slate-700 mb-0 text-xs text-slate-500">Direction</label>
@@ -87,15 +87,15 @@
                 </div>
 
                 <div class="sm:col-span-4">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-start gap-2">
                         <input class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" type="checkbox" id="apply_all"
                                @change="setAll(true)" :checked="applyAll">
-                        <label class="text-sm text-slate-700" for="apply_all">Apply to ALL filtered products</label>
+                        <label class="text-sm leading-5 text-slate-700" for="apply_all">Apply to ALL filtered products</label>
                     </div>
-                    <div class="flex items-center gap-2 mt-1">
+                    <div class="mt-1 flex items-start gap-2">
                         <input class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" type="checkbox" id="apply_selected"
                                @change="setAll(false)" :checked="!applyAll">
-                        <label class="text-sm text-slate-700" for="apply_selected">Apply only to selected rows</label>
+                        <label class="text-sm leading-5 text-slate-700" for="apply_selected">Apply only to selected rows</label>
                     </div>
                     <div class="mt-1 text-xs text-slate-500">When "Apply to ALL" is on, row checkboxes are disabled.</div>
                 </div>
@@ -104,7 +104,7 @@
 
         {{-- Products list --}}
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 font-semibold flex justify-between">
+            <div class="flex flex-col gap-1 border-b border-slate-200 bg-slate-100 px-4 py-3 font-semibold sm:flex-row sm:items-center sm:justify-between">
                 <span>Active Products ({{ $products->count() }})</span>
                 <span class="text-xs text-slate-500">Showing 1–{{ $products->count() }} (only active listings are included)</span>
             </div>
@@ -344,5 +344,3 @@ function bulkPricer(shopId = 0){
 }
 </script>
 @endpush
-
-

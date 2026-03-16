@@ -232,9 +232,40 @@
                                     </thead>
                                     <tbody class="divide-y divide-slate-200">
                                         @foreach($orders as $o)
-                                            <tr>
+                                            @php
+                                                $primaryItem = $o->items->first();
+                                                $primaryProduct = optional($primaryItem)->product;
+                                                $thumbUrl = $primaryItem ? product_thumb_url($primaryProduct) : null;
+                                            @endphp
+                                            @php($orderUrl = route('seller.orders.show', $o))
+                                            <tr
+                                                class="cursor-pointer transition hover:bg-slate-50"
+                                                onclick="window.location.href='{{ $orderUrl }}'"
+                                                onkeydown="if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); window.location.href='{{ $orderUrl }}'; }"
+                                                tabindex="0"
+                                                role="link"
+                                                aria-label="View order #{{ $o->id }} details"
+                                            >
                                                 <td class="px-3 py-2 text-slate-900">#{{ $o->id }}</td>
-                                                <td class="px-3 py-2 text-slate-700">{{ optional($o->customer)->name ?? '-' }}</td>
+                                                <td class="px-3 py-2">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                                                            @if($thumbUrl)
+                                                                <img src="{{ $thumbUrl }}" alt="{{ $primaryProduct->name ?? 'Order item' }}" class="h-full w-full object-cover" loading="lazy">
+                                                            @else
+                                                                <div class="flex h-full w-full items-center justify-center text-slate-400">
+                                                                    <i class="fas fa-box-open"></i>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                        <div class="min-w-0">
+                                                            <p class="font-semibold text-slate-700">{{ optional($o->customer)->name ?? '-' }}</p>
+                                                            @if($primaryProduct)
+                                                                <p class="truncate text-xs text-slate-500">{{ $primaryProduct->name }}</p>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </td>
                                                 <td class="px-3 py-2 text-right font-semibold text-slate-900">{{ $currency }} {{ number_format((float)($o->total ?? $o->total_amount ?? 0), 2) }}</td>
                                                 <td class="px-3 py-2">
                                                     <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusTone($o->status) }}">
@@ -253,16 +284,47 @@
 
                             <div class="space-y-2 p-3 md:hidden">
                                 @foreach($orders as $o)
-                                    <div class="rounded-xl border border-slate-200 p-3">
-                                        <div class="flex items-center justify-between">
-                                            <p class="text-sm font-semibold text-slate-900">#{{ $o->id }}</p>
-                                            <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusTone($o->status) }}">
-                                                {{ $o->getSellerStatusLabel() }}
-                                            </span>
+                                    @php
+                                        $primaryItem = $o->items->first();
+                                        $primaryProduct = optional($primaryItem)->product;
+                                        $thumbUrl = $primaryItem ? product_thumb_url($primaryProduct) : null;
+                                    @endphp
+                                    <a
+                                        href="{{ route('seller.orders.show', $o) }}"
+                                        class="block rounded-xl border border-slate-200 p-3 transition hover:border-emerald-200 hover:bg-emerald-50/40 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                                        aria-label="View order #{{ $o->id }} details"
+                                    >
+                                        <div class="flex items-start gap-3">
+                                            <div class="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                                                @if($thumbUrl)
+                                                    <img src="{{ $thumbUrl }}" alt="{{ $primaryProduct->name ?? 'Order item' }}" class="h-full w-full object-cover" loading="lazy">
+                                                @else
+                                                    <div class="flex h-full w-full items-center justify-center text-slate-400">
+                                                        <i class="fas fa-box-open"></i>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-start justify-between gap-3">
+                                                    <div>
+                                                        <p class="text-sm font-semibold text-slate-900">#{{ $o->id }}</p>
+                                                        <p class="mt-1 text-xs text-slate-500">{{ optional($o->customer)->name ?? '-' }}</p>
+                                                        @if($primaryProduct)
+                                                            <p class="mt-1 truncate text-xs text-slate-500">{{ $primaryProduct->name }}</p>
+                                                        @endif
+                                                    </div>
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusTone($o->status) }}">
+                                                            {{ $o->getSellerStatusLabel() }}
+                                                        </span>
+                                                        <i class="fas fa-chevron-right text-xs text-slate-400" aria-hidden="true"></i>
+                                                    </div>
+                                                </div>
+                                                <p class="mt-1 text-sm font-bold text-slate-900">{{ $currency }} {{ number_format((float)($o->total ?? $o->total_amount ?? 0), 2) }}</p>
+                                                <p class="mt-1 text-[11px] text-slate-500">{{ $progressMessage($o) }}</p>
+                                            </div>
                                         </div>
-                                        <p class="mt-1 text-xs text-slate-500">{{ optional($o->customer)->name ?? '-' }}</p>
-                                        <p class="mt-1 text-sm font-bold text-slate-900">{{ $currency }} {{ number_format((float)($o->total ?? $o->total_amount ?? 0), 2) }}</p>
-                                    </div>
+                                    </a>
                                 @endforeach
                             </div>
                         @else
@@ -291,8 +353,8 @@
                                                         <p class="mt-1 text-xs text-slate-700">{{ \Illuminate\Support\Str::limit($r->comment, 120) }}</p>
                                                     @endif
                                                 </div>
-                                                <a href="{{ route('orders.chat.show', $r->order_id) }}" class="inline-flex rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100">
-                                                    Respond
+                                                <a href="{{ route('seller.reviews.index', ['respond' => $r->id]) }}#review-{{ $r->id }}" class="inline-flex rounded-lg border border-emerald-600 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
+                                                    {{ $r->seller_response ? 'Edit reply' : 'Public reply' }}
                                                 </a>
                                             </div>
                                         </li>
@@ -325,4 +387,3 @@
     </div>
 </section>
 @endsection
-

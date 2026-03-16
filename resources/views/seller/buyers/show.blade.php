@@ -24,8 +24,12 @@
                 </a>
             </div>
         </div>
-    @endif`r`n<div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-x-4 gap-y-4">
+    @endif
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-x-4 gap-y-4">
         <div class="col-span-12">
+            @php
+                $buyerThumb = $buyer->avatarOrLogoUrl();
+            @endphp
             {{-- Page Header --}}
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center">
@@ -47,11 +51,17 @@
                         <div class="p-4">
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                                 <div class="col-span-12 md:col-span-6 lg:col-span-3 text-center mb-3">
-                                    <img src="{{ $buyer->get_gravatar(100) }}" 
-                                         alt="{{ $buyer->name }}" 
-                                         class="rounded-full mb-3" 
-                                         width="100" 
-                                         height="100">
+                                    @if ($buyerThumb)
+                                        <img src="{{ $buyerThumb }}"
+                                             alt="{{ $buyer->name }}"
+                                             class="mx-auto mb-3 h-24 w-24 rounded-full object-cover ring-2 ring-slate-200"
+                                             width="96"
+                                             height="96">
+                                    @else
+                                        <div class="mx-auto mb-3 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 text-2xl font-semibold tracking-wide text-emerald-700 ring-2 ring-emerald-200">
+                                            {{ $buyer->avatarInitials() }}
+                                        </div>
+                                    @endif
                                 </div>
                                 <div class="col-span-12 md:col-span-9">
                                     <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
@@ -191,8 +201,6 @@
   </div>
 </section>
 @endsection 
-
-
 
 
 

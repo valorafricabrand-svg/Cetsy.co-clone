@@ -162,12 +162,8 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function get_gravatar($s = 40, $d = 'mm', $r = 'g', $img = false, $atts = [])
     {
-        $email = $this->email;
-        $url = 'https://www.gravatar.com/avatar/' . md5(strtolower(trim($email))) . "?s=$s&d=$d&r=$r";
-
-        if (!empty($this->photo)) {
-            $url = avatar_img_url($this->photo, $this->photo_storage);
-        }
+        $url = $this->uploadedAvatarUrl()
+            ?: 'https://www.gravatar.com/avatar/' . md5(strtolower(trim((string) $this->email))) . "?s=$s&d=$d&r=$r";
 
         if ($img) {
             $attributes = '';
@@ -178,6 +174,53 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $url;
+    }
+
+    public function uploadedAvatarUrl(): ?string
+    {
+        if (empty($this->photo)) {
+            return null;
+        }
+
+        $url = avatar_img_url($this->photo, $this->photo_storage ?: 'public');
+
+        return $url !== '' ? $url : null;
+    }
+
+    public function avatarOrLogoUrl(): ?string
+    {
+        if ($avatarUrl = $this->uploadedAvatarUrl()) {
+            return $avatarUrl;
+        }
+
+        $shopLogoUrl = $this->shop?->logo_url;
+
+        return !empty($shopLogoUrl) ? $shopLogoUrl : null;
+    }
+
+    public function avatarInitials(): string
+    {
+        $label = trim((string) ($this->name ?: $this->email ?: '?'));
+        $parts = preg_split('/\s+/', $label, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $initials = '';
+        $letters = 0;
+
+        foreach ($parts as $part) {
+            $initial = function_exists('mb_substr') ? mb_substr($part, 0, 1) : substr($part, 0, 1);
+            $initials .= strtoupper((string) $initial);
+            $letters++;
+
+            if ($letters >= 2) {
+                break;
+            }
+        }
+
+        if ($initials === '') {
+            $initial = function_exists('mb_substr') ? mb_substr($label, 0, 1) : substr($label, 0, 1);
+            $initials = strtoupper((string) $initial ?: '?');
+        }
+
+        return $initials;
     }
 
     public function favorites()

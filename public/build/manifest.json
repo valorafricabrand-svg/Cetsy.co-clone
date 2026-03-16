@@ -1,11 +1,11 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-CrAEcuCP.css",
+    "file": "assets/app-BDmJAcuk.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/css/landing.css": {
-    "file": "assets/landing-CsKTylHD.css",
+    "file": "assets/landing-Bv8Tklf7.css",
     "src": "resources/css/landing.css",
     "isEntry": true
   },
@@ -19,6 +19,12 @@
     "file": "assets/landing-BwBNYA-D.js",
     "name": "landing",
     "src": "resources/js/landing.js",
+    "isEntry": true
+  },
+  "resources/js/seller-analytics.js": {
+    "file": "assets/seller-analytics-BHxypzVl.js",
+    "name": "seller-analytics",
+    "src": "resources/js/seller-analytics.js",
     "isEntry": true
   }
 }

@@ -4,48 +4,139 @@
 @push('styles')
 <style>
     .glass {
-        background: rgba(255,255,255,.8);
-        backdrop-filter: blur(6px);
-        border: 1px solid rgba(0,0,0,.05);
+        background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.98));
+        border: 1px solid var(--analytics-border);
+        box-shadow: var(--analytics-shadow);
         transition: transform .2s ease, box-shadow .2s ease;
     }
     .glass:hover {
         transform: translateY(-2px);
-        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+        box-shadow: 0 1.25rem 2.5rem rgba(15,23,42,.14);
     }
     :root {
         --brand: {{ optional(auth()->user()->shop)->primary_color && preg_match('/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/', auth()->user()->shop->primary_color) ? auth()->user()->shop->primary_color : '#27b105' }};
+        --analytics-surface: #ffffff;
+        --analytics-surface-soft: #f8fafc;
+        --analytics-border: rgba(148,163,184,.28);
+        --analytics-text: #0f172a;
+        --analytics-muted: #475569;
+        --analytics-subtle: #64748b;
+        --analytics-grid: rgba(148,163,184,.18);
+        --analytics-shadow: 0 1rem 2.5rem rgba(15,23,42,.08);
+        color-scheme: light;
+    }
+    .analytics-shell {
+        color: var(--analytics-text);
     }
     .analytics-icon {
-        width: 56px;
-        height: 56px;
-        background: linear-gradient(135deg,#e9ecef,#fff);
-        box-shadow: 0 2px 6px rgba(0,0,0,.1);
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(180deg,#ffffff,#f1f5f9);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0.75rem 1.5rem rgba(15,23,42,.08);
         border-radius: 50%;
         border: 2px solid var(--brand);
     }
     .analytics-icon i { color: var(--brand) !important; }
-    .range-label { font-size: .825rem; color: #64748b; }
+    .range-label { font-size: .825rem; color: var(--analytics-muted); font-weight: 500; }
+    .analytics-chip {
+        border-color: var(--analytics-border);
+        background: var(--analytics-surface-soft);
+        color: var(--analytics-text);
+    }
+    .analytics-panel-title {
+        color: var(--analytics-text);
+    }
+    .analytics-panel-subtle {
+        color: var(--analytics-subtle);
+    }
+    .analytics-table thead {
+        background: var(--analytics-surface-soft);
+        color: var(--analytics-muted);
+    }
+    .analytics-table tbody {
+        color: var(--analytics-text);
+    }
+    .analytics-table tbody tr {
+        border-color: rgba(226,232,240,.85);
+    }
+    .analytics-select,
+    .analytics-date {
+        border-color: rgba(148,163,184,.45);
+        background: #fff;
+        color: var(--analytics-text);
+        box-shadow: 0 1px 2px rgba(15,23,42,.04);
+    }
+    .analytics-select:focus,
+    .analytics-date:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 4px rgba(16,185,129,.12);
+    }
+    .analytics-toggle {
+        border-color: rgba(148,163,184,.35);
+        background: rgba(248,250,252,.9);
+    }
+    .analytics-toggle button {
+        color: var(--analytics-muted);
+    }
+    .analytics-summary-row {
+        background: linear-gradient(180deg, rgba(248,250,252,.92), rgba(255,255,255,.96));
+        border-top: 1px solid rgba(226,232,240,.9);
+        border-bottom: 1px solid rgba(226,232,240,.9);
+    }
+    .analytics-summary-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        border-radius: 9999px;
+        border: 1px solid rgba(148,163,184,.24);
+        background: #fff;
+        padding: .5rem .85rem;
+        font-size: .8125rem;
+        font-weight: 700;
+        color: var(--analytics-text);
+        box-shadow: 0 1px 2px rgba(15,23,42,.04);
+    }
+    .analytics-chart-stage {
+        position: relative;
+        min-height: 18rem;
+    }
+    .analytics-chart-empty {
+        border: 1px dashed rgba(148,163,184,.45);
+        border-radius: 1rem;
+        background: rgba(248,250,252,.96);
+        padding: 2rem 1.25rem;
+        text-align: center;
+    }
+    .analytics-chart-empty p:first-child {
+        margin: 0;
+        color: var(--analytics-text);
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    .analytics-chart-empty p:last-child {
+        margin: .4rem 0 0;
+        color: var(--analytics-muted);
+        font-size: .925rem;
+    }
     #chartToggle button.active {
         background: var(--brand);
         border-color: var(--brand);
         color: #fff;
     }
-    @media (prefers-color-scheme: dark) {
-        .glass {
-            background: rgba(35,35,35,.55);
-            border-color: rgba(255,255,255,.1);
+    @media (max-width: 640px) {
+        .analytics-summary-pill {
+            width: 100%;
+            justify-content: space-between;
         }
-        .analytics-icon {
-            background: linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.05));
-            box-shadow: 0 2px 6px rgba(0,0,0,.4);
+        .analytics-chart-stage {
+            min-height: 15.5rem;
         }
     }
 </style>
 @endpush
 
 @section('main')
-<section class="bg-slate-50 py-8 md:py-10">
+<section class="analytics-shell bg-slate-50 py-8 md:py-10">
   <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
     <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
       @include('seller.partials.sidebar')
@@ -53,13 +144,13 @@
       <div class="space-y-6">
         <div class="mb-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Analytics Dashboard</h1>
-            <p class="mt-1 text-sm text-slate-500">Monitor your shop performance at a glance.</p>
+            <h1 class="text-3xl font-semibold tracking-tight text-slate-950">Analytics Dashboard</h1>
+            <p class="mt-1 text-sm text-slate-600">Monitor your shop performance at a glance.</p>
             <div class="range-label">Range: <strong>{{ $rangeLabel }}</strong></div>
           </div>
 
           <form method="GET" class="flex flex-col gap-2 sm:flex-row sm:items-center" id="rangeForm">
-            <select name="range" id="rangeSelect" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 sm:w-auto sm:min-w-[180px]">
+            <select name="range" id="rangeSelect" class="analytics-select w-full rounded-xl border px-3 py-2 text-sm focus:outline-none sm:w-auto sm:min-w-[180px]">
               <option value="today" {{ $range=='today' ? 'selected' : '' }}>Today</option>
               <option value="yesterday" {{ $range=='yesterday' ? 'selected' : '' }}>Yesterday</option>
               <option value="week" {{ $range=='week' ? 'selected' : '' }}>Last 7 Days</option>
@@ -72,9 +163,9 @@
             </select>
 
             <div id="customRange" class="{{ $range!='custom' ? 'hidden' : 'flex' }} items-center gap-2">
-              <input type="date" name="start" value="{{ $startDate }}" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
-              <span class="text-slate-500">to</span>
-              <input type="date" name="end" value="{{ $endDate }}" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+              <input type="date" name="start" value="{{ $startDate }}" class="analytics-date rounded-xl border px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none">
+              <span class="text-slate-600">to</span>
+              <input type="date" name="end" value="{{ $endDate }}" class="analytics-date rounded-xl border px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none">
               <button class="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700" type="submit">Apply</button>
             </div>
           </form>
@@ -99,31 +190,52 @@
         </div>
 
         <div class="mb-4 flex flex-wrap gap-2">
-          <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-50 text-slate-900">Best Day: <strong class="ml-1">{{ $bestDay ? date('M j, Y', strtotime($bestDay)) : '-' }}</strong> <span class="ml-1">({{ shop_currency() }} {{ number_format($bestRevenue,2) }})</span></span>
-          <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-50 text-slate-900">Avg Daily Revenue: <strong class="ml-1">{{ shop_currency() }} {{ number_format($avgDailyRevenue,2) }}</strong></span>
-          <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-50 text-slate-900">Overall Conversion: <strong class="ml-1">{{ number_format($overallConversion,2) }}%</strong></span>
+          <span class="analytics-chip inline-flex items-center rounded-full border px-3 py-2 text-sm font-semibold">Best Day <strong class="ml-1">{{ $bestDay ? date('M j, Y', strtotime($bestDay)) : '-' }}</strong> <span class="ml-1">({{ shop_currency() }} {{ number_format($bestRevenue,2) }})</span></span>
+          <span class="analytics-chip inline-flex items-center rounded-full border px-3 py-2 text-sm font-semibold">Avg Daily Revenue <strong class="ml-1">{{ shop_currency() }} {{ number_format($avgDailyRevenue,2) }}</strong></span>
+          <span class="analytics-chip inline-flex items-center rounded-full border px-3 py-2 text-sm font-semibold">Overall Conversion <strong class="ml-1">{{ number_format($overallConversion,2) }}%</strong></span>
         </div>
 
         <div class="mb-5 rounded-2xl border border-slate-200 bg-white shadow-sm glass">
-          <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <h6 class="mb-0 font-semibold"><i class="fas fa-chart-area mr-2" style="color:var(--brand)"></i>Revenue &amp; Orders</h6>
-            <div id="chartToggle" class="inline-flex items-center gap-1 rounded-xl border border-slate-300 p-1 text-xs" role="group">
+          <div class="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h6 class="analytics-panel-title mb-0 font-semibold"><i class="fas fa-chart-area mr-2" style="color:var(--brand)"></i>Revenue &amp; Orders</h6>
+              <p class="analytics-panel-subtle mt-1 text-sm">Shows daily paid revenue and the number of paid orders for <span class="font-semibold text-slate-900">{{ $rangeLabel }}</span>.</p>
+            </div>
+            <div id="chartToggle" class="analytics-toggle inline-flex items-center gap-1 rounded-xl border p-1 text-xs" role="group">
               <button type="button" class="active inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-target="revenue">Revenue</button>
               <button type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-target="orders">Orders</button>
             </div>
           </div>
+          <div class="analytics-summary-row px-4 py-3">
+            <div class="flex flex-wrap gap-2">
+              <span class="analytics-summary-pill">Revenue in range <strong>{{ shop_currency() }} {{ number_format($kpi->total_sales,2) }}</strong></span>
+              <span class="analytics-summary-pill">Paid orders <strong>{{ number_format($kpi->total_orders) }}</strong></span>
+            </div>
+          </div>
           <div class="p-4">
-            <canvas id="revenueChart" class="h-72 w-full"></canvas>
-            <canvas id="ordersChart" class="hidden h-72 w-full"></canvas>
+            <div id="chartMessage" class="analytics-chart-empty hidden"></div>
+            <div id="chartCanvasWrap" class="analytics-chart-stage">
+              <canvas id="revenueChart" class="h-72 w-full"></canvas>
+              <canvas id="ordersChart" class="hidden h-72 w-full"></canvas>
+            </div>
+            <noscript>
+              <div class="analytics-chart-empty mt-4">
+                <p>Charts need JavaScript enabled.</p>
+                <p>Revenue tracks paid sales totals per day, and Orders tracks the paid order count per day.</p>
+              </div>
+            </noscript>
           </div>
         </div>
 
         <div class="mb-5 rounded-2xl border border-slate-200 bg-white shadow-sm glass">
           <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <h6 class="mb-0 font-semibold"><i class="fas fa-calendar-week mr-2" style="color:var(--brand)"></i>Sales by Day of Week</h6>
+            <h6 class="analytics-panel-title mb-0 font-semibold"><i class="fas fa-calendar-week mr-2" style="color:var(--brand)"></i>Sales by Day of Week</h6>
           </div>
           <div class="p-4">
-            <canvas id="dowChart" class="h-64 w-full"></canvas>
+            <div id="dowMessage" class="analytics-chart-empty hidden"></div>
+            <div id="dowChartWrap" class="analytics-chart-stage min-h-[16rem]">
+              <canvas id="dowChart" class="h-64 w-full"></canvas>
+            </div>
           </div>
         </div>
 
@@ -131,13 +243,13 @@
           <div>
             <div class="glass h-full rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 font-semibold">
-                <span><i class="fas fa-ranking-star mr-2" style="color:var(--brand)"></i>Top Products</span>
+                <span class="analytics-panel-title"><i class="fas fa-ranking-star mr-2" style="color:var(--brand)"></i>Top Products</span>
                 <button type="button" id="exportTopCsv" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"><i class="fas fa-file-csv mr-1"></i>Export</button>
               </div>
               <div class="p-0">
                 <div class="overflow-x-auto">
-                  <table id="topProductsTable" class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead class="bg-slate-50 text-slate-600">
+                  <table id="topProductsTable" class="analytics-table min-w-full divide-y divide-slate-200 text-sm">
+                    <thead>
                       <tr>
                         <th class="px-4 py-3 text-left">Product</th>
                         <th class="px-4 py-3 text-right">Qty</th>
@@ -162,7 +274,7 @@
                           <td class="px-4 py-3 text-right">{{ shop_currency() }} {{ number_format($p->revenue,2) }}</td>
                         </tr>
                       @empty
-                        <tr><td colspan="3" class="py-4 text-center text-slate-500">No products in this range.</td></tr>
+                        <tr><td colspan="3" class="analytics-panel-subtle py-4 text-center">No products in this range.</td></tr>
                       @endforelse
                     </tbody>
                   </table>
@@ -174,13 +286,13 @@
           <div>
             <div class="glass h-full rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 font-semibold">
-                <span><i class="fas fa-bolt mr-2" style="color:var(--brand)"></i>Listing Performance</span>
+                <span class="analytics-panel-title"><i class="fas fa-bolt mr-2" style="color:var(--brand)"></i>Listing Performance</span>
                 <button type="button" id="exportPerfCsv" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"><i class="fas fa-file-csv mr-1"></i>Export</button>
               </div>
               <div class="p-0">
                 <div class="overflow-x-auto">
-                  <table id="performanceTable" class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead class="bg-slate-50 text-slate-600">
+                  <table id="performanceTable" class="analytics-table min-w-full divide-y divide-slate-200 text-sm">
+                    <thead>
                       <tr>
                         <th class="px-4 py-3 text-left">Product</th>
                         <th class="px-4 py-3 text-right">Views</th>
@@ -203,11 +315,11 @@
                             <div class="h-1.5 w-full rounded-full bg-slate-100">
                               <div class="h-1.5 rounded-full {{ $bar }}" style="width: {{ $width }}%" title="{{ number_format($conv, 2) }}%"></div>
                             </div>
-                            <span class="text-xs text-slate-500">{{ $conv }}%</span>
+                            <span class="analytics-panel-subtle text-xs">{{ $conv }}%</span>
                           </td>
                         </tr>
                       @empty
-                        <tr><td colspan="4" class="py-4 text-center text-slate-500">No listing activity in this range.</td></tr>
+                        <tr><td colspan="4" class="analytics-panel-subtle py-4 text-center">No listing activity in this range.</td></tr>
                       @endforelse
                     </tbody>
                   </table>
@@ -223,161 +335,16 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
 <script>
-(() => {
-    const BRAND = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#27b105';
-
-    const rangeSelect = document.getElementById('rangeSelect');
-    const customRange = document.getElementById('customRange');
-    rangeSelect?.addEventListener('change', () => {
-        const isCustom = rangeSelect.value === 'custom';
-        customRange.classList.toggle('hidden', !isCustom);
-        customRange.classList.toggle('flex', isCustom);
-        if (!isCustom) {
-            rangeSelect.form.submit();
-        }
-    });
-
-    const labels = @json($chart['labels']);
-    const revenue = @json($chart['revenue']);
-    const orders = @json($chart['orders']);
-    const dowLabels = @json($dowLabels ?? []);
-    const dowSeries = @json($dowSeries ?? []);
-
-    const gradient = (ctx, color) => {
-        const g = ctx.createLinearGradient(0, 0, 0, 200);
-        g.addColorStop(0, `${color}CC`);
-        g.addColorStop(1, `${color}00`);
-        return g;
-    };
-
-    const revCtx = document.getElementById('revenueChart')?.getContext('2d');
-    const ordCtx = document.getElementById('ordersChart')?.getContext('2d');
-    if (!revCtx || !ordCtx) return;
-
-    const revenueChart = new Chart(revCtx, {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Revenue',
-                data: revenue,
-                backgroundColor: gradient(revCtx, BRAND),
-                borderColor: BRAND,
-                borderWidth: 1
-            }]
-        },
-        options: {
-            maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() } } },
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw.toLocaleString()}` } } }
-        }
-    });
-
-    const ordersChart = new Chart(ordCtx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Orders',
-                data: orders,
-                borderColor: BRAND,
-                backgroundColor: 'transparent',
-                borderWidth: 2,
-                tension: .3,
-                pointRadius: 3
-            }]
-        },
-        options: {
-            maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true } },
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw } } }
-        }
-    });
-
-    document.querySelectorAll('#chartToggle button').forEach(btn => {
-        btn.addEventListener('click', e => {
-            document.querySelectorAll('#chartToggle button').forEach(b => b.classList.remove('active'));
-            e.currentTarget.classList.add('active');
-
-            const target = e.currentTarget.dataset.target;
-            const revenueCanvas = document.getElementById('revenueChart');
-            const ordersCanvas = document.getElementById('ordersChart');
-
-            revenueCanvas.classList.toggle('hidden', target !== 'revenue');
-            ordersCanvas.classList.toggle('hidden', target !== 'orders');
-
-            requestAnimationFrame(() => {
-                revenueChart.resize();
-                ordersChart.resize();
-            });
-        });
-    });
-
-    if (dowLabels.length && dowSeries.length) {
-        const ctx = document.getElementById('dowChart')?.getContext('2d');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: dowLabels,
-                    datasets: [{ data: dowSeries, backgroundColor: gradient(ctx, BRAND), borderColor: BRAND, borderWidth: 1 }]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() } } }
-                }
-            });
-        }
-    }
-
-    function createSpark(id, data, color) {
-        const el = document.getElementById(id);
-        if (!el) return;
-
-        const ctx = el.getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.map((_, i) => i + 1),
-                datasets: [{ data, borderColor: color, pointRadius: 0, borderWidth: 2, tension: .35, fill: false }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                scales: { x: { display: false }, y: { display: false } }
-            }
-        });
-    }
-
-    const aovSeries = labels.map((_, i) => (orders[i] > 0 ? revenue[i] / orders[i] : 0));
-    const lastN = (arr, n) => arr.slice(Math.max(0, arr.length - n));
-    createSpark('sparkRevenue', lastN(revenue, 30), BRAND);
-    createSpark('sparkOrders', lastN(orders, 30), BRAND);
-    createSpark('sparkAov', lastN(aovSeries, 30), BRAND);
-
-    function tableToCSV(tableId, filename) {
-        const rows = Array.from(document.querySelectorAll(`#${tableId} tr`));
-        const csv = rows
-            .map(tr => Array.from(tr.querySelectorAll('th,td')).map(td => {
-                const t = td.innerText.replace(/\s+/g, ' ').trim();
-                return `"${t.replaceAll('"', '""')}"`;
-            }).join(','))
-            .join('\n');
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(a.href);
-    }
-
-    document.getElementById('exportTopCsv')?.addEventListener('click', () => tableToCSV('topProductsTable', 'top-products.csv'));
-    document.getElementById('exportPerfCsv')?.addEventListener('click', () => tableToCSV('performanceTable', 'listing-performance.csv'));
-})();
+window.__sellerAnalytics = {
+    brand: getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#27b105',
+    currency: @json(shop_currency()),
+    labels: @json($chart['labels']),
+    revenue: @json($chart['revenue']),
+    orders: @json($chart['orders']),
+    dowLabels: @json($dowLabels ?? []),
+    dowSeries: @json($dowSeries ?? []),
+};
 </script>
+@vite('resources/js/seller-analytics.js')
 @endpush

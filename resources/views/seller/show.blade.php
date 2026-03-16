@@ -8,7 +8,8 @@
     <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
       @include('seller.partials.sidebar')
       <div class="space-y-6">
-<div class="mx-auto w-full max-w-7xl px-4 sm:px-6 mt-4">`r`n<div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+<div class="mx-auto w-full max-w-7xl px-4 sm:px-6 mt-4">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
         <div class="col-span-6">
             <h2 class="mb-3">{{ $product->name }}</h2>
             <div class="mb-3">
@@ -61,7 +62,6 @@
   </div>
 </section>
 @endsection 
-
 
 
 

@@ -937,14 +937,26 @@
 
                 @if($isSellerUser)
                     @php
+                        $sellerShop = auth()->user()?->shop;
+                        $sellerShopUrl = $sellerShop
+                            ? route('shop.show', $sellerShop->slug ?: $sellerShop->getKey())
+                            : route('seller.shop.create');
                         $sellerDrawerLinks = [
                             ['route' => 'seller.dashboard', 'icon' => 'fas fa-tachometer-alt', 'label' => 'Seller Dashboard'],
-                            ['route' => 'products.index', 'icon' => 'fas fa-box-open', 'label' => 'Listings'],
-                            ['route' => 'seller.orders.index', 'icon' => 'fas fa-receipt', 'label' => 'Orders'],
+                            ['route' => 'products.index', 'icon' => 'fas fa-box-open', 'label' => 'My Listings'],
+                            ['route' => 'seller.deals.index', 'icon' => 'fas fa-percent', 'label' => '%Deals'],
+                            ['route' => 'seller.orders.index', 'icon' => 'fas fa-shopping-cart', 'label' => 'Shop Orders'],
+                            ['route' => 'seller.reviews.index', 'icon' => 'fas fa-star', 'label' => 'Reviews'],
                             ['route' => 'account.orders', 'icon' => 'fas fa-bag-shopping', 'label' => 'My Orders'],
                             ['route' => 'seller.messages.index', 'icon' => 'fas fa-comments', 'label' => 'Messages'],
                             ['route' => 'seller.offers.index', 'icon' => 'fas fa-handshake', 'label' => 'Offers'],
+                            ['route' => 'buyer.favorites', 'icon' => 'fas fa-heart', 'label' => 'Favorites'],
+                            ['route' => 'seller.favorites.index', 'icon' => 'fas fa-store', 'label' => 'Shop Favorites'],
+                            ['route' => 'seller.notifications.index', 'icon' => 'fas fa-bell', 'label' => 'Notifications'],
+                            ['route' => 'disputes.index', 'icon' => 'fas fa-exclamation-triangle', 'label' => 'Disputes'],
+                            ['href' => $sellerShopUrl, 'icon' => 'fas fa-store', 'label' => 'My Shop'],
                             ['route' => 'seller.analytics.index', 'icon' => 'fas fa-chart-line', 'label' => 'Analytics'],
+                            ['route' => 'seller.reports.inventory', 'icon' => 'fas fa-boxes-stacked', 'label' => 'Inventory Report'],
                             ['route' => 'seller.payouts.index', 'icon' => 'fas fa-money-bill-wave', 'label' => 'Payouts'],
                             ['route' => 'seller.subscription', 'icon' => 'fas fa-file-invoice', 'label' => 'Subscription'],
                             ['route' => 'seller.kyc', 'icon' => 'fas fa-id-card', 'label' => 'KYC'],
@@ -955,8 +967,12 @@
                         <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Seller Menu</div>
                         <div class="space-y-1.5">
                             @foreach($sellerDrawerLinks as $sellerItem)
-                                @continue(!\Illuminate\Support\Facades\Route::has($sellerItem['route']))
-                                <a href="{{ route($sellerItem['route']) }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                @php
+                                    $sellerRouteName = $sellerItem['route'] ?? null;
+                                    $sellerHref = $sellerItem['href'] ?? ($sellerRouteName && \Illuminate\Support\Facades\Route::has($sellerRouteName) ? route($sellerRouteName) : null);
+                                @endphp
+                                @continue(!$sellerHref)
+                                <a href="{{ $sellerHref }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                                     <span><i class="{{ $sellerItem['icon'] }} mr-2"></i>{{ $sellerItem['label'] }}</span>
                                 </a>
                             @endforeach
@@ -1612,21 +1628,62 @@
 
             (function () {
                 var mobileQuery = window.matchMedia('(max-width: 1023.98px)');
+                var mobileNavSelectors = [
+                    'nav[aria-label="Mobile Bottom Navigation"]',
+                    '[data-seller-mobile-nav-root] > nav',
+                    '.mobile-bottom-nav'
+                ];
+
+                function getVisibleMobileNavHeight() {
+                    if (!mobileQuery.matches) return null;
+
+                    var tallestNav = 0;
+
+                    mobileNavSelectors.forEach(function (selector) {
+                        document.querySelectorAll(selector).forEach(function (mobileNav) {
+                            var style = window.getComputedStyle(mobileNav);
+                            if (style.display === 'none' || style.visibility === 'hidden') return;
+
+                            var navHeight = Math.ceil(mobileNav.getBoundingClientRect().height || mobileNav.offsetHeight || 0);
+                            if (navHeight > tallestNav) {
+                                tallestNav = navHeight;
+                            }
+                        });
+                    });
+
+                    return tallestNav > 0 ? tallestNav : null;
+                }
 
                 function getMobileBottomOffset() {
-                    if (!mobileQuery.matches) return null;
-                    var mobileNav = document.querySelector('nav[aria-label="Mobile Bottom Navigation"]');
-                    if (!mobileNav) return null;
+                    var navHeight = getVisibleMobileNavHeight();
+                    if (!navHeight) return null;
 
-                    var navHeight = Math.ceil(mobileNav.getBoundingClientRect().height || 0);
-                    if (navHeight <= 0) return null;
+                    return 'calc(' + (navHeight + 16) + 'px + env(safe-area-inset-bottom, 0px))';
+                }
 
-                    return 'calc(' + (navHeight + 8) + 'px + env(safe-area-inset-bottom, 0px))';
+                function updateTawkNodeBottom(node, bottomOffset) {
+                    var style = window.getComputedStyle(node);
+                    if (style.position !== 'fixed') return;
+
+                    if (bottomOffset) {
+                        if (!node.hasAttribute('data-cetsy-tawk-bottom') && node.style.bottom) {
+                            node.setAttribute('data-cetsy-tawk-bottom', node.style.bottom);
+                        }
+                        node.style.setProperty('bottom', bottomOffset, 'important');
+                        return;
+                    }
+
+                    if (node.hasAttribute('data-cetsy-tawk-bottom')) {
+                        node.style.setProperty('bottom', node.getAttribute('data-cetsy-tawk-bottom'));
+                        node.removeAttribute('data-cetsy-tawk-bottom');
+                        return;
+                    }
+
+                    node.style.removeProperty('bottom');
                 }
 
                 function applyTawkMobileOffset() {
                     var bottomOffset = getMobileBottomOffset();
-                    if (!bottomOffset) return;
 
                     var selectors = [
                         'iframe[src*="tawk"]',
@@ -1640,9 +1697,7 @@
                     ].join(',');
 
                     document.querySelectorAll(selectors).forEach(function (node) {
-                        var style = window.getComputedStyle(node);
-                        if (style.position !== 'fixed') return;
-                        node.style.setProperty('bottom', bottomOffset, 'important');
+                        updateTawkNodeBottom(node, bottomOffset);
                     });
                 }
 
@@ -1688,4 +1743,3 @@
     @stack('scripts')
 </body>
 </html>
-

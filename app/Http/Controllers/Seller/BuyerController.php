@@ -28,7 +28,7 @@ class BuyerController extends Controller
         $orders = Order::whereHas('items.product', function ($query) use ($user) {
             $query->where('shop_id', $user->shop->id);
         })
-        ->with(['customer', 'items.product'])
+        ->with(['customer.shop', 'items.product'])
         ->orderBy('created_at', 'desc')
         ->get();
 
@@ -68,7 +68,7 @@ class BuyerController extends Controller
                 ->with('warning', 'Please create a shop to continue.');
         }
 
-        $buyer = User::findOrFail($buyerId);
+        $buyer = User::with('shop')->findOrFail($buyerId);
 
         // Get all orders from this buyer that contain products from this seller's shop
         $orders = Order::where('user_id', $buyerId)

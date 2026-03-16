@@ -27,6 +27,11 @@ class ReviewController extends Controller
         $ratingFilter = $request->filled('rating') ? (int) $request->input('rating') : null;
         $perPage = (int) $request->input('per_page', 15);
         $perPage = $perPage > 0 ? min($perPage, 100) : 15;
+        $respondReviewId = $request->filled('respond') ? (int) $request->input('respond') : null;
+
+        if ($respondReviewId && ! Review::where('shop_id', $shop->id)->whereKey($respondReviewId)->exists()) {
+            $respondReviewId = null;
+        }
 
         $baseQuery = Review::with([
                 // Load related order and listing product
@@ -83,6 +88,7 @@ class ReviewController extends Controller
             'search'       => $search,
             'ratingFilter' => $ratingFilter,
             'perPage'      => $perPage,
+            'respondReviewId' => $respondReviewId,
         ]);
     }
 

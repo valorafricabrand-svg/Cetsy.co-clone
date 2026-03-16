@@ -138,16 +138,58 @@ function subscription_grace_days(): int
     }
 }
 
-    function avatar_img_url( $source, $img = null){
-      $url_path = '';
-      if ($img){
-        if ($source == 'public'){
-          $url_path = asset('storage/uploads/photos/'.$img);
-        }elseif ($source == 's3'){
-          $url_path = \Illuminate\Support\Facades\Storage::disk('s3')->url('uploads/avatar/'.$img);
+    function avatar_img_url($path, $storage = null){
+      if (!$path) {
+        return '';
+      }
+
+      $path = trim((string) $path);
+      if ($path === '') {
+        return '';
+      }
+
+      $storage = $storage ? trim((string) $storage) : null;
+
+      // Backward compatibility for any old calls that passed storage first.
+      if (in_array($path, ['public', 's3'], true) && !in_array((string) $storage, ['public', 's3'], true)) {
+        [$path, $storage] = [(string) $storage, $path];
+      }
+
+      if ($path === '') {
+        return '';
+      }
+
+      if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '//')) {
+        return $path;
+      }
+
+      $rel = storage_rel_path($path) ?? ltrim($path, '/');
+
+      if ($storage === 's3') {
+        try {
+          return \Illuminate\Support\Facades\Storage::disk('s3')->url($rel);
+        } catch (\Throwable $e) {
+          return '';
         }
       }
-      return $url_path;
+
+      try {
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($rel)) {
+          return \Illuminate\Support\Facades\Storage::disk('public')->url($rel);
+        }
+      } catch (\Throwable $e) {}
+
+      $basename = basename($rel);
+      foreach (['profile-photos', 'avatars', 'uploads/photos', 'uploads/avatar'] as $dir) {
+        $candidate = $dir . '/' . $basename;
+        try {
+          if (\Illuminate\Support\Facades\Storage::disk('public')->exists($candidate)) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->url($candidate);
+          }
+        } catch (\Throwable $e) {}
+      }
+
+      return asset('storage/' . ltrim($rel ?: $path, '/'));
     }
 
     function get_option($option_key = ''){

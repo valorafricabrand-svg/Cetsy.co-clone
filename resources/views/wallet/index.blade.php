@@ -26,6 +26,86 @@
     font-weight: 600;
     color: #334155;
   }
+  .wallet-overview-hero {
+    margin-bottom: 1.5rem;
+    border: 1px solid #d1fae5;
+    border-radius: 1.5rem;
+    background:
+      radial-gradient(circle at top right, rgba(16, 185, 129, 0.16), transparent 34%),
+      linear-gradient(135deg, #f8fffc 0%, #ffffff 62%, #ecfdf5 100%);
+    box-shadow: 0 18px 40px -32px rgba(15, 23, 42, 0.45);
+    padding: 1.25rem;
+  }
+  .wallet-overview-hero__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .wallet-overview-hero__eyebrow {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #059669;
+  }
+  .wallet-overview-hero__title {
+    margin-top: .35rem;
+    font-size: 1.75rem;
+    line-height: 1.1;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .wallet-overview-hero__text {
+    margin-top: .5rem;
+    max-width: 34rem;
+    font-size: .95rem;
+    color: #475569;
+  }
+  .wallet-overview-actions {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+  }
+  .wallet-overview-actions__row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+  }
+  .wallet-overview-actions__row > :only-child {
+    grid-column: 1 / -1;
+  }
+  .wallet-overview-action {
+    min-height: 3rem;
+    width: 100%;
+    white-space: nowrap;
+  }
+  .wallet-overview-action[disabled] {
+    cursor: not-allowed;
+    opacity: .55;
+  }
+  @media (min-width: 768px) {
+    .wallet-overview-hero {
+      padding: 1.5rem;
+    }
+    .wallet-overview-hero__inner {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+    .wallet-overview-actions {
+      width: min(100%, 31rem);
+      flex-shrink: 0;
+    }
+  }
+  @media (max-width: 420px) {
+    .wallet-overview-actions__row {
+      grid-template-columns: 1fr;
+    }
+    .wallet-overview-action {
+      white-space: normal;
+    }
+  }
 </style>
 @endpush
 @section('main')
@@ -49,39 +129,49 @@
             <div class="{{ $hasSidebar ? 'col-span-12 lg:col-span-9' : 'col-span-12' }}">
 
             {{-- Header --}}
-<div class="flex items-center justify-between mb-2">
-    <h2 class="text-xl font-semibold text-slate-900">Wallet Overview</h2>
-    <div class="flex flex-wrap items-center gap-2">
-        {{-- View Payouts --}}
-        @if(auth()->user()->isSeller())
-        <a href="{{ route('seller.payouts.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
-            <i class="fas fa-receipt mr-1"></i> View Payouts
-        </a>
-        @endif
-        <a href="{{ route('wallet.deposit.form') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
-            <i class="fas fa-plus mr-1"></i> Deposit Funds
-        </a>
+            <div class="wallet-overview-hero">
+                <div class="wallet-overview-hero__inner">
+                    <div>
+                        <div class="wallet-overview-hero__eyebrow">Wallet center</div>
+                        <h2 class="wallet-overview-hero__title">Wallet Overview</h2>
+                        <p class="wallet-overview-hero__text">Track your balance, top up funds, and manage payouts from one clean control area.</p>
+                    </div>
 
-        @if(auth()->user()->isSeller())
-          <button class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
-                  data-ui-toggle="modal"
-                  data-ui-target="#payoutModal"
-                  @disabled($balance < $minAmount || ($paymentMethods?->count() ?? 0) === 0)>
-              Request&nbsp;Payout
-          </button>
-        @endif
+                    <div class="wallet-overview-actions">
+                        <div class="wallet-overview-actions__row">
+                            <a href="{{ route('wallet.deposit.form') }}" class="wallet-overview-action inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+                                <i class="fas fa-plus mr-1"></i> Deposit Funds
+                            </a>
 
-        
-        <a href="{{ route('wallet.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
-            <i class="fas fa-sync-alt mr-1"></i> Refresh
-        </a>
-    </div>
-</div>
+                            @if(auth()->user()->isSeller())
+                              <button class="wallet-overview-action inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+                                      data-ui-toggle="modal"
+                                      data-ui-target="#payoutModal"
+                                      @disabled($balance < $minAmount || ($paymentMethods?->count() ?? 0) === 0)>
+                                  Request&nbsp;Payout
+                              </button>
+                            @endif
+                        </div>
+
+                        <div class="wallet-overview-actions__row">
+                            @if(auth()->user()->isSeller())
+                            <a href="{{ route('seller.payouts.index') }}" class="wallet-overview-action inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+                                <i class="fas fa-receipt mr-1"></i> View Payouts
+                            </a>
+                            @endif
+
+                            <a href="{{ route('wallet.index') }}" class="wallet-overview-action inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+                                <i class="fas fa-sync-alt mr-1"></i> Refresh
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
 
             {{-- Summary Card --}}
             <div class="grid grid-cols-12 gap-4 mb-4">
-                <div class="col-span-12 md:col-span-4">
+                <div class="col-span-12 md:col-span-6">
                     <div class="h-full rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div class="p-4 sm:p-5 flex items-center">
                             <i class="fas fa-wallet text-3xl text-emerald-600 mr-3"></i>
@@ -94,7 +184,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-span-12 md:col-span-4">
+                <div class="col-span-12 md:col-span-6">
                     <div class="h-full rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div class="p-4 sm:p-5 flex items-center justify-between">
                             <div class="flex items-center">
@@ -564,8 +654,6 @@
   @endif
 </script>
 @endpush
-
-
 
 
 

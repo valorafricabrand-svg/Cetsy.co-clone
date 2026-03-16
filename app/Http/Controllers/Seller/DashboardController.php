@@ -45,7 +45,13 @@ public function index()
 
     $orders = (clone $ordersQuery)
         ->orderBy('id', 'desc')
-        ->with(['customer', 'payment', 'items.product', 'items.shippingProfile.processingTime'])
+        ->with([
+            'customer',
+            'payment',
+            'items.product.media',
+            'items.product.shop',
+            'items.shippingProfile.processingTime',
+        ])
         ->take(5)
         ->get();
 

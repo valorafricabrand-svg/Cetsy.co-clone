@@ -604,7 +604,7 @@
  @endif
  </div>
  <div class="ml-3">
- <a href="{{ route('orders.chat.show', $order->id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50">Respond</a>
+ <a href="{{ route('orders.chat.show', $order->id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50">Message Buyer</a>
  </div>
  </div>
  </li>
@@ -1001,7 +1001,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
-
 
 
 

@@ -8,7 +8,7 @@
   .card-rounded { border-radius: 1rem; }
   .table td, .table th { vertical-align: middle; }
   .content .page-header { border-bottom: 1px solid rgba(0,0,0,.08); }
-  .sticky-actions { position: sticky; bottom: 0; background: #fff; padding: .75rem 0; border-top: 1px solid rgba(0,0,0,.08); z-index: 5; }
+  .sticky-actions { position: sticky; bottom: 0; background: #fff; padding: .75rem 0 calc(.75rem + env(safe-area-inset-bottom)); border-top: 1px solid rgba(0,0,0,.08); z-index: 5; }
 </style>
 @endpush
 
@@ -18,8 +18,8 @@
   <div class="mx-auto w-full px-4 sm:px-6">
 
     {{-- Page header / breadcrumbs --}}
-    <div class="flex items-center justify-between page-header py-2 mb-3">
-      <div>
+    <div class="page-header mb-3 flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:justify-between">
+      <div class="min-w-0">
         <nav class="text-xs text-slate-500" aria-label="Breadcrumb">
           <ol class="flex flex-wrap items-center gap-2">
             <li><a href="{{ url('/products') }}" class="hover:text-slate-700">Products</a></li>
@@ -31,19 +31,19 @@
             <li class="font-semibold text-slate-700" aria-current="page">Manage: {{ $type->name ?? 'Variation Type' }}</li>
           </ol>
         </nav>
-        <h1 class="text-lg font-semibold mt-2 mb-0">Manage: <span class="text-emerald-600">{{ $type->name ?? 'Variation Type' }}</span></h1>
+        <h1 class="mb-0 mt-2 text-xl font-semibold sm:text-2xl">Manage: <span class="text-emerald-600">{{ $type->name ?? 'Variation Type' }}</span></h1>
       </div>
-      <div class="flex gap-2 items-center">
-        <form method="POST" action="{{ route('variationTypes.affects_price', $type) }}" class="flex items-center gap-2">
+      <div class="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end lg:w-auto">
+        <form method="POST" action="{{ route('variationTypes.affects_price', $type) }}" class="flex w-full flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:w-auto sm:flex-row sm:items-center sm:gap-2 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
           @csrf
           @method('PATCH')
           <div class="flex items-center gap-2">
             <input class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" type="checkbox" id="ap_header" name="affects_price" value="1" {{ $type->affects_price ? 'checked' : '' }}>
             <label class="text-sm text-slate-700" for="ap_header">Affects price</label>
           </div>
-          <button class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500">Save</button>
+          <button class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 sm:w-auto sm:py-1.5 sm:text-xs">Save</button>
         </form>
-        <a href="{{ route('products.variations', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">Back</a>
+        <a href="{{ route('products.variations', $product) }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto">Back</a>
       </div>
     </div>
 
@@ -71,34 +71,35 @@
       </div>
     @endif
 
-    <div class="grid grid-cols-12 gap-4">
+    <div class="grid grid-cols-12 gap-4 xl:gap-5">
       {{-- LEFT: Options --}}
-      <div class="lg:col-span-5">
+      <div class="col-span-12 min-w-0 lg:col-span-5">
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm card-rounded">
           <div class="p-4 sm:p-5">
             <h5 class="text-lg font-semibold text-slate-900 mb-3">Options <small class="text-slate-500">for "{{ $type->name }}"</small></h5>
 
             <div class="divide-y divide-slate-200 rounded-xl border border-slate-200 mb-3">
               @forelse($type->options as $opt)
-                <div class="px-4 py-3 flex justify-between items-center">
-                  <form class="flex flex-1 items-center"
+                <div class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <form class="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center"
                         action="{{ route('variationOptions.update', $opt) }}"
                         method="POST">
                     @csrf
                     @method('PATCH')
                     <input type="text"
-                           class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs mr-2"
+                           class="min-w-0 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 sm:px-2.5 sm:py-1.5 sm:text-xs"
                            name="value"
                            value="{{ $opt->value }}"
                            placeholder="Option value">
-                    <button class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">Save</button>
+                    <button class="inline-flex w-full items-center justify-center rounded-xl border border-emerald-600 px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 sm:w-auto sm:py-1.5 sm:text-xs">Save</button>
                   </form>
                   <form action="{{ route('variationOptions.destroy', $opt) }}"
                         method="POST"
+                        class="sm:shrink-0"
                         onsubmit="return confirm('Delete this option?')">
                     @csrf
                     @method('DELETE')
-                    <button class="inline-flex items-center justify-center rounded-xl border border-rose-600 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50" title="Delete">
+                    <button class="inline-flex w-full items-center justify-center rounded-xl border border-rose-600 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 sm:w-auto sm:py-1.5 sm:text-xs" title="Delete">
                       <i class="fas fa-trash"></i>
                     </button>
                   </form>
@@ -112,9 +113,9 @@
             <form class="rounded-xl border border-slate-200 p-3" action="{{ route('variationOptions.store', $type) }}" method="POST">
               @csrf
               <h6 class="mb-2">Add Option</h6>
-              <div class="flex w-full items-stretch">
+              <div class="flex w-full flex-col gap-2 sm:flex-row sm:items-stretch">
                 <input type="text" name="value" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="e.g. Red / 28 inches" required>
-                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Add</button>
+                <button class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 sm:w-auto">Add</button>
               </div>
               <small class="text-slate-500">Adds a single option to this type.</small>
             </form>
@@ -123,7 +124,7 @@
       </div>
 
       {{-- RIGHT: Add Variant + existing variants --}}
-      <div class="lg:col-span-7">
+      <div class="col-span-12 min-w-0 lg:col-span-7">
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm card-rounded mb-4">
           <div class="p-4 sm:p-5">
             <h5 class="text-lg font-semibold text-slate-900 mb-3">Add Variant</h5>
@@ -183,8 +184,8 @@
               {{-- This container will be filled with values[] by JS on submit --}}
               <div class="hidden" data-values-container></div>
 
-              <div class="mt-3 flex justify-end">
-                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Create Variant</button>
+              <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 sm:w-auto">Create Variant</button>
               </div>
             </form>
           </div>
@@ -195,7 +196,74 @@
             <h5 class="text-lg font-semibold text-slate-900 mb-3">Variants with "{{ $type->name }}"</h5>
 
             @if($variantsForType->count())
-              <div class="overflow-x-auto">
+              <div class="hidden">
+                @foreach($variantsForType as $v)
+                  @php $formId = 'variant-form-'.$type->id.'-'.$v->id; @endphp
+                  <form id="{{ $formId }}" action="{{ route('variations.update', $v) }}" method="POST" class="hidden">
+                    @csrf
+                    @method('PATCH')
+                  </form>
+                  <form id="delete-variant-{{ $type->id }}-{{ $v->id }}" action="{{ route('variations.destroy', $v) }}" method="POST" class="hidden">
+                    @csrf
+                    @method('DELETE')
+                  </form>
+                @endforeach
+              </div>
+
+              <div class="space-y-3 md:hidden">
+                @foreach($variantsForType as $v)
+                  @php
+                    $formId = 'variant-form-'.$type->id.'-'.$v->id;
+                    $combo = $v->options->map(fn($o) => $o->variationType->name . ': ' . $o->value)->join(' | ');
+                  @endphp
+                  <div class="rounded-2xl border border-slate-200 p-4 shadow-sm">
+                    <div class="mb-3">
+                      <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Combination</div>
+                      <div class="mt-1 break-words text-sm font-medium leading-6 text-slate-900">{{ $combo }}</div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-3 {{ $tracksStock ? 'sm:grid-cols-2' : '' }}">
+                      <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">Price</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
+                          name="price"
+                          value="{{ $v->price }}"
+                          form="{{ $formId }}"
+                          required>
+                      </div>
+                      @if($tracksStock)
+                        <div>
+                          <label class="mb-1 block text-sm font-medium text-slate-700">Stock</label>
+                          <input
+                            type="number"
+                            step="1"
+                            min="0"
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
+                            name="stock"
+                            value="{{ $v->stock ?? '' }}"
+                            placeholder="Unlimited"
+                            form="{{ $formId }}">
+                        </div>
+                      @endif
+                    </div>
+
+                    <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+                      <button class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 sm:w-auto" form="{{ $formId }}">Save</button>
+                      <button class="inline-flex w-full items-center justify-center rounded-xl border border-rose-600 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 sm:w-auto"
+                              form="delete-variant-{{ $type->id }}-{{ $v->id }}"
+                              onclick="return confirm('Remove this variation? This action cannot be undone.');">
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                @endforeach
+              </div>
+
+              <div class="hidden overflow-x-auto md:block">
                 <table class="min-w-full divide-y divide-slate-200 text-sm align-middle">
                   <thead class="bg-slate-50">
                     <tr>
@@ -209,19 +277,14 @@
                   </thead>
                   <tbody>
                     @foreach($variantsForType as $v)
-                      @php $formId = 'variant-form-'.$type->id.'-'.$v->id; @endphp
-                      <form id="{{ $formId }}" action="{{ route('variations.update', $v) }}" method="POST" class="hidden">
-                        @csrf
-                        @method('PATCH')
-                      </form>
-                      <form id="delete-variant-{{ $type->id }}-{{ $v->id }}" action="{{ route('variations.destroy', $v) }}" method="POST" class="hidden">
-                        @csrf
-                        @method('DELETE')
-                      </form>
+                      @php
+                        $formId = 'variant-form-'.$type->id.'-'.$v->id;
+                        $combo = $v->options->map(fn($o) => $o->variationType->name . ': ' . $o->value)->join(' | ');
+                      @endphp
                       <tr>
                         <td>
-                          <small class="text-slate-500">
-                            {{ $v->options->map(fn($o) => $o->variationType->name . ': ' . $o->value)->join(' | ') }}
+                          <small class="break-words text-slate-500">
+                            {{ $combo }}
                           </small>
                         </td>
                         <td>
@@ -229,7 +292,7 @@
                             type="number"
                             step="0.01"
                             min="0"
-                            class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs"
+                            class="w-full rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                             name="price"
                             value="{{ $v->price }}"
                             form="{{ $formId }}"
@@ -241,7 +304,7 @@
                               type="number"
                               step="1"
                               min="0"
-                              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs"
+                              class="w-full rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                               name="stock"
                               value="{{ $v->stock ?? '' }}"
                               placeholder="Unlimited"
@@ -271,8 +334,8 @@
 
     {{-- Bottom actions --}}
     <div class="sticky-actions mt-4">
-      <div class="mx-auto w-full px-4 sm:px-6 flex justify-end">
-        <a href="{{ route('products.variations', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500">Close</a>
+      <div class="mx-auto flex w-full px-4 sm:px-6 sm:justify-end">
+        <a href="{{ route('products.variations', $product) }}" class="inline-flex w-full items-center justify-center rounded-xl bg-slate-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-500 sm:w-auto">Close</a>
       </div>
     </div>
 
@@ -314,6 +377,5 @@
   }
 </script>
 @endpush
-
 
 

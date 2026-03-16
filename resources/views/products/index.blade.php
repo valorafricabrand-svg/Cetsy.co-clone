@@ -68,6 +68,52 @@
                     </div>
                 @endif
 
+                @php
+                    $filters = $filters ?? [
+                        'price_min'  => null,
+                        'price_max'  => null,
+                        'type'       => null,
+                        'country_id' => null,
+                    ];
+                    $searchQuery = trim((string) request('q', ''));
+                @endphp
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    <form action="{{ route('products.index') }}" method="GET" class="space-y-3">
+                        <input type="hidden" name="status" value="{{ request('status') }}">
+                        <input type="hidden" name="no_featured" value="{{ request('no_featured') }}">
+                        <input type="hidden" name="price_min" value="{{ $filters['price_min'] ?? '' }}">
+                        <input type="hidden" name="price_max" value="{{ $filters['price_max'] ?? '' }}">
+                        <input type="hidden" name="type" value="{{ $filters['type'] ?? '' }}">
+                        <input type="hidden" name="country_id" value="{{ $filters['country_id'] ?? '' }}">
+
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                            <div class="min-w-0 flex-1">
+                                <label for="listing-search" class="mb-1 block text-sm font-medium text-slate-700">Search Listings</label>
+                                <div class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 transition focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100">
+                                    <i class="fas fa-search text-slate-400"></i>
+                                    <input id="listing-search" type="search" name="q" class="min-w-0 w-full border-0 bg-transparent px-0 py-0 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+                                           value="{{ $searchQuery }}" placeholder="Search by listing name or description">
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2">
+                                <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">
+                                    <i class="fas fa-search mr-2"></i> Search
+                                </button>
+                                @if($searchQuery !== '')
+                                    <a href="{{ request()->fullUrlWithQuery(['q' => null, 'page' => null]) }}"
+                                       class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                                        Clear Search
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-500">Find a listing quickly by title or description.</p>
+                    </form>
+                </div>
+
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     @php
                         $labels = [
@@ -94,18 +140,9 @@
                     </div>
                 </div>
 
-                @php
-                    $filters = $filters ?? [
-                        'price_min'  => null,
-                        'price_max'  => null,
-                        'type'       => null,
-                        'country_id' => null,
-                    ];
-                @endphp
-
                 <form action="{{ route('products.index') }}" method="GET" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                     <div class="grid grid-cols-12 gap-3">
-                        <input type="hidden" name="q" value="{{ request('q') }}">
+                        <input type="hidden" name="q" value="{{ $searchQuery }}">
                         <input type="hidden" name="status" value="{{ request('status') }}">
                         <input type="hidden" name="no_featured" value="{{ request('no_featured') }}">
 

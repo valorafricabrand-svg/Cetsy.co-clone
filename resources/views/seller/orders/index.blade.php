@@ -210,14 +210,37 @@
  $symbol = shop_currency($order->shop ?? null);
  $dispute = $order->disputes()->latest()->first();
  $statusClass = $statusTone((string) $order->status);
+ $primaryItem = $order->items->first();
+ $primaryProduct = optional($primaryItem)->product;
+ $thumbUrl = $primaryItem ? product_thumb_url($primaryProduct) : null;
+ $extraItems = max($order->items->count() - 1, 0);
  @endphp
  <a href="{{ route('seller.orders.show', $order) }}" class="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+ <div class="flex gap-3">
+ <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+ @if($thumbUrl)
+ <img src="{{ $thumbUrl }}" alt="{{ $primaryProduct->name ?? 'Order item' }}" class="h-full w-full object-cover" loading="lazy">
+ @else
+ <div class="flex h-full w-full items-center justify-center text-slate-400">
+ <i class="fa-solid fa-box-open"></i>
+ </div>
+ @endif
+ @if($extraItems > 0)
+ <span class="absolute bottom-1 right-1 inline-flex items-center rounded-full bg-slate-900 px-1.5 py-0.5 text-[10px] font-semibold text-white">+{{ $extraItems }}</span>
+ @endif
+ </div>
+
+ <div class="min-w-0 flex-1">
  <div class="flex items-start justify-between gap-2">
  <p class="text-sm font-bold text-slate-900">Order #{{ $order->id }}</p>
  <p class="text-xs text-slate-500">{{ optional($order->created_at)->format('d M Y') }}</p>
  </div>
 
  <p class="mt-2 text-sm text-slate-700">{{ $order->full_name }}</p>
+ @if($primaryProduct)
+ <p class="mt-1 truncate text-xs text-slate-500">{{ $primaryProduct->name }}</p>
+ @endif
+
  <div class="mt-2 flex items-center justify-between text-sm">
  <p class="text-slate-500">Qty: {{ $qtyTotal }}</p>
  <p class="font-bold text-slate-900">{{ $symbol }} {{ number_format((float)$order->total_amount, 2) }}</p>
@@ -246,6 +269,8 @@
  @endif
 
  <p class="mt-2 text-xs text-slate-500">Tracking: {{ $order->tracking_no ?: '-' }}</p>
+ </div>
+ </div>
  </a>
  @endforeach
 
@@ -369,5 +394,4 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endpush
-
 

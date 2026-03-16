@@ -88,7 +88,12 @@ public function index(Request $request)
 
     // 4) Paginate with items, product, disputes, and appeals eager-load
     $orders = $baseQuery
-        ->with(['items.product', 'items.shippingProfile.processingTime', 'disputes.appeal'])
+        ->with([
+            'items.product.media',
+            'items.product.shop',
+            'items.shippingProfile.processingTime',
+            'disputes.appeal',
+        ])
         ->orderByDesc('id')
         ->paginate(15)
         ->withQueryString(); // preserves status & search
