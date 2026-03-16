@@ -399,8 +399,8 @@
             <div class="crop-footer__meta">
               <div class="text-xs text-slate-500" x-text="dimText"></div>
               <div class="crop-quality">
-              <label class="text-xs mr-2">Quality</label>
-              <input type="range" min="60" max="100" step="2" x-model.number="quality" style="width:120px">
+                <label class="text-xs mr-2">Quality</label>
+                <input type="range" min="60" max="100" step="2" x-model.number="quality" style="width:120px">
               </div>
             </div>
             <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" @click="closeCropModal()">Cancel</button>
@@ -743,7 +743,6 @@ function mediaPage(config = {}){
 }
 </script>
 @endpush
-
 
 
 

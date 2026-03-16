@@ -11,6 +11,10 @@ class ProductVariationController extends Controller
 {
     public function manage(Product $product, VariationType $type)
     {
+        abort_unless((int) $type->product_id === (int) $product->getKey(), 404);
+
+        $product->loadMissing('variationTypes.options');
+
         // eager-load to keep queries tight
         $type->load('options');
 
