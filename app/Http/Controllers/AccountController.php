@@ -246,7 +246,7 @@ public function orderDetails(Order $order)
         $switchAccounts = collect();
 
         if ($user) {
-            $switchIds = collect(RecentAccountSwitcher::ids($request->session()));
+            $switchIds = collect(RecentAccountSwitcher::idsForRequest($request));
 
             if (! $switchIds->contains((int) $user->id)) {
                 $switchIds->prepend((int) $user->id);

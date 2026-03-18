@@ -43,6 +43,9 @@ Route::middleware('auth')->group(function () {
     Route::post('account-switch/{user}', [AccountSwitchController::class, 'switch'])
         ->name('account.switch');
 
+    Route::delete('account-switch/{user}', [AccountSwitchController::class, 'forget'])
+        ->name('account.switch.forget');
+
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 

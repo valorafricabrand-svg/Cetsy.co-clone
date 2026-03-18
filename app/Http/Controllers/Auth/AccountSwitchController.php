@@ -18,8 +18,8 @@ class AccountSwitchController extends Controller
         $currentUser = $request->user();
         abort_unless($currentUser, 403);
 
-        if (! RecentAccountSwitcher::contains($request->session(), (int) $user->id)) {
-            return back()->with('error', 'That account is not available for quick switching in this session.');
+        if (! RecentAccountSwitcher::containsForRequest($request, (int) $user->id)) {
+            return back()->with('error', 'That account is not available for quick switching on this device.');
         }
 
         $this->loginAs($request, $user, $currentUser);
@@ -61,13 +61,31 @@ class AccountSwitchController extends Controller
             ->with('success', 'Switched account to ' . ($targetUser->name ?: $targetUser->email) . '.');
     }
 
+    public function forget(Request $request, User $user): RedirectResponse
+    {
+        $currentUser = $request->user();
+        abort_unless($currentUser, 403);
+
+        if ((int) $currentUser->id === (int) $user->id) {
+            return back()->with('error', 'You cannot remove the account you are currently using.');
+        }
+
+        if (! RecentAccountSwitcher::containsForRequest($request, (int) $user->id)) {
+            return back()->with('error', 'That account is not in your saved switcher list.');
+        }
+
+        RecentAccountSwitcher::forgetForRequest($request, (int) $user->id);
+
+        return back()->with('success', 'Removed ' . ($user->name ?: $user->email) . ' from saved accounts.');
+    }
+
     private function loginAs(Request $request, User $targetUser, User $currentUser): void
     {
-        RecentAccountSwitcher::remember($request->session(), $currentUser, $targetUser);
+        RecentAccountSwitcher::rememberForRequest($request, $currentUser, $targetUser);
 
-        Auth::login($targetUser);
+        Auth::login($targetUser, true);
         $request->session()->regenerate();
 
-        RecentAccountSwitcher::remember($request->session(), $currentUser, $targetUser);
+        RecentAccountSwitcher::rememberForRequest($request, $currentUser, $targetUser);
     }
 }

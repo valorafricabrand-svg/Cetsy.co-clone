@@ -86,9 +86,9 @@
                                         </span>
                                     </div>
                                 @else
-                                    <form method="POST" action="{{ route('account.switch', $switchAccount) }}">
-                                        @csrf
-                                        <button type="submit" class="flex w-full items-center gap-3 px-5 py-4 text-left transition hover:bg-slate-50">
+                                    <div class="flex items-center gap-3 px-5 py-4 transition hover:bg-slate-50">
+                                        <form method="POST" action="{{ route('account.switch', $switchAccount) }}" class="flex min-w-0 flex-1 items-center gap-3">
+                                            @csrf
                                             @if ($switchAvatar)
                                                 <span class="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white">
                                                     <img src="{{ $switchAvatar }}" alt="{{ $switchName }}" class="h-full w-full object-cover" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');">
@@ -103,11 +103,18 @@
                                                 <p class="truncate text-sm text-slate-500">{{ $switchMeta }}</p>
                                             </div>
 
-                                            <span class="inline-flex items-center justify-center rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700">
+                                            <button type="submit" class="inline-flex items-center justify-center rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100">
                                                 Switch
-                                            </span>
-                                        </button>
-                                    </form>
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ route('account.switch.forget', $switchAccount) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="inline-flex items-center justify-center rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" onclick="return confirm('Remove this saved account from quick switching on this device?')">
+                                                Remove
+                                            </button>
+                                        </form>
+                                    </div>
                                 @endif
                             @endforeach
 
@@ -121,7 +128,7 @@
                         <div class="border-t border-slate-200 bg-slate-50/80 px-5 py-5 lg:border-l lg:border-t-0">
                             <div class="mb-4">
                                 <h5 class="text-base font-semibold text-slate-900">Add Another Account</h5>
-                                <p class="mt-1 text-sm text-slate-500">Enter the other account's login details once to save it for quick switching in this browser session.</p>
+                                <p class="mt-1 text-sm text-slate-500">Enter the other account's login details once to save it for quick switching on this device for longer.</p>
                             </div>
 
                             <form method="POST" action="{{ route('account.switch.authenticate') }}" class="space-y-4">

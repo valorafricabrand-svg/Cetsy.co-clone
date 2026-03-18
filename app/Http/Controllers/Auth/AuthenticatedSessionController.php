@@ -31,7 +31,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         $user = Auth::user();
-        RecentAccountSwitcher::remember($request->session(), $user);
+        RecentAccountSwitcher::rememberForRequest($request, $user);
 
         // If seller and no active subscription, start trial or redirect to subscription
         if ($user->isSeller() && !$user->hasActiveSubscription()) {
