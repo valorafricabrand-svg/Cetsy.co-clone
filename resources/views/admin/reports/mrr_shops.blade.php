@@ -20,7 +20,7 @@
         <select name="payment_method" class="form-select">
           <option value="">All</option>
           @foreach(($paymentMethods ?? []) as $pm)
-            <option value="{{ $pm }}" @selected(($filters['payment_method'] ?? '') === $pm)>{{ ucfirst($pm) }}</option>
+            <option value="{{ $pm }}" @selected(($filters['payment_method'] ?? '') === $pm)>{{ payment_method_label($pm) }}</option>
           @endforeach
         </select>
       </div>
@@ -87,5 +87,4 @@
   </div>
 </div>
 @endsection
-
 

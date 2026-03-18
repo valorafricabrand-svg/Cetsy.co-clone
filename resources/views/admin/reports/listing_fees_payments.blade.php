@@ -20,7 +20,7 @@
             <select name="payment_method" class="form-select">
               <option value="">All</option>
               @foreach(($paymentMethods ?? []) as $pm)
-                <option value="{{ $pm }}" @selected(($filters['payment_method'] ?? '') === $pm)>{{ ucfirst($pm) }}</option>
+                <option value="{{ $pm }}" @selected(($filters['payment_method'] ?? '') === $pm)>{{ payment_method_label($pm) }}</option>
               @endforeach
             </select>
           </div>
@@ -60,7 +60,7 @@
               </td>
               <td class="d-none d-md-table-cell">{{ optional(optional($p->shop)->user)->name ?? '—' }}</td>
               <td class="text-end">{{ get_currency() }} {{ number_format((float)$p->total_amount, 2) }}</td>
-              <td class="d-none d-lg-table-cell">{{ strtoupper($p->payment_method ?? '-') }}</td>
+              <td class="d-none d-lg-table-cell">{{ payment_method_label($p->payment_method) }}</td>
               <td class="d-none d-lg-table-cell">{{ optional($p->created_at)->format('Y-m-d') }}</td>
             </tr>
           @empty

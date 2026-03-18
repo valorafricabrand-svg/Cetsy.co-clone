@@ -178,19 +178,24 @@
  </div>
  </div>
  @if(!empty($favorite->user))
+ @php
+ $conversationId = $product->id . '-' . $favorite->user->id;
+ $prefillMessage = 'Hi '.($favorite->user->name ?? 'there').', thanks for favoriting "'.$product->name.'". Can I answer any questions or offer help?';
+ $conversationUrl = route('seller.messages.show', $conversationId) . '?prefill=' . urlencode($prefillMessage);
+ @endphp
  <div class="mt-2 flex flex-wrap gap-2">
- <button
- type="button"
+ <a
+ href="{{ $conversationUrl }}"
  class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50"
- data-ui-toggle="collapse"
+ data-favorites-message-toggle
  data-target="#msg-{{ $product->id }}-{{ $favorite->user->id }}"
  aria-expanded="false"
  aria-controls="msg-{{ $product->id }}-{{ $favorite->user->id }}"
  >
  <i class="fa-regular fa-comments mr-1"></i> Message buyer
- </button>
+ </a>
  <a
- href="{{ route('seller.messages.show', $product->id . '-' . $favorite->user->id) }}?prefill={{ urlencode('Hi '.($favorite->user->name ?? 'there').', thanks for favoriting \"'.$product->name.'\". Can I answer any questions or offer help?') }}"
+ href="{{ $conversationUrl }}"
  class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100"
  >
  <i class="fa-regular fa-message mr-1"></i> View conversation
@@ -335,12 +340,51 @@
  }
 </style>
 @endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+ document.querySelectorAll('[data-favorites-message-toggle]').forEach(function (trigger) {
+ trigger.addEventListener('click', function (event) {
+ const selector = trigger.getAttribute('data-target');
+ if (!selector) {
+ return;
+ }
+
+ let panel = null;
+ try {
+ panel = document.querySelector(selector);
+ } catch (_) {
+ panel = null;
+ }
+
+ if (!panel) {
+ return;
+ }
+
+ event.preventDefault();
+
+ const willOpen = panel.classList.contains('hidden');
+ panel.classList.toggle('hidden', !willOpen);
+ trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+
+ if (willOpen) {
+ const textarea = panel.querySelector('textarea[name="message"]');
+ if (textarea) {
+ textarea.focus();
+ textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+ }
+ }
+ });
+ });
+});
+</script>
+@endpush
  </div>
  </div>
  </div>
 </section>
 @endsection
-
 
 
 

@@ -343,7 +343,7 @@
  </address>
 
  <p class="mb-1"><strong>Shipping Method:</strong> {{ ucfirst($order->shipping_method) }}</p>
- <p class="mb-0"><strong>Payment Method:</strong> {{ ucfirst($order->payment_method) }}</p>
+ <p class="mb-0"><strong>Payment Method:</strong> {{ payment_method_label($order->payments->last()?->payment_method ?? $order->payment_method) }}</p>
  </div>
  </div>
  </div>
@@ -521,7 +521,7 @@
  <div class="text-xs text-slate-500">{{ $payment->created_at->format('d M Y, h:i A') }}</div>
  </div>
  <div class="flex justify-between items-center">
- <div class="text-xs text-slate-500">{{ ucfirst($payment->payment_method) }}</div>
+ <div class="text-xs text-slate-500">{{ payment_method_label($payment->payment_method) }}</div>
  <div><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }} capitalize">{{ $statusText }}</span></div>
  <div class="font-semibold">{{ $symbol }} {{ number_format($payment->total_amount,2) }}</div>
  </div>
@@ -564,7 +564,7 @@
  <tr>
  <td>{{ $loop->iteration }}</td>
  <td>{{ $payment->local_transaction_id ?? 'N/A' }}</td>
- <td>{{ ucfirst($payment->payment_method) }}</td>
+ <td>{{ payment_method_label($payment->payment_method) }}</td>
  <td class="text-right">{{ $symbol }} {{ number_format($payment->total_amount,2) }}</td>
  <td><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }} capitalize">{{ $statusText }}</span></td>
  <td>{{ $payment->created_at->format('d M Y, h:i A') }}</td>
@@ -1001,8 +1001,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
-
-
 
 
 

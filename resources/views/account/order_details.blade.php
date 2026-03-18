@@ -831,7 +831,7 @@
                 <span class="font-semibold">Shipping Method:</span> {{ ucfirst($order->shipping_method) }}
               </li>
               <li class="px-4 py-3 px-0">
-                <span class="font-semibold">Payment Method:</span> {{ ucfirst($order->payment_method) }}
+                <span class="font-semibold">Payment Method:</span> {{ payment_method_label($order->payments->last()?->payment_method ?? $order->payment_method) }}
               </li>
             </ul>
           </div>
@@ -1192,7 +1192,7 @@
                     </div>
                     <div class="flex items-start justify-between gap-3">
                       <span class="text-slate-500">Method</span>
-                      <span class="text-right text-slate-900">{{ ucfirst((string)$pay->payment_method) ?: '-' }}</span>
+                      <span class="text-right text-slate-900">{{ payment_method_label($pay->payment_method) }}</span>
                     </div>
                     <div class="flex items-start justify-between gap-3">
                       <span class="text-slate-500">Amount</span>
@@ -1231,7 +1231,7 @@
                   <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td class="max-w-[260px] break-all">{{ $pay->local_transaction_id }}</td>
-                    <td>{{ ucfirst($pay->payment_method) }}</td>
+                    <td>{{ payment_method_label($pay->payment_method) }}</td>
                     <td>{{ money((float)($pay->total_amount ?? 0)) }}</td>
                     <td>
                       <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700' }}">
@@ -1423,8 +1423,6 @@
   @endif
 @endforeach
 @endsection
-
-
 
 
 

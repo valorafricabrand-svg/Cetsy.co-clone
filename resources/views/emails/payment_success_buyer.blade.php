@@ -83,7 +83,7 @@
         <div class="payment-success">
             <h3>✅ Payment Confirmed!</h3>
             <p><strong>Payment Status:</strong> <span class="success">Successful</span></p>
-            <p><strong>Payment Method:</strong> {{ ucfirst($payment->payment_method) }}</p>
+            <p><strong>Payment Method:</strong> {{ payment_method_label($payment->payment_method) }}</p>
             <p><strong>Transaction ID:</strong> {{ $payment->local_transaction_id }}</p>
             <p><strong>Payment Date:</strong> {{ $payment->created_at->format('F j, Y \a\t g:i A') }}</p>
             <p><strong>Amount Paid:</strong> <span class="highlight">{{ get_currency() }} {{ number_format($payment->total_amount, 2) }}</span></p>

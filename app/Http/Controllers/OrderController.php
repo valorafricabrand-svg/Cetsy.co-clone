@@ -134,14 +134,15 @@ public function index(Request $request)
             abort(403, 'You are not allowed to manage this order.');
         }
 
-        $order->load(
+        $order->load([
             'items.product',
             'items.shippingProfile.processingTime',
             'shop.user',
             'user',
+            'payments' => fn ($query) => $query->orderBy('created_at'),
             'disputes',
-            'disputes.messages'
-        );
+            'disputes.messages',
+        ]);
         // Mark order notifications as read for the seller
         try {
             \App\Models\Activity::where('user_id', auth()->id())
@@ -383,7 +384,7 @@ public function storeOrder(Request $request)
 
             // If you later support multiple choices, take from request; for now defaults:
             $order->shipping_method = 'standard';
-            $order->payment_method  = 'paypal';
+            $order->payment_method  = 'pending';
 
             $order->order_notes  = $validated['order_notes'] ?? null;
             $order->promo_code   = $validated['promo_code'] ?? null;
@@ -636,7 +637,10 @@ public function storeOrder(Request $request)
         $payment = Payment::create($paymentData);
 
         if ($payment) {
-            $order->update(['status' => Order::STATUS_PROCESSING]);
+            $order->update([
+                'status' => Order::STATUS_PROCESSING,
+                'payment_method' => $method,
+            ]);
         }
 
         $shop = $order->shop;

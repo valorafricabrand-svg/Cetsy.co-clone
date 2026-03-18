@@ -21,7 +21,7 @@
         <select name="payment_method" class="form-select form-select-sm" style="width:140px" onchange="this.form.submit()">
           <option value="">All methods</option>
           @foreach($methods ?? ['mpesa','paypal','stripe','paystack','card','wallet'] as $m)
-            <option value="{{ $m }}" @selected(request('payment_method')===$m)>{{ strtoupper($m) }}</option>
+            <option value="{{ $m }}" @selected(request('payment_method')===$m)>{{ payment_method_label($m) }}</option>
           @endforeach
         </select>
 
@@ -108,7 +108,7 @@
                   </small>
                 </td>
                 <td>{{ get_currency() }} {{ number_format($payment->total_amount,2) }}</td>
-                <td class="text-uppercase small">{{ $payment->payment_method }}</td>
+                <td class="small">{{ payment_method_label($payment->payment_method) }}</td>
               <td class="text-uppercase small">{{ $payment->payment_name }}</td>
                 <td>{{ $payment->created_at?->format('d M Y H:i') }}</td>
                 <td class="text-end">
@@ -136,4 +136,3 @@
   </div>
 </div>
 @endsection
-

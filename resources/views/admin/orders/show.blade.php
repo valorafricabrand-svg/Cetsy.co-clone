@@ -85,7 +85,7 @@
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Payment Method</span>
-                        <span class="text-uppercase">{{ $order->payment_method ?: 'N/A' }}</span>
+                        <span>{{ payment_method_label($order->payment_method, 'N/A') }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Placed</span>
@@ -185,4 +185,3 @@
     @endif
 </div>
 @endsection
-

@@ -1928,6 +1928,7 @@ public function payOrder(Request $request, $id)
         if ($payment) {
             $wasPending = ($order->status === \App\Models\Order::STATUS_PENDING);
             if ($wasPending) { $this->decrementInventoryForOrder($order); }
+            $order->payment_method = $method;
             $order->status = \App\Models\Order::STATUS_PROCESSING;
             $order->save();
         }

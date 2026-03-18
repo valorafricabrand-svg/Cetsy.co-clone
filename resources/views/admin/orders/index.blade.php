@@ -145,7 +145,7 @@
                                     <span class="badge bg-warning text-dark ms-1">{{ $order->disputes_count }} dispute{{ ($order->disputes_count ?? 0) > 1 ? 's' : '' }}</span>
                                 @endif
                             </td>
-                            <td class="text-uppercase">{{ $order->payment_method ?: 'N/A' }}</td>
+                            <td>{{ payment_method_label($order->payment_method, 'N/A') }}</td>
                             <td>
                                 <div>{{ optional($order->created_at)->format('d M Y') }}</div>
                                 <small class="text-muted">{{ optional($order->created_at)->format('H:i') }}</small>
@@ -171,4 +171,3 @@
     </div>
 </div>
 @endsection
-

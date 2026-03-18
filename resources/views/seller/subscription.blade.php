@@ -388,7 +388,7 @@
  <div class="font-semibold">${{ number_format($payment->total_amount, 2) }}</div>
  <div class="text-xs text-slate-500">{{ $payment->currency }}</div>
  </td>
- <td><span class="sub-method-badge">{{ ucfirst($payment->payment_method) }}</span></td>
+ <td><span class="sub-method-badge">{{ payment_method_label($payment->payment_method) }}</span></td>
  <td>
  @if($payment->payment_status == 'successful')
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-emerald-100 text-emerald-800 border-emerald-200">Successful</span>
@@ -421,7 +421,6 @@
  </div>
 </section>
 @endsection
-
 
 
 

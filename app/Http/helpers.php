@@ -613,6 +613,34 @@ if (! function_exists('payment_gateway_available')) {
     }
 }
 
+if (! function_exists('payment_method_label')) {
+    function payment_method_label(?string $method, string $fallback = '-'): string
+    {
+        $value = trim((string) $method);
+
+        if ($value === '') {
+            return $fallback;
+        }
+
+        return match (strtolower($value)) {
+            'paypal' => 'PayPal',
+            'mpesa', 'm-pesa' => 'M-Pesa',
+            'stripe' => 'Stripe',
+            'paystack' => 'Paystack',
+            'wallet' => 'Wallet',
+            'card', 'credit_card', 'credit-card' => 'Card',
+            'bank_transfer', 'bank-transfer' => 'Bank Transfer',
+            'cash_on_delivery', 'cash-on-delivery' => 'Cash on Delivery',
+            'cash' => 'Cash',
+            'pending' => 'Pending',
+            default => \Illuminate\Support\Str::of($value)
+                ->replace(['_', '-'], ' ')
+                ->title()
+                ->value(),
+        };
+    }
+}
+
 if (! function_exists('theme')) {
     /**
      * Shortcut for 'theme' setting.

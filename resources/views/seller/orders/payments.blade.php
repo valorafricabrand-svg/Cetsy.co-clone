@@ -122,7 +122,7 @@
  @case('card') <i class="fa-regular fa-credit-card"></i> @break
  @default <i class="fa-solid fa-money-bill-wave"></i>
  @endswitch
- {{ $payment->payment_method }}
+ {{ payment_method_label($payment->payment_method) }}
  </span>
  </td>
 
@@ -152,7 +152,6 @@
  </div>
 </section>
 @endsection
-
 
 
 
