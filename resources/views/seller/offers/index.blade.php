@@ -198,7 +198,7 @@
  @endif
  </td>
  <td style="min-width:200px;">
- <div class="flex items-center gap-2">
+ <a href="{{ route('seller.offers.show', $offer->id) }}" class="group flex items-center gap-2 rounded-lg -m-1 p-1 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-200">
  @php
  $thumb = product_thumb_url($offer->product);
  @endphp
@@ -209,26 +209,27 @@
  </div>
  </div>
  <div class="flex-1">
- <span class="font-semibold text-slate-900 block" title="{{ $offer->product->name ?? '-' }}">
+ <span class="font-semibold text-slate-900 block group-hover:text-emerald-700" title="{{ $offer->product->name ?? '-' }}">
  {{ \Illuminate\Support\Str::limit($offer->product->name ?? '-', 25) }}
  </span>
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-slate-50 text-slate-500 text-xs">#{{ $offer->product_id }}</span>
  @if($offer->is_counter_offer)
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-sky-100 text-sky-800 border-sky-200 text-xs ml-1">Counter</span>
  @endif
+ <span class="mt-1 block text-[11px] font-medium text-emerald-700 md:hidden">Tap to open</span>
  </div>
- </div>
+ </a>
  </td>
  <td style="min-width:150px;">
- <div class="flex flex-col">
+ <a href="{{ route('seller.offers.show', $offer->id) }}" class="flex flex-col rounded-lg -m-1 p-1 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-200">
  <span class="font-semibold text-xs text-slate-900">{{ $offer->buyer->name ?? '-' }}</span>
  <span class="text-slate-500 text-xs" title="{{ $offer->buyer->email ?? '' }}">
  <i class="fa-regular fa-envelope mr-1"></i>{{ \Illuminate\Support\Str::limit($offer->buyer->email ?? '', 20) }}
  </span>
- </div>
+ </a>
  </td>
  <td>
- <div class="flex flex-col">
+ <a href="{{ route('seller.offers.show', $offer->id) }}" class="flex flex-col rounded-lg -m-1 p-1 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-200">
  <span class="font-bold text-slate-900">{{ $offer->formatted_price }}</span>
  @if($offer->is_counter_offer)
  @php
@@ -243,7 +244,7 @@
  </span>
  @endif
  @endif
- </div>
+ </a>
  </td>
  <td>
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $offer->status_badge_class }}">{{ $offer->status_label }}</span>
@@ -470,7 +471,6 @@ document.addEventListener('DOMContentLoaded', function() {
  </div>
 </section>
 @endsection 
-
 
 
 
