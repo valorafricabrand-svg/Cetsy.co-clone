@@ -51,6 +51,22 @@
         $headerAccountInitial = \Illuminate\Support\Str::upper(
             \Illuminate\Support\Str::substr($headerAccountName !== '' ? $headerAccountName : 'A', 0, 1)
         );
+        $headerDashboardRoute = null;
+        $headerDashboardLabel = 'Dashboard';
+        $headerDashboardDescription = 'Open your dashboard.';
+        if ($headerUser) {
+            if ($isSellerUser && \Illuminate\Support\Facades\Route::has('seller.dashboard')) {
+                $headerDashboardRoute = route('seller.dashboard');
+                $headerDashboardLabel = 'Seller Dashboard';
+                $headerDashboardDescription = 'Manage listings, orders, and shop activity.';
+            } elseif (\Illuminate\Support\Facades\Route::has('buyer.dashboard')) {
+                $headerDashboardRoute = route('buyer.dashboard');
+                $headerDashboardLabel = 'Buyer Dashboard';
+                $headerDashboardDescription = 'Track orders, messages, and account activity.';
+            } elseif (\Illuminate\Support\Facades\Route::has('dashboard')) {
+                $headerDashboardRoute = route('dashboard');
+            }
+        }
         $headerSwitchAccounts = collect();
 
         $topNavCategories = collect();
@@ -692,6 +708,18 @@
                                 </div>
 
                                 <div class="space-y-2 p-4">
+                                    @if ($headerDashboardRoute)
+                                        <a href="{{ $headerDashboardRoute }}" class="flex w-full items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-left transition hover:bg-emerald-100">
+                                            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                                                <i class="fas fa-gauge-high"></i>
+                                            </span>
+                                            <span class="min-w-0 flex-1">
+                                                <span class="block truncate text-sm font-semibold text-slate-900">{{ $headerDashboardLabel }}</span>
+                                                <span class="block truncate text-xs text-slate-500">{{ $headerDashboardDescription }}</span>
+                                            </span>
+                                            <i class="fas fa-chevron-right text-sm text-slate-400"></i>
+                                        </a>
+                                    @endif
                                     <button type="button" data-ui-toggle="modal" data-ui-target="#accountSwitchModal" class="flex w-full items-center gap-3 rounded-xl border border-slate-200 px-3 py-3 text-left transition hover:bg-slate-50">
                                         <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
                                             <i class="fas fa-repeat"></i>
@@ -984,7 +1012,7 @@
                     <div class="rounded-xl border border-slate-200 p-3">
                         <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Account</div>
                         <div class="grid grid-cols-2 gap-2">
-                            <a href="{{ url('/dashboard') }}" @click="mobileDrawerOpen = false" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Dashboard</a>
+                            <a href="{{ $headerDashboardRoute ?: url('/dashboard') }}" @click="mobileDrawerOpen = false" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ $headerDashboardLabel }}</a>
                             <a href="{{ url('/cart') }}" @click="mobileDrawerOpen = false" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Cart</a>
                         </div>
                     </div>
