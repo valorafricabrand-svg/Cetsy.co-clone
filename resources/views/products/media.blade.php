@@ -8,6 +8,36 @@
   :root{ --accent:#0d6efd; --accent-light:rgba(13,110,253,.08); }
   .dropzone{transition:.18s;border:2px dashed #ced4da;touch-action:manipulation;}
   .dropzone.drag{background:var(--accent-light);border-color:var(--accent)!important;color:var(--accent);}
+  .media-native-input{
+    width:100%;
+    border:1px solid #cbd5e1;
+    border-radius:1rem;
+    background:#fff;
+    color:#334155;
+    font-size:.95rem;
+    line-height:1.4;
+    padding:.75rem .9rem;
+  }
+  .media-native-input::file-selector-button{
+    margin-right:.75rem;
+    border:0;
+    border-radius:.85rem;
+    background:#16a34a;
+    color:#fff;
+    font-weight:700;
+    padding:.65rem 1rem;
+    cursor:pointer;
+  }
+  .media-native-input::-webkit-file-upload-button{
+    margin-right:.75rem;
+    border:0;
+    border-radius:.85rem;
+    background:#16a34a;
+    color:#fff;
+    font-weight:700;
+    padding:.65rem 1rem;
+    cursor:pointer;
+  }
   .thumb{height:170px}
   .thumb img{width:100%;height:100%;object-fit:cover;user-select:none}
   .toolbar-action{min-width:34px}
@@ -284,18 +314,13 @@
       <div x-ref="b64Container"></div>
 
       {{-- Dropzone --}}
-      <div class="dropzone relative mb-4 block rounded-2xl py-5 text-center"
+      <label for="productMediaUploadInput"
+           class="dropzone relative mb-4 block rounded-2xl py-5 text-center"
            :class="{'drag':dragging}"
-           @click="openFilePicker()"
-           @keydown.enter.prevent="openFilePicker()"
-           @keydown.space.prevent="openFilePicker()"
            @dragenter.prevent="dragging=true"
            @dragover.prevent="dragging=true"
            @dragleave.prevent="dragging=false"
            @drop.prevent="handleDrop($event)"
-           role="button"
-           tabindex="0"
-           aria-label="Choose product photos or videos"
            style="cursor:pointer;">
         <p class="mb-1">
           <i class="fas fa-cloud-arrow-up mb-2 block text-2xl"></i>
@@ -303,20 +328,24 @@
         </p>
         <small class="text-slate-500">Images up to 5MB - Videos up to 50MB</small>
         <div class="mt-4">
-          <button type="button"
-                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-500"
-                  @click.stop.prevent="openFilePicker()">
+          <span class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-500">
             <i class="fas fa-plus mr-2"></i>
             Choose Files
-          </button>
+          </span>
         </div>
+      </label>
+
+      <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+        <label for="productMediaUploadInput" class="mb-2 block text-sm font-semibold text-slate-700">Choose from your device</label>
         <input type="file"
+               id="productMediaUploadInput"
                name="media[]"
-               class="sr-only"
+               class="media-native-input"
                multiple
                accept="image/*,video/*"
                x-ref="fileInput"
                @change="seedFromNative($event)">
+        <p class="mt-2 text-xs text-slate-500">If the app does not react when you tap the upload area, use this chooser and then tap Upload Media.</p>
       </div>
 
       {{-- Previews --}}
@@ -355,13 +384,12 @@
       </template>
 
       {{-- Submit --}}
-      <template x-if="items.length">
-        <div class="grid">
-          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 rounded-full">
-            <i class="fas fa-upload mr-1"></i> Upload Media
-          </button>
-        </div>
-      </template>
+      <div class="grid gap-2">
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 rounded-full">
+          <i class="fas fa-upload mr-1"></i> Upload Media
+        </button>
+        <p class="text-center text-xs text-slate-500" x-show="!items.length">After choosing files, tap Upload Media.</p>
+      </div>
     </form>
   </div>
 
@@ -772,6 +800,5 @@ function mediaPage(config = {}){
 }
 </script>
 @endpush
-
 
 
