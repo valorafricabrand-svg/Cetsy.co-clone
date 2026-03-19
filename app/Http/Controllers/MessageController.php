@@ -4,6 +4,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
+use App\Models\Offer;
 use App\Models\Product;
 use App\Models\User;
 use App\Mail\MessageReceivedMail;
@@ -200,7 +201,7 @@ class MessageController extends Controller
                     $q->where('sender_id', $otherUserId)->where('receiver_id', $user->id);
                 });
             })
-            ->with(['sender:id,name', 'receiver:id,name', 'product'])
+            ->with(['sender.shop', 'receiver.shop', 'product.media', 'product.shop.user'])
             ->orderBy('created_at', 'asc')
             ->get();
 
@@ -221,11 +222,17 @@ class MessageController extends Controller
             // ignore
         }
 
-        $otherUser = User::find($otherUserId);
-        $product = (int)$productId === 0 ? null : Product::find($productId);
+        $otherUser = User::with('shop')->find($otherUserId);
+        $product = $messages->first()->product;
         $shop = $product && $product->shop ? $product->shop : ($otherUser ? $otherUser->shop : null);
+        $latestOffer = $product
+            ? Offer::where('product_id', $product->id)
+                ->where('buyer_id', $user->id)
+                ->latest('updated_at')
+                ->first()
+            : null;
 
-        return view('buyer.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'shop'));
+        return view('buyer.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'shop', 'latestOffer'));
     }
 
     public function sellerIndex(Request $request)

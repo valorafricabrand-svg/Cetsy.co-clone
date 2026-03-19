@@ -17,25 +17,100 @@
                 @include('buyer.partials.sidebar')
             </div>
             <div class="col-span-12 lg:col-span-9">
+                @if(session('success'))
+                <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="alert">
+                    <i class="fa-solid fa-circle-check mr-2"></i>{{ session('success') }}
+                </div>
+                @endif
+
+                @if($errors->any())
+                <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation mr-2"></i>{{ $errors->first() }}
+                </div>
+                @endif
+
+                @php
+                    $currencySymbol = function_exists('shop_currency') ? shop_currency() : get_currency();
+                    $listingPrice = $product ? (float) ($product->price ?? 0) : 0;
+                    $currentPrice = $product ? (float) ($product->discounted_price ?? $listingPrice) : 0;
+                    $offerInputValue = old('offer_price', $latestOffer->offer_price ?? '');
+                    $listingRouteParam = $product ? ($product->slug ?: $product->id) : null;
+                    $showOfferPanel = $product && ($errors->has('offer_price') || (string) old('product_id') === (string) $product->id);
+                @endphp
+
                 @if($product)
                 <div class="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div class="p-4 sm:p-5">
-                        <div class="flex items-center">
-                            @if($product->media && $product->media->count() > 0)
-                                @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null); @endphp
-                                <img src="{{ $thumb }}" alt="{{ $product->name }}" class="mr-3 h-[60px] w-[60px] rounded object-cover">
-                            @else
-                                <div class="mr-3 flex h-[60px] w-[60px] items-center justify-center rounded bg-slate-100">
-                                    <i class="fa-regular fa-image text-slate-500"></i>
+                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <a href="{{ route('listing.show', $listingRouteParam) }}" class="flex min-w-0 flex-1 items-center gap-3 rounded-2xl transition hover:bg-slate-50">
+                                @if($product->media && $product->media->count() > 0)
+                                    @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null); @endphp
+                                    <img src="{{ $thumb }}" alt="{{ $product->name }}" class="h-[72px] w-[72px] rounded-xl object-cover">
+                                @else
+                                    <div class="flex h-[72px] w-[72px] items-center justify-center rounded-xl bg-slate-100">
+                                        <i class="fa-regular fa-image text-slate-500"></i>
+                                    </div>
+                                @endif
+                                <div class="min-w-0 grow">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h6 class="text-base font-semibold text-slate-900">{{ $product->name }}</h6>
+                                        <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Tap to view listing</span>
+                                    </div>
+                                    <p class="mt-1 text-xs text-slate-500">{!! $product->description ? \Illuminate\Support\Str::limit($product->description, 110) : 'No description available' !!}</p>
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Posted price {{ $currencySymbol }} {{ number_format($listingPrice, 2) }}</span>
+                                        @if($currentPrice > 0 && abs($currentPrice - $listingPrice) > 0.009)
+                                        <span class="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">Current listing price {{ $currencySymbol }} {{ number_format($currentPrice, 2) }}</span>
+                                        @endif
+                                        @if($latestOffer)
+                                        <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">Latest offer {{ $latestOffer->formatted_price }} · {{ $latestOffer->status_label }}</span>
+                                        @endif
+                                    </div>
                                 </div>
-                            @endif
-                            <div class="grow">
-                                <h6 class="mb-1 text-base font-semibold text-slate-900">{{ $product->name }}</h6>
-                                <p class="mb-0 text-xs text-slate-500">{!! $product->description ? \Illuminate\Support\Str::limit($product->description, 100) : 'No description available' !!}</p>
+                            </a>
+                            <div class="flex flex-wrap gap-2 lg:w-auto lg:flex-col lg:items-end">
+                                <a href="{{ route('listing.show', $listingRouteParam) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                                    <i class="fa-regular fa-eye mr-1"></i>View Item
+                                </a>
+                                @if($latestOffer)
+                                <a href="{{ route('buyer.offers.details', $latestOffer->id) }}" class="inline-flex items-center justify-center rounded-xl border border-sky-600 px-3 py-2 text-xs font-semibold text-sky-700 transition hover:bg-sky-50">
+                                    <i class="fa-regular fa-file-lines mr-1"></i>View Offer
+                                </a>
+                                @endif
+                                <button type="button" id="toggleBuyerOffer" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500">
+                                    <i class="fa-solid fa-tag mr-1"></i>{{ $latestOffer ? 'Update Offer' : 'Make Offer' }}
+                                </button>
                             </div>
-                            <div class="text-right">
-                                <span class="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">{{ $product->price_formatted }}</span>
+                        </div>
+
+                        <div id="buyerOfferPanel" class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 {{ $showOfferPanel ? '' : 'hidden' }}">
+                            <div class="mb-3">
+                                <h6 class="mb-1 text-sm font-semibold text-slate-900">Send an offer to the seller</h6>
+                                <p class="mb-0 text-xs text-slate-500">Use the posted price above as your reference. Your offer cannot exceed the current listing price.</p>
                             </div>
+                            <form method="POST" action="{{ route('offers.store') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                                @csrf
+                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                <div class="w-full sm:max-w-xs">
+                                    <label for="buyerOfferPrice" class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Offer Price</label>
+                                    <input type="number"
+                                           name="offer_price"
+                                           id="buyerOfferPrice"
+                                           min="1"
+                                           max="{{ number_format($currentPrice > 0 ? $currentPrice : $listingPrice, 2, '.', '') }}"
+                                           step="0.01"
+                                           value="{{ $offerInputValue }}"
+                                           class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
+                                           placeholder="{{ number_format($currentPrice > 0 ? $currentPrice : $listingPrice, 2) }}"
+                                           required>
+                                    @error('offer_price')
+                                    <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">
+                                    <i class="fa-regular fa-paper-plane mr-1"></i>Send Offer
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -149,22 +224,34 @@
 document.addEventListener('DOMContentLoaded', function() {
     const textarea = document.querySelector('textarea[name="message"]');
     const form = document.getElementById('buyerMessageForm');
+    const offerToggle = document.getElementById('toggleBuyerOffer');
+    const offerPanel = document.getElementById('buyerOfferPanel');
 
-    textarea?.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    });
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
 
-    textarea?.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            form?.submit();
-        }
-    });
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
+    }
 
     const messagesContainer = document.getElementById('messagesContainer');
     if (messagesContainer) {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    if (offerToggle && offerPanel) {
+        offerToggle.addEventListener('click', function() {
+            offerPanel.classList.toggle('hidden');
+        });
     }
 });
 </script>

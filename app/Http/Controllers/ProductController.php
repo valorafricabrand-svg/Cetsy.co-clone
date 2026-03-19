@@ -893,26 +893,34 @@ public function listing(string $slug)
     /* ------------------------------------------------------------
      | 1.  Fetch the product with everything the view needs
      |------------------------------------------------------------ */
-    $product = Product::with([
-            'media',
-            'category:id,name,slug',
-            'country:id,name',
-            'shippingProfiles:id,name,base_rate,pickup_available',
-            // Shop with rating aggregates and policies
-            'shop' => function ($q) {
-                $q->select('id','name','user_id','slug')
-                  ->with('policies:shop_id,shipping,returns')
-                  ->withCount('reviews')
-                  ->withAvg('reviews', 'rating');
-            },
-            // + variation types & variants for picker:
-            'variationTypes.options',
-            'variations.options.variationType',
-        ])
-        ->withCount('reviews')
-        ->withAvg('reviews', 'rating')
-        ->whereSlug($slug)
-        ->firstOrFail();
+    $listingQuery = function () {
+        return Product::with([
+                'media',
+                'category:id,name,slug',
+                'country:id,name',
+                'shippingProfiles:id,name,base_rate,pickup_available',
+                // Shop with rating aggregates and policies
+                'shop' => function ($q) {
+                    $q->select('id','name','user_id','slug')
+                      ->with('policies:shop_id,shipping,returns')
+                      ->withCount('reviews')
+                      ->withAvg('reviews', 'rating');
+                },
+                // + variation types & variants for picker:
+                'variationTypes.options',
+                'variations.options.variationType',
+            ])
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating');
+    };
+
+    $product = $listingQuery()->whereSlug($slug)->first();
+
+    if (! $product && ctype_digit($slug)) {
+        $product = $listingQuery()->find((int) $slug);
+    }
+
+    abort_if(! $product, 404);
 
     // Public visibility: only active listings are publicly viewable.
     // Allow owner and admins to view paused/draft via direct link (preview).

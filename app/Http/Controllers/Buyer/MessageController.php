@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\Product;
+use App\Models\Offer;
 use App\Mail\MessageReceivedMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\Activity;
@@ -102,7 +103,7 @@ class MessageController extends Controller
                       ->where('receiver_id', $user->id);
                 });
             })
-            ->with(['product', 'sender', 'receiver'])
+            ->with(['product.media', 'product.shop.user', 'sender.shop', 'receiver.shop'])
             ->orderBy('created_at', 'asc')
             ->get();
 
@@ -111,7 +112,14 @@ class MessageController extends Controller
         }
 
         $product = $messages->first()->product;
-        $otherUser = $user->id == $otherUserId ? $user : User::find($otherUserId);
+        $otherUser = $user->id == $otherUserId ? $user : User::with('shop')->find($otherUserId);
+        $shop = $product?->shop ?? $otherUser?->shop;
+        $latestOffer = $product
+            ? Offer::where('product_id', $productId)
+                ->where('buyer_id', $user->id)
+                ->latest('updated_at')
+                ->first()
+            : null;
 
         // Mark messages as read
         Message::where('product_id', $productId)
@@ -129,7 +137,7 @@ class MessageController extends Controller
             // non-fatal
         }
 
-        return view('buyer.messages.show', compact('messages', 'product', 'otherUser', 'conversationId'));
+        return view('buyer.messages.show', compact('messages', 'product', 'otherUser', 'conversationId', 'shop', 'latestOffer'));
     }
 
     public function reply(Request $request, $conversationId)
