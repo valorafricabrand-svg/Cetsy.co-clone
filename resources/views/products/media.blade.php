@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
 <style>
   :root{ --accent:#0d6efd; --accent-light:rgba(13,110,253,.08); }
-  .dropzone{transition:.18s;border:2px dashed #ced4da;}
+  .dropzone{transition:.18s;border:2px dashed #ced4da;touch-action:manipulation;}
   .dropzone.drag{background:var(--accent-light);border-color:var(--accent)!important;color:var(--accent);}
   .thumb{height:170px}
   .thumb img{width:100%;height:100%;object-fit:cover;user-select:none}
@@ -284,26 +284,40 @@
       <div x-ref="b64Container"></div>
 
       {{-- Dropzone --}}
-      <label class="dropzone relative mb-4 block rounded-2xl py-5 text-center"
-             :class="{'drag':dragging}"
-             @dragenter.prevent="dragging=true"
-             @dragover.prevent="dragging=true"
-             @dragleave.prevent="dragging=false"
-             @drop.prevent="handleDrop($event)"
-             style="cursor:pointer;">
+      <div class="dropzone relative mb-4 block rounded-2xl py-5 text-center"
+           :class="{'drag':dragging}"
+           @click="openFilePicker()"
+           @keydown.enter.prevent="openFilePicker()"
+           @keydown.space.prevent="openFilePicker()"
+           @dragenter.prevent="dragging=true"
+           @dragover.prevent="dragging=true"
+           @dragleave.prevent="dragging=false"
+           @drop.prevent="handleDrop($event)"
+           role="button"
+           tabindex="0"
+           aria-label="Choose product photos or videos"
+           style="cursor:pointer;">
         <p class="mb-1">
           <i class="fas fa-cloud-arrow-up mb-2 block text-2xl"></i>
           Drag & drop images or videos here or click to browse
         </p>
         <small class="text-slate-500">Images up to 5MB - Videos up to 50MB</small>
+        <div class="mt-4">
+          <button type="button"
+                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-500"
+                  @click.stop.prevent="openFilePicker()">
+            <i class="fas fa-plus mr-2"></i>
+            Choose Files
+          </button>
+        </div>
         <input type="file"
                name="media[]"
-               class="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+               class="sr-only"
                multiple
                accept="image/*,video/*"
                x-ref="fileInput"
                @change="seedFromNative($event)">
-      </label>
+      </div>
 
       {{-- Previews --}}
       <template x-if="items.length">
@@ -422,7 +436,6 @@
 @push('scripts')
 <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
 <script>
 function mediaPage(config = {}){
@@ -459,21 +472,37 @@ function mediaPage(config = {}){
 
     init(){
       // Attach once for crop action button.
-      document.getElementById('cropApplyBtn').addEventListener('click', ()=> this.applyCrop());
+      const cropApplyBtn = document.getElementById('cropApplyBtn');
+      if(cropApplyBtn){
+        cropApplyBtn.addEventListener('click', ()=> this.applyCrop());
+      }
 
     },
 
     // ---------- Upload list helpers ----------
     seedFromNative(e){
-      if(!e.target.files?.length) return;
+      if(!e.target || !e.target.files || !e.target.files.length) return;
       this.addFiles(e.target.files);
+    },
+    openFilePicker(){
+      if(this.$refs.fileInput){
+        this.$refs.fileInput.click();
+      }
     },
     handleDrop(e){
       this.dragging=false;
-      if(e.dataTransfer?.files?.length) this.addFiles(e.dataTransfer.files);
+      if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+        this.addFiles(e.dataTransfer.files);
+      }
+    },
+    makeItemId(){
+      if(window.crypto && typeof window.crypto.randomUUID === 'function'){
+        return window.crypto.randomUUID();
+      }
+      return 'media-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
     },
     addFiles(fileList){
-      [...fileList].forEach(file=>{
+      Array.from(fileList || []).forEach(file=>{
         const isImage = file.type.startsWith('image/');
         const isVideo = file.type.startsWith('video/');
         if(!isImage && !isVideo) return;
@@ -484,7 +513,7 @@ function mediaPage(config = {}){
         }
         const url = URL.createObjectURL(file);
         this.items.push({
-          id: crypto.randomUUID(),
+          id: this.makeItemId(),
           file, name: file.name,
           previewUrl: url,       // shown in the grid
           b64: null,             // set after crop (dataURL)
@@ -495,7 +524,7 @@ function mediaPage(config = {}){
     },
     removeNew(i){
       const it = this.items[i];
-      if(it?.previewUrl) URL.revokeObjectURL(it.previewUrl);
+      if(it && it.previewUrl) URL.revokeObjectURL(it.previewUrl);
       this.items.splice(i,1);
       if(this.items.length===0){
         // clear native input so empty submit doesn't send ghosts
@@ -743,8 +772,6 @@ function mediaPage(config = {}){
 }
 </script>
 @endpush
-
-
 
 
 
