@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const brand = String(payload.brand || "#27b105").trim() || "#27b105";
     const currency = String(payload.currency || "USD").trim() || "USD";
+    const rangeLabel = String(payload.rangeLabel || "the selected range").trim() || "the selected range";
     const labels = normalizeSeries(payload.labels);
     const revenue = normalizeSeries(payload.revenue, true);
     const orders = normalizeSeries(payload.orders, true);
@@ -15,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const dowSeries = normalizeSeries(payload.dowSeries, true);
 
     bindRangeForm();
-    initTrendPanel({ brand, currency, labels, revenue, orders });
+    initTrendPanel({ brand, currency, rangeLabel, labels, revenue, orders });
     initDowPanel({ brand, currency, labels: dowLabels, values: dowSeries });
     initSparklines({ brand, labels, revenue, orders });
     initExports();
@@ -36,11 +37,16 @@ function bindRangeForm() {
     });
 }
 
-function initTrendPanel({ brand, currency, labels, revenue, orders }) {
+function initTrendPanel({ brand, currency, rangeLabel, labels, revenue, orders }) {
     const messageEl = document.getElementById("chartMessage");
     const chartWrap = document.getElementById("chartCanvasWrap");
     const revenueCanvas = document.getElementById("revenueChart");
     const ordersCanvas = document.getElementById("ordersChart");
+    const buttons = Array.from(document.querySelectorAll("#chartToggle button"));
+    const statusEl = document.getElementById("chartToggleStatus");
+    const descriptionEl = document.getElementById("chartModeDescription");
+    const summaryRevenue = document.getElementById("summaryRevenue");
+    const summaryOrders = document.getElementById("summaryOrders");
     const revCtx = revenueCanvas?.getContext("2d");
     const ordCtx = ordersCanvas?.getContext("2d");
 
@@ -132,23 +138,52 @@ function initTrendPanel({ brand, currency, labels, revenue, orders }) {
         },
     });
 
-    document.querySelectorAll("#chartToggle button").forEach((button) => {
+    const setMode = (target) => {
+        const isRevenue = target === "revenue";
+
+        buttons.forEach((button) => {
+            const isActive = button.dataset.target === target;
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+
+        revenueCanvas.classList.toggle("hidden", !isRevenue);
+        ordersCanvas.classList.toggle("hidden", isRevenue);
+        summaryRevenue?.classList.toggle("active", isRevenue);
+        summaryOrders?.classList.toggle("active", !isRevenue);
+
+        if (statusEl) {
+            statusEl.textContent = isRevenue ? "Showing revenue trend" : "Showing orders trend";
+        }
+
+        if (descriptionEl) {
+            descriptionEl.innerHTML = isRevenue
+                ? `Showing <span class="font-semibold text-slate-900">daily paid revenue</span> for <span class="font-semibold text-slate-900">${escapeHtml(rangeLabel)}</span>.`
+                : `Showing <span class="font-semibold text-slate-900">daily paid order count</span> for <span class="font-semibold text-slate-900">${escapeHtml(rangeLabel)}</span>.`;
+        }
+
+        requestAnimationFrame(() => {
+            revenueChart.resize();
+            ordersChart.resize();
+        });
+    };
+
+    buttons.forEach((button) => {
         button.addEventListener("click", (event) => {
-            document
-                .querySelectorAll("#chartToggle button")
-                .forEach((item) => item.classList.remove("active"));
-            event.currentTarget.classList.add("active");
-
-            const target = event.currentTarget.dataset.target;
-            revenueCanvas.classList.toggle("hidden", target !== "revenue");
-            ordersCanvas.classList.toggle("hidden", target !== "orders");
-
-            requestAnimationFrame(() => {
-                revenueChart.resize();
-                ordersChart.resize();
-            });
+            setMode(event.currentTarget.dataset.target || "revenue");
         });
     });
+
+    setMode("revenue");
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 
 function initDowPanel({ brand, currency, labels, values }) {

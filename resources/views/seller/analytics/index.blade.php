@@ -95,6 +95,13 @@
         font-weight: 700;
         color: var(--analytics-text);
         box-shadow: 0 1px 2px rgba(15,23,42,.04);
+        transition: border-color .2s ease, background-color .2s ease, color .2s ease, box-shadow .2s ease;
+    }
+    .analytics-summary-pill.active {
+        border-color: var(--brand);
+        background: #f0fdf4;
+        color: var(--analytics-text);
+        box-shadow: 0 0 0 3px rgba(16,185,129,.12);
     }
     .analytics-chart-stage {
         position: relative;
@@ -199,17 +206,20 @@
           <div class="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h6 class="analytics-panel-title mb-0 font-semibold"><i class="fas fa-chart-area mr-2" style="color:var(--brand)"></i>Revenue &amp; Orders</h6>
-              <p class="analytics-panel-subtle mt-1 text-sm">Shows daily paid revenue and the number of paid orders for <span class="font-semibold text-slate-900">{{ $rangeLabel }}</span>.</p>
+              <p id="chartModeDescription" class="analytics-panel-subtle mt-1 text-sm">Showing <span class="font-semibold text-slate-900">daily paid revenue</span> for <span class="font-semibold text-slate-900">{{ $rangeLabel }}</span>.</p>
             </div>
-            <div id="chartToggle" class="analytics-toggle inline-flex items-center gap-1 rounded-xl border p-1 text-xs" role="group">
-              <button type="button" class="active inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-target="revenue">Revenue</button>
-              <button type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-target="orders">Orders</button>
+            <div class="flex flex-col items-stretch gap-2 sm:items-end">
+              <div id="chartToggle" class="analytics-toggle inline-flex items-center gap-1 rounded-xl border p-1 text-xs" role="group" aria-label="Switch analytics chart metric">
+                <button type="button" class="active inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-target="revenue" aria-pressed="true">Revenue</button>
+                <button type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-target="orders" aria-pressed="false">Orders</button>
+              </div>
+              <p id="chartToggleStatus" class="analytics-panel-subtle text-xs font-semibold">Showing revenue trend</p>
             </div>
           </div>
           <div class="analytics-summary-row px-4 py-3">
             <div class="flex flex-wrap gap-2">
-              <span class="analytics-summary-pill">Revenue in range <strong>{{ shop_currency() }} {{ number_format($kpi->total_sales,2) }}</strong></span>
-              <span class="analytics-summary-pill">Paid orders <strong>{{ number_format($kpi->total_orders) }}</strong></span>
+              <span id="summaryRevenue" class="analytics-summary-pill active">Revenue in range <strong>{{ shop_currency() }} {{ number_format($kpi->total_sales,2) }}</strong></span>
+              <span id="summaryOrders" class="analytics-summary-pill">Paid orders <strong>{{ number_format($kpi->total_orders) }}</strong></span>
             </div>
           </div>
           <div class="p-4">
@@ -339,6 +349,7 @@
 window.__sellerAnalytics = {
     brand: getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#27b105',
     currency: @json(shop_currency()),
+    rangeLabel: @json($rangeLabel),
     labels: @json($chart['labels']),
     revenue: @json($chart['revenue']),
     orders: @json($chart['orders']),
