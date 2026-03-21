@@ -36,6 +36,7 @@
             }
         }
 
+        $isAdminUser = $headerUser && method_exists($headerUser, 'isAdmin') && $headerUser->isAdmin();
         $isSellerUser = $headerUser && method_exists($headerUser, 'isSeller') && $headerUser->isSeller();
         $headerUserShop = $headerUser?->shop;
         $headerAccountName = trim((string) ($headerUserShop?->name ?: $headerUser?->name ?: $headerUser?->email ?: 'Account'));
@@ -55,7 +56,11 @@
         $headerDashboardLabel = 'Dashboard';
         $headerDashboardDescription = 'Open your dashboard.';
         if ($headerUser) {
-            if ($isSellerUser && \Illuminate\Support\Facades\Route::has('seller.dashboard')) {
+            if ($isAdminUser && \Illuminate\Support\Facades\Route::has('admin.dashboard')) {
+                $headerDashboardRoute = route('admin.dashboard');
+                $headerDashboardLabel = 'Admin Dashboard';
+                $headerDashboardDescription = 'Review platform activity, users, and operations.';
+            } elseif ($isSellerUser && \Illuminate\Support\Facades\Route::has('seller.dashboard')) {
                 $headerDashboardRoute = route('seller.dashboard');
                 $headerDashboardLabel = 'Seller Dashboard';
                 $headerDashboardDescription = 'Manage listings, orders, and shop activity.';
@@ -901,6 +906,35 @@
                     <a href="{{ route('become-seller') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Sell</a>
                     <a href="{{ route('contact') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Support</a>
                 </nav>
+
+                @if($isAdminUser)
+                    @php
+                        $adminDrawerLinks = [
+                            ['route' => 'admin.dashboard', 'icon' => 'fas fa-gauge-high', 'label' => 'Dashboard'],
+                            ['route' => 'admin.notifications.index', 'icon' => 'fas fa-bell', 'label' => 'Notifications'],
+                            ['route' => 'admin.users.index', 'icon' => 'fas fa-users', 'label' => 'Manage Users'],
+                            ['route' => 'admin.kyc.index', 'icon' => 'fas fa-id-card', 'label' => 'KYC Management'],
+                        ];
+                    @endphp
+                    <div class="rounded-xl border border-slate-200 p-3">
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Admin Menu</div>
+                        <div class="space-y-1.5">
+                            @foreach($adminDrawerLinks as $adminItem)
+                                @php
+                                    $adminRouteName = $adminItem['route'] ?? null;
+                                    $adminHref = $adminRouteName && \Illuminate\Support\Facades\Route::has($adminRouteName)
+                                        ? route($adminRouteName)
+                                        : null;
+                                @endphp
+                                @if($adminHref)
+                                    <a href="{{ $adminHref }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                        <span><i class="{{ $adminItem['icon'] }} mr-2"></i>{{ $adminItem['label'] }}</span>
+                                    </a>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
                 @if(auth()->check() && auth()->user()->isBuyer())
                     @php
