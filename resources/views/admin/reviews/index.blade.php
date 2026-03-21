@@ -772,53 +772,55 @@
 
     <!-- Main Content Card -->
     <div class="main-card">
-        <form method="POST" id="bulkForm">
+        <form method="POST" id="bulkForm" action="{{ route('admin.reviews.bulk-approve') }}" style="display: none;">
             @csrf
-            <!-- Bulk Actions Bar -->
-            <div class="bulk-actions">
-                <div class="bulk-actions-text">
-                    <i class="fas fa-info-circle"></i>
-                    Select reviews to perform bulk actions
-                </div>
-                <div class="bulk-buttons">
-                    <button type="submit" formaction="{{ route('admin.reviews.bulk-approve') }}" 
-                            class="btn btn-success btn-sm" 
-                            onclick="return confirm('Approve selected reviews?')">
-                        <i class="fas fa-check-double"></i>
-                        Bulk Approve
-                    </button>
-                    <button type="submit" formaction="{{ route('admin.reviews.bulk-delete') }}" 
-                            class="btn btn-danger btn-sm" 
-                            onclick="return confirm('Delete selected reviews? This action cannot be undone.')">
-                        <i class="fas fa-trash-alt"></i>
-                        Bulk Delete
-                    </button>
-                </div>
-            </div>
+        </form>
 
-            <!-- Table -->
-            <div class="table-wrapper">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>
-                                <input type="checkbox" id="checkAll" aria-label="Select all reviews">
-                            </th>
-                            <th>Customer</th>
-                            <th>Shop</th>
-                            <th>Rating</th>
-                            <th>Review</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th style="text-align: right;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        <!-- Bulk Actions Bar -->
+        <div class="bulk-actions">
+            <div class="bulk-actions-text">
+                <i class="fas fa-info-circle"></i>
+                Select reviews to perform bulk actions
+            </div>
+            <div class="bulk-buttons">
+                <button type="submit" form="bulkForm" formaction="{{ route('admin.reviews.bulk-approve') }}" 
+                        class="btn btn-success btn-sm" 
+                        onclick="return confirm('Approve selected reviews?')">
+                    <i class="fas fa-check-double"></i>
+                    Bulk Approve
+                </button>
+                <button type="submit" form="bulkForm" formaction="{{ route('admin.reviews.bulk-delete') }}" 
+                        class="btn btn-danger btn-sm" 
+                        onclick="return confirm('Delete selected reviews? This action cannot be undone.')">
+                    <i class="fas fa-trash-alt"></i>
+                    Bulk Delete
+                </button>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="checkAll" aria-label="Select all reviews">
+                        </th>
+                        <th>Customer</th>
+                        <th>Shop</th>
+                        <th>Rating</th>
+                        <th>Review</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
                         @forelse($reviews as $review)
                             <tr>
                                 <td data-label="Select">
                                     <input type="checkbox" name="ids[]" value="{{ $review->id }}" class="row-check" 
-                                           aria-label="Select review">
+                                           form="bulkForm" aria-label="Select review">
                                 </td>
                                 
                                 <td data-label="Customer">
@@ -932,54 +934,6 @@
                                     </div>
                                 </td>
                             </tr>
-
-                            <!-- Reject Modal -->
-                            <div class="modal fade" id="rejectModal-{{ $review->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <form method="POST" action="{{ route('admin.reviews.reject', $review->id) }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">
-                                                    <i class="fas fa-ban me-2"></i>
-                                                    Reject Review
-                                                </h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <strong>Customer:</strong> {{ $review->user ? $review->user->name : 'Unknown User' }}
-                                                </div>
-                                                <div class="mb-3">
-                                                    <strong>Review:</strong>
-                                                    <div class="review-content mt-2">
-                                                        {{ $review->comment ?? 'No comment provided' }}
-                                                    </div>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label class="form-label" for="reason-{{ $review->id }}">
-                                                        <strong>Rejection Reason</strong>
-                                                        <span class="text-danger">*</span>
-                                                    </label>
-                                                    <textarea name="reason" id="reason-{{ $review->id }}" class="form-control" rows="4" 
-                                                              required placeholder="Please provide a clear reason for rejecting this review..."></textarea>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                                    <i class="fas fa-times"></i>
-                                                    Cancel
-                                                </button>
-                                                <button type="submit" class="btn btn-warning">
-                                                    <i class="fas fa-ban"></i>
-                                                    Confirm Rejection
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
                         @empty
                             <tr>
                                 <td colspan="8">
@@ -997,24 +951,74 @@
                                 </td>
                             </tr>
                         @endforelse
-                    </tbody>
-                </table>
-            </div>
+                </tbody>
+            </table>
+        </div>
 
-            <!-- Pagination Footer -->
-            @if($reviews->count() > 0)
-                <div class="pagination-footer">
-                    <div class="pagination-info">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Showing {{ $reviews->firstItem() ?? 0 }} to {{ $reviews->lastItem() ?? 0 }} 
-                        of {{ $reviews->total() }} reviews
-                    </div>
-                    <div>
-                        {{ $reviews->appends(request()->query())->links() }}
+        @foreach($reviews as $review)
+            @if(!$review->approved && !$review->rejected_at)
+                <div class="modal fade" id="rejectModal-{{ $review->id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ route('admin.reviews.reject', $review->id) }}">
+                                @csrf
+                                @method('PATCH')
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-ban me-2"></i>
+                                        Reject Review
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <strong>Customer:</strong> {{ $review->user ? $review->user->name : 'Unknown User' }}
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong>Review:</strong>
+                                        <div class="review-content mt-2">
+                                            {{ $review->comment ?? 'No comment provided' }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="reason-{{ $review->id }}">
+                                            <strong>Rejection Reason</strong>
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <textarea name="reason" id="reason-{{ $review->id }}" class="form-control" rows="4" 
+                                                  required placeholder="Please provide a clear reason for rejecting this review..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="fas fa-times"></i>
+                                        Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-ban"></i>
+                                        Confirm Rejection
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             @endif
-        </form>
+        @endforeach
+
+        <!-- Pagination Footer -->
+        @if($reviews->count() > 0)
+            <div class="pagination-footer">
+                <div class="pagination-info">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Showing {{ $reviews->firstItem() ?? 0 }} to {{ $reviews->lastItem() ?? 0 }} 
+                    of {{ $reviews->total() }} reviews
+                </div>
+                <div>
+                    {{ $reviews->appends(request()->query())->links() }}
+                </div>
+            </div>
+        @endif
     </div>
 </div>
 </div>
