@@ -312,7 +312,24 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
         return const <String>[];
       }
 
-      return result.paths.whereType<String>().toList();
+      final selectedUris = result.files
+          .map((file) {
+            final identifier = file.identifier?.trim();
+            if (identifier != null && identifier.isNotEmpty) {
+              return identifier;
+            }
+
+            final path = file.path?.trim();
+            if (path != null && path.isNotEmpty) {
+              return Uri.file(path).toString();
+            }
+
+            return null;
+          })
+          .whereType<String>()
+          .toList();
+
+      return selectedUris;
     } catch (error, stackTrace) {
       debugPrint('Android WebView file picker failed: $error');
       debugPrintStack(stackTrace: stackTrace);
