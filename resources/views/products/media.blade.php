@@ -79,6 +79,17 @@
     pointer-events:auto;
     touch-action:manipulation;
   }
+  .media-picker-hidden{
+    position:absolute;
+    width:1px;
+    height:1px;
+    padding:0;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0, 0, 0, 0);
+    white-space:nowrap;
+    border:0;
+  }
   .thumb{height:170px}
   .thumb img{width:100%;height:100%;object-fit:cover;user-select:none}
   .toolbar-action{min-width:34px}
@@ -420,36 +431,33 @@
       {{-- hidden container to hold cropped base64 overrides --}}
       <div x-ref="b64Container"></div>
 
-      <div class="dropzone mb-4 rounded-2xl p-4 text-center"
-           :class="{'drag':dragging}"
-           @dragenter.prevent="dragging=true"
-           @dragover.prevent="dragging=true"
-           @dragleave.prevent="dragging=false"
-           @drop.prevent="handleDrop($event)">
-        <p class="mb-1">
-          <i class="fas fa-cloud-arrow-up mb-2 block text-2xl"></i>
-          Choose images or videos from your phone
-        </p>
-        <small class="text-slate-500">For best app compatibility, choose one file at a time. Images up to 5MB - Videos up to 50MB.</small>
-        <div class="mx-auto mt-4 max-w-xl">
-          <div class="media-picker-hotspot">
-            <div class="media-picker-hotspot__button">
-              <i class="fas fa-plus"></i>
-              <span>Choose File</span>
-            </div>
-            <input type="file"
-                   id="productMediaUploadInput"
-                   name="media[]"
-                   class="media-picker-hotspot__input"
-                   accept="image/*,video/*"
-                   x-ref="fileInput"
-                   @change="seedFromNative($event)">
+      <div class="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <label class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500" for="productMediaUploadInput">Upload File</label>
+            <p class="mt-1 text-xs text-slate-500">Same phone-picker pattern as the rider page. Choose one file at a time, then tap Upload Media.</p>
           </div>
+          <span class="inline-flex items-center rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Single file</span>
         </div>
-        <div class="mt-3 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-600">
-          <span x-text="selectionSummary()"></span>
+
+        <input type="file"
+               id="productMediaUploadInput"
+               name="media[]"
+               class="media-picker-hidden"
+               accept="image/*,video/*"
+               x-ref="fileInput"
+               @change="seedFromNative($event)">
+
+        <div class="mt-3 flex flex-wrap items-center gap-3">
+          <label for="productMediaUploadInput"
+                 class="inline-flex cursor-pointer items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+            <i class="fas fa-plus mr-2"></i>
+            <span>Choose File</span>
+          </label>
+          <p class="text-sm text-slate-500" x-text="selectionSummary()"></p>
         </div>
-        <p class="mt-2 text-xs text-slate-500">Choose a file from your phone, then tap Upload Media. Repeat for the next file if needed.</p>
+
+        <p class="mt-3 text-xs text-slate-500">Images up to 5MB. Videos up to 50MB. Repeat the process for the next file if needed.</p>
       </div>
 
       {{-- Previews --}}
