@@ -39,6 +39,46 @@
     padding:.65rem 1rem;
     cursor:pointer;
   }
+  .media-picker-hotspot{
+    position:relative;
+    width:100%;
+    max-width:22rem;
+    margin:0 auto;
+  }
+  .media-picker-hotspot__button{
+    display:inline-flex;
+    width:100%;
+    align-items:center;
+    justify-content:center;
+    gap:.5rem;
+    border-radius:1rem;
+    border:1px solid #16a34a;
+    background:#16a34a;
+    color:#fff;
+    font-size:1rem;
+    font-weight:700;
+    line-height:1.2;
+    min-height:3.5rem;
+    padding:.95rem 1rem;
+    pointer-events:none;
+  }
+  .media-picker-hotspot__input{
+    display:block;
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    margin:0;
+    border:0;
+    background:transparent;
+    appearance:none;
+    -webkit-appearance:none;
+    opacity:.01;
+    z-index:2;
+    cursor:pointer;
+    pointer-events:auto;
+    touch-action:manipulation;
+  }
   .thumb{height:170px}
   .thumb img{width:100%;height:100%;object-fit:cover;user-select:none}
   .toolbar-action{min-width:34px}
@@ -392,13 +432,19 @@
         </p>
         <small class="text-slate-500">For best app compatibility, choose one file at a time. Images up to 5MB - Videos up to 50MB.</small>
         <div class="mx-auto mt-4 max-w-xl">
-          <input type="file"
-                 id="productMediaUploadInput"
-                 name="media[]"
-                 class="media-native-input"
-                 accept="image/*,video/*"
-                 x-ref="fileInput"
-                 @change="seedFromNative($event)">
+          <div class="media-picker-hotspot">
+            <div class="media-picker-hotspot__button">
+              <i class="fas fa-plus"></i>
+              <span>Choose File</span>
+            </div>
+            <input type="file"
+                   id="productMediaUploadInput"
+                   name="media[]"
+                   class="media-picker-hotspot__input"
+                   accept="image/*,video/*"
+                   x-ref="fileInput"
+                   @change="seedFromNative($event)">
+          </div>
         </div>
         <div class="mt-3 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-600">
           <span x-text="selectionSummary()"></span>
