@@ -79,17 +79,6 @@
     pointer-events:auto;
     touch-action:manipulation;
   }
-  .media-picker-hidden{
-    position:absolute;
-    width:1px;
-    height:1px;
-    padding:0;
-    margin:-1px;
-    overflow:hidden;
-    clip:rect(0, 0, 0, 0);
-    white-space:nowrap;
-    border:0;
-  }
   .thumb{height:170px}
   .thumb img{width:100%;height:100%;object-fit:cover;user-select:none}
   .toolbar-action{min-width:34px}
@@ -434,16 +423,16 @@
       <div class="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div class="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <label class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500" for="productMediaUploadInput">Upload File</label>
-            <p class="mt-1 text-xs text-slate-500">Same phone-picker pattern as the rider page. Choose one file at a time, then tap Upload Media.</p>
+            <label class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500" for="productMediaUploadInput">Media File</label>
+            <p class="mt-1 text-xs text-slate-500">Choose one image or video from your phone, then tap Upload Media.</p>
           </div>
-          <span class="inline-flex items-center rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Single file</span>
+          <span class="inline-flex items-center rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Optional</span>
         </div>
 
         <input type="file"
                id="productMediaUploadInput"
                name="media[]"
-               class="media-picker-hidden"
+               class="sr-only"
                accept="image/*,video/*"
                x-ref="fileInput"
                @change="seedFromNative($event)">
@@ -451,13 +440,12 @@
         <div class="mt-3 flex flex-wrap items-center gap-3">
           <label for="productMediaUploadInput"
                  class="inline-flex cursor-pointer items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
-            <i class="fas fa-plus mr-2"></i>
             <span>Choose File</span>
           </label>
-          <p class="text-sm text-slate-500" x-text="selectionSummary()"></p>
+          <p class="text-sm text-slate-500" x-text="selectionStatus()"></p>
         </div>
 
-        <p class="mt-3 text-xs text-slate-500">Images up to 5MB. Videos up to 50MB. Repeat the process for the next file if needed.</p>
+        <p class="mt-3 text-xs text-slate-500">Images up to 5MB. Videos up to 50MB.</p>
       </div>
 
       {{-- Previews --}}
@@ -653,15 +641,14 @@ function mediaPage(config = {}){
       }
       return 'media-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
     },
-    selectionSummary(){
+    selectionStatus(){
       if(!this.items.length){
-        return 'No files chosen yet.';
+        return 'No new file selected yet.';
       }
-      const names = this.items.slice(0, 2).map(it => it.name);
-      if(this.items.length <= 2){
-        return names.join(', ');
+      if(this.items.length === 1){
+        return this.items[0].name || '1 file selected.';
       }
-      return `${names.join(', ')} + ${this.items.length - 2} more`;
+      return `${this.items.length} files selected.`;
     },
     addFiles(fileList){
       Array.from(fileList || []).forEach(file=>{
