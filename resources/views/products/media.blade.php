@@ -390,13 +390,12 @@
           <i class="fas fa-cloud-arrow-up mb-2 block text-2xl"></i>
           Choose images or videos from your phone
         </p>
-        <small class="text-slate-500">On desktop you can also drag and drop. Images up to 5MB - Videos up to 50MB.</small>
+        <small class="text-slate-500">For best app compatibility, choose one file at a time. Images up to 5MB - Videos up to 50MB.</small>
         <div class="mx-auto mt-4 max-w-xl">
           <input type="file"
                  id="productMediaUploadInput"
                  name="media[]"
                  class="media-native-input"
-                 multiple
                  accept="image/*,video/*"
                  x-ref="fileInput"
                  @change="seedFromNative($event)">
@@ -404,7 +403,7 @@
         <div class="mt-3 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-600">
           <span x-text="selectionSummary()"></span>
         </div>
-        <p class="mt-2 text-xs text-slate-500">Choose files from your phone, then tap Upload Media.</p>
+        <p class="mt-2 text-xs text-slate-500">Choose a file from your phone, then tap Upload Media. Repeat for the next file if needed.</p>
       </div>
 
       {{-- Previews --}}
@@ -569,11 +568,28 @@ function mediaPage(config = {}){
     // ---------- Upload list helpers ----------
     seedFromNative(e){
       if(!e.target || !e.target.files || !e.target.files.length) return;
+      if(!this.supportsQueuedNativeFiles()){
+        this.resetPendingItems();
+      }
       this.addFiles(e.target.files);
+    },
+    supportsQueuedNativeFiles(){
+      return typeof DataTransfer !== 'undefined';
+    },
+    resetPendingItems(){
+      this.items.forEach(it => {
+        if(it && typeof it.previewUrl === 'string' && it.previewUrl.startsWith('blob:')){
+          URL.revokeObjectURL(it.previewUrl);
+        }
+      });
+      this.items = [];
     },
     handleDrop(e){
       this.dragging=false;
       if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+        if(!this.supportsQueuedNativeFiles()){
+          this.resetPendingItems();
+        }
         this.addFiles(e.dataTransfer.files);
       }
     },
