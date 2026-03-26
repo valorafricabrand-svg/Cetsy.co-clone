@@ -12,6 +12,8 @@ use App\Models\Activity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 
 
 
@@ -27,7 +29,15 @@ class MediaController extends Controller
      */
     public function upload(Request $request, Product $product)
     {
-        $validator = Validator::make($request->all(), [
+        $normalizedMedia = Arr::wrap($request->file('media', []));
+        $uploadedFiles = collect($normalizedMedia)
+            ->flatten()
+            ->filter(fn ($file) => $file instanceof UploadedFile && $file->isValid())
+            ->values();
+
+        $validator = Validator::make(array_merge($request->all(), [
+            'media' => $normalizedMedia,
+        ]), [
             'media'            => ['array'],
             'media.*'          => ['file', 'mimes:jpeg,jpg,png,gif,webp,mp4,mov,avi,wmv,webm', 'max:51200'], // up to ~50MB
             'media_b64'        => ['array'],
@@ -36,8 +46,8 @@ class MediaController extends Controller
             'media_b64_names.*'=> ['string'],
         ]);
 
-        $validator->after(function ($validator) use ($request) {
-            $hasFiles = $request->hasFile('media');
+        $validator->after(function ($validator) use ($request, $uploadedFiles) {
+            $hasFiles = $uploadedFiles->isNotEmpty();
             $b64Items = collect($request->input('media_b64', []))
                 ->filter(fn ($value) => is_string($value) && trim($value) !== '');
 
@@ -59,7 +69,7 @@ class MediaController extends Controller
         $paths = [];
 
         // Handle uploaded files from <input type="file">
-        foreach ($request->file('media', []) as $file) {
+        foreach ($uploadedFiles as $file) {
             $path = $file->store('product-media', 'public');
             $type = str_starts_with($file->getMimeType(), 'video') ? 'video' : 'image';
             $product->media()->create(['url' => $path, 'type' => $type]);

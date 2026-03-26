@@ -644,7 +644,7 @@ function mediaPage(config = {}){
     : [];
   return {
       // Upload (new images)
-      items: [], dragging:false,
+      items: [], dragging:false, inputNeedsRebuild:false,
       // Existing media selection & deletion
       existingIds: normalizedExisting,
       selectedExisting: [],
@@ -682,10 +682,9 @@ function mediaPage(config = {}){
     // ---------- Upload list helpers ----------
     seedFromNative(e){
       if(!e.target || !e.target.files || !e.target.files.length) return;
-      if(!this.supportsQueuedNativeFiles()){
-        this.resetPendingItems();
-      }
+      this.resetPendingItems();
       this.addFiles(e.target.files);
+      this.inputNeedsRebuild = false;
     },
     supportsQueuedNativeFiles(){
       return typeof DataTransfer !== 'undefined';
@@ -701,10 +700,9 @@ function mediaPage(config = {}){
     handleDrop(e){
       this.dragging=false;
       if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
-        if(!this.supportsQueuedNativeFiles()){
-          this.resetPendingItems();
-        }
+        this.resetPendingItems();
         this.addFiles(e.dataTransfer.files);
+        this.inputNeedsRebuild = true;
       }
     },
     makeItemId(){
@@ -769,9 +767,11 @@ function mediaPage(config = {}){
       const it = this.items[i];
       if(it && it.previewUrl) URL.revokeObjectURL(it.previewUrl);
       this.items.splice(i,1);
+      this.inputNeedsRebuild = true;
       if(this.items.length===0){
         // clear native input so empty submit doesn't send ghosts
         if(this.$refs.fileInput) this.$refs.fileInput.value = '';
+        this.inputNeedsRebuild = false;
       }
     },
 
@@ -862,6 +862,7 @@ function mediaPage(config = {}){
         const it = this.items[this.newIndex];
         it.b64 = dataURL; // mark as cropped-override
         it.file = null;   // drop original file so only the cropped version uploads
+        this.inputNeedsRebuild = true;
         // Update preview to reflect the crop
         if(it.previewUrl){ URL.revokeObjectURL(it.previewUrl); }
         it.previewUrl = dataURL;
@@ -890,6 +891,12 @@ function mediaPage(config = {}){
 
     // ---------- Submit upload form (normal POST) ----------
     beforeUploadSubmit(e){
+      if(!this.items.length){
+        e.preventDefault();
+        alert('Please choose at least one media file before uploading.');
+        return;
+      }
+
       // For each CROPPED item, append hidden inputs media_b64[] + media_b64_names[]
       // Your controller should prefer these over the matching original file, if both exist.
       const holder = this.$refs.b64Container;
@@ -915,7 +922,7 @@ function mediaPage(config = {}){
       });
 
       // Rebuild the native file input so it only carries uncropped files
-      if(this.$refs.fileInput){
+      if(this.$refs.fileInput && this.inputNeedsRebuild){
         try {
           const dt = new DataTransfer();
           this.items.forEach(it => {
@@ -929,11 +936,16 @@ function mediaPage(config = {}){
             this.$refs.fileInput.value = '';
           }
         } catch (error) {
-          // Fallback: if DataTransfer is unavailable and we have cropped items, clear input
           const hasCropped = this.items.some(it => it.b64);
-          if(hasCropped){
+          const hasPendingFiles = this.items.some(it => it.file instanceof File);
+
+          if(hasCropped && !hasPendingFiles){
             this.$refs.fileInput.value = '';
+            return;
           }
+
+          e.preventDefault();
+          alert('Your browser could not prepare the selected file. Please choose the file again, then upload.');
         }
       }
 
