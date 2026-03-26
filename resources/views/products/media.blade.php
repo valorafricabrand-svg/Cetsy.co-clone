@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
 <style>
   :root{ --accent:#0d6efd; --accent-light:rgba(13,110,253,.08); }
+  .product-media-page{min-width:0;}
   .dropzone{transition:.18s;border:2px dashed #ced4da;touch-action:manipulation;}
   .dropzone.drag{background:var(--accent-light);border-color:var(--accent)!important;color:var(--accent);}
   .media-native-input{
@@ -59,6 +60,40 @@
   .progress-mini{height:4px;background:#e9ecef;border-radius:2px;overflow:hidden}
   .progress-mini>div{height:100%;background:var(--accent);width:0;transition:width .2s}
   [x-cloak]{display:none!important;}
+  .product-media-panel__header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:.75rem;
+    flex-wrap:wrap;
+  }
+  .product-media-toolbar{
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    flex-wrap:wrap;
+  }
+  .media-grid-col{grid-column:span 12 / span 12;min-width:0;}
+  .media-card-actions{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:.5rem;
+  }
+  .media-card-actions form{
+    display:flex;
+    flex:1 1 100%;
+  }
+  .media-card-actions form button{
+    width:100%;
+    justify-content:center;
+  }
+  .media-card-actions > button{
+    flex:1 1 calc(50% - .25rem);
+    min-width:0;
+    justify-content:center;
+  }
+  .media-upload-submit{width:100%;}
 
   .crop-modal-shell{align-items:flex-end;justify-content:center;padding:0;}
   .crop-modal-panel{
@@ -142,9 +177,30 @@
       max-height:92vh;
       border-radius:1rem;
     }
+    .product-media-toolbar{justify-content:flex-end;}
+    .media-grid-col{grid-column:span 6 / span 6;}
+  }
+
+  @media (min-width: 768px){
+    .media-grid-col{grid-column:span 4 / span 4;}
+    .media-card-actions form,
+    .media-card-actions > button{
+      flex:0 0 auto;
+    }
+    .media-card-actions form button{
+      width:auto;
+    }
+  }
+
+  @media (min-width: 1024px){
+    .media-grid-col{grid-column:span 3 / span 3;}
   }
 
   @media (max-width: 639.98px){
+    .product-media-panel__header{align-items:flex-start;}
+    .product-media-toolbar{width:100%;}
+    .product-media-toolbar > button{flex:1 1 auto;justify-content:center;}
+    .product-media-toolbar > span{width:100%;}
     .crop-toolbar{
       margin-inline:-1rem;
       padding-inline:1rem;
@@ -174,6 +230,24 @@
       min-width:0;
       flex:1 1 auto;
     }
+    .dropzone{
+      padding:1.25rem .875rem;
+    }
+    .dropzone p{
+      font-size:.95rem;
+      line-height:1.45;
+    }
+    .dropzone small{
+      display:block;
+      line-height:1.5;
+    }
+    .media-picker-trigger{
+      width:100%;
+    }
+    .media-picker-trigger span{
+      width:100%;
+      text-align:center;
+    }
     #cropWrapper{
       height:clamp(260px, 46vh, 420px);
       height:clamp(260px, 46dvh, 420px);
@@ -188,12 +262,12 @@
 @section('main')
 @php $current = \Illuminate\Support\Facades\Route::currentRouteName(); @endphp
 
-<section class="bg-slate-50 py-8 md:py-10">
+<section class="bg-slate-50 py-6 md:py-10">
   <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
     <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
       @include('seller.partials.sidebar')
 
-      <div class="space-y-6" x-data="mediaPage({ existingIds: @json($product->media->pluck('id')) })" x-init="init()">
+      <div class="product-media-page space-y-6" x-data="mediaPage({ existingIds: @json($product->media->pluck('id')) })" x-init="init()">
         @include('products.partials.edit-tabs', ['product' => $product, 'current' => $current])
 
   {{-- Flash --}}
@@ -213,10 +287,10 @@
 
   {{-- ===== Current Media ===== --}}
   <div class="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
-    <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 flex flex-wrap gap-2 items-center justify-between">
+    <div class="product-media-panel__header border-b border-slate-200 bg-slate-100 px-4 py-3">
       <h5 class="mb-0">Current Media</h5>
       @if($product->media->count())
-        <div class="flex items-center gap-2" x-show="existingIds.length" x-cloak>
+        <div class="product-media-toolbar" x-show="existingIds.length" x-cloak>
           <button type="button"
                   class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
                   @click="toggleSelectAllExisting()"
@@ -255,7 +329,7 @@
               $mediaUrl = asset('storage/'.$media->url);
               $isFeatured = $product->featured_image === $mediaUrl;
             @endphp
-            <div class="col-span-6 sm:col-span-4 md:col-span-3">
+            <div class="media-grid-col">
               <div data-media-id="{{ $media->id }}" class="relative rounded-2xl border border-slate-200 bg-white shadow-sm"
                    :class="selectedExisting.includes({{ $media->id }}) ? 'border-emerald-500 border-2 shadow' : ''">
                 <div class="absolute left-0 top-0 m-2 rounded-full bg-white shadow-sm">
@@ -272,9 +346,9 @@
                        class="h-[140px] w-full object-cover"
                        style="height:140px;object-fit:cover;">
                 @endif
-                <div class="border-t border-slate-200 px-4 py-3 text-center py-2">
+                <div class="media-card-actions border-t border-slate-200 px-4 py-2 text-center">
                   {{-- Make featured --}}
-                  <form action="{{ route('products.setFeaturedImage', $product) }}" method="POST" class="inline-block">
+                  <form action="{{ route('products.setFeaturedImage', $product) }}" method="POST">
                     @csrf @method('PATCH')
                     <input type="hidden" name="featured_image" value="{{ $media->url }}">
                     <button type="submit" class="inline-flex items-center rounded-xl border px-3 py-1.5 text-xs font-semibold {{ $isFeatured ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100' : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' }}">
@@ -312,7 +386,7 @@
 
   {{-- ===== Upload New Media (normal form submit) ===== --}}
   <div class="mb-5 rounded-2xl border border-slate-200 bg-white shadow-sm">
-    <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 flex justify-between items-center">
+    <div class="product-media-panel__header border-b border-slate-200 bg-slate-100 px-4 py-3">
       <h5 class="mb-0"><i class="fas fa-images mr-2"></i>Upload Media</h5>
       <small class="text-slate-500" x-text="items.length ? `${items.length} selected` : ''"></small>
     </div>
@@ -384,7 +458,7 @@
       <template x-if="items.length">
         <div class="grid grid-cols-12 gap-4 gap-3 mb-4" id="previewList">
           <template x-for="(it,i) in items" :key="it.id">
-            <div class="col-span-6 sm:col-span-4 md:col-span-3">
+            <div class="media-grid-col">
               <div class="relative overflow-hidden rounded border shadow-sm thumb">
                 <template x-if="it.type==='video'">
                   <video :src="it.previewUrl" class="w-full h-full" controls></video>
@@ -417,7 +491,7 @@
 
       {{-- Submit --}}
       <div class="grid gap-2">
-        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 rounded-full">
+        <button type="submit" class="media-upload-submit inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 rounded-full">
           <i class="fas fa-upload mr-1"></i> Upload Media
         </button>
         <p class="text-center text-xs text-slate-500" x-show="!items.length">After choosing files, tap Upload Media.</p>
