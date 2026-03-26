@@ -33,6 +33,10 @@ def hasReleaseSigningConfig =
         keystoreProperties["storePassword"] &&
         keystoreProperties["keyAlias"] &&
         keystoreProperties["keyPassword"]
+def requiresReleaseSigning =
+        gradle.startParameter.taskNames.any { taskName ->
+            taskName.toLowerCase().contains("release")
+        }
 
 android {
     namespace "com.cetsy.co.cetsy_starter" // TODO: replace with your real package
@@ -67,15 +71,11 @@ android {
 
     buildTypes {
         release {
-            if (!hasReleaseSigningConfig) {
-                throw new GradleException(
-                        "Missing Android release signing config. " +
-                        "Create android/key.properties (see README Play Store signing section)."
-                )
-            }
             minifyEnabled false
             shrinkResources false
-            signingConfig signingConfigs.release
+            if (hasReleaseSigningConfig) {
+                signingConfig signingConfigs.release
+            }
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
@@ -114,4 +114,11 @@ dependencies {
 
     // Multidex support if needed
     implementation "androidx.multidex:multidex:2.0.1"
+}
+
+if (requiresReleaseSigning && !hasReleaseSigningConfig) {
+    throw new GradleException(
+            "Missing Android release signing config. " +
+            "Create android/key.properties (see README Play Store signing section)."
+    )
 }

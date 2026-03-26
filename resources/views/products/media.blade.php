@@ -119,6 +119,58 @@
     justify-content:center;
   }
   .media-upload-submit{width:100%;}
+  .media-inline-preview{
+    margin-top:1rem;
+    border:1px solid #cbd5e1;
+    border-radius:1rem;
+    overflow:hidden;
+    background:#f8fafc;
+  }
+  .media-inline-preview__media{
+    position:relative;
+    aspect-ratio:1 / 1;
+    background:#0f172a;
+  }
+  .media-inline-preview__media img,
+  .media-inline-preview__media video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .media-inline-preview__meta{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:.75rem;
+    padding:.85rem 1rem 1rem;
+  }
+  .media-inline-preview__name{
+    color:#0f172a;
+    font-size:.95rem;
+    font-weight:700;
+    line-height:1.35;
+    word-break:break-word;
+  }
+  .media-inline-preview__note{
+    color:#64748b;
+    font-size:.75rem;
+    line-height:1.45;
+    margin-top:.25rem;
+  }
+  .media-inline-preview__badge{
+    display:inline-flex;
+    align-items:center;
+    white-space:nowrap;
+    border-radius:9999px;
+    background:#dcfce7;
+    color:#166534;
+    font-size:.7rem;
+    font-weight:700;
+    letter-spacing:.04em;
+    padding:.35rem .7rem;
+    text-transform:uppercase;
+  }
 
   .crop-modal-shell{align-items:flex-end;justify-content:center;padding:0;}
   .crop-modal-panel{
@@ -446,6 +498,26 @@
         </div>
 
         <p class="mt-3 text-xs text-slate-500">Images up to 5MB. Videos up to 50MB.</p>
+
+        <template x-if="primaryPreview()">
+          <div class="media-inline-preview">
+            <div class="media-inline-preview__media">
+              <template x-if="primaryPreview().type === 'video'">
+                <video :src="primaryPreview().previewUrl" controls playsinline preload="metadata"></video>
+              </template>
+              <template x-if="primaryPreview().type === 'image'">
+                <img :src="primaryPreview().previewUrl" :alt="primaryPreview().name || 'Selected media preview'" draggable="false">
+              </template>
+            </div>
+            <div class="media-inline-preview__meta">
+              <div>
+                <div class="media-inline-preview__name" x-text="primaryPreview().name || 'Selected file'"></div>
+                <p class="media-inline-preview__note">Preview your file here before tapping Upload Media.</p>
+              </div>
+              <span class="media-inline-preview__badge" x-text="primaryPreview().type === 'video' ? 'Video' : 'Image'"></span>
+            </div>
+          </div>
+        </template>
       </div>
 
       {{-- Previews --}}
@@ -641,6 +713,24 @@ function mediaPage(config = {}){
       }
       return 'media-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
     },
+    inferMediaKind(file){
+      const mime = String(file?.type || '').toLowerCase();
+      if(mime.startsWith('image/')) return 'image';
+      if(mime.startsWith('video/')) return 'video';
+
+      const name = String(file?.name || '').toLowerCase();
+      const ext = name.includes('.') ? name.split('.').pop() : '';
+      const imageExts = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
+      const videoExts = ['mp4', 'mov', 'avi', 'wmv', 'webm'];
+
+      if(imageExts.includes(ext)) return 'image';
+      if(videoExts.includes(ext)) return 'video';
+
+      return null;
+    },
+    primaryPreview(){
+      return this.items.length ? this.items[0] : null;
+    },
     selectionStatus(){
       if(!this.items.length){
         return 'No new file selected yet.';
@@ -652,9 +742,13 @@ function mediaPage(config = {}){
     },
     addFiles(fileList){
       Array.from(fileList || []).forEach(file=>{
-        const isImage = file.type.startsWith('image/');
-        const isVideo = file.type.startsWith('video/');
-        if(!isImage && !isVideo) return;
+        const kind = this.inferMediaKind(file);
+        const isImage = kind === 'image';
+        const isVideo = kind === 'video';
+        if(!isImage && !isVideo){
+          alert(`${file.name || 'This file'} is not supported. Use JPG, PNG, GIF, WEBP, MP4, MOV, AVI, WMV, or WEBM.`);
+          return;
+        }
         const max = isImage ? 5*1024*1024 : 50*1024*1024;
         if(file.size > max){
           alert(`${file.name} is larger than ${isImage ? '5MB' : '50MB'}`);

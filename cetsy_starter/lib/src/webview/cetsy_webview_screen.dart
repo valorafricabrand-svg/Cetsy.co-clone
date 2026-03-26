@@ -1,10 +1,11 @@
 // WebView screen with 4-item bottom navigation.
-// Keeps: no AppBar, Safe top margin, pull-to-refresh, tap/transition loader,
+// Keeps: no AppBar, Safe top margin, pull-to-refresh,
 // offline banner and Android file uploads.
 
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,10 +31,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
 
   // ---- Layout tuning
   static const double _topMargin = 0;
-
-  // ---- Load/progress state
-  final ValueNotifier<int> _pageProgress = ValueNotifier<int>(0);
-  bool _loadingOverlay = false; // tap/transition spinner
 
   // ---- Offline + errors
   final ValueNotifier<bool> _isOffline = ValueNotifier<bool>(false);
@@ -94,9 +91,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
         },
       );
       controller.loadRequest(Uri.parse(widget.initialUrl)).catchError((_) {});
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted && _loadingOverlay) _setLoading(false);
-      });
       _controller = controller;
       return;
     }
@@ -106,14 +100,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
       ..setBackgroundColor(Colors.transparent)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onProgress: (p) {
-            _pageProgress.value = p;
-            if (p > 0 && p < 100) {
-              _setLoading(true);
-            } else if (p == 100) {
-              _setLoading(false);
-            }
-          },
           onPageStarted: (_) {
             _lastError.value = null;
             _setLoading(true);
@@ -209,8 +195,7 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
       final android = controller.platform as AndroidWebViewController;
       // Best-effort: allow inline media playback without user gesture
       android.setMediaPlaybackRequiresUserGesture(false).catchError((_) {});
-      // Rely on platform file chooser for best compatibility (camera/gallery)
-      // NOTE: Some versions don't support setDownloadListener; omitted intentionally.
+      android.setOnShowFileSelector(_androidFilePicker);
     }
 
     // iOS: enable back/forward swipe gestures
@@ -232,7 +217,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
   void dispose() {
     WebIframeHooks.stop();
     _connSub.cancel();
-    _pageProgress.dispose();
     _isOffline.dispose();
     _lastError.dispose();
     super.dispose();
@@ -279,9 +263,61 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     } catch (_) {}
   }
 
-  void _setLoading(bool v) {
-    if (_loadingOverlay == v) return;
-    setState(() => _loadingOverlay = v);
+  void _setLoading(bool _) {
+    // Loader UI is intentionally disabled in the app WebView.
+  }
+
+  Future<List<String>> _androidFilePicker(FileSelectorParams params) async {
+    try {
+      final acceptTypes = params.acceptTypes
+          .map((type) => type.trim().toLowerCase())
+          .where((type) => type.isNotEmpty)
+          .toList();
+
+      final wantsImage = acceptTypes.any(
+        (type) =>
+            type.contains('image') ||
+            type.endsWith('.jpg') ||
+            type.endsWith('.jpeg') ||
+            type.endsWith('.png') ||
+            type.endsWith('.gif') ||
+            type.endsWith('.webp'),
+      );
+      final wantsVideo = acceptTypes.any(
+        (type) =>
+            type.contains('video') ||
+            type.endsWith('.mp4') ||
+            type.endsWith('.mov') ||
+            type.endsWith('.avi') ||
+            type.endsWith('.webm') ||
+            type.endsWith('.mkv'),
+      );
+
+      final pickerType = wantsImage && wantsVideo
+          ? FileType.media
+          : wantsImage
+              ? FileType.image
+              : wantsVideo
+                  ? FileType.video
+                  : FileType.any;
+
+      final allowMultiple = params.mode == FileSelectorMode.openMultiple;
+
+      final result = await FilePicker.platform.pickFiles(
+        type: pickerType,
+        allowMultiple: allowMultiple,
+      );
+
+      if (result == null) {
+        return const <String>[];
+      }
+
+      return result.paths.whereType<String>().toList();
+    } catch (error, stackTrace) {
+      debugPrint('Android WebView file picker failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return const <String>[];
+    }
   }
 
   Future<void> _reload() async {
@@ -339,40 +375,7 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     );
   }
 
-  // Thin progress strip at the top (uses either pull-progress or page-load progress)
-  Widget _buildTopProgressStrip() {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 2,
-      child: ValueListenableBuilder<int>(
-        valueListenable: _pageProgress,
-        builder: (_, p, __) {
-          final isLoading = p > 0 && p < 100;
-          final showPull = _pullProgress > 0;
-          final value = showPull ? _pullProgress : (isLoading ? p / 100 : null);
-          return AnimatedOpacity(
-            duration: const Duration(milliseconds: 120),
-            opacity: (showPull || isLoading) ? 1 : 0,
-            child: LinearProgressIndicator(value: value),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildGlobalLoadingBar() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
-      height: _loadingOverlay ? 2 : 0,
-      child: _loadingOverlay
-          ? const LinearProgressIndicator()
-          : const SizedBox.shrink(),
-    );
-  }
-
-  // Offline banner (under the progress strip)
+  // Offline banner
   Widget _buildOfflineBanner() {
     return ValueListenableBuilder<bool>(
       valueListenable: _isOffline,
@@ -481,24 +484,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
     );
   }
 
-  // Tap listener overlay: shows a quick loader flash and lets touch pass through.
-  Widget _buildTapLoaderListener() {
-    return Listener(
-      behavior: HitTestBehavior.translucent, // does NOT block the webview
-      onPointerDown: (_) {
-        // flash the loader briefly on any tap; if a real navigation starts,
-        // onProgress/onPageStarted will keep it visible until finished.
-        _setLoading(true);
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if ((_pageProgress.value == 0 || _pageProgress.value == 100) &&
-              mounted) {
-            _setLoading(false);
-          }
-        });
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -520,7 +505,6 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
               // Offline banner (appears under the margin)
               _buildOfflineBanner(),
               _buildInstallHintBanner(),
-              _buildGlobalLoadingBar(),
 
               // Main area
               Expanded(
@@ -531,33 +515,11 @@ class _CetsyWebViewScreenState extends State<CetsyWebViewScreen> {
                       if (_controller != null)
                         WebViewWidget(controller: _controller!),
 
-                      // Pull-to-refresh handle + top progress strip
+                      // Pull-to-refresh handle
                       _buildPullHandle(),
-                      _buildTopProgressStrip(),
-
-                      // Tap loader listener (doesn't block touches)
-                      if (!kIsWeb) _buildTapLoaderListener(),
 
                       // Error overlay (if any)
                       _buildErrorOverlay(),
-
-                      // Center loader overlay
-                      IgnorePointer(
-                        ignoring: true, // visual only
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 150),
-                          opacity: _loadingOverlay ? 1 : 0,
-                          child: Container(
-                            color: Colors.black.withValues(alpha: 0.12),
-                            alignment: Alignment.center,
-                            child: const SizedBox(
-                              width: 36,
-                              height: 36,
-                              child: CircularProgressIndicator(strokeWidth: 3),
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
