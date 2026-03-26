@@ -29,19 +29,21 @@
     padding:.65rem 1rem;
     cursor:pointer;
   }
+  .media-picker-input{
+    position:absolute;
+    width:1px;
+    height:1px;
+    padding:0;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0, 0, 0, 0);
+    white-space:nowrap;
+    border:0;
+  }
   .media-picker-trigger{
-    position:relative;
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    overflow:hidden;
-  }
-  .media-picker-input{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    opacity:0;
     cursor:pointer;
   }
   .media-native-input::-webkit-file-upload-button{
@@ -401,34 +403,37 @@
 
       {{-- hidden container to hold cropped base64 overrides --}}
       <div x-ref="b64Container"></div>
+      <input type="file"
+             id="productMediaUploadInput"
+             name="media[]"
+             class="media-picker-input"
+             multiple
+             accept="image/*,video/*"
+             x-ref="fileInput"
+             @click="prepareNativePicker($event)"
+             @change="seedFromNative($event)">
 
       {{-- Dropzone --}}
-      <div class="dropzone relative mb-4 block rounded-2xl py-5 text-center"
-           :class="{'drag':dragging}"
-           role="button"
-           tabindex="0"
-           @click="openFilePicker()"
-           @keydown.enter.prevent="openFilePicker()"
-           @keydown.space.prevent="openFilePicker()"
-           @dragenter.prevent="dragging=true"
-           @dragover.prevent="dragging=true"
-           @dragleave.prevent="dragging=false"
-           @drop.prevent="handleDrop($event)"
-           style="cursor:pointer;">
+      <label for="productMediaUploadInput"
+             class="dropzone relative mb-4 block rounded-2xl py-5 text-center"
+             :class="{'drag':dragging}"
+             @dragenter.prevent="dragging=true"
+             @dragover.prevent="dragging=true"
+             @dragleave.prevent="dragging=false"
+             @drop.prevent="handleDrop($event)"
+             style="cursor:pointer;">
         <p class="mb-1">
           <i class="fas fa-cloud-arrow-up mb-2 block text-2xl"></i>
           Drag & drop images or videos here or click to browse
         </p>
         <small class="text-slate-500">Images up to 5MB - Videos up to 50MB</small>
         <div class="mt-4">
-          <button type="button"
-                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-500"
-                  @click.stop="openFilePicker()">
+          <span class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-500">
             <i class="fas fa-plus mr-2"></i>
             Choose Files
-          </button>
+          </span>
         </div>
-      </div>
+      </label>
 
       <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -436,17 +441,10 @@
             <label class="mb-1 block text-sm font-semibold text-slate-700">Choose from your device</label>
             <p class="text-xs text-slate-500">Tap the native button below to open your phone file picker, then tap Upload Media.</p>
           </div>
-          <div class="media-picker-trigger rounded-xl border border-emerald-600 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">
+          <label for="productMediaUploadInput"
+                 class="media-picker-trigger rounded-xl border border-emerald-600 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">
             <span>Choose Files</span>
-            <input type="file"
-                   id="productMediaUploadInput"
-                   name="media[]"
-                   class="media-picker-input"
-                   multiple
-                   accept="image/*,video/*"
-                   x-ref="fileInput"
-                   @change="seedFromNative($event)">
-          </div>
+          </label>
         </div>
         <div class="mt-3 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-600">
           <span x-text="selectionSummary()"></span>
@@ -624,21 +622,9 @@ function mediaPage(config = {}){
     canRebuildNativeFiles(){
       return typeof DataTransfer !== 'undefined';
     },
-    openFilePicker(){
-      const input = this.$refs.fileInput;
-      if(!input) return;
-      if(this.canRebuildNativeFiles()){
-        input.value = '';
-      }
-      if(typeof input.showPicker === 'function'){
-        try {
-          input.showPicker();
-          return;
-        } catch (error) {
-          // Some mobile browsers expose showPicker but still reject it.
-        }
-      }
-      input.click();
+    prepareNativePicker(e){
+      if(!this.canRebuildNativeFiles() || !e.target) return;
+      e.target.value = '';
     },
     handleDrop(e){
       this.dragging=false;
