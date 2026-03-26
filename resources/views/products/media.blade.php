@@ -28,16 +28,20 @@
     padding:.65rem 1rem;
     cursor:pointer;
   }
+  .media-picker-trigger{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
   .media-picker-input{
     position:absolute;
-    width:1px;
-    height:1px;
-    padding:0;
-    margin:-1px;
-    overflow:hidden;
-    clip:rect(0, 0, 0, 0);
-    white-space:nowrap;
-    border:0;
+    inset:0;
+    width:100%;
+    height:100%;
+    opacity:0;
+    cursor:pointer;
   }
   .media-native-input::-webkit-file-upload-button{
     margin-right:.75rem;
@@ -353,25 +357,22 @@
       </div>
 
       <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-        <input type="file"
-               id="productMediaUploadInput"
-               name="media[]"
-               class="media-picker-input"
-               multiple
-               accept="image/*,video/*"
-               x-ref="fileInput"
-               tabindex="-1"
-               @change="seedFromNative($event)">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <label for="productMediaUploadInput" class="mb-1 block text-sm font-semibold text-slate-700">Choose from your device</label>
-            <p class="text-xs text-slate-500">Use this mobile-friendly chooser if tapping the upload box does not open your phone picker.</p>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">Choose from your device</label>
+            <p class="text-xs text-slate-500">Tap the native button below to open your phone file picker, then tap Upload Media.</p>
           </div>
-          <button type="button"
-                  class="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
-                  @click="openFilePicker()">
-            Choose Files
-          </button>
+          <div class="media-picker-trigger rounded-xl border border-emerald-600 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">
+            <span>Choose Files</span>
+            <input type="file"
+                   id="productMediaUploadInput"
+                   name="media[]"
+                   class="media-picker-input"
+                   multiple
+                   accept="image/*,video/*"
+                   x-ref="fileInput"
+                   @change="seedFromNative($event)">
+          </div>
         </div>
         <div class="mt-3 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-600">
           <span x-text="selectionSummary()"></span>
@@ -542,12 +543,19 @@ function mediaPage(config = {}){
     seedFromNative(e){
       if(!e.target || !e.target.files || !e.target.files.length) return;
       this.addFiles(e.target.files);
-      e.target.value = '';
+      if(this.canRebuildNativeFiles()){
+        e.target.value = '';
+      }
+    },
+    canRebuildNativeFiles(){
+      return typeof DataTransfer !== 'undefined';
     },
     openFilePicker(){
       const input = this.$refs.fileInput;
       if(!input) return;
-      input.value = '';
+      if(this.canRebuildNativeFiles()){
+        input.value = '';
+      }
       if(typeof input.showPicker === 'function'){
         try {
           input.showPicker();
@@ -851,4 +859,3 @@ function mediaPage(config = {}){
 }
 </script>
 @endpush
-
