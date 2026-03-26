@@ -28,6 +28,17 @@
     padding:.65rem 1rem;
     cursor:pointer;
   }
+  .media-picker-input{
+    position:absolute;
+    width:1px;
+    height:1px;
+    padding:0;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0, 0, 0, 0);
+    white-space:nowrap;
+    border:0;
+  }
   .media-native-input::-webkit-file-upload-button{
     margin-right:.75rem;
     border:0;
@@ -314,9 +325,13 @@
       <div x-ref="b64Container"></div>
 
       {{-- Dropzone --}}
-      <label for="productMediaUploadInput"
-           class="dropzone relative mb-4 block rounded-2xl py-5 text-center"
+      <div class="dropzone relative mb-4 block rounded-2xl py-5 text-center"
            :class="{'drag':dragging}"
+           role="button"
+           tabindex="0"
+           @click="openFilePicker()"
+           @keydown.enter.prevent="openFilePicker()"
+           @keydown.space.prevent="openFilePicker()"
            @dragenter.prevent="dragging=true"
            @dragover.prevent="dragging=true"
            @dragleave.prevent="dragging=false"
@@ -328,24 +343,40 @@
         </p>
         <small class="text-slate-500">Images up to 5MB - Videos up to 50MB</small>
         <div class="mt-4">
-          <span class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-500">
+          <button type="button"
+                  class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-500"
+                  @click.stop="openFilePicker()">
             <i class="fas fa-plus mr-2"></i>
             Choose Files
-          </span>
+          </button>
         </div>
-      </label>
+      </div>
 
       <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-        <label for="productMediaUploadInput" class="mb-2 block text-sm font-semibold text-slate-700">Choose from your device</label>
         <input type="file"
                id="productMediaUploadInput"
                name="media[]"
-               class="media-native-input"
+               class="media-picker-input"
                multiple
                accept="image/*,video/*"
                x-ref="fileInput"
+               tabindex="-1"
                @change="seedFromNative($event)">
-        <p class="mt-2 text-xs text-slate-500">If the app does not react when you tap the upload area, use this chooser and then tap Upload Media.</p>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <label for="productMediaUploadInput" class="mb-1 block text-sm font-semibold text-slate-700">Choose from your device</label>
+            <p class="text-xs text-slate-500">Use this mobile-friendly chooser if tapping the upload box does not open your phone picker.</p>
+          </div>
+          <button type="button"
+                  class="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+                  @click="openFilePicker()">
+            Choose Files
+          </button>
+        </div>
+        <div class="mt-3 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-600">
+          <span x-text="selectionSummary()"></span>
+        </div>
+        <p class="mt-2 text-xs text-slate-500">After choosing files, tap Upload Media.</p>
       </div>
 
       {{-- Previews --}}
@@ -511,11 +542,21 @@ function mediaPage(config = {}){
     seedFromNative(e){
       if(!e.target || !e.target.files || !e.target.files.length) return;
       this.addFiles(e.target.files);
+      e.target.value = '';
     },
     openFilePicker(){
-      if(this.$refs.fileInput){
-        this.$refs.fileInput.click();
+      const input = this.$refs.fileInput;
+      if(!input) return;
+      input.value = '';
+      if(typeof input.showPicker === 'function'){
+        try {
+          input.showPicker();
+          return;
+        } catch (error) {
+          // Some mobile browsers expose showPicker but still reject it.
+        }
       }
+      input.click();
     },
     handleDrop(e){
       this.dragging=false;
@@ -528,6 +569,16 @@ function mediaPage(config = {}){
         return window.crypto.randomUUID();
       }
       return 'media-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    },
+    selectionSummary(){
+      if(!this.items.length){
+        return 'No files chosen yet.';
+      }
+      const names = this.items.slice(0, 2).map(it => it.name);
+      if(this.items.length <= 2){
+        return names.join(', ');
+      }
+      return `${names.join(', ')} + ${this.items.length - 2} more`;
     },
     addFiles(fileList){
       Array.from(fileList || []).forEach(file=>{
@@ -800,5 +851,4 @@ function mediaPage(config = {}){
 }
 </script>
 @endpush
-
 
