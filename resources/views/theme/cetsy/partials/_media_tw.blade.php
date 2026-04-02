@@ -2,6 +2,7 @@
 @php
   $mediaItems = $product->media ?? collect();
   $mediaTotal = $mediaItems->count();
+  $isDigitalPreview = strtolower((string) ($product->type ?? '')) === 'digital';
 @endphp
 
 <div data-media-gallery class="space-y-3">
@@ -11,9 +12,10 @@
         @foreach($mediaItems as $i => $media)
           <button
             type="button"
-            class="media-thumb inline-flex h-[68px] w-[68px] items-center justify-center overflow-hidden rounded-xl border bg-white {{ $i === 0 ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-slate-200' }}"
+            class="media-thumb inline-flex h-[68px] w-[68px] items-center justify-center overflow-hidden rounded-xl border bg-white {{ $i === 0 ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-slate-200' }} {{ $isDigitalPreview && $media->type !== 'video' ? 'cetsy-preview-watermark cetsy-preview-watermark--thumb' : '' }}"
             data-media-thumb="{{ $i }}"
             aria-label="Select media {{ $i + 1 }}"
+            @if($isDigitalPreview && $media->type !== 'video') data-watermark-label="Preview" @endif
           >
             @if($media->type === 'video')
               <video src="{{ media_url($media->url) }}" class="h-full w-full object-cover" muted preload="metadata"></video>
@@ -46,10 +48,11 @@
             @else
               <button
                 type="button"
-                class="group relative block h-[420px] w-full cursor-zoom-in bg-slate-100 md:h-[460px]"
+                class="group relative block h-[420px] w-full cursor-zoom-in bg-slate-100 md:h-[460px] {{ $isDigitalPreview ? 'cetsy-preview-watermark' : '' }}"
                 data-open-image-lightbox
                 data-media-index="{{ $i }}"
                 data-lightbox-src="{{ media_url($media->url) }}"
+                @if($isDigitalPreview) data-watermark-label="Cetsy Preview" @endif
               >
                 <img
                   src="{{ media_url($media->url) }}"
@@ -83,9 +86,10 @@
           @foreach($mediaItems as $i => $media)
             <button
               type="button"
-              class="media-thumb inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border bg-white {{ $i === 0 ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-slate-200' }}"
+              class="media-thumb inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border bg-white {{ $i === 0 ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-slate-200' }} {{ $isDigitalPreview && $media->type !== 'video' ? 'cetsy-preview-watermark cetsy-preview-watermark--thumb' : '' }}"
               data-media-thumb="{{ $i }}"
               aria-label="Select media {{ $i + 1 }}"
+              @if($isDigitalPreview && $media->type !== 'video') data-watermark-label="Preview" @endif
             >
               @if($media->type === 'video')
                 <video src="{{ media_url($media->url) }}" class="h-full w-full object-cover" muted preload="metadata"></video>
@@ -125,7 +129,8 @@
       </button>
     </div>
 
-    <div id="imageLightboxTwStage" class="flex h-full w-full items-center justify-center overflow-hidden">
+    <div id="imageLightboxTwStage" class="flex h-full w-full items-center justify-center overflow-hidden {{ $isDigitalPreview ? 'cetsy-preview-watermark cetsy-preview-watermark--lightbox' : '' }}"
+         @if($isDigitalPreview) data-watermark-label="Cetsy Preview" @endif>
       <img id="imageLightboxTwImg" src="" alt="Full size image preview" class="max-h-[92vh] max-w-[92vw] rounded-xl border border-white/20 bg-slate-900 object-contain shadow-2xl transition-transform duration-150">
     </div>
   </div>

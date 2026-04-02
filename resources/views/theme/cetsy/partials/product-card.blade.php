@@ -24,6 +24,7 @@
   $isReserved = (($item->type ?? '') === 'physical')
       && (int) ($item->stock ?? 0) === 1
       && (($item->is_reserved ?? false));
+  $isDigitalPreview = strtolower((string) ($item->type ?? '')) === 'digital';
 
   $thumb = product_thumb_url($item);
   $mediaItems = $item->media ?? collect();
@@ -73,7 +74,8 @@
 <a href="{{ route('listing.show', $item->slug) }}"
    class="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg sm:rounded-2xl">
 
-  <div class="relative aspect-[4/3] overflow-hidden bg-slate-100 sm:aspect-square">
+  <div class="relative aspect-[4/3] overflow-hidden bg-slate-100 sm:aspect-square {{ $isDigitalPreview ? 'cetsy-preview-watermark' : '' }}"
+       @if($isDigitalPreview) data-watermark-label="Cetsy Preview" @endif>
     @if($isReserved)
       <span class="absolute right-1.5 top-1.5 z-10 rounded-full bg-red-600 px-1.5 py-0.5 text-[9px] font-semibold text-white sm:right-2 sm:top-2 sm:px-2 sm:text-[10px]">Reserved</span>
     @endif

@@ -191,12 +191,13 @@
         </div>
       @else
         <div id="listing-items" class="space-y-3">
-          @forelse ($products as $item)
-            @php
-              $thumb = product_thumb_url($item);
+            @forelse ($products as $item)
+              @php
+                $thumb = product_thumb_url($item);
+                $isDigitalPreview = strtolower((string) ($item->type ?? '')) === 'digital';
 
-              $mediaItems = $item->media ?? collect();
-              $firstImage = optional($mediaItems)->first(function ($media) {
+                $mediaItems = $item->media ?? collect();
+                $firstImage = optional($mediaItems)->first(function ($media) {
                 $url = (string) ($media->url ?? '');
                 if ($url === '') return false;
                 $type = strtolower((string) ($media->type ?? ''));
@@ -232,12 +233,14 @@
               }
             @endphp
 
-            <article class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-              <div class="grid items-center gap-3 sm:grid-cols-[120px_1fr_auto]">
-                <a href="{{ route('listing.show', $item->slug) }}" class="relative block overflow-hidden rounded-xl bg-slate-100">
-                  @if($hasVideo)
-                    <span class="absolute left-2 top-2 z-10 rounded-md bg-slate-900/75 px-2 py-0.5 text-[10px] font-semibold text-white"><i class="fas fa-play mr-1 text-[9px]"></i>Video</span>
-                  @endif
+              <article class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+                <div class="grid items-center gap-3 sm:grid-cols-[120px_1fr_auto]">
+                  <a href="{{ route('listing.show', $item->slug) }}"
+                     class="relative block overflow-hidden rounded-xl bg-slate-100 {{ $isDigitalPreview ? 'cetsy-preview-watermark' : '' }}"
+                     @if($isDigitalPreview) data-watermark-label="Cetsy Preview" @endif>
+                    @if($hasVideo)
+                      <span class="absolute left-2 top-2 z-10 rounded-md bg-slate-900/75 px-2 py-0.5 text-[10px] font-semibold text-white"><i class="fas fa-play mr-1 text-[9px]"></i>Video</span>
+                    @endif
                   <img src="{{ $thumb }}"
                        alt="{{ $item->name }}"
                        class="aspect-square h-full w-full object-cover"
