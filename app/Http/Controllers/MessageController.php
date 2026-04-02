@@ -107,7 +107,7 @@ class MessageController extends Controller
                 $query->where('sender_id', $user->id)
                       ->orWhere('receiver_id', $user->id);
             })
-            ->with(['product.shop', 'sender.shop', 'receiver.shop'])
+            ->with(['product.media', 'product.variations', 'product.shop', 'sender.shop', 'receiver.shop'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->groupBy(function($message) use ($user) {
@@ -155,6 +155,27 @@ class MessageController extends Controller
             });
         }
 
+        $productIds = $conversations->pluck('product.id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $latestOffersByProduct = $productIds->isEmpty()
+            ? collect()
+            : Offer::where('buyer_id', $user->id)
+                ->whereIn('product_id', $productIds)
+                ->orderByDesc('updated_at')
+                ->get()
+                ->unique('product_id')
+                ->keyBy('product_id');
+
+        $conversations = $conversations->map(function ($conversation) use ($latestOffersByProduct) {
+            $productId = data_get($conversation, 'product.id');
+            $conversation['latest_offer'] = $productId ? $latestOffersByProduct->get($productId) : null;
+
+            return $conversation;
+        })->values();
+
         return view('buyer.messages.index', compact('conversations'));
     }
 
@@ -201,7 +222,7 @@ class MessageController extends Controller
                     $q->where('sender_id', $otherUserId)->where('receiver_id', $user->id);
                 });
             })
-            ->with(['sender.shop', 'receiver.shop', 'product.media', 'product.shop.user'])
+            ->with(['sender.shop', 'receiver.shop', 'product.media', 'product.variations', 'product.shop.user'])
             ->orderBy('created_at', 'asc')
             ->get();
 

@@ -19,13 +19,28 @@ class OfferController extends Controller
         ]);
 
         // Load product and compute the effective price buyers see
-        $product = Product::with('shop.user')->findOrFail($data['product_id']);
-        $finalPrice = (float) ($product->discounted_price ?? $product->price);
+        $product = Product::with(['shop.user', 'variations'])->findOrFail($data['product_id']);
+
+        $lowestVariantPrice = null;
+        if ($product->relationLoaded('variations') && $product->variations) {
+            $lowestVariantPrice = $product->variations
+                ->pluck('price')
+                ->filter(fn ($value) => $value !== null)
+                ->min();
+        } elseif (method_exists($product, 'variations')) {
+            $lowestVariantPrice = $product->variations()
+                ->whereNotNull('price')
+                ->min('price');
+        }
+
+        $finalPrice = $lowestVariantPrice !== null
+            ? (float) $lowestVariantPrice
+            : (float) ($product->discounted_price ?? $product->price);
 
         // Disallow offers that exceed the listing price
         if ((float) $data['offer_price'] > $finalPrice) {
             return back()->withErrors([
-                'offer_price' => 'Offer cannot exceed the listing price (' . get_currency() . ' ' . number_format($finalPrice, 2) . ').'
+                'offer_price' => 'Offer cannot exceed the listing price (' . money($finalPrice) . ').'
             ])->withInput();
         }
 

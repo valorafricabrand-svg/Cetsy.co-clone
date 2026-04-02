@@ -33,6 +33,25 @@
                     $currencySymbol = function_exists('shop_currency') ? shop_currency() : get_currency();
                     $listingPrice = $product ? (float) ($product->price ?? 0) : 0;
                     $currentPrice = $product ? (float) ($product->discounted_price ?? $listingPrice) : 0;
+                    $lowestVariantPrice = null;
+                    if ($product) {
+                        if ($product->relationLoaded('variations') && $product->variations) {
+                            $lowestVariantPrice = $product->variations
+                                ->pluck('price')
+                                ->filter(fn ($value) => $value !== null)
+                                ->min();
+                        } elseif (method_exists($product, 'variations')) {
+                            $lowestVariantPrice = $product->variations()
+                                ->whereNotNull('price')
+                                ->min('price');
+                        }
+                    }
+                    $displayPrice = $lowestVariantPrice !== null
+                        ? (float) $lowestVariantPrice
+                        : ($currentPrice > 0 ? $currentPrice : ($listingPrice > 0 ? $listingPrice : null));
+                    $priceLabel = $lowestVariantPrice !== null
+                        ? (strtolower((string) ($product->type ?? '')) === 'service' ? 'Priced from' : 'From')
+                        : 'Posted price';
                     $offerInputValue = old('offer_price', $latestOffer->offer_price ?? '');
                     $listingRouteParam = $product ? ($product->slug ?: $product->id) : null;
                     $showOfferPanel = $product && ($errors->has('offer_price') || (string) old('product_id') === (string) $product->id);
@@ -58,7 +77,11 @@
                                     </div>
                                     <p class="mt-1 text-xs text-slate-500">{!! $product->description ? \Illuminate\Support\Str::limit($product->description, 110) : 'No description available' !!}</p>
                                     <div class="mt-3 flex flex-wrap gap-2">
-                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Posted price {{ $currencySymbol }} {{ number_format($listingPrice, 2) }}</span>
+                                        @if($displayPrice !== null)
+                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{{ $priceLabel }} {{ money($displayPrice) }}</span>
+                                        @else
+                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Contact for price</span>
+                                        @endif
                                         @if($currentPrice > 0 && abs($currentPrice - $listingPrice) > 0.009)
                                         <span class="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">Current listing price {{ $currencySymbol }} {{ number_format($currentPrice, 2) }}</span>
                                         @endif
@@ -97,11 +120,11 @@
                                            name="offer_price"
                                            id="buyerOfferPrice"
                                            min="1"
-                                           max="{{ number_format($currentPrice > 0 ? $currentPrice : $listingPrice, 2, '.', '') }}"
+                                           max="{{ number_format($displayPrice ?? ($currentPrice > 0 ? $currentPrice : $listingPrice), 2, '.', '') }}"
                                            step="0.01"
                                            value="{{ $offerInputValue }}"
                                            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
-                                           placeholder="{{ number_format($currentPrice > 0 ? $currentPrice : $listingPrice, 2) }}"
+                                           placeholder="{{ number_format($displayPrice ?? ($currentPrice > 0 ? $currentPrice : $listingPrice), 2) }}"
                                            required>
                                     @error('offer_price')
                                     <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p>
