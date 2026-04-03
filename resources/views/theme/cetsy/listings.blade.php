@@ -218,6 +218,10 @@
               $cnt  = (int) ($shop?->reviews_count ?? ($shop ? $shop->reviews()->count() : 0));
               $basePrice  = $item->price;
               $finalPrice = $item->discounted_price;
+              $lowestVariantPrice = collect($item->variations ?? [])
+                ->filter(fn ($variant) => ($variant->options->count() ?? 0) > 0)
+                ->whereNotNull('price')
+                ->min('price');
 
               $featuredMedia = (string) ($item->featured_image ?? '');
               $featuredIsVideo = ($featuredMedia !== '')
@@ -266,7 +270,12 @@
                 </div>
 
                 <div class="text-left sm:text-right">
-                  @if(isset($finalPrice, $basePrice) && is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
+                  @if(!is_null($lowestVariantPrice))
+                    <div class="mb-2">
+                      <div class="text-[11px] uppercase tracking-[0.12em] text-slate-400">From</div>
+                      <span class="text-base font-bold text-emerald-700">{{ money($lowestVariantPrice) }}</span>
+                    </div>
+                  @elseif(isset($finalPrice, $basePrice) && is_numeric($finalPrice) && is_numeric($basePrice) && $finalPrice < $basePrice)
                     <div class="mb-2 flex items-baseline gap-2 sm:justify-end">
                       <span class="text-base font-bold text-emerald-700">{{ money($finalPrice) }}</span>
                       <span class="text-xs text-slate-400 line-through">{{ money($basePrice) }}</span>

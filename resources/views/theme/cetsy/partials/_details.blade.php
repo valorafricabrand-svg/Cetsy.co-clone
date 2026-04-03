@@ -11,9 +11,11 @@
 
   if (! $isDigital && method_exists($product, 'loadMissing')) {
       try {
-          $product->loadMissing('variations');
+          $product->loadMissing('variations.options');
           $variants = $product->relationLoaded('variations') && $product->variations
-              ? $product->variations
+              ? collect($product->variations)
+                    ->filter(fn ($variant) => ($variant->options->count() ?? 0) > 0)
+                    ->values()
               : collect();
       } catch (\Throwable $e) {
           $variants = collect();

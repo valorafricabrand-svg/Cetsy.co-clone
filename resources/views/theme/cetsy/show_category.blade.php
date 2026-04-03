@@ -274,7 +274,10 @@
                 $basePrice  = $item->price;
                 $finalPrice = $item->discounted_price;
                 $isService = (strtolower((string)($item->type ?? '')) === 'service');
-                $lowestVariantPrice = optional($item->variations)->whereNotNull('price')->min('price');
+                $lowestVariantPrice = collect($item->variations ?? [])
+                    ->filter(fn ($variant) => ($variant->options->count() ?? 0) > 0)
+                    ->whereNotNull('price')
+                    ->min('price');
 
                 $featuredMedia = (string) ($item->featured_image ?? '');
                 $featuredIsVideo = ($featuredMedia !== '')

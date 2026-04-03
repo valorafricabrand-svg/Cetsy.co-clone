@@ -10,9 +10,12 @@
   $product->loadMissing('variations.options', 'variationTypes.options', 'shop', 'category', 'country');
 
   $isPhysical = ($product->type ?? '') === 'physical';
-  $hasVariants = $product->variations && $product->variations->count() > 0;
+  $validVariants = collect($product->variations ?? [])
+      ->filter(fn ($variant) => ($variant->options->count() ?? 0) > 0)
+      ->values();
+  $hasVariants = $validVariants->isNotEmpty();
   if ($hasVariants) {
-      $hasAvailableVariant = $product->variations->contains(function ($v) {
+      $hasAvailableVariant = $validVariants->contains(function ($v) {
           return is_null($v->stock) || (int) $v->stock > 0;
       });
       $isOutOfStock = $isPhysical && ! $hasAvailableVariant;
@@ -29,7 +32,7 @@
   }
 
   $variantIndex = [];
-  foreach ($product->variations ?? [] as $v) {
+  foreach ($validVariants as $v) {
       if (($v->price ?? null) !== null && $v->options && $v->options->count()) {
           $ids = $v->options->pluck('id')->sort()->values();
           $variantIndex[] = [

@@ -84,18 +84,20 @@
             @endif
 
             @php
-                $hasVariants = false;
+                $validVariants = collect();
                 $lowestVariantPrice = null;
                 if ($product->relationLoaded('variations')) {
-                    $hasVariants = $product->variations && $product->variations->count() > 0;
-                    if ($hasVariants) {
-                        $lowestVariantPrice = optional($product->variations)->whereNotNull('price')->min('price');
-                    }
+                    $validVariants = collect($product->variations ?? [])
+                        ->filter(fn($variant) => ($variant->options->count() ?? 0) > 0)
+                        ->values();
                 } else {
-                    $hasVariants = $product->variations()->exists();
-                    if ($hasVariants) {
-                        $lowestVariantPrice = $product->variations()->whereNotNull('price')->min('price');
-                    }
+                    $validVariants = $product->variations()
+                        ->whereHas('options')
+                        ->get();
+                }
+                $hasVariants = $validVariants->isNotEmpty();
+                if ($hasVariants) {
+                    $lowestVariantPrice = $validVariants->whereNotNull('price')->min('price');
                 }
                 $formatMoney = fn($n) => money((float) $n, null);
             @endphp

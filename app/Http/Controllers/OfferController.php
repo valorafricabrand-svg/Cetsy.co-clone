@@ -19,16 +19,18 @@ class OfferController extends Controller
         ]);
 
         // Load product and compute the effective price buyers see
-        $product = Product::with(['shop.user', 'variations'])->findOrFail($data['product_id']);
+        $product = Product::with(['shop.user', 'variations.options'])->findOrFail($data['product_id']);
 
         $lowestVariantPrice = null;
         if ($product->relationLoaded('variations') && $product->variations) {
             $lowestVariantPrice = $product->variations
+                ->filter(fn ($variant) => ($variant->options->count() ?? 0) > 0)
                 ->pluck('price')
                 ->filter(fn ($value) => $value !== null)
                 ->min();
         } elseif (method_exists($product, 'variations')) {
             $lowestVariantPrice = $product->variations()
+                ->whereHas('options')
                 ->whereNotNull('price')
                 ->min('price');
         }

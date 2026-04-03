@@ -9,11 +9,13 @@
   $lowestVariantPrice = null;
   if ($item->relationLoaded('variations') && $item->variations) {
       $lowestVariantPrice = $item->variations
+          ->filter(fn ($variant) => ($variant->options->count() ?? 0) > 0)
           ->pluck('price')
           ->filter(fn ($v) => $v !== null)
           ->min();
   } else {
       $lowestVariantPrice = $item->variations()
+          ->whereHas('options')
           ->whereNotNull('price')
           ->min('price');
   }
