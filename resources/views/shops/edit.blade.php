@@ -193,12 +193,12 @@
           </div>
 
           <div class="mt-4">
-            <label for="logo" class="mb-1 block text-sm font-medium text-slate-700">Logo @if(empty($shop->logo))<span class="text-rose-600">*</span>@endif</label>
-            <input class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('logo') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" type="file" id="logo" name="logo" accept="image/*" {{ empty($shop->logo) ? 'required' : '' }}>
+            <label for="logo" class="mb-1 block text-sm font-medium text-slate-700">Logo <span class="text-slate-500">(optional)</span></label>
+            <input class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('logo') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" type="file" id="logo" name="logo" accept="image/*">
             @error('logo')
               <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
             @else
-              <div class="mt-1 text-xs text-slate-500">Upload your shop logo. Recommended size: 200x200 pixels.</div>
+              <div class="mt-1 text-xs text-slate-500">Upload your shop logo now or leave it blank and add it later. Recommended size: 200x200 pixels.</div>
             @enderror
             @if($shop->logo)
               <div class="mt-2">
@@ -360,5 +360,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </style>
 
 @endsection
-
 

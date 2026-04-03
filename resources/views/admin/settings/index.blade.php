@@ -399,6 +399,10 @@
           ? setting_bool('seller_signup_auto_approve', true)
           : ((bool) (int) (function_exists('setting') ? setting('seller_signup_auto_approve', 1) : 1));
         $sellerAutoApproveValue = (bool) (int) old('seller_signup_auto_approve', $sellerAutoApproveSetting ? 1 : 0);
+        $sellerLogoRequiredSetting = function_exists('setting_bool')
+          ? setting_bool('seller_signup_require_logo', false)
+          : ((bool) (int) (function_exists('setting') ? setting('seller_signup_require_logo', 0) : 0));
+        $sellerLogoRequiredValue = (bool) (int) old('seller_signup_require_logo', $sellerLogoRequiredSetting ? 1 : 0);
       @endphp
       <div class="col-md-4">
         <label class="form-label">Subscription Grace Period (days)</label>
@@ -431,6 +435,17 @@
           <label class="form-check-label" for="seller-signup-auto-approve">Enabled</label>
         </div>
         <div class="form-text">When enabled, new sellers are activated immediately without manual admin approval.</div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Require Shop Logo On Signup</label>
+        <input type="hidden" name="seller_signup_require_logo" value="0">
+        <div class="form-check form-switch mt-1">
+          <input class="form-check-input" type="checkbox" role="switch" id="seller-signup-require-logo"
+                 name="seller_signup_require_logo" value="1" {{ $sellerLogoRequiredValue ? 'checked' : '' }}>
+          <label class="form-check-label" for="seller-signup-require-logo">Enabled</label>
+        </div>
+        <div class="form-text">When disabled, sellers can open a shop first and upload a logo later.</div>
       </div>
 
       <div class="col-md-4">

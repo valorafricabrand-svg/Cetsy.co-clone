@@ -101,6 +101,7 @@ class SettingsController extends Controller
         'subscription_trial_enabled' => 'nullable|boolean',
         'subscription_trial_days' => 'nullable|integer|min:1|max:365',
         'seller_signup_auto_approve' => 'nullable|boolean',
+        'seller_signup_require_logo' => 'nullable|boolean',
         'home_listings_cache_ttl_minutes' => 'nullable|integer|min:1|max:1440',
 
         // Shipping defaults
@@ -182,6 +183,9 @@ class SettingsController extends Controller
         }
         if ($request->has('seller_signup_auto_approve')) {
             $putSetting('seller_signup_auto_approve', $request->boolean('seller_signup_auto_approve'));
+        }
+        if ($request->has('seller_signup_require_logo')) {
+            $putSetting('seller_signup_require_logo', $request->boolean('seller_signup_require_logo'));
         }
         if ($request->has('home_listings_cache_ttl_minutes')) {
             $putSetting('home_listings_cache_ttl_minutes', (int) $request->input('home_listings_cache_ttl_minutes'));

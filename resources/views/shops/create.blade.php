@@ -41,6 +41,12 @@
           >
             @csrf
 
+            @php
+              $requireShopLogoOnSignup = function_exists('setting_bool')
+                ? setting_bool('seller_signup_require_logo', false)
+                : false;
+            @endphp
+
             {{-- 1) Shop Preferences --}}
             <h5 class="mt-4">1. Shop Preferences</h5>
             <div class="grid grid-cols-1 gap-3 mb-4 md:grid-cols-12">
@@ -132,17 +138,24 @@
             <h5 class="mt-4">3. Shop Images</h5>
             <div class="grid grid-cols-1 gap-3 mb-4 md:grid-cols-12">
               <div class="col-span-12 md:col-span-6">
-                <label for="logo" class="mb-1 block text-sm font-medium text-slate-700">Logo <span class="text-rose-600">*</span></label>
+                <label for="logo" class="mb-1 block text-sm font-medium text-slate-700">
+                  Logo
+                  @if($requireShopLogoOnSignup)
+                    <span class="text-rose-600">*</span>
+                  @else
+                    <span class="text-slate-500">(optional)</span>
+                  @endif
+                </label>
                 <input 
                   id="logo" name="logo" type="file"
-                  required
+                  {{ $requireShopLogoOnSignup ? 'required' : '' }}
                   accept="image/*"
                   class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('logo') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
                 >
                 @error('logo')
                   <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
                 @else
-                  <div class="mt-1 text-xs text-slate-500">Upload your shop logo. Recommended size: 200x200 pixels.</div>
+                  <div class="mt-1 text-xs text-slate-500">Upload your shop logo now or add it later. Recommended size: 200x200 pixels.</div>
                 @enderror
               </div>
               <div class="col-span-12 md:col-span-6">
@@ -231,6 +244,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 @endsection
-
 
 
