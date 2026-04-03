@@ -603,6 +603,21 @@
         }
         .cetsy-preview-watermark img {
             -webkit-user-drag: none;
+            -webkit-touch-callout: none;
+            pointer-events: none;
+            user-select: none;
+        }
+        .cetsy-preview-watermark {
+            -webkit-touch-callout: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .cetsy-preview-watermark video {
+            -webkit-user-drag: none;
+            -webkit-touch-callout: none;
+            pointer-events: none;
             user-select: none;
         }
     </style>
@@ -1975,6 +1990,38 @@
         </script>
         <!-- End of Tawk.to Script -->
     @endif
+
+    <script>
+        (function () {
+            function protectedPreview(target) {
+                return target && target.closest ? target.closest('.cetsy-preview-watermark') : null;
+            }
+
+            document.addEventListener('contextmenu', function (event) {
+                if (protectedPreview(event.target)) {
+                    event.preventDefault();
+                }
+            });
+
+            document.addEventListener('dragstart', function (event) {
+                if (protectedPreview(event.target)) {
+                    event.preventDefault();
+                }
+            });
+
+            document.addEventListener('selectstart', function (event) {
+                if (protectedPreview(event.target)) {
+                    event.preventDefault();
+                }
+            });
+
+            document.addEventListener('copy', function (event) {
+                if (protectedPreview(event.target) || protectedPreview(document.activeElement)) {
+                    event.preventDefault();
+                }
+            });
+        })();
+    </script>
 
     @yield('scripts')
     @stack('scripts')
