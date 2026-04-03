@@ -104,32 +104,32 @@
   </div>
 
   <div id="imageLightboxTw" class="fixed inset-0 z-[90] hidden items-center justify-center bg-slate-950/90 p-4" aria-hidden="true">
-    <div class="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-900/40 px-2.5 py-1 text-xs font-semibold text-white">
-      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 hover:bg-white/10" data-lb-prev aria-label="Previous image">
+    <div class="absolute left-4 top-4 z-30 inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-900/40 px-2.5 py-1 text-xs font-semibold text-white pointer-events-auto">
+      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 hover:bg-white/10 pointer-events-auto" data-lb-prev aria-label="Previous image">
         <i class="fas fa-chevron-left"></i>
       </button>
       <span id="imageLightboxTwCount" class="min-w-[52px] text-center">1 / 1</span>
-      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 hover:bg-white/10" data-lb-next aria-label="Next image">
+      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 hover:bg-white/10 pointer-events-auto" data-lb-next aria-label="Next image">
         <i class="fas fa-chevron-right"></i>
       </button>
     </div>
 
-    <div class="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-900/40 px-2 py-1">
-      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10" data-lb-zoom-out aria-label="Zoom out">
+    <div class="absolute right-4 top-4 z-30 inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-900/40 px-2 py-1 pointer-events-auto">
+      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10 pointer-events-auto" data-lb-zoom-out aria-label="Zoom out">
         <i class="fas fa-minus"></i>
       </button>
-      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10" data-lb-reset aria-label="Reset zoom">
+      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10 pointer-events-auto" data-lb-reset aria-label="Reset zoom">
         <i class="fas fa-arrows-rotate"></i>
       </button>
-      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10" data-lb-zoom-in aria-label="Zoom in">
+      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10 pointer-events-auto" data-lb-zoom-in aria-label="Zoom in">
         <i class="fas fa-plus"></i>
       </button>
-      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10" data-close-image-lightbox aria-label="Close image preview">
+      <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10 pointer-events-auto" data-close-image-lightbox aria-label="Close image preview">
         <i class="fas fa-times"></i>
       </button>
     </div>
 
-    <div id="imageLightboxTwStage" class="flex h-full w-full items-center justify-center overflow-hidden {{ $isDigitalPreview ? 'cetsy-preview-watermark cetsy-preview-watermark--lightbox' : '' }}"
+    <div id="imageLightboxTwStage" class="relative z-10 flex h-full w-full items-center justify-center overflow-hidden {{ $isDigitalPreview ? 'cetsy-preview-watermark cetsy-preview-watermark--lightbox' : '' }}"
          @if($isDigitalPreview) data-watermark-label="Cetsy Preview" @endif>
       <img id="imageLightboxTwImg" src="" alt="Full size image preview" class="max-h-[92vh] max-w-[92vw] rounded-xl border border-white/20 bg-slate-900 object-contain shadow-2xl transition-transform duration-150">
     </div>
