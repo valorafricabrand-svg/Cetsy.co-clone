@@ -63,9 +63,29 @@
     {{-- Seller notice: buyer requested return/exchange and order reset to processing --}}
     @php
         $isSellerUser = auth()->check() && (($dispute->seller_id ?? null) === auth()->id() || optional($dispute->order?->shop)->user_id === auth()->id());
+        $buyerRequestedResolution = null;
         $exchangeRequested = false;
         try {
             $msgs = $dispute->messages ?? collect();
+            if ($msgs->contains(function($m){
+                $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+                $text   = strtolower((string)($m->message ?? ''));
+                return $typeOk && str_contains($text, 'buyer requested a full refund');
+            })) {
+                $buyerRequestedResolution = 'full_refund';
+            } elseif ($msgs->contains(function($m){
+                $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+                $text   = strtolower((string)($m->message ?? ''));
+                return $typeOk && str_contains($text, 'buyer requested a partial refund');
+            })) {
+                $buyerRequestedResolution = 'partial_refund';
+            } elseif ($msgs->contains(function($m){
+                $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+                $text   = strtolower((string)($m->message ?? ''));
+                return $typeOk && str_contains($text, 'buyer requested a return/exchange');
+            })) {
+                $buyerRequestedResolution = 'return_exchange';
+            }
             $exchangeRequested = $msgs->contains(function($m){
                 $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
                 $text   = strtolower((string)($m->message ?? ''));
@@ -73,11 +93,26 @@
             });
         } catch (\Throwable $e) { $exchangeRequested = false; }
     @endphp
+    @if($buyerRequestedResolution)
+        <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 flex items-center" role="alert">
+            <i class="bi bi-info-circle mr-2"></i>
+            <div>
+                <strong>Buyer Requested:</strong>
+                @if($buyerRequestedResolution === 'full_refund')
+                    Full refund.
+                @elseif($buyerRequestedResolution === 'partial_refund')
+                    Partial refund.
+                @else
+                    Return or exchange.
+                @endif
+            </div>
+        </div>
+    @endif
     @if($isSellerUser && $exchangeRequested)
         <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 flex items-center" role="alert">
             <i class="bi bi-exclamation-triangle-fill mr-2"></i>
             <div>
-                The buyer has requested a order refund and your order has been restored to processing state, please ship that product again.
+                The buyer requested a return or exchange and the order was restored to processing so you can ship a replacement and update tracking.
             </div>
         </div>
     @endif
@@ -2296,7 +2331,6 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 @endsection
-
 
 
 

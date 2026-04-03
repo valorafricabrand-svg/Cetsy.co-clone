@@ -184,6 +184,7 @@ class DisputeController extends Controller
                 'description' => 'required|string|max:2000',
                 'evidence.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
                 'request_return_exchange' => 'nullable|boolean',
+                'requested_resolution' => ['nullable', Rule::in(['full_refund', 'partial_refund', 'return_exchange', 'review'])],
             ]);
 
             \Log::info('Validation passed', ['data' => $data]);
@@ -234,9 +235,16 @@ class DisputeController extends Controller
             $isBuyer = $order->user_id === Auth::id();
             $buyerId = $isBuyer ? Auth::id() : $order->user_id;
             $sellerId = $isBuyer ? $order->shop->user_id : Auth::id();
+            $requestedResolution = null;
+            if ($isBuyer) {
+                $requestedResolution = $data['requested_resolution'] ?? null;
+                if (!$requestedResolution && $request->boolean('request_return_exchange')) {
+                    $requestedResolution = 'return_exchange';
+                }
+            }
 
             // Whether buyer requested a return/exchange
-            $wantsExchange = $isBuyer && $request->boolean('request_return_exchange');
+            $wantsExchange = $isBuyer && $requestedResolution === 'return_exchange';
 
             \Log::info('User role determination', [
                 'is_buyer' => $isBuyer,
@@ -262,7 +270,7 @@ class DisputeController extends Controller
             \Log::info('About to create dispute in transaction');
 
             // Create the dispute and return it from the transaction
-            $dispute = DB::transaction(function () use ($data, $order, $evidence, $buyerId, $sellerId, $wantsExchange) {
+            $dispute = DB::transaction(function () use ($data, $order, $evidence, $buyerId, $sellerId, $wantsExchange, $requestedResolution) {
                 \Log::info('Inside transaction - creating dispute');
                 
                 $dispute = Dispute::create([
@@ -300,9 +308,28 @@ class DisputeController extends Controller
 
                 \Log::info('System message created');
 
+                if ($requestedResolution === 'full_refund') {
+                    DisputeMessage::create([
+                        'dispute_id' => $dispute->id,
+                        'user_id' => null,
+                        'message' => 'Buyer requested a full refund.',
+                        'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                        'is_internal' => false
+                    ]);
+                } elseif ($requestedResolution === 'partial_refund') {
+                    DisputeMessage::create([
+                        'dispute_id' => $dispute->id,
+                        'user_id' => null,
+                        'message' => 'Buyer requested a partial refund. The amount can be agreed during the dispute.',
+                        'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                        'is_internal' => false
+                    ]);
+                }
+
                 // If buyer requested return/exchange, reset order to processing and clear previous shipment details
                 if ($wantsExchange) {
                     try {
+                        $exchangeMessage = 'Buyer requested a return/exchange.';
                         if (!in_array($order->status, [Order::STATUS_CANCELLED, Order::STATUS_REFUNDED], true)) {
                             $order->update([
                                 'status'       => Order::STATUS_PROCESSING,
@@ -312,20 +339,22 @@ class DisputeController extends Controller
                                 'shipped_at'   => null,
                                 'ship_notes'   => null,
                             ]);
-
-                            DisputeMessage::create([
-                                'dispute_id' => $dispute->id,
-                                'user_id' => null,
-                                'message' => 'Buyer requested a return/exchange. Order reset to processing so seller can ship a replacement and update tracking.',
-                                'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
-                                'is_internal' => false
-                            ]);
+                            $exchangeMessage .= ' Order reset to processing so seller can ship a replacement and update tracking.';
                         } else {
                             \Log::info('Return/exchange requested but order is not eligible for reset', [
                                 'order_id' => $order->id,
                                 'status' => $order->status,
                             ]);
+                            $exchangeMessage .= ' Current order status did not allow an automatic reset.';
                         }
+
+                        DisputeMessage::create([
+                            'dispute_id' => $dispute->id,
+                            'user_id' => null,
+                            'message' => $exchangeMessage,
+                            'type' => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                            'is_internal' => false
+                        ]);
                     } catch (\Throwable $e) {
                         \Log::error('Failed to reset order for return/exchange', [
                             'order_id' => $order->id,
@@ -1975,5 +2004,4 @@ class DisputeController extends Controller
         }
     }
 }
-
 

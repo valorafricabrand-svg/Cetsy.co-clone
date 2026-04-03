@@ -43,6 +43,10 @@
 
                     <form action="{{ route('disputes.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        @php
+                            $viewerIsBuyerForDispute = !$order || (int) ($order->user_id ?? 0) === (int) auth()->id();
+                            $requestedResolution = old('requested_resolution', old('request_return_exchange') ? 'return_exchange' : 'review');
+                        @endphp
                         
                         <!-- Order Selection -->
                         <div class="mb-3">
@@ -148,18 +152,45 @@
                             @enderror
                         </div>
 
-                        <!-- Return / Exchange Option -->
-                        <div class="mb-3 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
-                            <label for="request_return_exchange" class="flex items-start gap-3">
-                                <input class="mt-1 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500" type="checkbox" id="request_return_exchange" name="request_return_exchange" value="1" {{ old('request_return_exchange') ? 'checked' : '' }}>
-                                <span class="text-sm font-semibold leading-6 text-amber-700">
-                                    Request a return/exchange (reset order to Processing)
-                                </span>
-                            </label>
-                            <p class="mt-2 text-xs font-medium leading-5 text-amber-700">
-                                If selected, we will reset the order status to <strong>Processing</strong> so the seller can ship a replacement and update tracking details. Previous tracking info (if any) will be cleared.
-                            </p>
-                        </div>
+                        @if($viewerIsBuyerForDispute)
+                            <!-- Preferred Resolution -->
+                            <div class="mb-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+                                <div class="mb-2 text-sm font-semibold text-emerald-800">Preferred Resolution</div>
+                                <div class="space-y-3">
+                                    <label for="resolution_review" class="flex items-start gap-3 rounded-lg border border-transparent px-1 py-1">
+                                        <input class="mt-1 h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500" type="radio" id="resolution_review" name="requested_resolution" value="review" {{ $requestedResolution === 'review' ? 'checked' : '' }}>
+                                        <span>
+                                            <span class="block text-sm font-semibold text-slate-800">Let Cetsy review first</span>
+                                            <span class="block text-xs text-slate-600">Open the dispute without requesting a specific refund or replacement yet.</span>
+                                        </span>
+                                    </label>
+
+                                    <label for="resolution_full_refund" class="flex items-start gap-3 rounded-lg border border-transparent px-1 py-1">
+                                        <input class="mt-1 h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500" type="radio" id="resolution_full_refund" name="requested_resolution" value="full_refund" {{ $requestedResolution === 'full_refund' ? 'checked' : '' }}>
+                                        <span>
+                                            <span class="block text-sm font-semibold text-slate-800">Request Refund</span>
+                                            <span class="block text-xs text-slate-600">Ask for a full refund of the order.</span>
+                                        </span>
+                                    </label>
+
+                                    <label for="resolution_partial_refund" class="flex items-start gap-3 rounded-lg border border-transparent px-1 py-1">
+                                        <input class="mt-1 h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500" type="radio" id="resolution_partial_refund" name="requested_resolution" value="partial_refund" {{ $requestedResolution === 'partial_refund' ? 'checked' : '' }}>
+                                        <span>
+                                            <span class="block text-sm font-semibold text-slate-800">Request Partial Refund</span>
+                                            <span class="block text-xs text-slate-600">Ask for a partial refund. The final amount can be agreed during the dispute.</span>
+                                        </span>
+                                    </label>
+
+                                    <label for="resolution_return_exchange" class="flex items-start gap-3 rounded-lg border border-transparent px-1 py-1">
+                                        <input class="mt-1 h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500" type="radio" id="resolution_return_exchange" name="requested_resolution" value="return_exchange" {{ $requestedResolution === 'return_exchange' ? 'checked' : '' }}>
+                                        <span>
+                                            <span class="block text-sm font-semibold text-slate-800">Request Return / Exchange</span>
+                                            <span class="block text-xs text-slate-600">Reset the order to <strong>Processing</strong> so the seller can ship a replacement and update tracking details.</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        @endif
 
                         <!-- Important Information -->
                         <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800">
@@ -275,7 +306,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
-
 
 
 
