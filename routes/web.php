@@ -513,6 +513,8 @@ Route::middleware(['auth','verified'])->group(function () {
 
         // Seller refund acceptance (partial or full refund to buyer wallet)
         Route::post('/{dispute}/refund', [\App\Http\Controllers\DisputeController::class, 'refund'])->name('refund');
+        // Buyer request for a full or partial refund
+        Route::post('/{dispute}/buyer-refund-request', [\App\Http\Controllers\DisputeController::class, 'requestBuyerRefund'])->name('buyer-refund-request');
         // Buyer response to refund proposals
         Route::post('/{dispute}/refund-proposal/accept', [\App\Http\Controllers\DisputeController::class, 'acceptRefundProposal'])->name('refund-proposal.accept');
         Route::post('/{dispute}/refund-proposal/decline', [\App\Http\Controllers\DisputeController::class, 'declineRefundProposal'])->name('refund-proposal.decline');

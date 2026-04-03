@@ -80,9 +80,16 @@
  $resolvedDispute = $disputes->where('status', 'resolved')->first();
  }
 
- // Detect if the active dispute contains a system message indicating an exchange was requested
+ // Detect if the active dispute contains a current buyer request for return/exchange
+ $buyerResolutionRequest = null;
  $exchangeRequested = false;
- if ($activeDispute && method_exists($activeDispute, 'messages')) {
+ if ($activeDispute && method_exists($activeDispute, 'getBuyerResolutionRequest')) {
+ try {
+ $buyerResolutionRequest = $activeDispute->getBuyerResolutionRequest();
+ $exchangeRequested = (($buyerResolutionRequest['type'] ?? null) === 'return_exchange');
+ } catch (\Throwable $e) { $exchangeRequested = false; }
+ }
+ if (!$exchangeRequested && $activeDispute && method_exists($activeDispute, 'messages')) {
  try {
  $msgs = $activeDispute->messages ?? collect();
  $exchangeRequested = $msgs->contains(function($m){
@@ -126,7 +133,7 @@
  @if($activeDispute && $exchangeRequested)
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-amber-100 text-amber-800 border-amber-200 text-slate-900 flex gap-2" title="Buyer requested a return/exchange via dispute">
  <i class="fa-solid fa-triangle-exclamation"></i>
- The buyer has requested a order refund and your order has been restored to processing state, please ship that product again.
+ The buyer requested a return or exchange and this order was restored to processing so you can ship a replacement.
  </span>
  @endif
  <a href="{{ route('orders.chat.show', $order->id) }}"
@@ -1001,7 +1008,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
-
 
 
 

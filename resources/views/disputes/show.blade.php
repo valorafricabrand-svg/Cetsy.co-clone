@@ -63,34 +63,45 @@
     {{-- Seller notice: buyer requested return/exchange and order reset to processing --}}
     @php
         $isSellerUser = auth()->check() && (($dispute->seller_id ?? null) === auth()->id() || optional($dispute->order?->shop)->user_id === auth()->id());
+        $buyerResolutionRequest = method_exists($dispute, 'getBuyerResolutionRequest') ? $dispute->getBuyerResolutionRequest() : null;
         $buyerRequestedResolution = null;
+        $buyerRequestedPercent = null;
+        $buyerRequestedAmount = null;
         $exchangeRequested = false;
         try {
-            $msgs = $dispute->messages ?? collect();
-            if ($msgs->contains(function($m){
-                $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
-                $text   = strtolower((string)($m->message ?? ''));
-                return $typeOk && str_contains($text, 'buyer requested a full refund');
-            })) {
-                $buyerRequestedResolution = 'full_refund';
-            } elseif ($msgs->contains(function($m){
-                $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
-                $text   = strtolower((string)($m->message ?? ''));
-                return $typeOk && str_contains($text, 'buyer requested a partial refund');
-            })) {
-                $buyerRequestedResolution = 'partial_refund';
-            } elseif ($msgs->contains(function($m){
-                $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
-                $text   = strtolower((string)($m->message ?? ''));
-                return $typeOk && str_contains($text, 'buyer requested a return/exchange');
-            })) {
-                $buyerRequestedResolution = 'return_exchange';
+            if (is_array($buyerResolutionRequest) && !empty($buyerResolutionRequest['type'])) {
+                $buyerRequestedResolution = $buyerResolutionRequest['type'];
+                $buyerRequestedPercent = isset($buyerResolutionRequest['percent']) ? (float) $buyerResolutionRequest['percent'] : null;
+                $buyerRequestedAmount = isset($buyerResolutionRequest['amount']) ? (float) $buyerResolutionRequest['amount'] : null;
+                $exchangeRequested = $buyerRequestedResolution === 'return_exchange';
+            } else {
+                $msgs = $dispute->messages ?? collect();
+                if ($msgs->contains(function($m){
+                    $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+                    $text   = strtolower((string)($m->message ?? ''));
+                    return $typeOk && str_contains($text, 'buyer requested a full refund');
+                })) {
+                    $buyerRequestedResolution = 'full_refund';
+                    $buyerRequestedPercent = 100.0;
+                } elseif ($msgs->contains(function($m){
+                    $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+                    $text   = strtolower((string)($m->message ?? ''));
+                    return $typeOk && str_contains($text, 'buyer requested a partial refund');
+                })) {
+                    $buyerRequestedResolution = 'partial_refund';
+                } elseif ($msgs->contains(function($m){
+                    $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+                    $text   = strtolower((string)($m->message ?? ''));
+                    return $typeOk && str_contains($text, 'buyer requested a return/exchange');
+                })) {
+                    $buyerRequestedResolution = 'return_exchange';
+                }
+                $exchangeRequested = $msgs->contains(function($m){
+                    $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
+                    $text   = strtolower((string)($m->message ?? ''));
+                    return $typeOk && (str_contains($text,'return/exchange') || str_contains($text,'reset to processing') || str_contains($text,'exchange'));
+                });
             }
-            $exchangeRequested = $msgs->contains(function($m){
-                $typeOk = ($m->type ?? null) === \App\Models\DisputeMessage::TYPE_SYSTEM_MESSAGE;
-                $text   = strtolower((string)($m->message ?? ''));
-                return $typeOk && (str_contains($text,'return/exchange') || str_contains($text,'reset to processing') || str_contains($text,'exchange'));
-            });
         } catch (\Throwable $e) { $exchangeRequested = false; }
     @endphp
     @if($buyerRequestedResolution)
@@ -99,9 +110,20 @@
             <div>
                 <strong>Buyer Requested:</strong>
                 @if($buyerRequestedResolution === 'full_refund')
-                    Full refund.
+                    Full refund
+                    @if($buyerRequestedAmount)
+                        ({{ get_currency() }} {{ number_format($buyerRequestedAmount, 2) }})
+                    @endif
+                    .
                 @elseif($buyerRequestedResolution === 'partial_refund')
-                    Partial refund.
+                    Partial refund
+                    @if($buyerRequestedPercent)
+                        of {{ rtrim(rtrim(number_format($buyerRequestedPercent, 2), '0'), '.') }}%
+                    @endif
+                    @if($buyerRequestedAmount)
+                        ({{ get_currency() }} {{ number_format($buyerRequestedAmount, 2) }})
+                    @endif
+                    .
                 @else
                     Return or exchange.
                 @endif
@@ -121,6 +143,7 @@
     @php
         $pendingRefund = method_exists($dispute, 'getPendingRefund') ? $dispute->getPendingRefund() : null;
         $isBuyerUser = auth()->check() && $dispute->buyer_id === auth()->id();
+        $canBuyerRequestRefund = $isBuyerUser && !$pendingRefund && !$dispute->isResolved() && !$dispute->isClosed();
     @endphp
     @if($pendingRefund)
         <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800" role="alert">
@@ -150,6 +173,100 @@
                 @endif
             </div>
         </div>
+    @endif
+
+    @if($canBuyerRequestRefund)
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4 border-emerald-200">
+            <div class="border-b border-slate-200 px-4 py-3 bg-emerald-50 flex justify-between items-center flex-wrap gap-2">
+                <h6 class="mb-0 flex items-center gap-2 text-emerald-900">
+                    <i class="bi bi-cash-coin"></i> Request Refund from Seller
+                </h6>
+                <div class="flex items-center gap-2">
+                    <form method="POST" action="{{ route('disputes.buyer-refund-request', $dispute) }}" class="m-0">
+                        @csrf
+                        <input type="hidden" name="request_type" value="full_refund">
+                        <input type="hidden" name="refund_percent" value="100">
+                        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500">
+                            <i class="bi bi-check2-circle"></i>
+                            {{ $buyerRequestedResolution === 'full_refund' ? 'Update to Full Refund (100%)' : 'Request Full Refund (100%)' }}
+                        </button>
+                    </form>
+                    <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-slate-900 text-white hover:bg-slate-700" data-ui-toggle="modal" data-ui-target="#buyerRefundRequestModal-{{ $dispute->id }}">
+                        <i class="bi bi-sliders"></i>
+                        {{ $buyerRequestedResolution === 'partial_refund' ? 'Update Partial Refund' : 'Request Partial Refund' }}
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 sm:p-5">
+                <p class="mb-2">Ask the seller to resolve this dispute with a full or partial refund.</p>
+                <ul class="mb-0 text-xs text-slate-500">
+                    <li>This sends your requested refund outcome to the dispute thread.</li>
+                    <li>Funds are not moved until the seller or admin approves and processes the refund.</li>
+                    <li>You can update your request if the discussion changes.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="modal" id="buyerRefundRequestModal-{{ $dispute->id }}" tabindex="-1" aria-labelledby="buyerRefundRequestModalLabel-{{ $dispute->id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <form method="POST" action="{{ route('disputes.buyer-refund-request', $dispute) }}" class="rounded-2xl border border-slate-200 bg-white shadow-xl">
+                    @csrf
+                    <input type="hidden" name="request_type" value="partial_refund">
+                    <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                        <h5 class="text-base font-semibold text-slate-900" id="buyerRefundRequestModalLabel-{{ $dispute->id }}">Request Partial Refund</h5>
+                        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="px-4 py-4">
+                        @php
+                            $buyerOrderTotal = (float) ($dispute->order->total_amount ?? 0);
+                            $buyerPartialPercent = ($buyerRequestedResolution === 'partial_refund' && $buyerRequestedPercent)
+                                ? max(1, min(100, $buyerRequestedPercent))
+                                : 50;
+                        @endphp
+                        <div class="mb-3">
+                            <label for="buyer-refund-percent-{{ $dispute->id }}" class="mb-1 block text-sm font-medium text-slate-700">Refund Percentage (%)</label>
+                            <input type="number" name="refund_percent" id="buyer-refund-percent-{{ $dispute->id }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ rtrim(rtrim(number_format($buyerPartialPercent, 2), '0'), '.') }}" min="1" max="100" step="0.01" required>
+                            <div class="mt-1 text-xs text-slate-500">Order Total: {{ get_currency() }} {{ number_format($buyerOrderTotal, 2) }}. Choose the percentage you want to request from the seller.</div>
+                        </div>
+                        <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800" id="buyer-refund-amount-box-{{ $dispute->id }}">
+                            <i class="bi bi-calculator"></i>
+                            <strong>Requested Amount:</strong>
+                            <span id="buyer-refund-amount-{{ $dispute->id }}">{{ get_currency() }} {{ number_format($buyerOrderTotal * ($buyerPartialPercent / 100), 2) }}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">Cancel</button>
+                        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+                            <i class="bi bi-send"></i> Send Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @push('scripts')
+        <script>
+        (function(){
+          document.addEventListener('DOMContentLoaded', function(){
+            var input = document.getElementById('buyer-refund-percent-{{ $dispute->id }}');
+            var amountEl = document.getElementById('buyer-refund-amount-{{ $dispute->id }}');
+            if (!input || !amountEl) return;
+            var total = {{ $buyerOrderTotal }};
+            var currency = @json(get_currency());
+            function fmt(n){ try { return n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); } catch(e){ return (Math.round(n*100)/100).toFixed(2); } }
+            function recalc(){
+              var p = parseFloat(input.value || '0');
+              if (isNaN(p) || p < 0) p = 0;
+              if (p > 100) p = 100;
+              var amt = total * (p/100);
+              amountEl.textContent = currency + ' ' + fmt(amt);
+            }
+            input.addEventListener('input', recalc);
+            recalc();
+          });
+        })();
+        </script>
+        @endpush
     @endif
 
     {{-- Contact Support (buyer & seller) and Admin Request Evidence --}}
@@ -560,6 +677,9 @@
                 $isSeller = auth()->check() && (($dispute->seller_id ?? null) === auth()->id() || optional($dispute->order->shop)->user_id === auth()->id());
                 $isAdmin  = auth()->check() && (method_exists(auth()->user(), 'isAdmin') ? auth()->user()->isAdmin() : false);
                 $canRefund = $isSeller || $isAdmin;
+                $sellerSuggestedPercent = ($buyerRequestedResolution === 'partial_refund' && $buyerRequestedPercent)
+                    ? max(1, min(100, $buyerRequestedPercent))
+                    : 50;
             @endphp
             @if($canRefund && !$dispute->isResolved() && !$dispute->isClosed())
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4 border-warning">
@@ -603,7 +723,7 @@
                         @php $orderTotal = (float)($dispute->order->total_amount ?? 0); @endphp
                         <div class="mb-3">
                           <label for="refund-percent-{{ $dispute->id }}" class="mb-1 block text-sm font-medium text-slate-700">Refund Percentage (%)</label>
-                          <input type="number" name="refund_percent" id="refund-percent-{{ $dispute->id }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="50" min="1" max="100" step="0.01" required>
+                          <input type="number" name="refund_percent" id="refund-percent-{{ $dispute->id }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" value="{{ rtrim(rtrim(number_format($sellerSuggestedPercent, 2), '0'), '.') }}" min="1" max="100" step="0.01" required>
                           <div class="mt-1 text-xs text-slate-500">Order Total: {{ get_currency() }} {{ number_format($orderTotal, 2) }}. Set the percentage to refund to the buyer.</div>
                         </div>
                         <div class="rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800" id="refund-amount-box-{{ $dispute->id }}">
@@ -2331,8 +2451,3 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 @endsection
-
-
-
-
-

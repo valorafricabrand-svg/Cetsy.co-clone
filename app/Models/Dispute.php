@@ -324,6 +324,48 @@ class Dispute extends Model
         }
     }
 
+    public function getBuyerResolutionRequest(): ?array
+    {
+        $notes = $this->admin_notes;
+        if (!is_string($notes) || trim($notes) === '') {
+            return null;
+        }
+        try {
+            $data = json_decode($notes, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($data) && isset($data['buyer_resolution_request'])) {
+                return is_array($data['buyer_resolution_request']) ? $data['buyer_resolution_request'] : null;
+            }
+        } catch (\Throwable $e) {}
+        return null;
+    }
+
+    public function setBuyerResolutionRequest(array $payload): void
+    {
+        $existing = [];
+        if (is_string($this->admin_notes) && trim($this->admin_notes) !== '') {
+            $tmp = json_decode($this->admin_notes, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($tmp)) {
+                $existing = $tmp;
+            }
+        }
+        $existing['buyer_resolution_request'] = $payload;
+        $this->admin_notes = json_encode($existing);
+        $this->save();
+    }
+
+    public function clearBuyerResolutionRequest(): void
+    {
+        if (!is_string($this->admin_notes) || trim($this->admin_notes) === '') {
+            return;
+        }
+        $tmp = json_decode($this->admin_notes, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($tmp) && array_key_exists('buyer_resolution_request', $tmp)) {
+            unset($tmp['buyer_resolution_request']);
+            $this->admin_notes = empty($tmp) ? null : json_encode($tmp);
+            $this->save();
+        }
+    }
+
     public function setAppealDeadline(): void
     {
         $this->update([

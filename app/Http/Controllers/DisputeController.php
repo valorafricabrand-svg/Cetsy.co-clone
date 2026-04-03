@@ -242,6 +242,7 @@ class DisputeController extends Controller
                     $requestedResolution = 'return_exchange';
                 }
             }
+            $requestedResolutionPercent = $requestedResolution === 'full_refund' ? 100.0 : null;
 
             // Whether buyer requested a return/exchange
             $wantsExchange = $isBuyer && $requestedResolution === 'return_exchange';
@@ -270,7 +271,7 @@ class DisputeController extends Controller
             \Log::info('About to create dispute in transaction');
 
             // Create the dispute and return it from the transaction
-            $dispute = DB::transaction(function () use ($data, $order, $evidence, $buyerId, $sellerId, $wantsExchange, $requestedResolution) {
+            $dispute = DB::transaction(function () use ($data, $order, $evidence, $buyerId, $sellerId, $wantsExchange, $requestedResolution, $requestedResolutionPercent) {
                 \Log::info('Inside transaction - creating dispute');
                 
                 $dispute = Dispute::create([
@@ -307,6 +308,21 @@ class DisputeController extends Controller
                 ]);
 
                 \Log::info('System message created');
+
+                if ($requestedResolution && $requestedResolution !== 'review') {
+                    $amount = null;
+                    if ($requestedResolutionPercent) {
+                        $baseTotal = (float) ($order->total_amount ?? 0);
+                        $amount = round($baseTotal * ($requestedResolutionPercent / 100), 2);
+                    }
+                    $dispute->setBuyerResolutionRequest([
+                        'type'         => $requestedResolution,
+                        'percent'      => $requestedResolutionPercent,
+                        'amount'       => $amount,
+                        'requested_by' => $buyerId,
+                        'requested_at' => now()->toDateTimeString(),
+                    ]);
+                }
 
                 if ($requestedResolution === 'full_refund') {
                     DisputeMessage::create([
@@ -1409,6 +1425,92 @@ class DisputeController extends Controller
     }
 
     /**
+     * Buyer requests a full or partial refund from the seller within an open dispute.
+     */
+    public function requestBuyerRefund(Request $request, Dispute $dispute)
+    {
+        $user = Auth::user();
+        abort_unless($dispute->buyer_id === $user->id, 403, 'Only the buyer can request a refund on this dispute.');
+
+        if ($dispute->isResolved() || $dispute->isClosed()) {
+            return back()->withErrors(['error' => 'This dispute has already been resolved or closed.']);
+        }
+
+        $data = $request->validate([
+            'request_type'   => ['required', Rule::in(['full_refund', 'partial_refund'])],
+            'refund_percent' => 'nullable|numeric|min:1|max:100',
+        ]);
+
+        $order = $dispute->order()->with('shop')->first();
+        if (!$order) {
+            return back()->withErrors(['error' => 'Order not found for this dispute.']);
+        }
+
+        $percent = $data['request_type'] === 'full_refund'
+            ? 100.0
+            : (float) ($data['refund_percent'] ?? 0);
+
+        if ($data['request_type'] === 'partial_refund' && $percent <= 0) {
+            return back()->withErrors(['error' => 'Enter the partial refund percentage you want to request.']);
+        }
+
+        $baseTotal = (float) ($order->total_amount ?? 0);
+        $amount = round($baseTotal * ($percent / 100), 2);
+        if ($amount <= 0) {
+            return back()->withErrors(['error' => 'Refund request amount must be greater than zero.']);
+        }
+
+        try {
+            $dispute->setBuyerResolutionRequest([
+                'type'         => $data['request_type'],
+                'percent'      => $percent,
+                'amount'       => $amount,
+                'requested_by' => $user->id,
+                'requested_at' => now()->toDateTimeString(),
+            ]);
+
+            $message = $data['request_type'] === 'full_refund'
+                ? 'Buyer requested a full refund ('.get_currency().' '.number_format($amount, 2).').'
+                : 'Buyer requested a partial refund of '.rtrim(rtrim(number_format($percent, 2), '0'), '.').'% ('.get_currency().' '.number_format($amount, 2).').';
+
+            DisputeMessage::create([
+                'dispute_id' => $dispute->id,
+                'user_id'    => null,
+                'message'    => $message,
+                'type'       => DisputeMessage::TYPE_SYSTEM_MESSAGE,
+                'is_internal'=> false,
+            ]);
+
+            try {
+                $seller = $dispute->seller ?: optional($order->shop)->user;
+                if ($seller) {
+                    Activity::create([
+                        'user_id'     => $seller->id,
+                        'is_read'     => false,
+                        'description' => 'Buyer requested a '.($data['request_type'] === 'full_refund'
+                            ? 'full refund'
+                            : rtrim(rtrim(number_format($percent, 2), '0'), '.').'% partial refund')
+                            .' on dispute #'.$dispute->id.'.',
+                        'type'        => Activity::TYPE_DISPUTE,
+                        'related_id'  => $dispute->id,
+                        'related_type'=> 'dispute',
+                        'link'        => route('disputes.show', $dispute->id),
+                    ]);
+                }
+            } catch (\Throwable $e) { /* non-fatal */ }
+        } catch (\Throwable $e) {
+            \Log::error('dispute.buyer_refund_request_failed', [
+                'dispute_id' => $dispute->id,
+                'buyer_id'   => $user->id,
+                'error'      => $e->getMessage(),
+            ]);
+            return back()->withErrors(['error' => 'Failed to send refund request. Please try again.']);
+        }
+
+        return back()->with('success', 'Your refund request has been sent.');
+    }
+
+    /**
      * Seller accepts and issues a refund (partial or full) to the buyer's wallet.
      */
     public function refund(Request $request, Dispute $dispute)
@@ -2004,4 +2106,3 @@ class DisputeController extends Controller
         }
     }
 }
-
