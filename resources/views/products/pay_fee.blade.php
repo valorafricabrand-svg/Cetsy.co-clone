@@ -34,8 +34,8 @@
   $walletBalanceRaw = $walletBalance ?? (function_exists('wallet') ? wallet() : 0);
   $walletBalance    = max(0, (float) ($walletBalanceRaw ?? 0));
 
-  // Server-side gate: should the wallet button be visible on first render?
-  $showWalletFormInitial = ($walletBalance > 0) && ($initialFee > 0) && ($walletBalance >= $initialFee);
+  // Server-side gate: show the activation button either for free plans or for wallet-covered plans.
+  $showWalletFormInitial = ($initialFee <= 0) || (($walletBalance > 0) && ($initialFee > 0) && ($walletBalance >= $initialFee));
 
   // Build a robust deposit URL (supports multiple route names)
   $depositUrl = \Illuminate\Support\Facades\Route::has('wallet.deposit.form')
@@ -54,8 +54,8 @@
 
           <div class="text-center mb-3">
             <div class="badge-dot success subtle mb-2">Secure Checkout</div>
-            <h1 class="text-xl font-semibold headline mb-1">Complete Your Payment</h1>
-            <p class="subtle mb-0">We'll use your wallet to pay for the listing.</p>
+            <h1 class="text-xl font-semibold headline mb-1">{{ $initialFee <= 0 ? 'Activate Your Listing' : 'Complete Your Payment' }}</h1>
+            <p class="subtle mb-0">{{ $initialFee <= 0 ? 'This listing plan is free and can be activated right away.' : "We'll use your wallet to pay for the listing." }}</p>
           </div>
 
           <div
@@ -124,13 +124,19 @@
               </ul>
             </div>
 
+            @php
+              $initialActionLabel = $initialFee <= 0 ? 'Activate Listing' : 'Pay via Wallet';
+              $initialActionHint = $initialFee <= 0
+                ? 'No wallet charge will be made for this plan.'
+                : 'Your wallet will be debited immediately.';
+            @endphp
             {{-- ACTIONS --}}
             <div class="mt-4">
               {{-- SERVER-SAFE VISIBILITY: also add hidden when initial wallet is <=0 or insufficient --}}
               <form
                 id="wallet-pay-form"
                 class="grid gap-2 {{ $showWalletFormInitial ? '' : 'hidden' }}"
-                x-show="canPayFromWallet"
+                x-show="canSubmitListing"
                 method="POST"
                 action="{{ route('listing.wallet.pay', $order->id) }}"
                 @submit="$el.querySelector('[name=plan]').value = plan"
@@ -138,10 +144,10 @@
                 @csrf
                 <input type="hidden" name="plan" value="">
                 <input type="hidden" name="via"  value="wallet">
-                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base">
-                  Pay via Wallet
+                <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 py-2.5 text-base" x-text="noPaymentDue ? 'Activate Listing' : 'Pay via Wallet'">
+                  {{ $initialActionLabel }}
                 </button>
-                <small class="text-center subtle">Your wallet will be debited immediately.</small>
+                <small class="text-center subtle" x-text="noPaymentDue ? 'No wallet charge will be made for this plan.' : 'Your wallet will be debited immediately.'">{{ $initialActionHint }}</small>
               </form>
 
               {{-- If nothing to pay at all (free/comp) --}}
@@ -215,6 +221,10 @@ function checkoutPlans(cfg) {
       return this.hasPlans && this.wallet > 0 && this.currentFee > 0 && this.wallet >= this.currentFee;
     },
 
+    get canSubmitListing() {
+      return this.hasPlans && (this.noPaymentDue || this.canPayFromWallet);
+    },
+
     get noPaymentDue() {
       return !this.hasPlans || this.currentFee <= 0.000001;
     },
@@ -247,7 +257,7 @@ function checkoutPlans(cfg) {
     syncForm() {
       const form = document.getElementById('wallet-pay-form');
       if (form) {
-        if (this.canPayFromWallet) {
+        if (this.canSubmitListing) {
           form.classList.remove('hidden');
         } else {
           form.classList.add('hidden');
@@ -265,5 +275,3 @@ function checkoutPlans(cfg) {
 }
 </script>
 @endsection
-
-

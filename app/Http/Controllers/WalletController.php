@@ -1697,7 +1697,8 @@ class WalletController extends Controller
 public function payListing(Request $request, $id)
 {
     // 1) Fetch the product
-    $product = Product::findOrFail($id);
+    $product = Product::with('shop')->findOrFail($id);
+    abort_unless((int) optional($product->shop)->user_id === (int) Auth::id(), 403, 'You can only activate your own listing.');
 
     // Only accept the plan that matches the product's category frequency
     $freq = (int) ($product->category->listing_frequency ?? 4);
@@ -1713,13 +1714,24 @@ public function payListing(Request $request, $id)
     $planDetails = $this->resolveListingPlan($product, $data['plan']);
     $fee         = $planDetails['amount'];
     $nextDue     = $planDetails['due'];
+    $hasFeatured = !empty($product->featured_image);
+    try {
+        $hasFeatured = $hasFeatured || $product->media()->exists();
+    } catch (\Throwable $e) { /* ignore */ }
+
+    if ($data['via'] === 'wallet' && $fee > 0) {
+        $balance = $this->currentBalance(Auth::id());
+        if ($balance < $fee) {
+            return back()->with('error', 'Insufficient wallet balance.');
+        }
+    }
 
     // 4) Set due date; publish only if featured image present
     $updates = [
         'listing_paid_at' => now(),
         'next_due_date'   => $nextDue,
     ];
-    if (!empty($product->featured_image)) {
+    if ($hasFeatured) {
         $updates['is_active'] = true;
     }
     $product->update($updates);
@@ -1733,22 +1745,17 @@ public function payListing(Request $request, $id)
     }
 
     // 6) If paying via wallet, record a Wallet debit
-    if ($data['via'] === 'wallet') {
-        $currentBalance = Wallet::where('user_id', Auth::id())
-            ->latest('created_at')
-            ->value('balance') ?? 0;
-
-        Wallet::create([
-            'user_id'     => Auth::id(),
-            'credit'      => 0,
-            'debit'       => $fee,
-            'balance'     => $currentBalance - $fee,
-            'reference'   => strtoupper(uniqid('TXN-')),
+    if ($data['via'] === 'wallet' && $fee > 0) {
+        $this->appendWalletRow(Auth::id(), 0, $fee, [
             'method'      => 'wallet',
             'description' => "Listing fee ({$planDetails['plan']})",
+            'meta'        => [
+                'product_id' => $product->id,
+                'plan'       => $planDetails['plan'],
+                'kind'       => 'listing_fee',
+            ],
         ]);
 
-        // Notification: listing fee paid for a specific product
         Activity::create([
             'user_id'      => Auth::id(),
             'is_read'      => false,
@@ -1759,6 +1766,20 @@ public function payListing(Request $request, $id)
             'properties'   => [
                 'product_id' => $product->id,
                 'plan'       => $planDetails['plan'],
+            ],
+        ]);
+    } elseif ($fee <= 0) {
+        Activity::create([
+            'user_id'      => Auth::id(),
+            'is_read'      => false,
+            'type'         => Activity::TYPE_PRODUCT,
+            'related_id'   => $product->id,
+            'related_type' => 'product',
+            'description'  => 'You activated a free listing plan.',
+            'properties'   => [
+                'product_id' => $product->id,
+                'plan'       => $planDetails['plan'],
+                'amount'     => 0,
             ],
         ]);
     }

@@ -191,6 +191,11 @@
                 ];
               }
             @endphp
+            @php
+              $planRequiresPayment = collect($planButtons)->contains(function ($option) {
+                return (float) ($option['amount'] ?? 0) > 0;
+              });
+            @endphp
 
             @if((int)$product->is_active === 3)
               <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
@@ -202,7 +207,7 @@
               @if(! $hasPaid)
                 <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   <i class="fas fa-exclamation-triangle mr-2"></i>
-                  This listing is not live yet. Pay the fee below to activate it.
+                  This listing is not live yet. {{ $planRequiresPayment ? 'Pay the fee below' : 'Activate the free plan below' }} to activate it.
                 </div>
 
                 <div class="mb-4 flex flex-wrap gap-2">
@@ -211,8 +216,8 @@
                       @csrf
                       <input type="hidden" name="plan" value="{{ $planKey }}">
                       <button class="inline-flex flex-col items-start rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500">
-                        <span>Pay {{ $option['label'] }}</span>
-                        <small>{{ money($option['amount']) }}</small>
+                        <span>{{ (float) $option['amount'] > 0 ? 'Pay ' : 'Activate ' }}{{ $option['label'] }}</span>
+                        <small>{{ (float) $option['amount'] > 0 ? money($option['amount']) : 'Free' }}</small>
                       </button>
                     </form>
                   @endforeach
@@ -230,7 +235,7 @@
                       <input type="hidden" name="plan" value="{{ $planKey }}">
                       <button class="inline-flex flex-col items-start rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500">
                         <span>Renew {{ $option['label'] }}</span>
-                        <small>{{ money($option['amount']) }}</small>
+                        <small>{{ (float) $option['amount'] > 0 ? money($option['amount']) : 'Free' }}</small>
                       </button>
                     </form>
                   @endforeach
@@ -286,7 +291,7 @@
               @else
                 <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   <i class="fas fa-exclamation-triangle mr-2"></i>
-                  This listing is not live yet. Pay the fee below to activate it.
+                  This listing is not live yet. {{ $planRequiresPayment ? 'Pay the fee below' : 'Activate the free plan below' }} to activate it.
                 </div>
 
                 <div class="mb-4 flex flex-wrap gap-2">
@@ -295,8 +300,8 @@
                       @csrf
                       <input type="hidden" name="plan" value="{{ $planKey }}">
                       <button class="inline-flex flex-col items-start rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500">
-                        <span>Pay {{ $option['label'] }}</span>
-                        <small>{{ money($option['amount']) }}</small>
+                        <span>{{ (float) $option['amount'] > 0 ? 'Pay ' : 'Activate ' }}{{ $option['label'] }}</span>
+                        <small>{{ (float) $option['amount'] > 0 ? money($option['amount']) : 'Free' }}</small>
                       </button>
                     </form>
                   @endforeach

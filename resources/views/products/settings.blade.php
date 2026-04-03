@@ -45,6 +45,7 @@
                 @php
                   $rawStatus = (int) old('is_active', $product->is_active);
                   $hasPaid = !empty($product->listing_paid_at);
+                  $listingFee = max(0, (float) ($product->category?->listing_fee ?? 0));
                   $hasBillingHistory = $hasPaid || !empty($product->next_due_date);
                   try {
                     $nextDueDate = $product->next_due_date ? \Carbon\Carbon::parse($product->next_due_date) : null;
@@ -71,9 +72,9 @@
                   @if($isActive !== 1 && !$eligibleToActivate)
                     @if(empty($product->listing_paid_at))
                       <div class="mt-1">
-                        <span>Pay the listing fee to activate.</span>
+                        <span>{{ $listingFee > 0 ? 'Pay the listing fee to activate.' : 'Activate the free listing plan to go live.' }}</span>
                         <button type="button" class="ml-1 text-emerald-700 underline decoration-emerald-500 underline-offset-2 hover:text-emerald-600" onclick="document.getElementById('payFeeForm-{{ $product->id }}').submit();">
-                          Pay to activate
+                          {{ $listingFee > 0 ? 'Pay to activate' : 'Activate listing' }}
                         </button>
                       </div>
                     @else
