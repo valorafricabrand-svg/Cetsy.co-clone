@@ -1750,6 +1750,35 @@
             <i class="fas fa-comments" aria-hidden="true"></i>
             <span>Live Chat</span>
         </a>
+        <section
+            id="cetsyDesktopChatPanel"
+            aria-hidden="true"
+            style="display:none;position:fixed;right:24px;bottom:156px;z-index:161;width:min(420px, calc(100vw - 32px));height:min(680px, calc(100vh - 120px));max-height:calc(100vh - 120px);overflow:hidden;border:1px solid rgba(148, 163, 184, 0.3);border-radius:24px;background:#ffffff;box-shadow:0 28px 70px rgba(15, 23, 42, 0.24);"
+        >
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;background:#0f766e;color:#ffffff;">
+                <div>
+                    <strong style="display:block;font-size:15px;line-height:1.2;">Live Chat</strong>
+                    <span style="display:block;font-size:12px;line-height:1.3;opacity:0.85;">Cetsy customer support</span>
+                </div>
+                <button
+                    id="cetsyDesktopChatPanelClose"
+                    type="button"
+                    aria-label="Close live chat"
+                    style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:0;border-radius:999px;background:rgba(255,255,255,0.16);color:#ffffff;font-size:20px;line-height:1;cursor:pointer;"
+                >
+                    &times;
+                </button>
+            </div>
+            <iframe
+                id="cetsyDesktopChatFrame"
+                title="Cetsy live chat support"
+                data-src="{{ $tawkDirectUrl }}"
+                src="about:blank"
+                loading="lazy"
+                referrerpolicy="strict-origin-when-cross-origin"
+                style="display:block;width:100%;height:calc(100% - 64px);border:0;background:#ffffff;"
+            ></iframe>
+        </section>
         <!-- Start of Tawk.to Script -->
         <script type="text/javascript">
             window.Tawk_API = window.Tawk_API || {};
@@ -1758,6 +1787,9 @@
             (function () {
                 var mobileQuery = window.matchMedia('(max-width: 1023.98px)');
                 var desktopLauncher = document.getElementById('cetsyDesktopChatLauncher');
+                var desktopChatPanel = document.getElementById('cetsyDesktopChatPanel');
+                var desktopChatFrame = document.getElementById('cetsyDesktopChatFrame');
+                var desktopChatClose = document.getElementById('cetsyDesktopChatPanelClose');
                 var mobileNavSelectors = [
                     'nav[aria-label="Mobile Bottom Navigation"]',
                     '[data-seller-mobile-nav-root] > nav',
@@ -1823,7 +1855,35 @@
 
                 function syncDesktopLauncherVisibility() {
                     if (!desktopLauncher) return;
-                    desktopLauncher.style.display = mobileQuery.matches ? 'none' : 'inline-flex';
+                    var showDesktop = !mobileQuery.matches;
+                    desktopLauncher.style.display = showDesktop ? 'inline-flex' : 'none';
+
+                    if (!showDesktop) {
+                        closeDesktopChatPanel();
+                    }
+                }
+
+                function openDesktopChatPanel() {
+                    if (!desktopChatPanel || mobileQuery.matches) return;
+
+                    if (desktopChatFrame && desktopChatFrame.getAttribute('src') === 'about:blank') {
+                        desktopChatFrame.setAttribute('src', desktopChatFrame.getAttribute('data-src') || @json($tawkDirectUrl));
+                    }
+
+                    desktopChatPanel.style.display = 'block';
+                    desktopChatPanel.setAttribute('aria-hidden', 'false');
+                    if (desktopLauncher) {
+                        desktopLauncher.setAttribute('aria-expanded', 'true');
+                    }
+                }
+
+                function closeDesktopChatPanel() {
+                    if (!desktopChatPanel) return;
+                    desktopChatPanel.style.display = 'none';
+                    desktopChatPanel.setAttribute('aria-hidden', 'true');
+                    if (desktopLauncher) {
+                        desktopLauncher.setAttribute('aria-expanded', 'false');
+                    }
                 }
 
                 function applyTawkMobileOffset() {
@@ -1872,38 +1932,22 @@
                 if (desktopLauncher) {
                     desktopLauncher.addEventListener('click', function (event) {
                         if (mobileQuery.matches) return;
-                        if (!window.Tawk_API) return;
-
-                        var canOpenInPlace =
-                            typeof window.Tawk_API.maximize === 'function'
-                            || typeof window.Tawk_API.toggle === 'function';
-
-                        if (!canOpenInPlace) return;
-
                         event.preventDefault();
-
-                        try {
-                            if (typeof window.Tawk_API.showWidget === 'function') {
-                                window.Tawk_API.showWidget();
-                            }
-                        } catch (_) {}
-
-                        window.setTimeout(function () {
-                            try {
-                                if (typeof window.Tawk_API.maximize === 'function') {
-                                    window.Tawk_API.maximize();
-                                    return;
-                                }
-                            } catch (_) {}
-
-                            try {
-                                if (typeof window.Tawk_API.toggle === 'function') {
-                                    window.Tawk_API.toggle();
-                                }
-                            } catch (_) {}
-                        }, 120);
+                        openDesktopChatPanel();
                     });
                 }
+
+                if (desktopChatClose) {
+                    desktopChatClose.addEventListener('click', function () {
+                        closeDesktopChatPanel();
+                    });
+                }
+
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        closeDesktopChatPanel();
+                    }
+                });
 
                 var observer = new MutationObserver(queueApply);
                 observer.observe(document.documentElement, { childList: true, subtree: true });
