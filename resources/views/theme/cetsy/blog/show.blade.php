@@ -11,6 +11,159 @@
 @section('meta_image', $heroImage)
 @section('canonical_url', route('blog.show', $post->slug))
 
+@push('styles')
+<style>
+  .blog-article {
+    min-width: 0;
+    color: #334155;
+    line-height: 1.85;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .blog-article,
+  .blog-article * {
+    box-sizing: border-box;
+  }
+
+  .blog-article > * {
+    max-width: 100%;
+  }
+
+  .blog-article > :first-child {
+    margin-top: 0;
+  }
+
+  .blog-article > :last-child {
+    margin-bottom: 0;
+  }
+
+  .blog-article h1,
+  .blog-article h2,
+  .blog-article h3,
+  .blog-article h4,
+  .blog-article h5,
+  .blog-article h6 {
+    color: #0f172a;
+    font-weight: 800;
+    line-height: 1.25;
+    margin: 1.35rem 0 0.75rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal !important;
+  }
+
+  .blog-article h1 { font-size: clamp(1.7rem, 5.5vw, 2.5rem); }
+  .blog-article h2 { font-size: clamp(1.45rem, 4.8vw, 2rem); }
+  .blog-article h3 { font-size: clamp(1.2rem, 4vw, 1.6rem); }
+
+  .blog-article p,
+  .blog-article ul,
+  .blog-article ol,
+  .blog-article blockquote,
+  .blog-article pre,
+  .blog-article table,
+  .blog-article figure {
+    margin: 0 0 1rem;
+  }
+
+  .blog-article p,
+  .blog-article li,
+  .blog-article a,
+  .blog-article span,
+  .blog-article strong,
+  .blog-article em {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+  .blog-article ul,
+  .blog-article ol {
+    padding-left: 1.25rem;
+  }
+
+  .blog-article blockquote {
+    margin-left: 0;
+    padding-left: 1rem;
+    border-left: 4px solid #cbd5e1;
+    color: #475569;
+  }
+
+  .blog-article img,
+  .blog-article video,
+  .blog-article iframe,
+  .blog-article embed,
+  .blog-article object {
+    display: block;
+    height: auto !important;
+    max-width: 100% !important;
+  }
+
+  .blog-article img,
+  .blog-article video {
+    border-radius: 0.9rem;
+  }
+
+  .blog-article iframe {
+    width: 100% !important;
+    min-height: min(56vw, 360px);
+    border: 0;
+    border-radius: 0.9rem;
+  }
+
+  .blog-article figure {
+    width: 100% !important;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .blog-article table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+
+  .blog-article th,
+  .blog-article td {
+    border: 1px solid #e2e8f0;
+    padding: 0.65rem 0.85rem;
+    vertical-align: top;
+    white-space: normal;
+  }
+
+  .blog-article pre,
+  .blog-article code {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .blog-article pre {
+    overflow-x: auto;
+    white-space: pre-wrap;
+    border-radius: 1rem;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .blog-article {
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    .blog-article table {
+      font-size: 0.875rem;
+    }
+  }
+</style>
+@endpush
+
 @section('main')
 <div class="relative overflow-x-clip pb-10">
   <div class="pointer-events-none absolute -right-24 -top-20 h-80 w-80 rounded-full bg-emerald-200/40 blur-3xl"></div>
@@ -33,8 +186,8 @@
           <span class="inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-50">
             {{ optional($post->category)->name ?? 'Cetsy Updates' }}
           </span>
-          <h1 class="mt-3 text-4xl font-extrabold leading-tight md:text-5xl">{{ $post->title }}</h1>
-          <p class="mt-3 max-w-3xl text-sm text-emerald-50/95 md:text-base">
+          <h1 class="mt-3 break-words text-4xl font-extrabold leading-tight md:text-5xl">{{ $post->title }}</h1>
+          <p class="mt-3 max-w-3xl break-words text-sm text-emerald-50/95 md:text-base">
             {{ $post->excerpt ?? \Illuminate\Support\Str::limit(strip_tags($post->body), 160) }}
           </p>
 
@@ -55,8 +208,8 @@
 
   <section class="bg-slate-50 py-6">
     <div class="mx-auto grid w-full max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
-      <div>
-        <article class="blog-article content-body rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="min-w-0">
+        <article class="blog-article content-body min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           {!! $post->body !!}
         </article>
 
@@ -105,4 +258,3 @@
   </section>
 </div>
 @endsection
-
