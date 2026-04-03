@@ -1798,6 +1798,15 @@
                     node.style.removeProperty('bottom');
                 }
 
+                function ensureTawkDesktopVisibility() {
+                    if (mobileQuery.matches) return;
+                    if (!window.Tawk_API || typeof window.Tawk_API.showWidget !== 'function') return;
+
+                    try {
+                        window.Tawk_API.showWidget();
+                    } catch (_) {}
+                }
+
                 function applyTawkMobileOffset() {
                     var bottomOffset = getMobileBottomOffset();
 
@@ -1824,6 +1833,7 @@
                     window.requestAnimationFrame(function () {
                         applyQueued = false;
                         applyTawkMobileOffset();
+                        ensureTawkDesktopVisibility();
                     });
                 }
 
