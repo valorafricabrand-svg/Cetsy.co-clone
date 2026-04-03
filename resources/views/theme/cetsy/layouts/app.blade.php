@@ -601,6 +601,11 @@
         .cetsy-preview-watermark--lightbox::before {
             inset: 20% -28%;
         }
+        .cetsy-preview-watermark img,
+        .cetsy-preview-watermark video {
+            position: relative;
+            z-index: 1;
+        }
         .cetsy-preview-watermark img {
             -webkit-user-drag: none;
             -webkit-touch-callout: none;

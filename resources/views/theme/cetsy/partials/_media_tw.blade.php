@@ -48,7 +48,7 @@
             @else
               <button
                 type="button"
-                class="group relative block h-[420px] w-full cursor-zoom-in bg-slate-100 md:h-[460px] {{ $isDigitalPreview ? 'cetsy-preview-watermark' : '' }}"
+                class="group relative flex h-[420px] w-full items-center justify-center overflow-hidden cursor-zoom-in bg-slate-100 md:h-[460px] {{ $isDigitalPreview ? 'cetsy-preview-watermark' : '' }}"
                 data-open-image-lightbox
                 data-media-index="{{ $i }}"
                 data-lightbox-src="{{ media_url($media->url) }}"
@@ -57,10 +57,10 @@
                 <img
                   src="{{ media_url($media->url) }}"
                   alt="{{ $media->alt ?? ($product->name . ' image ' . ($i + 1)) }}"
-                  class="h-full w-full object-contain"
+                  class="block h-full w-full object-contain"
                   @if($i===0) fetchpriority="high" decoding="async" @else loading="lazy" decoding="async" @endif
                 >
-                <span class="pointer-events-none absolute bottom-3 right-3 rounded-md bg-slate-900/70 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                <span class="pointer-events-none absolute bottom-3 right-3 z-10 rounded-md bg-slate-900/70 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
                   Click to zoom
                 </span>
               </button>
