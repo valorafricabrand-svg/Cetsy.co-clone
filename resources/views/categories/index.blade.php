@@ -22,12 +22,12 @@
             <input type="text"
                    name="q"
                    value="{{ request('q') }}"
-                   placeholder="Search categories…"
+                   placeholder="Search categories..."
                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                    autocomplete="off">
             <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" type="submit">Search</button>
             @if(request()->filled('q'))
-              <a href="{{ route('admin.categories.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-rose-600 text-rose-700 hover:bg-rose-50">×</a>
+              <a href="{{ route('admin.categories.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-rose-600 text-rose-700 hover:bg-rose-50">&times;</a>
             @endif
           </div>
         </form>
@@ -104,7 +104,7 @@
                   <div class="mb-3">
                     <label class="mb-1 block text-sm font-medium text-slate-700">Listing Type</label>
                     <select name="listing_type" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
-                      <option value="">— Leave unchanged —</option>
+                      <option value="">- Leave unchanged -</option>
                       <option value="products">Products</option>
                       <option value="services">Services</option>
                       <option value="digital">Digital Downloads</option>
@@ -114,7 +114,7 @@
                   <div class="mb-3">
                     <label class="mb-1 block text-sm font-medium text-slate-700">Listing Frequency</label>
                     <select name="listing_frequency" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
-                      <option value="">— Leave unchanged —</option>
+                      <option value="">- Leave unchanged -</option>
                       <option value="1">1 month</option>
                       <option value="4">4 months</option>
                     </select>
@@ -138,15 +138,15 @@
                   <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal"></button>
                 </div>
                 <div class="px-4 py-4">
-                  <p class="text-slate-500">Select a new parent for the selected categories. Choose “None” to move them to top level.</p>
+                  <p class="text-slate-500">Select a new parent for the selected categories. Choose "None" to move them to top level.</p>
 
                   <label class="mb-1 block text-sm font-medium text-slate-700">New Parent</label>
                   <select name="parent_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
-                    <option value="">— None (Top level) —</option>
+                    <option value="">- None (Top level) -</option>
                     @php
                       $renderOptions = function($nodes, $depth = 0) use (&$renderOptions) {
                         foreach ($nodes as $node) {
-                          echo '<option value="'.$node->id.'">'.str_repeat('— ', $depth).e($node->name).'</option>';
+                          echo '<option value="'.$node->id.'">'.str_repeat('- ', $depth).e($node->name).'</option>';
                           if ($node->relationLoaded('children') && $node->children->isNotEmpty()) {
                               $renderOptions($node->children, $depth+1);
                           }
@@ -319,7 +319,3 @@
   .slug { font-size: 12px; color:#6b7280; }
 </style>
 @endpush
-
-
-
-

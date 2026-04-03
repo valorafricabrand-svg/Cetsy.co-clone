@@ -1,4 +1,4 @@
-﻿{{-- resources/views/admin/categories/edit.blade.php --}}
+{{-- resources/views/admin/categories/edit.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('header')
@@ -52,7 +52,7 @@
     {{-- NAV BUTTON --}}
     <div class="flex justify-between items-center mb-4">
       <a href="{{ route('admin.categories.show', $category) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">
-        â† Back to details
+        &larr; Back to details
       </a>
     </div>
 
@@ -117,7 +117,7 @@
       <div class="mb-4">
         <label for="parent_id" class="mb-1 block text-sm font-medium text-slate-700">Parent Category</label>
         <select id="parent_id" name="parent_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
-          <option value="">â€” None â€”</option>
+          <option value="">- None -</option>
           @foreach($parents as $p)
             <option
               value="{{ $p->id }}"
@@ -176,7 +176,7 @@
           rows="3"
           class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
         >{{ old('description', $category->description) }}</textarea>
-        <div class="mt-1 text-xs text-slate-500">Optionalâ€”briefly describe this category.</div>
+        <div class="mt-1 text-xs text-slate-500">Optional - briefly describe this category.</div>
       </div>
 
       <!-- Current Featured Image -->
@@ -213,5 +213,3 @@
   </div>
 </div>
 @endsection
-
-

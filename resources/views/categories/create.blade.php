@@ -1,4 +1,4 @@
-﻿{{-- resources/views/admin/categories/create.blade.php --}}
+{{-- resources/views/admin/categories/create.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
 @section('header')
@@ -106,7 +106,7 @@
       <div class="mb-4">
         <label for="parent_id" class="mb-1 block text-sm font-medium text-slate-700">Parent Category</label>
         <select id="parent_id" name="parent_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
-          <option value="">â€” None â€”</option>
+          <option value="">- None -</option>
           @foreach($parents as $p)
             <option
               value="{{ $p->id }}"
@@ -159,7 +159,7 @@
           rows="3"
           class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
         >{{ old('description') }}</textarea>
-        <div class="mt-1 text-xs text-slate-500">Optionalâ€”describe this category for listing pages.</div>
+        <div class="mt-1 text-xs text-slate-500">Optional - describe this category for listing pages.</div>
       </div>
 
       {{-- Featured Image --}}
@@ -183,5 +183,3 @@
   </div>
 </div>
 @endsection
-
-
