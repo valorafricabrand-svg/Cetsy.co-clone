@@ -1735,8 +1735,21 @@
             ?: config('services.tawk.embed_url')
             ?: 'https://embed.tawk.to/6760175aaf5bfec1dbdcc04c/1if7lmf47'
         ));
+        $tawkChatPath = trim((string) parse_url($tawkEmbedUrl, PHP_URL_PATH), '/');
+        $tawkDirectUrl = $tawkChatPath !== '' ? 'https://tawk.to/chat/' . $tawkChatPath : 'https://tawk.to/';
     @endphp
     @if ($tawkEmbedUrl !== '')
+        <a
+            id="cetsyDesktopChatLauncher"
+            href="{{ $tawkDirectUrl }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open live chat support"
+            style="display:none;position:fixed;right:24px;bottom:92px;z-index:160;align-items:center;gap:10px;padding:14px 18px;border-radius:999px;background:#0f766e;color:#ffffff;font-size:14px;font-weight:700;line-height:1;text-decoration:none;box-shadow:0 18px 40px rgba(15, 23, 42, 0.22);"
+        >
+            <i class="fas fa-comments" aria-hidden="true"></i>
+            <span>Live Chat</span>
+        </a>
         <!-- Start of Tawk.to Script -->
         <script type="text/javascript">
             window.Tawk_API = window.Tawk_API || {};
@@ -1744,6 +1757,7 @@
 
             (function () {
                 var mobileQuery = window.matchMedia('(max-width: 1023.98px)');
+                var desktopLauncher = document.getElementById('cetsyDesktopChatLauncher');
                 var mobileNavSelectors = [
                     'nav[aria-label="Mobile Bottom Navigation"]',
                     '[data-seller-mobile-nav-root] > nav',
@@ -1807,6 +1821,11 @@
                     } catch (_) {}
                 }
 
+                function syncDesktopLauncherVisibility() {
+                    if (!desktopLauncher) return;
+                    desktopLauncher.style.display = mobileQuery.matches ? 'none' : 'inline-flex';
+                }
+
                 function applyTawkMobileOffset() {
                     var bottomOffset = getMobileBottomOffset();
 
@@ -1834,6 +1853,7 @@
                         applyQueued = false;
                         applyTawkMobileOffset();
                         ensureTawkDesktopVisibility();
+                        syncDesktopLauncherVisibility();
                     });
                 }
 
@@ -1849,6 +1869,42 @@
                 window.addEventListener('resize', queueApply, { passive: true });
                 window.addEventListener('orientationchange', queueApply, { passive: true });
 
+                if (desktopLauncher) {
+                    desktopLauncher.addEventListener('click', function (event) {
+                        if (mobileQuery.matches) return;
+                        if (!window.Tawk_API) return;
+
+                        var canOpenInPlace =
+                            typeof window.Tawk_API.maximize === 'function'
+                            || typeof window.Tawk_API.toggle === 'function';
+
+                        if (!canOpenInPlace) return;
+
+                        event.preventDefault();
+
+                        try {
+                            if (typeof window.Tawk_API.showWidget === 'function') {
+                                window.Tawk_API.showWidget();
+                            }
+                        } catch (_) {}
+
+                        window.setTimeout(function () {
+                            try {
+                                if (typeof window.Tawk_API.maximize === 'function') {
+                                    window.Tawk_API.maximize();
+                                    return;
+                                }
+                            } catch (_) {}
+
+                            try {
+                                if (typeof window.Tawk_API.toggle === 'function') {
+                                    window.Tawk_API.toggle();
+                                }
+                            } catch (_) {}
+                        }, 120);
+                    });
+                }
+
                 var observer = new MutationObserver(queueApply);
                 observer.observe(document.documentElement, { childList: true, subtree: true });
 
@@ -1859,6 +1915,7 @@
                 s1.src = @json($tawkEmbedUrl);
                 s1.charset = 'UTF-8';
                 s1.setAttribute('crossorigin', '*');
+                s1.onerror = queueApply;
                 s0.parentNode.insertBefore(s1, s0);
             })();
         </script>
