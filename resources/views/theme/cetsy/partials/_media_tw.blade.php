@@ -2,7 +2,6 @@
 @php
   $mediaItems = $product->media ?? collect();
   $mediaTotal = $mediaItems->count();
-  $isDigitalPreview = product_is_digital($product);
 @endphp
 
 <div data-media-gallery class="space-y-3">
@@ -12,15 +11,14 @@
         @foreach($mediaItems as $i => $media)
           <button
             type="button"
-            class="media-thumb inline-flex h-[68px] w-[68px] items-center justify-center overflow-hidden rounded-xl border bg-white {{ $i === 0 ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-slate-200' }} {{ $isDigitalPreview && $media->type !== 'video' ? 'cetsy-preview-watermark cetsy-preview-watermark--thumb' : '' }}"
+            class="media-thumb inline-flex h-[68px] w-[68px] items-center justify-center overflow-hidden rounded-xl border bg-white {{ $i === 0 ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-slate-200' }}"
             data-media-thumb="{{ $i }}"
             aria-label="Select media {{ $i + 1 }}"
-            @if($isDigitalPreview && $media->type !== 'video') data-watermark-label="Preview" @endif
           >
             @if($media->type === 'video')
               <video src="{{ media_url($media->url) }}" class="h-full w-full object-cover" muted preload="metadata"></video>
             @else
-              <img src="{{ product_media_preview_url($product, $media, 'thumb') }}" alt="Thumbnail {{ $i + 1 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
+              <img src="{{ media_url($media->url) }}" alt="Thumbnail {{ $i + 1 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
             @endif
           </button>
         @endforeach
@@ -48,14 +46,13 @@
             @else
               <button
                 type="button"
-                class="group relative block h-[420px] w-full cursor-zoom-in bg-slate-100 md:h-[460px] {{ $isDigitalPreview ? 'cetsy-preview-watermark' : '' }}"
+                class="group relative block h-[420px] w-full cursor-zoom-in bg-slate-100 md:h-[460px]"
                 data-open-image-lightbox
                 data-media-index="{{ $i }}"
-                data-lightbox-src="{{ product_media_preview_url($product, $media, 'display') }}"
-                @if($isDigitalPreview) data-watermark-label="Cetsy Preview" @endif
+                data-lightbox-src="{{ media_url($media->url) }}"
               >
                 <img
-                  src="{{ product_media_preview_url($product, $media, 'display') }}"
+                  src="{{ media_url($media->url) }}"
                   alt="{{ $media->alt ?? ($product->name . ' image ' . ($i + 1)) }}"
                   class="h-full w-full object-contain"
                   @if($i===0) fetchpriority="high" decoding="async" @else loading="lazy" decoding="async" @endif
@@ -86,15 +83,14 @@
           @foreach($mediaItems as $i => $media)
             <button
               type="button"
-              class="media-thumb inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border bg-white {{ $i === 0 ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-slate-200' }} {{ $isDigitalPreview && $media->type !== 'video' ? 'cetsy-preview-watermark cetsy-preview-watermark--thumb' : '' }}"
+              class="media-thumb inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border bg-white {{ $i === 0 ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-slate-200' }}"
               data-media-thumb="{{ $i }}"
               aria-label="Select media {{ $i + 1 }}"
-              @if($isDigitalPreview && $media->type !== 'video') data-watermark-label="Preview" @endif
             >
               @if($media->type === 'video')
                 <video src="{{ media_url($media->url) }}" class="h-full w-full object-cover" muted preload="metadata"></video>
               @else
-                <img src="{{ product_media_preview_url($product, $media, 'thumb') }}" alt="Thumbnail {{ $i + 1 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
+                <img src="{{ media_url($media->url) }}" alt="Thumbnail {{ $i + 1 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
               @endif
             </button>
           @endforeach
@@ -129,8 +125,7 @@
       </button>
     </div>
 
-    <div id="imageLightboxTwStage" class="flex h-full w-full items-center justify-center overflow-hidden {{ $isDigitalPreview ? 'cetsy-preview-watermark cetsy-preview-watermark--lightbox' : '' }}"
-         @if($isDigitalPreview) data-watermark-label="Cetsy Preview" @endif>
+    <div id="imageLightboxTwStage" class="flex h-full w-full items-center justify-center overflow-hidden">
       <img id="imageLightboxTwImg" src="" alt="Full size image preview" class="max-h-[92vh] max-w-[92vw] rounded-xl border border-white/20 bg-slate-900 object-contain shadow-2xl transition-transform duration-150">
     </div>
   </div>

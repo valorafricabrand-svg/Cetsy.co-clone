@@ -921,16 +921,7 @@ if (! function_exists('product_preview_thumb_url')) {
      */
     function product_preview_thumb_url($product): string
     {
-        if (! $product || ! product_is_digital($product)) {
-            return product_raw_thumb_url($product);
-        }
-
-        try {
-            return app(\App\Services\ProductPreviewImageService::class)
-                ->productPreviewUrl($product, 'thumb');
-        } catch (\Throwable $e) {
-            return product_raw_thumb_url($product);
-        }
+        return product_raw_thumb_url($product);
     }
 }
 
@@ -940,16 +931,7 @@ if (! function_exists('product_preview_image_url')) {
      */
     function product_preview_image_url($product): string
     {
-        if (! $product || ! product_is_digital($product)) {
-            return product_raw_thumb_url($product);
-        }
-
-        try {
-            return app(\App\Services\ProductPreviewImageService::class)
-                ->productPreviewUrl($product, 'display');
-        } catch (\Throwable $e) {
-            return product_raw_thumb_url($product);
-        }
+        return product_raw_thumb_url($product);
     }
 }
 
@@ -960,22 +942,7 @@ if (! function_exists('product_media_preview_url')) {
      */
     function product_media_preview_url($product, $media, string $variant = 'display'): string
     {
-        $raw = media_url($media->url ?? null);
-
-        if (! $product || ! $media || ! product_is_digital($product)) {
-            return $raw;
-        }
-
-        if (strtolower((string) ($media->type ?? '')) === 'video') {
-            return $raw;
-        }
-
-        try {
-            return app(\App\Services\ProductPreviewImageService::class)
-                ->mediaPreviewUrl($media, $variant);
-        } catch (\Throwable $e) {
-            return $raw;
-        }
+        return media_url($media->url ?? null);
     }
 }
 
