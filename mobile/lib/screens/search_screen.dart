@@ -61,10 +61,7 @@ class _SearchScreenState extends State<SearchScreen> {
           onSubmitted: (_) => _search(),
         ),
         actions: [
-          IconButton(
-            onPressed: _search,
-            icon: const Icon(Icons.search),
-          ),
+          IconButton(onPressed: _search, icon: const Icon(Icons.search)),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(46),
@@ -105,7 +102,9 @@ class _SearchScreenState extends State<SearchScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 6),
                     itemBuilder: (_, i) {
                       final p = items[i];
-                      final url = _imageUrlFrom(p.image);
+                      final url = _imageUrlFrom(
+                        p.previewThumbnailUrl ?? p.thumbnailUrl ?? p.image,
+                      );
                       final price = p.discountPrice ?? p.price;
                       // final isSpecial = p.type != null && p.type != 'physical';
                       final typeLabel = p.type == 'service'
@@ -113,23 +112,40 @@ class _SearchScreenState extends State<SearchScreen> {
                           : (p.type == 'digital' ? 'Digital' : null);
                       return ListTile(
                         leading: url != null
-                            ? Image.network(url, width: 56, height: 56, fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported))
+                            ? Image.network(
+                                url,
+                                width: 56,
+                                height: 56,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    const Icon(Icons.image_not_supported),
+                              )
                             : const Icon(Icons.image_not_supported),
                         title: Row(
                           children: [
-                            Expanded(child: Text(p.name, overflow: TextOverflow.ellipsis)),
+                            Expanded(
+                              child: Text(
+                                p.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                             if (typeLabel != null)
                               Container(
                                 margin: const EdgeInsets.only(left: 8),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.black87.withValues(alpha: .08),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
                                   typeLabel,
-                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                           ],
@@ -184,11 +200,3 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 }
-
-
-
-
-
-
-
-

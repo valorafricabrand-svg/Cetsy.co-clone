@@ -37,7 +37,8 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         // Only surface active listings to the public API
-        $query = Product::where('is_active', 1);
+        $query = Product::with(['media', 'shop', 'category'])
+            ->where('is_active', 1);
 
         if ($request->filled('min_price')) {
             $query->where('price', '>=', $request->min_price);
@@ -61,7 +62,12 @@ class ProductController extends Controller
             $query->where('name', 'like', '%' . $term . '%');
         }
 
-        return $query->latest()->paginate(10);
+        $paginator = $query->latest()->paginate(10);
+        $paginator->getCollection()->transform(function (Product $product) {
+            return $this->serializePublicProduct($product);
+        });
+
+        return $paginator;
     }
 
     /**
@@ -541,21 +547,16 @@ class ProductController extends Controller
             'variationTypes.options',
             'variations.options',
             'media',
-            'shop:id,user_id,name',
+            'shop:id,user_id,name,logo',
+            'category:id,listing_type',
         ]);
 
-        $data = $product->toArray();
+        $data = $this->serializePublicProduct($product, true);
 
         // Normalize image: if stored filename, expose as filename and keep featured_image for legacy
         if (!empty($product->image)) {
             $data['image'] = $product->image; // filename; mobile builds URL
         }
-
-        // Include media URLs (relative paths)
-        $data['media'] = $product->media->map(fn($m) => [
-            'id' => $m->id,
-            'url' => $m->url,
-        ])->values();
 
         // Shape variations for mobile
         $data['variation_types'] = $product->variationTypes->map(function ($type) {
@@ -589,5 +590,35 @@ class ProductController extends Controller
         })->values();
 
         return response()->json($data);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializePublicProduct(Product $product, bool $includeMedia = false): array
+    {
+        $data = $product->toArray();
+        $effectiveType = product_effective_type($product) ?? ($product->type ?: Product::TYPE_PHYSICAL);
+
+        $data['type'] = $effectiveType;
+        $data['effective_type'] = $effectiveType;
+        $data['thumbnail_url'] = product_raw_thumb_url($product);
+        $data['preview_thumbnail_url'] = product_thumb_url($product);
+        $data['preview_image_url'] = product_preview_image_url($product);
+        $data['is_digital_preview'] = $effectiveType === Product::TYPE_DIGITAL;
+
+        if ($includeMedia) {
+            $data['media'] = $product->media->map(function ($media) use ($product) {
+                return [
+                    'id' => $media->id,
+                    'type' => $media->type,
+                    'url' => $media->url,
+                    'preview_url' => product_media_preview_url($product, $media, 'display'),
+                    'thumbnail_url' => product_media_preview_url($product, $media, 'thumb'),
+                ];
+            })->values();
+        }
+
+        return $data;
     }
 }

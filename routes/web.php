@@ -31,6 +31,7 @@ use App\Http\Controllers\{
     ProductReportController,
     ProductShippingController,
     ProductVariationController,
+    ProductPreviewController,
     ContactController
 };
 
@@ -193,6 +194,8 @@ Route::get('/categories', [CategoryController::class, 'index'])->name('categorie
 Route::get('/search', [ProductController::class, 'search'])->name('search');
 Route::get('/listings', [ProductController::class, 'listings'])->name('listings');
 Route::get('/listing/{slug}', [ProductController::class, 'listing'])->name('listing.show');
+Route::get('/preview/products/{product}/image', [ProductPreviewController::class, 'product'])->name('preview.products.image');
+Route::get('/preview/media/{media}/image', [ProductPreviewController::class, 'media'])->name('preview.media.image');
 Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])->name('category.show');
 
 // All shops listing

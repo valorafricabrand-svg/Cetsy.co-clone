@@ -63,7 +63,9 @@
     $renderProductCard = function ($item) {
         $basePrice = (float) ($item->price ?? 0);
         $salePrice = (float) ($item->discounted_price ?? $basePrice);
-        $isService = strtolower((string) ($item->type ?? '')) === 'service';
+        $effectiveType = product_effective_type($item);
+        $isService = $effectiveType === 'service';
+        $isDigitalPreview = $effectiveType === 'digital';
         $thumb = product_thumb_url($item);
 
         $shop = $item->shop;
@@ -72,7 +74,7 @@
         $avg = max(0, min(5, (int) round((float) ($shopAvg ?? 0))));
         $reviewsCnt = (int) ($shopCount ?? 0);
 
-        return compact('basePrice', 'salePrice', 'isService', 'thumb', 'avg', 'reviewsCnt');
+        return compact('basePrice', 'salePrice', 'isService', 'isDigitalPreview', 'thumb', 'avg', 'reviewsCnt');
     };
 @endphp
 
@@ -310,8 +312,9 @@
                             @foreach($pageItems as $item)
                                 @php($card = $renderProductCard($item))
                                 <a href="{{ route('listing.show', $item->slug) }}" class="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:rounded-2xl">
-                                    <div class="relative aspect-[4/3] overflow-hidden bg-slate-100 sm:aspect-square">
-                                        @if((($item->type ?? '') === 'physical') && (int)($item->stock ?? 0) === 1 && (($item->is_reserved ?? false)) )
+                                    <div class="relative aspect-[4/3] overflow-hidden bg-slate-100 sm:aspect-square {{ $card['isDigitalPreview'] ? 'cetsy-preview-watermark' : '' }}"
+                                         @if($card['isDigitalPreview']) data-watermark-label="Cetsy Preview" @endif>
+                                        @if((product_effective_type($item) === 'physical') && (int)($item->stock ?? 0) === 1 && (($item->is_reserved ?? false)) )
                                             <span class="absolute right-1.5 top-1.5 z-10 rounded-full bg-red-600 px-1.5 py-0.5 text-[9px] font-semibold text-white sm:right-2 sm:top-2 sm:px-2 sm:text-[10px]">Reserved</span>
                                         @endif
                                         <img src="{{ $card['thumb'] }}" alt="{{ $item->name }}" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async" onerror='this.onerror=null;this.src=@json($productThumbFallback);'>

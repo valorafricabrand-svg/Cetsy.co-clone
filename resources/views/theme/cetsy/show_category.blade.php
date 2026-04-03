@@ -249,7 +249,8 @@
             @foreach ($products as $item)
               @php
                 $thumb = product_thumb_url($item);
-                $isDigitalPreview = strtolower((string) ($item->type ?? '')) === 'digital';
+                $effectiveType = product_effective_type($item);
+                $isDigitalPreview = ($effectiveType === 'digital');
 
                 $mediaItems = $item->media ?? collect();
                 $firstImage = optional($mediaItems)->first(function ($media) {
@@ -273,7 +274,7 @@
                 $cnt  = (int) ($shop?->reviews_count ?? ($shop ? $shop->reviews()->count() : 0));
                 $basePrice  = $item->price;
                 $finalPrice = $item->discounted_price;
-                $isService = (strtolower((string)($item->type ?? '')) === 'service');
+                  $isService = ($effectiveType === 'service');
                 $lowestVariantPrice = collect($item->variations ?? [])
                     ->filter(fn ($variant) => ($variant->options->count() ?? 0) > 0)
                     ->whereNotNull('price')

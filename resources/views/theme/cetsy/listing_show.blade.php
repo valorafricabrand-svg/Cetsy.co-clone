@@ -15,7 +15,9 @@ $product->loadMissing(
 );
 
 $primaryMedia = $product->media->firstWhere('type', 'image') ?? $product->media->first();
-$metaImage = $primaryMedia && $primaryMedia->url ? media_url($primaryMedia->url) : asset('assets/images/default-og-image-cetsy.jpg');
+$metaImage = $primaryMedia && $primaryMedia->url
+    ? product_media_preview_url($product, $primaryMedia, 'display')
+    : asset('assets/images/default-og-image-cetsy.jpg');
 $metaDescription = Str::limit(strip_tags($product->description ?? $product->name), 155);
 @endphp
 

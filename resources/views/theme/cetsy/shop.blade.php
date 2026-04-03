@@ -256,7 +256,7 @@
           @foreach($products as $product)
             @php
               $thumbUrl = product_thumb_url($product);
-              $isDigitalPreview = strtolower((string) ($product->type ?? '')) === 'digital';
+              $isDigitalPreview = product_is_digital($product);
             @endphp
 
             <article class="product-item product-item-list shop-product-item flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3" data-price="{{ (float) ($product->price ?? 0) }}" data-type="{{ $product->type }}" data-rating="{{ $shop->reviews_avg_rating ?? ($shop->average_rating ?? 0) }}">

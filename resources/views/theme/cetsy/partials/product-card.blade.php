@@ -4,7 +4,8 @@
 @php
   $basePrice  = (float) ($item->price ?? 0);
   $salePrice  = (float) ($item->discounted_price ?? $basePrice);
-  $isService  = (strtolower((string) ($item->type ?? '')) === 'service');
+  $effectiveType = product_effective_type($item);
+  $isService  = ($effectiveType === 'service');
 
   $lowestVariantPrice = null;
   if ($item->relationLoaded('variations') && $item->variations) {
@@ -23,10 +24,10 @@
   $formatMoney = fn($n) => money((float) $n, null);
   $hasVariantPricing = $lowestVariantPrice !== null;
 
-  $isReserved = (($item->type ?? '') === 'physical')
+  $isReserved = ($effectiveType === 'physical')
       && (int) ($item->stock ?? 0) === 1
       && (($item->is_reserved ?? false));
-  $isDigitalPreview = strtolower((string) ($item->type ?? '')) === 'digital';
+  $isDigitalPreview = product_is_digital($item);
 
   $thumb = product_thumb_url($item);
   $mediaItems = $item->media ?? collect();

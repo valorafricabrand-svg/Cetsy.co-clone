@@ -2,7 +2,7 @@
 @php
   $mediaItems = $product->media ?? collect();
   $mediaTotal = $mediaItems->count();
-  $isDigitalPreview = strtolower((string) ($product->type ?? '')) === 'digital';
+  $isDigitalPreview = product_is_digital($product);
 @endphp
 
 <div data-media-gallery class="space-y-3">
@@ -20,7 +20,7 @@
             @if($media->type === 'video')
               <video src="{{ media_url($media->url) }}" class="h-full w-full object-cover" muted preload="metadata"></video>
             @else
-              <img src="{{ media_url($media->url) }}" alt="Thumbnail {{ $i + 1 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
+              <img src="{{ product_media_preview_url($product, $media, 'thumb') }}" alt="Thumbnail {{ $i + 1 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
             @endif
           </button>
         @endforeach
@@ -51,11 +51,11 @@
                 class="group relative block h-[420px] w-full cursor-zoom-in bg-slate-100 md:h-[460px] {{ $isDigitalPreview ? 'cetsy-preview-watermark' : '' }}"
                 data-open-image-lightbox
                 data-media-index="{{ $i }}"
-                data-lightbox-src="{{ media_url($media->url) }}"
+                data-lightbox-src="{{ product_media_preview_url($product, $media, 'display') }}"
                 @if($isDigitalPreview) data-watermark-label="Cetsy Preview" @endif
               >
                 <img
-                  src="{{ media_url($media->url) }}"
+                  src="{{ product_media_preview_url($product, $media, 'display') }}"
                   alt="{{ $media->alt ?? ($product->name . ' image ' . ($i + 1)) }}"
                   class="h-full w-full object-contain"
                   @if($i===0) fetchpriority="high" decoding="async" @else loading="lazy" decoding="async" @endif
@@ -94,7 +94,7 @@
               @if($media->type === 'video')
                 <video src="{{ media_url($media->url) }}" class="h-full w-full object-cover" muted preload="metadata"></video>
               @else
-                <img src="{{ media_url($media->url) }}" alt="Thumbnail {{ $i + 1 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
+                <img src="{{ product_media_preview_url($product, $media, 'thumb') }}" alt="Thumbnail {{ $i + 1 }}" class="h-full w-full object-cover" loading="lazy" decoding="async">
               @endif
             </button>
           @endforeach

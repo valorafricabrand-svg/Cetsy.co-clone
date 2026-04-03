@@ -44,7 +44,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (selected.length != p.variationTypes.length) return null;
     for (final v in p.variants) {
       final ids = [...v.optionIds]..sort();
-      if (ids.length == selected.length && ids.every((id) => selected.contains(id))) {
+      if (ids.length == selected.length &&
+          ids.every((id) => selected.contains(id))) {
         return v;
       }
     }
@@ -55,7 +56,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget build(BuildContext context) {
     final routeProduct = ModalRoute.of(context)!.settings.arguments as Product;
     final product = _data ?? routeProduct;
-    final imgUrl = _imageUrl(product.image);
+    final imgUrl = _imageUrl(
+      product.isDigital
+          ? (product.previewImageUrl ??
+                product.previewThumbnailUrl ??
+                product.thumbnailUrl ??
+                product.image)
+          : (product.image ?? product.thumbnailUrl),
+    );
     // final priceFmt = NumberFormat.decimalPattern();
 
     final variant = _matchVariant(product);
@@ -65,7 +73,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         : (product.discountPrice ?? product.price);
 
     final auth = context.watch<AuthProvider>();
-    final canManage = auth.user != null && auth.user!.userType == 'seller' && product.shopUserId != null && auth.user!.id == product.shopUserId;
+    final canManage =
+        auth.user != null &&
+        auth.user!.userType == 'seller' &&
+        product.shopUserId != null &&
+        auth.user!.id == product.shopUserId;
 
     return Scaffold(
       appBar: AppBar(
@@ -77,7 +89,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               icon: const Icon(Icons.settings),
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ManageListingScreen(productId: product.id)),
+                MaterialPageRoute(
+                  builder: (_) => ManageListingScreen(productId: product.id),
+                ),
               ),
             ),
         ],
@@ -101,7 +115,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                   ),
                 )
-              : Image.asset('assets/images/placeholder.png', height: 220, fit: BoxFit.cover),
+              : Image.asset(
+                  'assets/images/placeholder.png',
+                  height: 220,
+                  fit: BoxFit.cover,
+                ),
 
           // info card
           Padding(
@@ -110,16 +128,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (_loading) const LinearProgressIndicator(),
-                Text(product.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+                Text(
+                  product.name,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 8),
 
                 Row(
                   children: [
                     Text(
                       context.money(displayPrice),
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    if (variant == null && (product.discountPrice != null && product.discountPrice! < product.price)) ...[
+                    if (variant == null &&
+                        (product.discountPrice != null &&
+                            product.discountPrice! < product.price)) ...[
                       const SizedBox(width: 8),
                       Text(
                         context.money(product.price),
@@ -131,11 +160,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(4)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                         child: Text(
                           '-${(((product.price - displayPrice) / product.price) * 100).round()}%',
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -145,7 +183,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                 // Variations (if any)
                 if (product.variationTypes.isNotEmpty) ...[
-                  const Text('Options', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Options',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 8),
                   ...product.variationTypes.map((t) {
                     final value = _selectedOptionByType[t.id];
@@ -154,7 +195,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       child: DropdownButtonFormField<int>(
                         initialValue: value,
                         decoration: InputDecoration(labelText: t.name),
-                        items: t.options.map((o) => DropdownMenuItem(value: o.id, child: Text(o.value))).toList(),
+                        items: t.options
+                            .map(
+                              (o) => DropdownMenuItem(
+                                value: o.id,
+                                child: Text(o.value),
+                              ),
+                            )
+                            .toList(),
                         onChanged: (id) {
                           if (id == null) return;
                           setState(() => _selectedOptionByType[t.id] = id);
@@ -165,7 +213,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   if (variant != null && variant.label.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Text('Selected: ${variant.label}', style: const TextStyle(color: Colors.black54)),
+                      child: Text(
+                        'Selected: ${variant.label}',
+                        style: const TextStyle(color: Colors.black54),
+                      ),
                     ),
                 ],
 
@@ -175,10 +226,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     const Text('Qty:'),
                     const SizedBox(width: 8),
                     IconButton(
-                      onPressed: () => setState(() => _qty = (_qty > 1) ? _qty - 1 : 1),
+                      onPressed: () =>
+                          setState(() => _qty = (_qty > 1) ? _qty - 1 : 1),
                       icon: const Icon(Icons.remove_circle_outline),
                     ),
-                    Text('$_qty', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      '$_qty',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     IconButton(
                       onPressed: () => setState(() => _qty += 1),
                       icon: const Icon(Icons.add_circle_outline),
@@ -204,19 +259,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    if (product.variationTypes.isNotEmpty && _matchVariant(product) == null) {
+                    if (product.variationTypes.isNotEmpty &&
+                        _matchVariant(product) == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please select all options')),
+                        const SnackBar(
+                          content: Text('Please select all options'),
+                        ),
                       );
                       return;
                     }
                     final v = _matchVariant(product);
                     context.read<CartProvider>().add(
-                          product,
-                          qty: _qty,
-                          variantId: v?.id,
-                          variationLabel: v?.label,
-                        );
+                      product,
+                      qty: _qty,
+                      variantId: v?.id,
+                      variationLabel: v?.label,
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Added to cart')),
                     );
@@ -228,19 +286,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               Expanded(
                 child: FilledButton(
                   onPressed: () {
-                    if (product.variationTypes.isNotEmpty && _matchVariant(product) == null) {
+                    if (product.variationTypes.isNotEmpty &&
+                        _matchVariant(product) == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please select all options')),
+                        const SnackBar(
+                          content: Text('Please select all options'),
+                        ),
                       );
                       return;
                     }
                     final v = _matchVariant(product);
                     context.read<CartProvider>().add(
-                          product,
-                          qty: _qty,
-                          variantId: v?.id,
-                          variationLabel: v?.label,
-                        );
+                      product,
+                      qty: _qty,
+                      variantId: v?.id,
+                      variationLabel: v?.label,
+                    );
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const CheckoutScreen()),
@@ -277,12 +338,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget _descriptionSection(BuildContext ctx, Product p) {
     final hasDesc = p.description != null && p.description!.trim().isNotEmpty;
     if (!hasDesc) {
-      return const Text('No description provided.', style: TextStyle(color: Colors.grey));
+      return const Text(
+        'No description provided.',
+        style: TextStyle(color: Colors.grey),
+      );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Description', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        const Text(
+          'Description',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 8),
         Html(
           data: p.description!,
@@ -308,7 +375,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 tag: 'product-$id',
                 child: PhotoView(
                   imageProvider: NetworkImage(url),
-                  loadingBuilder: (_, __) => const CircularProgressIndicator(color: Colors.white),
+                  loadingBuilder: (_, __) =>
+                      const CircularProgressIndicator(color: Colors.white),
                 ),
               ),
             ),
@@ -319,13 +387,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   void _openLink(BuildContext ctx, String url) {
-    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Open link: $url')));
+    ScaffoldMessenger.of(
+      ctx,
+    ).showSnackBar(SnackBar(content: Text('Open link: $url')));
   }
 }
-
-
-
-
-
-
-

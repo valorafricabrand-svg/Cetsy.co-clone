@@ -789,34 +789,57 @@ if (! function_exists('policy_effective_label')) {
     }
 }
 
-if (! function_exists('product_thumb_url')) {
+if (! function_exists('product_effective_type')) {
     /**
-     * Build a product thumbnail URL with fallbacks:
+     * Resolve the user-facing listing type, falling back to the category mapping.
+     */
+    function product_effective_type($product): ?string
+    {
+        if (! $product) {
+            return null;
+        }
+
+        $explicit = strtolower((string) ($product->effective_type ?? $product->type ?? ''));
+        if (in_array($explicit, [
+            Product::TYPE_PHYSICAL,
+            Product::TYPE_DIGITAL,
+            Product::TYPE_SERVICE,
+        ], true)) {
+            return $explicit;
+        }
+
+        $category = $product->category ?? ($product->category_id ?? null);
+
+        return Product::resolveTypeForCategory($product->type ?? null, $category);
+    }
+}
+
+if (! function_exists('product_is_digital')) {
+    function product_is_digital($product): bool
+    {
+        return product_effective_type($product) === Product::TYPE_DIGITAL;
+    }
+}
+
+if (! function_exists('product_raw_thumb_url')) {
+    /**
+     * Build a raw product thumbnail URL with fallbacks:
      * 1) featured_image (absolute or storage path)
      * 2) first media item
      * 3) product->shop->logo
      * 4) setting('favicon_url')
      * 5) storage/placeholder.jpg
      */
-    function product_thumb_url($product): string
+    function product_raw_thumb_url($product): string
     {
         if (! $product) {
             return setting('favicon_url') ?: asset('storage/placeholder.jpg');
         }
 
-        // Normalize a path to a public-disk relative path
-        $normalize = function (?string $path): ?string {
-            if (!$path) return null;
-            $p = ltrim($path, '/');
-            if (str_starts_with($p, 'public/'))  { $p = substr($p, 7); }
-            if (str_starts_with($p, 'storage/')) { $p = substr($p, 8); }
-            return $p;
-        };
-
-        // Try to resolve to an existing file on the public disk.
-        $resolvePublic = function (?string $rel) use ($normalize): ?string {
+        $resolvePublic = function (?string $rel): ?string {
             if (!$rel) return null;
-            $rel = $normalize($rel);
+            $rel = storage_rel_path($rel);
+            if (!$rel) return null;
             try {
                 if (\Storage::disk('public')->exists($rel)) {
                     return $rel;
@@ -824,18 +847,22 @@ if (! function_exists('product_thumb_url')) {
             } catch (\Throwable $e) {}
 
             $basename = basename($rel);
-            $candidates = [];
-            // If original included a directory, try its filename in common folders
-            $candidates[] = $rel;
-            $dirs = ['product-media','product_media','product-images','products'];
-            foreach ($dirs as $dir) { $candidates[] = $dir . '/' . $basename; }
-            foreach ($candidates as $cand) {
-                try { if (\Storage::disk('public')->exists($cand)) return $cand; } catch (\Throwable $e) {}
+            $candidates = [$rel];
+            foreach (['product-media','product_media','product-images','products'] as $dir) {
+                $candidates[] = $dir . '/' . $basename;
             }
+
+            foreach ($candidates as $cand) {
+                try {
+                    if (\Storage::disk('public')->exists($cand)) {
+                        return $cand;
+                    }
+                } catch (\Throwable $e) {}
+            }
+
             return $rel;
         };
 
-        // 1) Featured image (skip video files for <img> thumbnails)
         $fi = $product->featured_image ?? null;
         if (!empty($fi) && !is_video_media_path($fi)) {
             if (str_starts_with($fi, 'http')) {
@@ -846,7 +873,6 @@ if (! function_exists('product_thumb_url')) {
             catch (\Throwable $e) { return asset('storage/' . ltrim($rel ?: $fi, '/')); }
         }
 
-        // 2) First image-like media (never return video URL as image thumb)
         $mediaItems = collect();
         try {
             if (method_exists($product, 'relationLoaded') && $product->relationLoaded('media')) {
@@ -878,15 +904,85 @@ if (! function_exists('product_thumb_url')) {
             catch (\Throwable $e) { return asset('storage/' . ltrim($rel ?: $firstImageMedia->url, '/')); }
         }
 
-        // 3) Shop logo
         if ($product->shop && !empty($product->shop->logo)) {
             $rel = $resolvePublic($product->shop->logo);
             try { return \Storage::disk('public')->url($rel); }
             catch (\Throwable $e) { return asset('storage/' . ltrim($rel ?: $product->shop->logo, '/')); }
         }
 
-        // 4) Fallbacks
         return setting('favicon_url') ?: asset('storage/placeholder.jpg');
+    }
+}
+
+if (! function_exists('product_preview_thumb_url')) {
+    /**
+     * Build the thumbnail preview URL. Digital listings are routed through
+     * the watermark generator; all others use the raw thumbnail URL.
+     */
+    function product_preview_thumb_url($product): string
+    {
+        if (! $product || ! product_is_digital($product)) {
+            return product_raw_thumb_url($product);
+        }
+
+        try {
+            return app(\App\Services\ProductPreviewImageService::class)
+                ->productPreviewUrl($product, 'thumb');
+        } catch (\Throwable $e) {
+            return product_raw_thumb_url($product);
+        }
+    }
+}
+
+if (! function_exists('product_preview_image_url')) {
+    /**
+     * Build the larger public preview image URL for digital listings.
+     */
+    function product_preview_image_url($product): string
+    {
+        if (! $product || ! product_is_digital($product)) {
+            return product_raw_thumb_url($product);
+        }
+
+        try {
+            return app(\App\Services\ProductPreviewImageService::class)
+                ->productPreviewUrl($product, 'display');
+        } catch (\Throwable $e) {
+            return product_raw_thumb_url($product);
+        }
+    }
+}
+
+if (! function_exists('product_media_preview_url')) {
+    /**
+     * Build a per-media preview URL for digital listings; falls back to the raw
+     * media asset for non-digital items and video entries.
+     */
+    function product_media_preview_url($product, $media, string $variant = 'display'): string
+    {
+        $raw = media_url($media->url ?? null);
+
+        if (! $product || ! $media || ! product_is_digital($product)) {
+            return $raw;
+        }
+
+        if (strtolower((string) ($media->type ?? '')) === 'video') {
+            return $raw;
+        }
+
+        try {
+            return app(\App\Services\ProductPreviewImageService::class)
+                ->mediaPreviewUrl($media, $variant);
+        } catch (\Throwable $e) {
+            return $raw;
+        }
+    }
+}
+
+if (! function_exists('product_thumb_url')) {
+    function product_thumb_url($product): string
+    {
+        return product_preview_thumb_url($product);
     }
 }
 

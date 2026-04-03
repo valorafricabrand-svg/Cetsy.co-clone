@@ -196,8 +196,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
               if (activeChips.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding:
-                        EdgeInsets.fromLTRB(12, compactMobile ? 6 : 8, 12, 0),
+                    padding: EdgeInsets.fromLTRB(
+                      12,
+                      compactMobile ? 6 : 8,
+                      12,
+                      0,
+                    ),
                     child: Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -227,13 +231,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   // Search pill with Cetsy styling
   Widget _buildSearchBar() => TextField(
-        controller: _keywordCtl,
-        textInputAction: TextInputAction.search,
-        onSubmitted: (_) => _applyDebounced(),
-        decoration: _pillInput(
-          hint: 'Search listings…',
-          prefixIcon: Icons.search,
-        ).copyWith(
+    controller: _keywordCtl,
+    textInputAction: TextInputAction.search,
+    onSubmitted: (_) => _applyDebounced(),
+    decoration: _pillInput(hint: 'Search listings…', prefixIcon: Icons.search)
+        .copyWith(
           suffixIcon: _keywordCtl.text.isNotEmpty
               ? IconButton(
                   tooltip: 'Clear',
@@ -245,39 +247,47 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 )
               : null,
         ),
-      );
+  );
 
   // Build chips for any active filters
   List<Widget> _activeFilterChips() {
     final chips = <Widget>[];
     if (_keywordCtl.text.trim().isNotEmpty) {
-      chips.add(_filterChip('Keyword: ${_keywordCtl.text.trim()}', () {
-        _keywordCtl.clear();
-        _applyDebounced();
-      }));
+      chips.add(
+        _filterChip('Keyword: ${_keywordCtl.text.trim()}', () {
+          _keywordCtl.clear();
+          _applyDebounced();
+        }),
+      );
     }
     if (_minCtl.text.trim().isNotEmpty) {
-      chips.add(_filterChip('Min: ${_minCtl.text.trim()}', () {
-        _minCtl.clear();
-        _applyDebounced();
-      }));
+      chips.add(
+        _filterChip('Min: ${_minCtl.text.trim()}', () {
+          _minCtl.clear();
+          _applyDebounced();
+        }),
+      );
     }
     if (_maxCtl.text.trim().isNotEmpty) {
-      chips.add(_filterChip('Max: ${_maxCtl.text.trim()}', () {
-        _maxCtl.clear();
-        _applyDebounced();
-      }));
+      chips.add(
+        _filterChip('Max: ${_maxCtl.text.trim()}', () {
+          _maxCtl.clear();
+          _applyDebounced();
+        }),
+      );
     }
     if (_selectedType != null && _selectedType!.isNotEmpty) {
       final label = _selectedType == 'service'
           ? 'Services'
           : _selectedType == 'digital'
-              ? 'Digital'
-              : 'Products';
-      chips.add(_filterChip('Type: $label', () {
-        _selectedType = null;
-        _applyDebounced();
-      }));
+          ? 'Digital'
+          : 'Products';
+      chips.add(
+        _filterChip('Type: $label', () {
+          _selectedType = null;
+          _applyDebounced();
+        }),
+      );
     }
     return chips;
   }
@@ -295,64 +305,63 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   Widget _buildProductGrid() => FutureBuilder<List<Product>>(
-        future: _products,
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return _shimmerGrid();
-          }
-          if (snap.hasError) {
-            return _sliverMessage(
-              icon: Icons.error_outline,
-              text: 'Something went wrong.\n${snap.error}',
-            );
-          }
-          final products = snap.data;
-          if (products == null || products.isEmpty) {
-            return _sliverMessage(
-              icon: Icons.inventory_2_outlined,
-              text: 'No products found.',
-            );
-          }
-          final compact = _isCompactMobile(context);
-          final spacing = compact ? 8.0 : 12.0;
-          return SliverPadding(
-            padding: EdgeInsets.all(spacing),
-            sliver: compact
-                ? SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: _columnCount(context),
-                      mainAxisSpacing: spacing,
-                      crossAxisSpacing: spacing,
-                      childAspectRatio: 0.74,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (_, i) => _buildCard(products[i]),
-                      childCount: products.length,
-                    ),
-                  )
-                : SliverMasonryGrid.count(
-                    crossAxisCount: _columnCount(context),
-                    mainAxisSpacing: spacing,
-                    crossAxisSpacing: spacing,
-                    childCount: products.length,
-                    itemBuilder: (_, i) => _buildCard(products[i]),
-                  ),
-          );
-        },
+    future: _products,
+    builder: (context, snap) {
+      if (snap.connectionState == ConnectionState.waiting) {
+        return _shimmerGrid();
+      }
+      if (snap.hasError) {
+        return _sliverMessage(
+          icon: Icons.error_outline,
+          text: 'Something went wrong.\n${snap.error}',
+        );
+      }
+      final products = snap.data;
+      if (products == null || products.isEmpty) {
+        return _sliverMessage(
+          icon: Icons.inventory_2_outlined,
+          text: 'No products found.',
+        );
+      }
+      final compact = _isCompactMobile(context);
+      final spacing = compact ? 8.0 : 12.0;
+      return SliverPadding(
+        padding: EdgeInsets.all(spacing),
+        sliver: compact
+            ? SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: _columnCount(context),
+                  mainAxisSpacing: spacing,
+                  crossAxisSpacing: spacing,
+                  childAspectRatio: 0.74,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (_, i) => _buildCard(products[i]),
+                  childCount: products.length,
+                ),
+              )
+            : SliverMasonryGrid.count(
+                crossAxisCount: _columnCount(context),
+                mainAxisSpacing: spacing,
+                crossAxisSpacing: spacing,
+                childCount: products.length,
+                itemBuilder: (_, i) => _buildCard(products[i]),
+              ),
       );
+    },
+  );
 
   Widget _buildCard(Product p) {
     final compact = _isCompactMobile(context);
-    final url = _imageUrlFrom(p.image);
+    final url = _imageUrlFrom(
+      p.previewThumbnailUrl ?? p.thumbnailUrl ?? p.image,
+    );
     final hasDiscount = p.discountPrice != null && p.discountPrice! < p.price;
     final displayPrice = hasDiscount ? p.discountPrice! : p.price;
 
     return InkWell(
-      onTap: () => Navigator.pushNamed(
-        context,
-        ProductDetailScreen.route,
-        arguments: p,
-      ),
+      onTap: () =>
+          Navigator.pushNamed(context, ProductDetailScreen.route, arguments: p),
       borderRadius: BorderRadius.circular(14),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -378,10 +387,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             fit: BoxFit.cover,
                             frameBuilder: (ctx, child, frame, _) =>
                                 AnimatedOpacity(
-                              opacity: frame == null ? 0 : 1,
-                              duration: const Duration(milliseconds: 300),
-                              child: child,
-                            ),
+                                  opacity: frame == null ? 0 : 1,
+                                  duration: const Duration(milliseconds: 300),
+                                  child: child,
+                                ),
                             errorBuilder: (_, __, ___) => Image.asset(
                               'assets/images/placeholder.png',
                               fit: BoxFit.cover,
@@ -452,9 +461,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             child: Text(
                               p.type == 'service' ? 'Service' : 'Digital',
                               style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w700),
+                                color: Colors.white,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
@@ -471,15 +481,16 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               BoxShadow(
                                 blurRadius: 10,
                                 color: Color(0x14000000),
-                              )
+                              ),
                             ],
                           ),
                           child: IconButton(
                             tooltip: 'Add to cart',
                             onPressed: () {
                               context.read<CartProvider>().add(p);
-                              ScaffoldMessenger.of(context)
-                                  .hideCurrentSnackBar();
+                              ScaffoldMessenger.of(
+                                context,
+                              ).hideCurrentSnackBar();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Added "${p.name}" to cart'),
@@ -488,8 +499,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 ),
                               );
                             },
-                            icon: Icon(Icons.add_shopping_cart,
-                                size: compact ? 18 : 22),
+                            icon: Icon(
+                              Icons.add_shopping_cart,
+                              size: compact ? 18 : 22,
+                            ),
                             splashRadius: compact ? 16 : 20,
                             padding: EdgeInsets.all(compact ? 6 : 8),
                             constraints: const BoxConstraints(),
@@ -571,107 +584,110 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 
   SliverPadding _shimmerGrid() => SliverPadding(
-        padding: EdgeInsets.all(_isCompactMobile(context) ? 8 : 12),
-        sliver: _isCompactMobile(context)
-            ? SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: _columnCount(context),
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 0.74,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (_, __) => Shimmer.fromColors(
-                    baseColor: Colors.grey.shade300,
-                    highlightColor: Colors.grey.shade100,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                  ),
-                  childCount: 9,
-                ),
-              )
-            : SliverMasonryGrid.count(
-                crossAxisCount: _columnCount(context),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childCount: 8,
-                itemBuilder: (_, __) => Shimmer.fromColors(
-                  baseColor: Colors.grey.shade300,
-                  highlightColor: Colors.grey.shade100,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+    padding: EdgeInsets.all(_isCompactMobile(context) ? 8 : 12),
+    sliver: _isCompactMobile(context)
+        ? SliverGrid(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: _columnCount(context),
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.74,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (_, __) => Shimmer.fromColors(
+                baseColor: Colors.grey.shade300,
+                highlightColor: Colors.grey.shade100,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
               ),
-      );
+              childCount: 9,
+            ),
+          )
+        : SliverMasonryGrid.count(
+            crossAxisCount: _columnCount(context),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childCount: 8,
+            itemBuilder: (_, __) => Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+  );
 
   SliverToBoxAdapter _sliverMessage({
     required IconData icon,
     required String text,
-  }) =>
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 100),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 48, color: Colors.grey.shade400),
-              const SizedBox(height: 12),
-              Text(
-                text,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-              ),
-            ],
+  }) => SliverToBoxAdapter(
+    child: Padding(
+      padding: const EdgeInsets.only(top: 100),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 48, color: Colors.grey.shade400),
+          const SizedBox(height: 12),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 
   Widget _buildPagination() => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        child: Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 12,
-          children: [
-            OutlinedButton.icon(
-              onPressed: _page > 1
-                  ? () {
-                      setState(() => _page--);
-                      _fetch();
-                    }
-                  : null,
-              icon: const Icon(Icons.chevron_left),
-              label: const Text('Previous'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: cetsyGreen,
-                side: const BorderSide(color: cetsyGreen),
-              ),
-            ),
-            Text('Page $_page',
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600, color: Colors.black87)),
-            OutlinedButton.icon(
-              onPressed: () {
-                setState(() => _page++);
-                _fetch();
-              },
-              icon: const Icon(Icons.chevron_right),
-              label: const Text('Next'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: cetsyGreen,
-                side: const BorderSide(color: cetsyGreen),
-              ),
-            ),
-          ],
+    padding: const EdgeInsets.symmetric(vertical: 24),
+    child: Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 12,
+      children: [
+        OutlinedButton.icon(
+          onPressed: _page > 1
+              ? () {
+                  setState(() => _page--);
+                  _fetch();
+                }
+              : null,
+          icon: const Icon(Icons.chevron_left),
+          label: const Text('Previous'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: cetsyGreen,
+            side: const BorderSide(color: cetsyGreen),
+          ),
         ),
-      );
+        Text(
+          'Page $_page',
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        OutlinedButton.icon(
+          onPressed: () {
+            setState(() => _page++);
+            _fetch();
+          },
+          icon: const Icon(Icons.chevron_right),
+          label: const Text('Next'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: cetsyGreen,
+            side: const BorderSide(color: cetsyGreen),
+          ),
+        ),
+      ],
+    ),
+  );
 
   void _openFilterSheet() {
     showModalBottomSheet(
@@ -697,8 +713,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   const Expanded(
                     child: Text(
                       'Refine Results',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                   TextButton(

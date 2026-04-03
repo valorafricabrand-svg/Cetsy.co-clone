@@ -194,7 +194,8 @@
             @forelse ($products as $item)
               @php
                 $thumb = product_thumb_url($item);
-                $isDigitalPreview = strtolower((string) ($item->type ?? '')) === 'digital';
+                $effectiveType = product_effective_type($item);
+                $isDigitalPreview = ($effectiveType === 'digital');
 
                 $mediaItems = $item->media ?? collect();
                 $firstImage = optional($mediaItems)->first(function ($media) {
