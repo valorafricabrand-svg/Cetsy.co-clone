@@ -338,6 +338,23 @@
       @include('seller.partials.sidebar')
 
       <div class="product-media-page space-y-6" x-data="mediaPage({ existingIds: @json($product->media->pluck('id')) })" x-init="init()">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Media</h1>
+              <p class="mt-1 text-sm text-slate-500">Upload, crop, reorder, and choose the featured media that buyers will see first.</p>
+            </div>
+            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50">
+                <i class="fas fa-external-link-alt mr-2"></i> View Public Listing
+              </a>
+              <a href="{{ route('products.show', $product) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Listing
+              </a>
+            </div>
+          </div>
+        </div>
+
         @include('products.partials.edit-tabs', ['product' => $product, 'current' => $current])
 
   {{-- Flash --}}

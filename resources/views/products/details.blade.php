@@ -1,6 +1,20 @@
 @extends('theme.'.theme().'.layouts.app')
 @section('title', $product->name . ' | Edit Details')
 
+@push('styles')
+<style>
+  .product-details__category-menu{
+    width:100%;
+    max-width:100%;
+  }
+  @media (min-width: 640px){
+    .product-details__category-menu{
+      max-width:26rem;
+    }
+  }
+</style>
+@endpush
+
 @section('main')
 @php $current = \Illuminate\Support\Facades\Route::currentRouteName(); @endphp
 
@@ -10,27 +24,39 @@
       @include('seller.partials.sidebar')
 
       <div class="space-y-6" x-data="detailsForm()" x-init="init()">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Edit Details</h1>
+              <p class="mt-1 text-sm text-slate-500">Update the listing name, type, category, description, and any digital delivery setup.</p>
+            </div>
+            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50">
+                <i class="fas fa-external-link-alt mr-2"></i> View Public Listing
+              </a>
+              <a href="{{ route('products.show', $product) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Listing
+              </a>
+            </div>
+          </div>
+        </div>
+
         @include('products.partials.edit-tabs', ['product' => $product, 'current' => $current])
 
   {{-- Validation errors --}}
   @if ($errors->any())
-    <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800 mt-3">
+    <div class="rounded-xl border px-4 py-3 text-sm border-rose-200 bg-rose-50 text-rose-800">
       <strong>Please fix the following errors:</strong>
       <ul class="mt-2 mb-0 pl-3">@foreach ($errors->all() as $error) <li>{{ $error }}</li> @endforeach</ul>
     </div>
   @endif
-
-  <div class="flex justify-between items-center mt-3 mb-3">
-    <h2 class="mb-0">{{ $product->name }} - Edit Details</h2>
-    <a href="{{ route('products.show', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-900 text-slate-900 hover:bg-slate-100 px-3 py-1.5 text-xs"><i class="fas fa-arrow-left mr-1"></i>Back</a>
-  </div>
 
   <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
     <div class="p-4 sm:p-5">
       <form action="{{ route('products.details.update', $product) }}" method="POST" enctype="multipart/form-data">
         @csrf @method('PATCH')
 
-        <div class="grid grid-cols-12 gap-4 gap-3">
+        <div class="grid grid-cols-12 gap-3">
           <div class="col-span-12 md:col-span-8">
             <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Listing Name</label>
             <input type="text" name="name" id="name" spellcheck="true" autocapitalize="sentences" autocomplete="on"
@@ -73,7 +99,7 @@
                      aria-label="Search categories">
               <input type="hidden" name="category_id" :value="categoryId || ''">
               <div id="details-category-suggestion-list"
-                   class="absolute z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
+                   class="product-details__category-menu absolute z-50 mt-2 rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
                    
                    style="max-height: 16rem; overflow-y: auto;"
                    x-cloak
@@ -180,7 +206,7 @@
           </div>
         </div>
 
-        <div class="mt-4 flex gap-2">
+        <div class="mt-4 flex flex-col gap-2 sm:flex-row">
           <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500"><i class="fas fa-save mr-1"></i> Save</button>
           <a href="{{ route('products.show', $product) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">Cancel</a>
         </div>
@@ -213,7 +239,7 @@
             </div>
             <form action="{{ route('digital-files.destroy',$file) }}" method="POST" onsubmit="return confirm('Delete this delivery asset?')">
               @csrf @method('DELETE')
-              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50"><i class="fas fa-trash"></i></button>
+              <button class="inline-flex w-full items-center justify-center rounded-xl border border-rose-600 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 sm:w-auto"><i class="fas fa-trash"></i></button>
             </form>
           </li>
         @endforeach
@@ -579,7 +605,6 @@ function detailsForm(){
 })();
 </script>
 @endpush
-
 
 
 
