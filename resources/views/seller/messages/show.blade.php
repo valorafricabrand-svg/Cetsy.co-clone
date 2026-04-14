@@ -191,20 +191,23 @@
  <div class="p-4 p-0">
  <div class="conversation-container" id="conversationContainer">
  @forelse($messages as $message)
+ @php
+ $sharedProductsForMessage = $message->sharedProducts ?? collect();
+ @endphp
  <div class="message-row flex {{ $message->sender_id == auth()->id() ? 'justify-end' : 'justify-start' }} mb-3">
- <div class="flex items-end {{ $message->sender_id == auth()->id() ? 'flex-row-reverse' : '' }}">
- <div class="avatar-sm {{ $message->sender_id == auth()->id() ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-emerald-600 text-white border-emerald-600' }} rounded-full flex items-center justify-center ml-2 mr-2" style="width:32px;height:32px;font-size:0.9rem;">
+ <div class="message-shell flex max-w-full items-end gap-2 {{ $message->sender_id == auth()->id() ? 'flex-row-reverse' : '' }}">
+ <div class="avatar-sm {{ $message->sender_id == auth()->id() ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-emerald-600 text-white border-emerald-600' }} shrink-0 rounded-full flex items-center justify-center" style="width:32px;height:32px;font-size:0.9rem;">
  {{ strtoupper(substr($message->sender->name ?? 'U', 0, 1)) }}
  </div>
  <div class="bubble-wrap">
- <div class="message-bubble-compact {{ $message->sender_id == auth()->id() ? 'outgoing' : 'incoming' }}">
- <div class="message-meta flex items-center mb-1">
- <span class="font-semibold text-xs mr-2">{{ $message->sender->name ?? 'Unknown' }}</span>
- <span class="text-slate-500 text-xs">{{ $message->created_at->format('M j, Y g:i A') }}</span>
+ <div class="message-bubble-compact {{ $message->sender_id == auth()->id() ? 'outgoing' : 'incoming' }} {{ $sharedProductsForMessage->isNotEmpty() ? 'has-shared-listings' : '' }}">
+ <div class="message-meta mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+ <span class="min-w-0 break-words text-xs font-semibold">{{ $message->sender->name ?? 'Unknown' }}</span>
+ <span class="text-xs {{ $message->sender_id == auth()->id() ? 'text-emerald-100/90' : 'text-slate-500' }}">{{ $message->created_at->format('M j, Y g:i A') }}</span>
  </div>
  <div class="message-content">{{ $message->body }}</div>
  @include('messages.partials.shared-listings', [
-   'sharedProducts' => $message->sharedProducts ?? collect(),
+   'sharedProducts' => $sharedProductsForMessage,
    'isOutgoing' => $message->sender_id == auth()->id(),
  ])
  @if(!empty($message->attachment_path))
@@ -491,11 +494,33 @@
  overflow-y: auto;
  padding: 1rem;
  }
+ .message-row {
+ width: 100%;
+ }
+ .message-shell {
+ max-width: 100%;
+ }
+ .message-shell.flex-row-reverse .bubble-wrap {
+ display: flex;
+ justify-content: flex-end;
+ }
+ .bubble-wrap {
+ flex: 0 1 auto;
+ max-width: 82%;
+ min-width: 0;
+ }
  .message-bubble-compact {
- max-width: 75%;
+ display: inline-flex;
+ flex-direction: column;
+ max-width: 100%;
+ min-width: 0;
  padding: 0.75rem 1rem;
  border-radius: 1rem;
  position: relative;
+ }
+ .message-bubble-compact.has-shared-listings {
+ display: flex;
+ width: 100%;
  }
  .message-bubble-compact.outgoing {
  background: #28a745;
@@ -510,6 +535,7 @@
  }
  .message-content {
  word-wrap: break-word;
+ overflow-wrap: anywhere;
  white-space: pre-wrap;
  }
  .empty-icon {
@@ -553,6 +579,12 @@
  object-fit: cover;
  }
  @media (max-width: 768px) {
+ .conversation-container {
+ padding: 0.75rem;
+ }
+ .bubble-wrap {
+ max-width: calc(100% - 2.5rem);
+ }
  .reply-actions {
  flex-direction: column;
  gap: 0.5rem;
@@ -785,9 +817,6 @@ function clearForm() {
  </div>
 </section>
 @endsection 
-
-
-
 
 
 

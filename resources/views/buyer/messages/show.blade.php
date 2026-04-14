@@ -162,16 +162,19 @@
                     <div id="messagesContainer" class="max-h-[500px] overflow-y-auto p-4 sm:p-5">
                         @if($messages->count())
                             @foreach($messages as $message)
-                                @php $isMine = $message->sender_id == auth()->id(); @endphp
+                                @php
+                                    $isMine = $message->sender_id == auth()->id();
+                                    $sharedProductsForMessage = $message->sharedProducts ?? collect();
+                                @endphp
                                 <div class="mb-3 {{ $isMine ? 'text-right' : 'text-left' }}">
-                                    <div class="inline-block max-w-[85%] rounded-xl p-3 {{ $isMine ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-900' }}">
+                                    <div class="inline-block rounded-xl p-3 {{ $sharedProductsForMessage->isNotEmpty() ? 'w-full max-w-full sm:max-w-[85%]' : 'max-w-[85%]' }} {{ $isMine ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-900' }}">
                                         <div class="mb-1 flex items-center">
                                             <strong class="mr-2 text-xs">{{ $message->sender->shop->name ?? $message->sender->name }}</strong>
                                             <small class="text-xs {{ $isMine ? 'text-emerald-100' : 'text-slate-500' }}">{{ $message->created_at->format('M d, H:i') }}</small>
                                         </div>
                                         <div class="message-content text-sm">{{ $message->body }}</div>
                                         @include('messages.partials.shared-listings', [
-                                            'sharedProducts' => $message->sharedProducts ?? collect(),
+                                            'sharedProducts' => $sharedProductsForMessage,
                                             'isOutgoing' => $isMine,
                                         ])
 

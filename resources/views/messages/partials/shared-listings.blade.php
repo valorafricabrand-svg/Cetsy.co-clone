@@ -9,7 +9,7 @@
 @endphp
 
 @if($sharedProducts->isNotEmpty())
-  <div class="mt-3 grid gap-2">
+  <div class="shared-listings mt-3 grid w-full max-w-full gap-2">
     @foreach($sharedProducts as $sharedProduct)
       @php
         $listingUrl = route('listing.show', $sharedProduct->slug ?: $sharedProduct->id);
@@ -26,7 +26,7 @@
         $price = money((float) ($sharedProduct->discounted_price ?? $sharedProduct->price ?? 0), null);
       @endphp
 
-      <a href="{{ $listingUrl }}" class="group flex items-center gap-3 rounded-xl p-3 transition {{ $cardClasses }}">
+      <a href="{{ $listingUrl }}" title="{{ $sharedProduct->name }}" class="shared-listing-card group flex w-full max-w-full items-center gap-3 overflow-hidden rounded-xl p-3 transition {{ $cardClasses }}">
         @if($thumbUrl)
           <img src="{{ $thumbUrl }}" alt="{{ $sharedProduct->name }}" class="h-14 w-14 shrink-0 rounded-lg object-cover">
         @else
@@ -45,7 +45,7 @@
           <div class="mt-1 text-[11px] {{ $metaClasses }}">Tap to review this listing</div>
         </div>
 
-        <i class="fa-solid fa-chevron-right text-xs {{ $metaClasses }}"></i>
+        <i class="fa-solid fa-chevron-right shrink-0 text-xs {{ $metaClasses }}"></i>
       </a>
     @endforeach
   </div>
