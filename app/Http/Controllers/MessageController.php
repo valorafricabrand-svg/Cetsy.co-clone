@@ -25,8 +25,10 @@ class MessageController extends Controller
         $data = $request->validate([
             'receiver_id' => ['required', 'exists:users,id'],
             'product_id'  => ['nullable', 'exists:products,id'],
-            'message'     => ['required', 'string', 'max:2000'],
+            'message'     => ['nullable', 'string', 'max:2000'],
             'attachment'  => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,webp,pdf', 'max:5120'],
+            'shared_listing_ids' => ['nullable', 'array', 'max:24'],
+            'shared_listing_ids.*' => ['integer', 'distinct', 'exists:products,id'],
         ]);
 
         $attachmentPath = null;
@@ -34,12 +36,26 @@ class MessageController extends Controller
             $attachmentPath = $request->file('attachment')->store('messages', 'public');
         }
 
+        $sharedListingIds = $this->validateSharedListingIds($data['shared_listing_ids'] ?? []);
+        $body = $this->buildMessageBody(
+            $data['message'] ?? null,
+            $sharedListingIds->count(),
+            !empty($attachmentPath)
+        );
+
+        if ($body === '') {
+            return back()
+                ->withErrors(['message' => 'Write a message, attach a file, or select at least one listing to send.'])
+                ->withInput();
+        }
+
         $message = Message::create([
             'sender_id'   => $request->user()->id,
             'receiver_id' => $data['receiver_id'],
             'product_id'  => $data['product_id'] ?? null,
-            'body'        => $data['message'],
+            'body'        => $body,
             'attachment_path' => $attachmentPath,
+            'shared_listing_ids' => $sharedListingIds->all(),
         ]);
 
         // Get receiver and product info
@@ -226,6 +242,8 @@ class MessageController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
+        Message::hydrateSharedProducts($messages);
+
         // Mark messages as read where current user is receiver
         $messages->where('receiver_id', $user->id)->each(function($message) {
             if (!$message->is_read) {
@@ -369,5 +387,55 @@ class MessageController extends Controller
         }
 
         return view('seller.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'buyerFavorites'));
+    }
+
+    private function validateSharedListingIds(array $sharedListingIds): \Illuminate\Support\Collection
+    {
+        $ids = collect($sharedListingIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        $validIds = Product::query()
+            ->whereIn('id', $ids)
+            ->where('is_active', 1)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        if ($validIds->count() !== $ids->count()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'shared_listing_ids' => 'One or more selected listings are no longer available to share.',
+            ]);
+        }
+
+        return $ids;
+    }
+
+    private function buildMessageBody(?string $body, int $sharedListingCount, bool $hasAttachment): string
+    {
+        $body = trim((string) $body);
+        if ($body !== '') {
+            return $body;
+        }
+
+        if ($sharedListingCount > 0 && $hasAttachment) {
+            return 'Shared ' . $sharedListingCount . ' listing' . ($sharedListingCount === 1 ? '' : 's') . ' and an attachment.';
+        }
+
+        if ($sharedListingCount > 0) {
+            return 'Shared ' . $sharedListingCount . ' listing' . ($sharedListingCount === 1 ? '' : 's') . '.';
+        }
+
+        if ($hasAttachment) {
+            return 'Sent an attachment.';
+        }
+
+        return '';
     }
 }

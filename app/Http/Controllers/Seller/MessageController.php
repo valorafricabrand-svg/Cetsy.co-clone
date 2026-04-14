@@ -159,6 +159,8 @@ class MessageController extends Controller
             $messages = collect();
         }
 
+        Message::hydrateSharedProducts($messages);
+
         // Mark messages as read where current user is receiver
         $messages->where('receiver_id', $user->id)->each(function($message) {
             if (!$message->is_read) {
@@ -190,7 +192,16 @@ class MessageController extends Controller
                 ->values();
         }
 
-        return view('seller.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'buyerFavorites', 'showBuyerFavorites'));
+        $shareableProducts = Product::query()
+            ->where('shop_id', $shop->id)
+            ->where('is_active', 1)
+            ->with(['media'])
+            ->latest('updated_at')
+            ->get(['id', 'shop_id', 'name', 'slug', 'price', 'stock', 'type', 'featured_image', 'updated_at'])
+            ->sortByDesc(fn ($item) => (int) $item->id === (int) optional($product)->id)
+            ->values();
+
+        return view('seller.messages.show', compact('messages', 'otherUser', 'product', 'conversationId', 'buyerFavorites', 'showBuyerFavorites', 'shareableProducts'));
     }
 
     public function markAsRead($id)
@@ -296,8 +307,10 @@ class MessageController extends Controller
         }
         
         $data = $request->validate([
-            'message' => ['required', 'string', 'max:2000'],
+            'message' => ['nullable', 'string', 'max:2000'],
             'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,webp,pdf', 'max:5120'],
+            'shared_listing_ids' => ['nullable', 'array', 'max:24'],
+            'shared_listing_ids.*' => ['integer', 'distinct', 'exists:products,id'],
         ]);
 
         $attachmentPath = null;
@@ -305,13 +318,27 @@ class MessageController extends Controller
             $attachmentPath = $request->file('attachment')->store('messages', 'public');
         }
 
+        $sharedListingIds = $this->validateSharedListingIdsForShop($data['shared_listing_ids'] ?? [], $shop->id);
+        $body = $this->buildMessageBody(
+            $data['message'] ?? null,
+            $sharedListingIds->count(),
+            !empty($attachmentPath)
+        );
+
+        if ($body === '') {
+            return back()
+                ->withErrors(['message' => 'Write a message, attach a file, or select at least one listing to send.'])
+                ->withInput();
+        }
+
         // Create the reply message
         $replyMessage = Message::create([
             'sender_id' => $user->id, // Seller is the sender
             'receiver_id' => $otherUserId, // Buyer is the receiver
             'product_id' => (int)$productId === 0 ? null : $productId,
-            'body' => $data['message'],
+            'body' => $body,
             'attachment_path' => $attachmentPath,
+            'shared_listing_ids' => $sharedListingIds->all(),
         ]);
 
         // Send email notification to the buyer
@@ -345,4 +372,55 @@ class MessageController extends Controller
         return redirect()->route('seller.messages.show', $conversationId)
             ->with('success', 'Reply sent successfully!');
     }
-} 
+
+    private function validateSharedListingIdsForShop(array $sharedListingIds, int $shopId): \Illuminate\Support\Collection
+    {
+        $ids = collect($sharedListingIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        $validIds = Product::query()
+            ->where('shop_id', $shopId)
+            ->where('is_active', 1)
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        if ($validIds->count() !== $ids->count()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'shared_listing_ids' => 'You can only share active listings from your own shop.',
+            ]);
+        }
+
+        return $ids;
+    }
+
+    private function buildMessageBody(?string $body, int $sharedListingCount, bool $hasAttachment): string
+    {
+        $body = trim((string) $body);
+        if ($body !== '') {
+            return $body;
+        }
+
+        if ($sharedListingCount > 0 && $hasAttachment) {
+            return 'Shared ' . $sharedListingCount . ' listing' . ($sharedListingCount === 1 ? '' : 's') . ' and an attachment.';
+        }
+
+        if ($sharedListingCount > 0) {
+            return 'Shared ' . $sharedListingCount . ' listing' . ($sharedListingCount === 1 ? '' : 's') . '.';
+        }
+
+        if ($hasAttachment) {
+            return 'Sent an attachment.';
+        }
+
+        return '';
+    }
+}

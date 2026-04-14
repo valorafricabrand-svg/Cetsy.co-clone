@@ -170,6 +170,10 @@
                                             <small class="text-xs {{ $isMine ? 'text-emerald-100' : 'text-slate-500' }}">{{ $message->created_at->format('M d, H:i') }}</small>
                                         </div>
                                         <div class="message-content text-sm">{{ $message->body }}</div>
+                                        @include('messages.partials.shared-listings', [
+                                            'sharedProducts' => $message->sharedProducts ?? collect(),
+                                            'isOutgoing' => $isMine,
+                                        ])
 
                                         @if(!empty($message->attachment_path))
                                             @php

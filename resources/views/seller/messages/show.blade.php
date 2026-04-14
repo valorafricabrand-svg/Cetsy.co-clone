@@ -203,6 +203,10 @@
  <span class="text-slate-500 text-xs">{{ $message->created_at->format('M j, Y g:i A') }}</span>
  </div>
  <div class="message-content">{{ $message->body }}</div>
+ @include('messages.partials.shared-listings', [
+   'sharedProducts' => $message->sharedProducts ?? collect(),
+   'isOutgoing' => $message->sender_id == auth()->id(),
+ ])
  @if(!empty($message->attachment_path))
  @php
  $isImage = \Illuminate\Support\Str::endsWith(strtolower($message->attachment_path), ['.jpg','.jpeg','.png','.gif','.webp']);
@@ -240,16 +244,58 @@
  </div>
 
  {{-- Reply Form --}}
+ @php
+ $selectedSharedListingIds = collect(old('shared_listing_ids', []))
+ ->map(fn ($id) => (int) $id)
+ ->filter()
+ ->unique()
+ ->values();
+ @endphp
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0 reply-card">
  <div class="border-b border-slate-200 px-4 py-3 bg-slate-50">
+ <div class="flex flex-wrap items-center justify-between gap-3">
  <div class="flex items-center">
  <i class="fa-solid fa-reply mr-2 text-emerald-600"></i>
  <h5 class="mb-0">Send Reply</h5>
+ </div>
+ @if(($shareableProducts ?? collect())->isNotEmpty())
+ <button type="button" id="openListingShareModal" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100">
+ <i class="fa-solid fa-share-nodes mr-1"></i>
+ Choose Listings
+ </button>
+ @endif
  </div>
  </div>
  <div class="p-4">
  <form method="POST" action="{{ route('seller.messages.reply', $conversationId) }}" id="replyForm" enctype="multipart/form-data">
  @csrf
+ @if(($shareableProducts ?? collect())->isNotEmpty())
+ <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+ <div class="flex flex-wrap items-center justify-between gap-3">
+ <div>
+ <div class="text-sm font-semibold text-slate-900">Share listings in this conversation</div>
+ <p class="mt-1 text-xs text-slate-500">Select one or more of your active listings and send them with an optional note.</p>
+ </div>
+ <button type="button" class="inline-flex items-center justify-center rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50" id="openListingShareModalInline">
+ <i class="fa-solid fa-list-check mr-1"></i>Pick Listings
+ </button>
+ </div>
+ <div class="mt-3">
+ <div id="selectedListingEmpty" class="text-xs text-slate-500">No listings selected yet.</div>
+ <div id="selectedListingState" class="hidden">
+ <div class="mb-2 flex items-center gap-2 text-xs text-slate-600">
+ <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">
+ <span id="selectedListingCount">0</span>&nbsp;selected
+ </span>
+ </div>
+ <div id="selectedListingPreview" class="flex flex-wrap gap-2"></div>
+ </div>
+ </div>
+ @error('shared_listing_ids')
+ <div class="mt-2 text-sm text-rose-600">{{ $message }}</div>
+ @enderror
+ </div>
+ @endif
  <div class="mb-3">
  <label for="message" class="form-label font-bold">
  <i class="fa-solid fa-pen mr-1"></i>
@@ -260,8 +306,7 @@
  id="message" 
  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 py-3 text-base @error('message') border-rose-400 focus:border-rose-500 focus:ring-rose-100 @enderror" 
  rows="4" 
- placeholder="Type your professional reply here..." 
- required
+ placeholder="Write a reply, or just send selected listings..." 
  maxlength="2000"
  >{{ old('message', request('prefill')) }}</textarea>
  <div class="mt-3">
@@ -270,7 +315,7 @@
  <div class="form-text">Images or PDF, max 5MB.</div>
  </div>
  <div class="form-text flex justify-between">
- <span>Be professional and helpful in your response</span>
+ <span>Be professional and helpful. You can send a note, listings, an attachment, or a combination.</span>
  <span id="charCount">0/2000</span>
  </div>
  @error('message')
@@ -295,13 +340,87 @@
  </button>
  <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2.5 text-base" id="sendButton">
  <i class="fa-solid fa-paper-plane mr-1"></i>
- Send Reply
+ Send Message
  </button>
  </div>
  </div>
  </form>
  </div>
  </div>
+
+ @if(($shareableProducts ?? collect())->isNotEmpty())
+ <div id="listingShareModal" class="fixed inset-0 z-[90] hidden">
+ <div class="absolute inset-0 bg-slate-950/80" data-close-listing-share></div>
+ <div class="relative mx-auto flex h-full w-full max-w-3xl flex-col p-4 sm:p-6">
+ <div class="flex h-full flex-col overflow-hidden rounded-[28px] bg-[#111111] text-white shadow-2xl">
+ <div class="flex items-center justify-between border-b border-white/10 px-4 py-4 sm:px-6">
+ <button type="button" class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-white transition hover:bg-white/10" data-close-listing-share aria-label="Close send listings">
+ <i class="fa-solid fa-xmark text-lg"></i>
+ </button>
+ <h3 class="text-lg font-semibold sm:text-2xl">Send listings</h3>
+ <button type="button" id="submitListingShare" class="rounded-full bg-white/15 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40">
+ Send
+ </button>
+ </div>
+
+ <div class="px-4 py-4 sm:px-6">
+ <label class="flex items-center gap-3 rounded-full border border-white/15 bg-white/5 px-4 py-3">
+ <i class="fa-solid fa-magnifying-glass text-slate-300"></i>
+ <input type="search" id="listingShareSearch" placeholder="Search your listings" class="w-full bg-transparent text-base text-white placeholder:text-slate-400 focus:outline-none">
+ <button type="button" id="clearListingShareSearch" class="hidden text-slate-300 transition hover:text-white" aria-label="Clear listing search">
+ <i class="fa-solid fa-xmark text-xl"></i>
+ </button>
+ </label>
+ <div class="mt-3 flex items-center justify-between text-xs text-slate-300">
+ <span id="listingShareResultsMeta">{{ $shareableProducts->count() }} listings available</span>
+ <span>Selected: <span id="modalSelectedCount">{{ $selectedSharedListingIds->count() }}</span></span>
+ </div>
+ </div>
+
+ <div class="flex-1 overflow-y-auto px-4 pb-6 sm:px-6">
+ <div class="space-y-3">
+ @foreach($shareableProducts as $shareListing)
+ @php
+ $shareThumb = function_exists('product_thumb_url') ? product_thumb_url($shareListing) : media_url($shareListing->featured_image ?? null);
+ $shareType = strtolower((string) ($shareListing->type ?? ''));
+ $shareStock = is_numeric($shareListing->stock ?? null) ? (int) $shareListing->stock : null;
+ $shareStockLabel = match ($shareType) {
+ 'service' => 'Service listing',
+ 'digital' => 'Digital listing',
+ default => ($shareStock !== null ? $shareStock . ' in stock' : 'Stock unavailable'),
+ };
+ @endphp
+ <label class="listing-share-option group flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 transition hover:border-white/20 hover:bg-white/10" data-listing-option data-name="{{ strtolower($shareListing->name) }}" data-sku="{{ strtolower((string) ($shareListing->sku ?? '')) }}">
+ <input type="checkbox" class="listing-share-checkbox peer sr-only" name="shared_listing_ids[]" value="{{ $shareListing->id }}" form="replyForm" data-listing-name="{{ $shareListing->name }}" {{ $selectedSharedListingIds->contains((int) $shareListing->id) ? 'checked' : '' }}>
+ <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-transparent text-transparent transition peer-checked:border-emerald-400 peer-checked:bg-emerald-500 peer-checked:text-white">
+ <i class="fa-solid fa-check text-xs"></i>
+ </span>
+ @if($shareThumb)
+ <img src="{{ $shareThumb }}" alt="{{ $shareListing->name }}" class="h-16 w-16 shrink-0 rounded-2xl object-cover">
+ @else
+ <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/5">
+ <i class="fa-regular fa-image text-slate-400"></i>
+ </div>
+ @endif
+ <div class="min-w-0 flex-1">
+ <div class="truncate text-base font-semibold text-white">{{ $shareListing->name }}</div>
+ <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-300">
+ <span>{{ $shareStockLabel }}</span>
+ <span>&bull;</span>
+ <span>{{ money((float) ($shareListing->discounted_price ?? $shareListing->price ?? 0), null) }}</span>
+ </div>
+ </div>
+ </label>
+ @endforeach
+ <div id="listingShareNoResults" class="hidden rounded-2xl border border-dashed border-white/15 px-4 py-6 text-center text-sm text-slate-300">
+ No listings match your search.
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ @endif
 
  {{-- Message Details Card --}}
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow border-0 mt-4 conversation-details-card">
@@ -455,12 +574,33 @@ document.addEventListener('DOMContentLoaded', function() {
  const textarea = document.getElementById('message');
  const charCount = document.getElementById('charCount');
  const sendButton = document.getElementById('sendButton');
+ const replyForm = document.getElementById('replyForm');
+ const attachmentInput = document.getElementById('attachment');
+ const listingModal = document.getElementById('listingShareModal');
+ const openListingButtons = [
+ document.getElementById('openListingShareModal'),
+ document.getElementById('openListingShareModalInline'),
+ ].filter(Boolean);
+ const closeListingButtons = document.querySelectorAll('[data-close-listing-share]');
+ const submitListingShare = document.getElementById('submitListingShare');
+ const listingSearch = document.getElementById('listingShareSearch');
+ const clearListingSearch = document.getElementById('clearListingShareSearch');
+ const listingOptions = Array.from(document.querySelectorAll('[data-listing-option]'));
+ const listingCheckboxes = Array.from(document.querySelectorAll('.listing-share-checkbox'));
+ const selectedListingCount = document.getElementById('selectedListingCount');
+ const selectedListingState = document.getElementById('selectedListingState');
+ const selectedListingEmpty = document.getElementById('selectedListingEmpty');
+ const selectedListingPreview = document.getElementById('selectedListingPreview');
+ const modalSelectedCount = document.getElementById('modalSelectedCount');
+ const listingShareResultsMeta = document.getElementById('listingShareResultsMeta');
+ const listingShareNoResults = document.getElementById('listingShareNoResults');
  
  // Character counter
- textarea.addEventListener('input', function() {
- const length = this.value.length;
+ const updateCharCount = () => {
+ if (!textarea || !charCount) return;
+ const length = textarea.value.length;
  charCount.textContent = `${length}/2000`;
- 
+
  if (length > 1900) {
  charCount.style.color = '#dc3545';
  } else if (length > 1500) {
@@ -468,35 +608,175 @@ document.addEventListener('DOMContentLoaded', function() {
  } else {
  charCount.style.color = '#6c757d';
  }
- });
- 
- // Auto-resize textarea
+ };
+
+ if (textarea) {
  textarea.addEventListener('input', function() {
+ updateCharCount();
  this.style.height = 'auto';
  this.style.height = Math.min(this.scrollHeight, 200) + 'px';
  });
+ }
  
  // Send on Enter (but allow Shift+Enter for new line)
+ if (textarea && sendButton) {
  textarea.addEventListener('keydown', function(e) {
  if (e.key === 'Enter' && !e.shiftKey) {
  e.preventDefault();
  sendButton.click();
  }
  });
+ }
  
  // Scroll to bottom of conversation
  const container = document.getElementById('conversationContainer');
  if (container) {
  container.scrollTop = container.scrollHeight;
  }
+
+ const updateSelectedListingsUI = () => {
+ if (!listingCheckboxes.length) return;
+
+ const selected = listingCheckboxes.filter(checkbox => checkbox.checked);
+
+ if (selectedListingCount) {
+ selectedListingCount.textContent = selected.length;
+ }
+
+ if (modalSelectedCount) {
+ modalSelectedCount.textContent = selected.length;
+ }
+
+ if (submitListingShare) {
+ submitListingShare.disabled = selected.length === 0;
+ }
+
+ if (selectedListingPreview) {
+ selectedListingPreview.innerHTML = '';
+ selected.forEach(checkbox => {
+ const chip = document.createElement('span');
+ chip.className = 'inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700';
+ chip.textContent = checkbox.dataset.listingName || 'Listing';
+ selectedListingPreview.appendChild(chip);
+ });
+ }
+
+ if (selectedListingState && selectedListingEmpty) {
+ selectedListingState.classList.toggle('hidden', selected.length === 0);
+ selectedListingEmpty.classList.toggle('hidden', selected.length > 0);
+ }
+ };
+
+ const updateListingResults = () => {
+ if (!listingOptions.length || !listingSearch) return;
+
+ const query = listingSearch.value.trim().toLowerCase();
+ let visibleCount = 0;
+
+ listingOptions.forEach(option => {
+ const haystack = `${option.dataset.name || ''} ${option.dataset.sku || ''}`;
+ const matches = haystack.includes(query);
+ option.classList.toggle('hidden', !matches);
+ if (matches) {
+ visibleCount += 1;
+ }
+ });
+
+ if (clearListingSearch) {
+ clearListingSearch.classList.toggle('hidden', query.length === 0);
+ }
+
+ if (listingShareResultsMeta) {
+ listingShareResultsMeta.textContent = `${visibleCount} listing${visibleCount === 1 ? '' : 's'} available`;
+ }
+
+ if (listingShareNoResults) {
+ listingShareNoResults.classList.toggle('hidden', visibleCount !== 0);
+ }
+ };
+
+ const openListingModal = () => {
+ if (!listingModal) return;
+ listingModal.classList.remove('hidden');
+ document.body.style.overflow = 'hidden';
+ if (listingSearch) {
+ listingSearch.focus();
+ listingSearch.select();
+ }
+ };
+
+ const closeListingModal = () => {
+ if (!listingModal) return;
+ listingModal.classList.add('hidden');
+ document.body.style.overflow = '';
+ };
+
+ openListingButtons.forEach(button => {
+ button.addEventListener('click', openListingModal);
+ });
+
+ closeListingButtons.forEach(button => {
+ button.addEventListener('click', closeListingModal);
+ });
+
+ if (listingSearch) {
+ listingSearch.addEventListener('input', updateListingResults);
+ }
+
+ if (clearListingSearch) {
+ clearListingSearch.addEventListener('click', function() {
+ if (!listingSearch) return;
+ listingSearch.value = '';
+ updateListingResults();
+ listingSearch.focus();
+ });
+ }
+
+ listingCheckboxes.forEach(checkbox => {
+ checkbox.addEventListener('change', updateSelectedListingsUI);
+ });
+
+ if (submitListingShare && replyForm) {
+ submitListingShare.addEventListener('click', function() {
+ if (listingCheckboxes.every(checkbox => !checkbox.checked)) {
+ return;
+ }
+ replyForm.submit();
+ });
+ }
+
+ document.addEventListener('keydown', function(e) {
+ if (e.key === 'Escape') {
+ closeListingModal();
+ }
+ });
+
+ updateCharCount();
+ updateSelectedListingsUI();
+ updateListingResults();
 });
 
 function clearForm() {
  const messageField = document.getElementById('message');
  const charCountField = document.getElementById('charCount');
+ const attachmentField = document.getElementById('attachment');
+ const listingSearch = document.getElementById('listingShareSearch');
+ const listingCheckboxes = document.querySelectorAll('.listing-share-checkbox');
  messageField.value = '';
  charCountField.textContent = '0/2000';
  charCountField.style.color = '#6c757d';
+ messageField.style.height = 'auto';
+ if (attachmentField) {
+ attachmentField.value = '';
+ }
+ listingCheckboxes.forEach(checkbox => {
+ checkbox.checked = false;
+ checkbox.dispatchEvent(new Event('change'));
+ });
+ if (listingSearch) {
+ listingSearch.value = '';
+ listingSearch.dispatchEvent(new Event('input'));
+ }
 }
 </script>
 @endpush
@@ -505,10 +785,6 @@ function clearForm() {
  </div>
 </section>
 @endsection 
-
-
-
-
 
 
 
