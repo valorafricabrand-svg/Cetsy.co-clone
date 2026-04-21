@@ -416,6 +416,12 @@
 <script src="https://cdn.jsdelivr.net/npm/intro.js/minified/intro.min.js"></script>
 <script src="{{ asset('assets/js/pwa-install.js') }}" defer></script>
 {{-- Mobile bottom navigation (front theme) --}}
-@include('theme.'.theme().'.partials._mobile_nav')
+@php
+  $layoutUser = auth()->user();
+  $hideFrontMobileNav = $layoutUser && method_exists($layoutUser, 'isAdmin') && $layoutUser->isAdmin();
+@endphp
+@unless($hideFrontMobileNav)
+  @include('theme.'.theme().'.partials._mobile_nav')
+@endunless
 </body>
 </html>

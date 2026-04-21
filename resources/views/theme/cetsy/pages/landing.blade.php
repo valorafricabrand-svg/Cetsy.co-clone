@@ -12,13 +12,13 @@
 
     <div class="mx-auto w-full max-w-6xl px-4 pt-4 md:px-6 md:pt-6">
         <header class="app-header" data-reveal>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('home') }}" class="flex items-center gap-2">
+            <div class="landing-brand-wrap flex items-center gap-3">
+                <a href="{{ route('home') }}" class="landing-brand flex items-center gap-2">
                     <img src="{{ logo_url() }}" alt="{{ config('app.name', 'Cetsy') }}" class="h-10 w-10 rounded-xl object-contain"
                         onerror='this.onerror=null;this.src=@json(asset("assets/images/cetsylogmain.png"));'>
-                    <span>
+                    <span class="min-w-0">
                         <span class="block text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-700">Marketplace</span>
-                        <span class="block text-lg font-extrabold text-slate-900">{{ config('app.name', 'Cetsy') }}</span>
+                        <span class="landing-brand-name block text-lg font-extrabold text-slate-900">{{ config('app.name', 'Cetsy') }}</span>
                     </span>
                 </a>
             </div>
@@ -38,7 +38,7 @@
                 <a href="{{ route('become-seller') }}" class="nav-chip">Sell</a>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="landing-actions flex items-center gap-2">
                 <a href="{{ route('login') }}" class="nav-btn">Login</a>
                 <a href="{{ route('register') }}" class="nav-btn nav-btn-primary">Create account</a>
             </div>

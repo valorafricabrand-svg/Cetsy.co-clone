@@ -1,4 +1,5 @@
 {{-- resources/views/seller/partials/sidebar.blade.php --}}
+@section('cetsy_mobile_nav_context', 'seller')
 @php
     $user = auth()->user();
     $shop = $user?->shop;

@@ -1339,7 +1339,14 @@
             @yield('main')
         </main>
 
-        @if (!$isSellerArea)
+        @php
+            $mobileNavContext = trim($__env->yieldContent('cetsy_mobile_nav_context', ''));
+            $showThemeMobileBottomNav = ! $isAdminUser
+                && $mobileNavContext !== 'seller'
+                && ! $isSellerArea;
+        @endphp
+
+        @if ($showThemeMobileBottomNav)
             @php
                 $mobileCartCount = isset($headerCartCount)
                     ? (int) $headerCartCount

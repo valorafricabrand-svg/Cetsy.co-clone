@@ -6,10 +6,11 @@
   $cart = session('cart', []);
   $cartCount = collect($cart)->sum(function($i){ return (int)($i['quantity'] ?? 1); });
   $rn = Rt::currentRouteName();
+  $isAdmin    = $user && method_exists($user, 'isAdmin') && $user->isAdmin();
   $hideOnRoutes = [
     'cart.checkout', 'checkout', 'checkout.index', 'checkout.store', 'checkout.success', 'cart.buy',
   ];
-  $hideNav = in_array($rn, $hideOnRoutes, true);
+  $hideNav = $isAdmin || in_array($rn, $hideOnRoutes, true);
 
   $isHome     = $rn === 'home';
   $isSearch   = $rn === 'search' || Str::startsWith((string)$rn, 'category.');
