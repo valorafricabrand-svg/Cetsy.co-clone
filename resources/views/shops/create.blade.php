@@ -208,10 +208,10 @@
             </div>
 
             {{-- Submit --}}
-            <div class="text-right mb-3">
-              <button 
+            <div class="mb-3 flex sm:justify-end">
+              <button
                 type="submit"
-                class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5"
+                class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-5 sm:w-auto"
               >
                 Finish & Create
               </button>
@@ -244,5 +244,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 @endsection
-
 

@@ -72,7 +72,7 @@
             x-cloak
           >
             {{-- PLAN SELECTOR --}}
-            <div class="plan-toggle flex justify-center gap-3 mb-4" x-show="hasPlans">
+            <div class="plan-toggle mb-4 flex flex-wrap justify-center gap-3" x-show="hasPlans">
               <template x-for="([key, details], index) in planEntries" :key="key">
                 <button
                   type="button"

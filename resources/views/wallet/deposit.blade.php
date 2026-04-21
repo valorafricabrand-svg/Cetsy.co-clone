@@ -269,6 +269,7 @@
     }
     @media (max-width: 768px) {
         .payment-layout { flex-direction: column; }
+        .payment-content { padding: 1rem; }
         .payment-menu {
             width: 100%;
             border-right: 0;
@@ -430,7 +431,7 @@
                           @if($mpesaAvailable)
                           <div id="mpesa-section" class="payment-panel method-panel {{ $defaultGateway === 'mpesa' ? 'is-active' : '' }}" data-method="mpesa">
                               <div class="rounded-xl border px-4 py-3 text-sm mpesa-callout">
-                                  <div class="flex items-center">
+                                  <div class="flex items-start">
                                       <i class="fa fa-mobile mr-2"></i>
                                       <div>
                                           <strong>M-Pesa STK Push:</strong> We'll send a prompt to your phone. Enter your PIN to approve.
@@ -788,7 +789,6 @@
 })();
 </script>
 @endsection
-
 
 
 

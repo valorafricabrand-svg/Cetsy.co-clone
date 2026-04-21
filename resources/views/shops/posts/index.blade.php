@@ -4,13 +4,13 @@
 @section('main')
 <div class="content">
   <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4 shadow-sm">
-    <div class="border-b border-slate-200 px-4 py-3 flex justify-between items-center bg-white">
+    <div class="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <h2 class="mb-0 font-bold">Shop Posts</h2>
-      <a href="{{ route('seller.shop-posts.create') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+      <a href="{{ route('seller.shop-posts.create') }}" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 sm:w-auto">
         <i class="fas fa-plus mr-1"></i> Create Post
       </a>
     </div>
-    <div class="p-4 sm:p-5 p-0">
+    <div class="overflow-x-auto p-0">
       <table class="min-w-full divide-y divide-slate-200 text-sm align-middle mb-0">
         <thead class="bg-slate-50">
           <tr>
@@ -78,4 +78,3 @@
   </div>
 </div>
 @endsection 
-

@@ -26,9 +26,9 @@
 @endif
 
 {{-- HEADER --}}
-<div class="mb-4 flex justify-between items-center">
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
   <h3 class="mb-0">Variations</h3>
-  <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-toggle="modal" data-ui-target="#manageVariationsModal">
+  <button class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 sm:w-auto" data-ui-toggle="modal" data-ui-target="#manageVariationsModal">
     Manage variation types
   </button>
 </div>
@@ -37,8 +37,8 @@
 <div class="mb-4">
   @forelse($variationTypes as $type)
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-2">
-      <div class="p-4 sm:p-5 flex justify-between items-center">
-        <div class="mr-3">
+      <div class="p-4 sm:p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0 sm:mr-3">
           <h6 class="mb-1">{{ $type->name }}</h6>
           <div class="text-xs text-slate-500">
             {{ $type->options->count() }} {{ \Illuminate\Support\Str::plural('option', $type->options->count()) }}
@@ -53,10 +53,10 @@
           </div>
         </div>
 
-        <div class="text-right">
+        <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
           {{-- Open the per-type modal for this type --}}
           <button
-            class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50"
+            class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-slate-300 text-slate-700 hover:bg-slate-50 sm:w-auto"
             data-ui-toggle="modal"
             data-ui-target="#typeOptionsModal{{ $type->id }}">
             Manage
@@ -65,11 +65,11 @@
           <form
             action="{{ route('variationTypes.destroy', $type) }}"
             method="POST"
-            class="inline ml-2"
+            class="w-full sm:ml-2 sm:w-auto"
             onsubmit="return confirm('Delete variation type “{{ $type->name }}”? This will also remove its options.')">
             @csrf
             @method('DELETE')
-            <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50">Delete</button>
+            <button class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50 sm:w-auto">Delete</button>
           </form>
         </div>
       </div>
@@ -85,7 +85,7 @@
 <div class="tw-modal" id="manageVariationsModal" tabindex="-1" aria-hidden="true">
   <div class="tw-modal-dialog tw-modal-lg">
     <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
-      <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+      <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900">Manage Variation Types</h5>
         <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal">&times;</button>
       </div>
@@ -93,8 +93,8 @@
       <div class="px-4 py-4">
         @forelse($variationTypes as $type)
           <div class="mb-4 p-3 border rounded">
-            <div class="flex justify-between items-start">
-              <div class="mr-3">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div class="min-w-0 sm:mr-3">
                 <strong>{{ $type->name }}</strong>
                 <div class="text-xs text-slate-500">Affects price: {{ $type->affects_price ? 'Yes' : 'No' }}</div>
                 <div class="mt-2">
@@ -104,10 +104,11 @@
                 </div>
               </div>
               <form action="{{ route('variationTypes.destroy', $type) }}" method="POST"
+                    class="w-full sm:w-auto"
                     onsubmit="return confirm('Delete this variation type and its options?')">
                 @csrf
                 @method('DELETE')
-                <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50"><i class="fas fa-trash"></i> Delete</button>
+                <button class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50 sm:w-auto"><i class="fas fa-trash"></i> Delete</button>
               </form>
             </div>
 
@@ -150,17 +151,17 @@
               <small class="mt-1 text-xs text-slate-500">Separate options with commas.</small>
             </div>
           </div>
-          <div class="mt-3 flex items-center gap-3">
+          <div class="mt-3 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
             <div class="flex items-center gap-2">
               <input class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" type="checkbox" value="1" id="affects_price_new" name="affects_price">
               <label class="text-sm text-slate-700" for="affects_price_new">Affects price</label>
             </div>
-            <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Add Type</button>
+            <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 sm:w-auto">Add Type</button>
           </div>
         </form>
       </div>
 
-      <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+      <div class="flex flex-col-reverse items-stretch gap-2 border-t border-slate-200 px-4 py-3 sm:flex-row sm:justify-end">
         <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Close</button>
       </div>
     </div>
@@ -180,7 +181,7 @@
   <div class="tw-modal" id="typeOptionsModal{{ $type->id }}" tabindex="-1" aria-hidden="true">
     <div class="tw-modal-dialog tw-modal-lg">
       <div class="rounded-2xl border border-slate-200 bg-white shadow-xl">
-        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900">Manage: {{ $type->name }}</h5>
           <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" data-ui-dismiss="modal">&times;</button>
         </div>
@@ -188,23 +189,24 @@
         <div class="px-4 py-4">
           <div class="grid grid-cols-12 gap-4">
             {{-- LEFT: Options --}}
-            <div class="lg:col-span-5">
+            <div class="col-span-12 lg:col-span-5">
               <h6 class="mb-3">Options</h6>
 
               <div class="divide-y divide-slate-200 rounded-xl border border-slate-200 mb-3">
                 @foreach($type->options as $opt)
-                  <div class="px-4 py-3 flex justify-between items-center">
-                    <form class="flex items-center" action="{{ route('variationOptions.update', $opt) }}" method="POST">
+                  <div class="px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <form class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center" action="{{ route('variationOptions.update', $opt) }}" method="POST">
                       @csrf
                       @method('PATCH')
-                      <input type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs mr-2" name="value" value="{{ $opt->value }}">
-                      <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">Save</button>
+                      <input type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 px-2.5 py-1.5 text-xs sm:mr-2" name="value" value="{{ $opt->value }}">
+                      <button class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50 sm:w-auto">Save</button>
                     </form>
                     <form action="{{ route('variationOptions.destroy', $opt) }}" method="POST"
+                          class="w-full sm:w-auto"
                           onsubmit="return confirm('Delete this option?')">
                       @csrf
                       @method('DELETE')
-                      <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50"><i class="fas fa-trash"></i></button>
+                      <button class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-rose-600 text-rose-700 hover:bg-rose-50 sm:w-auto"><i class="fas fa-trash"></i></button>
                     </form>
                   </div>
                 @endforeach
@@ -214,16 +216,16 @@
               <form class="border p-3 rounded" action="{{ route('variationOptions.store', $type) }}" method="POST">
                 @csrf
                 <h6 class="mb-2">Add Option</h6>
-                <div class="flex w-full items-stretch">
+                <div class="flex w-full flex-col gap-2 sm:flex-row sm:items-stretch">
                   <input type="text" name="value" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" placeholder="e.g. Red / 28 inches" required>
-                  <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Add</button>
+                  <button class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 sm:w-auto">Add</button>
                 </div>
                 <small class="text-slate-500">Adds a single option to this type.</small>
               </form>
             </div>
 
             {{-- RIGHT: Add Variant (only PRICE) + list existing (inline PRICE only) --}}
-            <div class="lg:col-span-7">
+            <div class="col-span-12 lg:col-span-7">
               <div class="border rounded p-3 mb-4">
                 <h6 class="mb-3">Add Variant</h6>
                 <form
@@ -279,8 +281,8 @@
                   {{-- This container will be filled with values[] by JS on submit --}}
                   <div class="hidden" data-values-container></div>
 
-                  <div class="mt-3 flex justify-end">
-                    <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Create Variant</button>
+                  <div class="mt-3 flex sm:justify-end">
+                    <button class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 sm:w-auto">Create Variant</button>
                   </div>
                 </form>
               </div>
@@ -355,7 +357,7 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+        <div class="flex flex-col-reverse items-stretch gap-2 border-t border-slate-200 px-4 py-3 sm:flex-row sm:justify-end">
           <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Close</button>
         </div>
       </div>
@@ -396,4 +398,3 @@
     });
   });
 </script>
-

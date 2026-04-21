@@ -586,7 +586,7 @@
   <div x-cloak x-show="isCropOpen" class="fixed inset-0 z-50 flex crop-modal-shell">
     <div class="absolute inset-0 bg-slate-900/60" @click="closeCropModal()"></div>
     <div class="relative border border-slate-200 bg-white shadow-xl crop-modal-panel">
-        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900 flex items-center">
             <i class="fas fa-crop mr-2"></i> Crop Image
           </h5>

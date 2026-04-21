@@ -4,9 +4,9 @@
 @section('main')
 <div class="content">
   <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-sm mb-4">
-    <div class="border-b border-slate-200 px-4 py-3 flex justify-between items-center bg-white">
+    <div class="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <h2 class="mb-0 font-bold">Create New Shop Post</h2>
-      <a href="{{ route('seller.shop-posts.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50">
+      <a href="{{ route('seller.shop-posts.index') }}" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 sm:w-auto">
         <i class="fas fa-arrow-left mr-1"></i> Back to Posts
       </a>
     </div>
@@ -67,11 +67,11 @@
             </div>
           </div>
         </div>
-        <div class="text-right mt-4">
-          <a href="{{ route('seller.shop-posts.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 mr-2">
+        <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <a href="{{ route('seller.shop-posts.index') }}" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 sm:w-auto">
             <i class="fas fa-times mr-1"></i> Cancel
           </a>
-          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-4">
+          <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-4 sm:w-auto">
             <i class="fas fa-check mr-1"></i> Create Post
           </button>
         </div>
@@ -118,5 +118,4 @@
 })();
 </script>
 @endpush
-
 

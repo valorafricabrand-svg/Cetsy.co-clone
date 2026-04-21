@@ -130,7 +130,7 @@
   <div x-cloak x-show="manageVariationsModal" class="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
     <div class="absolute inset-0 bg-slate-900/50" @click="manageVariationsModal = false"></div>
     <div class="variation-modal-panel relative max-w-5xl rounded-t-3xl border border-slate-200 bg-white shadow-xl sm:rounded-2xl">
-        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900">Manage Variation Types</h5>
           <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="manageVariationsModal = false">&times;</button>
         </div>

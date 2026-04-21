@@ -105,9 +105,9 @@
           </div>
           <div>
             <label for="slug" class="mb-1 block text-sm font-medium text-slate-700">Slug (URL Identifier)</label>
-            <div class="flex w-full items-stretch">
-              <span class="inline-flex items-center rounded-l-xl border border-slate-300 bg-slate-100 px-3 text-sm text-slate-600">{{ url('shop') }}/</span>
-              <input type="text" id="slug" name="slug" x-model="slug" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
+            <div class="flex w-full flex-col items-stretch sm:flex-row">
+              <span class="inline-flex items-center rounded-t-xl border border-slate-300 bg-slate-100 px-3 py-2 text-xs text-slate-600 sm:rounded-l-xl sm:rounded-tr-none sm:text-sm">{{ url('shop') }}/</span>
+              <input type="text" id="slug" name="slug" x-model="slug" class="w-full rounded-b-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 sm:rounded-r-xl sm:rounded-bl-none" required>
             </div>
             <div class="mt-1 text-xs text-slate-500">You may customize, but it must be unique.</div>
           </div>
@@ -213,7 +213,7 @@
             <div class="mt-1 text-xs text-slate-500">This image will be displayed prominently on your shop page. Recommended size: 1200x400 pixels.</div>
             @if($shop->featured_image)
               <div class="mt-2">
-                <img src="{{ asset('storage/' . $shop->featured_image) }}" alt="featured image" class="img-fluid rounded" style="max-width: 300px; max-height: 150px; object-fit: cover;">
+                <img src="{{ asset('storage/' . $shop->featured_image) }}" alt="featured image" class="img-fluid w-full rounded" style="max-width: 300px; max-height: 150px; object-fit: cover;">
               </div>
             @endif
           </div>
@@ -221,9 +221,9 @@
       </div>
 
       {{-- Submit --}}
-      <div class="text-right">
-        <a href="{{ route('seller.shops.show', $shop) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500 px-4">Cancel</a>
-        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-4">Save Changes</button>
+      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <a href="{{ route('seller.shops.show', $shop) }}" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500 px-4 sm:w-auto">Cancel</a>
+        <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 px-4 sm:w-auto">Save Changes</button>
       </div>
     </form>
 </div>
@@ -360,4 +360,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </style>
 
 @endsection
-

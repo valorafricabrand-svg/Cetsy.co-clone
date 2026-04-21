@@ -221,9 +221,9 @@
                 <img src="{{ $photoUrl }}" class="h-[72px] w-[72px] rounded-lg border border-slate-200 object-cover" alt="">
               @endif
               <div class="min-w-0 flex-1">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="font-semibold text-slate-900">{{ $item['name'] }}</p>
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div class="min-w-0">
+                    <p class="font-semibold text-slate-900 break-words">{{ $item['name'] }}</p>
                     @if (!empty($item['variation_summary']))
                       <p class="text-xs text-slate-500">{{ $item['variation_summary'] }}</p>
                     @endif
@@ -231,19 +231,19 @@
                       <span class="mt-1 inline-flex rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">Digital</span>
                     @endif
                   </div>
-                  <div class="text-right">
+                  <div class="text-left sm:text-right">
                     <p class="text-[11px] uppercase tracking-wide text-slate-400">Unit</p>
                     <p class="text-sm font-semibold text-slate-800">{{ $currency }} {{ number_format($unitPrice,2) }}</p>
                   </div>
                 </div>
 
-                <div class="mt-3 flex items-center justify-between">
+                <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div class="flex items-center gap-2">
                     <button class="js-qty-btn inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40" data-action="decrease" @disabled($qty<=1)>&minus;</button>
                     <span class="quantity min-w-[20px] text-center font-semibold">{{ $qty }}</span>
                     <button class="js-qty-btn inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100" data-action="increase">+</button>
                   </div>
-                  <div class="text-right">
+                  <div class="text-left sm:text-right">
                     <p class="text-[11px] uppercase tracking-wide text-slate-400">Line Total</p>
                     <p class="line-total text-sm font-semibold text-slate-900">{{ $currency }} {{ number_format($lineTotal,2) }}</p>
                   </div>
@@ -325,7 +325,7 @@
         @endphp
 
         <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <div class="flex items-center justify-between">
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="text-sm font-semibold text-slate-700">Total</span>
             <span id="grand-total-mobile" class="text-sm font-bold text-slate-900">{{ $currency }} {{ number_format($grand,2) }}</span>
           </div>
@@ -347,7 +347,7 @@
             <p class="text-[11px] uppercase tracking-wide text-slate-400">Total</p>
             <p id="grand-total-sticky" class="text-sm font-bold text-slate-900">{{ $currency }} {{ number_format($grand ?? 0,2) }}</p>
           </div>
-          <a href="{{ route('cart.checkout') }}" class="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500">Checkout</a>
+          <a href="{{ route('cart.checkout') }}" class="inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500">Checkout</a>
         </div>
       </div>
     @endif

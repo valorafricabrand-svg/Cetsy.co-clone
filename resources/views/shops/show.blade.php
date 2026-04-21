@@ -76,13 +76,13 @@
       </div>
     </div>
 
-    <div class="flex flex-wrap gap-2">
-      <a href="{{ route('seller.payment-methods.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+    <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+      <a href="{{ route('seller.payment-methods.index') }}" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 sm:w-auto">
         <i class="fas fa-credit-card mr-2"></i>Payment Methods
       </a>
 
       @if(Auth::id() === $shop->user_id)
-        <a href="{{ route('seller.shops.edit', $shop) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">
+        <a href="{{ route('seller.shops.edit', $shop) }}" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 sm:w-auto">
           <i class="fas fa-edit mr-2"></i>Edit Shop
         </a>
       @endif
@@ -142,12 +142,12 @@
       {{-- Shop Rating --}}
       @if($shop->hasReviews())
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div class="border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+          <div class="border-b border-slate-200 px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span class="inline-flex items-center gap-2">
               <i class="fas fa-star text-amber-600"></i>
               <strong>Shop Rating</strong>
             </span>
-            <a href="{{ route('shop.reviews', $shop) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+            <a href="{{ route('shop.reviews', $shop) }}" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50 sm:w-auto">
               <i class="fas fa-eye mr-1"></i>View All Reviews
             </a>
           </div>
@@ -261,22 +261,22 @@
         </div>
         <div class="p-4 sm:p-5">
           <div class="grid grid-cols-12 gap-4 gap-y-3">
-            <div class="col-span-12 flex justify-between">
+            <div class="col-span-12 flex flex-wrap justify-between gap-2">
               <span class="text-slate-500">Language</span>
               <span class="fw-medium">{{ $shop->language }}</span>
             </div>
-            <div class="col-span-12 flex justify-between">
+            <div class="col-span-12 flex flex-wrap justify-between gap-2">
               <span class="text-slate-500">Country</span>
               <span class="fw-medium">{{ country_name($shop->country) }}</span>
             </div>
-            <div class="col-span-12 flex justify-between">
+            <div class="col-span-12 flex flex-wrap justify-between gap-2">
               <span class="text-slate-500">Currency</span>
               <span class="fw-medium"> {{ $shop->currency }}</span>
             </div>
             <div class="col-span-12">
-              <div class="flex justify-between items-center">
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <span class="text-slate-500">Shop URL</span>
-                <a href="{{ route('seller.shops.show', $shop) }}" class="link-success text-truncate ml-2" style="max-width:60%;">
+                <a href="{{ route('seller.shops.show', $shop) }}" class="link-success min-w-0 break-all sm:ml-2 sm:max-w-[60%]">
                   {{ url('shop/' . $shop->slug) }}
                 </a>
               </div>
@@ -287,7 +287,7 @@
 
       {{-- Payment Details --}}
       <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4">
-        <div class="border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+        <div class="border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
           <strong>Payment Details</strong>
           <a href="{{ route('seller.payment-methods.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
             <i class="fas fa-plus mr-1"></i> Add
@@ -303,7 +303,7 @@
                       <div class="font-semibold">{{ $paymentMethod->paymentType->name }}</div>
                       <div class="text-slate-500 text-xs text-break">{{ $paymentMethod->account_number }}</div>
                     </div>
-                    <div class="col-span-12 sm:col-span-5 text-sm-end">
+                    <div class="col-span-12 sm:col-span-5 sm:text-right">
                       <div class="text-slate-500 text-xs">Account Name</div>
                       <div class="fw-medium text-break">{{ $paymentMethod->account_name }}</div>
                     </div>
@@ -325,7 +325,7 @@
 
       {{-- Subscription --}}
       <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mt-4">
-        <div class="border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+        <div class="border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
           <strong>Subscription Status</strong>
           <a href="{{ route('seller.subscription') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
             <i class="fas fa-cog mr-1"></i> Manage
@@ -334,7 +334,7 @@
         <div class="p-4 sm:p-5">
           @if($subscription)
             <div class="grid grid-cols-12 gap-4 gap-y-3">
-              <div class="col-span-12 flex justify-between">
+              <div class="col-span-12 flex flex-wrap justify-between gap-2">
                 <span class="text-slate-500">Status</span>
                 @if($subscription->isActive())
                   <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-success">Active</span>
@@ -342,15 +342,15 @@
                   <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-danger">Inactive</span>
                 @endif
               </div>
-              <div class="col-span-12 flex justify-between">
+              <div class="col-span-12 flex flex-wrap justify-between gap-2">
                 <span class="text-slate-500">Plan Amount</span>
                 <span class="fw-medium">{{ get_currency()}} {{ number_format($subscription->amount, 2) }}</span>
               </div>
-              <div class="col-span-12 flex justify-between">
+              <div class="col-span-12 flex flex-wrap justify-between gap-2">
                 <span class="text-slate-500">Start Date</span>
                 <span class="fw-medium">{{ $subscription->start_date ? $subscription->start_date->format('M d, Y') : 'N/A' }}</span>
               </div>
-              <div class="col-span-12 flex justify-between">
+              <div class="col-span-12 flex flex-wrap justify-between gap-2">
                 <span class="text-slate-500">End Date</span>
                 <span class="fw-medium">{{ $subscription->end_date ? $subscription->end_date->format('M d, Y') : 'N/A' }}</span>
               </div>
@@ -419,7 +419,6 @@
 
 </div>
 @endsection
-
 
 
 

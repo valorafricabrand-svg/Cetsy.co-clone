@@ -69,7 +69,7 @@
             @enderror
           </div>
 
-          <div class="mt-4 flex items-center justify-between gap-3">
+          <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <label for="remember_me" class="inline-flex items-center gap-2 text-sm text-slate-600">
               <input id="remember_me" type="checkbox" name="remember" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
               Remember me

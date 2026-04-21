@@ -178,11 +178,11 @@
                             </select>
                         </div>
 
-                        <div class="col-span-12 md:col-span-6 xl:col-span-4 flex items-end gap-2">
-                            <button type="submit" class="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">
+                        <div class="col-span-12 flex flex-col gap-2 sm:flex-row sm:items-end md:col-span-6 xl:col-span-4">
+                            <button type="submit" class="inline-flex w-full flex-1 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 sm:w-auto">
                                 <i class="fas fa-filter mr-2"></i> Apply Filters
                             </button>
-                            <a href="{{ route('products.index', $resetParams ?? []) }}" class="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                            <a href="{{ route('products.index', $resetParams ?? []) }}" class="inline-flex w-full flex-1 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto">
                                 Reset
                             </a>
                         </div>
@@ -207,7 +207,7 @@
                     @foreach($sectionMeta as $type => $meta)
                         @php $items = $grouped->get($type, collect()); @endphp
                         <section>
-                            <div class="mb-3 flex items-center justify-between">
+                            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
                                 <div class="flex items-center gap-2">
                                     <i class="fas {{ $meta['icon'] }} text-slate-500"></i>
                                     <h2 class="text-lg font-bold text-slate-900">{{ $meta['title'] }}</h2>
@@ -232,7 +232,7 @@
                     @foreach($grouped as $type => $items)
                         @continue(array_key_exists($type, $sectionMeta) || $items->isEmpty())
                         <section>
-                            <div class="mb-3 flex items-center justify-between">
+                            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
                                 <h2 class="text-lg font-bold capitalize text-slate-900">{{ $type }} Listings</h2>
                                 <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-900">{{ $items->count() }}</span>
                             </div>

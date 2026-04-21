@@ -17,7 +17,7 @@
         <h1 class="mb-1 mt-2 text-xl font-bold text-slate-900">Reviews for {{ $shop->name }}</h1>
         
         <!-- Rating Summary -->
-        <div class="flex items-center gap-3 mt-3">
+        <div class="mt-3 flex flex-wrap items-center gap-3">
           <div class="flex items-center">
             @for($i = 1; $i <= 5; $i++)
               @if($i <= $averageRating)
@@ -40,7 +40,7 @@
       </div>
       
       <div class="col-span-12 md:col-span-4 md:text-right">
-        <a href="{{ route('shop.show', $shop) }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+        <a href="{{ route('shop.show', $shop) }}" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 md:w-auto">
           <i class="fas fa-arrow-left mr-1"></i> Back to Shop
         </a>
       </div>
@@ -59,13 +59,13 @@
       </div>
     @else
       <div class="grid grid-cols-12 gap-4">
-        <div class="lg:col-span-8">
+        <div class="col-span-12 lg:col-span-8">
           <!-- Reviews -->
           @foreach($reviews as $review)
             <div class="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div class="p-4 sm:p-5">
-                <div class="flex justify-between items-start mb-3">
-                  <div class="flex items-center gap-3">
+                <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div class="flex min-w-0 items-center gap-3">
                     <div class="flex items-center">
                       @for($i = 1; $i <= 5; $i++)
                         @if($i <= $review->rating)
@@ -98,16 +98,16 @@
                         } catch (\Throwable $e) {}
                       }
                     @endphp
-                    <div class="flex flex-col items-end text-right">
+                    <div class="flex flex-col sm:items-end sm:text-right">
                       <small class="text-slate-500">Reviewed item</small>
-                      <div class="flex items-center mt-1">
+                      <div class="mt-1 flex min-w-0 items-center">
                         @if($thumbUrl)
                           <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" class="mr-2">
                             <img src="{{ $thumbUrl }}" alt="{{ $product->name }} thumbnail" style="width:56px;height:56px;object-fit:cover;border-radius:6px;">
                           </a>
                         @endif
-                        <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" 
-                           class="no-underline text-emerald-600 text-xs">
+                        <a href="{{ route('listing.show', $product->slug ?? $product->id) }}"
+                           class="min-w-0 break-words text-xs text-emerald-600 no-underline">
                           {{ $product->name }}
                         </a>
                       </div>
@@ -139,7 +139,7 @@
         </div>
         
         <!-- Sidebar -->
-        <div class="lg:col-span-4">
+        <div class="col-span-12 lg:col-span-4">
           <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div class="border-b border-slate-200 bg-white px-4 py-3 font-semibold text-slate-900">
               Shop Information
@@ -173,5 +173,4 @@
 </section>
 
 @endsection 
-
 

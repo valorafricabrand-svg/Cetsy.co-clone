@@ -181,7 +181,7 @@
 
           <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
             <a href="{{ route('login') }}" class="text-sm font-semibold text-emerald-700 hover:text-emerald-600">Already have an account?</a>
-            <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500">
+            <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500 sm:w-auto">
               <i class="fa-solid fa-user-plus mr-2" aria-hidden="true"></i>
               Register
             </button>

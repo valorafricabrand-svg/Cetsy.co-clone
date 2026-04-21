@@ -307,7 +307,7 @@
   <div class="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl">
     <form method="POST" action="{{ route('products.shipping.rows.store',$product) }}" class="rounded-t-3xl border border-slate-200 bg-white shadow-xl sm:rounded-2xl" novalidate>
       @csrf
-      <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+      <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
         <h5 class="text-base font-semibold text-slate-900">Add shipping row</h5>
         <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="addRowOpen = false" aria-label="Close">&times;</button>
       </div>
@@ -434,7 +434,7 @@
         @csrf
         @method('PATCH')
 
-        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900">Edit shipping row</h5>
           <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="editRowOpen = null" aria-label="Close">&times;</button>
         </div>

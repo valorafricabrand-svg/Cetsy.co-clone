@@ -129,10 +129,11 @@
         </div>
 
         {{-- Form Actions --}}
-        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Create Profile</button>
-        <a href="{{ route('seller.shipping_profiles.index') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500 ml-2">Cancel</a>
+        <div class="flex flex-col gap-2 sm:flex-row">
+            <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 sm:w-auto">Create Profile</button>
+            <a href="{{ route('seller.shipping_profiles.index') }}" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500 sm:w-auto">Cancel</a>
+        </div>
     </form>
 </div>
 @endsection
-
 

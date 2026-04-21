@@ -90,7 +90,7 @@
       <form id="checkout-form" action="{{ route('store_order') }}" method="POST" class="grid gap-6 lg:grid-cols-12" novalidate>
         @csrf
 
-        <div class="space-y-4 lg:col-span-7">
+        <div class="col-span-12 space-y-4 lg:col-span-7">
           <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
             <h2 class="text-xl font-bold text-slate-900">Billing and Shipping Details</h2>
             <p class="mt-1 text-sm text-slate-500">Review your contact details and delivery address before placing the order.</p>
@@ -215,7 +215,7 @@
           </div>
         </div>
 
-        <div class="space-y-4 lg:col-span-5">
+        <div class="col-span-12 space-y-4 lg:col-span-5">
           <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-24 md:p-5">
             <h2 class="text-xl font-bold text-slate-900">Your Order</h2>
 
@@ -256,7 +256,7 @@
                       }
                   }
                 @endphp
-                <li class="flex items-start justify-between gap-3 px-4 py-3">
+                <li class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
                   <div class="flex min-w-0 items-start gap-3">
                     <div class="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
                       @if(!empty($row['photo']))
@@ -281,22 +281,22 @@
                       <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">x {{ $qty }}</p>
                     </div>
                   </div>
-                  <div class="whitespace-nowrap text-sm font-semibold text-slate-900">{{ $currency }} {{ number_format($lineTotal,2) }}</div>
+                  <div class="text-sm font-semibold text-slate-900 sm:whitespace-nowrap">{{ $currency }} {{ number_format($lineTotal,2) }}</div>
                 </li>
               @endforeach
             </ul>
 
             <div class="mt-4 space-y-2 text-sm">
-              <div class="flex items-center justify-between text-slate-700">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-slate-700">
                 <span>Subtotal</span>
                 <span class="font-semibold">{{ $currency }} {{ number_format($subtotal,2) }}</span>
               </div>
-              <div class="flex items-center justify-between text-slate-700">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-slate-700">
                 <span>Shipping</span>
                 <span class="font-semibold">{{ $currency }} {{ number_format($totalShipping,2) }}</span>
               </div>
               <div class="border-t border-slate-200 pt-3">
-                <div class="flex items-center justify-between text-base font-bold text-slate-900">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-base font-bold text-slate-900">
                   <span>Total</span>
                   <span>{{ $currency }} {{ number_format($grandTotal,2) }}</span>
                 </div>
@@ -324,11 +324,11 @@
 @if (!empty($cart))
   <div class="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
     <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-1 sm:px-4">
-      <div>
+      <div class="min-w-0">
         <p class="text-[11px] uppercase tracking-wide text-slate-400">Total</p>
         <p id="grand-total-sticky-checkout" class="text-sm font-bold text-slate-900">{{ $currency }} {{ number_format($grandTotal,2) }}</p>
       </div>
-      <button id="checkout-sticky-submit" type="submit" form="checkout-form" class="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-300" data-submit-checkout>
+      <button id="checkout-sticky-submit" type="submit" form="checkout-form" class="inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-300" data-submit-checkout>
         Place Order
       </button>
     </div>

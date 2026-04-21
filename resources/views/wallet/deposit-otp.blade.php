@@ -42,15 +42,15 @@
               <input type="text" name="code" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('code') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror" placeholder="6-digit code" autofocus required>
               @error('code') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
             </div>
-            <div class="col-span-12 flex items-center justify-between">
-              <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" href="{{ route('wallet.index') }}">Cancel</a>
-              <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500">Verify</button>
+            <div class="col-span-12 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <a class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 sm:w-auto" href="{{ route('wallet.index') }}">Cancel</a>
+              <button class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 sm:w-auto">Verify</button>
             </div>
           </form>
 
-          <form method="POST" action="{{ $resendRoute ?? route('wallet.deposit.otp.resend') }}" class="mt-3">
+          <form method="POST" action="{{ $resendRoute ?? route('wallet.deposit.otp.resend') }}" class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
             @csrf
-            <button class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition text-emerald-700 hover:text-emerald-600 underline-offset-2 hover:underline" type="submit">Resend code</button>
+            <button class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition text-emerald-700 hover:text-emerald-600 underline-offset-2 hover:underline sm:w-auto" type="submit">Resend code</button>
             @if(!empty($cooldown) && $cooldown > 0)
               <small class="text-slate-500">Please wait {{ $cooldown }}s to resend.</small>
             @endif
@@ -63,7 +63,6 @@
   </div>
 </div>
 @endsection
-
 
 
 

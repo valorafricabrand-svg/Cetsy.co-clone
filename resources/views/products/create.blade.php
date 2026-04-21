@@ -16,7 +16,7 @@
               <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Create New Listing</h1>
               <p class="mt-1 text-sm text-slate-500">Add a new physical product, digital item, or service to your shop.</p>
             </div>
-            <a href="{{ route('products.index') }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+            <a href="{{ route('products.index') }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:w-auto">
               <i class="fas fa-arrow-left mr-2"></i> Back to Listings
             </a>
           </div>
@@ -533,7 +533,6 @@ if (window.tinymce) tinymce.init({
 })();
 </script>
 @endpush
-
 
 
 

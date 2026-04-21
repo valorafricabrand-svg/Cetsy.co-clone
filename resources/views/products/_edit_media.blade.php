@@ -247,7 +247,7 @@
 
   {{-- ------------------ Upload New Media ------------------ --}}
   <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-5">
-    <div class="border-b border-slate-200 px-4 py-3 bg-slate-100 flex justify-between items-center">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-100 px-4 py-3">
       <h5 class="mb-0"><i class="fa-regular fa-images mr-2"></i>Upload Media</h5>
       <small class="text-slate-500" x-text="items.length ? `${items.length} selected` : ''"></small>
     </div>
@@ -336,7 +336,7 @@
   <div class="tw-modal" id="cropModal" tabindex="-1" aria-hidden="true">
     <div class="tw-modal-dialog tw-modal-dialog-centered tw-modal-lg">
       <div class="border border-slate-200 bg-white shadow-xl crop-modal-panel">
-        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
           <h5 class="text-base font-semibold text-slate-900 flex items-center">
             <i class="fas fa-crop mr-2"></i> Crop Image
           </h5>

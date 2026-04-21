@@ -18,7 +18,7 @@
               <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Listing Settings</h1>
               <p class="mt-1 text-sm text-slate-500">Control status, renewal, visibility, and SEO metadata for this listing.</p>
             </div>
-            <a href="{{ route('products.show', $product) }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+            <a href="{{ route('products.show', $product) }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:w-auto">
               <i class="fas fa-arrow-left mr-2"></i> Back to Listing
             </a>
           </div>
@@ -123,9 +123,9 @@
               </div>
             </div>
 
-            <div class="mt-4 flex flex-wrap gap-2">
-              <button type="submit" class="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"><i class="fas fa-save mr-1"></i> Save</button>
-              <a href="{{ route('products.show', $product) }}" class="inline-flex items-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Cancel</a>
+            <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+              <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 sm:w-auto"><i class="fas fa-save mr-1"></i> Save</button>
+              <a href="{{ route('products.show', $product) }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:w-auto">Cancel</a>
             </div>
           </form>
 
