@@ -363,12 +363,12 @@
         </div>
 
         @if($order->status === \App\Models\Order::STATUS_PENDING)
-          <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 mt-3 flex items-center justify-between" role="alert">
+          <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" role="alert">
             <div class="flex items-center gap-2">
               <i class="bi bi-exclamation-triangle"></i>
               <span>Awaiting payment to start processing.</span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <a href="{{ route('pay_now', $order->id) }}" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500">
                 <i class="bi bi-credit-card"></i> Pay Now
               </a>
@@ -394,9 +394,9 @@
               <textarea name="cancel_reason" id="cancel-reason-{{ $order->id }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="3" placeholder="Tell the seller why you're cancelling"></textarea>
             </div>
           </div>
-          <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50" data-ui-dismiss="modal">Keep Order</button>
-            <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-rose-600 text-white hover:bg-rose-500">Confirm Cancel</button>
+          <div class="flex flex-col-reverse gap-2 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-end">
+            <button type="button" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-50 sm:w-auto" data-ui-dismiss="modal">Keep Order</button>
+            <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-rose-600 text-white hover:bg-rose-500 sm:w-auto">Confirm Cancel</button>
           </div>
         </form>
       </div>
@@ -534,7 +534,7 @@
           <div class="font-semibold mb-1">Processing Timeline</div>
           <ul class="text-xs">
             <li class="mb-2">
-              <div class="flex justify-between items-center gap-3">
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <div class="flex items-center gap-2">
                   <i class="bi bi-check-circle {{ $stepPlaced ? 'text-emerald-600' : 'text-slate-400' }}"></i>
                   <span>Order placed</span>
@@ -543,7 +543,7 @@
               </div>
             </li>
             <li class="mb-2">
-              <div class="flex justify-between items-center gap-3">
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <div class="flex items-center gap-2">
                   <i class="bi bi-gear-fill {{ $paid ? 'text-emerald-600' : 'text-amber-600' }}"></i>
                   <span>Processing</span>
@@ -563,7 +563,7 @@
               @endunless
             </li>
             <li class="mb-2">
-              <div class="flex justify-between items-center gap-3">
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <div class="flex items-center gap-2">
                   <i class="bi bi-truck {{ $stepShipped ? 'text-emerald-600' : 'text-slate-400' }}"></i>
                   <span>Shipped</span>
@@ -572,7 +572,7 @@
               </div>
             </li>
             <li class="mb-2">
-              <div class="flex justify-between items-center gap-3">
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <div class="flex items-center gap-2">
                   <i class="bi bi-box-seam {{ $stepDelivered ? 'text-emerald-600' : 'text-slate-400' }}"></i>
                   <span>Delivered</span>
@@ -581,7 +581,7 @@
               </div>
             </li>
             <li>
-              <div class="flex justify-between items-center gap-3">
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <div class="flex items-center gap-2">
                   <i class="bi bi-flag {{ $stepCompleted ? 'text-emerald-600' : 'text-slate-400' }}"></i>
                   <span>Completed</span>
@@ -748,48 +748,48 @@
           </div>
           <div class="p-4 sm:p-5 text-xs">
             <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
-              <li class="px-4 py-3 px-0 flex justify-between">
+              <li class="px-4 py-3 px-0 flex flex-col gap-1 sm:flex-row sm:justify-between">
                 <span class="font-semibold">Tracking No:</span><span>{{ $order->tracking_no ?? 'N/A' }}</span>
               </li>
-              <li class="px-4 py-3 px-0 flex justify-between">
+              <li class="px-4 py-3 px-0 flex flex-col gap-1 sm:flex-row sm:justify-between">
                 <span class="font-semibold">Courier:</span><span>{{ $order->courier ?? 'N/A' }}</span>
               </li>
               @if(!empty($order->tracking_url))
-              <li class="px-4 py-3 px-0 flex justify-between">
+              <li class="px-4 py-3 px-0 flex flex-col gap-1 sm:flex-row sm:justify-between">
                 <span class="font-semibold">Tracking Link:</span>
                 <span>
                   <a href="{{ $order->tracking_url }}" target="_blank" rel="noopener" class="font-medium text-sky-700 underline hover:text-sky-600">Track package</a>
                 </span>
               </li>
               @endif
-              <li class="px-4 py-3 px-0 flex justify-between">
+              <li class="px-4 py-3 px-0 flex flex-col gap-1 sm:flex-row sm:justify-between">
                 <span class="font-semibold">Quantity:</span><span>{{ $order->items->sum('quantity') }}</span>
               </li>
-              <li class="px-4 py-3 px-0 flex justify-between">
+              <li class="px-4 py-3 px-0 flex flex-col gap-1 sm:flex-row sm:justify-between">
                 <span class="font-semibold">Subtotal:</span>
                 <span>{{ money((float)($order->subtotal ?? 0)) }}</span>
               </li>
-              <li class="px-4 py-3 px-0 flex justify-between">
+              <li class="px-4 py-3 px-0 flex flex-col gap-1 sm:flex-row sm:justify-between">
                 <span class="font-semibold">Shipping Fee:</span>
                 <span>{{ money((float)($order->shipping_cost ?? 0)) }}</span>
               </li>
-              <li class="px-4 py-3 px-0 flex justify-between">
+              <li class="px-4 py-3 px-0 flex flex-col gap-1 sm:flex-row sm:justify-between">
                 <span class="font-semibold">Total Amount:</span>
                 <span class="font-bold">{{ money((float)($order->total_amount ?? 0)) }}</span>
               </li>
-              <li class="px-4 py-3 px-0 flex justify-between items-center">
+              <li class="px-4 py-3 px-0 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <span class="font-semibold">Status:</span>
                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $order->getStatusBadgeClass() }} px-3 py-2 text-uppercase">
                   {{ ucfirst($order->status) }}
                 </span>
               </li>
               @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
-                <li class="px-4 py-3 px-0 flex justify-between">
+                <li class="px-4 py-3 px-0 flex flex-col gap-1 sm:flex-row sm:justify-between">
                   <span class="font-semibold text-rose-600">Cancellation Reason:</span>
                   <span class="text-rose-600">{{ $order->cancel_reason }}</span>
                 </li>
               @endif
-              <li class="px-4 py-3 px-0 flex justify-between">
+              <li class="px-4 py-3 px-0 flex flex-col gap-1 sm:flex-row sm:justify-between">
                 <span class="font-semibold">Created:</span>
                 <span>{{ $order->created_at->format('d M Y, h:i A') }}</span>
               </li>
@@ -988,10 +988,10 @@
                           <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-0">
                             <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
                               @foreach($product->digitalFiles as $file)
-                                <li class="px-4 py-3 flex justify-between items-center">
+                                <li class="px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                   <a href="{{ route('digital-files.download', $file) }}"
                                      target="_blank" rel="noopener"
-                                     class="inline-flex items-center">
+                                     class="inline-flex min-w-0 items-center break-all">
                                     <i class="fas {{ $file->isExternalUrl() ? 'fa-link' : 'fa-file-download' }} mr-2"></i> {{ $file->filename }}
                                   </a>
                                 </li>
@@ -1061,7 +1061,7 @@
                       </div>
                     @endif
                     <div class="grow">
-                      <div class="flex justify-between items-start">
+                      <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                         <div style="min-width:0;">
                           <div class="font-semibold text-clamp-2">
                             @if($product)
@@ -1077,7 +1077,7 @@
                             <div class="text-slate-500 text-xs">{{ $item->variation_summary }}</div>
                           @endif
                         </div>
-                        <div class="text-right ml-2">
+                        <div class="text-left sm:ml-2 sm:text-right">
                           <div class="label">Unit</div>
                           <div>{{ money((float)$unit) }}</div>
                         </div>
@@ -1111,7 +1111,7 @@
                         <div class="order-item__total">{{ money((float)$lineTotal) }}</div>
                       </div>
 
-                      <div class="flex justify-between items-center mt-3">
+                      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mt-3">
                         <div>
                           @if($reviewed)
                             <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
@@ -1134,7 +1134,7 @@
                             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-0">
                               <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
                                 @foreach($product->digitalFiles as $file)
-                                  <li class="px-4 py-3 flex justify-between items-center">
+                                  <li class="px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <a href="{{ route('digital-files.download', $file) }}" target="_blank" rel="noopener" class="inline-flex items-center">
                                       <i class="fas {{ $file->isExternalUrl() ? 'fa-link' : 'fa-file-download' }} mr-2"></i> {{ $file->filename }}
                                     </a>
@@ -1179,26 +1179,26 @@
                   $statusLabel = $isCompleted ? 'Completed' : (is_numeric($pay->status) ? $pay->status : ucfirst((string)$pay->status));
                 @endphp
                 <div class="rounded-xl border border-slate-200 bg-white p-3">
-                  <div class="flex items-center justify-between gap-2">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
                     <div class="text-xs text-slate-500">Payment #{{ $loop->iteration }}</div>
                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700' }}">
                       {{ $statusLabel }}
                     </span>
                   </div>
                   <div class="mt-2 space-y-1 text-sm">
-                    <div class="flex items-start justify-between gap-3">
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                       <span class="text-slate-500">Reference</span>
                       <span class="min-w-0 break-all text-right font-medium text-slate-900">{{ $pay->local_transaction_id ?: '-' }}</span>
                     </div>
-                    <div class="flex items-start justify-between gap-3">
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                       <span class="text-slate-500">Method</span>
                       <span class="text-right text-slate-900">{{ payment_method_label($pay->payment_method) }}</span>
                     </div>
-                    <div class="flex items-start justify-between gap-3">
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                       <span class="text-slate-500">Amount</span>
                       <span class="font-semibold text-slate-900">{{ money((float)($pay->total_amount ?? 0)) }}</span>
                     </div>
-                    <div class="flex items-start justify-between gap-3">
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                       <span class="text-slate-500">Paid On</span>
                       <span class="text-right text-slate-900">{{ optional($pay->created_at)->format('d M Y, h:i A') ?: '-' }}</span>
                     </div>
@@ -1295,19 +1295,19 @@
         <div class="px-4 py-4 p-0">
           <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 list-group-flush">
             @foreach($__dlFiles as $__file)
-              <li class="px-4 py-3 flex justify-between items-center">
-                <div class="mr-3 truncate">
+              <li class="px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0 truncate sm:mr-3">
                   <i class="bi bi-file-earmark-arrow-down mr-2"></i>
                   <span class="inline-block max-w-72 truncate" title="{{ $__file->filename }}">{{ $__file->filename }}</span>
                 </div>
-                <a href="{{ route('digital-files.download', $__file) }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500">
+                <a href="{{ route('digital-files.download', $__file) }}" target="_blank" rel="noopener" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-500 sm:w-auto">
                   <i class="bi {{ $__file->isExternalUrl() ? 'bi-link-45deg' : 'bi-download' }}"></i> {{ $__file->isExternalUrl() ? 'Open link' : 'Download' }}
                 </a>
               </li>
             @endforeach
           </ul>
         </div>
-        <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
+        <div class="flex flex-col-reverse gap-2 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-end">
           <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" data-ui-dismiss="modal">Close</button>
         </div>
       </div>
@@ -1423,8 +1423,5 @@
   @endif
 @endforeach
 @endsection
-
-
-
 
 

@@ -72,7 +72,7 @@
                   $currency = get_currency();
                 @endphp
                 <div class="px-4 py-3">
-                  <div class="mb-1 flex items-start justify-between">
+                  <div class="mb-1 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                     <div class="font-semibold text-slate-900">#{{ $order->id }}</div>
                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ method_exists($order,'getStatusBadgeClass') ? $order->getStatusBadgeClass() : 'bg-slate-200 text-slate-700' }}">
                       {{ ucfirst($order->status) }}
@@ -89,15 +89,15 @@
                   </div>
 
                   <div class="space-y-1 text-sm">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <div class="text-slate-500">Subtotal</div>
                       <div>{{ $currency }} {{ number_format((float)$order->subtotal,2) }}</div>
                     </div>
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <div class="text-slate-500">Shipping</div>
                       <div>{{ $currency }} {{ number_format((float)$order->shipping_cost,2) }}</div>
                     </div>
-                    <div class="flex items-center justify-between font-semibold">
+                    <div class="flex flex-col gap-1 font-semibold sm:flex-row sm:items-center sm:justify-between">
                       <div>Total</div>
                       <div>{{ $currency }} {{ number_format((float)$order->total_amount,2) }}</div>
                     </div>

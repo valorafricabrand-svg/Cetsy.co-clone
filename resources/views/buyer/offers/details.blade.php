@@ -17,9 +17,9 @@
             @include('buyer.partials.sidebar')
         </div>
         <div class="col-span-12 lg:col-span-9">
-    <div class="mb-3 flex items-center justify-between">
+    <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 class="mb-0 text-base font-semibold">Offer Details</h2>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <a href="{{ route('buyer.offers') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
                 <i class="fa-solid fa-arrow-left mr-1"></i>Back to Offers
             </a>
@@ -36,7 +36,7 @@
             <div class="grid grid-cols-12 gap-4">
                 <div class="col-span-12 md:col-span-6">
                     <h6 class="mb-3">Product Information</h6>
-                    <div class="mb-3 flex items-center">
+                    <div class="mb-3 flex min-w-0 items-center">
                         @if($offer->product->media && $offer->product->media->count() > 0)
                             @php
                                 $thumb = function_exists('product_thumb_url')
@@ -47,14 +47,14 @@
                             @endphp
                             <img src="{{ $thumb }}"
                                  alt="{{ $offer->product->name }}"
-                                 class="mr-3 h-20 w-20 rounded object-cover">
+                                 class="mr-3 h-20 w-20 shrink-0 rounded object-cover">
                         @else
-                            <div class="mr-3 flex h-20 w-20 items-center justify-center rounded bg-slate-100">
+                            <div class="mr-3 flex h-20 w-20 shrink-0 items-center justify-center rounded bg-slate-100">
                                 <i class="fa-regular fa-image text-slate-500"></i>
                             </div>
                         @endif
-                        <div>
-                            <h6 class="mb-1">{{ $offer->product->name }}</h6>
+                        <div class="min-w-0">
+                            <h6 class="mb-1 break-words">{{ $offer->product->name }}</h6>
                             <p class="mb-1 text-slate-500">{{ $offer->product->shop->name ?? 'Unknown Shop' }}</p>
                             <span class="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">{{ get_currency() }} {{ number_format($offer->product->price, 2) }}</span>
                         </div>
@@ -64,23 +64,23 @@
                 <div class="col-span-12 md:col-span-6">
                     <h6 class="mb-3">Offer Details</h6>
                     <div class="grid grid-cols-12 gap-4">
-                        <div class="col-span-6">
+                        <div class="col-span-12 sm:col-span-6">
                             <small class="text-slate-500">Your Offer</small>
                             <div class="font-bold text-emerald-600">{{ $offer->formatted_price }}</div>
                         </div>
-                        <div class="col-span-6">
+                        <div class="col-span-12 sm:col-span-6">
                             <small class="text-slate-500">Savings</small>
                             <div class="font-bold text-emerald-600">{{ get_currency() }} {{ number_format($offer->product->price - $offer->offer_price, 2) }}</div>
                         </div>
                     </div>
                     <div class="mt-2 grid grid-cols-12 gap-4">
-                        <div class="col-span-6">
+                        <div class="col-span-12 sm:col-span-6">
                             <small class="text-slate-500">Status</small>
                             <div>
                                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $offerStatusClass }}">{{ $offer->status_label }}</span>
                             </div>
                         </div>
-                        <div class="col-span-6">
+                        <div class="col-span-12 sm:col-span-6">
                             <small class="text-slate-500">Date</small>
                             <div class="font-bold">{{ $offer->created_at->format('M d, Y H:i') }}</div>
                         </div>
@@ -115,15 +115,15 @@
                         };
                     @endphp
                     <div class="mb-2 rounded border p-3">
-                        <div class="flex items-start justify-between">
-                            <div>
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="min-w-0">
                                 <strong class="text-sky-600">Counter Offer</strong>
                                 <div class="font-bold">{{ $counterOffer->formatted_price }}</div>
                                 @if($counterOffer->seller_notes)
                                     <div class="mt-1 text-xs text-slate-500">{{ $counterOffer->seller_notes }}</div>
                                 @endif
                             </div>
-                            <div class="text-right">
+                            <div class="text-left sm:text-right">
                                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $counterStatusClass }}">{{ $counterOffer->status_label }}</span>
                                 <div class="text-xs text-slate-500">{{ $counterOffer->created_at->format('M d, H:i') }}</div>
                             </div>

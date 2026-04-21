@@ -316,13 +316,13 @@
 
             {{-- -- Amount breakdown ----------------------------- --}}
             <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200 mb-4 summary-list">
-              <li class="px-4 py-3 flex justify-between summary-row">
+              <li class="px-4 py-3 flex flex-col gap-1 summary-row sm:flex-row sm:justify-between">
                 <span>Order&nbsp;Total</span>
                 <span>{{ $currency }} {{ number_format($orderTotal, 2) }}</span>
               </li>
 
               @if($walletApplied > 0)
-                <li class="px-4 py-3 flex justify-between summary-row">
+                <li class="px-4 py-3 flex flex-col gap-1 summary-row sm:flex-row sm:justify-between">
                   <span>Wallet&nbsp;Applied</span>
                   <span>- {{ $currency }} {{ number_format($walletApplied, 2) }}</span>
                 </li>
@@ -330,7 +330,7 @@
 
               {{-- No fee shown here; PayPal fee shown near PayPal button only --}}
 
-              <li class="px-4 py-3 flex justify-between summary-row summary-row--total">
+              <li class="px-4 py-3 flex flex-col gap-1 summary-row summary-row--total sm:flex-row sm:justify-between">
                 <span>Amount&nbsp;Due&nbsp;Now</span>
                 <span>{{ $currency }} {{ $amountDueNowDisplay }}</span>
               </li>
@@ -731,7 +731,6 @@ $(function () {
 });
 </script>
 @endsection
-
 
 
 

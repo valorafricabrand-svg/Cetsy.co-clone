@@ -238,7 +238,7 @@
         </div>
 
         <div class="mb-5 rounded-2xl border border-slate-200 bg-white shadow-sm glass">
-          <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <div class="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <h6 class="analytics-panel-title mb-0 font-semibold"><i class="fas fa-calendar-week mr-2" style="color:var(--brand)"></i>Sales by Day of Week</h6>
           </div>
           <div class="p-4">
@@ -252,7 +252,7 @@
         <div class="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div>
             <div class="glass h-full rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 font-semibold">
+              <div class="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 font-semibold sm:flex-row sm:items-center sm:justify-between">
                 <span class="analytics-panel-title"><i class="fas fa-ranking-star mr-2" style="color:var(--brand)"></i>Top Products</span>
                 <button type="button" id="exportTopCsv" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"><i class="fas fa-file-csv mr-1"></i>Export</button>
               </div>
@@ -295,7 +295,7 @@
 
           <div>
             <div class="glass h-full rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 font-semibold">
+              <div class="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 font-semibold sm:flex-row sm:items-center sm:justify-between">
                 <span class="analytics-panel-title"><i class="fas fa-bolt mr-2" style="color:var(--brand)"></i>Listing Performance</span>
                 <button type="button" id="exportPerfCsv" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"><i class="fas fa-file-csv mr-1"></i>Export</button>
               </div>

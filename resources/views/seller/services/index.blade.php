@@ -83,7 +83,7 @@
 
  {{-- Card Footer --}}
  <div class="border-t border-slate-200 px-4 py-3 bg-transparent">
- <div class="flex justify-between items-center">
+ <div class="flex flex-wrap items-center justify-between gap-2">
  <div class="inline-flex items-center gap-1 rounded-xl border border-slate-300 p-1">
  <a href="{{ route('seller.services.edit', $service->id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
  <i class="fas fa-edit"></i>
@@ -132,7 +132,6 @@
  </div>
 </section>
 @endsection
-
 
 
 

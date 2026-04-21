@@ -51,7 +51,7 @@
                             </p>
                         </div>
 
-                        <div class="flex items-center justify-between gap-2 border-t border-slate-200 px-4 py-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 px-4 py-3">
                             <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
                                 View
                             </a>

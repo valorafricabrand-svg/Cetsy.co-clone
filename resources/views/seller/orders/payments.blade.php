@@ -65,7 +65,7 @@
 
  @if ($payments->isNotEmpty())
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
- <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex justify-between items-center">
+ <div class="border-b border-slate-200 px-4 py-3 bg-slate-50 font-semibold flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
  <span>Payment History ({{ $payments->total() }})</span>
  <span class="text-slate-500 text-xs">
  Showing {{ $payments->firstItem() }}–{{ $payments->lastItem() }} of {{ $payments->total() }}
@@ -152,7 +152,6 @@
  </div>
 </section>
 @endsection
-
 
 
 

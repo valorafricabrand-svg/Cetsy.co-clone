@@ -95,7 +95,7 @@
  <div class="md:col-span-9 xl:col-span-10">
 
  <div class="subpay-hero p-4 md:p-5 mb-4">
- <div class="flex flex-col md:flex-row md:items-start justify-between gap-3">
+ <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
  <div>
  <div class="subpay-badge inline-flex items-center gap-2 mb-2">
  <i class="fa-solid fa-shield"></i> Secure checkout
@@ -115,7 +115,7 @@
  <div class="md:col-span-5">
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm subpay-card">
  <div class="p-4">
- <div class="flex items-start justify-between">
+ <div class="flex flex-wrap items-start justify-between gap-2">
  <div>
  <div class="text-xs text-uppercase font-semibold subpay-muted">Plan</div>
  <div class="text-lg font-semibold mb-1">{{ $planName }} subscription</div>
@@ -152,7 +152,7 @@
  <div class="md:col-span-7">
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm subpay-card">
  <div class="p-4 md:p-5">
- <div class="flex items-start justify-between gap-2 mb-3">
+ <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
  <div>
  <div class="text-xs text-uppercase font-semibold subpay-muted">Payment</div>
  <div class="text-lg font-semibold mb-0">Choose a method</div>
@@ -433,7 +433,6 @@ $(function () {
 });
 </script>
 @endsection
-
 
 
 

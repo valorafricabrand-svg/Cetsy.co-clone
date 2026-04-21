@@ -231,7 +231,7 @@
  </div>
 
  <div class="min-w-0 flex-1">
- <div class="flex items-start justify-between gap-2">
+ <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
  <p class="text-sm font-bold text-slate-900">Order #{{ $order->id }}</p>
  <p class="text-xs text-slate-500">{{ optional($order->created_at)->format('d M Y') }}</p>
  </div>
@@ -241,7 +241,7 @@
  <p class="mt-1 truncate text-xs text-slate-500">{{ $primaryProduct->name }}</p>
  @endif
 
- <div class="mt-2 flex items-center justify-between text-sm">
+ <div class="mt-2 flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
  <p class="text-slate-500">Qty: {{ $qtyTotal }}</p>
  <p class="font-bold text-slate-900">{{ $symbol }} {{ number_format((float)$order->total_amount, 2) }}</p>
  </div>
@@ -394,4 +394,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endpush
-

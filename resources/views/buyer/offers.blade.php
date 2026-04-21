@@ -122,8 +122,8 @@
                 @endphp
                 <div class="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm offer-card @if($offerData['latest_offer']->status === 'accepted') border-emerald-400 ring-2 ring-emerald-200 accepted-offer-card @endif">
                     <div class="border-b border-slate-200 px-4 py-3 bg-slate-100">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="flex min-w-0 items-center">
                                 @if($offerData['product']->media && $offerData['product']->media->count() > 0)
                                     @php
                                         $thumb = function_exists('product_thumb_url')
@@ -134,20 +134,20 @@
                                     @endphp
                                     <img src="{{ $thumb }}" 
                                          alt="{{ $offerData['product']->name }}" 
-                                         class="mr-3 h-[50px] w-[50px] rounded object-cover">
+                                         class="mr-3 h-[50px] w-[50px] shrink-0 rounded object-cover">
                                 @else
-                                    <div class="mr-3 flex h-[50px] w-[50px] items-center justify-center rounded bg-slate-100">
+                                    <div class="mr-3 flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded bg-slate-100">
                                         <i class="fa-regular fa-image text-slate-500"></i>
                                     </div>
                                 @endif
-                                <div>
-                                    <h6 class="mb-1">{{ $offerData['product']->name }}</h6>
+                                <div class="min-w-0">
+                                    <h6 class="mb-1 break-words">{{ $offerData['product']->name }}</h6>
                                     <small class="text-slate-500">
                                         <i class="fa-solid fa-store mr-1"></i>{{ $offerData['product']->shop->name ?? 'Unknown Shop' }}
                                     </small>
                                 </div>
                             </div>
-                            <div class="text-right">
+                            <div class="text-left sm:text-right">
                                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $latestStatusClass }}">
                                     {{ $offerData['latest_offer']->status_label }}
                                 </span>
@@ -157,7 +157,7 @@
                     
                     <div class="p-4 sm:p-5">
                         @if($offerData['latest_offer']->status === 'accepted')
-                            <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 flex items-center mb-4 p-3 shadow-sm accepted-offer-alert">
+                            <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 flex flex-col gap-3 mb-4 p-3 shadow-sm accepted-offer-alert sm:flex-row sm:items-center">
                                 <i class="fa-solid fa-circle-check mr-3 text-3xl text-emerald-600"></i>
                                 <div class="grow">
                                     <strong class="text-emerald-600">Congratulations!</strong> Your offer was <b>accepted</b> by the seller.<br>
@@ -165,13 +165,13 @@
                                     
                                     @if($offerData['latest_offer']->order)
                                         <div class="mt-3 p-3 bg-white rounded border">
-                                            <div class="flex justify-between items-center">
-                                                <div>
+                                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                                <div class="min-w-0">
                                                     <strong class="text-emerald-600">Order #{{ $offerData['latest_offer']->order->id }} Created</strong><br>
                                                     <small class="text-slate-500">Total: {{ get_currency() }} {{ number_format($offerData['latest_offer']->order->total_amount, 2) }}</small>
                                                 </div>
                                                 <a href="{{ route('pay_now', $offerData['latest_offer']->order->id) }}" 
-                                                   class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500">
+                                                   class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 sm:w-auto">
                                                     <i class="fa-regular fa-credit-card mr-1"></i>Pay Now
                                                 </a>
                                             </div>
@@ -242,8 +242,8 @@
                                         <div class="timeline-item">
                                             <div class="timeline-marker {{ $isCounter ? 'bg-indigo-500' : 'bg-sky-500' }}"></div>
                                             <div class="timeline-content">
-                                                <div class="flex justify-between items-start">
-                                                    <div>
+                                                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                                    <div class="min-w-0">
                                                         <strong>
                                                             <i class="{{ $iconClass }} mr-1"></i>{{ $labelText }}
                                                         </strong>
@@ -254,7 +254,7 @@
                                                             <div class="text-slate-500 text-xs mt-1">{{ $offer->buyer_notes }}</div>
                                                         @endif
                                                     </div>
-                                                    <div class="text-right">
+                                                    <div class="text-left sm:text-right">
                                                         <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusBadge }}">{{ $statusLabel }}</span>
                                                         @if($createdLabel)
                                                             <div class="text-slate-500 text-xs">{{ $createdLabel }}</div>
@@ -341,9 +341,9 @@
                     </div>
                 </form>
         </div>
-        <div class="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3">
-            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500" onclick="hideNewOfferModal()">Cancel</button>
-            <button type="button" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500" onclick="submitNewOffer()">Submit Offer</button>
+        <div class="flex flex-col-reverse gap-2 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-end">
+            <button type="button" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-slate-600 text-white hover:bg-slate-500 sm:w-auto" onclick="hideNewOfferModal()">Cancel</button>
+            <button type="button" class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition bg-emerald-600 text-white hover:bg-emerald-500 sm:w-auto" onclick="submitNewOffer()">Submit Offer</button>
         </div>
     </div>
 </div>
@@ -505,7 +505,4 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 @endpush
 @endsection 
-
-
-
 

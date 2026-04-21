@@ -8,7 +8,7 @@
       @include('seller.partials.sidebar')
       <div class="space-y-6">
 <div class="content">
-  <div class="flex justify-between items-center mb-3">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
     <h2 class="mb-0">Inventory Report</h2>
     <a href="{{ route('seller.analytics.index') }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100 px-2.5 py-1.5 text-xs rounded-lg"><i class="fas fa-chart-line mr-1"></i> Analytics</a>
   </div>
@@ -163,7 +163,6 @@
   </div>
 </section>
 @endsection
-
 
 
 

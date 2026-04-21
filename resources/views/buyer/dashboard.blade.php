@@ -156,8 +156,8 @@
                 @if(isset($myRecentReviews) && $myRecentReviews->count())
                     <ul class="divide-y divide-slate-200 rounded-xl border border-slate-200">
                         @foreach($myRecentReviews as $r)
-                            <li class="flex items-start justify-between gap-3 px-4 py-3">
-                                <div>
+                            <li class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div class="min-w-0">
                                     <div class="font-semibold">{{ optional($r->orderItem?->product)->name ?? 'Product' }}</div>
                                     <div class="text-xs text-slate-500">Order #{{ $r->order_id }} • Rated: {{ $r->rating }} / 5</div>
                                     @if($r->comment)

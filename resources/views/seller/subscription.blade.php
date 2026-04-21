@@ -2,7 +2,7 @@
 
 @section('title', 'Seller Subscription')
 
-@section('styles')
+@push('styles')
 <style>
  .sub-page{
  --sub-brand: #198754;
@@ -100,11 +100,7 @@
  font-weight: 600;
  }
 </style>
- </div>
- </div>
- </div>
-</section>
-@endsection
+@endpush
 
 @section('main')
 <section class="bg-slate-50 py-8 md:py-10">
@@ -122,7 +118,7 @@
  <h1 class="text-2xl font-semibold mb-1 sub-hero__title">Seller Subscription</h1>
  <div class="sub-hero__subtitle">Renew early, upgrade your plan, and view payment history.</div>
  </div>
- <div class="flex gap-2">
+ <div class="flex flex-wrap gap-2">
  <a href="{{ route('seller.billing.index') }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100">
  <i class="fa-solid fa-wallet mr-1"></i> Billing
  </a>
@@ -277,10 +273,10 @@
  </div>
 
  <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 g-lg-4">
- <div class="col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="pricing-card h-full">
  <div class="p-4">
- <div class="flex items-start justify-between">
+ <div class="flex flex-wrap items-start justify-between gap-2">
  <div>
  <div class="font-semibold">Monthly</div>
  <div class="pricing-muted text-xs">Flexible month‑to‑month</div>
@@ -313,10 +309,10 @@
  </div>
  </div>
 
- <div class="col-span-6">
+ <div class="col-span-12 md:col-span-6">
  <div class="pricing-card pricing-card--featured h-full">
  <div class="p-4">
- <div class="flex items-start justify-between">
+ <div class="flex flex-wrap items-start justify-between gap-2">
  <div>
  <div class="font-semibold">Yearly</div>
  <div class="pricing-muted text-xs">Best value for serious sellers</div>
@@ -362,7 +358,7 @@
  {{-- Payment history --}}
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
  <div class="border-b border-slate-200 px-4 py-3 bg-white sub-card-header">
- <div class="flex items-center justify-between">
+ <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
  <h3 class="text-lg font-semibold mb-0"><i class="fa-solid fa-receipt mr-2"></i>Subscription Payment History</h3>
  </div>
  </div>
@@ -421,8 +417,6 @@
  </div>
 </section>
 @endsection
-
-
 
 
 

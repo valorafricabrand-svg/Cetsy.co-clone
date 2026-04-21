@@ -61,11 +61,11 @@
 
     {{-- Product Selector (hidden when applies_to_all is checked) --}}
     <div class="mb-4" id="product-selector">
-      <div class="flex justify-between items-center mb-3">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
         <label class="form-label font-semibold mb-0">
           <i class="fas fa-box mr-1"></i>Select Specific Products
         </label>
-        <div class="inline-flex items-center gap-1 rounded-xl border border-slate-300 p-1 text-xs" role="group">
+        <div class="inline-flex flex-wrap items-center gap-1 rounded-xl border border-slate-300 p-1 text-xs" role="group">
           <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50" id="select-all-products">
             <i class="fas fa-check-double mr-1"></i>Select All
           </button>
@@ -372,7 +372,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
-
 
 
 

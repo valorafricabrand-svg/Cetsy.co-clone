@@ -142,19 +142,19 @@
             </div>
             <div class="p-4">
               <div class="space-y-3">
-                <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div class="flex flex-col gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <span class="text-sm text-slate-500">Total Orders</span>
                   <span class="text-sm font-semibold text-slate-900">{{ $orderCount }}</span>
                 </div>
-                <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div class="flex flex-col gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <span class="text-sm text-slate-500">Lifetime Spend</span>
                   <span class="text-sm font-semibold text-slate-900">{{ $currencySymbol }} {{ number_format($totalSpent, 2) }}</span>
                 </div>
-                <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div class="flex flex-col gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <span class="text-sm text-slate-500">Average Order</span>
                   <span class="text-sm font-semibold text-slate-900">{{ $currencySymbol }} {{ number_format($avgOrderValue, 2) }}</span>
                 </div>
-                <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div class="flex flex-col gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <span class="text-sm text-slate-500">Orders in 30 Days</span>
                   <span class="text-sm font-semibold text-slate-900">{{ $recentOrderCount }}</span>
                 </div>
@@ -179,8 +179,8 @@
                   $quantityTotal = $order->items->sum('quantity');
                 @endphp
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div class="flex items-start justify-between gap-3">
-                    <div>
+                  <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div class="min-w-0">
                       <p class="text-sm font-bold text-slate-900">Order #{{ $order->id }}</p>
                       <p class="mt-1 text-xs text-slate-500">{{ $order->created_at->format('M d, Y') }}</p>
                     </div>

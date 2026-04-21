@@ -13,7 +13,7 @@
         <div class="rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800">{{ session('success') }}</div>
       @endif
 
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
         <h3 class="mb-0">Payout Requests</h3>
         <div>
           <a href="{{ route('wallet.index', ['open_payout' => 1]) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">
@@ -23,12 +23,12 @@
       </div>
 
       @if(!empty($otpPending))
-        <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 flex items-center justify-between">
+        <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <i class="fa-solid fa-shield mr-2"></i>
             You have a payout request (ID #{{ $otpPending->id }}) awaiting verification.
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <a href="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.verify') ? route('seller.payouts.otp.verify', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/verify')) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">Continue Verification</a>
             <form action="{{ route('seller.payouts.otp.cancel', $otpPending) }}" method="POST" class="inline" onsubmit="return confirm('Cancel this payout request?');">
               @csrf
@@ -59,9 +59,9 @@
                 <input type="text" name="code" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 @error('code') border-rose-400 focus:border-rose-500 focus:ring-rose-100 @enderror" placeholder="6-digit code" required>
                 @error('code') <div class="invalid-feedback">{{ $message }}</div> @enderror
               </div>
-              <div class="col-span-12 md:col-span-6 flex items-end gap-2">
-                <button class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700" type="submit">Verify &amp; Submit</button>
-                <a href="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.verify') ? route('seller.payouts.otp.verify', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/verify')) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100">Open full verify page</a>
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-2 sm:flex-row sm:items-end">
+                <button class="inline-flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto" type="submit">Verify &amp; Submit</button>
+                <a href="{{ (\Illuminate\Support\Facades\Route::has('seller.payouts.otp.verify') ? route('seller.payouts.otp.verify', $otpPending) : url('/seller/payouts/'.$otpPending->id.'/verify')) }}" class="inline-flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-slate-300 text-slate-700 hover:bg-slate-100 sm:w-auto">Open full verify page</a>
               </div>
             </form>
             <div class="mt-2 flex gap-3">
@@ -151,7 +151,6 @@
  
 
  
-
 
 
 

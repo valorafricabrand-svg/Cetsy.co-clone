@@ -91,7 +91,7 @@
                                 @endphp
 
                                 <div class="rounded-xl border border-slate-200 p-4">
-                                    <div class="mb-2 flex items-center justify-between">
+                                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                                         <div class="text-sm font-semibold text-slate-900">Payment #{{ $pay->id }}</div>
                                         <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusClass }}">{{ ucfirst($pay->payment_status) }}</span>
                                     </div>

@@ -207,7 +207,7 @@
                 <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                     @foreach ($cards as $card)
                         <a href="{{ $card['href'] }}" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                            <div class="flex items-start justify-between gap-3">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
                                 <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ $card['label'] }}</p>
                                 <i class="{{ $card['icon'] }} {{ $card['tone'] }}"></i>
                             </div>
@@ -323,8 +323,8 @@
                                             </div>
 
                                             <div class="min-w-0 flex-1">
-                                                <div class="flex items-start justify-between gap-3">
-                                                    <div>
+                                                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                                    <div class="min-w-0">
                                                         <p class="text-sm font-semibold text-slate-900">#{{ $o->id }}</p>
                                                         <p class="mt-1 text-xs text-slate-500">{{ optional($o->customer)->name ?? '-' }}</p>
                                                         @if ($primaryProduct)
@@ -332,7 +332,7 @@
                                                         @endif
                                                     </div>
 
-                                                    <div class="flex items-center gap-2">
+                                                    <div class="flex flex-wrap items-center gap-2">
                                                         <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusTone($o->status) }}">
                                                             {{ $o->getSellerStatusLabel() }}
                                                         </span>
@@ -368,8 +368,8 @@
                                 <ul class="divide-y divide-slate-200">
                                     @foreach ($recentReviews as $r)
                                         <li class="px-4 py-3">
-                                            <div class="flex items-start justify-between gap-3">
-                                                <div>
+                                            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                                <div class="min-w-0">
                                                     <p class="text-sm font-semibold text-slate-900">{{ optional($r->orderItem?->product)->name ?? 'Product' }}</p>
                                                     <p class="text-xs text-slate-500">Order #{{ $r->order_id }} | Rated {{ $r->rating }}/5</p>
 

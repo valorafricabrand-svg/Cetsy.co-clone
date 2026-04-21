@@ -10,7 +10,7 @@
       <div class="space-y-6">
 <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 mt-4">
     <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-        <div class="col-span-6">
+        <div class="col-span-12 md:col-span-6">
             <h2 class="mb-3">{{ $product->name }}</h2>
             <div class="mb-3">
                 @php
@@ -30,7 +30,7 @@
                 @endif
             </div>
         </div>
-        <div class="col-span-6">
+        <div class="col-span-12 md:col-span-6">
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="p-4">
                     <h4 class="text-base font-bold text-slate-900 mb-3">Product Information</h4>
@@ -62,7 +62,6 @@
   </div>
 </section>
 @endsection 
-
 
 
 

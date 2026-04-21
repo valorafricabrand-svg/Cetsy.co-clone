@@ -8,12 +8,12 @@
  @include('seller.partials.sidebar')
  <div class="space-y-6">
 <div class="content">
- <div class="flex justify-between items-center mb-4">
- <div>
+ <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+ <div class="min-w-0">
  <h1 class="text-xl font-semibold mb-1">My Offers Received</h1>
  <p class="text-slate-500 mb-0">Manage offers from potential buyers for your products</p>
  </div>
- <div class="flex gap-2">
+ <div class="flex flex-wrap gap-2">
  @if($stats['pending'] > 0)
  <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-amber-500 bg-amber-500 text-slate-900 hover:bg-amber-400 px-2.5 py-1.5 text-xs rounded-lg" data-ui-toggle="modal" data-target="#bulkActionModal">
  <i class="fa-solid fa-check-double mr-1"></i>Bulk Actions
@@ -149,7 +149,7 @@
  </div>
  <div class="col-span-12 md:col-span-6 xl:col-span-2">
  <label class="form-label text-xs">&nbsp;</label>
- <div class="flex gap-2">
+ <div class="flex flex-wrap gap-2">
  <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 px-2.5 py-1.5 text-xs rounded-lg">
  <i class="fa-solid fa-filter mr-1"></i>Filter
  </button>
@@ -166,7 +166,7 @@
  {{-- Offers Table --}}
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm border-0">
  <div class="border-b border-slate-200 px-4 py-3 bg-slate-50">
- <div class="flex justify-between items-center">
+ <div class="flex flex-wrap items-center justify-between gap-2">
  <h6 class="mb-0">Offers ({{ $offers->total() }})</h6>
  <div class="form-check">
  <input class="form-check-input" type="checkbox" id="selectAllHeader">
@@ -471,7 +471,6 @@ document.addEventListener('DOMContentLoaded', function() {
  </div>
 </section>
 @endsection 
-
 
 
 

@@ -9,12 +9,12 @@
  <div class="space-y-6">
 <div class="content">
  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
- <div class="flex justify-between items-center mb-4">
- <div>
+ <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+ <div class="min-w-0">
  <h2 class="mb-1">Offer Details</h2>
  <p class="text-slate-500 mb-0">Manage and respond to this offer from {{ $offer->buyer->name ?? 'Buyer' }}</p>
  </div>
- <div class="flex gap-2">
+ <div class="flex flex-wrap gap-2">
  @if($offer && $offer->buyer)
  <a href="{{ route('seller.messages.show', $offer->product_id . '-' . $offer->buyer_id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
  <i class="fa-regular fa-comments mr-1"></i> Message Buyer
@@ -71,23 +71,23 @@
  <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
  <div class="col-span-12 md:col-span-6">
  <dl class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-0">
- <dt class="col-span-4">Offer ID</dt>
- <dd class="col-span-8">{{ $offer->id }}</dd>
+ <dt class="col-span-12 md:col-span-4">Offer ID</dt>
+ <dd class="col-span-12 md:col-span-8">{{ $offer->id }}</dd>
 
- <dt class="col-span-4">Status</dt>
- <dd class="col-span-8">
+ <dt class="col-span-12 md:col-span-4">Status</dt>
+ <dd class="col-span-12 md:col-span-8">
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $offer->status_badge_class }}">{{ $offer->status_label }}</span>
  </dd>
 
- <dt class="col-span-4">Offer Price</dt>
- <dd class="col-span-8 font-bold text-emerald-600">{{ $offer->formatted_price }}</dd>
+ <dt class="col-span-12 md:col-span-4">Offer Price</dt>
+ <dd class="col-span-12 md:col-span-8 font-bold text-emerald-600">{{ $offer->formatted_price }}</dd>
 
- <dt class="col-span-4">Date</dt>
- <dd class="col-span-8">{{ $offer->created_at ? $offer->created_at->format('d M Y, H:i') : '-' }}</dd>
+ <dt class="col-span-12 md:col-span-4">Date</dt>
+ <dd class="col-span-12 md:col-span-8">{{ $offer->created_at ? $offer->created_at->format('d M Y, H:i') : '-' }}</dd>
 
  @if($offer->is_counter_offer)
- <dt class="col-span-4">Counter Offer</dt>
- <dd class="col-span-8">
+ <dt class="col-span-12 md:col-span-4">Counter Offer</dt>
+ <dd class="col-span-12 md:col-span-8">
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-sky-100 text-sky-800 border-sky-200">Yes</span>
  @if($offer->originalOffer)
  <br><span class="text-slate-500 text-xs">Original: {{ shop_currency() }} {{ number_format($offer->originalOffer->offer_price, 2) }}</span>
@@ -98,9 +98,9 @@
  </div>
  <div class="col-span-12 md:col-span-6">
  <dl class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-0">
- <dt class="col-span-4">Product</dt>
- <dd class="col-span-8">
- <div class="flex items-center gap-2">
+ <dt class="col-span-12 md:col-span-4">Product</dt>
+ <dd class="col-span-12 md:col-span-8">
+ <div class="flex min-w-0 items-center gap-2">
  @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($offer->product) : (optional($offer->product->media->first())->url ? asset('storage/' . $offer->product->media->first()->url) : null); @endphp
  @if($thumb)
  <img src="{{ $thumb }}" 
@@ -111,35 +111,35 @@
  <i class="fa-solid fa-box text-slate-500"></i>
  </div>
  @endif
- <div>
- <span class="font-semibold">{{ $offer->product->name ?? '-' }}</span><br>
+ <div class="min-w-0">
+ <span class="font-semibold break-words">{{ $offer->product->name ?? '-' }}</span><br>
  <span class="text-slate-500 text-xs">#{{ $offer->product_id }}</span>
  </div>
  </div>
  </dd>
 
- <dt class="col-span-4">Buyer</dt>
- <dd class="col-span-8">
- <div class="flex items-center gap-2">
+ <dt class="col-span-12 md:col-span-4">Buyer</dt>
+ <dd class="col-span-12 md:col-span-8">
+ <div class="flex min-w-0 items-center gap-2">
  <div class="bg-emerald-600 text-white border-emerald-600 bg-opacity-10 rounded-full flex items-center justify-center" 
  style="width:40px;height:40px;">
  <i class="fa-regular fa-user text-emerald-600"></i>
  </div>
- <div>
- <span class="font-semibold">{{ $offer->buyer->name ?? '-' }}</span><br>
- <span class="text-slate-500 text-xs">{{ $offer->buyer->email ?? '' }}</span>
+ <div class="min-w-0">
+ <span class="font-semibold break-words">{{ $offer->buyer->name ?? '-' }}</span><br>
+ <span class="text-slate-500 text-xs break-all">{{ $offer->buyer->email ?? '' }}</span>
  </div>
  </div>
  </dd>
 
  @if($offer->seller_notes)
- <dt class="col-span-4">Seller Notes</dt>
- <dd class="col-span-8">{{ $offer->seller_notes }}</dd>
+ <dt class="col-span-12 md:col-span-4">Seller Notes</dt>
+ <dd class="col-span-12 md:col-span-8 break-words">{{ $offer->seller_notes }}</dd>
  @endif
 
  @if($offer->buyer_notes)
- <dt class="col-span-4">Buyer Notes</dt>
- <dd class="col-span-8">{{ $offer->buyer_notes }}</dd>
+ <dt class="col-span-12 md:col-span-4">Buyer Notes</dt>
+ <dd class="col-span-12 md:col-span-8 break-words">{{ $offer->buyer_notes }}</dd>
  @endif
  </dl>
  </div>
@@ -176,8 +176,8 @@
  <div class="timeline-item {{ isset($historyOffer->id) && $historyOffer->id === $offer->id ? 'active' : '' }}">
  <div class="timeline-marker {{ isset($historyOffer->id) && $historyOffer->id === $offer->id ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-200 text-slate-700 border-slate-300' }}"></div>
  <div class="timeline-content">
- <div class="flex justify-between items-start">
- <div>
+ <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+ <div class="min-w-0">
  <h6 class="mb-1">
  {{ isset($historyOffer->is_original) && $historyOffer->is_original ? 'Original Offer' : (isset($historyOffer->is_counter_offer) && $historyOffer->is_counter_offer ? 'Counter Offer' : 'Original Offer') }}
  @if(isset($historyOffer->id) && $historyOffer->id === $offer->id)
@@ -252,7 +252,7 @@
  </div>
  <div class="p-4">
  @if($offer->product)
- <div class="flex items-center gap-3 mb-3">
+ <div class="flex min-w-0 items-center gap-3 mb-3">
  @php $thumb2 = function_exists('product_thumb_url') ? product_thumb_url($offer->product) : (optional($offer->product->media->first())->url ? asset('storage/' . $offer->product->media->first()->url) : null); @endphp
  @if($thumb2)
  <img src="{{ $thumb2 }}" 
@@ -263,25 +263,25 @@
  <i class="fa-solid fa-box text-slate-500"></i>
  </div>
  @endif
- <div>
- <h6 class="mb-1">{{ $offer->product->name }}</h6>
+ <div class="min-w-0">
+ <h6 class="mb-1 break-words">{{ $offer->product->name }}</h6>
  <span class="text-slate-500 text-xs">#{{ $offer->product_id }}</span>
  </div>
  </div>
  
  <dl class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-0">
- <dt class="col-span-6">Listed Price</dt>
- <dd class="col-span-6">{{ shop_currency() }} {{ number_format($offer->product->price ?? 0, 2) }}</dd>
+ <dt class="col-span-12 md:col-span-6">Listed Price</dt>
+ <dd class="col-span-12 md:col-span-6">{{ shop_currency() }} {{ number_format($offer->product->price ?? 0, 2) }}</dd>
  
- <dt class="col-span-6">Offer Price</dt>
- <dd class="col-span-6 font-bold text-emerald-600">{{ $offer->formatted_price }}</dd>
+ <dt class="col-span-12 md:col-span-6">Offer Price</dt>
+ <dd class="col-span-12 md:col-span-6 font-bold text-emerald-600">{{ $offer->formatted_price }}</dd>
  
  @if($offer->product->price && $offer->product->price > 0)
  @php
  $discount = (($offer->product->price - $offer->offer_price) / $offer->product->price) * 100;
  @endphp
- <dt class="col-span-6">Discount</dt>
- <dd class="col-span-6 {{ $discount > 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+ <dt class="col-span-12 md:col-span-6">Discount</dt>
+ <dd class="col-span-12 md:col-span-6 {{ $discount > 0 ? 'text-emerald-600' : 'text-rose-600' }}">
  {{ $discount > 0 ? '-' : '+' }}{{ number_format(abs($discount), 1) }}%
  </dd>
  @endif
@@ -299,7 +299,7 @@
  </div>
  <div class="p-4">
  @if($offer->buyer)
- <div class="flex items-center gap-3 mb-3">
+ <div class="flex min-w-0 items-center gap-3 mb-3">
  @php
  $buyerPhotoUrl = null;
  if (!empty($offer->buyer->photo)) {
@@ -325,18 +325,18 @@
  <i class="fa-regular fa-user text-emerald-600 text-xl"></i>
  </div>
  @endif
- <div>
- <h6 class="mb-1">{{ $offer->buyer->name }}</h6>
- <span class="text-slate-500 text-xs">{{ $offer->buyer->email }}</span>
+ <div class="min-w-0">
+ <h6 class="mb-1 break-words">{{ $offer->buyer->name }}</h6>
+ <span class="text-slate-500 text-xs break-all">{{ $offer->buyer->email }}</span>
  </div>
  </div>
  
  <dl class="grid grid-cols-1 gap-4 md:grid-cols-12 mb-0">
- <dt class="col-span-6">Member Since</dt>
- <dd class="col-span-6">{{ $offer->buyer->created_at ? $offer->buyer->created_at->format('M Y') : '-' }}</dd>
+ <dt class="col-span-12 md:col-span-6">Member Since</dt>
+ <dd class="col-span-12 md:col-span-6">{{ $offer->buyer->created_at ? $offer->buyer->created_at->format('M Y') : '-' }}</dd>
  
- <dt class="col-span-6">Location</dt>
- <dd class="col-span-6">{{ $offer->buyer->address ?? '-' }}</dd>
+ <dt class="col-span-12 md:col-span-6">Location</dt>
+ <dd class="col-span-12 md:col-span-6 break-words">{{ $offer->buyer->address ?? '-' }}</dd>
  </dl>
  @else
  <p class="text-slate-500 mb-0">Buyer information not available</p>
@@ -475,7 +475,6 @@
  </div>
 </section>
 @endsection 
-
 
 
 

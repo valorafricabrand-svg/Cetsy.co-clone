@@ -62,6 +62,10 @@
  .tw-modal-footer { justify-content: flex-end; border-top: 1px solid #e2e8f0; }
  .tw-modal-body { padding: 1rem; }
  .tw-modal-title { margin: 0; font-size: 1rem; font-weight: 600; color: #0f172a; }
+ @media (max-width: 640px) {
+ .tw-modal-footer { flex-direction: column-reverse; align-items: stretch; }
+ .tw-modal-footer > * { width: 100%; justify-content: center; }
+ }
  .form-floating { display: flex; flex-direction: column; gap: .35rem; }
  .form-floating > label { font-size: .8125rem; color: #64748b; }
  .form-text { font-size: .75rem; color: #64748b; margin-top: .35rem; }
@@ -246,14 +250,14 @@
  'Items' => $order->items->sum('quantity'),
  'Subtotal' => "{$symbol} ".number_format($subtotalVal,2),
  ] as $label => $value)
- <div class="flex justify-between mb-2">
+ <div class="flex flex-col gap-1 sm:flex-row sm:justify-between mb-2">
  <span class="font-semibold">{{ $label }}:</span>
  <span>{{ $value }}</span>
  </div>
  @endforeach
 
  @if(!empty($order->tracking_url))
- <div class="flex justify-between mb-2">
+ <div class="flex flex-col gap-1 sm:flex-row sm:justify-between mb-2">
  <span class="font-semibold">Tracking Link:</span>
  <span>
  <a href="{{ $order->tracking_url }}" target="_blank" rel="noopener" class="font-medium text-sky-700 underline hover:text-sky-600">Open tracking</a>
@@ -261,14 +265,14 @@
  </div>
  @endif
 
- <div class="flex justify-between mb-2">
+ <div class="flex flex-col gap-1 sm:flex-row sm:justify-between mb-2">
  <span class="font-semibold">Shipping Fee:</span>
  <span>{{ $symbol }} {{ number_format($shippingVal,2) }}</span>
  </div>
 
  <hr>
 
- <div class="flex justify-between mb-2 font-bold">
+ <div class="flex flex-col gap-1 font-bold sm:flex-row sm:justify-between mb-2">
  <span>Total Amount:</span>
  <span>{{ $symbol }} {{ number_format($totalVal,2) }}</span>
  </div>
@@ -289,7 +293,7 @@
  $shipEndLabel = $shipEnd && $placedAt && $shipEnd->isSameDay($placedAt) ? 'today' : ($shipEnd? $shipEnd->format('M j') : null);
  @endphp
  @if(!is_null($minDays) || !is_null($maxDays))
- <div class="flex justify-between mb-2">
+ <div class="flex flex-col gap-1 sm:flex-row sm:justify-between mb-2">
  <span class="font-semibold">Ship by:</span>
  <span>
  @if($shipStart && $shipEnd)
@@ -306,7 +310,7 @@
  </div>
  @endif
 
- <div class="flex justify-between mb-2">
+ <div class="flex flex-col gap-1 sm:flex-row sm:justify-between mb-2">
  <span class="font-semibold">Status:</span>
  <span>
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $order->getStatusBadgeClass() }} capitalize">
@@ -316,13 +320,13 @@
  </div>
 
  @if(in_array($order->status, [\App\Models\Order::STATUS_CANCELLED, \App\Models\Order::STATUS_REFUNDED]) && $order->cancel_reason)
- <div class="flex justify-between mb-2">
+ <div class="flex flex-col gap-1 sm:flex-row sm:justify-between mb-2">
  <span class="font-semibold text-rose-600">Cancellation Reason:</span>
  <span class="text-rose-600">{{ $order->cancel_reason }}</span>
  </div>
  @endif
 
- <div class="flex justify-between">
+ <div class="flex flex-col gap-1 sm:flex-row sm:justify-between">
  <span class="font-semibold">Created:</span>
  <span>{{ $order->created_at->format('d M Y, h:i A') }}</span>
  </div>
@@ -393,7 +397,7 @@
  <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" class="rounded" style="width:64px;height:64px;object-fit:cover;">
  @endif
  <div class="grow">
- <div class="flex justify-between items-start">
+ <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
  <div class="font-semibold truncate">
  @if($product?->slug)
  <a href="{{ route('listing.show', $product->slug) }}" class="text-slate-900 hover:text-emerald-700" target="_blank">{{ $product->name ?? 'N/A' }}</a>
@@ -410,7 +414,7 @@
  @if($item->variation_summary)
  <div class="text-xs text-slate-500">{{ $item->variation_summary }}</div>
  @endif
- <div class="flex justify-between items-center mt-1">
+ <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mt-1">
  <div class="text-xs"><span class="text-slate-500">Qty:</span> {{ $qty }}</div>
  <div class="text-xs text-slate-500">Shipping: {{ $isDigital ? '-' : ($shipLabel ?: '-') }}</div>
  <div class="font-semibold">{{ $symbol }} {{ number_format($lineSub,2) }}</div>
@@ -523,11 +527,11 @@
  };
  @endphp
  <div class="rounded-xl border border-slate-200 bg-white p-3">
- <div class="flex justify-between items-start mb-1">
- <div class="font-semibold">{{ $payment->local_transaction_id ?? 'N/A' }}</div>
+ <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between mb-1">
+ <div class="font-semibold break-all">{{ $payment->local_transaction_id ?? 'N/A' }}</div>
  <div class="text-xs text-slate-500">{{ $payment->created_at->format('d M Y, h:i A') }}</div>
  </div>
- <div class="flex justify-between items-center">
+ <div class="flex flex-wrap items-center justify-between gap-2">
  <div class="text-xs text-slate-500">{{ payment_method_label($payment->payment_method) }}</div>
  <div><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }} capitalize">{{ $statusText }}</span></div>
  <div class="font-semibold">{{ $symbol }} {{ number_format($payment->total_amount,2) }}</div>
@@ -602,7 +606,7 @@
  @php $rev = $item->review; @endphp
  @if($rev)
  <li class="rounded-xl border border-slate-200 bg-white p-3">
- <div class="flex justify-between items-start">
+ <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
  <div>
  <div class="font-semibold">{{ optional($item->product)->name ?? 'Product' }}</div>
  <div class="text-xs text-slate-500">Rating: {{ $rev->rating }} / 5</div>
@@ -633,7 +637,7 @@
  <div class="p-4">
  @foreach($order->disputes as $dispute)
  <div class="border-b border-slate-200 pb-3 mb-3 @if(!$loop->last) @endif">
- <div class="flex justify-between items-start mb-2">
+ <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-2">
  <h6 class="mb-1">
  {{ $dispute->getTypeLabel() }}
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $dispute->getStatusBadgeClass() }} ml-2">
@@ -1008,6 +1012,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
-
-
 

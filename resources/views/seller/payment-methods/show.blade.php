@@ -11,9 +11,9 @@
 <div class="content">
  <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
  
- <div class="flex justify-between items-center mb-4">
+ <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
  <h2 class="mb-0">Payment Method Details</h2>
- <div class="flex gap-2">
+ <div class="flex flex-wrap gap-2">
  <a href="{{ route('seller.payment-methods.edit', $paymentMethod->id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
  <i class="fas fa-edit mr-2"></i>Edit
  </a>
@@ -72,7 +72,7 @@
 
  <dt class="col-span-12 md:col-span-6 lg:col-span-3">Account Number</dt>
  <dd class="col-span-12 md:col-span-9">
- <code class="text-base">{{ $paymentMethod->account_number }}</code>
+ <code class="text-base break-all">{{ $paymentMethod->account_number }}</code>
  </dd>
 
  @if($paymentMethod->bank_name || $paymentMethod->bank_country || $paymentMethod->bank_currency || $paymentMethod->bank_routing_number || $paymentMethod->swift_bic || $paymentMethod->iban || $paymentMethod->bank_address)
@@ -229,7 +229,6 @@
  </div>
 </section>
 @endsection 
-
 
 
 

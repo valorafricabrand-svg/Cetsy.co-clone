@@ -12,8 +12,8 @@
     {{-- Return to Admin Button (when impersonating) --}}
     @if(session('impersonating'))
         <div class="rounded-xl border px-4 py-3 text-sm border-amber-200 bg-amber-50 text-amber-800 mb-4" role="alert">
-            <div class="flex items-center justify-between">
-                <div>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0">
                     <i class="fas fa-user-secret mr-2"></i>
                     <strong>Admin Impersonation Active</strong>
                     <br>
@@ -28,9 +28,9 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-x-4 gap-y-4">
         <div class="col-span-12">
             {{-- Page Header --}}
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
                 <h2 class="text-lg font-semibold mb-0">My Buyers</h2>
-                <div class="flex items-center">
+                <div class="flex flex-wrap items-center">
                     <span class="text-slate-500 mr-3">
                         <i class="fas fa-users mr-2 text-sky-600" style="color: #027333;"></i>
                         {{ $buyers->count() }} Total Buyers
@@ -179,7 +179,6 @@
   </div>
 </section>
 @endsection 
-
 
 
 

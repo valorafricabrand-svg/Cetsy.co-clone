@@ -39,7 +39,7 @@
                 <option value="amount_asc" @selected(request('sort')==='amount_asc')>Amount (low to high)</option>
               </select>
             </div>
-            <div class="col-span-12 md:col-span-12 flex gap-2">
+            <div class="col-span-12 md:col-span-12 flex flex-col gap-2 sm:flex-row">
               <div class="inline-flex flex-wrap gap-2" role="group" aria-label="Status filters">
                 @php $st = request('status'); @endphp
                 <a class="inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold transition {{ $st ? 'border-slate-300 text-slate-700 hover:bg-slate-50' : 'border-slate-900 bg-slate-900 text-white hover:bg-slate-700' }}" href="{{ url()->current() }}">All{{ isset($summary['all'])? ' ('.$summary['all'].')':'' }}</a>
@@ -57,7 +57,7 @@
                   </a>
                 @endforeach
               </div>
-              <button class="ml-auto inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500" type="submit">Apply</button>
+              <button class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 sm:ml-auto" type="submit">Apply</button>
             </div>
           </div>
         </form>
@@ -225,11 +225,11 @@
             @endphp
 
             <a href="{{ route('buyer.orders.show', $order->id) }}" class="block px-4 py-3 transition hover:bg-slate-50">
-              <div class="flex justify-between items-start mb-1">
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between mb-1">
                 <div class="font-semibold">#{{ $order->id }}</div>
                 <div class="text-slate-500 text-xs">{{ $order->created_at->format('d M Y') }}</div>
               </div>
-              <div class="flex items-center gap-2 mb-2">
+              <div class="flex flex-wrap items-center gap-2 mb-2">
                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $order->getStatusBadgeClass() }}">{{ ucfirst($order->status) }}</span>
                 @if($order->status === \App\Models\Order::STATUS_PENDING)
                   <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-slate-900">Pending payment</span>
@@ -241,8 +241,8 @@
               @if(!empty($progressMessage))
                 <div class="text-xs text-slate-500 mb-2">{{ $progressMessage }}</div>
               @endif
-              <div class="flex justify-between items-center">
-                <div class="truncate">
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0 truncate">
                   <span class="text-slate-500 text-xs">Shop:</span>
                   <span class="text-xs">{{ optional($order->shop)->name ?? 'N/A' }}</span>
                 </div>
@@ -289,7 +289,6 @@
   </div>
 </div>
 @endsection
-
 
 
 

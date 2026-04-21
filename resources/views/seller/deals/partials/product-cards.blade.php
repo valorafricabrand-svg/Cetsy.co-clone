@@ -55,7 +55,7 @@ in seller @foreach($products as $product)
               <div class="flex-1">
                 <h6 class="mb-1 truncate" title="{{ $product->name }}">{{ $product->name }}</h6>
                 <div class="text-slate-500 text-xs">
-                  <div class="flex justify-between">
+                  <div class="flex flex-col gap-1 sm:flex-row sm:justify-between">
                     <span>Price: <strong>{{ get_currency() }} {{ number_format($product->price, 2) }}</strong></span>
                     @if($product->discount_percent > 0)
                       <span class="text-emerald-600">Already {{ $product->discount_percent }}% off</span>
@@ -85,5 +85,4 @@ in seller @foreach($products as $product)
     </div>
   </div>
 @endforeach
-
 

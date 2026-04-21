@@ -8,12 +8,12 @@
  @include('seller.partials.sidebar')
  <div class="space-y-6">
 <div class="content">
- <div class="flex justify-between items-center mb-4">
- <div>
+ <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+ <div class="min-w-0">
  <h1 class="text-xl font-semibold mb-1">Shop Favorites</h1>
  <p class="text-slate-500 mb-0">See which customers have added your products to their favorites</p>
  </div>
- <div class="flex items-center gap-2">
+ <div class="flex flex-wrap items-center gap-2">
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-emerald-600 text-white border-emerald-600 text-base px-3 py-2">
  <i class="fa-solid fa-heart mr-1"></i>{{ $favorites->count() }} total favorites
  </span>
@@ -40,7 +40,7 @@
  @else
  {{-- Summary Cards --}}
  <div class="grid grid-cols-1 gap-4 md:grid-cols-12 gap-3 mb-4">
- <div class="col-span-3">
+ <div class="col-span-12 md:col-span-3">
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow border-0 bg-emerald-600 text-white border-emerald-600">
  <div class="p-4">
  <div class="flex items-center">
@@ -55,7 +55,7 @@
  </div>
  </div>
  </div>
- <div class="col-span-3">
+ <div class="col-span-12 md:col-span-3">
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow border-0 bg-emerald-100 text-emerald-800 border-emerald-200 text-white">
  <div class="p-4">
  <div class="flex items-center">
@@ -70,7 +70,7 @@
  </div>
  </div>
  </div>
- <div class="col-span-3">
+ <div class="col-span-12 md:col-span-3">
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow border-0 bg-sky-100 text-sky-800 border-sky-200 text-white">
  <div class="p-4">
  <div class="flex items-center">
@@ -85,7 +85,7 @@
  </div>
  </div>
  </div>
- <div class="col-span-3">
+ <div class="col-span-12 md:col-span-3">
  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow border-0 bg-amber-100 text-amber-800 border-amber-200 text-slate-900">
  <div class="p-4">
  <div class="flex items-center">
@@ -120,32 +120,32 @@
  @endphp
  <div class="product-favorites-section border-b border-slate-200">
  <div class="p-4">
- <div class="flex items-center mb-3">
- <div class="product-info flex items-center flex-1">
+ <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
+ <div class="product-info flex min-w-0 flex-1 items-center">
  @if($product->media->first())
- <a href="{{ $productUrl }}" class="product-thumb-link rounded mr-3" aria-label="Open {{ $product->name }}">
+ <a href="{{ $productUrl }}" class="product-thumb-link rounded mr-3 shrink-0" aria-label="Open {{ $product->name }}">
  <img src="{{ asset('storage/' . $product->media->first()->url) }}" 
  alt="{{ $product->name }}" 
  class="rounded" 
  style="width:60px;height:60px;object-fit:cover;">
  </a>
  @else
- <a href="{{ $productUrl }}" class="product-thumb-link bg-slate-50 border rounded mr-3 flex items-center justify-center" aria-label="Open {{ $product->name }}" style="width:60px;height:60px;">
+ <a href="{{ $productUrl }}" class="product-thumb-link bg-slate-50 border rounded mr-3 flex items-center justify-center shrink-0" aria-label="Open {{ $product->name }}" style="width:60px;height:60px;">
  <i class="fa-solid fa-box text-slate-500"></i>
  </a>
  @endif
- <div class="flex-1">
- <h6 class="mb-1 font-bold">{{ $product->name }}</h6>
- <div class="flex items-center gap-3">
+ <div class="min-w-0 flex-1">
+ <h6 class="mb-1 font-bold break-words">{{ $product->name }}</h6>
+ <div class="flex flex-wrap items-center gap-2 sm:gap-3">
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-emerald-600 text-white border-emerald-600">{{ shop_currency() }} {{ number_format($product->price, 2) }}</span>
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-emerald-100 text-emerald-800 border-emerald-200">{{ $favoriteCount }} favorites</span>
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-sky-100 text-sky-800 border-sky-200">{{ $uniqueBuyers }} unique customers</span>
  </div>
  </div>
  </div>
- <div class="product-actions">
+ <div class="product-actions shrink-0 sm:text-right">
  <a href="{{ $productUrl }}" 
- class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-2.5 py-1.5 text-xs rounded-lg">
+ class="inline-flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-2.5 py-1.5 text-xs rounded-lg sm:w-auto">
  <i class="fa-regular fa-eye mr-1"></i>View Product
  </a>
  </div>
@@ -161,13 +161,13 @@
  <div class="col-span-12 md:col-span-6 lg:col-span-4">
  <div class="buyer-card border rounded p-3">
  <div class="flex items-center">
- <div class="avatar-sm bg-emerald-600 text-white border-emerald-600 rounded-full flex items-center justify-center mr-3" 
+ <div class="avatar-sm bg-emerald-600 text-white border-emerald-600 rounded-full flex items-center justify-center mr-3 shrink-0" 
  style="width:40px;height:40px;">
  {{ strtoupper(substr($favorite->user->name ?? 'U', 0, 1)) }}
  </div>
- <div class="flex-1">
- <h6 class="mb-1 font-semibold">{{ $favorite->user->name ?? 'Unknown Customer' }}</h6>
- <div class="text-slate-500 text-xs">
+ <div class="min-w-0 flex-1">
+ <h6 class="mb-1 font-semibold break-words">{{ $favorite->user->name ?? 'Unknown Customer' }}</h6>
+ <div class="text-slate-500 text-xs break-all">
  <i class="fa-regular fa-envelope mr-1"></i>
  {{ \Illuminate\Support\Str::limit($favorite->user->email ?? '', 25) }}
  </div>
@@ -206,8 +206,8 @@
  <input type="hidden" name="receiver_id" value="{{ $favorite->user->id }}">
  <input type="hidden" name="product_id" value="{{ $product->id }}">
  <input type="hidden" name="source" value="favorites">
- <div class="flex gap-2 mb-2">
- <select id="msg-template-{{ $product->id }}-{{ $favorite->user->id }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" style="max-width:280px">
+ <div class="flex flex-col gap-2 mb-2 sm:flex-row">
+ <select id="msg-template-{{ $product->id }}-{{ $favorite->user->id }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 sm:max-w-[280px]">
  <option value="">Select template…</option>
  <option>Hi {{ $favorite->user->name ?? 'there' }}, I saw you favorited "{{ $product->name }}" — we're open for offers. Would you like to make one?</option>
  <option>Hi {{ $favorite->user->name ?? 'there' }}, we can offer a special price on "{{ $product->name }}" for you. Interested?</option>
@@ -257,14 +257,14 @@
  <div class="timeline-container">
  @foreach($favorites->take(10) as $favorite)
  <div class="timeline-item border-b border-slate-200 p-3">
- <div class="flex items-center">
- <div class="timeline-icon bg-emerald-100 text-emerald-800 border-emerald-200 text-white rounded-full flex items-center justify-center mr-3" 
+ <div class="flex items-start gap-3">
+ <div class="timeline-icon bg-emerald-100 text-emerald-800 border-emerald-200 text-white rounded-full flex items-center justify-center" 
  style="width:40px;height:40px;">
  <i class="fa-solid fa-heart"></i>
  </div>
- <div class="flex-1">
- <div class="flex items-center justify-between">
- <div>
+ <div class="min-w-0 flex-1">
+ <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+ <div class="min-w-0 break-words">
  <strong>{{ $favorite->user->name ?? 'Unknown Customer' }}</strong>
  <span class="text-slate-500">favorited</span>
  <strong>{{ $favorite->product->name }}</strong>
@@ -385,8 +385,6 @@ document.addEventListener('DOMContentLoaded', function () {
  </div>
 </section>
 @endsection
-
-
 
 
 

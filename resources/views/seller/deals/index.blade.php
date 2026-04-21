@@ -7,7 +7,7 @@
  @include('seller.partials.sidebar')
  <div class="space-y-6">
 <div class="content">
- <div class="flex justify-between items-center mb-4">
+ <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
  <h1 class="mb-0">One‑Off Deals</h1>
  <a href="{{ route('seller.deals.create') }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700">
  <i class="fas fa-plus mr-1"></i>New Deal
@@ -138,7 +138,6 @@
  </div>
 </section>
 @endsection
-
 
 
 
