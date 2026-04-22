@@ -20,6 +20,23 @@ class BlogVisibilityTest extends TestCase
         Cache::flush();
     }
 
+    public function test_blog_named_routes_use_cetsy_blog_urls(): void
+    {
+        $this->assertSame('/cetsy-blog', parse_url(route('blog.index'), PHP_URL_PATH));
+        $this->assertSame('/cetsy-blog/example-post', parse_url(route('blog.show', 'example-post'), PHP_URL_PATH));
+    }
+
+    public function test_old_blog_urls_redirect_to_cetsy_blog_urls(): void
+    {
+        $this->get('/blog?category=news')
+            ->assertRedirect('/cetsy-blog?category=news')
+            ->assertStatus(301);
+
+        $this->get('/blog/example-post')
+            ->assertRedirect('/cetsy-blog/example-post')
+            ->assertStatus(301);
+    }
+
     public function test_published_posts_are_visible_even_if_published_at_is_in_the_future(): void
     {
         Carbon::setTestNow('2026-03-06 20:15:00');

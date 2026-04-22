@@ -1,7 +1,7 @@
 @extends('theme.'.theme().'.layouts.app')
 
-@section('title', 'Cetsy Blog')
-@section('meta_description', 'Fresh stories, maker spotlights, and platform updates from the Cetsy team.')
+@section('title', 'Cetsy.co Blog')
+@section('meta_description', 'Fresh stories, maker spotlights, and platform updates from the Cetsy.co team.')
 @section('canonical_url', route('blog.index'))
 
 @section('main')
@@ -13,15 +13,15 @@
     <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="grid items-center gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
-          <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-200">Cetsy Journal</p>
-          <h1 class="mt-2 text-4xl font-extrabold leading-tight md:text-5xl">Cetsy Blog</h1>
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-200">Cetsy.co Journal</p>
+          <h1 class="mt-2 text-4xl font-extrabold leading-tight md:text-5xl">Cetsy.co Blog</h1>
           <p class="mt-3 max-w-2xl text-sm text-emerald-50/95 md:text-base">
             Stories, tips, and product updates to help you build a thriving handmade brand.
           </p>
         </div>
 
         <div class="justify-self-start lg:justify-self-end">
-          <img src="{{ asset('assets/img/blog/blog-1.png') }}" alt="Cetsy blog" class="h-36 w-auto max-w-full rounded-2xl border border-white/20 bg-white/10 p-2 shadow-xl md:h-44">
+          <img src="{{ asset('assets/img/blog/blog-1.png') }}" alt="Cetsy.co blog" class="h-36 w-auto max-w-full rounded-2xl border border-white/20 bg-white/10 p-2 shadow-xl md:h-44">
         </div>
       </div>
     </div>
@@ -74,7 +74,7 @@
 
                 <div class="p-4">
                   <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-                    {{ optional($post->category)->name ?? 'Cetsy Updates' }}
+                    {{ optional($post->category)->name ?? 'Cetsy.co Updates' }}
                     <span class="mx-1">-</span>
                     {{ $published }}
                   </p>

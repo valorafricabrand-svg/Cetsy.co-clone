@@ -6,7 +6,7 @@
     $heroImage = $post->featured_image_url ?? asset('assets/img/blog/blog-3.png');
 @endphp
 
-@section('title', $meta['title'] ?? $post->title.' | Cetsy Blog')
+@section('title', $meta['title'] ?? $post->title.' | Cetsy.co Blog')
 @section('meta_description', $description)
 @section('meta_image', $heroImage)
 @section('canonical_url', route('blog.show', $post->slug))
@@ -184,7 +184,7 @@
       <div class="grid items-center gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
           <span class="inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-50">
-            {{ optional($post->category)->name ?? 'Cetsy Updates' }}
+            {{ optional($post->category)->name ?? 'Cetsy.co Updates' }}
           </span>
           <h1 class="mt-3 break-words text-4xl font-extrabold leading-tight md:text-5xl">{{ $post->title }}</h1>
           <p class="mt-3 max-w-3xl break-words text-sm text-emerald-50/95 md:text-base">
@@ -215,7 +215,7 @@
 
         @php
           $shareUrl = urlencode(route('blog.show', $post->slug));
-          $shareText = urlencode($post->title.' on Cetsy');
+          $shareText = urlencode($post->title.' on Cetsy.co');
         @endphp
 
         <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
