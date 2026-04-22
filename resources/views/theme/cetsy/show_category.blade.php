@@ -27,13 +27,82 @@
   $desc = $category->description
     ?: ('Explore a wide range of ' . $catName . ($category->listing_type ? ' ' . $category->listing_type : ' listings'));
   $metaDescription = Str::limit(strip_tags($desc), 155);
+  $categoryUrl = route('category.show', $category->slug);
+  $categoryListItems = $products->getCollection()
+    ->take(24)
+    ->values()
+    ->map(function ($item, $index) {
+      $listingUrl = route('listing.show', $item->slug);
+
+      return [
+        '@type' => 'ListItem',
+        'position' => $index + 1,
+        'url' => $listingUrl,
+        'item' => [
+          '@type' => 'Product',
+          'name' => $item->name,
+          'url' => $listingUrl,
+          'image' => product_thumb_url($item),
+        ],
+      ];
+    })
+    ->all();
+
+  $categoryStructuredData = [
+    '@context' => 'https://schema.org',
+    '@graph' => [
+      [
+        '@type' => 'CollectionPage',
+        '@id' => $categoryUrl . '#webpage',
+        'name' => $catName,
+        'description' => $metaDescription,
+        'url' => $categoryUrl,
+      ],
+      [
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => [
+          [
+            '@type' => 'ListItem',
+            'position' => 1,
+            'name' => 'Home',
+            'item' => url('/'),
+          ],
+          [
+            '@type' => 'ListItem',
+            'position' => 2,
+            'name' => 'Listings',
+            'item' => route('listings'),
+          ],
+          [
+            '@type' => 'ListItem',
+            'position' => 3,
+            'name' => $catName,
+            'item' => $categoryUrl,
+          ],
+        ],
+      ],
+      [
+        '@type' => 'ItemList',
+        'name' => $catName . ' listings',
+        'url' => $categoryUrl,
+        'numberOfItems' => $products->total(),
+        'itemListElement' => $categoryListItems,
+      ],
+    ],
+  ];
 @endphp
 
 @section('title', ($category->seo_title ?? $catName) . ' - Marketplace Category')
 @section('meta_description', $metaDescription)
 @section('canonical_url', route('category.show', $category->slug))
-@section('meta_image', $banner)
+@section('meta_image', $banner ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
+
+@push('structured-data')
+<script type="application/ld+json">
+{!! json_encode($categoryStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+</script>
+@endpush
 
 @push('styles')
 <style>

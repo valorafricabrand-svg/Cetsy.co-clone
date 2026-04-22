@@ -1,15 +1,80 @@
 @extends('theme.'.theme().'.layouts.app')
 
 @php
+    use Illuminate\Support\Str;
+
     $meta = $post->meta ?? [];
-    $description = $meta['description'] ?? strip_tags($post->excerpt ?: \Illuminate\Support\Str::limit($post->body, 180));
+    $description = $meta['description'] ?? strip_tags($post->excerpt ?: Str::limit($post->body, 180));
     $heroImage = $post->featured_image_url ?? asset('assets/img/blog/blog-3.png');
+    $postUrl = route('blog.show', $post->slug);
+    $publishedAt = $post->published_at ?? $post->created_at;
+
+    $articleStructuredData = [
+        '@context' => 'https://schema.org',
+        '@graph' => [
+            [
+                '@type' => 'BlogPosting',
+                '@id' => $postUrl . '#article',
+                'headline' => $post->title,
+                'description' => Str::limit(strip_tags($description), 200),
+                'image' => [$heroImage],
+                'mainEntityOfPage' => [
+                    '@type' => 'WebPage',
+                    '@id' => $postUrl,
+                ],
+                'author' => [
+                    '@type' => $post->author ? 'Person' : 'Organization',
+                    'name' => optional($post->author)->name ?: config('app.name', 'Cetsy'),
+                ],
+                'publisher' => [
+                    '@type' => 'Organization',
+                    'name' => config('app.name', 'Cetsy'),
+                    'logo' => [
+                        '@type' => 'ImageObject',
+                        'url' => asset('assets/images/cetsylogmain.png'),
+                    ],
+                ],
+                'datePublished' => optional($publishedAt)->toAtomString(),
+                'dateModified' => optional($post->updated_at ?? $publishedAt)->toAtomString(),
+            ],
+            [
+                '@type' => 'BreadcrumbList',
+                'itemListElement' => [
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 1,
+                        'name' => 'Home',
+                        'item' => url('/'),
+                    ],
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 2,
+                        'name' => 'Blog',
+                        'item' => route('blog.index'),
+                    ],
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 3,
+                        'name' => $post->title,
+                        'item' => $postUrl,
+                    ],
+                ],
+            ],
+        ],
+    ];
 @endphp
 
 @section('title', $meta['title'] ?? $post->title.' | Cetsy.co Blog')
 @section('meta_description', $description)
 @section('meta_image', $heroImage)
 @section('canonical_url', route('blog.show', $post->slug))
+@section('meta_robots', 'index, follow')
+
+@push('structured-data')
+<script type="application/ld+json">
+{!! json_encode($articleStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+</script>
+@endpush
 
 @push('styles')
 <style>

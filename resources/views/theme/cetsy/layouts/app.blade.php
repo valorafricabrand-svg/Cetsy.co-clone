@@ -9,7 +9,49 @@
         $metaDescription = trim($__env->yieldContent('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.'));
         $canonicalUrl = trim($__env->yieldContent('canonical_url', url()->current()));
         $metaImage = trim($__env->yieldContent('meta_image', asset('assets/images/cetsylogmain.png')));
-        $metaRobots = trim($__env->yieldContent('meta_robots', 'index, follow'));
+        $noindexByDefault = request()->is(
+                'admin*',
+                'seller*',
+                'buyer*',
+                'account*',
+                'wallet*',
+                'orders*',
+                'notifications*',
+                'profile*',
+                'cart*',
+                'checkout*',
+                'login',
+                'register',
+                'forgot-password',
+                'reset-password*',
+                'verify-email*',
+                'confirm-password',
+                'pay-now*',
+                'success-deposit*',
+                'disputes*',
+                'evidence-requests*'
+            )
+            || request()->routeIs(
+                'admin.*',
+                'seller.*',
+                'buyer.*',
+                'account.*',
+                'wallet.*',
+                'orders.*',
+                'notifications.*',
+                'profile.*',
+                'cart.*',
+                'checkout.*',
+                'password.*',
+                'verification.*',
+                'login',
+                'register',
+                'products.*',
+                'shipping-profiles.*',
+                'disputes.*',
+                'evidence-requests.*'
+            );
+        $metaRobots = trim($__env->yieldContent('meta_robots', $noindexByDefault ? 'noindex, nofollow' : 'index, follow'));
         $favicon = favicon_url();
         $isSellerArea = request()->is('seller*') || request()->routeIs('products.*');
         $isTailwindPrimaryArea = request()->is('buyer*')

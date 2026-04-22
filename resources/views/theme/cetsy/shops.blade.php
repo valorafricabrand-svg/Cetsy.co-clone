@@ -3,8 +3,82 @@
 @section('title', 'All Shops')
 @section('meta_description', 'Browse shops on Cetsy and discover creators offering handmade products, services, and digital goods.')
 @section('canonical_url', route('shops.index'))
-@section('meta_image', setting('logo_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
+
+@php
+  $shopsUrl = route('shops.index');
+  $shopListItems = $shops->getCollection()
+    ->take(24)
+    ->values()
+    ->map(function ($shop, $index) use ($countries) {
+      $shopRouteParam = $shop->slug ?: $shop->id;
+      $shopUrl = route('shop.show', $shopRouteParam);
+      $shopImage = $shop->logo
+        ? ($shop->logo_url ?? asset('storage/' . ltrim($shop->logo, '/')))
+        : (setting('favicon_url') ?: asset('assets/images/cetsylogmain.png'));
+
+      return [
+        '@type' => 'ListItem',
+        'position' => $index + 1,
+        'url' => $shopUrl,
+        'item' => [
+          '@type' => 'Store',
+          'name' => $shop->name,
+          'url' => $shopUrl,
+          'image' => $shopImage,
+          'address' => [
+            '@type' => 'PostalAddress',
+            'addressCountry' => optional($countries->get($shop->country))->name ?: 'Global',
+          ],
+        ],
+      ];
+    })
+    ->all();
+
+  $shopsStructuredData = [
+    '@context' => 'https://schema.org',
+    '@graph' => [
+      [
+        '@type' => 'CollectionPage',
+        '@id' => $shopsUrl . '#webpage',
+        'name' => 'All Shops',
+        'description' => 'Browse shops on Cetsy and discover creators offering handmade products, services, and digital goods.',
+        'url' => $shopsUrl,
+      ],
+      [
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => [
+          [
+            '@type' => 'ListItem',
+            'position' => 1,
+            'name' => 'Home',
+            'item' => url('/'),
+          ],
+          [
+            '@type' => 'ListItem',
+            'position' => 2,
+            'name' => 'Shops',
+            'item' => $shopsUrl,
+          ],
+        ],
+      ],
+      [
+        '@type' => 'ItemList',
+        'name' => 'Cetsy shops',
+        'url' => $shopsUrl,
+        'numberOfItems' => $shops->total(),
+        'itemListElement' => $shopListItems,
+      ],
+    ],
+  ];
+@endphp
+
+@push('structured-data')
+<script type="application/ld+json">
+{!! json_encode($shopsStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+</script>
+@endpush
 
 @push('styles')
 <style>

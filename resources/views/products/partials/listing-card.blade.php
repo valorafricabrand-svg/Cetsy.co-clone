@@ -61,7 +61,7 @@
                 <video src="{{ $thumb }}" class="h-56 w-full rounded-t-2xl object-cover" controls></video>
             @else
                 <img src="{{ $thumb }}" class="h-56 w-full rounded-t-2xl object-cover" alt="{{ $product->name }}"
-                     onerror="this.onerror=null;this.src=@json(asset('assets/images/default-og-image-cetsy.jpg'));">
+                     onerror="this.onerror=null;this.src=@json(asset('assets/images/cetsylogmain.png'));">
             @endif
         @else
             <div class="flex h-56 w-full items-center justify-center rounded-t-2xl bg-slate-100">

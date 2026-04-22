@@ -3,7 +3,7 @@
 @section('title', 'Cetsy | Products, Services & Digital Downloads from Across the Globe')
 @section('meta_description', 'Discover products, services, and digital downloads from sellers across the globe on Cetsy.')
 @section('canonical_url', route('home'))
-@section('meta_image', setting('logo_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 
 @push('styles')
@@ -51,7 +51,7 @@
         : collect($categories ?? [])->take(6);
 
     $heroImageFallback = asset('assets/images/illustrator.webp');
-    $productThumbFallback = asset('assets/images/default-og-image-cetsy.jpg');
+    $productThumbFallback = asset('assets/images/cetsylogmain.png');
     $slides = isset($heroSlides) && $heroSlides instanceof \Illuminate\Support\Collection
         ? $heroSlides
         : collect();
@@ -159,7 +159,7 @@
                         </div>
                     </div>
                     <div class="text-center">
-                        <img src="{{ $heroImageFallback }}" alt="Featured Cetsy deals" class="mx-auto max-h-[360px] w-auto rounded-2xl shadow-2xl" onerror='this.onerror=null;this.src=@json(asset("assets/images/default-og-image-cetsy.jpg"));'>
+                        <img src="{{ $heroImageFallback }}" alt="Featured Cetsy deals" class="mx-auto max-h-[360px] w-auto rounded-2xl shadow-2xl" onerror='this.onerror=null;this.src=@json(asset("assets/images/cetsylogmain.png"));'>
                     </div>
                 </div>
             </article>

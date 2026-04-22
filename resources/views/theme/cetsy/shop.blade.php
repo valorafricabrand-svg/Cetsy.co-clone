@@ -5,7 +5,7 @@
 
   $shopImage = $shop->featured_image_url
     ?? $shop->logo_url
-    ?? (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg'));
+    ?? (setting('favicon_url') ?: asset('assets/images/cetsylogmain.png'));
 
   $shopDescription = Str::limit(strip_tags($shop->bio ?? $shop->announcement ?? ($shop->name . ' shop on Cetsy')), 155);
   $shopRouteParam = $shop->slug ?: $shop->id;
@@ -25,6 +25,87 @@
     ->latest()
     ->take(10)
     ->get();
+
+  $shopUrl = route('shop.show', $shopRouteParam);
+  $shopListItems = $products->getCollection()
+    ->take(24)
+    ->values()
+    ->map(function ($product, $index) {
+      $listingUrl = route('listing.show', $product->slug);
+
+      return [
+        '@type' => 'ListItem',
+        'position' => $index + 1,
+        'url' => $listingUrl,
+        'item' => [
+          '@type' => 'Product',
+          'name' => $product->name,
+          'url' => $listingUrl,
+          'image' => product_thumb_url($product),
+        ],
+      ];
+    })
+    ->all();
+
+  $shopSchema = [
+    '@type' => 'Store',
+    '@id' => $shopUrl . '#shop',
+    'name' => $shop->name,
+    'url' => $shopUrl,
+    'image' => $shopImage ?: asset('assets/images/cetsylogmain.png'),
+    'description' => $shopDescription,
+    'address' => [
+      '@type' => 'PostalAddress',
+      'addressCountry' => country_name($shop->country) ?: 'Global',
+    ],
+  ];
+
+  if ($reviewCount > 0 && $averageRating > 0) {
+    $shopSchema['aggregateRating'] = [
+      '@type' => 'AggregateRating',
+      'ratingValue' => round($averageRating, 1),
+      'reviewCount' => $reviewCount,
+      'bestRating' => '5',
+      'worstRating' => '1',
+    ];
+  }
+
+  $shopStructuredData = [
+    '@context' => 'https://schema.org',
+    '@graph' => [
+      $shopSchema,
+      [
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => [
+          [
+            '@type' => 'ListItem',
+            'position' => 1,
+            'name' => 'Home',
+            'item' => url('/'),
+          ],
+          [
+            '@type' => 'ListItem',
+            'position' => 2,
+            'name' => 'Shops',
+            'item' => route('shops.index'),
+          ],
+          [
+            '@type' => 'ListItem',
+            'position' => 3,
+            'name' => $shop->name,
+            'item' => $shopUrl,
+          ],
+        ],
+      ],
+      [
+        '@type' => 'ItemList',
+        'name' => $shop->name . ' listings',
+        'url' => $shopUrl,
+        'numberOfItems' => $products->total(),
+        'itemListElement' => $shopListItems,
+      ],
+    ],
+  ];
 @endphp
 
 @section('title', $shop->name . ' | Shop on Cetsy')
@@ -32,6 +113,12 @@
 @section('canonical_url', route('shop.show', $shopRouteParam))
 @section('meta_image', $shopImage)
 @section('meta_robots', 'index, follow')
+
+@push('structured-data')
+<script type="application/ld+json">
+{!! json_encode($shopStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+</script>
+@endpush
 
 @push('styles')
 <style>
@@ -73,10 +160,10 @@
       <div class="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-start">
         <div class="flex items-start gap-4">
           <img
-            src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : (setting('favicon_url') ?: asset('assets/images/default-og-image-cetsy.jpg')) }}"
+            src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : (setting('favicon_url') ?: asset('assets/images/cetsylogmain.png')) }}"
             alt="{{ $shop->name }} logo"
             class="h-20 w-20 rounded-full border border-slate-200 object-cover shadow-sm"
-            onerror='this.onerror=null;this.src=@json(asset("assets/images/default-og-image-cetsy.jpg"));'
+            onerror='this.onerror=null;this.src=@json(asset("assets/images/cetsylogmain.png"));'
           >
 
           <div class="min-w-0 flex-1">

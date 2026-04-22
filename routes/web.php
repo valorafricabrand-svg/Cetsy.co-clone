@@ -82,7 +82,20 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/landing', function () {
     return view('theme.cetsy.pages.landing');
 })->name('landing');
-Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('/sitemap-static.xml', [SitemapController::class, 'static'])->name('sitemap.static');
+Route::get('/sitemap-products-{page}.xml', [SitemapController::class, 'products'])
+    ->whereNumber('page')
+    ->name('sitemap.products');
+Route::get('/sitemap-categories-{page}.xml', [SitemapController::class, 'categories'])
+    ->whereNumber('page')
+    ->name('sitemap.categories');
+Route::get('/sitemap-shops-{page}.xml', [SitemapController::class, 'shops'])
+    ->whereNumber('page')
+    ->name('sitemap.shops');
+Route::get('/sitemap-blog-{page}.xml', [SitemapController::class, 'blog'])
+    ->whereNumber('page')
+    ->name('sitemap.blog');
 // Currency selector (accept GET or POST; CSRF not required for this benign action)
 Route::match(['GET','POST'], '/set-currency', [CurrencySelectionController::class, 'set'])
     ->name('currency.set')
@@ -146,22 +159,11 @@ Route::post('/contact', [ContactController::class, 'submit'])
     ->name('contact.submit')
     ->middleware('throttle:8,1');
 // Aliases for legacy links
-Route::get('/privacy-policy', function () {
-    return themed_view('pages.privacy');
-})->name('privacy.policy');
-Route::get('/terms-of-service', function () {
-    return themed_view('pages.terms');
-})->name('terms.of.service');
-Route::get('/returns', function () {
-    return redirect()->to('/refunds-returns');
-})->name('returns.alias');
-Route::get('/shipping', function () {
-    return redirect()->to('/shipping-delivery');
-})->name('shipping.alias');
-Route::get('/intro', function () {
-    // Direct to About as an intro/overview
-    return themed_view('pages.about');
-})->name('intro');
+Route::redirect('/privacy-policy', '/privacy', 301)->name('privacy.policy');
+Route::redirect('/terms-of-service', '/terms', 301)->name('terms.of.service');
+Route::redirect('/returns', '/refunds-returns', 301)->name('returns.alias');
+Route::redirect('/shipping', '/shipping-delivery', 301)->name('shipping.alias');
+Route::redirect('/intro', '/about', 301)->name('intro');
 Route::get('/seller-forum', function () {
     return themed_view('pages.seller-forum');
 })->name('seller-forum');
@@ -201,7 +203,7 @@ Route::get('/restricted_for_sale', function () {
 })->name('restricted_for_sale');
 
 // Product listings & categories
-Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+Route::get('/categories', [CategoryController::class, 'publicIndex'])->name('categories.index');
 Route::get('/search', [ProductController::class, 'search'])->name('search');
 Route::get('/listings', [ProductController::class, 'listings'])->name('listings');
 Route::get('/listing/{slug}', [ProductController::class, 'listing'])->name('listing.show');

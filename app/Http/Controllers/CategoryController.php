@@ -13,6 +13,60 @@ class CategoryController extends Controller
     
 
 
+public function publicIndex(Request $request)
+{
+    $search = trim((string) $request->input('q', ''));
+    $type = (string) $request->input('type', '');
+    $allowedTypes = ['products', 'services', 'digital'];
+
+    if (!in_array($type, $allowedTypes, true)) {
+        $type = '';
+    }
+
+    $childrenQuery = function ($query) use ($type) {
+        $query->withCount([
+                'products as active_products_count' => fn ($productQuery) => $productQuery->where('is_active', 1),
+            ])
+            ->when($type !== '', fn ($categoryQuery) => $categoryQuery->where('listing_type', $type))
+            ->orderBy('name');
+    };
+
+    $categories = Category::query()
+        ->whereNull('parent_id')
+        ->with(['children' => $childrenQuery])
+        ->withCount([
+            'products as active_products_count' => fn ($query) => $query->where('is_active', 1),
+        ])
+        ->when($search !== '', function ($query) use ($search) {
+            $query->where(function ($nested) use ($search) {
+                $nested->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('children', function ($childQuery) use ($search) {
+                        $childQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%");
+                    });
+            });
+        })
+        ->when($type !== '', function ($query) use ($type) {
+            $query->where(function ($nested) use ($type) {
+                $nested->where('listing_type', $type)
+                    ->orWhereHas('children', fn ($childQuery) => $childQuery->where('listing_type', $type));
+            });
+        })
+        ->orderBy('name')
+        ->get();
+
+    $featuredProducts = \App\Models\Product::query()
+        ->where('is_active', 1)
+        ->with(['media', 'category:id,name,slug', 'shop:id,name,slug'])
+        ->latest()
+        ->take(8)
+        ->get();
+
+    return themed_view('categories', compact('categories', 'featuredProducts', 'search', 'type'));
+}
+
+
 public function index(Request $request)
 {
     $search = trim($request->input('q'));
@@ -185,7 +239,7 @@ public function update(Request $request, Category $category)
         $category->delete();
 
         return redirect()
-            ->route('categories.index')
+            ->route('admin.categories.index')
             ->with('success', 'Category deleted successfully!');
     }
 

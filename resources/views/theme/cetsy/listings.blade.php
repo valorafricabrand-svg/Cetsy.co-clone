@@ -1,10 +1,22 @@
 @extends('theme.'.theme().'.layouts.app')
 
+@php
+  $q       = request('q');
+  $sort    = request('sort', 'latest');
+  $type    = request('type');
+  $perPage = (int) request('per_page', 24);
+  $view    = request('view', 'grid');
+  $isSearchRoute = request()->routeIs('search') || request()->is('search');
+  $hasListingQuery = request()->query() !== [];
+  $listingsCanonicalUrl = route('listings');
+  $listingsMetaRobots = ($isSearchRoute || $hasListingQuery) ? 'noindex, follow' : 'index, follow';
+@endphp
+
 @section('title', 'Marketplace - Products, Services and Digital Goods | Cetsy')
 @section('meta_description', 'Browse marketplace listings for handmade products, services, and digital goods on Cetsy.')
-@section('canonical_url', route('listings'))
-@section('meta_image', setting('logo_url') ?: asset('assets/images/default-og-image-cetsy.jpg'))
-@section('meta_robots', 'index, follow')
+@section('canonical_url', $listingsCanonicalUrl)
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', $listingsMetaRobots)
 
 @push('styles')
 <style>
@@ -30,14 +42,6 @@
 @endpush
 
 @section('main')
-@php
-  $q       = request('q');
-  $sort    = request('sort', 'latest');
-  $type    = request('type');
-  $perPage = (int) request('per_page', 24);
-  $view    = request('view', 'grid');
-@endphp
-
 <div class="relative overflow-x-clip pb-10">
   <div class="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-emerald-200/40 blur-3xl"></div>
   <div class="pointer-events-none absolute -left-20 top-[24rem] h-72 w-72 rounded-full bg-rose-200/35 blur-3xl"></div>

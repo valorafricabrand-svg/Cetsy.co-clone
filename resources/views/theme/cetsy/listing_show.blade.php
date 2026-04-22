@@ -17,8 +17,139 @@ $product->loadMissing(
 $primaryMedia = $product->media->firstWhere('type', 'image') ?? $product->media->first();
 $metaImage = $primaryMedia && $primaryMedia->url
     ? media_url($primaryMedia->url)
-    : asset('assets/images/default-og-image-cetsy.jpg');
+    : asset('assets/images/cetsylogmain.png');
 $metaDescription = Str::limit(strip_tags($product->description ?? $product->name), 155);
+
+$productUrl = route('listing.show', $product->slug);
+$schemaCurrency = get_currency();
+$schemaRawPrice = is_numeric($product->discounted_price ?? null)
+    ? (float) $product->discounted_price
+    : (float) ($product->price ?? 0);
+$schemaPrice = convert_usd($schemaRawPrice, $schemaCurrency);
+$schemaImages = collect([$metaImage])
+    ->merge(($product->media ?? collect())->filter(function ($media) {
+        return !empty($media->url) && strtolower((string) ($media->type ?? '')) !== 'video';
+    })->map(fn ($media) => media_url($media->url)))
+    ->filter()
+    ->unique()
+    ->values()
+    ->all();
+
+$productSchema = [
+    '@type' => 'Product',
+    '@id' => $productUrl . '#product',
+    'name' => $product->name,
+    'description' => $metaDescription,
+    'url' => $productUrl,
+    'image' => $schemaImages,
+    'offers' => [
+        '@type' => 'Offer',
+        'url' => $productUrl,
+        'priceCurrency' => $schemaCurrency,
+        'price' => number_format($schemaPrice, 2, '.', ''),
+        'availability' => product_has_available_stock($product)
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock',
+        'itemCondition' => 'https://schema.org/NewCondition',
+    ],
+];
+
+if (!empty($product->sku)) {
+    $productSchema['sku'] = $product->sku;
+}
+
+if ($product->category) {
+    $productSchema['category'] = $product->category->name;
+}
+
+if ($product->shop) {
+    $shopRouteParam = $product->shop->slug ?: $product->shop->id;
+    $productSchema['offers']['seller'] = [
+        '@type' => 'Organization',
+        'name' => $product->shop->name,
+        'url' => route('shop.show', $shopRouteParam),
+    ];
+}
+
+if (($product->reviews_count ?? 0) > 0 && ($product->reviews_avg_rating ?? 0) > 0) {
+    $productSchema['aggregateRating'] = [
+        '@type' => 'AggregateRating',
+        'ratingValue' => round((float) $product->reviews_avg_rating, 1),
+        'reviewCount' => (int) $product->reviews_count,
+        'bestRating' => '5',
+        'worstRating' => '1',
+    ];
+}
+
+$schemaProductReviews = collect();
+try {
+    $schemaProductReviews = $product->reviews()
+        ->where('is_approved', true)
+        ->with('user:id,name')
+        ->latest()
+        ->take(3)
+        ->get();
+} catch (\Throwable $e) {
+    $schemaProductReviews = collect();
+}
+
+if ($schemaProductReviews->isNotEmpty()) {
+    $productSchema['review'] = $schemaProductReviews->map(function ($review) {
+        $reviewSchema = [
+            '@type' => 'Review',
+            'author' => [
+                '@type' => 'Person',
+                'name' => optional($review->user)->name ?: 'Cetsy buyer',
+            ],
+            'reviewRating' => [
+                '@type' => 'Rating',
+                'ratingValue' => (int) $review->rating,
+                'bestRating' => '5',
+                'worstRating' => '1',
+            ],
+        ];
+
+        if (!empty($review->comment)) {
+            $reviewSchema['reviewBody'] = Str::limit(strip_tags($review->comment), 300);
+        }
+
+        if ($review->created_at) {
+            $reviewSchema['datePublished'] = $review->created_at->toDateString();
+        }
+
+        return $reviewSchema;
+    })->values()->all();
+}
+
+$productBreadcrumbItems = [
+    ['name' => 'Home', 'url' => url('/')],
+    ['name' => 'Listings', 'url' => route('listings')],
+];
+
+if ($product->category) {
+    $productBreadcrumbItems[] = [
+        'name' => $product->category->name,
+        'url' => route('category.show', $product->category->slug),
+    ];
+}
+
+$productBreadcrumbItems[] = ['name' => $product->name, 'url' => $productUrl];
+
+$productStructuredData = [
+    '@context' => 'https://schema.org',
+    '@graph' => [
+        $productSchema,
+        [
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => collect($productBreadcrumbItems)->map(fn ($item, $index) => [
+                '@type' => 'ListItem',
+                'position' => $index + 1,
+                'name' => $item['name'],
+                'item' => $item['url'],
+            ])->values()->all(),
+        ],
+    ],
+];
 @endphp
 
 @section('title', $product->name . ' - Item Details | Cetsy')
@@ -26,6 +157,12 @@ $metaDescription = Str::limit(strip_tags($product->description ?? $product->name
 @section('canonical_url', route('listing.show', $product->slug))
 @section('meta_image', $metaImage)
 @section('meta_robots', 'index, follow')
+
+@push('structured-data')
+<script type="application/ld+json">
+{!! json_encode($productStructuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+</script>
+@endpush
 
 @section('main')
 @php
