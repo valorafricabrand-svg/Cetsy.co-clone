@@ -20,20 +20,28 @@ class BlogVisibilityTest extends TestCase
         Cache::flush();
     }
 
-    public function test_blog_named_routes_use_cetsy_blog_urls(): void
+    public function test_blog_named_routes_use_post_urls(): void
     {
-        $this->assertSame('/cetsy-blog', parse_url(route('blog.index'), PHP_URL_PATH));
-        $this->assertSame('/cetsy-blog/example-post', parse_url(route('blog.show', 'example-post'), PHP_URL_PATH));
+        $this->assertSame('/post', parse_url(route('blog.index'), PHP_URL_PATH));
+        $this->assertSame('/post/example-post', parse_url(route('blog.show', 'example-post'), PHP_URL_PATH));
     }
 
-    public function test_old_blog_urls_redirect_to_cetsy_blog_urls(): void
+    public function test_old_blog_urls_redirect_to_post_urls(): void
     {
         $this->get('/blog?category=news')
-            ->assertRedirect('/cetsy-blog?category=news')
+            ->assertRedirect('/post?category=news')
             ->assertStatus(301);
 
         $this->get('/blog/example-post')
-            ->assertRedirect('/cetsy-blog/example-post')
+            ->assertRedirect('/post/example-post')
+            ->assertStatus(301);
+
+        $this->get('/cetsy-blog?category=news')
+            ->assertRedirect('/post?category=news')
+            ->assertStatus(301);
+
+        $this->get('/cetsy-blog/example-post')
+            ->assertRedirect('/post/example-post')
             ->assertStatus(301);
     }
 

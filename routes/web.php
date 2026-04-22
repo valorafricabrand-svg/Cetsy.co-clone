@@ -105,18 +105,30 @@ Route::post('/wallet/deposit/mpesa/timeout',  [WalletController::class, 'mpesaTi
 // pages
 Route::get('/blog', function (\Illuminate\Http\Request $request) {
     $query = $request->getQueryString();
-    $target = url('/cetsy-blog') . ($query ? '?' . $query : '');
+    $target = url('/post') . ($query ? '?' . $query : '');
 
     return redirect()->to($target, 301);
 });
 Route::get('/blog/{slug}', function (\Illuminate\Http\Request $request, string $slug) {
     $query = $request->getQueryString();
-    $target = url('/cetsy-blog/' . rawurlencode($slug)) . ($query ? '?' . $query : '');
+    $target = url('/post/' . rawurlencode($slug)) . ($query ? '?' . $query : '');
 
     return redirect()->to($target, 301);
 });
-Route::get('/cetsy-blog', [BlogController::class, 'index'])->name('blog.index');
-Route::get('/cetsy-blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+Route::get('/cetsy-blog', function (\Illuminate\Http\Request $request) {
+    $query = $request->getQueryString();
+    $target = url('/post') . ($query ? '?' . $query : '');
+
+    return redirect()->to($target, 301);
+});
+Route::get('/cetsy-blog/{slug}', function (\Illuminate\Http\Request $request, string $slug) {
+    $query = $request->getQueryString();
+    $target = url('/post/' . rawurlencode($slug)) . ($query ? '?' . $query : '');
+
+    return redirect()->to($target, 301);
+});
+Route::get('/post', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/post/{slug}', [BlogController::class, 'show'])->name('blog.show');
 
 Route::get('/become-seller', function () {
     return themed_view('pages.become-seller');
