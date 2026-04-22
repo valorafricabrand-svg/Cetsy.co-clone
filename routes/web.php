@@ -103,18 +103,6 @@ Route::post('/wallet/deposit/mpesa/timeout',  [WalletController::class, 'mpesaTi
 
 
 // pages
-Route::get('/blog', function (\Illuminate\Http\Request $request) {
-    $query = $request->getQueryString();
-    $target = url('/post') . ($query ? '?' . $query : '');
-
-    return redirect()->to($target, 301);
-});
-Route::get('/blog/{slug}', function (\Illuminate\Http\Request $request, string $slug) {
-    $query = $request->getQueryString();
-    $target = url('/post/' . rawurlencode($slug)) . ($query ? '?' . $query : '');
-
-    return redirect()->to($target, 301);
-});
 Route::get('/cetsy-blog', function (\Illuminate\Http\Request $request) {
     $query = $request->getQueryString();
     $target = url('/post') . ($query ? '?' . $query : '');

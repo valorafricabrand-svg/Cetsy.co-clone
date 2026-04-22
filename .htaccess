@@ -6,5 +6,9 @@ RewriteEngine On
 RewriteCond %{HTTP_HOST} ^www\.cetsy\.co$ [NC]
 RewriteRule ^(.*)$ https://cetsy.co/$1 [L,R=301]
 
+# Allow a WordPress install at /blog to handle its own files and permalinks.
+RewriteCond %{DOCUMENT_ROOT}/blog -d
+RewriteRule ^blog(/.*)?$ - [L,NC]
+
 RewriteRule ^$ public/index.php [L]
 RewriteRule ^((?!public/).*)$ public/$1 [L,NC]

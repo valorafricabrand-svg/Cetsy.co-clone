@@ -26,16 +26,14 @@ class BlogVisibilityTest extends TestCase
         $this->assertSame('/post/example-post', parse_url(route('blog.show', 'example-post'), PHP_URL_PATH));
     }
 
-    public function test_old_blog_urls_redirect_to_post_urls(): void
+    public function test_laravel_does_not_claim_wordpress_blog_urls(): void
     {
-        $this->get('/blog?category=news')
-            ->assertRedirect('/post?category=news')
-            ->assertStatus(301);
+        $this->get('/blog')->assertNotFound();
+        $this->get('/blog/example-post')->assertNotFound();
+    }
 
-        $this->get('/blog/example-post')
-            ->assertRedirect('/post/example-post')
-            ->assertStatus(301);
-
+    public function test_old_cetsy_blog_urls_redirect_to_post_urls(): void
+    {
         $this->get('/cetsy-blog?category=news')
             ->assertRedirect('/post?category=news')
             ->assertStatus(301);
