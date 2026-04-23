@@ -1,7 +1,7 @@
 {{-- resources/views/seller/dashboard.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
-@section('title', 'Seller Dashboard')
+@section('title', __('Seller Dashboard'))
 
 @section('main')
 @php
@@ -21,7 +21,7 @@
         [
             'value' => $total_orders,
             'sub' => null,
-            'label' => 'Total Orders',
+            'label' => __('Total Orders'),
             'icon' => 'fas fa-credit-card',
             'href' => route('seller.orders.index'),
             'tone' => 'text-amber-600',
@@ -29,31 +29,31 @@
         [
             'value' => $total_products,
             'sub' => null,
-            'label' => 'Total Listings',
+            'label' => __('Total Listings'),
             'icon' => 'fas fa-box-open',
             'href' => route('products.index'),
             'tone' => 'text-sky-600',
         ],
         [
             'value' => $currency . ' ' . number_format((float) $walletBalance, 2),
-            'sub' => 'On hold: ' . $currency . ' ' . number_format((float) $walletHold, 2),
-            'label' => 'Wallet Balance',
+            'sub' => __('On hold: :amount', ['amount' => $currency . ' ' . number_format((float) $walletHold, 2)]),
+            'label' => __('Wallet Balance'),
             'icon' => 'fas fa-wallet',
             'href' => route('wallet.index'),
             'tone' => 'text-emerald-600',
         ],
         [
             'value' => $total_offers,
-            'sub' => $accepted_offers . ' accepted | ' . $declined_offers . ' declined',
-            'label' => 'Offers Received',
+            'sub' => __(':accepted accepted | :declined declined', ['accepted' => $accepted_offers, 'declined' => $declined_offers]),
+            'label' => __('Offers Received'),
             'icon' => 'fas fa-handshake',
             'href' => route('seller.offers.index'),
             'tone' => 'text-indigo-600',
         ],
         [
             'value' => $favorites_messages_total,
-            'sub' => 'Last 7 days: ' . $favorites_messages_week,
-            'label' => 'Favorites Messages',
+            'sub' => __('Last 7 days: :count', ['count' => $favorites_messages_week]),
+            'label' => __('Favorites Messages'),
             'icon' => 'fas fa-comments',
             'href' => route('seller.favorites.index'),
             'tone' => 'text-slate-600',
@@ -84,7 +84,7 @@
                 return !empty($item->downloaded_at);
             });
 
-            return $allDownloaded ? 'Downloaded' : 'Digital delivery';
+            return $allDownloaded ? __('Downloaded') : __('Digital delivery');
         }
 
         $minDays = null;
@@ -112,7 +112,7 @@
         $shipEnd = $placedAt && is_numeric($maxDays) ? $placedAt->copy()->addDays($maxDays) : null;
         $dispatchBy = $shipEnd?->format('M j') ?? $shipStart?->format('M j');
 
-        return $dispatchBy ? 'Dispatch by ' . $dispatchBy : 'Dispatch soon';
+        return $dispatchBy ? __('Dispatch by :date', ['date' => $dispatchBy]) : __('Dispatch soon');
     };
 @endphp
 
@@ -120,17 +120,17 @@
     <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
         @if (session('status') === 'verification-link-sent')
             <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                A new verification link was sent to your email.
+                {{ __('A new verification link was sent to your email.') }}
             </div>
         @endif
 
         @if (!auth()->user()->hasVerifiedEmail())
             <div class="mb-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
-                <p>Your email is not verified. Please verify to unlock all seller features.</p>
+                <p>{{ __('Your email is not verified. Please verify to unlock all seller features.') }}</p>
                 <form method="POST" action="{{ route('verification.send') }}">
                     @csrf
                     <button type="submit" class="inline-flex rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100">
-                        Resend verification email
+                        {{ __('Resend verification email') }}
                     </button>
                 </form>
             </div>
@@ -153,7 +153,7 @@
                                 <span class="inline-flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                                     <img
                                         src="{{ $shopLogoUrl }}"
-                                        alt="{{ $shop->name ?? 'Shop logo' }}"
+                                        alt="{{ $shop?->localized_name ?? $shop->name ?? __('Shop logo') }}"
                                         class="h-full w-full object-cover"
                                         onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');"
                                     >
@@ -168,16 +168,16 @@
                             @endif
 
                             <div>
-                                <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Seller Dashboard</h1>
+                                <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">{{ __('Seller Dashboard') }}</h1>
                                 <p class="text-sm text-slate-500">
-                                    {{ $shop->name ?? 'Your Shop' }}
+                                    {{ $shop?->localized_name ?? $shop->name ?? __('Your Shop') }}
                                     <span class="mx-1">|</span>
-                                    Active: <span class="font-semibold text-emerald-700">{{ $activeProducts }}</span>
+                                    {{ __('Active') }}: <span class="font-semibold text-emerald-700">{{ $activeProducts }}</span>
                                     <span class="mx-1">|</span>
-                                    Paused: <span class="font-semibold text-slate-700">{{ $pausedProducts }}</span>
+                                    {{ __('Paused') }}: <span class="font-semibold text-slate-700">{{ $pausedProducts }}</span>
                                     @if ($isHolidayMode)
                                         <span class="ml-2 inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-                                            Holiday mode
+                                            {{ __('Holiday mode') }}
                                         </span>
                                     @endif
                                 </p>
@@ -186,19 +186,19 @@
 
                         <div class="flex flex-wrap gap-2">
                             <a href="{{ route('products.create') }}" class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold text-white shadow-sm" style="background-color: {{ $brandColor }}">
-                                <i class="fas fa-plus mr-1"></i> New Listing
+                                <i class="fas fa-plus mr-1"></i> {{ __('New Listing') }}
                             </a>
                             <a href="{{ route('seller.orders.index') }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-                                <i class="fas fa-receipt mr-1"></i> Orders
+                                <i class="fas fa-receipt mr-1"></i> {{ __('Orders') }}
                             </a>
                             <a href="{{ route('seller.offers.index') }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-                                <i class="fas fa-handshake mr-1"></i> Offers
+                                <i class="fas fa-handshake mr-1"></i> {{ __('Offers') }}
                             </a>
                             <a href="{{ route('wallet.index') }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-                                <i class="fas fa-wallet mr-1"></i> Wallet
+                                <i class="fas fa-wallet mr-1"></i> {{ __('Wallet') }}
                             </a>
                             <a href="{{ route('seller.analytics.index') }}" class="inline-flex items-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-                                <i class="fas fa-chart-line mr-1"></i> Analytics
+                                <i class="fas fa-chart-line mr-1"></i> {{ __('Analytics') }}
                             </a>
                         </div>
                     </div>
@@ -224,9 +224,9 @@
                         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                             <h2 class="text-base font-bold text-slate-900">
                                 <i class="fas fa-receipt mr-2 text-emerald-600"></i>
-                                Recent Orders
+                                {{ __('Recent Orders') }}
                             </h2>
-                            <a href="{{ route('seller.orders.index') }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-600">View all</a>
+                            <a href="{{ route('seller.orders.index') }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-600">{{ __('View all') }}</a>
                         </div>
 
                         @if ($orders->count())
@@ -234,11 +234,11 @@
                                 <table class="min-w-full divide-y divide-slate-200 text-sm">
                                     <thead class="bg-slate-50 text-slate-600">
                                         <tr>
-                                            <th class="px-3 py-2 text-left font-semibold">ID</th>
-                                            <th class="px-3 py-2 text-left font-semibold">Customer</th>
-                                            <th class="px-3 py-2 text-right font-semibold">Total</th>
-                                            <th class="px-3 py-2 text-left font-semibold">Status</th>
-                                            <th class="px-3 py-2 text-left font-semibold">Date</th>
+                                            <th class="px-3 py-2 text-left font-semibold">{{ __('ID') }}</th>
+                                            <th class="px-3 py-2 text-left font-semibold">{{ __('Customer') }}</th>
+                                            <th class="px-3 py-2 text-right font-semibold">{{ __('Total') }}</th>
+                                            <th class="px-3 py-2 text-left font-semibold">{{ __('Status') }}</th>
+                                            <th class="px-3 py-2 text-left font-semibold">{{ __('Date') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-200">
@@ -256,14 +256,14 @@
                                                 onkeydown="if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); window.location.href='{{ $orderUrl }}'; }"
                                                 tabindex="0"
                                                 role="link"
-                                                aria-label="View order #{{ $o->id }} details"
+                                                aria-label="{{ __('View order #:id details', ['id' => $o->id]) }}"
                                             >
                                                 <td class="px-3 py-2 text-slate-900">#{{ $o->id }}</td>
                                                 <td class="px-3 py-2">
                                                     <div class="flex items-center gap-3">
                                                         <div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
                                                             @if ($thumbUrl)
-                                                                <img src="{{ $thumbUrl }}" alt="{{ $primaryProduct->name ?? 'Order item' }}" class="h-full w-full object-cover" loading="lazy">
+                                                                <img src="{{ $thumbUrl }}" alt="{{ $primaryProduct?->localized_name ?? $primaryProduct->name ?? __('Order item') }}" class="h-full w-full object-cover" loading="lazy">
                                                             @else
                                                                 <div class="flex h-full w-full items-center justify-center text-slate-400">
                                                                     <i class="fas fa-box-open"></i>
@@ -273,7 +273,7 @@
                                                         <div class="min-w-0">
                                                             <p class="font-semibold text-slate-700">{{ optional($o->customer)->name ?? '-' }}</p>
                                                             @if ($primaryProduct)
-                                                                <p class="truncate text-xs text-slate-500">{{ $primaryProduct->name }}</p>
+                                                                <p class="truncate text-xs text-slate-500">{{ $primaryProduct->localized_name ?? $primaryProduct->name }}</p>
                                                             @endif
                                                         </div>
                                                     </div>
@@ -309,12 +309,12 @@
                                     <a
                                         href="{{ route('seller.orders.show', $o) }}"
                                         class="block rounded-xl border border-slate-200 p-3 transition hover:border-emerald-200 hover:bg-emerald-50/40 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                        aria-label="View order #{{ $o->id }} details"
+                                        aria-label="{{ __('View order #:id details', ['id' => $o->id]) }}"
                                     >
                                         <div class="flex items-start gap-3">
                                             <div class="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
                                                 @if ($thumbUrl)
-                                                    <img src="{{ $thumbUrl }}" alt="{{ $primaryProduct->name ?? 'Order item' }}" class="h-full w-full object-cover" loading="lazy">
+                                                    <img src="{{ $thumbUrl }}" alt="{{ $primaryProduct?->localized_name ?? $primaryProduct->name ?? __('Order item') }}" class="h-full w-full object-cover" loading="lazy">
                                                 @else
                                                     <div class="flex h-full w-full items-center justify-center text-slate-400">
                                                         <i class="fas fa-box-open"></i>
@@ -328,7 +328,7 @@
                                                         <p class="text-sm font-semibold text-slate-900">#{{ $o->id }}</p>
                                                         <p class="mt-1 text-xs text-slate-500">{{ optional($o->customer)->name ?? '-' }}</p>
                                                         @if ($primaryProduct)
-                                                            <p class="mt-1 truncate text-xs text-slate-500">{{ $primaryProduct->name }}</p>
+                                                            <p class="mt-1 truncate text-xs text-slate-500">{{ $primaryProduct->localized_name ?? $primaryProduct->name }}</p>
                                                         @endif
                                                     </div>
 
@@ -350,7 +350,7 @@
                                 @endforeach
                             </div>
                         @else
-                            <p class="px-4 py-6 text-sm text-slate-500">No recent orders.</p>
+                            <p class="px-4 py-6 text-sm text-slate-500">{{ __('No recent orders.') }}</p>
                         @endif
                     </div>
 
@@ -359,9 +359,9 @@
                             <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                                 <h2 class="text-base font-bold text-slate-900">
                                     <i class="fas fa-star mr-2 text-amber-500"></i>
-                                    Recent Reviews
+                                    {{ __('Recent Reviews') }}
                                 </h2>
-                                <a href="{{ route('seller.reviews.index') }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-600">View all</a>
+                                <a href="{{ route('seller.reviews.index') }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-600">{{ __('View all') }}</a>
                             </div>
 
                             @if (isset($recentReviews) && $recentReviews->count())
@@ -370,8 +370,8 @@
                                         <li class="px-4 py-3">
                                             <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                                 <div class="min-w-0">
-                                                    <p class="text-sm font-semibold text-slate-900">{{ optional($r->orderItem?->product)->name ?? 'Product' }}</p>
-                                                    <p class="text-xs text-slate-500">Order #{{ $r->order_id }} | Rated {{ $r->rating }}/5</p>
+                                                    <p class="text-sm font-semibold text-slate-900">{{ optional($r->orderItem?->product)->localized_name ?? optional($r->orderItem?->product)->name ?? __('Product') }}</p>
+                                                    <p class="text-xs text-slate-500">{{ __('Order #:id | Rated :rating/5', ['id' => $r->order_id, 'rating' => $r->rating]) }}</p>
 
                                                     @if ($r->comment)
                                                         <p class="mt-1 text-xs text-slate-700">{{ \Illuminate\Support\Str::limit($r->comment, 120) }}</p>
@@ -379,14 +379,14 @@
                                                 </div>
 
                                                 <a href="{{ route('seller.reviews.index', ['respond' => $r->id]) }}#review-{{ $r->id }}" class="inline-flex rounded-lg border border-emerald-600 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
-                                                    {{ $r->seller_response ? 'Edit reply' : 'Public reply' }}
+                                                    {{ $r->seller_response ? __('Edit reply') : __('Public reply') }}
                                                 </a>
                                             </div>
                                         </li>
                                     @endforeach
                                 </ul>
                             @else
-                                <p class="px-4 py-6 text-sm text-slate-500">No reviews yet.</p>
+                                <p class="px-4 py-6 text-sm text-slate-500">{{ __('No reviews yet.') }}</p>
                             @endif
                         </div>
 
@@ -394,25 +394,25 @@
                             <div class="border-b border-slate-200 px-4 py-3">
                                 <h2 class="text-base font-bold text-slate-900">
                                     <i class="fas fa-bolt mr-2 text-amber-500"></i>
-                                    Quick Links
+                                    {{ __('Quick Links') }}
                                 </h2>
                             </div>
 
                             <div class="grid gap-2 p-4 sm:grid-cols-2">
                                 <a class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="{{ route('products.index') }}">
-                                    <i class="fas fa-boxes-stacked mr-1"></i>Manage Listings
+                                    <i class="fas fa-boxes-stacked mr-1"></i>{{ __('Manage Listings') }}
                                 </a>
                                 <a class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="{{ route('seller.analytics.index') }}">
-                                    <i class="fas fa-chart-line mr-1"></i>View Analytics
+                                    <i class="fas fa-chart-line mr-1"></i>{{ __('View Analytics') }}
                                 </a>
                                 <a class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="{{ route('seller.payouts.index') }}">
-                                    <i class="fas fa-money-bill-transfer mr-1"></i>Payouts
+                                    <i class="fas fa-money-bill-transfer mr-1"></i>{{ __('Payouts') }}
                                 </a>
                                 <a class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100" href="{{ route('seller.messages.index') }}">
-                                    <i class="fas fa-comments mr-1"></i>Messages
+                                    <i class="fas fa-comments mr-1"></i>{{ __('Messages') }}
                                 </a>
                                 <a class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 sm:col-span-2" href="{{ route('seller.buyers.index') }}">
-                                    <i class="fas fa-users mr-1"></i>Buyers
+                                    <i class="fas fa-users mr-1"></i>{{ __('Buyers') }}
                                 </a>
                             </div>
                         </div>

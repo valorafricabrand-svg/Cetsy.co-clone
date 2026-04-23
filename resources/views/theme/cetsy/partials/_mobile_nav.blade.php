@@ -55,22 +55,22 @@
       <li>
         <a href="{{ route('home') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isHome ? 'active' : '' }}" aria-current="{{ $isHome ? 'page' : 'false' }}">
           <i class="fa-solid fa-house"></i>
-          <span class="label">Home</span>
+          <span class="label">{{ __('Home') }}</span>
         </a>
       </li>
       <li>
         <a href="{{ route('search') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isSearch ? 'active' : '' }}" aria-current="{{ $isSearch ? 'page' : 'false' }}">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <span class="label">Search</span>
+          <span class="label">{{ __('Search') }}</span>
         </a>
       </li>
       <li>
         @if($isSeller)
           <a href="{{ route('seller.orders.index') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isOrders ? 'active' : '' }}" aria-current="{{ $isOrders ? 'page' : 'false' }}">
             <i class="fa-solid fa-box"></i>
-            <span class="label">Orders</span>
+            <span class="label">{{ __('Orders') }}</span>
             @if($openOrdersCount > 0)
-              <span class="mobile-bottom-nav__badge" aria-label="{{ $openOrdersCount }} open orders">{{ $openOrdersCount }}</span>
+              <span class="mobile-bottom-nav__badge" aria-label="{{ __(':count open orders', ['count' => $openOrdersCount]) }}">{{ $openOrdersCount }}</span>
             @endif
           </a>
         @else
@@ -81,9 +81,9 @@
           @endphp
           <a href="{{ $buyerOrdersUrl }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isOrders ? 'active' : '' }}" aria-current="{{ $isOrders ? 'page' : 'false' }}">
             <i class="fa-solid fa-box"></i>
-            <span class="label">Orders</span>
+            <span class="label">{{ __('Orders') }}</span>
             @if($openOrdersCount > 0)
-              <span class="mobile-bottom-nav__badge" aria-label="{{ $openOrdersCount }} open orders">{{ $openOrdersCount }}</span>
+              <span class="mobile-bottom-nav__badge" aria-label="{{ __(':count open orders', ['count' => $openOrdersCount]) }}">{{ $openOrdersCount }}</span>
             @endif
           </a>
         @endif
@@ -91,9 +91,9 @@
       <li>
         <a href="{{ route('cart.view') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isCart ? 'active' : '' }}" aria-current="{{ $isCart ? 'page' : 'false' }}">
           <i class="fa-solid fa-cart-shopping"></i>
-          <span class="label">Cart</span>
+          <span class="label">{{ __('Cart') }}</span>
           @if($cartCount > 0)
-            <span class="mobile-bottom-nav__badge" aria-label="{{ $cartCount }} items in cart">{{ $cartCount }}</span>
+            <span class="mobile-bottom-nav__badge" aria-label="{{ __(':count items in cart', ['count' => $cartCount]) }}">{{ $cartCount }}</span>
           @endif
         </a>
       </li>
@@ -101,15 +101,15 @@
         @if($isSeller)
           <a href="{{ route('seller.dashboard') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isSellTab ? 'active' : '' }}" aria-current="{{ $isSellTab ? 'page' : 'false' }}">
             <i class="fa-solid fa-store"></i>
-            <span class="label">Sell</span>
+            <span class="label">{{ __('Sell') }}</span>
             @if($unreadMessages > 0)
-              <span class="mobile-bottom-nav__badge" aria-label="{{ $unreadMessages }} unread messages">{{ $unreadMessages }}</span>
+              <span class="mobile-bottom-nav__badge" aria-label="{{ __(':count unread messages', ['count' => $unreadMessages]) }}">{{ $unreadMessages }}</span>
             @endif
           </a>
         @else
           <a href="{{ route('dashboard') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isAccount ? 'active' : '' }}" aria-current="{{ $isAccount ? 'page' : 'false' }}">
             <i class="fa-regular fa-user"></i>
-            <span class="label">{{ $user ? 'Account' : 'Sign in' }}</span>
+            <span class="label">{{ $user ? __('Account') : __('Sign in') }}</span>
           </a>
         @endif
       </li>
@@ -176,9 +176,9 @@
         var sel = document.createElement('select');
         sel.id = 'currencySelectTop';
         sel.className = 'mb-2 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-emerald-500 focus:outline-none';
-        var defLabel = 'System Default';
+        var defLabel = @json(__('System Default'));
         var siteDefault = (document.querySelector('meta[name="default-currency"]')?.getAttribute('content')||'USD').toUpperCase();
-        var opt0 = document.createElement('option'); opt0.value = ''; opt0.disabled = true; opt0.selected = true; opt0.textContent = 'Select currency...'; sel.appendChild(opt0);
+        var opt0 = document.createElement('option'); opt0.value = ''; opt0.disabled = true; opt0.selected = true; opt0.textContent = @json(__('Select currency...')); sel.appendChild(opt0);
         var optDef = document.createElement('option'); optDef.value = '__default__'; optDef.textContent = defLabel + ' ('+ siteDefault +')'; sel.appendChild(optDef);
         var current = (trigger && trigger.textContent) ? trigger.textContent.trim().toUpperCase() : '';
         items.forEach(function(a){ var code=a.getAttribute('data-currency-code'); if(!code) return; var o=document.createElement('option'); o.value=code; o.textContent=code; if(current===code) o.selected=true; sel.appendChild(o); });

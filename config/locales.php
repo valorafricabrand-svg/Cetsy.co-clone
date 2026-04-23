@@ -1,0 +1,22 @@
+<?php
+
+return [
+    'default' => env('APP_LOCALE', 'en'),
+
+    'cookie' => env('APP_LOCALE_COOKIE', 'locale'),
+
+    'supported' => [
+        'en' => [
+            'name' => 'English',
+            'native' => 'English',
+            'html' => 'en',
+            'og' => 'en_US',
+        ],
+        'sw' => [
+            'name' => 'Swahili',
+            'native' => 'Kiswahili',
+            'html' => 'sw',
+            'og' => 'sw_KE',
+        ],
+    ],
+];

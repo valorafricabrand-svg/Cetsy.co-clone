@@ -23,13 +23,13 @@
 
       <div class="{{ $hasSidebar ? 'col-span-12 lg:col-span-9' : 'col-span-12' }} space-y-4">
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-          <h1 class="text-2xl font-semibold text-slate-900">Profile Settings</h1>
-          <p class="mt-1 text-slate-500">Manage your profile, password, and account preferences.</p>
+          <h1 class="text-2xl font-semibold text-slate-900">{{ __('Profile Settings') }}</h1>
+          <p class="mt-1 text-slate-500">{{ __('Manage your profile, password, and account preferences.') }}</p>
         </div>
 
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div class="border-b border-slate-200 px-4 py-3">
-            <h5 class="font-semibold text-slate-900">Update Profile Information</h5>
+            <h5 class="font-semibold text-slate-900">{{ __('Update Profile Information') }}</h5>
           </div>
           <div class="p-4 sm:p-5">
             @include('profile.partials.update-profile-information-form', ['countries' => $countries])
@@ -38,7 +38,7 @@
 
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div class="border-b border-slate-200 px-4 py-3">
-            <h5 class="font-semibold text-slate-900">Change Password</h5>
+            <h5 class="font-semibold text-slate-900">{{ __('Change Password') }}</h5>
           </div>
           <div class="p-4 sm:p-5">
             @include('profile.partials.update-password-form')
@@ -47,7 +47,7 @@
 
         <div class="rounded-2xl border border-rose-200 bg-white shadow-sm">
           <div class="border-b border-rose-200 px-4 py-3">
-            <h5 class="font-semibold text-rose-600">Delete Account</h5>
+            <h5 class="font-semibold text-rose-600">{{ __('Delete Account') }}</h5>
           </div>
           <div class="p-4 sm:p-5">
             @include('profile.partials.delete-user-form')
@@ -65,7 +65,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   $('#country_id').select2({
-    placeholder: 'Select a country',
+    placeholder: @json(__('Select a country')),
     width: '100%',
     minimumResultsForSearch: 0
   });
@@ -99,26 +99,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       e.preventDefault();
-      showAlert('Please fill in all password fields.', 'danger');
+      showAlert(@json(__('Please fill in all password fields.')), 'danger');
       return false;
     }
 
     if (newPassword !== confirmPassword) {
       e.preventDefault();
-      showAlert('New password and confirmation do not match.', 'danger');
+      showAlert(@json(__('New password and confirmation do not match.')), 'danger');
       return false;
     }
 
     if (newPassword.length < 8) {
       e.preventDefault();
-      showAlert('New password must be at least 8 characters long.', 'danger');
+      showAlert(@json(__('New password must be at least 8 characters long.')), 'danger');
       return false;
     }
 
     const submitBtn = this.querySelector('button[type="submit"]');
     if (!submitBtn) return;
     const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>' + @json(__('Updating...'));
     submitBtn.disabled = true;
 
     setTimeout(() => {

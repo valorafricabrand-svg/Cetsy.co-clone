@@ -37,6 +37,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'user_type',
         'preferred_currency',
+        'preferred_locale',
         'is_active',
         'country_id',
         'phone',

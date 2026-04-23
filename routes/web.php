@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CurrencySelectionController;
+use App\Http\Controllers\LocaleSelectionController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\{
     HomeController,
@@ -98,6 +99,8 @@ Route::get('/sitemap-blog-{page}.xml', [SitemapController::class, 'blog'])
 Route::match(['GET','POST'], '/set-currency', [CurrencySelectionController::class, 'set'])
     ->name('currency.set')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+Route::get('/set-locale/{locale}', [LocaleSelectionController::class, 'set'])
+    ->name('locale.set');
 // Safaricom callback (must be reachable publicly)
 Route::post('/wallet/deposit/mpesa/callback', [WalletController::class, 'mpesaCallback'])
     ->name('wallet.deposit.mpesa.callback')

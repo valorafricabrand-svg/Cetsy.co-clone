@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-US" dir="ltr" data-navigation-type="default" data-navbar-horizontal-shape="default">
+<html lang="{{ locale_html_code() }}" dir="ltr" data-navigation-type="default" data-navbar-horizontal-shape="default">
 
 <head>
     <meta charset="utf-8">

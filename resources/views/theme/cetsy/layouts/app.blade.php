@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ locale_html_code() }}">
 <head>
     @php
         $siteName = config('app.name', 'Cetsy');
@@ -82,8 +82,14 @@
         $isAdminUser = $headerUser && method_exists($headerUser, 'isAdmin') && $headerUser->isAdmin();
         $isSellerUser = $headerUser && method_exists($headerUser, 'isSeller') && $headerUser->isSeller();
         $headerUserShop = $headerUser?->shop;
-        $headerAccountName = trim((string) ($headerUserShop?->name ?: $headerUser?->name ?: $headerUser?->email ?: 'Account'));
+        $headerAccountName = trim((string) ($headerUserShop?->localized_name ?: $headerUserShop?->name ?: $headerUser?->name ?: $headerUser?->email ?: 'Account'));
         $headerAccountSubtitle = $headerUser?->email;
+        $headerAccountRoleLabel = match ((string) ($headerUser->user_type ?? '')) {
+            'admin' => __('Admin'),
+            'seller' => __('Seller'),
+            'buyer' => __('Buyer'),
+            default => __('Account'),
+        };
         $headerAccountAvatarUrl = null;
         if (!empty($headerUserShop?->logo_url)) {
             $headerAccountAvatarUrl = $headerUserShop->logo_url;
@@ -95,22 +101,26 @@
         $headerAccountInitial = \Illuminate\Support\Str::upper(
             \Illuminate\Support\Str::substr($headerAccountName !== '' ? $headerAccountName : 'A', 0, 1)
         );
+        $headerCurrentLocale = current_locale();
+        $headerLocaleOptions = supported_locales();
+        $headerLocaleLabel = locale_label($headerCurrentLocale);
+        $headerLocaleRedirect = url()->full();
         $headerDashboardRoute = null;
-        $headerDashboardLabel = 'Dashboard';
-        $headerDashboardDescription = 'Open your dashboard.';
+        $headerDashboardLabel = __('Dashboard');
+        $headerDashboardDescription = __('Open your dashboard.');
         if ($headerUser) {
             if ($isAdminUser && \Illuminate\Support\Facades\Route::has('admin.dashboard')) {
                 $headerDashboardRoute = route('admin.dashboard');
-                $headerDashboardLabel = 'Admin Dashboard';
-                $headerDashboardDescription = 'Review platform activity, users, and operations.';
+                $headerDashboardLabel = __('Admin Dashboard');
+                $headerDashboardDescription = __('Review platform activity, users, and operations.');
             } elseif ($isSellerUser && \Illuminate\Support\Facades\Route::has('seller.dashboard')) {
                 $headerDashboardRoute = route('seller.dashboard');
-                $headerDashboardLabel = 'Seller Dashboard';
-                $headerDashboardDescription = 'Manage listings, orders, and shop activity.';
+                $headerDashboardLabel = __('Seller Dashboard');
+                $headerDashboardDescription = __('Manage listings, orders, and shop activity.');
             } elseif (\Illuminate\Support\Facades\Route::has('buyer.dashboard')) {
                 $headerDashboardRoute = route('buyer.dashboard');
-                $headerDashboardLabel = 'Buyer Dashboard';
-                $headerDashboardDescription = 'Track orders, messages, and account activity.';
+                $headerDashboardLabel = __('Buyer Dashboard');
+                $headerDashboardDescription = __('Track orders, messages, and account activity.');
             } elseif (\Illuminate\Support\Facades\Route::has('dashboard')) {
                 $headerDashboardRoute = route('dashboard');
             }
@@ -214,6 +224,7 @@
     <meta name="robots" content="{{ $metaRobots }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="{{ $metaDescription }}">
+    <meta property="og:locale" content="{{ locale_og_code() }}">
     @auth
         @if (\Illuminate\Support\Facades\Route::has('notifications.pulse'))
             <meta name="cetsy-notifications-pulse-url" content="{{ route('notifications.pulse') }}">
@@ -703,11 +714,11 @@
                 </a>
 
                 <form method="GET" action="{{ route('search') }}" class="hidden flex-1 lg:block">
-                    <label for="globalSearch" class="sr-only">Search products</label>
+                    <label for="globalSearch" class="sr-only">{{ __('Search products') }}</label>
                     <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2">
                         <i class="fas fa-search text-slate-400"></i>
-                        <input id="globalSearch" name="q" type="search" value="{{ request('q') }}" placeholder="Search products, services, shops" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
-                        <button type="submit" class="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">Search</button>
+                        <input id="globalSearch" name="q" type="search" value="{{ request('q') }}" placeholder="{{ __('Search products, services, shops') }}" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
+                        <button type="submit" class="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">{{ __('Search') }}</button>
                     </div>
                 </form>
 
@@ -719,12 +730,12 @@
                                 return is_array($row) ? (int) ($row['quantity'] ?? 0) : 0;
                             });
                     @endphp
-                    <a href="{{ route('listings') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Listings</a>
-                    <a href="{{ route('shops.index') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Shops</a>
-                    <a href="{{ route('become-seller') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">Sell</a>
+                    <a href="{{ route('listings') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">{{ __('Listings') }}</a>
+                    <a href="{{ route('shops.index') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">{{ __('Shops') }}</a>
+                    <a href="{{ route('become-seller') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">{{ __('Sell') }}</a>
                     <a href="{{ url('/cart') }}" class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold {{ request()->is('cart*') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
                         <i class="fas fa-shopping-cart text-sm"></i>
-                        <span>Cart</span>
+                        <span>{{ __('Cart') }}</span>
                         @if ($headerCartCount > 0)
                             <span class="inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
                                 {{ $headerCartCount > 99 ? '99+' : $headerCartCount }}
@@ -734,10 +745,33 @@
                 </nav>
 
                 <div class="ml-auto flex items-center gap-2">
+                    <div class="relative">
+                        <button type="button" data-ui-toggle="dropdown" class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-slate-700 hover:border-slate-300 hover:bg-slate-50" aria-label="{{ __('Change language') }}" aria-expanded="false">
+                            <i class="fas fa-globe text-sm"></i>
+                            <span class="hidden text-sm font-semibold sm:inline">{{ $headerLocaleLabel }}</span>
+                        </button>
+
+                        <div class="tw-dropdown-menu right-0 w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                            <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                                <p class="text-sm font-semibold text-slate-900">{{ __('Language') }}</p>
+                                <p class="text-xs text-slate-500">{{ __('Choose your preferred interface language.') }}</p>
+                            </div>
+                            <div class="p-2">
+                                @foreach ($headerLocaleOptions as $localeCode => $localeMeta)
+                                    <a href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $headerLocaleRedirect]) }}" class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium {{ $headerCurrentLocale === $localeCode ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-50' }}">
+                                        <span>{{ $localeMeta['native'] ?? strtoupper($localeCode) }}</span>
+                                        @if ($headerCurrentLocale === $localeCode)
+                                            <i class="fas fa-check text-xs"></i>
+                                        @endif
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
                     @auth
                         @if (\Illuminate\Support\Facades\Route::has('notifications.index'))
                             <div class="relative">
-                                <button type="button" data-ui-toggle="dropdown" data-live-notification-bell class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50" aria-label="Notifications" aria-expanded="false">
+                                <button type="button" data-ui-toggle="dropdown" data-live-notification-bell class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50" aria-label="{{ __('Notifications') }}" aria-expanded="false">
                                     <i class="fas fa-bell text-sm"></i>
                                     @if ($headerUnreadNotifications > 0)
                                         <span data-live-notification-count class="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[10px] font-semibold leading-none text-white">
@@ -749,11 +783,11 @@
                                 <div class="tw-dropdown-menu right-0 w-[22rem] max-w-[90vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
                                     <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
                                         <div>
-                                            <h3 class="text-sm font-semibold text-slate-900">Notifications</h3>
-                                            <p class="text-xs text-slate-500">Latest updates from your account</p>
+                                            <h3 class="text-sm font-semibold text-slate-900">{{ __('Notifications') }}</h3>
+                                            <p class="text-xs text-slate-500">{{ __('Latest updates from your account') }}</p>
                                         </div>
                                         <span data-live-notification-unread-label class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
-                                            {{ $headerUnreadNotifications }} unread
+                                            {{ __(':count unread', ['count' => $headerUnreadNotifications]) }}
                                         </span>
                                     </div>
 
@@ -763,13 +797,13 @@
                                                 $notificationHref = \Illuminate\Support\Facades\Route::has('notifications.open')
                                                     ? route('notifications.open', $notification->id)
                                                     : route('notifications.index');
-                                                $notificationTitle = trim((string) ($notification->title ?: $notification->description ?: $notification->message ?: 'Notification'));
+                                                $notificationTitle = trim((string) ($notification->title ?: $notification->description ?: $notification->message ?: __('Notification')));
                                                 $notificationAge = optional($notification->created_at)->diffForHumans();
-                                                $notificationAction = 'Open';
+                                                $notificationAction = __('Open');
                                                 try {
-                                                    $notificationAction = \App\Services\NotificationRouteService::getLinkText($notification, auth()->user()) ?: 'Open';
+                                                    $notificationAction = \App\Services\NotificationRouteService::getLinkText($notification, auth()->user()) ?: __('Open');
                                                 } catch (\Throwable $e) {
-                                                    $notificationAction = 'Open';
+                                                    $notificationAction = __('Open');
                                                 }
                                             @endphp
                                             <div class="border-b border-slate-100 px-4 py-3 last:border-b-0">
@@ -782,7 +816,7 @@
                                                         <div class="mt-1 flex items-center justify-between gap-2">
                                                             <p class="text-xs text-slate-500">{{ $notificationAge }}</p>
                                                             @if (!$notification->is_read)
-                                                                <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">New</span>
+                                                                <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">{{ __('New') }}</span>
                                                             @endif
                                                         </div>
                                                         <a href="{{ $notificationHref }}" class="mt-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100" @click="open = false">
@@ -794,7 +828,7 @@
                                         @empty
                                             <div class="px-4 py-8 text-center text-sm text-slate-500">
                                                 <i class="far fa-bell-slash mb-2 block text-2xl text-slate-300"></i>
-                                                No notifications yet.
+                                                {{ __('No notifications yet.') }}
                                             </div>
                                         @endforelse
                                     </div>
@@ -802,10 +836,10 @@
                                     <div class="border-t border-slate-200 p-3">
                                         <div class="flex flex-col gap-2 sm:flex-row">
                                             <button type="button" data-ui-toggle="modal" data-ui-target="#liveNotificationPrefsModal" data-notify-settings-trigger class="inline-flex w-full items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto">
-                                                Alert settings
+                                                {{ __('Alert settings') }}
                                             </button>
                                             <a href="{{ route('notifications.index') }}" class="inline-flex w-full items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
-                                                View all notifications
+                                                {{ __('View all notifications') }}
                                             </a>
                                         </div>
                                     </div>
@@ -813,7 +847,7 @@
                             </div>
                         @endif
                         <div class="relative">
-                            <button type="button" data-ui-toggle="dropdown" class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-2 text-slate-700 hover:border-slate-300 hover:bg-slate-50 sm:px-3" aria-label="Account menu" aria-expanded="false">
+                            <button type="button" data-ui-toggle="dropdown" class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-2 text-slate-700 hover:border-slate-300 hover:bg-slate-50 sm:px-3" aria-label="{{ __('Account menu') }}" aria-expanded="false">
                                 @if ($headerAccountAvatarUrl)
                                     <span class="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
                                         <img src="{{ $headerAccountAvatarUrl }}" alt="{{ $headerAccountName }}" class="h-full w-full object-cover" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');">
@@ -842,7 +876,7 @@
                                             <p class="truncate text-xs text-slate-500">{{ $headerAccountSubtitle }}</p>
                                         </div>
                                         <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
-                                            {{ $isSellerUser ? 'Seller' : ucfirst((string) ($headerUser->user_type ?? 'Account')) }}
+                                            {{ $headerAccountRoleLabel }}
                                         </span>
                                     </div>
                                 </div>
@@ -865,9 +899,9 @@
                                             <i class="fas fa-repeat"></i>
                                         </span>
                                         <span class="min-w-0 flex-1">
-                                            <span class="block truncate text-sm font-semibold text-slate-900">Switch Account</span>
+                                            <span class="block truncate text-sm font-semibold text-slate-900">{{ __('Switch Account') }}</span>
                                             <span class="block truncate text-xs text-slate-500">
-                                                {{ $accountSwitchModalAccounts->count() === 1 ? 'Current account only' : $accountSwitchModalAccounts->count() . ' saved on this device' }}
+                                                {{ $accountSwitchModalAccounts->count() === 1 ? __('Current account only') : __(':count saved on this device', ['count' => $accountSwitchModalAccounts->count()]) }}
                                             </span>
                                         </span>
                                         <i class="fas fa-chevron-right text-sm text-slate-400"></i>
@@ -877,15 +911,15 @@
                                             <i class="fas fa-gear"></i>
                                         </span>
                                         <span class="min-w-0 flex-1">
-                                            <span class="block truncate text-sm font-semibold text-slate-900">Account settings</span>
-                                            <span class="block truncate text-xs text-slate-500">Manage profile details and add another account.</span>
+                                            <span class="block truncate text-sm font-semibold text-slate-900">{{ __('Account settings') }}</span>
+                                            <span class="block truncate text-xs text-slate-500">{{ __('Manage profile details and add another account.') }}</span>
                                         </span>
                                     </a>
                                     @if (Route::has('logout'))
                                         <form method="POST" action="{{ route('logout') }}">
                                             @csrf
                                             <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-                                                Logout
+                                                {{ __('Log Out') }}
                                             </button>
                                         </form>
                                     @endif
@@ -894,10 +928,10 @@
                         </div>
                     @else
                         @if (Route::has('login'))
-                            <a href="{{ route('login') }}" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300">Login</a>
+                            <a href="{{ route('login') }}" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300">{{ __('Login') }}</a>
                         @endif
                         @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500">Create account</a>
+                            <a href="{{ route('register') }}" class="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500">{{ __('Create account') }}</a>
                         @endif
                     @endauth
                 </div>
@@ -1036,23 +1070,23 @@
                 @endauth
 
                 <nav class="grid grid-cols-2 gap-2">
-                    <a href="{{ route('listings') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Listings</a>
-                    <a href="{{ route('shops.index') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Shops</a>
-                    <a href="{{ route('become-seller') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Sell</a>
-                    <a href="{{ route('contact') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Support</a>
+                    <a href="{{ route('listings') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Listings') }}</a>
+                    <a href="{{ route('shops.index') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Shops') }}</a>
+                    <a href="{{ route('become-seller') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Sell') }}</a>
+                    <a href="{{ route('contact') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Support') }}</a>
                 </nav>
 
                 @if($isAdminUser)
                     @php
                         $adminDrawerLinks = [
-                            ['route' => 'admin.dashboard', 'icon' => 'fas fa-gauge-high', 'label' => 'Dashboard'],
-                            ['route' => 'admin.notifications.index', 'icon' => 'fas fa-bell', 'label' => 'Notifications'],
-                            ['route' => 'admin.users.index', 'icon' => 'fas fa-users', 'label' => 'Manage Users'],
-                            ['route' => 'admin.kyc.index', 'icon' => 'fas fa-id-card', 'label' => 'KYC Management'],
+                            ['route' => 'admin.dashboard', 'icon' => 'fas fa-gauge-high', 'label' => __('Dashboard')],
+                            ['route' => 'admin.notifications.index', 'icon' => 'fas fa-bell', 'label' => __('Notifications')],
+                            ['route' => 'admin.users.index', 'icon' => 'fas fa-users', 'label' => __('Manage Users')],
+                            ['route' => 'admin.kyc.index', 'icon' => 'fas fa-id-card', 'label' => __('KYC Management')],
                         ];
                     @endphp
                     <div class="rounded-xl border border-slate-200 p-3">
-                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Admin Menu</div>
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ __('Admin Menu') }}</div>
                         <div class="space-y-1.5">
                             @foreach($adminDrawerLinks as $adminItem)
                                 @php
@@ -1077,17 +1111,17 @@
                         $buyerPendingOffers = \App\Models\Offer::where('buyer_id', auth()->id())->where('status', 'pending')->count();
                     @endphp
                     <div class="rounded-xl border border-slate-200 p-3">
-                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Buyer Menu</div>
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ __('Buyer Menu') }}</div>
                         <div class="space-y-1.5">
                             <a href="{{ route('buyer.dashboard') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                <span><i class="fas fa-gauge mr-2"></i>Dashboard</span>
+                                <span><i class="fas fa-gauge mr-2"></i>{{ __('Dashboard') }}</span>
                             </a>
                             <a href="{{ route('account.orders') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                <span><i class="fas fa-receipt mr-2"></i>Orders</span>
+                                <span><i class="fas fa-receipt mr-2"></i>{{ __('Orders') }}</span>
                             </a>
                             @if(\Illuminate\Support\Facades\Route::has('buyer.offers'))
                                 <a href="{{ route('buyer.offers') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                    <span><i class="fas fa-hand-holding-dollar mr-2"></i>Offers</span>
+                                    <span><i class="fas fa-hand-holding-dollar mr-2"></i>{{ __('Offers') }}</span>
                                     @if($buyerPendingOffers > 0)
                                         <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">{{ $buyerPendingOffers }}</span>
                                     @endif
@@ -1095,7 +1129,7 @@
                             @endif
                             @if(\Illuminate\Support\Facades\Route::has('buyer.messages.index'))
                                 <a href="{{ route('buyer.messages.index') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                    <span><i class="fas fa-comments mr-2"></i>Messages</span>
+                                    <span><i class="fas fa-comments mr-2"></i>{{ __('Messages') }}</span>
                                     @if($buyerUnreadMessages > 0)
                                         <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">{{ $buyerUnreadMessages }}</span>
                                     @endif
@@ -1103,30 +1137,30 @@
                             @endif
                             @if(\Illuminate\Support\Facades\Route::has('buyer.favorites'))
                                 <a href="{{ route('buyer.favorites') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                    <span><i class="fas fa-heart mr-2"></i>Favorites</span>
+                                    <span><i class="fas fa-heart mr-2"></i>{{ __('Favorites') }}</span>
                                 </a>
                             @endif
                             @if(\Illuminate\Support\Facades\Route::has('wishlist'))
                                 <a href="{{ route('wishlist') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                    <span><i class="fas fa-bookmark mr-2"></i>Wishlist</span>
+                                    <span><i class="fas fa-bookmark mr-2"></i>{{ __('Wishlist') }}</span>
                                 </a>
                             @endif
                             <a href="{{ route('wallet.index') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                <span><i class="fas fa-wallet mr-2"></i>Wallet</span>
+                                <span><i class="fas fa-wallet mr-2"></i>{{ __('Wallet') }}</span>
                             </a>
                             @if(\Illuminate\Support\Facades\Route::has('notifications.index'))
                                 <a href="{{ route('notifications.index') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                    <span><i class="fas fa-bell mr-2"></i>Notifications</span>
+                                    <span><i class="fas fa-bell mr-2"></i>{{ __('Notifications') }}</span>
                                 </a>
                             @endif
                             <a href="{{ route('account.payments') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                <span><i class="fas fa-credit-card mr-2"></i>Payments</span>
+                                <span><i class="fas fa-credit-card mr-2"></i>{{ __('Payments') }}</span>
                             </a>
                             <a href="{{ route('account.details') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                <span><i class="fas fa-user mr-2"></i>Account Settings</span>
+                                <span><i class="fas fa-user mr-2"></i>{{ __('Account Settings') }}</span>
                             </a>
                             <a href="{{ route('account.addresses') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                                <span><i class="fas fa-location-dot mr-2"></i>Addresses</span>
+                                <span><i class="fas fa-location-dot mr-2"></i>{{ __('Addresses') }}</span>
                             </a>
                         </div>
                     </div>
@@ -1139,29 +1173,29 @@
                             ? route('shop.show', $sellerShop->slug ?: $sellerShop->getKey())
                             : route('seller.shop.create');
                         $sellerDrawerLinks = [
-                            ['route' => 'seller.dashboard', 'icon' => 'fas fa-tachometer-alt', 'label' => 'Seller Dashboard'],
-                            ['route' => 'products.index', 'icon' => 'fas fa-box-open', 'label' => 'My Listings'],
-                            ['route' => 'seller.deals.index', 'icon' => 'fas fa-percent', 'label' => '%Deals'],
-                            ['route' => 'seller.orders.index', 'icon' => 'fas fa-shopping-cart', 'label' => 'Shop Orders'],
-                            ['route' => 'seller.reviews.index', 'icon' => 'fas fa-star', 'label' => 'Reviews'],
-                            ['route' => 'account.orders', 'icon' => 'fas fa-bag-shopping', 'label' => 'My Orders'],
-                            ['route' => 'seller.messages.index', 'icon' => 'fas fa-comments', 'label' => 'Messages'],
-                            ['route' => 'seller.offers.index', 'icon' => 'fas fa-handshake', 'label' => 'Offers'],
-                            ['route' => 'buyer.favorites', 'icon' => 'fas fa-heart', 'label' => 'Favorites'],
-                            ['route' => 'seller.favorites.index', 'icon' => 'fas fa-store', 'label' => 'Shop Favorites'],
-                            ['route' => 'seller.notifications.index', 'icon' => 'fas fa-bell', 'label' => 'Notifications'],
-                            ['route' => 'disputes.index', 'icon' => 'fas fa-exclamation-triangle', 'label' => 'Disputes'],
-                            ['href' => $sellerShopUrl, 'icon' => 'fas fa-store', 'label' => 'My Shop'],
-                            ['route' => 'seller.analytics.index', 'icon' => 'fas fa-chart-line', 'label' => 'Analytics'],
-                            ['route' => 'seller.reports.inventory', 'icon' => 'fas fa-boxes-stacked', 'label' => 'Inventory Report'],
-                            ['route' => 'seller.payouts.index', 'icon' => 'fas fa-money-bill-wave', 'label' => 'Payouts'],
-                            ['route' => 'seller.subscription', 'icon' => 'fas fa-file-invoice', 'label' => 'Subscription'],
-                            ['route' => 'seller.kyc', 'icon' => 'fas fa-id-card', 'label' => 'KYC'],
-                            ['route' => 'wallet.index', 'icon' => 'fas fa-wallet', 'label' => 'Wallet'],
+                            ['route' => 'seller.dashboard', 'icon' => 'fas fa-tachometer-alt', 'label' => __('Seller Dashboard')],
+                            ['route' => 'products.index', 'icon' => 'fas fa-box-open', 'label' => __('My Listings')],
+                            ['route' => 'seller.deals.index', 'icon' => 'fas fa-percent', 'label' => __('Deals')],
+                            ['route' => 'seller.orders.index', 'icon' => 'fas fa-shopping-cart', 'label' => __('Shop Orders')],
+                            ['route' => 'seller.reviews.index', 'icon' => 'fas fa-star', 'label' => __('Reviews')],
+                            ['route' => 'account.orders', 'icon' => 'fas fa-bag-shopping', 'label' => __('My Orders')],
+                            ['route' => 'seller.messages.index', 'icon' => 'fas fa-comments', 'label' => __('Messages')],
+                            ['route' => 'seller.offers.index', 'icon' => 'fas fa-handshake', 'label' => __('Offers')],
+                            ['route' => 'buyer.favorites', 'icon' => 'fas fa-heart', 'label' => __('Favorites')],
+                            ['route' => 'seller.favorites.index', 'icon' => 'fas fa-store', 'label' => __('Shop Favorites')],
+                            ['route' => 'seller.notifications.index', 'icon' => 'fas fa-bell', 'label' => __('Notifications')],
+                            ['route' => 'disputes.index', 'icon' => 'fas fa-exclamation-triangle', 'label' => __('Disputes')],
+                            ['href' => $sellerShopUrl, 'icon' => 'fas fa-store', 'label' => __('My Shop')],
+                            ['route' => 'seller.analytics.index', 'icon' => 'fas fa-chart-line', 'label' => __('Analytics')],
+                            ['route' => 'seller.reports.inventory', 'icon' => 'fas fa-boxes-stacked', 'label' => __('Inventory Report')],
+                            ['route' => 'seller.payouts.index', 'icon' => 'fas fa-money-bill-wave', 'label' => __('Payouts')],
+                            ['route' => 'seller.subscription', 'icon' => 'fas fa-file-invoice', 'label' => __('Subscription')],
+                            ['route' => 'seller.kyc', 'icon' => 'fas fa-id-card', 'label' => __('KYC')],
+                            ['route' => 'wallet.index', 'icon' => 'fas fa-wallet', 'label' => __('Wallet')],
                         ];
                     @endphp
                     <div class="rounded-xl border border-slate-200 p-3">
-                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Seller Menu</div>
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ __('Seller Menu') }}</div>
                         <div class="space-y-1.5">
                             @foreach($sellerDrawerLinks as $sellerItem)
                                 @php
@@ -1179,25 +1213,36 @@
 
                 @auth
                     <div class="rounded-xl border border-slate-200 p-3">
-                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Account</div>
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ __('Account') }}</div>
                         <div class="grid grid-cols-2 gap-2">
                             <a href="{{ $headerDashboardRoute ?: url('/dashboard') }}" @click="mobileDrawerOpen = false" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ $headerDashboardLabel }}</a>
-                            <a href="{{ url('/cart') }}" @click="mobileDrawerOpen = false" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Cart</a>
+                            <a href="{{ url('/cart') }}" @click="mobileDrawerOpen = false" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Cart') }}</a>
                         </div>
                     </div>
                 @else
                     <div class="rounded-xl border border-slate-200 p-3">
-                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Account</div>
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ __('Account') }}</div>
                         <div class="grid grid-cols-2 gap-2">
                             @if (Route::has('login'))
-                                <a href="{{ route('login') }}" @click="mobileDrawerOpen = false" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">Login</a>
+                                <a href="{{ route('login') }}" @click="mobileDrawerOpen = false" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Login') }}</a>
                             @endif
                             @if (Route::has('register'))
-                                <a href="{{ route('register') }}" @click="mobileDrawerOpen = false" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white">Register</a>
+                                <a href="{{ route('register') }}" @click="mobileDrawerOpen = false" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white">{{ __('Register') }}</a>
                             @endif
                         </div>
                     </div>
                 @endauth
+
+                <div class="rounded-xl border border-slate-200 p-3">
+                    <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ __('Language') }}</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach ($headerLocaleOptions as $localeCode => $localeMeta)
+                            <a href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $headerLocaleRedirect]) }}" @click="mobileDrawerOpen = false" class="rounded-lg border px-3 py-2 text-sm font-semibold {{ $headerCurrentLocale === $localeCode ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-700' }}">
+                                {{ $localeMeta['native'] ?? strtoupper($localeCode) }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
 
                 @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
                     <div class="space-y-2">
@@ -1300,7 +1345,7 @@
                                 @forelse ($accountSwitchModalAccounts as $switchAccount)
                                     @php
                                         $switchShop = $switchAccount->shop;
-                                        $switchName = trim((string) ($switchShop?->name ?: $switchAccount->name ?: $switchAccount->email));
+                                        $switchName = trim((string) ($switchShop?->localized_name ?: $switchShop?->name ?: $switchAccount->name ?: $switchAccount->email));
                                         $switchMeta = trim((string) ($switchAccount->email ?: ucfirst((string) $switchAccount->user_type)));
                                         $switchAvatar = $switchShop?->logo_url ?: (!empty($switchShop?->logo) ? asset('storage/' . ltrim((string) $switchShop->logo, '/')) : (!empty($switchAccount->photo) ? asset('storage/' . ltrim((string) $switchAccount->photo, '/')) : null));
                                         $switchInitial = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($switchName !== '' ? $switchName : 'A', 0, 1));

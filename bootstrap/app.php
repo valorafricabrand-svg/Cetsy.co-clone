@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\EnsureSellerKycIsVerified;
 use App\Http\Middleware\EnsureUserIsSeller;
+use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackUserPlatform;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Cache;
@@ -32,6 +33,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'ensure.seller.subscription' => \App\Http\Middleware\EnsureSellerHasActiveSubscription::class,
             'kyc.after.two.sales' => \App\Http\Middleware\RequireKycAfterTwoSales::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+        ]);
+
+        $middleware->web(append: [
+            SetLocale::class,
         ]);
 
         // Global middlewares you already had
@@ -72,6 +77,4 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
-
-
 

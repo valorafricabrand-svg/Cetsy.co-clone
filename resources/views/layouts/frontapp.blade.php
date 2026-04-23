@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="{{ locale_html_code() }}" dir="ltr">
 <head>
     @php
         $siteName = config('app.name', 'Cetsy');
@@ -43,7 +43,7 @@
         <meta property="og:url" content="{{ $canonicalUrl }}">
         <meta property="og:image" content="{{ $metaImage }}">
         <meta property="og:image:alt" content="Cetsy Handmade Products Marketplace">
-        <meta property="og:locale" content="en_US">
+        <meta property="og:locale" content="{{ locale_og_code() }}">
         <meta property="og:site_name" content="{{ $siteName }}">
 
         <!-- Twitter Card Meta Tags -->
@@ -232,6 +232,33 @@
                 @endforeach
               </ul>
             </li>
+          </ul>
+        </li>
+        @php
+          $currentLocale = current_locale();
+          $localeOptions = supported_locales();
+          $localeRedirect = url()->full();
+        @endphp
+        <li class="nav-item dropdown me-3">
+          <a class="nav-link dropdown-toggle text-dark" href="#" id="localeDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-globe me-1"></i>{{ locale_label($currentLocale) }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="localeDropdown">
+            <li class="px-2 py-1">
+              <div class="small fw-semibold text-body-emphasis">{{ __('Language') }}</div>
+              <div class="small text-body-secondary">{{ __('Choose your preferred interface language.') }}</div>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            @foreach($localeOptions as $localeCode => $localeMeta)
+              <li>
+                <a class="dropdown-item d-flex align-items-center justify-content-between {{ $currentLocale === $localeCode ? 'active' : '' }}" href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $localeRedirect]) }}">
+                  <span>{{ $localeMeta['native'] ?? strtoupper($localeCode) }}</span>
+                  @if($currentLocale === $localeCode)
+                    <i class="fas fa-check text-success"></i>
+                  @endif
+                </a>
+              </li>
+            @endforeach
           </ul>
         </li>
       

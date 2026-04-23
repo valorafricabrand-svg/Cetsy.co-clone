@@ -179,7 +179,7 @@ function initLiveNotificationPulse() {
         const latestMessage = payload?.latest_message || null;
 
         updateNotificationBadge(unreadNotifications);
-        updateDocumentTitle(unreadNotifications, unreadMessages);
+        updateDocumentTitle(unreadNotifications);
 
         if (!state.bootstrapped) {
             state.latestNotificationId = Number(latestNotification?.id || 0);
@@ -325,9 +325,9 @@ function initLiveNotificationPulse() {
         }
     }
 
-    function updateDocumentTitle(notificationCount, messageCount) {
-        const totalUnread = Number(notificationCount || 0) + Number(messageCount || 0);
-        document.title = totalUnread > 0 ? `(${totalUnread}) ${state.baseTitle}` : state.baseTitle;
+    function updateDocumentTitle(notificationCount) {
+        const unreadNotifications = Number(notificationCount || 0);
+        document.title = unreadNotifications > 0 ? `(${unreadNotifications}) ${state.baseTitle}` : state.baseTitle;
     }
 
     function ensureSettingsModal() {

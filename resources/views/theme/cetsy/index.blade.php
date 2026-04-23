@@ -317,10 +317,10 @@
                                         @if((product_effective_type($item) === 'physical') && (int)($item->stock ?? 0) === 1 && (($item->is_reserved ?? false)) )
                                             <span class="absolute right-1.5 top-1.5 z-10 rounded-full bg-red-600 px-1.5 py-0.5 text-[9px] font-semibold text-white sm:right-2 sm:top-2 sm:px-2 sm:text-[10px]">Reserved</span>
                                         @endif
-                                        <img src="{{ $card['thumb'] }}" alt="{{ $item->name }}" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async" onerror='this.onerror=null;this.src=@json($productThumbFallback);'>
+                                        <img src="{{ $card['thumb'] }}" alt="{{ $item->localized_name ?? $item->name }}" class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async" onerror='this.onerror=null;this.src=@json($productThumbFallback);'>
                                     </div>
                                     <div class="flex flex-1 flex-col p-2 sm:p-3">
-                                        <h3 class="line-clamp-1 text-[12px] font-semibold text-slate-900 sm:line-clamp-2 sm:text-sm">{{ $item->name }}</h3>
+                                        <h3 class="line-clamp-1 text-[12px] font-semibold text-slate-900 sm:line-clamp-2 sm:text-sm">{{ $item->localized_name ?? $item->name }}</h3>
 
                                         <div class="mt-1.5 hidden items-center gap-1 text-[11px] text-amber-500 sm:mt-2 sm:flex">
                                             @for($i = 1; $i <= 5; $i++)
@@ -394,16 +394,16 @@
                         <div class="flex items-center gap-3">
                             <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100">
                                 <img src="{{ !empty($shop->logo_url) ? $shop->logo_url : (!empty($shop->logo) ? (Str::startsWith((string) $shop->logo, ['http://', 'https://', '//']) ? $shop->logo : media_url($shop->logo)) : (setting('favicon_url') ?: $productThumbFallback)) }}"
-                                     alt="{{ $shop->name }} logo"
+                                     alt="{{ $shop->localized_name ?? $shop->name }} logo"
                                      class="h-full w-full object-cover"
                                      onerror='this.onerror=null;this.src=@json(setting("favicon_url") ?: $productThumbFallback);'>
                             </div>
                             <div>
-                                <h3 class="text-sm font-bold text-slate-900">{{ $shop->name }}</h3>
+                                <h3 class="text-sm font-bold text-slate-900">{{ $shop->localized_name ?? $shop->name }}</h3>
                                 <p class="text-xs text-slate-500">{{ $shop->completed_orders_count ?? 0 }} completed orders</p>
                             </div>
                         </div>
-                        <p class="mt-3 text-sm text-slate-600">{{ Str::limit(strip_tags($shop->description ?? 'Explore curated items from this shop.'), 95) }}</p>
+                        <p class="mt-3 text-sm text-slate-600">{{ Str::limit(strip_tags($shop->localized_bio ?? $shop->bio ?? 'Explore curated items from this shop.'), 95) }}</p>
                         <div class="mt-3 flex items-center justify-between text-xs font-semibold text-emerald-700">
                             <span class="rounded-full bg-emerald-50 px-2 py-0.5">Top rated</span>
                             <span>View shop <i class="fas fa-arrow-right ml-1"></i></span>

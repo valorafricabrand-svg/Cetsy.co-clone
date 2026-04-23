@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasLocalizedContent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -48,6 +49,14 @@ use App\Models\Review;
 class Shop extends Model
 {
     use HasFactory;
+    use HasLocalizedContent;
+
+    protected array $translatable = [
+        'name',
+        'bio',
+        'announcement',
+        'policies',
+    ];
 
     /**
      * Mass-assignable attributes.
@@ -63,14 +72,18 @@ class Shop extends Model
 
         // Section 2: name & slug
         'name',
+        'name_translations',
         'slug',
         'bio',
+        'bio_translations',
         'logo',
         'is_active',
         'is_holiday_mode',
         'featured_image',
         'announcement',
+        'announcement_translations',
         'policies',
+        'policies_translations',
 
         // Section 3: payment
         'bank_account',
@@ -121,7 +134,31 @@ class Shop extends Model
         'enable_2fa' => 'boolean',
         'is_active' => 'boolean',
         'is_holiday_mode' => 'boolean',
+        'name_translations' => 'array',
+        'bio_translations' => 'array',
+        'announcement_translations' => 'array',
+        'policies_translations' => 'array',
     ];
+
+    public function getLocalizedNameAttribute(): ?string
+    {
+        return $this->localized('name');
+    }
+
+    public function getLocalizedBioAttribute(): ?string
+    {
+        return $this->localized('bio');
+    }
+
+    public function getLocalizedAnnouncementAttribute(): ?string
+    {
+        return $this->localized('announcement');
+    }
+
+    public function getLocalizedPoliciesAttribute(): ?string
+    {
+        return $this->localized('policies');
+    }
 
     public function isActive(): bool
     {

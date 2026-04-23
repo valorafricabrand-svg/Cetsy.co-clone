@@ -4,6 +4,7 @@ use App\Models\Shop;
 use App\Models\Country;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 function favicon_url(){
     try {
@@ -91,6 +92,230 @@ function logo_url(){
     }
 
     return asset('assets/images/cetsylogmain.png');
+}
+
+if (! function_exists('supported_locales')) {
+    /**
+     * Supported application locales keyed by locale code.
+     *
+     * @return array<string, array<string, string>>
+     */
+    function supported_locales(): array
+    {
+        $locales = config('locales.supported', []);
+
+        return is_array($locales) ? $locales : [];
+    }
+}
+
+if (! function_exists('normalize_locale')) {
+    /**
+     * Normalize a locale code and ensure it is supported.
+     */
+    function normalize_locale(?string $locale): ?string
+    {
+        if (! is_string($locale)) {
+            return null;
+        }
+
+        $normalized = strtolower(trim($locale));
+
+        return array_key_exists($normalized, supported_locales()) ? $normalized : null;
+    }
+}
+
+if (! function_exists('default_locale')) {
+    /**
+     * Resolve the application default locale.
+     */
+    function default_locale(): string
+    {
+        return normalize_locale((string) config('locales.default', config('app.locale', 'en')))
+            ?? 'en';
+    }
+}
+
+if (! function_exists('current_locale')) {
+    /**
+     * Resolve the current application locale.
+     */
+    function current_locale(): string
+    {
+        return normalize_locale(app()->getLocale()) ?? default_locale();
+    }
+}
+
+if (! function_exists('locale_label')) {
+    /**
+     * Get the display label for a locale.
+     */
+    function locale_label(?string $locale = null, bool $native = true): string
+    {
+        $resolved = normalize_locale($locale) ?? current_locale();
+        $meta = supported_locales()[$resolved] ?? [];
+
+        if ($native && ! empty($meta['native'])) {
+            return (string) $meta['native'];
+        }
+
+        if (! empty($meta['name'])) {
+            return (string) $meta['name'];
+        }
+
+        return strtoupper($resolved);
+    }
+}
+
+if (! function_exists('locale_html_code')) {
+    /**
+     * Get the HTML language code for a locale.
+     */
+    function locale_html_code(?string $locale = null): string
+    {
+        $resolved = normalize_locale($locale) ?? current_locale();
+        $meta = supported_locales()[$resolved] ?? [];
+
+        return (string) ($meta['html'] ?? str_replace('_', '-', $resolved));
+    }
+}
+
+if (! function_exists('locale_og_code')) {
+    /**
+     * Get the Open Graph locale code for a locale.
+     */
+    function locale_og_code(?string $locale = null): string
+    {
+        $resolved = normalize_locale($locale) ?? current_locale();
+        $meta = supported_locales()[$resolved] ?? [];
+
+        return (string) ($meta['og'] ?? 'en_US');
+    }
+}
+
+if (! function_exists('locale_from_language_name')) {
+    /**
+     * Resolve a stored language label to a supported locale code.
+     */
+    function locale_from_language_name(?string $language): ?string
+    {
+        $normalized = strtolower(trim((string) $language));
+
+        return match ($normalized) {
+            'english' => 'en',
+            'swahili', 'kiswahili' => 'sw',
+            default => normalize_locale($normalized),
+        };
+    }
+}
+
+if (! function_exists('shop_primary_locale')) {
+    /**
+     * Resolve the primary content locale for a shop.
+     */
+    function shop_primary_locale($shop = null): string
+    {
+        if ($shop instanceof \App\Models\Shop) {
+            $locale = locale_from_language_name($shop->language);
+
+            if ($locale) {
+                return $locale;
+            }
+        }
+
+        return default_locale();
+    }
+}
+
+if (! function_exists('content_translation_locales')) {
+    /**
+     * Return supported locales for translated marketplace content.
+     *
+     * @return array<string, array<string, string>>
+     */
+    function content_translation_locales($shop = null, bool $includePrimary = false): array
+    {
+        $primaryLocale = shop_primary_locale($shop);
+
+        return array_filter(
+            supported_locales(),
+            fn (string $locale): bool => $includePrimary || $locale !== $primaryLocale,
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+}
+
+if (! function_exists('normalize_translation_payload')) {
+    /**
+     * Normalize nested translation input from request payloads.
+     *
+     * @param  array<string, mixed>|null  $translations
+     * @param  array<int, string>  $allowedFields
+     * @return array<string, array<string, string>>
+     */
+    function normalize_translation_payload(?array $translations, array $allowedFields): array
+    {
+        $normalized = [];
+
+        foreach ($allowedFields as $field) {
+            $normalized[$field] = [];
+
+            $fieldTranslations = $translations[$field] ?? [];
+            if (! is_array($fieldTranslations)) {
+                continue;
+            }
+
+            foreach ($fieldTranslations as $locale => $value) {
+                $resolvedLocale = normalize_locale(is_string($locale) ? $locale : null);
+                $resolvedValue = trim((string) $value);
+
+                if ($resolvedLocale && $resolvedValue !== '') {
+                    $normalized[$field][$resolvedLocale] = $resolvedValue;
+                }
+            }
+        }
+
+        return $normalized;
+    }
+}
+
+if (! function_exists('searchable_content_expression')) {
+    /**
+     * Build a portable SQL expression for searching plain text and JSON content.
+     *
+     * @param  array<int, string>  $columns
+     */
+    function searchable_content_expression(array $columns): string
+    {
+        $driver = DB::connection()->getDriverName();
+        $grammar = DB::connection()->getQueryGrammar();
+        $castType = in_array($driver, ['mysql', 'mariadb'], true) ? 'CHAR' : 'TEXT';
+
+        $parts = array_map(function (string $column) use ($grammar, $castType): string {
+            $wrapped = $grammar->wrap($column);
+
+            if (str_ends_with($column, '_translations')) {
+                return "COALESCE(CAST({$wrapped} AS {$castType}), '')";
+            }
+
+            return "COALESCE({$wrapped}, '')";
+        }, $columns);
+
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            return 'LOWER(CONCAT_WS(\' \', ' . implode(', ', $parts) . '))';
+        }
+
+        return 'LOWER(' . implode(" || ' ' || ", $parts) . ')';
+    }
+}
+
+if (! function_exists('search_like_value')) {
+    /**
+     * Normalize a search term for case-insensitive LIKE queries.
+     */
+    function search_like_value(string $term): string
+    {
+        return '%' . \Illuminate\Support\Str::lower(trim($term)) . '%';
+    }
 }
 
 

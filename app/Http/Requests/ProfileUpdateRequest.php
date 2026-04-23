@@ -27,6 +27,7 @@ class ProfileUpdateRequest extends FormRequest
             ],
             'phone' => ['nullable', 'string', 'max:255'],
             'country_id' => ['nullable', 'exists:countries,id'],
+            'preferred_locale' => ['nullable', 'string', Rule::in(array_keys((array) config('locales.supported', ['en' => [], 'sw' => []])))],
             'photo' => ['nullable', 'image', 'max:2048'],
         ];
     }

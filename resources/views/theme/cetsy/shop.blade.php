@@ -7,7 +7,12 @@
     ?? $shop->logo_url
     ?? (setting('favicon_url') ?: asset('assets/images/cetsylogmain.png'));
 
-  $shopDescription = Str::limit(strip_tags($shop->bio ?? $shop->announcement ?? ($shop->name . ' shop on Cetsy')), 155);
+  $localizedShopName = $shop->localized_name ?? $shop->name;
+  $localizedShopBio = $shop->localized_bio ?? $shop->bio;
+  $localizedShopAnnouncement = $shop->localized_announcement ?? $shop->announcement;
+  $localizedShopPolicies = $shop->localized_policies ?? $shop->policies;
+
+  $shopDescription = Str::limit(strip_tags($localizedShopBio ?? $localizedShopAnnouncement ?? ($localizedShopName . ' shop on Cetsy')), 155);
   $shopRouteParam = $shop->slug ?: $shop->id;
 
   $totalSales = $shop->orders()->whereIn('status', [
@@ -39,7 +44,7 @@
         'url' => $listingUrl,
         'item' => [
           '@type' => 'Product',
-          'name' => $product->name,
+          'name' => $product->localized_name ?? $product->name,
           'url' => $listingUrl,
           'image' => product_thumb_url($product),
         ],
@@ -50,7 +55,7 @@
   $shopSchema = [
     '@type' => 'Store',
     '@id' => $shopUrl . '#shop',
-    'name' => $shop->name,
+    'name' => $localizedShopName,
     'url' => $shopUrl,
     'image' => $shopImage ?: asset('assets/images/cetsylogmain.png'),
     'description' => $shopDescription,
@@ -92,14 +97,14 @@
           [
             '@type' => 'ListItem',
             'position' => 3,
-            'name' => $shop->name,
+            'name' => $localizedShopName,
             'item' => $shopUrl,
           ],
         ],
       ],
       [
         '@type' => 'ItemList',
-        'name' => $shop->name . ' listings',
+        'name' => $localizedShopName . ' listings',
         'url' => $shopUrl,
         'numberOfItems' => $products->total(),
         'itemListElement' => $shopListItems,
@@ -108,7 +113,7 @@
   ];
 @endphp
 
-@section('title', $shop->name . ' | Shop on Cetsy')
+@section('title', $localizedShopName . ' | Shop on Cetsy')
 @section('meta_description', $shopDescription)
 @section('canonical_url', route('shop.show', $shopRouteParam))
 @section('meta_image', $shopImage)
@@ -161,13 +166,13 @@
         <div class="flex items-start gap-4">
           <img
             src="{{ $shop->logo ? ($shop->logo_url ?? asset('storage/' . $shop->logo)) : (setting('favicon_url') ?: asset('assets/images/cetsylogmain.png')) }}"
-            alt="{{ $shop->name }} logo"
+            alt="{{ $localizedShopName }} logo"
             class="h-20 w-20 rounded-full border border-slate-200 object-cover shadow-sm"
             onerror='this.onerror=null;this.src=@json(asset("assets/images/cetsylogmain.png"));'
           >
 
           <div class="min-w-0 flex-1">
-            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">{{ $shop->name }}</h1>
+            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">{{ $localizedShopName }}</h1>
             <p class="mt-1 text-sm text-slate-500">{{ country_name($shop->country) }}</p>
 
             <div class="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-600 sm:text-sm">
@@ -243,11 +248,11 @@
     </div>
   </section>
 
-  @if($shop->announcement)
+  @if($localizedShopAnnouncement)
     <section class="bg-slate-50 pt-4">
       <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-          <i class="fas fa-bullhorn mr-2"></i>{!! $shop->announcement !!}
+          <i class="fas fa-bullhorn mr-2"></i>{!! $localizedShopAnnouncement !!}
         </div>
       </div>
     </section>
@@ -266,7 +271,7 @@
       <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <img
           src="{{ $shop->featured_image_url ?? asset('storage/' . $shop->featured_image) }}"
-          alt="Featured image for {{ $shop->name }}"
+          alt="Featured image for {{ $localizedShopName }}"
           class="h-48 w-full rounded-2xl border border-slate-200 object-cover shadow-sm md:h-72"
         >
       </div>
@@ -349,10 +354,10 @@
             <article class="product-item product-item-list shop-product-item flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3" data-price="{{ (float) ($product->price ?? 0) }}" data-type="{{ $product->type }}" data-rating="{{ $shop->reviews_avg_rating ?? ($shop->average_rating ?? 0) }}">
               <div class="relative overflow-hidden rounded-xl border border-slate-200 {{ $isDigitalPreview ? 'cetsy-preview-watermark' : '' }}"
                    @if($isDigitalPreview) data-watermark-label="Cetsy Preview" @endif>
-                <img src="{{ $thumbUrl }}" alt="{{ $product->name }}" class="h-20 w-20 object-cover">
+                <img src="{{ $thumbUrl }}" alt="{{ $product->localized_name ?? $product->name }}" class="h-20 w-20 object-cover">
               </div>
               <div class="min-w-0 flex-1">
-                <h3 class="line-clamp-1 text-sm font-semibold text-slate-900">{{ $product->name }}</h3>
+                <h3 class="line-clamp-1 text-sm font-semibold text-slate-900">{{ $product->localized_name ?? $product->name }}</h3>
                 <p class="mt-1 text-sm font-bold text-emerald-700">{{ money((float) $product->price, null) }}</p>
               </div>
               <button type="button" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500" onclick="addToCart({{ $product->id }})">
@@ -393,8 +398,8 @@
                   @endphp
 
                   <div class="mt-3 flex items-center gap-2">
-                    <img src="{{ $reviewThumb }}" alt="{{ $reviewProduct->name }} thumbnail" class="h-12 w-12 rounded-lg border border-slate-200 object-cover">
-                    <a href="{{ route('listing.show', $reviewProduct->slug ?? $reviewProduct->id) }}" class="text-sm font-medium text-slate-700 hover:text-emerald-700">{{ $reviewProduct->name }}</a>
+                    <img src="{{ $reviewThumb }}" alt="{{ $reviewProduct->localized_name ?? $reviewProduct->name }} thumbnail" class="h-12 w-12 rounded-lg border border-slate-200 object-cover">
+                    <a href="{{ route('listing.show', $reviewProduct->slug ?? $reviewProduct->id) }}" class="text-sm font-medium text-slate-700 hover:text-emerald-700">{{ $reviewProduct->localized_name ?? $reviewProduct->name }}</a>
                   </div>
                 @endif
 
@@ -444,7 +449,7 @@
           <article class="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <header class="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900">About This Shop</header>
             <div class="prose prose-sm max-w-none px-4 py-4 text-slate-700">
-              {!! $shop->bio ? $shop->bio : 'No description provided.' !!}
+              {!! $localizedShopBio ?: 'No description provided.' !!}
             </div>
           </article>
 
@@ -474,11 +479,11 @@
       </div>
 
       <div id="policies" class="shop-tab-panel hidden">
-        @if($shop->policies)
+        @if($localizedShopPolicies)
           <article class="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <header class="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900">Shop Policies</header>
             <div class="prose prose-sm max-w-none px-4 py-4 text-slate-700">
-              {!! $shop->policies !!}
+              {!! $localizedShopPolicies !!}
             </div>
           </article>
         @else
@@ -500,7 +505,7 @@
       <input type="hidden" name="product_id" value="">
 
       <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-        <h2 class="text-base font-semibold text-slate-900" id="messageModalLabel">Message Seller - {{ $shop->name }}</h2>
+        <h2 class="text-base font-semibold text-slate-900" id="messageModalLabel">Message Seller - {{ $localizedShopName }}</h2>
         <button type="button" data-close-message class="rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50" aria-label="Close message dialog">Close</button>
       </div>
 

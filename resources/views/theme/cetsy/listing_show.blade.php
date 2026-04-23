@@ -18,7 +18,7 @@ $primaryMedia = $product->media->firstWhere('type', 'image') ?? $product->media-
 $metaImage = $primaryMedia && $primaryMedia->url
     ? media_url($primaryMedia->url)
     : asset('assets/images/cetsylogmain.png');
-$metaDescription = Str::limit(strip_tags($product->description ?? $product->name), 155);
+$metaDescription = Str::limit(strip_tags($product->localized_description ?? $product->localized_name ?? $product->name), 155);
 
 $productUrl = route('listing.show', $product->slug);
 $schemaCurrency = 'USD';
@@ -38,7 +38,7 @@ $schemaImages = collect([$metaImage])
 $productSchema = [
     '@type' => 'Product',
     '@id' => $productUrl . '#product',
-    'name' => $product->name,
+    'name' => $product->localized_name ?? $product->name,
     'description' => $metaDescription,
     'url' => $productUrl,
     'image' => $schemaImages,
@@ -66,7 +66,7 @@ if ($product->shop) {
     $shopRouteParam = $product->shop->slug ?: $product->shop->id;
     $productSchema['offers']['seller'] = [
         '@type' => 'Organization',
-        'name' => $product->shop->name,
+        'name' => $product->shop->localized_name ?? $product->shop->name,
         'url' => route('shop.show', $shopRouteParam),
     ];
 }
@@ -133,7 +133,7 @@ if ($product->category) {
     ];
 }
 
-$productBreadcrumbItems[] = ['name' => $product->name, 'url' => $productUrl];
+$productBreadcrumbItems[] = ['name' => $product->localized_name ?? $product->name, 'url' => $productUrl];
 
 $productStructuredData = [
     '@context' => 'https://schema.org',
@@ -152,7 +152,7 @@ $productStructuredData = [
 ];
 @endphp
 
-@section('title', $product->name . ' - Item Details | Cetsy')
+@section('title', ($product->localized_name ?? $product->name) . ' - Item Details | Cetsy')
 @section('meta_description', $metaDescription)
 @section('canonical_url', route('listing.show', $product->slug))
 @section('meta_image', $metaImage)

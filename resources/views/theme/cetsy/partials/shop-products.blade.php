@@ -10,9 +10,9 @@
 @foreach($products as $product)
   @php $thumbUrl = product_thumb_url($product); @endphp
   <article class="product-item product-item-list shop-product-item flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3" data-price="{{ (float) ($product->price ?? 0) }}" data-type="{{ $product->type }}" data-rating="{{ optional($product->shop)->reviews_avg_rating ?? 0 }}">
-    <img src="{{ $thumbUrl }}" alt="{{ $product->name }}" class="h-20 w-20 rounded-xl border border-slate-200 object-cover">
+    <img src="{{ $thumbUrl }}" alt="{{ $product->localized_name ?? $product->name }}" class="h-20 w-20 rounded-xl border border-slate-200 object-cover">
     <div class="min-w-0 flex-1">
-      <h3 class="line-clamp-1 text-sm font-semibold text-slate-900">{{ $product->name }}</h3>
+      <h3 class="line-clamp-1 text-sm font-semibold text-slate-900">{{ $product->localized_name ?? $product->name }}</h3>
       <p class="mt-1 text-sm font-bold text-emerald-700">{{ money((float) $product->price, null) }}</p>
     </div>
     <button type="button" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500" onclick="addToCart({{ $product->id }})">

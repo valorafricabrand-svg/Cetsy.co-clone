@@ -115,6 +115,25 @@
       @enderror
     </div>
 
+    {{-- Preferred language --}}
+    <div class="mb-3">
+      <label for="preferred_locale" class="mb-1 block text-sm font-medium text-slate-700">{{ __('Language') }}</label>
+      <select
+        id="preferred_locale"
+        name="preferred_locale"
+        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500 @error('preferred_locale') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">
+        @foreach (supported_locales() as $localeCode => $localeMeta)
+          <option value="{{ $localeCode }}" {{ old('preferred_locale', $user->preferred_locale ?: current_locale()) === $localeCode ? 'selected' : '' }}>
+            {{ $localeMeta['native'] ?? strtoupper($localeCode) }}
+          </option>
+        @endforeach
+      </select>
+      <div class="mt-1 text-xs text-slate-500">{{ __('Choose the language used across the platform interface.') }}</div>
+      @error('preferred_locale')
+        <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
+      @enderror
+    </div>
+
     {{-- Profile Photo --}}
     <div class="mb-3">
       <label for="photo" class="mb-1 block text-sm font-medium text-slate-700">{{ __('Profile Photo') }}</label>
@@ -132,15 +151,15 @@
       @if($user->photo)
         <div class="mt-2">
           <img src="{{ asset('storage/' . $user->photo) }}" 
-               alt="Profile photo" 
+               alt="{{ __('Profile photo') }}" 
                class="rounded-full" 
                width="80" 
                height="80"
                style="object-fit: cover;">
-          <div class="mt-1 text-xs text-slate-500">Current profile photo</div>
+          <div class="mt-1 text-xs text-slate-500">{{ __('Current profile photo') }}</div>
         </div>
       @endif
-      <div class="mt-1 text-xs text-slate-500">Upload a new profile photo (optional). Max size: 2MB.</div>
+      <div class="mt-1 text-xs text-slate-500">{{ __('Upload a new profile photo (optional). Max size: 2MB.') }}</div>
     </div>
 
     {{-- Save button & flash "Saved." --}}
@@ -163,4 +182,3 @@
   </form>
 
 </section>
-

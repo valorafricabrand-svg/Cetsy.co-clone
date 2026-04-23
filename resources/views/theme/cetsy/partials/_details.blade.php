@@ -37,7 +37,7 @@
 @endphp
 
 <div class="space-y-4 lg:sticky lg:top-4">
-  <h1 class="text-2xl font-bold text-slate-900">{{ $product->name }}</h1>
+  <h1 class="text-2xl font-bold text-slate-900">{{ $product->localized_name ?? $product->name }}</h1>
 
   <div>
     @php
@@ -67,7 +67,7 @@
     <span class="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
       <i class="fa-solid fa-store"></i>
       <a href="{{ route('shop.show', $product->shop->slug) }}" class="hover:text-emerald-800">
-        {{ $product->shop->name }}
+        {{ $product->shop->localized_name ?? $product->shop->name }}
       </a>
     </span>
     @if (! $isDigital)

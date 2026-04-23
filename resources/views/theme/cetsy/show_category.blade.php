@@ -41,7 +41,7 @@
         'url' => $listingUrl,
         'item' => [
           '@type' => 'Product',
-          'name' => $item->name,
+          'name' => $item->localized_name ?? $item->name,
           'url' => $listingUrl,
           'image' => product_thumb_url($item),
         ],
@@ -373,14 +373,14 @@
                       <span class="absolute left-2 top-2 z-10 rounded-md bg-slate-900/75 px-2 py-0.5 text-[10px] font-semibold text-white"><i class="fas fa-play mr-1 text-[9px]"></i>Video</span>
                     @endif
                     <img src="{{ $thumb }}"
-                         alt="{{ $item->name }}"
+                         alt="{{ $item->localized_name ?? $item->name }}"
                          class="aspect-square h-full w-full object-cover"
                          @if($vid) data-video-src="{{ $vid }}" style="opacity:.01;filter:blur(8px);transition:opacity .35s ease,filter .35s ease;" @endif>
                   </a>
 
                   <div>
                     <h3 class="text-sm font-semibold text-slate-900">
-                      <a href="{{ route('listing.show', $item->slug) }}" class="hover:text-emerald-700">{{ $item->name ?? 'Untitled item' }}</a>
+                      <a href="{{ route('listing.show', $item->slug) }}" class="hover:text-emerald-700">{{ $item->localized_name ?? $item->name ?? 'Untitled item' }}</a>
                     </h3>
                     <div class="mt-1 text-xs text-amber-500">
                       @for($i=1; $i<=5; $i++)
@@ -388,8 +388,8 @@
                       @endfor
                       @if($cnt) <span class="ml-1 text-slate-400">({{ $cnt }})</span>@endif
                     </div>
-                    @if(!empty($item->short_description))
-                      <p class="mt-2 text-sm text-slate-500">{{ \Illuminate\Support\Str::limit(strip_tags($item->short_description), 120) }}</p>
+                    @if(!empty($item->localized_description ?? $item->short_description))
+                      <p class="mt-2 text-sm text-slate-500">{{ \Illuminate\Support\Str::limit(strip_tags($item->localized_description ?? $item->short_description), 120) }}</p>
                     @endif
                   </div>
 

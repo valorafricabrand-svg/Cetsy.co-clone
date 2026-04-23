@@ -124,7 +124,7 @@
                 }
             @endphp
             <li class="nav-item me-2 dropdown">
-                <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Select currency">
+                <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Select currency') }}">
                     <i class="fas fa-coins"></i>
                     <span class="ms-1">{{ $currentCurrency }}</span>
                 </a>
@@ -134,7 +134,7 @@
                         @php $siteDefault = setting('default_currency', 'USD') ?: 'USD'; @endphp
                         <li>
                             <a class="dropdown-item d-flex align-items-center justify-content-between {{ strtoupper($currentCurrency) === strtoupper($siteDefault) ? 'active' : '' }}" href="#" data-currency-reset="1">
-                                <span>Use Site Default ({{ strtoupper($siteDefault) }})</span>
+                                <span>{{ __('Use Site Default (:currency)', ['currency' => strtoupper($siteDefault)]) }}</span>
                                 @if(strtoupper($currentCurrency) === strtoupper($siteDefault))
                                     <i class="fas fa-check text-success"></i>
                                 @endif
@@ -146,6 +146,35 @@
                                 <a class="dropdown-item d-flex align-items-center justify-content-between {{ $is ? 'active' : '' }}" href="#" data-currency-code="{{ $code }}">
                                     <span>{{ $c->symbol ? $c->symbol.' ' : '' }}{{ $code }}</span>
                                     @if($is)
+                                        <i class="fas fa-check text-success"></i>
+                                    @endif
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </li>
+            @php
+                $currentLocale = current_locale();
+                $localeOptions = supported_locales();
+                $localeRedirect = url()->full();
+            @endphp
+            <li class="nav-item me-2 dropdown">
+                <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Change language') }}">
+                    <i class="fas fa-globe"></i>
+                    <span class="ms-1">{{ locale_label($currentLocale) }}</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end p-2" style="min-width: 220px;">
+                    <div class="px-2 pb-2">
+                        <div class="small fw-semibold text-body-emphasis">{{ __('Language') }}</div>
+                        <div class="text-body-secondary small">{{ __('Choose your preferred interface language.') }}</div>
+                    </div>
+                    <ul class="list-unstyled mb-0">
+                        @foreach($localeOptions as $localeCode => $localeMeta)
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center justify-content-between {{ $currentLocale === $localeCode ? 'active' : '' }}" href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $localeRedirect]) }}">
+                                    <span>{{ $localeMeta['native'] ?? strtoupper($localeCode) }}</span>
+                                    @if($currentLocale === $localeCode)
                                         <i class="fas fa-check text-success"></i>
                                     @endif
                                 </a>
@@ -168,7 +197,7 @@
                         <div class="dropdown-menu dropdown-menu-end navbar-dropdown-caret py-0 shadow border" style="min-width: 300px;">
                             <div class="card position-relative border-0">
                                 <div class="card-header bg-transparent border-bottom border-translucent">
-                                    <h6 class="mb-0">Recent Notifications</h6>
+                                    <h6 class="mb-0">{{ __('Recent Notifications') }}</h6>
                                 </div>
                                 <div class="card-body p-0" style="max-height: 360px; overflow-y: auto;">
                                     {{-- Recent Activity notifications --}}
@@ -193,15 +222,15 @@
                                                         <small class="text-body-quaternary">{{ $notification->created_at->diffForHumans() }}</small>
                                                         @if($route && $route !== route('notifications.index'))
                                                             <div class="mt-2">
-                                                                <a href="{{ $href }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
-                                                                    {{ $linkText ?: 'Open' }}
+                                                                    <a href="{{ $href }}" class="btn btn-sm btn-outline-primary" data-notif-id="{{ $notification->id }}" data-unread="{{ $notification->is_read ? 0 : 1 }}">
+                                                                    {{ $linkText ?: __('Open') }}
                                                                 </a>
                                                             </div>
                                                         @endif
                                                     </div>
                                                     @if(!$notification->is_read)
                                                         <div class="ms-2">
-                                                            <span class="badge bg-primary rounded-pill">New</span>
+                                                            <span class="badge bg-primary rounded-pill">{{ __('New') }}</span>
                                                         </div>
                                                     @endif
                                                 </div>
@@ -209,13 +238,13 @@
                                         @endforeach
                                     @else
                                         <div class="dropdown-item p-3 text-center">
-                                            <p class="mb-0 text-body-quaternary">No notifications</p>
+                                            <p class="mb-0 text-body-quaternary">{{ __('No notifications') }}</p>
                                         </div>
                                     @endif
 
                                     {{-- Recent Dispute messages --}}
                                     @if($recentDisputeMessages->count() > 0)
-                                        <div class="dropdown-item p-2 bg-light fw-semibold small text-muted">Recent Dispute Messages</div>
+                                        <div class="dropdown-item p-2 bg-light fw-semibold small text-muted">{{ __('Recent Dispute Messages') }}</div>
                                         @foreach($recentDisputeMessages as $msg)
                                             <div class="dropdown-item p-2 border-bottom border-translucent">
                                                 <div class="d-flex align-items-start">
@@ -230,7 +259,7 @@
                                                         <small class="text-body-quaternary">{{ $msg->created_at->diffForHumans() }} â¢ Dispute #{{ $msg->dispute_id }}</small>
                                                         <div class="mt-2">
                                                             <a href="{{ route('disputes.show', $msg->dispute_id) }}" class="btn btn-sm btn-outline-warning">
-                                                                View Dispute
+                                                                {{ __('View Dispute') }}
                                                             </a>
                                                         </div>
                                                     </div>
@@ -243,7 +272,7 @@
                                     @php
                                         $allRoute = $role === 'admin' ? route('admin.notifications.index') : route('notifications.index');
                                     @endphp
-                                    <a href="{{ $allRoute }}" class="btn btn-sm btn-phoenix-secondary w-100">View All Notifications</a>
+                                    <a href="{{ $allRoute }}" class="btn btn-sm btn-phoenix-secondary w-100">{{ __('View All Notifications') }}</a>
                                 </div>
                             </div>
                         </div>
@@ -286,27 +315,27 @@
                             <ul class="nav d-flex flex-column my-3">
                                 @if(Auth::user()->isAdmin())
                                     <a class="dropdown-item" href="{{ route('admin.dashboard') }}">
-                                        <i class="fa fa-tachometer-alt"></i> <span>Admin Dashboard</span>
+                                        <i class="fa fa-tachometer-alt"></i> <span>{{ __('Admin Dashboard') }}</span>
                                     </a>
                                     <a class="dropdown-item" href="{{ route('admin.users.index') }}">
-                                        <i class="fa fa-users"></i> <span>Manage Users</span>
+                                        <i class="fa fa-users"></i> <span>{{ __('Manage Users') }}</span>
                                     </a>
                                     <a class="dropdown-item" href="{{ route('admin.kyc.index') }}">
-                                        <i class="fa fa-id-card"></i> <span>KYC Management</span>
+                                        <i class="fa fa-id-card"></i> <span>{{ __('KYC Management') }}</span>
                                     </a>
                                 @elseif(Auth::user()->isSeller())
                                     <a class="dropdown-item" href="{{ route('profile.edit') }}">
-                                        <i class="fa fa-user"></i> <span>Profile</span>
+                                        <i class="fa fa-user"></i> <span>{{ __('Profile') }}</span>
                                     </a>
                                     <a class="dropdown-item" href="{{ route('seller.billing.index') }}">
-                                        <i class="fa fa-users"></i> <span>Manage your billings</span>
+                                        <i class="fa fa-users"></i> <span>{{ __('Manage your billings') }}</span>
                                     </a>
                                     <a class="dropdown-item" href="{{ route('seller.subscription') }}">
-                                        <i class="fa fa-users"></i> <span>Manage your subscriptions</span>
+                                        <i class="fa fa-users"></i> <span>{{ __('Manage your subscriptions') }}</span>
                                     </a>
                                 @else
                                     <a class="dropdown-item" href="{{ route('profile.edit') }}">
-                                        <i class="fa fa-user"></i> <span>Profile</span>
+                                        <i class="fa fa-user"></i> <span>{{ __('Profile') }}</span>
                                     </a>
                                 @endif
                             </ul>
@@ -314,7 +343,7 @@
                             <div class="px-3">
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
-                                    <button type="submit" class="btn btn-phoenix-secondary d-flex flex-center w-100"><span class="me-2" data-feather="log-out"></span> Log Out</button>
+                                    <button type="submit" class="btn btn-phoenix-secondary d-flex flex-center w-100"><span class="me-2" data-feather="log-out"></span> {{ __('Log Out') }}</button>
                                 </form>
                             </div>
                             <div class="my-2 text-center fw-bold fs-10 text-body-quaternary">

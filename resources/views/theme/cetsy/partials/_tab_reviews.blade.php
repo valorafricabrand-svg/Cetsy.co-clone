@@ -16,12 +16,12 @@
         @endphp
         <div class="mb-2 flex items-center gap-2">
           <a href="{{ route('listing.show', $p->slug ?? $p->id) }}">
-            <img src="{{ $thumb }}" alt="{{ $p->name }} thumbnail" class="h-12 w-12 rounded-lg border border-slate-200 object-cover">
+            <img src="{{ $thumb }}" alt="{{ $p->localized_name ?? $p->name }} thumbnail" class="h-12 w-12 rounded-lg border border-slate-200 object-cover">
           </a>
           <div class="text-sm">
             <div class="max-w-[220px] truncate font-semibold text-slate-900">
               <a href="{{ route('listing.show', $p->slug ?? $p->id) }}" class="hover:text-emerald-700">
-                {{ $p->name }}
+                {{ $p->localized_name ?? $p->name }}
               </a>
             </div>
             <div class="text-xs text-slate-500">Reviewed item</div>

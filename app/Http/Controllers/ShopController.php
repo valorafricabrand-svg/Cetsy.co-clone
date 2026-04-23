@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\Country;
 use App\Models\Activity;
 use App\Models\Subscription;
+use Illuminate\Database\Eloquent\Builder;
 
 class ShopController extends Controller
 {
@@ -50,6 +51,15 @@ class ShopController extends Controller
             'name'             => 'required|string|max:255',
             'slug'             => 'nullable|string|max:255|unique:shops,slug',
             'bio'              => 'nullable|string|max:1000',
+            'translations'     => 'nullable|array',
+            'translations.name' => 'nullable|array',
+            'translations.name.*' => 'nullable|string|max:255',
+            'translations.bio' => 'nullable|array',
+            'translations.bio.*' => 'nullable|string',
+            'translations.announcement' => 'nullable|array',
+            'translations.announcement.*' => 'nullable|string',
+            'translations.policies' => 'nullable|array',
+            'translations.policies.*' => 'nullable|string',
 
             // 4) Billing info
             'address'          => 'required|string|max:255',
@@ -86,12 +96,21 @@ class ShopController extends Controller
 
         // We don't persist the password field
         unset($data['password']);
+        $translations = normalize_translation_payload($data['translations'] ?? [], [
+            'name',
+            'bio',
+            'announcement',
+            'policies',
+        ]);
+        unset($data['translations']);
 
         // Ensure enable_2fa is boolean (checkbox may be absent)
         $data['enable_2fa'] = !empty($data['enable_2fa']);
 
         // Create the shop via the one-to-one relationship
         $shop = $user->shop()->create($data);
+        $shop->fillTranslations($translations);
+        $shop->save();
 
         // Optional auto-approval for seller onboarding (removes manual admin approval bottleneck).
         $autoApproveSellerSignups = function_exists('setting_bool')
@@ -152,9 +171,30 @@ class ShopController extends Controller
 
         if ($request->filled('q')) {
             $search = $request->q;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('slug', 'like', "%{$search}%");
+            $terms = collect(preg_split('/\s+/', trim((string) $search), -1, PREG_SPLIT_NO_EMPTY))
+                ->map(fn ($term) => trim($term))
+                ->filter()
+                ->values();
+
+            $searchTerms = $terms->isEmpty() ? collect([$search]) : $terms;
+
+            $query->where(function (Builder $q) use ($searchTerms) {
+                foreach ($searchTerms as $index => $term) {
+                    $method = $index === 0 ? 'whereRaw' : 'orWhereRaw';
+
+                    $q->{$method}(
+                        searchable_content_expression([
+                            'name',
+                            'slug',
+                            'bio',
+                            'announcement',
+                            'name_translations',
+                            'bio_translations',
+                            'announcement_translations',
+                        ]) . ' LIKE ?',
+                        [search_like_value((string) $term)]
+                    );
+                }
             });
         }
 
@@ -251,6 +291,15 @@ class ShopController extends Controller
             'featured_image' => ['nullable', 'image', 'max:2048'],
             'announcement'   => ['nullable', 'string'],
             'policies'       => ['nullable', 'string'],
+            'translations'   => ['nullable', 'array'],
+            'translations.name' => ['nullable', 'array'],
+            'translations.name.*' => ['nullable', 'string', 'max:255'],
+            'translations.bio' => ['nullable', 'array'],
+            'translations.bio.*' => ['nullable', 'string'],
+            'translations.announcement' => ['nullable', 'array'],
+            'translations.announcement.*' => ['nullable', 'string'],
+            'translations.policies' => ['nullable', 'array'],
+            'translations.policies.*' => ['nullable', 'string'],
         ], [
             'logo.required'  => 'Please upload your shop logo.',
         ]);
@@ -277,9 +326,18 @@ class ShopController extends Controller
 
         // Remove password from data
         unset($data['password']);
+        $translations = normalize_translation_payload($data['translations'] ?? [], [
+            'name',
+            'bio',
+            'announcement',
+            'policies',
+        ]);
+        unset($data['translations']);
 
         // Update the model
         $shop->update($data);
+        $shop->fillTranslations($translations);
+        $shop->save();
 
         return redirect()
             ->route('seller.shops.show', $shop)

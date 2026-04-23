@@ -49,7 +49,7 @@
     <article class="js-product-card listing-card-shell relative h-full cursor-pointer overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
              data-href="{{ route('products.show', $product) }}"
              tabindex="0"
-             aria-label="Open {{ $product->name }} details">
+             aria-label="Open {{ $product->localized_name ?? $product->name }} details">
         <span class="absolute left-3 top-3 z-10 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold {{ $statusClass }}">{{ $statusLabel }}</span>
 
         @if(((int)($product->is_active ?? 0) === 1) && empty($product->featured_image))
@@ -60,7 +60,7 @@
             @if ($mediaType === 'video')
                 <video src="{{ $thumb }}" class="h-56 w-full rounded-t-2xl object-cover" controls></video>
             @else
-                <img src="{{ $thumb }}" class="h-56 w-full rounded-t-2xl object-cover" alt="{{ $product->name }}"
+                <img src="{{ $thumb }}" class="h-56 w-full rounded-t-2xl object-cover" alt="{{ $product->localized_name ?? $product->name }}"
                      onerror="this.onerror=null;this.src=@json(asset('assets/images/cetsylogmain.png'));">
             @endif
         @else
@@ -70,7 +70,7 @@
         @endif
 
         <div class="flex h-[calc(100%-14rem)] min-h-[15rem] flex-col p-4 sm:p-5">
-            <h3 class="mb-1 line-clamp-2 text-base font-semibold text-slate-900">{{ Str::limit($product->name, 40) }}</h3>
+            <h3 class="mb-1 line-clamp-2 text-base font-semibold text-slate-900">{{ Str::limit($product->localized_name ?? $product->name, 40) }}</h3>
             <div class="mb-2 text-xs text-slate-500">ID: #{{ $product->id }}</div>
 
             @php $due = $product->next_due_date ? \Carbon\Carbon::parse($product->next_due_date) : null; @endphp

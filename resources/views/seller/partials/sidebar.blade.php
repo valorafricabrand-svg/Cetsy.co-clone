@@ -37,35 +37,35 @@
     }
 
     $groups = [
-        'Overview' => [
-            ['route' => 'seller.dashboard', 'icon' => 'fas fa-tachometer-alt', 'label' => 'Dashboard'],
+        __('Overview') => [
+            ['route' => 'seller.dashboard', 'icon' => 'fas fa-tachometer-alt', 'label' => __('Dashboard')],
         ],
-        'Listings' => [
-            ['route' => 'products.index', 'icon' => 'fas fa-box-open', 'label' => 'My Listings'],
-            ['route' => 'seller.deals.index', 'icon' => 'fas fa-percent', 'label' => '%Deals'],
+        __('Listings') => [
+            ['route' => 'products.index', 'icon' => 'fas fa-box-open', 'label' => __('My Listings')],
+            ['route' => 'seller.deals.index', 'icon' => 'fas fa-percent', 'label' => __('Deals')],
         ],
-        'Sales' => [
-            ['route' => 'seller.orders.index', 'icon' => 'fas fa-shopping-cart', 'label' => 'Shop Orders'],
-            ['route' => 'seller.reviews.index', 'icon' => 'fas fa-star', 'label' => 'Reviews'],
-            ['route' => 'account.orders', 'icon' => 'fas fa-bag-shopping', 'label' => 'My Orders'],
-            ['route' => 'seller.orders.payments', 'icon' => 'fas fa-credit-card', 'label' => 'Payments'],
+        __('Sales') => [
+            ['route' => 'seller.orders.index', 'icon' => 'fas fa-shopping-cart', 'label' => __('Shop Orders')],
+            ['route' => 'seller.reviews.index', 'icon' => 'fas fa-star', 'label' => __('Reviews')],
+            ['route' => 'account.orders', 'icon' => 'fas fa-bag-shopping', 'label' => __('My Orders')],
+            ['route' => 'seller.orders.payments', 'icon' => 'fas fa-credit-card', 'label' => __('Payments')],
         ],
-        'Engagement' => [
-            ['route' => 'seller.messages.index', 'icon' => 'fas fa-comments', 'label' => 'Messages', 'badge' => $unreadMessages],
-            ['route' => 'seller.offers.index', 'icon' => 'fas fa-handshake', 'label' => 'Offers', 'badge' => $pendingOffers],
-            ['route' => 'buyer.favorites', 'icon' => 'fas fa-heart', 'label' => 'Favorites', 'badge' => $myFavoritesCount],
-            ['route' => 'seller.favorites.index', 'icon' => 'fas fa-store', 'label' => 'Shop Favorites', 'badge' => $shopFavoritesCount],
-            ['route' => 'seller.notifications.index', 'icon' => 'fas fa-bell', 'label' => 'Notifications', 'badge' => $unreadNotifications],
+        __('Engagement') => [
+            ['route' => 'seller.messages.index', 'icon' => 'fas fa-comments', 'label' => __('Messages'), 'badge' => $unreadMessages],
+            ['route' => 'seller.offers.index', 'icon' => 'fas fa-handshake', 'label' => __('Offers'), 'badge' => $pendingOffers],
+            ['route' => 'buyer.favorites', 'icon' => 'fas fa-heart', 'label' => __('Favorites'), 'badge' => $myFavoritesCount],
+            ['route' => 'seller.favorites.index', 'icon' => 'fas fa-store', 'label' => __('Shop Favorites'), 'badge' => $shopFavoritesCount],
+            ['route' => 'seller.notifications.index', 'icon' => 'fas fa-bell', 'label' => __('Notifications'), 'badge' => $unreadNotifications],
         ],
-        'Disputes' => [
-            ['route' => 'disputes.index', 'icon' => 'fas fa-exclamation-triangle', 'label' => 'Disputes', 'badge' => $disputesCount],
+        __('Disputes') => [
+            ['route' => 'disputes.index', 'icon' => 'fas fa-exclamation-triangle', 'label' => __('Disputes'), 'badge' => $disputesCount],
         ],
-        'Shop & Settings' => [
-            ['href' => $myShopUrl, 'icon' => 'fas fa-store', 'label' => 'My Shop', 'activePatterns' => ['shop.show', 'seller.shops.*', 'seller.shop.create']],
-            ['route' => 'seller.analytics.index', 'icon' => 'fas fa-chart-line', 'label' => 'Analytics'],
-            ['route' => 'seller.reports.inventory', 'icon' => 'fas fa-boxes-stacked', 'label' => 'Inventory Report'],
-            ['route' => 'seller.subscription', 'icon' => 'fas fa-file-invoice', 'label' => 'Subscription'],
-            ['route' => 'seller.kyc', 'icon' => 'fas fa-id-card', 'label' => 'KYC'],
+        __('Shop & Settings') => [
+            ['href' => $myShopUrl, 'icon' => 'fas fa-store', 'label' => __('My Shop'), 'activePatterns' => ['shop.show', 'seller.shops.*', 'seller.shop.create']],
+            ['route' => 'seller.analytics.index', 'icon' => 'fas fa-chart-line', 'label' => __('Analytics')],
+            ['route' => 'seller.reports.inventory', 'icon' => 'fas fa-boxes-stacked', 'label' => __('Inventory Report')],
+            ['route' => 'seller.subscription', 'icon' => 'fas fa-file-invoice', 'label' => __('Subscription')],
+            ['route' => 'seller.kyc', 'icon' => 'fas fa-id-card', 'label' => __('KYC')],
         ],
     ];
 
@@ -74,7 +74,7 @@
         $primaryBottomNav[] = [
             'route' => 'seller.dashboard',
             'icon' => 'fas fa-tachometer-alt',
-            'label' => 'Dashboard',
+            'label' => __('Dashboard'),
             'active' => request()->routeIs('seller.dashboard'),
             'badge' => 0,
         ];
@@ -83,7 +83,7 @@
         $primaryBottomNav[] = [
             'route' => 'products.index',
             'icon' => 'fas fa-box-open',
-            'label' => 'Listings',
+            'label' => __('Listings'),
             'active' => request()->routeIs('products.*', 'seller.deals.*'),
             'badge' => 0,
         ];
@@ -92,7 +92,7 @@
         $primaryBottomNav[] = [
             'route' => 'seller.orders.index',
             'icon' => 'fas fa-receipt',
-            'label' => 'Orders',
+            'label' => __('Orders'),
             'active' => request()->routeIs('seller.orders.*'),
             'badge' => 0,
         ];
@@ -101,7 +101,7 @@
         $primaryBottomNav[] = [
             'route' => 'seller.messages.index',
             'icon' => 'fas fa-comments',
-            'label' => 'Messages',
+            'label' => __('Messages'),
             'active' => request()->routeIs('seller.messages.*'),
             'badge' => (int) $unreadMessages,
         ];
@@ -117,11 +117,11 @@
 <aside class="hidden space-y-4 lg:sticky lg:top-24 lg:block">
     @if(\Illuminate\Support\Facades\Route::has('products.index'))
         <form action="{{ route('products.index') }}" method="GET" class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <label for="seller-product-search" class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Search Listings</label>
+            <label for="seller-product-search" class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{{ __('Search Listings') }}</label>
             <div class="flex items-center gap-2 rounded-xl border border-slate-300 px-2 py-1.5">
                 <i class="fas fa-search text-slate-400"></i>
-                <input id="seller-product-search" type="search" name="q" placeholder="Search products..." class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
-                <button type="submit" class="rounded-lg px-2 py-1 text-xs font-semibold text-white" style="background-color: {{ $brandColor }}">Go</button>
+                <input id="seller-product-search" type="search" name="q" placeholder="{{ __('Search products...') }}" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
+                <button type="submit" class="rounded-lg px-2 py-1 text-xs font-semibold text-white" style="background-color: {{ $brandColor }}">{{ __('Go') }}</button>
             </div>
         </form>
     @endif
@@ -133,10 +133,10 @@
                 <i class="fas fa-wallet"></i>
             </span>
             <div class="min-w-0">
-                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Wallet Balance</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ __('Wallet Balance') }}</p>
                 <p class="truncate text-base font-bold text-slate-900">{{ $currency }} {{ number_format((float)$walletBalance, 2) }}</p>
                 @if((float)$walletHold > 0)
-                    <p class="text-xs text-slate-500">On hold: {{ $currency }} {{ number_format((float)$walletHold, 2) }}</p>
+                    <p class="text-xs text-slate-500">{{ __('On hold: :amount', ['amount' => $currency . ' ' . number_format((float)$walletHold, 2)]) }}</p>
                 @endif
             </div>
         </div>
@@ -191,12 +191,12 @@
                     </a>
                 </li>
             @endforeach
-            <li>
-                <button type="button"
+                    <li>
+                        <button type="button"
                         id="seller-menu-drawer-open"
                         class="flex min-h-[3.4rem] w-full flex-col items-center justify-center rounded-xl px-1 text-[11px] font-semibold text-slate-600">
                     <i class="fas fa-bars text-base"></i>
-                    <span class="mt-1">Menu</span>
+                    <span class="mt-1">{{ __('Menu') }}</span>
                 </button>
             </li>
         </ul>
@@ -206,7 +206,7 @@
 
     <aside id="seller-menu-drawer-panel" class="fixed inset-x-0 bottom-0 z-[61] hidden max-h-[84vh] overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <h3 class="text-base font-semibold text-slate-900">Seller Menu</h3>
+            <h3 class="text-base font-semibold text-slate-900">{{ __('Seller Menu') }}</h3>
             <button type="button" data-seller-drawer-close class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-100">
                 <i class="fas fa-times"></i>
             </button>
@@ -215,11 +215,11 @@
         <div class="max-h-[calc(84vh-58px)] overflow-y-auto p-4">
             @if(\Illuminate\Support\Facades\Route::has('products.index'))
                 <form action="{{ route('products.index') }}" method="GET" class="mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                    <label for="seller-product-search-mobile" class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Search Listings</label>
+                    <label for="seller-product-search-mobile" class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{{ __('Search Listings') }}</label>
                     <div class="flex items-center gap-2 rounded-xl border border-slate-300 px-2 py-1.5">
                         <i class="fas fa-search text-slate-400"></i>
-                        <input id="seller-product-search-mobile" type="search" name="q" placeholder="Search products..." class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
-                        <button type="submit" class="rounded-lg px-2 py-1 text-xs font-semibold text-white" style="background-color: {{ $brandColor }}">Go</button>
+                        <input id="seller-product-search-mobile" type="search" name="q" placeholder="{{ __('Search products...') }}" class="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none">
+                        <button type="submit" class="rounded-lg px-2 py-1 text-xs font-semibold text-white" style="background-color: {{ $brandColor }}">{{ __('Go') }}</button>
                     </div>
                 </form>
             @endif
@@ -231,10 +231,10 @@
                         <i class="fas fa-wallet"></i>
                     </span>
                     <div class="min-w-0">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Wallet Balance</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ __('Wallet Balance') }}</p>
                         <p class="truncate text-base font-bold text-slate-900">{{ $currency }} {{ number_format((float)$walletBalance, 2) }}</p>
                         @if((float)$walletHold > 0)
-                            <p class="text-xs text-slate-500">On hold: {{ $currency }} {{ number_format((float)$walletHold, 2) }}</p>
+                            <p class="text-xs text-slate-500">{{ __('On hold: :amount', ['amount' => $currency . ' ' . number_format((float)$walletHold, 2)]) }}</p>
                         @endif
                     </div>
                 </div>

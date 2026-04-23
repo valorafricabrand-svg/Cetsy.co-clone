@@ -24,7 +24,7 @@
         'url' => $shopUrl,
         'item' => [
           '@type' => 'Store',
-          'name' => $shop->name,
+          'name' => $shop->localized_name ?? $shop->name,
           'url' => $shopUrl,
           'image' => $shopImage,
           'address' => [
@@ -212,12 +212,12 @@
             <a href="{{ route('shop.show', $shop->slug) }}" class="block">
               <img
                 src="{{ $shopLogo }}"
-                alt="{{ $shop->name }} logo"
+                alt="{{ $shop->localized_name ?? $shop->name }} logo"
                 class="mx-auto h-14 w-14 rounded-full border border-slate-200 object-cover sm:h-20 sm:w-20"
                 loading="lazy"
                 decoding="async"
               >
-              <h3 class="mt-2 line-clamp-1 text-[12px] font-semibold text-slate-900 group-hover:text-emerald-700 sm:mt-3 sm:text-sm">{{ $shop->name }}</h3>
+              <h3 class="mt-2 line-clamp-1 text-[12px] font-semibold text-slate-900 group-hover:text-emerald-700 sm:mt-3 sm:text-sm">{{ $shop->localized_name ?? $shop->name }}</h3>
               <p class="mt-1 hidden text-xs text-slate-500 sm:block">
                 <span class="font-semibold text-amber-500"><i class="fas fa-star"></i> {{ number_format($shop->reviews_avg_rating ?? 0, 1) }}</span>
                 <span>({{ $shop->reviews_count }})</span>

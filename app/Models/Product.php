@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasLocalizedContent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,6 +12,7 @@ use Illuminate\Support\Carbon;
 class Product extends Model
 {
     use HasFactory;
+    use HasLocalizedContent;
 
     public const TYPE_PHYSICAL = 'physical';
     public const TYPE_DIGITAL = 'digital';
@@ -19,13 +21,20 @@ class Product extends Model
     // Ensure computed price (after deals or product discount) appears in JSON
     protected $appends = ['discounted_price'];
 
+    protected array $translatable = [
+        'name',
+        'description',
+    ];
+
     protected $fillable = [
         'shop_id',
         'category_id',
         'name',
+        'name_translations',
         'slug',
         'sku',
         'description',
+        'description_translations',
         'price',
         'discount_price',
         'image',
@@ -78,7 +87,19 @@ class Product extends Model
 
     protected $casts = [
         'pickup_available' => 'boolean',
+        'name_translations' => 'array',
+        'description_translations' => 'array',
     ];
+
+    public function getLocalizedNameAttribute(): ?string
+    {
+        return $this->localized('name');
+    }
+
+    public function getLocalizedDescriptionAttribute(): ?string
+    {
+        return $this->localized('description');
+    }
 
     public static function mapCategoryListingTypeToProductType(?string $listingType): ?string
     {

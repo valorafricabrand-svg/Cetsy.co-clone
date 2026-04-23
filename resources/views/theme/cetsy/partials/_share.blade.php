@@ -1,7 +1,7 @@
 {{-- resources/views/theme/{{ theme() }}/partials/_share.blade.php --}}
 @php
   $shareUrl = url()->current();
-  $shareTitle = trim((string) ($product->name ?? 'Listing'));
+  $shareTitle = trim((string) ($product->localized_name ?? $product->name ?? 'Listing'));
   $shareImage = function_exists('product_thumb_url') ? product_thumb_url($product) : media_url($product->featured_image ?? null);
   $shareText = trim($shareTitle . ' - ' . $shareUrl);
   $emailSubject = rawurlencode('Check out this listing: ' . $shareTitle);

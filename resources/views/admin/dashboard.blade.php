@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Admin Dashboard')
+@section('title', __('Admin Dashboard'))
 
 @section('content')
 @php
@@ -15,15 +15,16 @@
     $trendRevenueArray = collect($trendRevenue ?? [])->values()->all();
     $trendOrdersArray = collect($trendOrders ?? [])->values()->all();
     $ordersIndexRoute = Route::has('admin.orders.index') ? route('admin.orders.index') : (Route::has('orders.index') ? route('orders.index') : '#');
+    $updatedAtLabel = now()->format('d M Y, H:i');
 @endphp
 <div class="content">
     <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between mb-4 gap-3">
         <div>
-            <h1 class="h3 mb-1">Business Performance Overview</h1>
-            <p classs="text-muted mb-0">Real-time insight across revenue, orders, sellers, customers, and payouts.</p>
+            <h1 class="h3 mb-1">{{ __('Business Performance Overview') }}</h1>
+            <p classs="text-muted mb-0">{{ __('Real-time insight across revenue, orders, sellers, customers, and payouts.') }}</p>
         </div>
         <div class="text-lg-end">
-            <span class="badge bg-primary text-white fw-semibold py-2 px-3">Updated {{ now()->format('d M Y, H:i') }}</span>
+            <span class="badge bg-primary text-white fw-semibold py-2 px-3">{{ __('Updated :date', ['date' => $updatedAtLabel]) }}</span>
         </div>
     </div>
 
@@ -39,18 +40,18 @@
             <div class="card h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <h6 class="text-uppercase text-muted fw-semibold mb-0">Gross Revenue</h6>
+                        <h6 class="text-uppercase text-muted fw-semibold mb-0">{{ __('Gross Revenue') }}</h6>
                         @php $revDelta = $metrics['revenueGrowthPct'] ?? null; @endphp
                         <span class="badge {{ is_null($revDelta) ? 'bg-secondary' : ($revDelta >= 0 ? 'bg-success' : 'bg-danger') }} text-white">
                             @if(is_null($revDelta))
-                                N/A
+                                {{ __('N/A') }}
                             @else
                                 {{ $revDelta >= 0 ? '+' : '' }}{{ $revDelta }}%
                             @endif
                         </span>
                     </div>
                     <div class="display-6 fw-semibold">{{ $currency }} {{ number_format($metrics['totalRevenue'] ?? 0, 2) }}</div>
-                    <small class="text-muted">{{ $currency }} {{ number_format($metrics['revenueToday'] ?? 0, 2) }} today</small>
+                    <small class="text-muted">{{ __(':amount today', ['amount' => $currency . ' ' . number_format($metrics['revenueToday'] ?? 0, 2)]) }}</small>
                 </div>
             </div>
         </div>
@@ -58,20 +59,20 @@
             <div class="card h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <h6 class="text-uppercase text-muted fw-semibold mb-0">Orders</h6>
+                        <h6 class="text-uppercase text-muted fw-semibold mb-0">{{ __('Orders') }}</h6>
                         @php $orderDelta = $metrics['ordersGrowthPct'] ?? null; @endphp
                         <span class="badge {{ is_null($orderDelta) ? 'bg-secondary' : ($orderDelta >= 0 ? 'bg-success' : 'bg-danger') }} text-white">
                             @if(is_null($orderDelta))
-                                N/A
+                                {{ __('N/A') }}
                             @else
                                 {{ $orderDelta >= 0 ? '+' : '' }}{{ $orderDelta }}%
                             @endif
                         </span>
                     </div>
                     <div class="display-6 fw-semibold">{{ number_format($metrics['ordersTotal'] ?? 0) }}</div>
-                    <small class="text-muted">{{ number_format($metrics['ordersThisMonth'] ?? 0) }} this month</small>
+                    <small class="text-muted">{{ __(':count this month', ['count' => number_format($metrics['ordersThisMonth'] ?? 0)]) }}</small>
                     <div class="mt-2">
-                        <a href="{{ $ordersIndexRoute }}" class="small text-decoration-none">View all orders</a>
+                        <a href="{{ $ordersIndexRoute }}" class="small text-decoration-none">{{ __('View all orders') }}</a>
                     </div>
                 </div>
             </div>
@@ -79,18 +80,18 @@
         <div class="col">
             <div class="card h-100 shadow-sm border-0">
                 <div class="card-body">
-                    <h6 class="text-uppercase text-muted fw-semibold mb-2">Average Order Value</h6>
+                    <h6 class="text-uppercase text-muted fw-semibold mb-2">{{ __('Average Order Value') }}</h6>
                     <div class="display-6 fw-semibold">{{ $currency }} {{ number_format($metrics['averageOrderValue'] ?? 0, 2) }}</div>
-                    <small class="text-muted">Based on {{ number_format($metrics['fulfilledOrders'] ?? 0) }} fulfilled orders</small>
+                    <small class="text-muted">{{ __('Based on :count fulfilled orders', ['count' => number_format($metrics['fulfilledOrders'] ?? 0)]) }}</small>
                 </div>
             </div>
         </div>
         <div class="col">
             <div class="card h-100 shadow-sm border-0">
                 <div class="card-body">
-                    <h6 class="text-uppercase text-muted fw-semibold mb-2">Seller Network</h6>
+                    <h6 class="text-uppercase text-muted fw-semibold mb-2">{{ __('Seller Network') }}</h6>
                     <div class="display-6 fw-semibold">{{ number_format($metrics['activeSellers'] ?? 0) }}</div>
-                    <small class="text-muted">{{ number_format($metrics['newSellersThisMonth'] ?? 0) }} joined this month</small>
+                    <small class="text-muted">{{ __(':count joined this month', ['count' => number_format($metrics['newSellersThisMonth'] ?? 0)]) }}</small>
                 </div>
             </div>
         </div>
@@ -100,36 +101,36 @@
         <div class="col">
             <div class="card h-100 shadow-sm border-0">
                 <div class="card-body">
-                    <h6 class="text-uppercase text-muted fw-semibold mb-2">Customers</h6>
+                    <h6 class="text-uppercase text-muted fw-semibold mb-2">{{ __('Customers') }}</h6>
                     <div class="h3 fw-semibold mb-1">{{ number_format($metrics['activeCustomers'] ?? 0) }}</div>
-                    <small class="text-muted">{{ number_format($metrics['newCustomers30'] ?? 0) }} new in the last 30 days</small>
+                    <small class="text-muted">{{ __(':count new in the last 30 days', ['count' => number_format($metrics['newCustomers30'] ?? 0)]) }}</small>
                 </div>
             </div>
         </div>
         <div class="col">
             <div class="card h-100 shadow-sm border-0">
                 <div class="card-body">
-                    <h6 class="text-uppercase text-muted fw-semibold mb-2">Listings</h6>
+                    <h6 class="text-uppercase text-muted fw-semibold mb-2">{{ __('Listings') }}</h6>
                     <div class="h3 fw-semibold mb-1">{{ number_format($metrics['activeListings'] ?? 0) }}</div>
-                    <small class="text-muted">{{ number_format($metrics['totalListings'] ?? 0) }} total products</small>
+                    <small class="text-muted">{{ __(':count total products', ['count' => number_format($metrics['totalListings'] ?? 0)]) }}</small>
                 </div>
             </div>
         </div>
         <div class="col">
             <div class="card h-100 shadow-sm border-0">
                 <div class="card-body">
-                    <h6 class="text-uppercase text-muted fw-semibold mb-2">Shops</h6>
+                    <h6 class="text-uppercase text-muted fw-semibold mb-2">{{ __('Shops') }}</h6>
                     <div class="h3 fw-semibold mb-1">{{ number_format($metrics['shopsTotal'] ?? 0) }}</div>
-                    <small class="text-muted">Active storefronts onboarding and selling</small>
+                    <small class="text-muted">{{ __('Active storefronts onboarding and selling') }}</small>
                 </div>
             </div>
         </div>
         <div class="col">
             <div class="card h-100 shadow-sm border-0">
                 <div class="card-body">
-                    <h6 class="text-uppercase text-muted fw-semibold mb-2">Payout Exposure</h6>
+                    <h6 class="text-uppercase text-muted fw-semibold mb-2">{{ __('Payout Exposure') }}</h6>
                     <div class="h3 fw-semibold mb-1">{{ $currency }} {{ number_format($metrics['payoutsPendingTotal'] ?? 0, 2) }}</div>
-                    <small class="text-muted">{{ $currency }} {{ number_format($metrics['payoutsPaid30'] ?? 0, 2) }} paid in the last 30 days</small>
+                    <small class="text-muted">{{ __(':amount paid in the last 30 days', ['amount' => $currency . ' ' . number_format($metrics['payoutsPaid30'] ?? 0, 2)]) }}</small>
                 </div>
             </div>
         </div>
@@ -140,8 +141,8 @@
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="card-title mb-0">Revenue &amp; Orders</h5>
-                        <small class="text-muted">Trailing 12 months</small>
+                        <h5 class="card-title mb-0">{{ __('Revenue & Orders') }}</h5>
+                        <small class="text-muted">{{ __('Trailing 12 months') }}</small>
                     </div>
                 </div>
                 <div class="card-body">
@@ -152,7 +153,7 @@
         <div class="col-12 col-xl-4">
             <div class="card shadow-sm border-0 mb-4 h-100">
                 <div class="card-header bg-white">
-                    <h5 class="card-title mb-0">Order Status (30 days)</h5>
+                    <h5 class="card-title mb-0">{{ __('Order Status (30 days)') }}</h5>
                 </div>
                 <div class="card-body">
                     <canvas id="orderStatusChart" height="180"></canvas>
@@ -160,7 +161,7 @@
             </div>
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-white">
-                    <h5 class="card-title mb-0">Payout Mix (30 days)</h5>
+                    <h5 class="card-title mb-0">{{ __('Payout Mix (30 days)') }}</h5>
                 </div>
                 <div class="card-body">
                     <canvas id="payoutStatusChart" height="180"></canvas>
@@ -173,27 +174,27 @@
         <div class="col-12 col-xl-7">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Recent Orders</h5>
-                    <a href="{{ $ordersIndexRoute }}" class="btn btn-sm btn-outline-primary">View all</a>
+                    <h5 class="card-title mb-0">{{ __('Recent Orders') }}</h5>
+                    <a href="{{ $ordersIndexRoute }}" class="btn btn-sm btn-outline-primary">{{ __('View all') }}</a>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0 align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>ID</th>
-                                <th>Customer</th>
-                                <th>Shop</th>
-                                <th class="text-end">Amount</th>
-                                <th>Status</th>
-                                <th>Placed</th>
+                                <th>{{ __('ID') }}</th>
+                                <th>{{ __('Customer') }}</th>
+                                <th>{{ __('Shop') }}</th>
+                                <th class="text-end">{{ __('Amount') }}</th>
+                                <th>{{ __('Status') }}</th>
+                                <th>{{ __('Placed') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                         @forelse($recentOrders as $order)
                             <tr>
                                 <td class="fw-semibold">#{{ $order->id }}</td>
-                                <td>{{ optional($order->customer)->name ?? 'Customer #'.$order->user_id }}</td>
-                                <td>{{ optional($order->shop)->name ?? 'Shop #'.$order->shop_id }}</td>
+                                <td>{{ optional($order->customer)->name ?? __('Customer #:id', ['id' => $order->user_id]) }}</td>
+                                <td>{{ optional($order->shop)->name ?? __('Shop #:id', ['id' => $order->shop_id]) }}</td>
                                 <td class="text-end">{{ $currency }} {{ number_format($order->total_amount, 2) }}</td>
                                 <td>
                                     @php $badge = method_exists($order, 'getStatusBadgeClass') ? $order->getStatusBadgeClass() : 'bg-secondary'; @endphp
@@ -203,7 +204,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-4">No orders recorded yet.</td>
+                                <td colspan="6" class="text-center text-muted py-4">{{ __('No orders recorded yet.') }}</td>
                             </tr>
                         @endforelse
                         </tbody>
@@ -214,8 +215,8 @@
         <div class="col-12 col-xl-5">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Pending Payouts</h5>
-                    <a href="{{ route('admin.payouts.index') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+                    <h5 class="card-title mb-0">{{ __('Pending Payouts') }}</h5>
+                    <a href="{{ route('admin.payouts.index') }}" class="btn btn-sm btn-outline-primary">{{ __('Manage') }}</a>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0 align-middle">

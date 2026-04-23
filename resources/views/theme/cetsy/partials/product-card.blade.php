@@ -90,7 +90,7 @@
     @endif
 
     <img src="{{ $thumb }}"
-         alt="{{ $item->name }}"
+         alt="{{ $item->localized_name ?? $item->name }}"
          class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]"
          onerror='this.onerror=null;this.src=@json(asset("assets/images/cetsylogmain.png"));'
          @if($dataVideoSrc) data-video-src="{{ $dataVideoSrc }}" style="opacity:.01;filter:blur(8px);transition:opacity .35s ease,filter .35s ease;" @endif
@@ -99,7 +99,7 @@
 
   <div class="flex flex-1 flex-col p-2 sm:p-3">
     <h3 class="line-clamp-1 text-[12px] font-semibold text-slate-900 sm:line-clamp-2 sm:text-sm">
-      {{ $item->name }}
+      {{ $item->localized_name ?? $item->name }}
     </h3>
 
     <div class="mt-1.5 hidden items-center gap-1 text-[11px] text-amber-500 sm:mt-2 sm:flex">

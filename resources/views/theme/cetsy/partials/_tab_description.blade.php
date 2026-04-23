@@ -1,6 +1,6 @@
 {{-- resources/views/theme/{{ theme() }}/partials/_tab_description.blade.php --}}
 @php
-  $rawDescription = trim((string) ($product->description ?? ''));
+  $rawDescription = trim((string) ($product->localized_description ?? $product->description ?? ''));
   $hasHtml = $rawDescription !== strip_tags($rawDescription);
 
   $plainText = html_entity_decode(strip_tags($rawDescription), ENT_QUOTES | ENT_HTML5, 'UTF-8');

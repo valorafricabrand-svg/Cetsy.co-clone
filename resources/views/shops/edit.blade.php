@@ -1,6 +1,10 @@
 @extends('theme.'.theme().'.layouts.app')
 
 @section('main')
+@php
+  $primaryContentLocale = shop_primary_locale($shop);
+  $translationLocales = content_translation_locales($shop);
+@endphp
 <div class="content">
     <h2 class="text-center font-bold mb-5">Edit Your Shop</h2>
 
@@ -100,7 +104,7 @@
         <div class="border-b border-slate-200 px-4 py-3 font-semibold">2. Name Your Shop</div>
         <div class="p-4 sm:p-5">
           <div class="mb-3">
-            <label for="name" class="mb-1 block text-sm font-medium text-slate-700">Shop Name <span class="text-rose-600">*</span></label>
+            <label for="name" class="mb-1 block text-sm font-medium text-slate-700">Shop Name ({{ locale_label($primaryContentLocale) }}) <span class="text-rose-600">*</span></label>
             <input type="text" id="name" name="name" x-model="name" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" required>
           </div>
           <div>
@@ -114,12 +118,72 @@
         </div>
       </div>
 
+      @if($translationLocales)
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
+          <div class="border-b border-slate-200 px-4 py-3 font-semibold">2b. Translations</div>
+          <div class="p-4 sm:p-5 space-y-4">
+            <p class="text-sm text-slate-500">Add translated shop content for shoppers browsing in a different language.</p>
+
+            @foreach($translationLocales as $locale => $meta)
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <h3 class="text-sm font-semibold text-slate-900">{{ locale_label($locale) }}</h3>
+
+                <div class="mt-3">
+                  <label class="mb-1 block text-sm font-medium text-slate-700">Shop Name ({{ locale_label($locale) }})</label>
+                  <input
+                    type="text"
+                    name="translations[name][{{ $locale }}]"
+                    value="{{ old("translations.name.$locale", $shop->translationFor('name', $locale)) }}"
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error("translations.name.$locale") border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                    placeholder="Optional translated shop name"
+                  >
+                  @error("translations.name.$locale")<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="mt-3">
+                  <label class="mb-1 block text-sm font-medium text-slate-700">Description ({{ locale_label($locale) }})</label>
+                  <textarea
+                    name="translations[bio][{{ $locale }}]"
+                    rows="4"
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error("translations.bio.$locale") border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                    placeholder="Optional translated shop description"
+                  >{{ old("translations.bio.$locale", $shop->translationFor('bio', $locale)) }}</textarea>
+                  @error("translations.bio.$locale")<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="mt-3">
+                  <label class="mb-1 block text-sm font-medium text-slate-700">Announcement ({{ locale_label($locale) }})</label>
+                  <textarea
+                    name="translations[announcement][{{ $locale }}]"
+                    rows="3"
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error("translations.announcement.$locale") border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                    placeholder="Optional translated announcement"
+                  >{{ old("translations.announcement.$locale", $shop->translationFor('announcement', $locale)) }}</textarea>
+                  @error("translations.announcement.$locale")<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="mt-3">
+                  <label class="mb-1 block text-sm font-medium text-slate-700">Policies ({{ locale_label($locale) }})</label>
+                  <textarea
+                    name="translations[policies][{{ $locale }}]"
+                    rows="4"
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error("translations.policies.$locale") border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                    placeholder="Optional translated policies"
+                  >{{ old("translations.policies.$locale", $shop->translationFor('policies', $locale)) }}</textarea>
+                  @error("translations.policies.$locale")<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+                </div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+      @endif
+
       {{-- 3) Shop Description --}}
       <div class="rounded-2xl border border-slate-200 bg-white shadow-sm mb-4">
         <div class="border-b border-slate-200 px-4 py-3 font-semibold">3. Describe Your Shop</div>
         <div class="p-4 sm:p-5">
           <div class="col-span-12">
-          <label for="bio" class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Description</label>
+          <label for="bio" class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Description ({{ locale_label($primaryContentLocale) }})</label>
             <textarea id="bio" name="bio" rows="6"
                       class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('bio') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">{{ old('bio',$shop->bio) }}</textarea>
             @error('bio')<div class="text-rose-600 mt-1">{{ $message }}</div>@enderror
@@ -133,7 +197,7 @@
         <div class="border-b border-slate-200 px-4 py-3 font-semibold">3b. Shop Announcement</div>
         <div class="p-4 sm:p-5">
           <div class="mb-3">
-            <label for="announcement" class="mb-1 block text-sm font-medium text-slate-700">Shop Announcement</label>
+            <label for="announcement" class="mb-1 block text-sm font-medium text-slate-700">Shop Announcement ({{ locale_label($primaryContentLocale) }})</label>
             <textarea id="announcement" name="announcement" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="2">{{ old('announcement', $shop->announcement) }}</textarea>
             <div class="mt-1 text-xs text-slate-500">This announcement will appear at the top of your shop page.</div>
           </div>
@@ -145,7 +209,7 @@
         <div class="border-b border-slate-200 px-4 py-3 font-semibold">3c. Shop Policies</div>
         <div class="p-4 sm:p-5">
           <div class="mb-3">
-            <label for="policies" class="mb-1 block text-sm font-medium text-slate-700">Shop Policies</label>
+            <label for="policies" class="mb-1 block text-sm font-medium text-slate-700">Shop Policies ({{ locale_label($primaryContentLocale) }})</label>
             <textarea id="policies" name="policies" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="3">{{ old('policies', $shop->policies) }}</textarea>
             <div class="mt-1 text-xs text-slate-500">Describe your shop's return, shipping, and other important policies.</div>
           </div>

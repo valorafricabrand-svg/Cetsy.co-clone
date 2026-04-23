@@ -8,7 +8,7 @@
 
       <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <h3 class="text-base font-semibold text-slate-900">
-          Make an Offer for {{ $product->name }}
+          Make an Offer for {{ $product->localized_name ?? $product->name }}
         </h3>
         <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-100" data-tw-modal-close aria-label="Close">
           <i class="fa-solid fa-xmark"></i>

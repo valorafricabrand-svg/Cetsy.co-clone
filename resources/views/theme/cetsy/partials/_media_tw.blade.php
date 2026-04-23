@@ -56,7 +56,7 @@
               >
                 <img
                   src="{{ media_url($media->url) }}"
-                  alt="{{ $media->alt ?? ($product->name . ' image ' . ($i + 1)) }}"
+                  alt="{{ $media->alt ?? (($product->localized_name ?? $product->name) . ' image ' . ($i + 1)) }}"
                   class="block h-full w-full object-contain"
                   @if($i===0) fetchpriority="high" decoding="async" @else loading="lazy" decoding="async" @endif
                 >

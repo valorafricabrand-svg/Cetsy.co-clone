@@ -19,6 +19,7 @@ use App\Models\ProcessingTime;
 use App\Services\Shared\GetShippingService;
 use App\Models\ShippingPeriod;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;   
 use App\Models\Activity;
 use App\Models\ShippingProfile;
@@ -193,10 +194,15 @@ class ProductController extends Controller
 
         // Apply search
         if ($search = $request->input('q')) {
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
+            $query->whereRaw(
+                searchable_content_expression([
+                    'name',
+                    'description',
+                    'name_translations',
+                    'description_translations',
+                ]) . ' LIKE ?',
+                [search_like_value($search)]
+            );
         }
 
         // Apply status filter
@@ -351,6 +357,11 @@ public function store(Request $request)
         'name'                        => 'required|string|max:255',
         'type'                        => 'required|in:physical,digital,service',
         'description'                 => 'nullable|string',
+        'translations'                => 'nullable|array',
+        'translations.name'           => 'nullable|array',
+        'translations.name.*'         => 'nullable|string|max:255',
+        'translations.description'    => 'nullable|array',
+        'translations.description.*'  => 'nullable|string',
         'category_id'                 => 'nullable|exists:categories,id',
         'price'                       => 'required|numeric|min:0',
         'discount_percent'            => 'nullable|integer|between:1,100',
@@ -384,6 +395,10 @@ public function store(Request $request)
     $product->discount_percent              = $data['discount_percent'] ?? null;
     $product->stock                       = $resolvedType === Product::TYPE_PHYSICAL ? ($data['stock'] ?? 0) : null;
     $product->is_active                   = false;
+    $product->fillTranslations(normalize_translation_payload($data['translations'] ?? [], [
+        'name',
+        'description',
+    ]));
     $product->save();
 
 
@@ -473,6 +488,11 @@ public function update(Request $request, Product $product)
         'name'                      => 'required|string|max:255',
         'type'                      => 'required|in:physical,digital,service',
         'description'               => 'nullable|string',
+        'translations'              => 'nullable|array',
+        'translations.name'         => 'nullable|array',
+        'translations.name.*'       => 'nullable|string|max:255',
+        'translations.description'  => 'nullable|array',
+        'translations.description.*'=> 'nullable|string',
         'category_id'               => 'required|exists:categories,id',
         'price'                     => 'required|numeric|min:0',
          'discount_percent' => 'nullable|integer|between:1,100',
@@ -515,6 +535,11 @@ public function update(Request $request, Product $product)
                                             ? ($data['stock'] ?? 0)
                                             : null,
     ]);
+    $product->fillTranslations(normalize_translation_payload($data['translations'] ?? [], [
+        'name',
+        'description',
+    ]));
+    $product->save();
 
     // 2) Sync shipping profiles
     if ($resolvedType === Product::TYPE_PHYSICAL) {
@@ -901,7 +926,7 @@ public function listing(string $slug)
                 'shippingProfiles:id,name,base_rate,pickup_available',
                 // Shop with rating aggregates and policies
                 'shop' => function ($q) {
-                    $q->select('id','name','user_id','slug')
+                    $q->select('id', 'name', 'name_translations', 'user_id', 'slug')
                       ->with('policies:shop_id,shipping,returns')
                       ->withCount('reviews')
                       ->withAvg('reviews', 'rating');
@@ -970,7 +995,7 @@ public function listing(string $slug)
                     $q->select('users.id', 'users.name');
                 },
                 'orderItem.product' => function ($q) {
-                    $q->select('id', 'name', 'slug', 'featured_image', 'shop_id');
+                    $q->select('id', 'name', 'name_translations', 'slug', 'featured_image', 'shop_id');
                 },
             ])
             ->latest()
@@ -1136,19 +1161,22 @@ public function listings(Request $request)
             ->filter()
             ->values();
 
-        $query->where(function ($qq) use ($terms, $q) {
-            if ($terms->isEmpty()) {
-                $like = "%{$q}%";
-                $qq->where('name', 'like', $like)
-                    ->orWhere('description', 'like', $like)
-                    ->orWhere('tags', 'like', $like);
-                return;
-            }
-            foreach ($terms as $t) {
-                $like = "%{$t}%";
-                $qq->orWhere('name', 'like', $like)
-                    ->orWhere('description', 'like', $like)
-                    ->orWhere('tags', 'like', $like);
+        $searchTerms = $terms->isEmpty() ? collect([$q]) : $terms;
+
+        $query->where(function (Builder $qq) use ($searchTerms) {
+            foreach ($searchTerms as $index => $term) {
+                $method = $index === 0 ? 'whereRaw' : 'orWhereRaw';
+
+                $qq->{$method}(
+                    searchable_content_expression([
+                        'name',
+                        'description',
+                        'tags',
+                        'name_translations',
+                        'description_translations',
+                    ]) . ' LIKE ?',
+                    [search_like_value((string) $term)]
+                );
             }
         });
     }
@@ -1214,13 +1242,20 @@ public function listings(Request $request)
 
         $products = Product::where('is_active', 1)
             ->when($terms->isNotEmpty(), function ($query) use ($terms) {
-                $query->where(function ($q2) use ($terms) {
-                    // Match ANY term in name/description/tags
-                    foreach ($terms as $t) {
-                        $like = "%{$t}%";
-                        $q2->orWhere('name', 'like', $like)
-                           ->orWhere('description', 'like', $like)
-                           ->orWhere('tags', 'like', $like);
+                $query->where(function (Builder $q2) use ($terms) {
+                    foreach ($terms as $index => $t) {
+                        $method = $index === 0 ? 'whereRaw' : 'orWhereRaw';
+
+                        $q2->{$method}(
+                            searchable_content_expression([
+                                'name',
+                                'description',
+                                'tags',
+                                'name_translations',
+                                'description_translations',
+                            ]) . ' LIKE ?',
+                            [search_like_value((string) $t)]
+                        );
                     }
                 });
             })
@@ -1688,6 +1723,11 @@ public function shipping(Product $product, Request $request)
             'category_id'             => ['required','integer','exists:categories,id'],
             'short_description'       => ['nullable','string','max:500'],
             'description'             => ['nullable','string'],
+            'translations'            => ['nullable', 'array'],
+            'translations.name'       => ['nullable', 'array'],
+            'translations.name.*'     => ['nullable', 'string', 'max:255'],
+            'translations.description' => ['nullable', 'array'],
+            'translations.description.*' => ['nullable', 'string'],
             'digital_delivery_method' => ['nullable', Rule::in([
                 DigitalFile::SOURCE_UPLOAD,
                 DigitalFile::SOURCE_EXTERNAL_URL,
@@ -1699,7 +1739,12 @@ public function shipping(Product $product, Request $request)
         ]);
 
         $resolvedType = $this->resolveRequestedProductType($data);
-        $product->update($data + ['type' => $resolvedType]);
+        $product->update(Arr::except($data, ['translations']) + ['type' => $resolvedType]);
+        $product->fillTranslations(normalize_translation_payload($data['translations'] ?? [], [
+            'name',
+            'description',
+        ]));
+        $product->save();
         if ($resolvedType !== Product::TYPE_DIGITAL) {
             $this->purgeDigitalFiles($product);
         } elseif ($resolvedType === Product::TYPE_DIGITAL) {

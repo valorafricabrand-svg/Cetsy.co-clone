@@ -4,6 +4,11 @@
 @section('title', 'Create New Listing')
 
 @section('main')
+@php
+  $contentShop = auth()->user()?->shop;
+  $primaryContentLocale = shop_primary_locale($contentShop);
+  $translationLocales = content_translation_locales($contentShop);
+@endphp
 <section class="bg-slate-50 py-8 md:py-10">
   <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
     <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -52,7 +57,7 @@
             @csrf
 
             <div class="mb-4">
-              <label class="mb-1 block text-sm font-semibold text-slate-700">Listing Name</label>
+              <label class="mb-1 block text-sm font-semibold text-slate-700">Listing Name ({{ locale_label($primaryContentLocale) }})</label>
               <input type="text" name="name" id="name" spellcheck="true" autocapitalize="sentences" autocomplete="on"
                      class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('name') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
                      value="{{ old('name') }}" placeholder="e.g. Handmade Wooden Spoon" required>
@@ -116,10 +121,51 @@
             </div>
 
             <div class="mb-4">
-              <label for="description" class="mb-1 block text-sm font-semibold text-slate-700">Description</label>
+              <label for="description" class="mb-1 block text-sm font-semibold text-slate-700">Description ({{ locale_label($primaryContentLocale) }})</label>
               <textarea id="description" name="description" rows="6" spellcheck="true" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('description') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror">{{ old('description') }}</textarea>
               @error('description')<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
             </div>
+
+            @if($translationLocales)
+              <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                <div class="mb-4">
+                  <h2 class="text-base font-semibold text-slate-900">Translations</h2>
+                  <p class="mt-1 text-sm text-slate-500">Add optional translated copy for shoppers browsing in other languages.</p>
+                </div>
+
+                <div class="space-y-4">
+                  @foreach($translationLocales as $locale => $meta)
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                      <h3 class="text-sm font-semibold text-slate-900">{{ locale_label($locale) }}</h3>
+                      <p class="mt-1 text-xs text-slate-500">Shown when the storefront is viewed in {{ locale_label($locale, false) }}.</p>
+
+                      <div class="mt-3">
+                        <label class="mb-1 block text-sm font-semibold text-slate-700">Listing Name ({{ locale_label($locale) }})</label>
+                        <input
+                          type="text"
+                          name="translations[name][{{ $locale }}]"
+                          value="{{ old("translations.name.$locale") }}"
+                          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error("translations.name.$locale") border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                          placeholder="Optional translated name"
+                        >
+                        @error("translations.name.$locale")<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+                      </div>
+
+                      <div class="mt-3">
+                        <label class="mb-1 block text-sm font-semibold text-slate-700">Description ({{ locale_label($locale) }})</label>
+                        <textarea
+                          name="translations[description][{{ $locale }}]"
+                          rows="4"
+                          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error("translations.description.$locale") border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                          placeholder="Optional translated description"
+                        >{{ old("translations.description.$locale") }}</textarea>
+                        @error("translations.description.$locale")<div class="mt-1 text-xs text-rose-600">{{ $message }}</div>@enderror
+                      </div>
+                    </div>
+                  @endforeach
+                </div>
+              </div>
+            @endif
 
             <div class="mb-4 grid grid-cols-12 gap-3">
               <div class="col-span-12 md:col-span-6">
@@ -533,6 +579,5 @@ if (window.tinymce) tinymce.init({
 })();
 </script>
 @endpush
-
 
 

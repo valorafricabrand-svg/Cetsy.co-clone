@@ -1,5 +1,5 @@
 @extends('theme.'.theme().'.layouts.app')
-@section('title', $product->name . ' | Edit Details')
+@section('title', ($product->localized_name ?? $product->name) . ' | Edit Details')
 
 @push('styles')
 <style>
@@ -16,6 +16,11 @@
 @endpush
 
 @section('main')
+@php
+  $contentShop = $product->shop;
+  $primaryContentLocale = shop_primary_locale($contentShop);
+  $translationLocales = content_translation_locales($contentShop);
+@endphp
 @php $current = \Illuminate\Support\Facades\Route::currentRouteName(); @endphp
 
 <section class="bg-slate-50 py-8 md:py-10">
@@ -58,7 +63,7 @@
 
         <div class="grid grid-cols-12 gap-3">
           <div class="col-span-12 md:col-span-8">
-            <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Listing Name</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Listing Name ({{ locale_label($primaryContentLocale) }})</label>
             <input type="text" name="name" id="name" spellcheck="true" autocapitalize="sentences" autocomplete="on"
                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('name') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
                    value="{{ old('name', $product->name) }}" required autofocus>
@@ -136,12 +141,54 @@
           
 
           <div class="col-span-12">
-            <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Description</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Description ({{ locale_label($primaryContentLocale) }})</label>
             <textarea id="description" name="description" rows="8" spellcheck="true"
                       class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error('description') border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
                       placeholder="Full product description...">{{ old('description',$product->description ?? '') }}</textarea>
             @error('description') <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
           </div>
+
+          @if($translationLocales)
+            <div class="col-span-12">
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                <div class="mb-4">
+                  <h3 class="text-sm font-semibold text-slate-900">Translations</h3>
+                  <p class="mt-1 text-xs text-slate-500">Add or update translated copy for buyers browsing in another language.</p>
+                </div>
+
+                <div class="space-y-4">
+                  @foreach($translationLocales as $locale => $meta)
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                      <h4 class="text-sm font-semibold text-slate-900">{{ locale_label($locale) }}</h4>
+
+                      <div class="mt-3">
+                        <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Listing Name ({{ locale_label($locale) }})</label>
+                        <input
+                          type="text"
+                          name="translations[name][{{ $locale }}]"
+                          value="{{ old("translations.name.$locale", $product->translationFor('name', $locale)) }}"
+                          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error("translations.name.$locale") border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                          placeholder="Optional translated name"
+                        >
+                        @error("translations.name.$locale") <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
+                      </div>
+
+                      <div class="mt-3">
+                        <label class="mb-1 block text-sm font-medium text-slate-700 font-semibold">Description ({{ locale_label($locale) }})</label>
+                        <textarea
+                          name="translations[description][{{ $locale }}]"
+                          rows="4"
+                          class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error("translations.description.$locale") border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                          placeholder="Optional translated description"
+                        >{{ old("translations.description.$locale", $product->translationFor('description', $locale)) }}</textarea>
+                        @error("translations.description.$locale") <div class="mt-1 text-xs text-rose-600">{{ $message }}</div> @enderror
+                      </div>
+                    </div>
+                  @endforeach
+                </div>
+              </div>
+            </div>
+          @endif
 
           <div class="col-span-12" x-show="type==='digital'" x-cloak>
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
@@ -605,7 +652,6 @@ function detailsForm(){
 })();
 </script>
 @endpush
-
 
 
 

@@ -1,7 +1,7 @@
 {{-- resources/views/products/show.blade.php --}}
 @extends('theme.'.theme().'.layouts.app')
 
-@section('title', $product->name . ' | Product')
+@section('title', ($product->localized_name ?? $product->name) . ' | Product')
 
 @push('styles')
 <style>
@@ -176,7 +176,7 @@
                 Listing Overview
               </span>
               <div>
-                <h1 class="break-words text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{{ $product->name }}</h1>
+                <h1 class="break-words text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{{ $product->localized_name ?? $product->name }}</h1>
                 <p class="mt-2 max-w-2xl text-sm text-slate-600 sm:text-base">Manage this listing details, visibility, renewal, and launch readiness from one place.</p>
               </div>
               <div class="flex flex-wrap gap-2">
@@ -245,7 +245,7 @@
                             <source src="{{ media_url($media->url) }}" />
                           </video>
                         @else
-                          <img src="{{ media_url($media->url) }}" class="h-full w-full object-contain" alt="{{ $product->name }}">
+                          <img src="{{ media_url($media->url) }}" class="h-full w-full object-contain" alt="{{ $product->localized_name ?? $product->name }}">
                         @endif
                       </div>
                     @endforeach
@@ -294,7 +294,7 @@
               @endif
             </div>
 
-            @if($product->description)
+            @if($product->localized_description ?? $product->description)
               <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-4 py-4 sm:px-5">
                   <h3 class="text-lg font-bold text-slate-900">Description</h3>
@@ -302,7 +302,7 @@
                 </div>
                 <div class="px-4 py-4 sm:px-5 sm:py-5">
                   <div class="product-show__richtext rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4 text-sm sm:p-5">
-                    {!! $product->description !!}
+                    {!! $product->localized_description ?? $product->description !!}
                   </div>
                 </div>
               </div>
@@ -313,7 +313,7 @@
             <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
               <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
-                  <h2 class="break-words text-xl font-bold text-slate-900">{{ $product->name }}</h2>
+                  <h2 class="break-words text-xl font-bold text-slate-900">{{ $product->localized_name ?? $product->name }}</h2>
                   <p class="mt-1 text-sm text-slate-500">Review current status, renewal, stock, and launch requirements.</p>
                 </div>
                 <span class="inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold {{ $statusBadge }}">{{ $statusLabel }}</span>

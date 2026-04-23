@@ -2,6 +2,14 @@
 @extends('theme.'.theme().'.layouts.app')
 
 @section('main')
+@php
+  $primaryContentLocale = locale_from_language_name(old('language')) ?? default_locale();
+  $translationLocales = array_filter(
+      supported_locales(),
+      fn (string $locale): bool => $locale !== $primaryContentLocale,
+      ARRAY_FILTER_USE_KEY
+  );
+@endphp
 <div class="content">
   <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
     <div class="col-span-12 lg:col-span-10 lg:col-start-2">
@@ -55,6 +63,7 @@
                 <select name="language" id="language" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
                   <option value="" disabled selected>Select language</option>
                   <option value="English" {{ old('language')=='English'?'selected':'' }}>English</option>
+                  <option value="Swahili" {{ old('language')=='Swahili'?'selected':'' }}>Swahili</option>
                 </select>
                 <div class="mt-1 text-xs text-rose-600">Please select a language.</div>
               </div>
@@ -107,7 +116,7 @@
             <h5 class="mt-4">2. Name Your Shop</h5>
             <div class="grid grid-cols-1 gap-3 mb-4 md:grid-cols-12">
               <div class="col-span-12 md:col-span-8">
-                <label for="name" class="mb-1 block text-sm font-medium text-slate-700">Shop Name <span class="text-rose-600">*</span></label>
+                <label for="name" class="mb-1 block text-sm font-medium text-slate-700">Shop Name ({{ locale_label($primaryContentLocale) }}) <span class="text-rose-600">*</span></label>
                 <input 
                   id="name" name="name" type="text"
                   x-model="name"
@@ -131,6 +140,34 @@
                 <div class="mt-1 text-xs text-slate-500">Auto-generated from your shop name.</div>
               </div>
             </div>
+
+            @if($translationLocales)
+              <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                <div class="mb-3">
+                  <h5 class="text-sm font-semibold text-slate-900">Translations</h5>
+                  <p class="mt-1 text-xs text-slate-500">Add optional translated shop names now. You can add translated shop bio, announcement, and policies after setup.</p>
+                </div>
+
+                <div class="space-y-4">
+                  @foreach($translationLocales as $locale => $meta)
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                      <label for="translation_name_{{ $locale }}" class="mb-1 block text-sm font-medium text-slate-700">Shop Name ({{ locale_label($locale) }})</label>
+                      <input
+                        id="translation_name_{{ $locale }}"
+                        type="text"
+                        name="translations[name][{{ $locale }}]"
+                        value="{{ old("translations.name.$locale") }}"
+                        class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 @error("translations.name.$locale") border-rose-500 focus:border-rose-500 focus:ring-rose-500 @enderror"
+                        placeholder="Optional translated shop name"
+                      >
+                      @error("translations.name.$locale")
+                        <div class="mt-1 text-xs text-rose-600">{{ $message }}</div>
+                      @enderror
+                    </div>
+                  @endforeach
+                </div>
+              </div>
+            @endif
 
            
 
@@ -244,4 +281,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 @endsection
-

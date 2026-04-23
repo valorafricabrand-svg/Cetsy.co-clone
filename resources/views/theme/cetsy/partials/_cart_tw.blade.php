@@ -59,7 +59,7 @@
 
 <div class="space-y-4">
   <aside class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-    <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">{{ $product->name }}</h1>
+    <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">{{ $product->localized_name ?? $product->name }}</h1>
 
     <div class="mt-2 flex items-center gap-1 text-amber-500">
       @for($i = 1; $i <= 5; $i++)
@@ -92,7 +92,7 @@
     <div class="mt-3 flex flex-wrap gap-2 text-xs">
       <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-semibold text-emerald-700">
         <i class="fa-solid fa-store"></i>
-        <a href="{{ route('shop.show', $product->shop->slug) }}" class="hover:text-emerald-600">{{ $product->shop->name }}</a>
+        <a href="{{ route('shop.show', $product->shop->slug) }}" class="hover:text-emerald-600">{{ $product->shop->localized_name ?? $product->shop->name }}</a>
       </span>
 
       @if ($product->type === 'physical')
