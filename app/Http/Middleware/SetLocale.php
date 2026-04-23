@@ -5,6 +5,8 @@ namespace App\Http\Middleware;
 use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response;
 
 class SetLocale
@@ -43,6 +45,47 @@ class SetLocale
             $request->session()->put('locale', $locale);
         }
 
+        if ($redirect = $this->canonicalRedirect($request)) {
+            return $redirect;
+        }
+
         return $next($request);
+    }
+
+    /**
+     * Redirect default-locale prefixed URLs back to their canonical base routes.
+     */
+    protected function canonicalRedirect(Request $request): ?Response
+    {
+        if (! $request->isMethodCacheable()) {
+            return null;
+        }
+
+        $route = $request->route();
+        $routeLocale = normalize_locale(is_scalar($route?->parameter('locale')) ? (string) $route->parameter('locale') : null);
+
+        if ($routeLocale !== default_locale()) {
+            return null;
+        }
+
+        $routeName = base_route_name($route?->getName());
+
+        if (! $routeName || ! route_has_localized_variant($routeName) || ! Route::has($routeName)) {
+            return null;
+        }
+
+        $routeParameters = $route->parameters();
+        unset($routeParameters['locale']);
+
+        $target = route($routeName, route_parameters_for($routeName, $routeParameters), true);
+
+        $query = $request->query();
+        unset($query['lang']);
+
+        if (! empty($query)) {
+            $target .= '?' . Arr::query($query);
+        }
+
+        return redirect()->to($target, 301);
     }
 }

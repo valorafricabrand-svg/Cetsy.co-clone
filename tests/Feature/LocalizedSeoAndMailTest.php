@@ -32,10 +32,31 @@ class LocalizedSeoAndMailTest extends TestCase
             ->assertOk()
             ->assertSee('Kikombe cha Kiswahili')
             ->assertSee(route('localized.listing.show', ['locale' => 'sw', 'slug' => $product->slug]), false)
-            ->assertSee(route('localized.listing.show', ['locale' => 'en', 'slug' => $product->slug]), false)
+            ->assertSee(route('listing.show', ['slug' => $product->slug]), false)
             ->assertSee('hreflang="sw"', false)
             ->assertSee('hreflang="en"', false)
             ->assertSee('hreflang="x-default"', false);
+    }
+
+    public function test_default_locale_home_route_redirects_to_the_unprefixed_url(): void
+    {
+        $response = $this->get('/en');
+
+        $response->assertRedirect();
+        $this->assertSame(route('home'), strtok((string) $response->headers->get('Location'), '?'));
+    }
+
+    public function test_default_locale_listing_route_redirects_to_the_unprefixed_url(): void
+    {
+        [, , $product] = $this->createLocalizedMarketplaceFixtures();
+
+        $response = $this->get('/en/listing/' . $product->slug);
+
+        $response->assertRedirect();
+        $this->assertSame(
+            route('listing.show', ['slug' => $product->slug]),
+            strtok((string) $response->headers->get('Location'), '?')
+        );
     }
 
     public function test_locale_prefixed_shop_route_renders_the_public_shop_page(): void
@@ -136,13 +157,13 @@ class LocalizedSeoAndMailTest extends TestCase
 
         $this->get(route('sitemap.static'))
             ->assertOk()
-            ->assertSee(route('localized.home', ['locale' => 'en']), false)
+            ->assertSee(route('home'), false)
             ->assertSee(route('localized.home', ['locale' => 'sw']), false)
             ->assertSee(route('localized.listings', ['locale' => 'sw']), false);
 
         $this->get(route('sitemap.products', ['page' => 1]))
             ->assertOk()
-            ->assertSee(route('localized.listing.show', ['locale' => 'en', 'slug' => $product->slug]), false)
+            ->assertSee(route('listing.show', ['slug' => $product->slug]), false)
             ->assertSee(route('localized.listing.show', ['locale' => 'sw', 'slug' => $product->slug]), false);
     }
 

@@ -147,6 +147,18 @@ if (! function_exists('current_locale')) {
     }
 }
 
+if (! function_exists('locale_uses_url_prefix')) {
+    /**
+     * Determine whether a locale should be emitted with a URL prefix.
+     */
+    function locale_uses_url_prefix(?string $locale = null): bool
+    {
+        $resolved = normalize_locale($locale) ?? current_locale();
+
+        return $resolved !== default_locale();
+    }
+}
+
 if (! function_exists('locale_label')) {
     /**
      * Get the display label for a locale.
@@ -281,7 +293,7 @@ if (! function_exists('route_parameters_for')) {
 
 if (! function_exists('localized_route')) {
     /**
-     * Generate a locale-prefixed URL when a localized route alias exists.
+     * Generate a localized URL, omitting the prefix for the default locale.
      *
      * @param  mixed  $parameters
      */
@@ -289,11 +301,13 @@ if (! function_exists('localized_route')) {
     {
         $baseName = base_route_name($routeName) ?? $routeName;
         $localizedName = localized_route_name($baseName);
-        $targetRoute = $localizedName ?: $baseName;
+        $resolvedLocale = normalize_locale($locale) ?? current_locale();
+        $shouldUseLocalizedRoute = $localizedName && locale_uses_url_prefix($resolvedLocale);
+        $targetRoute = $shouldUseLocalizedRoute ? $localizedName : $baseName;
         $resolvedParameters = route_parameters_for($targetRoute, $parameters);
 
-        if ($localizedName) {
-            $resolvedParameters = ['locale' => normalize_locale($locale) ?? current_locale()] + $resolvedParameters;
+        if ($shouldUseLocalizedRoute) {
+            $resolvedParameters = ['locale' => $resolvedLocale] + $resolvedParameters;
         }
 
         return route($targetRoute, $resolvedParameters, $absolute);
