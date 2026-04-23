@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use App\Mail\CounterOfferMail;
 use App\Mail\WelcomeBuyerMail;
+use App\Models\BlogCategory;
+use App\Models\BlogPost;
+use App\Models\Category;
 use App\Models\Country;
 use App\Models\Offer;
 use App\Models\Product;
@@ -47,6 +50,84 @@ class LocalizedSeoAndMailTest extends TestCase
             ->assertOk()
             ->assertSee('Duka la Kiswahili')
             ->assertSee('Kikombe cha Kiswahili');
+    }
+
+    public function test_locale_prefixed_category_route_renders_the_category_page(): void
+    {
+        [, , $product] = $this->createLocalizedMarketplaceFixtures();
+
+        $category = Category::create([
+            'name' => 'Wall Art',
+            'slug' => 'wall-art',
+            'listing_type' => 'products',
+            'description' => 'Decorative wall art.',
+            'listing_fee' => 0.25,
+            'listing_frequency' => 4,
+        ]);
+
+        $product->update(['category_id' => $category->id]);
+
+        $this->get(route('localized.category.show', [
+            'locale' => 'sw',
+            'slug' => $category->slug,
+        ]))
+            ->assertOk()
+            ->assertSee('Kikombe cha Kiswahili');
+    }
+
+    public function test_locale_prefixed_blog_post_route_renders_the_blog_post_page(): void
+    {
+        $author = User::factory()->create();
+        $category = BlogCategory::create([
+            'name' => 'Marketplace News',
+            'slug' => 'marketplace-news',
+            'is_active' => true,
+        ]);
+
+        $post = BlogPost::create([
+            'user_id' => $author->id,
+            'blog_category_id' => $category->id,
+            'title' => 'Localized launch update',
+            'slug' => 'localized-launch-update',
+            'excerpt' => 'A short update.',
+            'body' => 'Body copy',
+            'status' => BlogPost::STATUS_PUBLISHED,
+            'published_at' => now()->subDay(),
+        ]);
+
+        $this->get(route('localized.blog.show', [
+            'locale' => 'sw',
+            'slug' => $post->slug,
+        ]))
+            ->assertOk()
+            ->assertSee('Localized launch update');
+    }
+
+    public function test_locale_prefixed_legacy_blog_slug_redirect_uses_the_correct_post_slug(): void
+    {
+        $author = User::factory()->create();
+        $category = BlogCategory::create([
+            'name' => 'Marketplace News',
+            'slug' => 'marketplace-news',
+            'is_active' => true,
+        ]);
+
+        $post = BlogPost::create([
+            'user_id' => $author->id,
+            'blog_category_id' => $category->id,
+            'title' => 'Localized launch update',
+            'slug' => 'localized-launch-update',
+            'excerpt' => 'A short update.',
+            'body' => 'Body copy',
+            'status' => BlogPost::STATUS_PUBLISHED,
+            'published_at' => now()->subDay(),
+        ]);
+
+        $this->get('/sw/cetsy-blog/' . $post->slug)
+            ->assertRedirect(route('localized.blog.show', [
+                'locale' => 'sw',
+                'slug' => $post->slug,
+            ]));
     }
 
     public function test_sitemaps_include_locale_prefixed_marketplace_urls(): void

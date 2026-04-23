@@ -102,7 +102,8 @@ Route::prefix('{locale}')
             return redirect()->to($target, 301);
         });
 
-        Route::get('/cetsy-blog/{slug}', function (\Illuminate\Http\Request $request, string $slug) {
+        Route::get('/cetsy-blog/{slug}', function (\Illuminate\Http\Request $request, string $localeOrSlug, ?string $slug = null) {
+            $slug = $slug ?? $localeOrSlug;
             $query = $request->getQueryString();
             $target = localized_route('blog.show', ['slug' => $slug], true, $request->route('locale')) . ($query ? '?' . $query : '');
 
