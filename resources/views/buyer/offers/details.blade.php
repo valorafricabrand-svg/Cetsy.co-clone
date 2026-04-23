@@ -141,7 +141,7 @@
             <div class="mt-4">
                 <h6 class="mb-2">Actions</h6>
                 <div class="flex flex-wrap gap-2">
-                    <a href="{{ route('listing.show', $offer->product->slug ?? $offer->product->id) }}" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
+                    <a href="{{ localized_route('listing.show', $offer->product->slug ?? $offer->product->id) }}" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
                         <i class="fa-regular fa-eye mr-1"></i>View Product
                     </a>
 

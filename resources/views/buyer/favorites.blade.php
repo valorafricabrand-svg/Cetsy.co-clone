@@ -32,7 +32,7 @@
                                 <div class="p-4 text-center">
                                     <h6 class="line-clamp-2 text-base font-semibold text-slate-900">{{ $product->name }}</h6>
                                     <p class="mb-3 mt-1 text-sm text-slate-500">{{ get_currency() }} {{ number_format((float) ($product->price ?? 0), 2) }}</p>
-                                    <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">View</a>
+                                    <a href="{{ localized_route('listing.show', $product->slug ?? $product->id) }}" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">View</a>
                                 </div>
                             </article>
                         @endforeach

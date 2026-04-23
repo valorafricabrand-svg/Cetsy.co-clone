@@ -151,7 +151,7 @@
  <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold bg-emerald-600 text-white border-emerald-600">{{ $currencySymbol }} {{ number_format($favProduct->price ?? 0, 2) }}</span>
  </div>
  <div class="text-right flex flex-col gap-2 items-end">
- <a href="{{ route('products.show', $favProduct->slug ?? $favProduct->id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+ <a href="{{ localized_route('listing.show', $favProduct->slug ?? $favProduct->id) }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
  <i class="fa-regular fa-eye mr-1"></i>View
  </a>
  <a href="{{ route('seller.messages.show', $favProduct->id . '-' . $otherUser->id) }}?prefill={{ urlencode('Hi '.($otherUser->name ?? 'there').', thanks for favoriting \"'.$favProduct->name.'\". Do you have any questions?') }}" class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition px-2.5 py-1.5 text-xs rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50">
@@ -817,6 +817,5 @@ function clearForm() {
  </div>
 </section>
 @endsection 
-
 
 

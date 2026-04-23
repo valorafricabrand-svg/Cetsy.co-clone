@@ -46,7 +46,7 @@
     $unreadNotifications = \App\Models\Activity::where('user_id', auth()->id())->where('is_read', false)->count();
     $myShopUrl = '#';
     if ($shop && \Illuminate\Support\Facades\Route::has('shop.show')) {
-        $myShopUrl = route('shop.show', $shop->slug ?: $shop->getKey());
+        $myShopUrl = localized_route('shop.show', $shop->slug ?: $shop->getKey());
     } elseif (\Illuminate\Support\Facades\Route::has('seller.shop.create')) {
         $myShopUrl = route('seller.shop.create');
     }

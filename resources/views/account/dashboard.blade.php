@@ -40,7 +40,7 @@
                         </a>
                     </div>
                     <div class="col-span-12 md:col-span-4">
-                        <a href="{{ route('wishlist') }}" class="block h-full rounded-2xl border border-slate-200 bg-white text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                        <a href="{{ localized_route('wishlist') }}" class="block h-full rounded-2xl border border-slate-200 bg-white text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                             <div class="flex flex-col items-center justify-center p-5">
                                 <div class="mb-3"><i class="fas fa-heart text-4xl text-emerald-600"></i></div>
                                 <h5 class="text-lg font-bold text-emerald-700">{{ __('Wishlist') }}</h5>
@@ -108,7 +108,7 @@
                                 'wrapperTag' => 'div',
                                 'wrapperClass' => 'recommended-carousel relative',
                                 'containerClass' => '',
-                                'seeMoreUrl' => route('listings'),
+                                'seeMoreUrl' => localized_route('listings'),
                                 'seeMoreLabel' => __('Explore marketplace')
                             ])
                         @endif

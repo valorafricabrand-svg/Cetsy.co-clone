@@ -116,7 +116,7 @@
  $product = $productFavorites->first()->product;
  $favoriteCount = $productFavorites->count();
  $uniqueBuyers = $productFavorites->unique('user_id')->count();
- $productUrl = route('products.show', $product->slug ?? $product->id);
+ $productUrl = localized_route('listing.show', $product->slug ?? $product->id);
  @endphp
  <div class="product-favorites-section border-b border-slate-200">
  <div class="p-4">
@@ -385,7 +385,6 @@ document.addEventListener('DOMContentLoaded', function () {
  </div>
 </section>
 @endsection
-
 
 
 

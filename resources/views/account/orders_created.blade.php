@@ -43,7 +43,7 @@
                     <td class="px-4 py-3">#{{ $order->id }}</td>
                     <td class="px-4 py-3">
                       @if($order->shop)
-                        <a href="{{ route('shop.show', $order->shop->slug) }}" class="font-medium text-slate-700 hover:text-emerald-700">{{ $order->shop->name }}</a>
+                        <a href="{{ localized_route('shop.show', $order->shop->slug ?: $order->shop->getKey()) }}" class="font-medium text-slate-700 hover:text-emerald-700">{{ $order->shop->name }}</a>
                       @else
                         <span class="text-slate-500">Unknown shop</span>
                       @endif
@@ -82,7 +82,7 @@
                   <div class="mb-2 truncate text-sm">
                     <span class="text-slate-500">Shop:</span>
                     @if($order->shop)
-                      <a href="{{ route('shop.show', $order->shop->slug) }}" class="text-slate-700 hover:text-emerald-700">{{ $order->shop->name }}</a>
+                      <a href="{{ localized_route('shop.show', $order->shop->slug ?: $order->shop->getKey()) }}" class="text-slate-700 hover:text-emerald-700">{{ $order->shop->name }}</a>
                     @else
                       <span class="text-slate-500">Unknown shop</span>
                     @endif

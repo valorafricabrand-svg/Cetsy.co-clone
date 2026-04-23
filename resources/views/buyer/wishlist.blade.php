@@ -36,13 +36,13 @@
                     @endphp
 
                     <article class="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="block aspect-[4/3] overflow-hidden">
+                        <a href="{{ localized_route('listing.show', $product->slug ?? $product->id) }}" class="block aspect-[4/3] overflow-hidden">
                             <img src="{{ $imgUrl }}" alt="{{ $product->name }}" class="h-full w-full object-cover transition duration-300 hover:scale-105">
                         </a>
 
                         <div class="p-4">
                             <h5 class="mb-1 text-base font-semibold text-slate-900">
-                                <a href="{{ route('products.show', $product->slug ?? $product->id) }}" class="no-underline text-slate-900 hover:text-emerald-700">
+                                <a href="{{ localized_route('listing.show', $product->slug ?? $product->id) }}" class="no-underline text-slate-900 hover:text-emerald-700">
                                     {{ $product->name }}
                                 </a>
                             </h5>
@@ -52,7 +52,7 @@
                         </div>
 
                         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 px-4 py-3">
-                            <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
+                            <a href="{{ localized_route('listing.show', $product->slug ?? $product->id) }}" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
                                 View
                             </a>
 

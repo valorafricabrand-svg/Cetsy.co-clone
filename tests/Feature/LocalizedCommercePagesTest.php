@@ -6,6 +6,7 @@ use App\Models\Country;
 use App\Models\Message;
 use App\Models\Offer;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
@@ -49,6 +50,57 @@ class LocalizedCommercePagesTest extends TestCase
             ->assertSee('Duka la Kiswahili')
             ->assertSee('Inasubiri')
             ->assertSee('Malipo yanasubiriwa');
+    }
+
+    public function test_buyer_dashboard_preserves_localized_wishlist_links(): void
+    {
+        [, $buyer] = $this->createMarketplaceFixtures();
+        $localeCookie = config('locales.cookie', 'locale');
+
+        $this->actingAs($buyer)
+            ->withCookie($localeCookie, 'sw')
+            ->get(route('buyer.dashboard'))
+            ->assertOk()
+            ->assertSee(localized_route('wishlist', [], true, 'sw'), false);
+    }
+
+    public function test_buyer_order_detail_page_preserves_localized_listing_links(): void
+    {
+        [$seller, $buyer, $country, $shop, $product] = $this->createMarketplaceFixtures();
+        $localeCookie = config('locales.cookie', 'locale');
+
+        $order = Order::create([
+            'user_id' => $buyer->id,
+            'shop_id' => $shop->id,
+            'full_name' => $buyer->name,
+            'email' => $buyer->email,
+            'phone' => '0712345678',
+            'shipping_country_id' => $country->id,
+            'shipping_address_1' => '123 Main Street',
+            'shipping_city' => 'Nairobi',
+            'shipping_state' => 'Nairobi',
+            'shipping_postal_code' => '00100',
+            'billing_same_as_shipping' => true,
+            'shipping_method' => 'standard',
+            'payment_method' => 'paypal',
+            'subtotal' => 25.00,
+            'total_amount' => 25.00,
+            'status' => Order::STATUS_PENDING,
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price' => 25.00,
+            'shipping_cost' => 0,
+        ]);
+
+        $this->actingAs($buyer)
+            ->withCookie($localeCookie, 'sw')
+            ->get(route('buyer.orders.show', $order->id))
+            ->assertOk()
+            ->assertSee(localized_route('listing.show', $product->slug, true, 'sw'), false);
     }
 
     public function test_buyer_message_pages_render_translated_ui_and_localized_product_content(): void

@@ -912,7 +912,7 @@
                     {{-- Image --}}
                     <td>
                       @if($thumbUrl)
-                        <a href="{{ route('listing.show', $product->slug) }}" target="_blank">
+                        <a href="{{ localized_route('listing.show', $product->slug) }}" target="_blank">
                           <img
                             src="{{ $thumbUrl }}"
                             alt="{{ $product->name }}"
@@ -925,7 +925,7 @@
                     {{-- Product --}}
                     <td>
                       @if($product)
-                        <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="text-slate-900 hover:text-emerald-700">
+                        <a href="{{ localized_route('listing.show', $product->slug) }}" target="_blank" class="text-slate-900 hover:text-emerald-700">
                           {{ $product->name }}
                         </a>
                         @if($isDigital)
@@ -1050,7 +1050,7 @@
                 <div class="p-4 sm:p-5">
                   <div class="flex items-start gap-3">
                     @if($thumbUrl)
-                      <a href="{{ $product ? route('listing.show', $product->slug) : '#' }}" target="_blank" class="order-item__thumb-wrap">
+                      <a href="{{ $product ? localized_route('listing.show', $product->slug) : '#' }}" target="_blank" class="order-item__thumb-wrap">
                         <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product image' }}" class="order-item__thumb">
                       </a>
                     @else
@@ -1065,7 +1065,7 @@
                         <div style="min-width:0;">
                           <div class="font-semibold text-clamp-2">
                             @if($product)
-                              <a href="{{ route('listing.show', $product->slug) }}" target="_blank" class="text-slate-900 hover:text-emerald-700">{{ $product->name }}</a>
+                              <a href="{{ localized_route('listing.show', $product->slug) }}" target="_blank" class="text-slate-900 hover:text-emerald-700">{{ $product->name }}</a>
                             @else
                               <span class="text-slate-500">&mdash;</span>
                             @endif
@@ -1423,5 +1423,4 @@
   @endif
 @endforeach
 @endsection
-
 

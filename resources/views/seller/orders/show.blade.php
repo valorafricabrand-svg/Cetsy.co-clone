@@ -400,7 +400,7 @@
  <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
  <div class="font-semibold truncate">
  @if($product?->slug)
- <a href="{{ route('listing.show', $product->slug) }}" class="text-slate-900 hover:text-emerald-700" target="_blank">{{ $product->name ?? 'N/A' }}</a>
+ <a href="{{ localized_route('listing.show', $product->slug) }}" class="text-slate-900 hover:text-emerald-700" target="_blank">{{ $product->name ?? 'N/A' }}</a>
  @else
  {{ $product->name ?? 'N/A' }}
  @endif
@@ -470,14 +470,14 @@
  <td>{{ $loop->iteration }}</td>
  <td>
  @if($thumbUrl)
- <a href="{{ $product?->slug ? route('listing.show', $product->slug) : 'javascript:void(0)' }}" target="_blank">
+ <a href="{{ $product?->slug ? localized_route('listing.show', $product->slug) : 'javascript:void(0)' }}" target="_blank">
  <img src="{{ $thumbUrl }}" alt="{{ $product->name ?? 'Product' }}" class="h-auto max-w-full rounded" style="max-width: 80px; height:auto; object-fit: cover;">
  </a>
  @endif
  </td>
  <td>
  @if($product?->slug)
- <a href="{{ route('listing.show', $product->slug) }}" class="text-slate-900 hover:text-emerald-700" target="_blank">{{ $product->name ?? 'N/A' }}</a>
+ <a href="{{ localized_route('listing.show', $product->slug) }}" class="text-slate-900 hover:text-emerald-700" target="_blank">{{ $product->name ?? 'N/A' }}</a>
  @else
  {{ $product->name ?? 'N/A' }}
  @endif
@@ -1012,4 +1012,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
-

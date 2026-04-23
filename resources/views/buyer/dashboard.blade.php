@@ -99,7 +99,7 @@
             </div>
 
             <div class="col-span-12 sm:col-span-6 xl:col-span-3">
-                <a href="{{ route('wishlist') }}" class="buyer-stat-card block h-full rounded-2xl border border-slate-200 bg-white text-center no-underline">
+                <a href="{{ localized_route('wishlist') }}" class="buyer-stat-card block h-full rounded-2xl border border-slate-200 bg-white text-center no-underline">
                     <div class="flex flex-col items-center justify-center p-5">
                         <div class="mb-3"><i class="fas fa-heart fa-3x text-emerald-600"></i></div>
                         <h5 class="font-bold text-emerald-600">{{ __('Favourites') }}</h5>
@@ -142,7 +142,7 @@
                     'wrapperTag' => 'div',
                     'wrapperClass' => 'pt-3',
                     'containerClass' => '',
-                    'seeMoreUrl' => route('listings'),
+                    'seeMoreUrl' => localized_route('listings'),
                     'seeMoreLabel' => __('Browse more')
                 ])
             </div>
@@ -165,7 +165,7 @@
                                     @endif
                                 </div>
                                 @if($r->orderItem?->product?->slug)
-                                    <a href="{{ route('listing.show', $r->orderItem->product->slug) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">{{ __('View Item') }}</a>
+                                    <a href="{{ localized_route('listing.show', $r->orderItem->product->slug) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">{{ __('View Item') }}</a>
                                 @endif
                             </li>
                         @endforeach
