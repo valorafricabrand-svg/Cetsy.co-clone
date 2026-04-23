@@ -110,13 +110,13 @@ class Offer extends Model
     {
         if ($this->status === 'pending') {
             // Clarify which side is expected to respond
-            return $this->is_counter_offer ? 'Pending buyer response' : 'Pending seller response';
+            return __($this->is_counter_offer ? 'Pending buyer response' : 'Pending seller response');
         }
         return match ($this->status) {
-            'accepted' => 'Accepted',
-            'declined' => 'Declined',
-            'expired'  => 'Expired',
-            default    => ucfirst((string)$this->status),
+            'accepted' => __('Accepted'),
+            'declined' => __('Declined'),
+            'expired'  => __('Expired'),
+            default    => __(ucfirst((string) $this->status)),
         };
     }
 

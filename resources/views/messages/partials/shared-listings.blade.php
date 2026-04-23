@@ -12,23 +12,24 @@
   <div class="shared-listings mt-3 grid w-full max-w-full gap-2">
     @foreach($sharedProducts as $sharedProduct)
       @php
-        $listingUrl = route('listing.show', $sharedProduct->slug ?: $sharedProduct->id);
+        $sharedProductName = $sharedProduct->localized_name ?? $sharedProduct->name;
+        $listingUrl = localized_route('listing.show', $sharedProduct->slug ?: $sharedProduct->id);
         $thumbUrl = function_exists('product_thumb_url')
             ? product_thumb_url($sharedProduct)
             : media_url($sharedProduct->featured_image ?? null);
         $type = strtolower((string) ($sharedProduct->type ?? ''));
         $stock = is_numeric($sharedProduct->stock ?? null) ? (int) $sharedProduct->stock : null;
         $stockLabel = match ($type) {
-            'service' => 'Service listing',
-            'digital' => 'Digital listing',
-            default => ($stock !== null ? $stock . ' in stock' : 'Stock unavailable'),
+            'service' => __('Service listing'),
+            'digital' => __('Digital listing'),
+            default => ($stock !== null ? __(':count in stock', ['count' => $stock]) : __('Stock unavailable')),
         };
         $price = money((float) ($sharedProduct->discounted_price ?? $sharedProduct->price ?? 0), null);
       @endphp
 
-      <a href="{{ $listingUrl }}" title="{{ $sharedProduct->name }}" class="shared-listing-card group flex w-full max-w-full items-center gap-3 overflow-hidden rounded-xl p-3 transition {{ $cardClasses }}">
+      <a href="{{ $listingUrl }}" title="{{ $sharedProductName }}" class="shared-listing-card group flex w-full max-w-full items-center gap-3 overflow-hidden rounded-xl p-3 transition {{ $cardClasses }}">
         @if($thumbUrl)
-          <img src="{{ $thumbUrl }}" alt="{{ $sharedProduct->name }}" class="h-14 w-14 shrink-0 rounded-lg object-cover">
+          <img src="{{ $thumbUrl }}" alt="{{ $sharedProductName }}" class="h-14 w-14 shrink-0 rounded-lg object-cover">
         @else
           <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg {{ $isOutgoing ? 'bg-white/10' : 'bg-slate-100' }}">
             <i class="fa-regular fa-image {{ $metaClasses }}"></i>
@@ -36,13 +37,13 @@
         @endif
 
         <div class="min-w-0 flex-1">
-          <div class="truncate text-sm font-semibold">{{ $sharedProduct->name }}</div>
+          <div class="truncate text-sm font-semibold">{{ $sharedProductName }}</div>
           <div class="mt-1 flex flex-wrap items-center gap-2 text-xs {{ $metaClasses }}">
             <span>{{ $stockLabel }}</span>
             <span>&bull;</span>
             <span class="font-semibold {{ $priceClasses }}">{{ $price }}</span>
           </div>
-          <div class="mt-1 text-[11px] {{ $metaClasses }}">Tap to review this listing</div>
+          <div class="mt-1 text-[11px] {{ $metaClasses }}">{{ __('Tap to review this listing') }}</div>
         </div>
 
         <i class="fa-solid fa-chevron-right shrink-0 text-xs {{ $metaClasses }}"></i>

@@ -6,6 +6,7 @@ use App\Models\Product\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class Order extends Model
 {
@@ -96,11 +97,26 @@ class Order extends Model
 
     public function getSellerStatusLabel(): string
     {
+        return $this->status_label;
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
         if ($this->isDownloadedDigitalOrder()) {
-            return 'Downloaded';
+            return __('Downloaded');
         }
 
-        return ucfirst(str_replace('_', ' ', (string) $this->status));
+        return match ((string) $this->status) {
+            self::STATUS_PENDING => __('Pending'),
+            self::STATUS_PROCESSING => __('Processing'),
+            self::STATUS_SHIPPED => __('Shipped'),
+            self::STATUS_DELIVERED => __('Delivered'),
+            self::STATUS_COMPLETED => __('Completed'),
+            self::STATUS_CANCELLED, 'canceled' => __('Cancelled'),
+            self::STATUS_REFUNDED => __('Refunded'),
+            self::STATUS_RETURNED => __('Returned'),
+            default => __(Str::headline((string) $this->status)),
+        };
     }
 
     public function customer(): BelongsTo

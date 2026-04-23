@@ -1,10 +1,14 @@
-﻿@extends('theme.'.theme().'.layouts.app')
+@extends('theme.'.theme().'.layouts.app')
 
 @section('header')
+    @php
+        $conversationName = $shop ? ($shop->localized_name ?? $shop->name) : ($otherUser->name ?? __('Seller'));
+        $productName = $product?->localized_name ?? $product?->name;
+    @endphp
     <h2 class="text-2xl font-semibold text-slate-900">
-        Conversation with {{ $shop ? $shop->name : ($otherUser->name ?? 'Seller') }}
+        {{ __('Conversation with :name', ['name' => $conversationName]) }}
         @if($product)
-            <span class="ml-2 inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">{{ $product->name }}</span>
+            <span class="ml-2 inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">{{ $productName }}</span>
         @endif
     </h2>
 @endsection
@@ -30,7 +34,6 @@
                 @endif
 
                 @php
-                    $currencySymbol = function_exists('shop_currency') ? shop_currency() : get_currency();
                     $listingPrice = $product ? (float) ($product->price ?? 0) : 0;
                     $currentPrice = $product ? (float) ($product->discounted_price ?? $listingPrice) : 0;
                     $lowestVariantPrice = null;
@@ -52,21 +55,22 @@
                         ? (float) $lowestVariantPrice
                         : ($currentPrice > 0 ? $currentPrice : ($listingPrice > 0 ? $listingPrice : null));
                     $priceLabel = $lowestVariantPrice !== null
-                        ? (strtolower((string) ($product->type ?? '')) === 'service' ? 'Priced from' : 'From')
-                        : 'Posted price';
+                        ? (strtolower((string) ($product->type ?? '')) === 'service' ? __('Priced from') : __('From'))
+                        : __('Posted price');
                     $offerInputValue = old('offer_price', $latestOffer->offer_price ?? '');
                     $listingRouteParam = $product ? ($product->slug ?: $product->id) : null;
                     $showOfferPanel = $product && ($errors->has('offer_price') || (string) old('product_id') === (string) $product->id);
+                    $productDescription = trim(strip_tags((string) ($product->localized_description ?? $product->description ?? '')));
                 @endphp
 
                 @if($product)
                 <div class="mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div class="p-4 sm:p-5">
                         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                            <a href="{{ route('listing.show', $listingRouteParam) }}" class="flex min-w-0 flex-1 items-center gap-3 rounded-2xl transition hover:bg-slate-50">
+                            <a href="{{ localized_route('listing.show', $listingRouteParam) }}" class="flex min-w-0 flex-1 items-center gap-3 rounded-2xl transition hover:bg-slate-50">
                                 @if($product->media && $product->media->count() > 0)
                                     @php $thumb = function_exists('product_thumb_url') ? product_thumb_url($product) : (optional($product->media->first())->url ? asset('storage/'.$product->media->first()->url) : null); @endphp
-                                    <img src="{{ $thumb }}" alt="{{ $product->name }}" class="h-[72px] w-[72px] rounded-xl object-cover">
+                                    <img src="{{ $thumb }}" alt="{{ $productName }}" class="h-[72px] w-[72px] rounded-xl object-cover">
                                 @else
                                     <div class="flex h-[72px] w-[72px] items-center justify-center rounded-xl bg-slate-100">
                                         <i class="fa-regular fa-image text-slate-500"></i>
@@ -74,50 +78,50 @@
                                 @endif
                                 <div class="min-w-0 grow">
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <h6 class="text-base font-semibold text-slate-900">{{ $product->name }}</h6>
-                                        <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Tap to view listing</span>
+                                        <h6 class="text-base font-semibold text-slate-900">{{ $productName }}</h6>
+                                        <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">{{ __('Tap to view listing') }}</span>
                                     </div>
-                                    <p class="mt-1 text-xs text-slate-500">{!! $product->description ? \Illuminate\Support\Str::limit($product->description, 110) : 'No description available' !!}</p>
+                                    <p class="mt-1 text-xs text-slate-500">{{ $productDescription !== '' ? \Illuminate\Support\Str::limit($productDescription, 110) : __('No description available') }}</p>
                                     <div class="mt-3 flex flex-wrap gap-2">
                                         @if($displayPrice !== null)
                                         <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{{ $priceLabel }} {{ money($displayPrice) }}</span>
                                         @else
-                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Contact for price</span>
+                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{{ __('Contact for price') }}</span>
                                         @endif
                                         @if($currentPrice > 0 && abs($currentPrice - $listingPrice) > 0.009)
-                                        <span class="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">Current listing price {{ $currencySymbol }} {{ number_format($currentPrice, 2) }}</span>
+                                        <span class="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">{{ __('Current listing price :price', ['price' => money($currentPrice)]) }}</span>
                                         @endif
                                         @if($latestOffer)
-                                        <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">Latest offer {{ $latestOffer->formatted_price }} · {{ $latestOffer->status_label }}</span>
+                                        <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">{{ __('Latest offer') }} {{ $latestOffer->formatted_price }} · {{ $latestOffer->status_label }}</span>
                                         @endif
                                     </div>
                                 </div>
                             </a>
                             <div class="flex flex-wrap gap-2 lg:w-auto lg:flex-col lg:items-end">
-                                <a href="{{ route('listing.show', $listingRouteParam) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-                                    <i class="fa-regular fa-eye mr-1"></i>View Item
+                                <a href="{{ localized_route('listing.show', $listingRouteParam) }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                                    <i class="fa-regular fa-eye mr-1"></i>{{ __('View Item') }}
                                 </a>
                                 @if($latestOffer)
                                 <a href="{{ route('buyer.offers.details', $latestOffer->id) }}" class="inline-flex items-center justify-center rounded-xl border border-sky-600 px-3 py-2 text-xs font-semibold text-sky-700 transition hover:bg-sky-50">
-                                    <i class="fa-regular fa-file-lines mr-1"></i>View Offer
+                                    <i class="fa-regular fa-file-lines mr-1"></i>{{ __('View Offer') }}
                                 </a>
                                 @endif
                                 <button type="button" id="toggleBuyerOffer" class="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500">
-                                    <i class="fa-solid fa-tag mr-1"></i>{{ $latestOffer ? 'Update Offer' : 'Make Offer' }}
+                                    <i class="fa-solid fa-tag mr-1"></i>{{ $latestOffer ? __('Update Offer') : __('Make Offer') }}
                                 </button>
                             </div>
                         </div>
 
                         <div id="buyerOfferPanel" class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 {{ $showOfferPanel ? '' : 'hidden' }}">
                             <div class="mb-3">
-                                <h6 class="mb-1 text-sm font-semibold text-slate-900">Send an offer to the seller</h6>
-                                <p class="mb-0 text-xs text-slate-500">Use the posted price above as your reference. Your offer cannot exceed the current listing price.</p>
+                                <h6 class="mb-1 text-sm font-semibold text-slate-900">{{ __('Send an offer to the seller') }}</h6>
+                                <p class="mb-0 text-xs text-slate-500">{{ __('Use the posted price above as your reference. Your offer cannot exceed the current listing price.') }}</p>
                             </div>
                             <form method="POST" action="{{ route('offers.store') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
                                 @csrf
                                 <input type="hidden" name="product_id" value="{{ $product->id }}">
                                 <div class="w-full sm:max-w-xs">
-                                    <label for="buyerOfferPrice" class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Offer Price</label>
+                                    <label for="buyerOfferPrice" class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ __('Offer Price') }}</label>
                                     <input type="number"
                                            name="offer_price"
                                            id="buyerOfferPrice"
@@ -133,7 +137,7 @@
                                     @enderror
                                 </div>
                                 <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">
-                                    <i class="fa-regular fa-paper-plane mr-1"></i>Send Offer
+                                    <i class="fa-regular fa-paper-plane mr-1"></i>{{ __('Send Offer') }}
                                 </button>
                             </form>
                         </div>
@@ -146,15 +150,15 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
                                 <div class="avatar mr-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-base font-semibold text-white">
-                                    {{ strtoupper(substr(($shop ? $shop->name : ($otherUser->name ?? 'U')), 0, 1)) }}
+                                    {{ strtoupper(substr(($shop ? ($shop->localized_name ?? $shop->name) : ($otherUser->name ?? 'U')), 0, 1)) }}
                                 </div>
                                 <div>
-                                    <h6 class="mb-0 text-sm font-semibold text-slate-900">{{ $shop ? $shop->name : ($otherUser->name ?? 'Unknown') }}</h6>
-                                    <small class="text-xs text-slate-500">{{ $messages->count() }} message{{ $messages->count() > 1 ? 's' : '' }}</small>
+                                    <h6 class="mb-0 text-sm font-semibold text-slate-900">{{ $conversationName }}</h6>
+                                    <small class="text-xs text-slate-500">{{ trans_choice('{1} :count message|[2,*] :count messages', $messages->count(), ['count' => $messages->count()]) }}</small>
                                 </div>
                             </div>
                             <a href="{{ route('buyer.messages.index') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-                                <i class="fa-solid fa-arrow-left mr-1"></i>Back to Conversations
+                                <i class="fa-solid fa-arrow-left mr-1"></i>{{ __('Back to Conversations') }}
                             </a>
                         </div>
                     </div>
@@ -165,12 +169,13 @@
                                 @php
                                     $isMine = $message->sender_id == auth()->id();
                                     $sharedProductsForMessage = $message->sharedProducts ?? collect();
+                                    $senderName = optional($message->sender->shop)->localized_name ?? optional($message->sender->shop)->name ?? $message->sender->name;
                                 @endphp
                                 <div class="mb-3 {{ $isMine ? 'text-right' : 'text-left' }}">
                                     <div class="inline-block rounded-xl p-3 {{ $sharedProductsForMessage->isNotEmpty() ? 'w-full max-w-full sm:max-w-[85%]' : 'max-w-[85%]' }} {{ $isMine ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-900' }}">
                                         <div class="mb-1 flex items-center">
-                                            <strong class="mr-2 text-xs">{{ $message->sender->shop->name ?? $message->sender->name }}</strong>
-                                            <small class="text-xs {{ $isMine ? 'text-emerald-100' : 'text-slate-500' }}">{{ $message->created_at->format('M d, H:i') }}</small>
+                                            <strong class="mr-2 text-xs">{{ $senderName }}</strong>
+                                            <small class="text-xs {{ $isMine ? 'text-emerald-100' : 'text-slate-500' }}">{{ $message->created_at->translatedFormat('M d, H:i') }}</small>
                                         </div>
                                         <div class="message-content text-sm">{{ $message->body }}</div>
                                         @include('messages.partials.shared-listings', [
@@ -186,11 +191,11 @@
                                             <div class="mt-2">
                                                 @if($isImage)
                                                     <a href="{{ $attachmentUrl }}" target="_blank">
-                                                        <img src="{{ $attachmentUrl }}" alt="Attachment" class="max-w-[240px] rounded">
+                                                        <img src="{{ $attachmentUrl }}" alt="{{ __('Attachment') }}" class="max-w-[240px] rounded">
                                                     </a>
                                                 @else
                                                     <a href="{{ $attachmentUrl }}" target="_blank" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-                                                        <i class="fa-solid fa-paperclip mr-1"></i>View attachment
+                                                        <i class="fa-solid fa-paperclip mr-1"></i>{{ __('View attachment') }}
                                                     </a>
                                                 @endif
                                             </div>
@@ -201,7 +206,7 @@
                         @else
                             <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-center text-sm text-sky-800">
                                 <i class="fa-regular fa-comments mb-2 text-3xl"></i>
-                                <div>No messages yet. Start the conversation!</div>
+                                <div>{{ __('No messages yet. Start the conversation!') }}</div>
                             </div>
                         @endif
                     </div>
@@ -215,18 +220,18 @@
                             <input type="hidden" name="product_id" value="{{ $product->id ?? '' }}">
 
                             <div class="mb-3">
-                                <textarea name="message" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="3" placeholder="Type your message..." required style="resize:none;"></textarea>
+                                <textarea name="message" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" rows="3" placeholder="{{ __('Type your message...') }}" required style="resize:none;"></textarea>
                             </div>
                             <div class="mb-3">
-                                <label for="buyerAttachment" class="mb-1 block text-sm font-medium text-slate-700">Attachment (optional)</label>
+                                <label for="buyerAttachment" class="mb-1 block text-sm font-medium text-slate-700">{{ __('Attachment (optional)') }}</label>
                                 <input type="file" name="attachment" id="buyerAttachment" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf">
-                                <small class="text-xs text-slate-500">Images or PDF, max 5MB.</small>
+                                <small class="text-xs text-slate-500">{{ __('Images or PDF, max 5MB.') }}</small>
                             </div>
 
                             <div class="flex items-center justify-between">
-                                <small class="text-xs text-slate-500">Press Enter to send, Shift+Enter for new line</small>
+                                <small class="text-xs text-slate-500">{{ __('Press Enter to send, Shift+Enter for new line') }}</small>
                                 <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">
-                                    <i class="fa-regular fa-paper-plane mr-1"></i>Send Message
+                                    <i class="fa-regular fa-paper-plane mr-1"></i>{{ __('Send Message') }}
                                 </button>
                             </div>
                         </form>

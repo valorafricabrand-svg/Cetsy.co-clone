@@ -45,7 +45,7 @@ class MessageController extends Controller
 
         if ($body === '') {
             return back()
-                ->withErrors(['message' => 'Write a message, attach a file, or select at least one listing to send.'])
+                ->withErrors(['message' => __('Write a message, attach a file, or select at least one listing to send.')])
                 ->withInput();
         }
 
@@ -111,7 +111,7 @@ class MessageController extends Controller
             }
         }
 
-        return back()->with('success', 'Message sent successfully!');
+        return back()->with('success', __('Message sent successfully!'));
     }
 
     public function buyerIndex(Request $request)
@@ -165,7 +165,15 @@ class MessageController extends Controller
                     str_contains(strtolower($conversation['other_user']->name), $search) ||
                     str_contains(strtolower($conversation['other_user']->email), $search)
                 );
-                $productMatch = $conversation['product'] && str_contains(strtolower($conversation['product']->name), $search);
+                $productContent = collect([
+                    data_get($conversation, 'product.name'),
+                    data_get($conversation, 'product.localized_name'),
+                    data_get($conversation, 'product.description'),
+                    data_get($conversation, 'product.localized_description'),
+                ])
+                    ->filter()
+                    ->map(fn ($value) => strtolower((string) $value));
+                $productMatch = $productContent->contains(fn ($value) => str_contains($value, $search));
                 $messageMatch = $conversation['latest_message'] && str_contains(strtolower($conversation['latest_message']->body), $search);
                 return $userMatch || $productMatch || $messageMatch;
             });
@@ -425,15 +433,23 @@ class MessageController extends Controller
         }
 
         if ($sharedListingCount > 0 && $hasAttachment) {
-            return 'Shared ' . $sharedListingCount . ' listing' . ($sharedListingCount === 1 ? '' : 's') . ' and an attachment.';
+            return trans_choice(
+                '{1} Shared :count listing and an attachment.|[2,*] Shared :count listings and an attachment.',
+                $sharedListingCount,
+                ['count' => $sharedListingCount]
+            );
         }
 
         if ($sharedListingCount > 0) {
-            return 'Shared ' . $sharedListingCount . ' listing' . ($sharedListingCount === 1 ? '' : 's') . '.';
+            return trans_choice(
+                '{1} Shared :count listing.|[2,*] Shared :count listings.',
+                $sharedListingCount,
+                ['count' => $sharedListingCount]
+            );
         }
 
         if ($hasAttachment) {
-            return 'Sent an attachment.';
+            return __('Sent an attachment.');
         }
 
         return '';

@@ -28,7 +28,7 @@ class OfferController extends Controller
             ->map(function($product) {
                 return [
                     'id' => $product->id,
-                    'name' => $product->name,
+                    'name' => $product->localized_name ?? $product->name,
                     'price' => $product->price,
                     'currency' => get_currency(),
                     'image' => $product->media->first() ? $product->media->first()->getUrl() : null
@@ -78,7 +78,7 @@ class OfferController extends Controller
             if ($existingOffer) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You already have a pending offer for this product.'
+                    'message' => __('You already have a pending offer for this product.')
                 ], 400);
             }
 
@@ -97,13 +97,13 @@ class OfferController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Your offer has been submitted successfully!'
+                'message' => __('Your offer has been submitted successfully!')
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error creating offer: ' . $e->getMessage()
+                'message' => __('Error creating offer: :message', ['message' => $e->getMessage()])
             ], 500);
         }
     }
@@ -154,10 +154,10 @@ class OfferController extends Controller
             }
 
             // For normal form submission, redirect back with a flash message
-            return redirect()->back()->with('success', 'Response submitted successfully!');
+            return redirect()->back()->with('success', __('Response submitted successfully!'));
 
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error processing response: ' . $e->getMessage());
+            return redirect()->back()->with('error', __('Error processing response: :message', ['message' => $e->getMessage()]));
         }
     }
 
