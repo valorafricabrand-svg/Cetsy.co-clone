@@ -35,7 +35,7 @@ class SitemapController extends Controller
             }
 
             $lastmod = $this->latestAtomForQuery(clone $query);
-            $pages = (int) ceil($count / self::PAGE_SIZE);
+            $pages = (int) ceil($count / $this->pageSizePerLocale());
 
             for ($page = 1; $page <= $pages; $page++) {
                 $sitemaps[] = [
@@ -58,22 +58,28 @@ class SitemapController extends Controller
 
         $publicProductsLastmod = $this->latestAtomForQuery($this->productsQuery());
 
-        $add(url('/'), $this->homepageLastmod(), 'daily', '1.0');
-        $add(route('listings'), $publicProductsLastmod, 'daily', '0.9');
+        foreach ($this->supportedLocaleCodes() as $localeCode) {
+            $add(localized_route('home', [], true, $localeCode), $this->homepageLastmod(), 'daily', '1.0');
+            $add(localized_route('listings', [], true, $localeCode), $publicProductsLastmod, 'daily', '0.9');
+        }
 
         foreach ([
             ['categories.index', 'weekly', '0.7'],
             ['shops.index', 'weekly', '0.7'],
             ['blog.index', 'weekly', '0.5'],
         ] as [$name, $changefreq, $priority]) {
-            if (Route::has($name)) {
-                $add(route($name), null, $changefreq, $priority);
+            if (Route::has($name) || route_has_localized_variant($name)) {
+                foreach ($this->supportedLocaleCodes() as $localeCode) {
+                    $add(localized_route($name, [], true, $localeCode), null, $changefreq, $priority);
+                }
             }
         }
 
         foreach ($this->staticRouteNames() as $name) {
-            if (Route::has($name)) {
-                $add(route($name), null, 'yearly', '0.3');
+            if (Route::has($name) || route_has_localized_variant($name)) {
+                foreach ($this->supportedLocaleCodes() as $localeCode) {
+                    $add(localized_route($name, [], true, $localeCode), null, 'yearly', '0.3');
+                }
             }
         }
 
@@ -86,14 +92,14 @@ class SitemapController extends Controller
 
         $urls = $this->productsQuery()
             ->orderBy('id')
-            ->forPage($page, self::PAGE_SIZE)
+            ->forPage($page, $this->pageSizePerLocale())
             ->get(['slug', 'updated_at', 'created_at'])
-            ->map(fn (Product $product) => [
-                'loc' => route('listing.show', $product->slug),
+            ->flatMap(fn (Product $product) => collect($this->supportedLocaleCodes())->map(fn (string $localeCode) => [
+                'loc' => localized_route('listing.show', $product->slug, true, $localeCode),
                 'lastmod' => $this->atom($product->updated_at ?? $product->created_at),
                 'changefreq' => 'daily',
                 'priority' => '0.8',
-            ])
+            ]))
             ->all();
 
         return $this->xmlView('sitemap', ['urls' => $urls]);
@@ -105,14 +111,14 @@ class SitemapController extends Controller
 
         $urls = $this->categoriesQuery()
             ->orderBy('id')
-            ->forPage($page, self::PAGE_SIZE)
+            ->forPage($page, $this->pageSizePerLocale())
             ->get(['slug', 'updated_at', 'created_at'])
-            ->map(fn (Category $category) => [
-                'loc' => route('category.show', $category->slug),
+            ->flatMap(fn (Category $category) => collect($this->supportedLocaleCodes())->map(fn (string $localeCode) => [
+                'loc' => localized_route('category.show', $category->slug, true, $localeCode),
                 'lastmod' => $this->atom($category->updated_at ?? $category->created_at),
                 'changefreq' => 'weekly',
                 'priority' => '0.6',
-            ])
+            ]))
             ->all();
 
         return $this->xmlView('sitemap', ['urls' => $urls]);
@@ -124,17 +130,17 @@ class SitemapController extends Controller
 
         $urls = $this->shopsQuery()
             ->orderBy('id')
-            ->forPage($page, self::PAGE_SIZE)
+            ->forPage($page, $this->pageSizePerLocale())
             ->get(['slug', 'id', 'updated_at', 'created_at'])
-            ->map(function (Shop $shop) {
+            ->flatMap(function (Shop $shop) {
                 $routeParam = $shop->slug ?: $shop->id;
 
-                return [
-                    'loc' => route('shop.show', $routeParam),
+                return collect($this->supportedLocaleCodes())->map(fn (string $localeCode) => [
+                    'loc' => localized_route('shop.show', $routeParam, true, $localeCode),
                     'lastmod' => $this->atom($shop->updated_at ?? $shop->created_at),
                     'changefreq' => 'weekly',
                     'priority' => '0.6',
-                ];
+                ]);
             })
             ->all();
 
@@ -147,14 +153,14 @@ class SitemapController extends Controller
 
         $urls = $this->postsQuery()
             ->orderBy('id')
-            ->forPage($page, self::PAGE_SIZE)
+            ->forPage($page, $this->pageSizePerLocale())
             ->get(['slug', 'published_at', 'updated_at', 'created_at'])
-            ->map(fn (BlogPost $post) => [
-                'loc' => route('blog.show', $post->slug),
+            ->flatMap(fn (BlogPost $post) => collect($this->supportedLocaleCodes())->map(fn (string $localeCode) => [
+                'loc' => localized_route('blog.show', $post->slug, true, $localeCode),
                 'lastmod' => $this->atom($post->published_at ?? $post->updated_at ?? $post->created_at),
                 'changefreq' => 'weekly',
                 'priority' => '0.5',
-            ])
+            ]))
             ->all();
 
         return $this->xmlView('sitemap', ['urls' => $urls]);
@@ -240,7 +246,7 @@ class SitemapController extends Controller
     private function abortInvalidPage(Builder $query, int $page): void
     {
         $count = (clone $query)->count();
-        $lastPage = max(1, (int) ceil($count / self::PAGE_SIZE));
+        $lastPage = max(1, (int) ceil($count / $this->pageSizePerLocale()));
 
         abort_if($page < 1 || $page > $lastPage, 404);
     }
@@ -273,5 +279,18 @@ class SitemapController extends Controller
         return response()
             ->view($view, $data)
             ->header('Content-Type', 'application/xml; charset=UTF-8');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function supportedLocaleCodes(): array
+    {
+        return array_keys(supported_locales());
+    }
+
+    private function pageSizePerLocale(): int
+    {
+        return max(1, (int) floor(self::PAGE_SIZE / max(1, count($this->supportedLocaleCodes()))));
     }
 }

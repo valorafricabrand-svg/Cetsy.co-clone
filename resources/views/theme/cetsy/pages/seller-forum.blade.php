@@ -2,7 +2,7 @@
 
 @section('title', 'Cetsy Seller Forum')
 @section('meta_description', 'Learn about Cetsy seller forum expectations, community participation, seller support, and marketplace discussion guidelines.')
-@section('canonical_url', route('seller-forum'))
+@section('canonical_url', localized_route('seller-forum'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

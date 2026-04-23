@@ -14,8 +14,19 @@
     }
 
     $productIds = $shop?->products()->pluck('id')->all() ?? [];
-    $myFavoritesCount = \App\Models\Wishlist::where('user_id', auth()->id())->count();
-    $shopFavoritesCount = empty($productIds) ? 0 : \App\Models\Wishlist::whereIn('product_id', $productIds)->count();
+    $myFavoritesCount = \App\Models\Activity::where('user_id', auth()->id())
+        ->where('type', \App\Models\Activity::TYPE_WISHLIST)
+        ->where('is_read', false)
+        ->whereNull('causer_id')
+        ->count();
+    $shopFavoritesCount = empty($productIds)
+        ? 0
+        : \App\Models\Activity::where('user_id', auth()->id())
+            ->where('type', \App\Models\Activity::TYPE_WISHLIST)
+            ->where('is_read', false)
+            ->whereNotNull('causer_id')
+            ->whereIn('related_id', $productIds)
+            ->count();
     $unreadMessages = empty($productIds)
         ? 0
         : \App\Models\Message::whereIn('product_id', $productIds)
@@ -24,7 +35,11 @@
             ->count();
     $pendingOffers = empty($productIds)
         ? 0
-        : \App\Models\Offer::whereIn('product_id', $productIds)->where('status', 'pending')->count();
+        : \App\Models\Activity::where('user_id', auth()->id())
+            ->where('type', \App\Models\Activity::TYPE_OFFER)
+            ->where('is_read', false)
+            ->whereIn('related_id', \App\Models\Offer::query()->select('id')->whereIn('product_id', $productIds))
+            ->count();
     $disputesCount = \App\Models\Dispute::where('seller_id', auth()->id())
         ->where('status', \App\Models\Dispute::STATUS_PENDING)
         ->count();

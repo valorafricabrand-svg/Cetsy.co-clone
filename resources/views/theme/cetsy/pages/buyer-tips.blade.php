@@ -2,7 +2,7 @@
 
 @section('title', 'Cetsy Buyer Tips')
 @section('meta_description', 'Helpful Cetsy buyer tips for choosing sellers, reviewing listings, communicating clearly, and shopping with confidence.')
-@section('canonical_url', route('buyer-tips'))
+@section('canonical_url', localized_route('buyer-tips'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

@@ -7,7 +7,7 @@
         $defaultTitle = $siteName . ' | All-in-one Platform to Showcase Your Handmade Products Globally';
         $metaTitle = trim($__env->yieldContent('title', $defaultTitle));
         $metaDescription = trim($__env->yieldContent('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.'));
-        $canonicalUrl = trim($__env->yieldContent('canonical_url', url()->current()));
+        $canonicalUrl = trim($__env->yieldContent('canonical_url', localized_current_url()));
         $metaImage = trim($__env->yieldContent('meta_image', asset('assets/images/cetsylogmain.png')));
         $noindexByDefault = request()->is(
                 'admin*',
@@ -104,7 +104,11 @@
         $headerCurrentLocale = current_locale();
         $headerLocaleOptions = supported_locales();
         $headerLocaleLabel = locale_label($headerCurrentLocale);
-        $headerLocaleRedirect = url()->full();
+        $headerLocaleRedirect = localized_current_url();
+        $headerLocaleRedirects = collect(array_keys($headerLocaleOptions))
+            ->mapWithKeys(fn (string $localeCode): array => [$localeCode => localized_current_url($localeCode)])
+            ->all();
+        $alternateLocaleUrls = localized_alternate_urls();
         $headerDashboardRoute = null;
         $headerDashboardLabel = __('Dashboard');
         $headerDashboardDescription = __('Open your dashboard.');
@@ -241,6 +245,15 @@
 
     <title>{{ $metaTitle }}</title>
     <link rel="canonical" href="{{ $canonicalUrl }}">
+    @if (! empty($alternateLocaleUrls))
+        @foreach ($alternateLocaleUrls as $alternateLocale => $alternateUrl)
+            <link rel="alternate" hreflang="{{ locale_html_code($alternateLocale) }}" href="{{ $alternateUrl }}">
+            @if ($alternateLocale !== current_locale())
+                <meta property="og:locale:alternate" content="{{ locale_og_code($alternateLocale) }}">
+            @endif
+        @endforeach
+        <link rel="alternate" hreflang="x-default" href="{{ $alternateLocaleUrls[default_locale()] ?? reset($alternateLocaleUrls) }}">
+    @endif
 
     @section('social-meta')
         <meta property="og:title" content="{{ $metaTitle }}">
@@ -708,12 +721,12 @@
                     <i class="fas fa-bars"></i>
                 </button>
 
-                <a href="{{ route('home') }}" class="inline-flex items-center gap-2">
+                <a href="{{ localized_route('home') }}" class="inline-flex items-center gap-2">
                     <img src="{{ logo_url() }}" alt="{{ $siteName }}" class="h-10 w-auto"
                          onerror='this.onerror=null;this.src=@json(asset("assets/images/cetsylogmain.png"));'>
                 </a>
 
-                <form method="GET" action="{{ route('search') }}" class="hidden flex-1 lg:block">
+                <form method="GET" action="{{ localized_route('search') }}" class="hidden flex-1 lg:block">
                     <label for="globalSearch" class="sr-only">{{ __('Search products') }}</label>
                     <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2">
                         <i class="fas fa-search text-slate-400"></i>
@@ -730,9 +743,9 @@
                                 return is_array($row) ? (int) ($row['quantity'] ?? 0) : 0;
                             });
                     @endphp
-                    <a href="{{ route('listings') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">{{ __('Listings') }}</a>
-                    <a href="{{ route('shops.index') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">{{ __('Shops') }}</a>
-                    <a href="{{ route('become-seller') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">{{ __('Sell') }}</a>
+                    <a href="{{ localized_route('listings') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">{{ __('Listings') }}</a>
+                    <a href="{{ localized_route('shops.index') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">{{ __('Shops') }}</a>
+                    <a href="{{ localized_route('become-seller') }}" class="rounded-full px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900">{{ __('Sell') }}</a>
                     <a href="{{ url('/cart') }}" class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold {{ request()->is('cart*') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
                         <i class="fas fa-shopping-cart text-sm"></i>
                         <span>{{ __('Cart') }}</span>
@@ -758,7 +771,7 @@
                             </div>
                             <div class="p-2">
                                 @foreach ($headerLocaleOptions as $localeCode => $localeMeta)
-                                    <a href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $headerLocaleRedirect]) }}" class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium {{ $headerCurrentLocale === $localeCode ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-50' }}">
+                                    <a href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $headerLocaleRedirects[$localeCode] ?? $headerLocaleRedirect]) }}" class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium {{ $headerCurrentLocale === $localeCode ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-50' }}">
                                         <span>{{ $localeMeta['native'] ?? strtoupper($localeCode) }}</span>
                                         @if ($headerCurrentLocale === $localeCode)
                                             <i class="fas fa-check text-xs"></i>
@@ -960,7 +973,7 @@
                                 }
                             @endphp
                             <div class="relative top-category-item" data-top-category-item x-data="{ open: false, pinned: false }" @mouseenter="open = true" @mouseleave="if (!pinned) open = false" @focusin="open = true" @focusout="if (!pinned) open = false" @click.outside="open = false; pinned = false">
-                                <a href="{{ route('category.show', $cat->slug) }}" class="inline-flex min-w-0 items-center justify-start gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700" @if ($children->isNotEmpty()) @click.prevent="pinned = !pinned; open = pinned" @endif>
+                                <a href="{{ localized_route('category.show', $cat->slug) }}" class="inline-flex min-w-0 items-center justify-start gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700" @if ($children->isNotEmpty()) @click.prevent="pinned = !pinned; open = pinned" @endif>
                                     @if ($catThumb)
                                         <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-8 w-8 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
                                     @else
@@ -976,7 +989,7 @@
 
                                 @if ($children->isNotEmpty())
                                     <div x-show="open" x-cloak x-transition class="absolute left-0 top-full z-50 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
-                                        <a href="{{ route('category.show', $cat->slug) }}" class="mb-1 block rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">
+                                        <a href="{{ localized_route('category.show', $cat->slug) }}" class="mb-1 block rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">
                                             All {{ $cat->name }}
                                         </a>
 
@@ -984,7 +997,7 @@
                                             @foreach ($children as $child)
                                                 @php $grandChildren = collect($child->children ?? []); @endphp
                                                 <li class="relative" x-data="{ openChild: false, pinnedChild: false }" @mouseenter="openChild = true" @mouseleave="if (!pinnedChild) openChild = false" @focusin="openChild = true" @focusout="if (!pinnedChild) openChild = false" @click.outside="openChild = false; pinnedChild = false">
-                                                    <a href="{{ route('category.show', $child->slug) }}" class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900" @if ($grandChildren->isNotEmpty()) @click.prevent="pinnedChild = !pinnedChild; openChild = pinnedChild" @endif>
+                                                    <a href="{{ localized_route('category.show', $child->slug) }}" class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900" @if ($grandChildren->isNotEmpty()) @click.prevent="pinnedChild = !pinnedChild; openChild = pinnedChild" @endif>
                                                         <span class="truncate">{{ $child->name }}</span>
                                                         @if ($grandChildren->isNotEmpty())
                                                             <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
@@ -993,13 +1006,13 @@
 
                                                     @if ($grandChildren->isNotEmpty())
                                                         <div x-show="openChild" x-cloak x-transition class="absolute left-full top-0 ml-2 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
-                                                            <a href="{{ route('category.show', $child->slug) }}" class="mb-1 block rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">
+                                                            <a href="{{ localized_route('category.show', $child->slug) }}" class="mb-1 block rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">
                                                                 All {{ $child->name }}
                                                             </a>
                                                             <ul class="space-y-1">
                                                                 @foreach ($grandChildren as $grand)
                                                                     <li>
-                                                                        <a href="{{ route('category.show', $grand->slug) }}" class="block rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+                                                                        <a href="{{ localized_route('category.show', $grand->slug) }}" class="block rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
                                                                             {{ $grand->name }}
                                                                         </a>
                                                                     </li>
@@ -1036,7 +1049,7 @@
             </div>
 
             <div class="space-y-4 px-4 py-4 pb-8">
-                <form method="GET" action="{{ route('search') }}">
+                <form method="GET" action="{{ localized_route('search') }}">
                     <label for="mobileDrawerSearch" class="sr-only">Search products</label>
                     <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2">
                         <i class="fas fa-search text-slate-400"></i>
@@ -1070,10 +1083,10 @@
                 @endauth
 
                 <nav class="grid grid-cols-2 gap-2">
-                    <a href="{{ route('listings') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Listings') }}</a>
-                    <a href="{{ route('shops.index') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Shops') }}</a>
-                    <a href="{{ route('become-seller') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Sell') }}</a>
-                    <a href="{{ route('contact') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Support') }}</a>
+                    <a href="{{ localized_route('listings') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Listings') }}</a>
+                    <a href="{{ localized_route('shops.index') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Shops') }}</a>
+                    <a href="{{ localized_route('become-seller') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Sell') }}</a>
+                    <a href="{{ localized_route('contact') }}" @click="mobileDrawerOpen = false" class="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">{{ __('Support') }}</a>
                 </nav>
 
                 @if($isAdminUser)
@@ -1141,7 +1154,7 @@
                                 </a>
                             @endif
                             @if(\Illuminate\Support\Facades\Route::has('wishlist'))
-                                <a href="{{ route('wishlist') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                <a href="{{ localized_route('wishlist') }}" @click="mobileDrawerOpen = false" class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                                     <span><i class="fas fa-bookmark mr-2"></i>{{ __('Wishlist') }}</span>
                                 </a>
                             @endif
@@ -1170,7 +1183,7 @@
                     @php
                         $sellerShop = auth()->user()?->shop;
                         $sellerShopUrl = $sellerShop
-                            ? route('shop.show', $sellerShop->slug ?: $sellerShop->getKey())
+                            ? localized_route('shop.show', $sellerShop->slug ?: $sellerShop->getKey())
                             : route('seller.shop.create');
                         $sellerDrawerLinks = [
                             ['route' => 'seller.dashboard', 'icon' => 'fas fa-tachometer-alt', 'label' => __('Seller Dashboard')],
@@ -1237,7 +1250,7 @@
                     <div class="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{{ __('Language') }}</div>
                     <div class="grid grid-cols-2 gap-2">
                         @foreach ($headerLocaleOptions as $localeCode => $localeMeta)
-                            <a href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $headerLocaleRedirect]) }}" @click="mobileDrawerOpen = false" class="rounded-lg border px-3 py-2 text-sm font-semibold {{ $headerCurrentLocale === $localeCode ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-700' }}">
+                            <a href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $headerLocaleRedirects[$localeCode] ?? $headerLocaleRedirect]) }}" @click="mobileDrawerOpen = false" class="rounded-lg border px-3 py-2 text-sm font-semibold {{ $headerCurrentLocale === $localeCode ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-700' }}">
                                 {{ $localeMeta['native'] ?? strtoupper($localeCode) }}
                             </a>
                         @endforeach
@@ -1274,7 +1287,7 @@
                                         <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
                                     </summary>
                                     <div class="space-y-1 border-t border-slate-200 px-2 py-2">
-                                        <a href="{{ route('category.show', $cat->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-lg px-2 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
+                                        <a href="{{ localized_route('category.show', $cat->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-lg px-2 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
                                             All {{ $cat->name }}
                                         </a>
                                         @foreach ($children as $child)
@@ -1286,18 +1299,18 @@
                                                         <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
                                                     </summary>
                                                     <div class="space-y-1 border-t border-slate-200 px-2 py-2">
-                                                        <a href="{{ route('category.show', $child->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-md px-2 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
+                                                        <a href="{{ localized_route('category.show', $child->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-md px-2 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
                                                             All {{ $child->name }}
                                                         </a>
                                                         @foreach ($grandChildren as $grand)
-                                                            <a href="{{ route('category.show', $grand->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-md px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-100">
+                                                            <a href="{{ localized_route('category.show', $grand->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-md px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-100">
                                                                 {{ $grand->name }}
                                                             </a>
                                                         @endforeach
                                                     </div>
                                                 </details>
                                             @else
-                                                <a href="{{ route('category.show', $child->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-lg px-2 py-2 text-xs text-slate-700 hover:bg-slate-100">
+                                                <a href="{{ localized_route('category.show', $child->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-lg px-2 py-2 text-xs text-slate-700 hover:bg-slate-100">
                                                     {{ $child->name }}
                                                 </a>
                                             @endif
@@ -1305,7 +1318,7 @@
                                     </div>
                                 </details>
                             @else
-                                <a href="{{ route('category.show', $cat->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+                                <a href="{{ localized_route('category.show', $cat->slug) }}" @click="mobileDrawerOpen = false" class="block rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
                                     <span class="flex items-center gap-2">
                                         @if ($catThumb)
                                             <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-8 w-8 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
@@ -1444,11 +1457,11 @@
             @endphp
             <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur lg:hidden" aria-label="Mobile Bottom Navigation">
                 <div class="mx-auto grid w-full max-w-7xl grid-cols-4 gap-2">
-                    <a href="{{ route('home') }}" class="inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold {{ request()->routeIs('home') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                    <a href="{{ localized_route('home') }}" class="inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold {{ localized_route_is('home') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100' }}">
                         <i class="fas fa-house mb-1 text-sm"></i>
                         Home
                     </a>
-                    <a href="{{ route('listings') }}" class="inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold {{ request()->routeIs('listings') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100' }}">
+                    <a href="{{ localized_route('listings') }}" class="inline-flex flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold {{ localized_route_is('listings') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100' }}">
                         <i class="fas fa-list-ul mb-1 text-sm"></i>
                         Listings
                     </a>
@@ -1475,10 +1488,10 @@
                     <h4 class="text-sm font-semibold uppercase tracking-[0.16em] text-white">Help & Support</h4>
                     <ul class="mt-4 space-y-2 text-sm">
                         <li><a class="hover:text-white" href="{{ url('/about') }}">About Us</a></li>
-                        <li><a class="hover:text-white" href="{{ route('contact') }}">Contact Us</a></li>
-                        <li><a class="hover:text-white" href="{{ route('payment_policy') }}">Payments & Payouts</a></li>
-                        <li><a class="hover:text-white" href="{{ route('user-agreement') }}">User Agreement</a></li>
-                        <li><a class="hover:text-white" href="{{ route('user-agreement') }}#fees">Fees Schedule</a></li>
+                        <li><a class="hover:text-white" href="{{ localized_route('contact') }}">Contact Us</a></li>
+                        <li><a class="hover:text-white" href="{{ localized_route('payment_policy') }}">Payments & Payouts</a></li>
+                        <li><a class="hover:text-white" href="{{ localized_route('user-agreement') }}">User Agreement</a></li>
+                        <li><a class="hover:text-white" href="{{ localized_route('user-agreement') }}#fees">Fees Schedule</a></li>
                         <li><a class="hover:text-white" href="{{ url('/refunds-returns') }}">Refund & Returns</a></li>
                         <li><a class="hover:text-white" href="{{ url('/shipping-delivery') }}">Shipping & Delivery</a></li>
                     </ul>
@@ -1487,10 +1500,10 @@
                 <div>
                     <h4 class="text-sm font-semibold uppercase tracking-[0.16em] text-white">Marketplace</h4>
                     <ul class="mt-4 space-y-2 text-sm">
-                        <li><a class="hover:text-white" href="{{ route('listings') }}">Browse Listings</a></li>
-                        <li><a class="hover:text-white" href="{{ route('shops.index') }}">Find a Shop</a></li>
-                        <li><a class="hover:text-white" href="{{ route('become-seller') }}">Sell on {{ $siteName }}</a></li>
-                        <li><a class="hover:text-white" href="{{ route('blog.index') }}">Blog</a></li>
+                        <li><a class="hover:text-white" href="{{ localized_route('listings') }}">Browse Listings</a></li>
+                        <li><a class="hover:text-white" href="{{ localized_route('shops.index') }}">Find a Shop</a></li>
+                        <li><a class="hover:text-white" href="{{ localized_route('become-seller') }}">Sell on {{ $siteName }}</a></li>
+                        <li><a class="hover:text-white" href="{{ localized_route('blog.index') }}">Blog</a></li>
                     </ul>
                 </div>
 

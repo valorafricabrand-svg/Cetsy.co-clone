@@ -11,15 +11,27 @@
     }
 
     $productIds     = $shop?->products()->pluck('id')->toArray() ?? [];
-    $myFavoritesCount = \App\Models\Wishlist::where('user_id', Auth::id())->count();
+    $myFavoritesCount = \App\Models\Activity::where('user_id', Auth::id())
+        ->where('type', \App\Models\Activity::TYPE_WISHLIST)
+        ->where('is_read', false)
+        ->whereNull('causer_id')
+        ->count();
     $unreadMessages = \App\Models\Message::whereIn('product_id', $productIds)
                          ->where('receiver_id', Auth::id())
                          ->where('is_read', false)
                          ->count();
-    // Favorites on this seller's products (shop favorites).
-    $shopFavoritesCount = \App\Models\Wishlist::whereIn('product_id', $productIds)->count();
-    $pendingOffers  = \App\Models\Offer::whereIn('product_id', $productIds)
-                         ->where('status', 'pending')->count();
+    // Unread favorites on this seller's products (shop favorites).
+    $shopFavoritesCount = \App\Models\Activity::where('user_id', Auth::id())
+        ->where('type', \App\Models\Activity::TYPE_WISHLIST)
+        ->where('is_read', false)
+        ->whereNotNull('causer_id')
+        ->whereIn('related_id', $productIds)
+        ->count();
+    $pendingOffers  = \App\Models\Activity::where('user_id', Auth::id())
+        ->where('type', \App\Models\Activity::TYPE_OFFER)
+        ->where('is_read', false)
+        ->whereIn('related_id', \App\Models\Offer::query()->select('id')->whereIn('product_id', $productIds))
+        ->count();
     // Pending disputes count for this seller (sidebar badge)
     $disputesCount  = \App\Models\Dispute::where('seller_id', Auth::id())
                         ->where('status', \App\Models\Dispute::STATUS_PENDING)

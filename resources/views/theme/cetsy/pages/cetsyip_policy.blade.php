@@ -2,7 +2,7 @@
 
 @section('title', 'Cetsy IP Infringement Policy')
 @section('meta_description', 'Learn how Cetsy handles intellectual property infringement reports, required evidence, and marketplace enforcement.')
-@section('canonical_url', route('cetsyip_policy'))
+@section('canonical_url', localized_route('cetsyip_policy'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

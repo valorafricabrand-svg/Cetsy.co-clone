@@ -899,14 +899,14 @@ public function update(Request $request, Product $product)
         $user = auth()->user();
 
         if (! $user) {
-            return redirect()->route('listing.show', $product->slug ?? $product->getRouteKey());
+            return redirect()->to(localized_route('listing.show', $product->slug ?? $product->getRouteKey()));
         }
 
         $shop = $user->shop ?? null;
         $ownsProduct = $shop && ((int) $product->shop_id === (int) $shop->id);
 
         if (! $ownsProduct && ! ($user->is_admin ?? false)) {
-            return redirect()->route('listing.show', $product->slug ?? $product->getRouteKey());
+            return redirect()->to(localized_route('listing.show', $product->slug ?? $product->getRouteKey()));
         }
 
         $product->load(['media', 'digitalFiles']);
@@ -953,7 +953,7 @@ public function listing(string $slug)
         $canonicalSlug = trim((string) ($product->slug ?? ''));
         abort_if($canonicalSlug === '', 404);
 
-        return redirect()->route('listing.show', $canonicalSlug, 301);
+        return redirect()->to(localized_route('listing.show', $canonicalSlug), 301);
     }
 
     // Public visibility: only active listings are publicly viewable.
@@ -1082,13 +1082,35 @@ public function listing(string $slug)
 
     public function favorites()
     {
-        $favorites = auth()->user()->favorites()->get();
+        $user = auth()->user();
+        $favorites = $user->favorites()->get();
+
+        try {
+            Activity::where('user_id', $user->id)
+                ->where('type', Activity::TYPE_WISHLIST)
+                ->where('is_read', false)
+                ->whereNull('causer_id')
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) {
+            // Ignore read-state sync failures.
+        }
+
         return view('buyer.favorites', compact('favorites'));
     }
 
     public function offers()
     {
         $user = Auth::user();
+
+        try {
+            Activity::where('user_id', $user->id)
+                ->where('type', Activity::TYPE_OFFER)
+                ->where('is_read', false)
+                ->whereIn('related_id', \App\Models\Offer::query()->select('id')->where('buyer_id', $user->id))
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) {
+            // Ignore read-state sync failures.
+        }
         
         // Get all offers made by the buyer with related data
         $offers = \App\Models\Offer::where('buyer_id', $user->id)

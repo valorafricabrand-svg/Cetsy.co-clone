@@ -2,7 +2,7 @@
 
 @section('title', 'Cetsy | Products, Services & Digital Downloads from Across the Globe')
 @section('meta_description', 'Discover products, services, and digital downloads from sellers across the globe on Cetsy.')
-@section('canonical_url', route('home'))
+@section('canonical_url', localized_route('home'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 
@@ -111,10 +111,10 @@
                                     <a href="{{ $btnUrl }}" class="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-red-600 hover:bg-slate-100">
                                         <i class="fas fa-tags mr-1"></i> {{ $btnLabel }}
                                     </a>
-                                    <a href="{{ route('listings') }}" class="rounded-full border border-white/50 px-5 py-2.5 text-sm font-semibold text-white hover:border-white hover:bg-white/10">Browse marketplace</a>
+                                    <a href="{{ localized_route('listings') }}" class="rounded-full border border-white/50 px-5 py-2.5 text-sm font-semibold text-white hover:border-white hover:bg-white/10">Browse marketplace</a>
                                 </div>
 
-                                <form class="mx-auto mt-4 max-w-xl lg:mx-0 lg:max-w-none lg:hidden" method="GET" action="{{ route('search') }}">
+                                <form class="mx-auto mt-4 max-w-xl lg:mx-0 lg:max-w-none lg:hidden" method="GET" action="{{ localized_route('search') }}">
                                     <label for="heroSearchMobile" class="sr-only">Search products</label>
                                     <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2 shadow">
                                         <i class="fas fa-search text-slate-400"></i>
@@ -152,10 +152,10 @@
                         <h1 class="mt-3 text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">Shop our lowest prices on selected items</h1>
                         <p class="mt-3 max-w-xl text-sm text-white/90 sm:text-base">Discover limited-time offers across electronics, services, and more from trusted Cetsy sellers.</p>
                         <div class="mt-5 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
-                            <a href="{{ route('listings', ['sort' => 'popular']) }}" class="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-red-600 hover:bg-slate-100">
+                            <a href="{{ localized_route('listings', ['sort' => 'popular']) }}" class="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-red-600 hover:bg-slate-100">
                                 <i class="fas fa-tags mr-1"></i> Shop deals
                             </a>
-                            <a href="{{ route('listings') }}" class="rounded-full border border-white/50 px-5 py-2.5 text-sm font-semibold text-white hover:border-white hover:bg-white/10">Browse marketplace</a>
+                            <a href="{{ localized_route('listings') }}" class="rounded-full border border-white/50 px-5 py-2.5 text-sm font-semibold text-white hover:border-white hover:bg-white/10">Browse marketplace</a>
                         </div>
                     </div>
                     <div class="text-center">
@@ -176,7 +176,7 @@
                 <i class="fas fa-truck"></i>
                 Global Shipping & Local Sellers
             </a>
-            <a href="{{ route('listings', ['sort' => 'popular']) }}" class="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50">
+            <a href="{{ localized_route('listings', ['sort' => 'popular']) }}" class="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50">
                 <i class="fas fa-star"></i>
                 Curated Trending Picks Daily
             </a>
@@ -201,7 +201,7 @@
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <a href="{{ route('payment_policy') }}" class="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+                    <a href="{{ localized_route('payment_policy') }}" class="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
                         <i class="fas fa-circle-info mr-2"></i> View Payout Countries & Methods
                     </a>
                 </div>
@@ -224,7 +224,7 @@
             <div class="flex flex-wrap items-center gap-2">
                 @if(isset($activeDeals) && $activeDeals->count())
                     @foreach($activeDeals as $deal)
-                        <a href="{{ route('listings', ['deal' => $deal->id]) }}" class="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+                        <a href="{{ localized_route('listings', ['deal' => $deal->id]) }}" class="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
                             <span>{{ $deal->name }}</span>
                             @if($deal->discount_percent)
                                 <span class="text-slate-400">{{ $deal->discount_percent }}% off</span>
@@ -232,11 +232,11 @@
                         </a>
                     @endforeach
                 @else
-                    <a href="{{ route('listings', ['sort' => 'popular']) }}" class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">Top picks</a>
-                    <a href="{{ route('listings', ['type' => 'digital']) }}" class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">Digital deals</a>
-                    <a href="{{ route('listings', ['type' => 'service']) }}" class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">Service bundles</a>
+                    <a href="{{ localized_route('listings', ['sort' => 'popular']) }}" class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">Top picks</a>
+                    <a href="{{ localized_route('listings', ['type' => 'digital']) }}" class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">Digital deals</a>
+                    <a href="{{ localized_route('listings', ['type' => 'service']) }}" class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">Service bundles</a>
                 @endif
-                <a href="{{ route('listings') }}" class="rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500">View all deals</a>
+                <a href="{{ localized_route('listings') }}" class="rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500">View all deals</a>
             </div>
         </div>
     </section>
@@ -248,7 +248,7 @@
                 'subtitle' => 'Trending picks from trusted sellers across the marketplace.',
                 'eyebrow' => 'Hot right now',
                 'items' => $featuredProducts,
-                'seeMoreUrl' => route('listings', ['sort' => 'popular']),
+                'seeMoreUrl' => localized_route('listings', ['sort' => 'popular']),
                 'seeMoreLabel' => 'Browse all products',
                 'autoRotate' => true,
             ],
@@ -257,7 +257,7 @@
                 'subtitle' => auth()->check() ? 'Curated from your favorites, orders, and recent views.' : 'Sign in to personalize picks from your favorites and recent views.',
                 'eyebrow' => 'Recommended',
                 'items' => $justForYouProducts ?? $featuredProducts,
-                'seeMoreUrl' => route('listings', ['sort' => 'popular']),
+                'seeMoreUrl' => localized_route('listings', ['sort' => 'popular']),
                 'seeMoreLabel' => 'See more picks',
                 'autoRotate' => true,
             ],
@@ -266,7 +266,7 @@
                 'subtitle' => 'Recently viewed and in-demand service providers.',
                 'eyebrow' => 'Services',
                 'items' => $services,
-                'seeMoreUrl' => route('listings', ['type' => 'service']),
+                'seeMoreUrl' => localized_route('listings', ['type' => 'service']),
                 'seeMoreLabel' => 'View all services',
                 'autoRotate' => true,
             ],
@@ -275,7 +275,7 @@
                 'subtitle' => 'Original music, e-books, templates, recipes, and more.',
                 'eyebrow' => 'Digital',
                 'items' => $featuredDigitals,
-                'seeMoreUrl' => route('listings', ['type' => 'digital']),
+                'seeMoreUrl' => localized_route('listings', ['type' => 'digital']),
                 'seeMoreLabel' => 'View all digitals',
                 'autoRotate' => true,
             ],
@@ -311,7 +311,7 @@
                         <div class="home-listing-grid-compact grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4 {{ $pageIndex === 0 ? '' : 'hidden' }}" data-rotator-page="{{ $pageIndex }}">
                             @foreach($pageItems as $item)
                                 @php($card = $renderProductCard($item))
-                                <a href="{{ route('listing.show', $item->slug) }}" class="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:rounded-2xl">
+                                <a href="{{ localized_route('listing.show', $item->slug) }}" class="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:rounded-2xl">
                                     <div class="relative aspect-[4/3] overflow-hidden bg-slate-100 sm:aspect-square {{ $card['isDigitalPreview'] ? 'cetsy-preview-watermark' : '' }}"
                                          @if($card['isDigitalPreview']) data-watermark-label="Cetsy Preview" @endif>
                                         @if((product_effective_type($item) === 'physical') && (int)($item->stock ?? 0) === 1 && (($item->is_reserved ?? false)) )
@@ -385,12 +385,12 @@
                     <h2 class="mt-2 text-2xl font-extrabold text-slate-900">Featured Shops</h2>
                     <p class="mt-1 text-sm text-slate-500">Discover trusted sellers and explore their latest drops.</p>
                 </div>
-                <a href="{{ route('shops.index') }}" class="hidden rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 md:inline-flex">View all shops</a>
+                <a href="{{ localized_route('shops.index') }}" class="hidden rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 md:inline-flex">View all shops</a>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach($topShops as $shop)
-                    <a href="{{ route('shop.show', $shop->slug) }}" class="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                    <a href="{{ localized_route('shop.show', $shop->slug) }}" class="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                         <div class="flex items-center gap-3">
                             <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100">
                                 <img src="{{ !empty($shop->logo_url) ? $shop->logo_url : (!empty($shop->logo) ? (Str::startsWith((string) $shop->logo, ['http://', 'https://', '//']) ? $shop->logo : media_url($shop->logo)) : (setting('favicon_url') ?: $productThumbFallback)) }}"
@@ -413,7 +413,7 @@
             </div>
 
             <div class="mt-4 md:hidden">
-                <a href="{{ route('shops.index') }}" class="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">View all shops</a>
+                <a href="{{ localized_route('shops.index') }}" class="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">View all shops</a>
             </div>
         </section>
     @endif
@@ -433,8 +433,8 @@
                 </div>
 
                 <div class="mt-6 flex flex-wrap justify-center gap-2">
-                    <a href="{{ url('/about') }}" class="rounded-full border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50">About Cetsy</a>
-                    <a href="{{ route('listings') }}" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">Explore Marketplace</a>
+                    <a href="{{ localized_route('about') }}" class="rounded-full border border-emerald-300 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50">About Cetsy</a>
+                    <a href="{{ localized_route('listings') }}" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">Explore Marketplace</a>
                     <a href="{{ route('register') }}" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">Become a Seller</a>
                 </div>
             </div>

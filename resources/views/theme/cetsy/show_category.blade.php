@@ -27,13 +27,13 @@
   $desc = $category->description
     ?: ('Explore a wide range of ' . $catName . ($category->listing_type ? ' ' . $category->listing_type : ' listings'));
   $metaDescription = Str::limit(strip_tags($desc), 155);
-  $categoryUrl = route('category.show', $category->slug);
+  $categoryUrl = localized_route('category.show', $category->slug);
   $categoryMetaRobots = request()->query() ? 'noindex, follow' : 'index, follow';
   $categoryListItems = $products->getCollection()
     ->take(24)
     ->values()
     ->map(function ($item, $index) {
-      $listingUrl = route('listing.show', $item->slug);
+      $listingUrl = localized_route('listing.show', $item->slug);
 
       return [
         '@type' => 'ListItem',
@@ -72,7 +72,7 @@
             '@type' => 'ListItem',
             'position' => 2,
             'name' => 'Listings',
-            'item' => route('listings'),
+            'item' => localized_route('listings'),
           ],
           [
             '@type' => 'ListItem',
@@ -95,7 +95,7 @@
 
 @section('title', ($category->seo_title ?? $catName) . ' - Marketplace Category')
 @section('meta_description', $metaDescription)
-@section('canonical_url', route('category.show', $category->slug))
+@section('canonical_url', localized_route('category.show', $category->slug))
 @section('meta_image', $banner ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', $categoryMetaRobots)
 
@@ -155,9 +155,9 @@
 
             <nav class="mt-4 text-xs text-white/80" aria-label="Breadcrumb">
               <ol class="flex flex-wrap items-center gap-2">
-                <li><a class="hover:text-white" href="{{ url('/') }}">Home</a></li>
+                <li><a class="hover:text-white" href="{{ localized_route('home') }}">Home</a></li>
                 <li>/</li>
-                <li><a class="hover:text-white" href="{{ route('listings') }}">Listings</a></li>
+                <li><a class="hover:text-white" href="{{ localized_route('listings') }}">Listings</a></li>
                 <li>/</li>
                 <li class="text-white">{{ $catName }}</li>
               </ol>
@@ -277,7 +277,7 @@
           <a href="{{ url()->current() }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-600">Clear all</a>
         @endif
 
-        <a href="{{ route('listings') }}" class="text-xs font-semibold text-slate-600 hover:text-slate-900">Browse All Listings</a>
+        <a href="{{ localized_route('listings') }}" class="text-xs font-semibold text-slate-600 hover:text-slate-900">Browse All Listings</a>
       </div>
     </div>
   </section>
@@ -366,7 +366,7 @@
 
               <article class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
                 <div class="grid items-center gap-3 sm:grid-cols-[120px_1fr_auto]">
-                  <a href="{{ route('listing.show', $item->slug) }}"
+                  <a href="{{ localized_route('listing.show', $item->slug) }}"
                      class="relative block overflow-hidden rounded-xl bg-slate-100 {{ $isDigitalPreview ? 'cetsy-preview-watermark' : '' }}"
                      @if($isDigitalPreview) data-watermark-label="Cetsy Preview" @endif>
                     @if($hasVideo)
@@ -380,7 +380,7 @@
 
                   <div>
                     <h3 class="text-sm font-semibold text-slate-900">
-                      <a href="{{ route('listing.show', $item->slug) }}" class="hover:text-emerald-700">{{ $item->localized_name ?? $item->name ?? 'Untitled item' }}</a>
+                      <a href="{{ localized_route('listing.show', $item->slug) }}" class="hover:text-emerald-700">{{ $item->localized_name ?? $item->name ?? 'Untitled item' }}</a>
                     </h3>
                     <div class="mt-1 text-xs text-amber-500">
                       @for($i=1; $i<=5; $i++)
@@ -415,7 +415,7 @@
                       @endif
                     @endif
 
-                    <a href="{{ route('listing.show', $item->slug) }}" class="inline-flex rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">
+                    <a href="{{ localized_route('listing.show', $item->slug) }}" class="inline-flex rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">
                       <i class="fas fa-eye mr-1"></i> View
                     </a>
                   </div>

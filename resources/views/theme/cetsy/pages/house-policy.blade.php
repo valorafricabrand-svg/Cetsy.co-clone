@@ -2,7 +2,7 @@
 
 @section('title', 'Cetsy House Rules and Community Policy')
 @section('meta_description', 'Read Cetsy community rules covering forums, messages, conduct, policy enforcement, and marketplace safety standards.')
-@section('canonical_url', route('house-policy'))
+@section('canonical_url', localized_route('house-policy'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

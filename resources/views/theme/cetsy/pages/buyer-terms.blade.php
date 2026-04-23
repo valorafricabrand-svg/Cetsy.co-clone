@@ -2,7 +2,7 @@
 
 @section('title', 'Buyer Terms and Conditions')
 @section('meta_description', 'Review Cetsy buyer terms covering orders, payments, cancellations, chargebacks, taxes, and marketplace responsibilities.')
-@section('canonical_url', route('buyer-terms'))
+@section('canonical_url', localized_route('buyer-terms'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

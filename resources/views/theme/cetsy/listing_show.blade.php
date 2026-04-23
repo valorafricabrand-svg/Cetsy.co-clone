@@ -20,7 +20,7 @@ $metaImage = $primaryMedia && $primaryMedia->url
     : asset('assets/images/cetsylogmain.png');
 $metaDescription = Str::limit(strip_tags($product->localized_description ?? $product->localized_name ?? $product->name), 155);
 
-$productUrl = route('listing.show', $product->slug);
+$productUrl = localized_route('listing.show', $product->slug);
 $schemaCurrency = 'USD';
 $schemaRawPrice = is_numeric($product->discounted_price ?? null)
     ? (float) $product->discounted_price
@@ -67,7 +67,7 @@ if ($product->shop) {
     $productSchema['offers']['seller'] = [
         '@type' => 'Organization',
         'name' => $product->shop->localized_name ?? $product->shop->name,
-        'url' => route('shop.show', $shopRouteParam),
+        'url' => localized_route('shop.show', $shopRouteParam),
     ];
 }
 
@@ -122,14 +122,14 @@ if ($schemaProductReviews->isNotEmpty()) {
 }
 
 $productBreadcrumbItems = [
-    ['name' => 'Home', 'url' => url('/')],
-    ['name' => 'Listings', 'url' => route('listings')],
+    ['name' => 'Home', 'url' => localized_route('home')],
+    ['name' => 'Listings', 'url' => localized_route('listings')],
 ];
 
 if ($product->category) {
     $productBreadcrumbItems[] = [
         'name' => $product->category->name,
-        'url' => route('category.show', $product->category->slug),
+        'url' => localized_route('category.show', $product->category->slug),
     ];
 }
 
@@ -154,7 +154,7 @@ $productStructuredData = [
 
 @section('title', ($product->localized_name ?? $product->name) . ' - Item Details | Cetsy')
 @section('meta_description', $metaDescription)
-@section('canonical_url', route('listing.show', $product->slug))
+@section('canonical_url', localized_route('listing.show', $product->slug))
 @section('meta_image', $metaImage)
 @section('meta_robots', 'index, follow')
 

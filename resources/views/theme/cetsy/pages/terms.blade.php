@@ -2,7 +2,7 @@
 
 @section('title', 'Terms & Conditions')
 @section('meta_description', 'Read Cetsy terms and conditions covering accounts, listings, payments, shipping, disputes, enforcement, liability, and contact.')
-@section('canonical_url', route('terms'))
+@section('canonical_url', localized_route('terms'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

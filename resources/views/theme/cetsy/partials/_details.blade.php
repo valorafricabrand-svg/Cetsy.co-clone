@@ -66,7 +66,7 @@
   <div class="flex flex-wrap gap-2">
     <span class="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
       <i class="fa-solid fa-store"></i>
-      <a href="{{ route('shop.show', $product->shop->slug) }}" class="hover:text-emerald-800">
+      <a href="{{ localized_route('shop.show', $product->shop->slug) }}" class="hover:text-emerald-800">
         {{ $product->shop->localized_name ?? $product->shop->name }}
       </a>
     </span>
@@ -111,7 +111,7 @@
   <div class="text-sm">
     <strong class="mr-1 text-slate-700">Category:</strong>
     @if ($product->category)
-      <a href="{{ route('category.show', $product->category->slug) }}" class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+      <a href="{{ localized_route('category.show', $product->category->slug) }}" class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
         {{ $product->category->name }}
       </a>
     @else

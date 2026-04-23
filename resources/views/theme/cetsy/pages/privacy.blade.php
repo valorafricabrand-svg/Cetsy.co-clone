@@ -2,7 +2,7 @@
 
 @section('title', 'Privacy Policy')
 @section('meta_description', 'Read the Cetsy privacy policy covering data collection, cookies, account information, sharing, security, and user rights.')
-@section('canonical_url', route('privacy'))
+@section('canonical_url', localized_route('privacy'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

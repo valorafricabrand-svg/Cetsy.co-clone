@@ -228,7 +228,7 @@ class ShopController extends Controller
             $canonicalSlug = trim((string) ($shop->slug ?? ''));
             abort_if($canonicalSlug === '', 404);
 
-            return redirect()->route('shop.show', $canonicalSlug, 301);
+            return redirect()->to(localized_route('shop.show', $canonicalSlug), 301);
         }
 
         $products = $shop->products()

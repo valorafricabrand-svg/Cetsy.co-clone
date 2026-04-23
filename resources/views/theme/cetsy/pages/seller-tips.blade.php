@@ -2,7 +2,7 @@
 
 @section('title', 'Tips for Selling on Cetsy')
 @section('meta_description', 'Practical seller tips for building strong Cetsy listings, communicating with buyers, shipping reliably, and growing a shop.')
-@section('canonical_url', route('seller-tips'))
+@section('canonical_url', localized_route('seller-tips'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

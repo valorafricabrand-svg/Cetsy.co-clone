@@ -1,7 +1,7 @@
 ﻿@extends('theme.'.theme().'.layouts.app')
 @section('title', 'Cetsy Payments, Settlement & Global Payouts')
 @section('meta_description', 'Understand how Cetsy buyer payments, seller wallet credits, settlement, payout methods, fees, and refunds work.')
-@section('canonical_url', route('payment_policy'))
+@section('canonical_url', localized_route('payment_policy'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 
@@ -155,10 +155,10 @@
         </div>
 
         <div class="mt-6 flex flex-wrap gap-2">
-          <a href="{{ route('contact') }}" class="inline-flex items-center rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+          <a href="{{ localized_route('contact') }}" class="inline-flex items-center rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
             <i class="fas fa-headset mr-2"></i> Contact Payments Support
           </a>
-          <a href="{{ route('seller-policy') }}" class="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-5 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+          <a href="{{ localized_route('seller-policy') }}" class="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-5 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
             <i class="fas fa-file-contract mr-2"></i> Seller Policy
           </a>
         </div>

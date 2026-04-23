@@ -2,7 +2,7 @@
 
 @section('title', 'Cetsy User Agreement')
 @section('meta_description', 'Read the Cetsy user agreement and related marketplace policies for buyers, sellers, privacy, fees, conduct, and prohibited items.')
-@section('canonical_url', route('user-agreement'))
+@section('canonical_url', localized_route('user-agreement'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

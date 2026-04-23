@@ -6,9 +6,9 @@
   $type    = request('type');
   $perPage = (int) request('per_page', 24);
   $view    = request('view', 'grid');
-  $isSearchRoute = request()->routeIs('search') || request()->is('search');
+  $isSearchRoute = localized_route_is('search') || request()->is('search');
   $hasListingQuery = request()->query() !== [];
-  $listingsCanonicalUrl = route('listings');
+  $listingsCanonicalUrl = localized_route('listings');
   $listingsMetaRobots = ($isSearchRoute || $hasListingQuery) ? 'noindex, follow' : 'index, follow';
 @endphp
 
@@ -170,7 +170,7 @@
           of <strong>{{ $products->total() }}</strong> listings
         </p>
         @if($products->total() > 0)
-          <a href="{{ route('listings') }}" class="inline-flex items-center rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+          <a href="{{ localized_route('listings') }}" class="inline-flex items-center rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
             <i class="fas fa-undo mr-1"></i> Reset
           </a>
         @endif
@@ -244,7 +244,7 @@
 
               <article class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
                 <div class="grid items-center gap-3 sm:grid-cols-[120px_1fr_auto]">
-                  <a href="{{ route('listing.show', $item->slug) }}"
+                  <a href="{{ localized_route('listing.show', $item->slug) }}"
                      class="relative block overflow-hidden rounded-xl bg-slate-100 {{ $isDigitalPreview ? 'cetsy-preview-watermark' : '' }}"
                      @if($isDigitalPreview) data-watermark-label="Cetsy Preview" @endif>
                     @if($hasVideo)
@@ -259,7 +259,7 @@
 
                 <div>
                   <h3 class="text-sm font-semibold text-slate-900">
-                    <a href="{{ route('listing.show', $item->slug) }}" class="hover:text-emerald-700">{{ $item->localized_name ?? $item->name ?? 'Untitled item' }}</a>
+                    <a href="{{ localized_route('listing.show', $item->slug) }}" class="hover:text-emerald-700">{{ $item->localized_name ?? $item->name ?? 'Untitled item' }}</a>
                   </h3>
 
                   <div class="mt-1 text-xs text-amber-500">
@@ -291,7 +291,7 @@
                     <p class="mb-2 text-xs text-slate-400">Contact for price</p>
                   @endif
 
-                  <a href="{{ route('listing.show', $item->slug) }}" class="inline-flex rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">
+                  <a href="{{ localized_route('listing.show', $item->slug) }}" class="inline-flex rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">
                     <i class="fas fa-eye mr-1"></i> View
                   </a>
                 </div>
@@ -323,7 +323,7 @@
       'subtitle' => 'Hand-picked from categories and styles you\'ve been browsing.',
       'eyebrow' => 'Recommended',
       'eyebrowIcon' => 'fa-wand-magic-sparkles',
-      'seeMoreUrl' => route('listings'),
+      'seeMoreUrl' => localized_route('listings'),
       'seeMoreLabel' => 'Keep exploring'
   ])
 </div>

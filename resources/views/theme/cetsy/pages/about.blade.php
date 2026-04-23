@@ -2,7 +2,7 @@
 
 @section('title', 'About Cetsy')
 @section('meta_description', 'Learn about Cetsy, a global marketplace for handmade products, services, and digital downloads from independent sellers.')
-@section('canonical_url', route('about'))
+@section('canonical_url', localized_route('about'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 
@@ -85,10 +85,10 @@
         @endif
 
         <div class="mt-8 flex flex-wrap gap-2 border-t border-slate-200 pt-5">
-          <a href="{{ route('listings') }}" class="inline-flex items-center rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+          <a href="{{ localized_route('listings') }}" class="inline-flex items-center rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
             <i class="fas fa-compass mr-2"></i> Explore Listings
           </a>
-          <a href="{{ route('become-seller') }}" class="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-5 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+          <a href="{{ localized_route('become-seller') }}" class="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-5 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
             <i class="fas fa-store mr-2"></i> Become a Seller
           </a>
         </div>

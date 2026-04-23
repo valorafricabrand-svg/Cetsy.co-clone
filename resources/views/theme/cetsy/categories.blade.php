@@ -5,7 +5,7 @@
 
   $metaTitle = 'Categories | Cetsy Marketplace';
   $metaDescription = 'Browse Cetsy marketplace categories for products, services, and digital downloads from sellers around the world.';
-  $categoriesUrl = route('categories.index');
+  $categoriesUrl = localized_route('categories.index');
   $typeLabels = [
     'products' => 'Products',
     'services' => 'Services',
@@ -16,11 +16,11 @@
     return [
       '@type' => 'ListItem',
       'position' => $index + 1,
-      'url' => route('category.show', $category->slug),
+      'url' => localized_route('category.show', $category->slug),
       'item' => [
         '@type' => 'CollectionPage',
         'name' => $category->name,
-        'url' => route('category.show', $category->slug),
+        'url' => localized_route('category.show', $category->slug),
       ],
     ];
   })->all();
@@ -42,7 +42,7 @@
             '@type' => 'ListItem',
             'position' => 1,
             'name' => 'Home',
-            'item' => url('/'),
+            'item' => localized_route('home'),
           ],
           [
             '@type' => 'ListItem',
@@ -158,7 +158,7 @@
               $activeCount = (int) ($category->active_products_count ?? 0) + (int) $children->sum('active_products_count');
             @endphp
             <article class="category-directory-card overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <a href="{{ route('category.show', $category->slug) }}" class="block">
+              <a href="{{ localized_route('category.show', $category->slug) }}" class="block">
                 <div class="category-directory-thumb bg-slate-100">
                   @if($image)
                     <img src="{{ $image }}" alt="{{ $category->name }}" class="h-full w-full object-cover" loading="lazy" decoding="async" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');">
@@ -184,7 +184,7 @@
                 <div class="border-t border-slate-100 px-3 py-2">
                   <div class="flex flex-wrap gap-1.5">
                     @foreach($children->take(4) as $child)
-                      <a href="{{ route('category.show', $child->slug) }}" class="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-emerald-50 hover:text-emerald-700">
+                      <a href="{{ localized_route('category.show', $child->slug) }}" class="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-emerald-50 hover:text-emerald-700">
                         {{ $child->name }}
                       </a>
                     @endforeach
@@ -207,7 +207,7 @@
       <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-4 flex items-center justify-between gap-3">
           <h2 class="text-xl font-extrabold text-slate-900">Latest Listings</h2>
-          <a href="{{ route('listings') }}" class="text-sm font-semibold text-emerald-700 hover:text-emerald-600">View all</a>
+          <a href="{{ localized_route('listings') }}" class="text-sm font-semibold text-emerald-700 hover:text-emerald-600">View all</a>
         </div>
         <div class="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
           @foreach($featuredProducts as $item)

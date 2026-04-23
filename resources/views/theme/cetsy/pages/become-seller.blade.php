@@ -2,7 +2,7 @@
 
 @section('title', 'Become a Seller on Cetsy')
 @section('meta_description', 'Open a Cetsy shop to sell handmade products, services, and digital downloads to buyers around the world.')
-@section('canonical_url', route('become-seller'))
+@section('canonical_url', localized_route('become-seller'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

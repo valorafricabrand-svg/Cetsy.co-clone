@@ -6,7 +6,7 @@
     $meta = $post->meta ?? [];
     $description = $meta['description'] ?? strip_tags($post->excerpt ?: Str::limit($post->body, 180));
     $heroImage = $post->featured_image_url ?? asset('assets/img/blog/blog-3.png');
-    $postUrl = route('blog.show', $post->slug);
+    $postUrl = localized_route('blog.show', $post->slug);
     $publishedAt = $post->published_at ?? $post->created_at;
 
     $articleStructuredData = [
@@ -44,13 +44,13 @@
                         '@type' => 'ListItem',
                         'position' => 1,
                         'name' => 'Home',
-                        'item' => url('/'),
+                        'item' => localized_route('home'),
                     ],
                     [
                         '@type' => 'ListItem',
                         'position' => 2,
                         'name' => 'Blog',
-                        'item' => route('blog.index'),
+                        'item' => localized_route('blog.index'),
                     ],
                     [
                         '@type' => 'ListItem',
@@ -67,7 +67,7 @@
 @section('title', $meta['title'] ?? $post->title.' | Cetsy.co Blog')
 @section('meta_description', $description)
 @section('meta_image', $heroImage)
-@section('canonical_url', route('blog.show', $post->slug))
+@section('canonical_url', localized_route('blog.show', $post->slug))
 @section('meta_robots', 'index, follow')
 
 @push('structured-data')
@@ -238,9 +238,9 @@
     <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
       <nav aria-label="Breadcrumb" class="mb-4 text-sm">
         <ol class="flex flex-wrap items-center gap-2 text-emerald-100/80">
-          <li><a href="{{ url('/') }}" class="hover:text-white">Home</a></li>
+          <li><a href="{{ localized_route('home') }}" class="hover:text-white">Home</a></li>
           <li>/</li>
-          <li><a href="{{ route('blog.index') }}" class="hover:text-white">Blog</a></li>
+          <li><a href="{{ localized_route('blog.index') }}" class="hover:text-white">Blog</a></li>
           <li>/</li>
           <li class="truncate text-white">{{ $post->title }}</li>
         </ol>
@@ -279,7 +279,7 @@
         </article>
 
         @php
-          $shareUrl = urlencode(route('blog.show', $post->slug));
+          $shareUrl = urlencode(localized_route('blog.show', $post->slug));
           $shareText = urlencode($post->title.' on Cetsy.co');
         @endphp
 
@@ -307,7 +307,7 @@
                 @php
                   $relatedImage = $related->featured_image_url ?? asset('assets/img/blog/blog-4.png');
                 @endphp
-                <a href="{{ route('blog.show', $related->slug) }}" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-2 transition hover:border-emerald-300">
+                <a href="{{ localized_route('blog.show', $related->slug) }}" class="group flex items-center gap-3 rounded-xl border border-slate-200 p-2 transition hover:border-emerald-300">
                   <img src="{{ $relatedImage }}" alt="{{ $related->title }}" class="h-16 w-16 rounded-lg object-cover">
                   <div class="min-w-0">
                     <p class="line-clamp-2 text-sm font-semibold text-slate-800 group-hover:text-emerald-700">{{ $related->title }}</p>

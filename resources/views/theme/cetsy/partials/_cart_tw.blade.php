@@ -92,7 +92,7 @@
     <div class="mt-3 flex flex-wrap gap-2 text-xs">
       <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-semibold text-emerald-700">
         <i class="fa-solid fa-store"></i>
-        <a href="{{ route('shop.show', $product->shop->slug) }}" class="hover:text-emerald-600">{{ $product->shop->localized_name ?? $product->shop->name }}</a>
+        <a href="{{ localized_route('shop.show', $product->shop->slug) }}" class="hover:text-emerald-600">{{ $product->shop->localized_name ?? $product->shop->name }}</a>
       </span>
 
       @if ($product->type === 'physical')
@@ -131,7 +131,7 @@
     <p class="mt-4 text-sm text-slate-700">
       <strong class="mr-1">Category:</strong>
       @if ($product->category)
-        <a href="{{ route('category.show', $product->category->slug) }}" class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 hover:text-emerald-600">
+        <a href="{{ localized_route('category.show', $product->category->slug) }}" class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 hover:text-emerald-600">
           {{ $product->category->name }}
         </a>
       @else

@@ -31,12 +31,12 @@
     ->take(10)
     ->get();
 
-  $shopUrl = route('shop.show', $shopRouteParam);
+  $shopUrl = localized_route('shop.show', $shopRouteParam);
   $shopListItems = $products->getCollection()
     ->take(24)
     ->values()
     ->map(function ($product, $index) {
-      $listingUrl = route('listing.show', $product->slug);
+      $listingUrl = localized_route('listing.show', $product->slug);
 
       return [
         '@type' => 'ListItem',
@@ -92,7 +92,7 @@
             '@type' => 'ListItem',
             'position' => 2,
             'name' => 'Shops',
-            'item' => route('shops.index'),
+            'item' => localized_route('shops.index'),
           ],
           [
             '@type' => 'ListItem',
@@ -115,7 +115,7 @@
 
 @section('title', $localizedShopName . ' | Shop on Cetsy')
 @section('meta_description', $shopDescription)
-@section('canonical_url', route('shop.show', $shopRouteParam))
+@section('canonical_url', localized_route('shop.show', $shopRouteParam))
 @section('meta_image', $shopImage)
 @section('meta_robots', 'index, follow')
 
@@ -223,7 +223,7 @@
                 <button type="button" class="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50" onclick="shareOn('twitter')"><i class="fab fa-twitter mr-2"></i>Twitter</button>
                 <button type="button" class="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50" onclick="shareOn('whatsapp')"><i class="fab fa-whatsapp mr-2"></i>WhatsApp</button>
                 <hr class="my-1 border-slate-200">
-                <button type="button" class="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50" onclick="copyShopUrl('{{ route('shop.show', $shopRouteParam) }}')"><i class="fas fa-link mr-2"></i>Copy Link</button>
+                <button type="button" class="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50" onclick="copyShopUrl('{{ localized_route('shop.show', $shopRouteParam) }}')"><i class="fas fa-link mr-2"></i>Copy Link</button>
               </div>
             </details>
           @endif
@@ -399,7 +399,7 @@
 
                   <div class="mt-3 flex items-center gap-2">
                     <img src="{{ $reviewThumb }}" alt="{{ $reviewProduct->localized_name ?? $reviewProduct->name }} thumbnail" class="h-12 w-12 rounded-lg border border-slate-200 object-cover">
-                    <a href="{{ route('listing.show', $reviewProduct->slug ?? $reviewProduct->id) }}" class="text-sm font-medium text-slate-700 hover:text-emerald-700">{{ $reviewProduct->localized_name ?? $reviewProduct->name }}</a>
+                    <a href="{{ localized_route('listing.show', $reviewProduct->slug ?? $reviewProduct->id) }}" class="text-sm font-medium text-slate-700 hover:text-emerald-700">{{ $reviewProduct->localized_name ?? $reviewProduct->name }}</a>
                   </div>
                 @endif
 
@@ -461,7 +461,7 @@
               <p><strong class="text-slate-900">Currency:</strong> {{ $shop->currency ?? 'N/A' }}</p>
               <p class="flex items-center gap-2">
                 <strong class="text-slate-900">Shop URL:</strong>
-                <button type="button" class="rounded-lg border border-emerald-300 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50" onclick="copyShopUrl('{{ route('shop.show', $shopRouteParam) }}')" aria-label="Copy shop URL">
+                <button type="button" class="rounded-lg border border-emerald-300 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50" onclick="copyShopUrl('{{ localized_route('shop.show', $shopRouteParam) }}')" aria-label="Copy shop URL">
                   <i class="fas fa-link"></i>
                 </button>
               </p>

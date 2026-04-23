@@ -74,7 +74,7 @@
   $reviewsCnt = (int) ($shopCount ?? ($item->reviews_count ?? 0));
 @endphp
 
-<a href="{{ route('listing.show', $item->slug) }}"
+<a href="{{ localized_route('listing.show', $item->slug) }}"
    class="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg sm:rounded-2xl">
 
   <div class="relative aspect-[4/3] overflow-hidden bg-slate-100 sm:aspect-square {{ $isDigitalPreview ? 'cetsy-preview-watermark' : '' }}"

@@ -2,7 +2,7 @@
 
 @section('title', 'Refund & Returns Policy')
 @section('meta_description', 'Review Cetsy refund and returns rules, including request steps, timeframes, eligibility, shipping, and dispute handling.')
-@section('canonical_url', route('refunds-returns'))
+@section('canonical_url', localized_route('refunds-returns'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

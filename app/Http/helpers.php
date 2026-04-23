@@ -4,7 +4,9 @@ use App\Models\Shop;
 use App\Models\Country;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
 function favicon_url(){
     try {
@@ -192,6 +194,201 @@ if (! function_exists('locale_og_code')) {
     }
 }
 
+if (! function_exists('base_route_name')) {
+    /**
+     * Normalize a localized route name back to its base route name.
+     */
+    function base_route_name(?string $routeName): ?string
+    {
+        if (! is_string($routeName) || trim($routeName) === '') {
+            return null;
+        }
+
+        return str_starts_with($routeName, 'localized.')
+            ? substr($routeName, strlen('localized.'))
+            : $routeName;
+    }
+}
+
+if (! function_exists('localized_route_name')) {
+    /**
+     * Resolve the localized route alias for a base route name.
+     */
+    function localized_route_name(?string $routeName): ?string
+    {
+        $baseName = base_route_name($routeName);
+
+        if (! $baseName) {
+            return null;
+        }
+
+        $candidate = 'localized.' . $baseName;
+
+        return Route::has($candidate) ? $candidate : null;
+    }
+}
+
+if (! function_exists('route_has_localized_variant')) {
+    /**
+     * Determine whether a route has a localized alias.
+     */
+    function route_has_localized_variant(?string $routeName): bool
+    {
+        return localized_route_name($routeName) !== null;
+    }
+}
+
+if (! function_exists('route_parameters_for')) {
+    /**
+     * Normalize route parameters for a named route.
+     *
+     * @param  mixed  $parameters
+     * @return array<string, mixed>
+     */
+    function route_parameters_for(string $routeName, mixed $parameters = []): array
+    {
+        $route = Route::getRoutes()->getByName($routeName);
+        $parameterNames = array_values(array_filter(
+            $route?->parameterNames() ?? [],
+            fn (string $parameter): bool => $parameter !== 'locale'
+        ));
+
+        if ($parameters === null || $parameters === []) {
+            return [];
+        }
+
+        if (! is_array($parameters)) {
+            return isset($parameterNames[0]) ? [$parameterNames[0] => $parameters] : [];
+        }
+
+        if (array_is_list($parameters)) {
+            $normalized = [];
+
+            foreach ($parameterNames as $index => $parameterName) {
+                if (array_key_exists($index, $parameters)) {
+                    $normalized[$parameterName] = $parameters[$index];
+                }
+            }
+
+            return $normalized;
+        }
+
+        unset($parameters['locale']);
+
+        return $parameters;
+    }
+}
+
+if (! function_exists('localized_route')) {
+    /**
+     * Generate a locale-prefixed URL when a localized route alias exists.
+     *
+     * @param  mixed  $parameters
+     */
+    function localized_route(string $routeName, mixed $parameters = [], bool $absolute = true, ?string $locale = null): string
+    {
+        $baseName = base_route_name($routeName) ?? $routeName;
+        $localizedName = localized_route_name($baseName);
+        $targetRoute = $localizedName ?: $baseName;
+        $resolvedParameters = route_parameters_for($targetRoute, $parameters);
+
+        if ($localizedName) {
+            $resolvedParameters = ['locale' => normalize_locale($locale) ?? current_locale()] + $resolvedParameters;
+        }
+
+        return route($targetRoute, $resolvedParameters, $absolute);
+    }
+}
+
+if (! function_exists('localized_current_url')) {
+    /**
+     * Generate the current URL for a specific locale when the route supports it.
+     */
+    function localized_current_url(?string $locale = null, bool $includeQuery = true): string
+    {
+        $route = request()->route();
+        $routeName = $route?->getName();
+
+        if (! $route || ! $routeName) {
+            return $includeQuery ? url()->full() : url()->current();
+        }
+
+        $baseName = base_route_name($routeName) ?? $routeName;
+        $routeParameters = $route->parameters();
+        unset($routeParameters['locale']);
+
+        $url = route_has_localized_variant($baseName)
+            ? localized_route($baseName, $routeParameters, true, $locale)
+            : route($routeName, $route->parameters(), true);
+
+        $query = request()->query();
+        unset($query['lang']);
+
+        if ($includeQuery && ! empty($query)) {
+            $url .= '?' . Arr::query($query);
+        }
+
+        return $url;
+    }
+}
+
+if (! function_exists('localized_alternate_urls')) {
+    /**
+     * Build hreflang alternate URLs for the current localizable route.
+     *
+     * @param  mixed  $parameters
+     * @return array<string, string>
+     */
+    function localized_alternate_urls(?string $routeName = null, mixed $parameters = null, ?array $query = null): array
+    {
+        $route = request()->route();
+        $resolvedRouteName = $routeName ?: $route?->getName();
+        $baseName = base_route_name($resolvedRouteName);
+
+        if (! $baseName || ! route_has_localized_variant($baseName)) {
+            return [];
+        }
+
+        $routeParameters = $parameters ?? ($route?->parameters() ?? []);
+        if (is_array($routeParameters)) {
+            unset($routeParameters['locale']);
+        }
+
+        $queryParameters = $query ?? request()->query();
+        unset($queryParameters['lang']);
+
+        $urls = [];
+
+        foreach (array_keys(supported_locales()) as $localeCode) {
+            $url = localized_route($baseName, $routeParameters, true, $localeCode);
+
+            if (! empty($queryParameters)) {
+                $url .= '?' . Arr::query($queryParameters);
+            }
+
+            $urls[$localeCode] = $url;
+        }
+
+        return $urls;
+    }
+}
+
+if (! function_exists('localized_route_is')) {
+    /**
+     * Check the current route name against base and localized route patterns.
+     */
+    function localized_route_is(string ...$patterns): bool
+    {
+        foreach ($patterns as $pattern) {
+            if (request()->routeIs($pattern) || request()->routeIs('localized.' . $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 if (! function_exists('locale_from_language_name')) {
     /**
      * Resolve a stored language label to a supported locale code.
@@ -205,6 +402,100 @@ if (! function_exists('locale_from_language_name')) {
             'swahili', 'kiswahili' => 'sw',
             default => normalize_locale($normalized),
         };
+    }
+}
+
+if (! function_exists('preferred_locale_for')) {
+    /**
+     * Resolve the most relevant locale from a set of related models or values.
+     */
+    function preferred_locale_for(mixed ...$candidates): ?string
+    {
+        foreach ($candidates as $candidate) {
+            if ($candidate === null) {
+                continue;
+            }
+
+            if (is_string($candidate)) {
+                $resolved = normalize_locale($candidate);
+
+                if ($resolved) {
+                    return $resolved;
+                }
+
+                continue;
+            }
+
+            if ($candidate instanceof \App\Models\User) {
+                $resolved = normalize_locale((string) ($candidate->preferred_locale ?? ''));
+
+                if ($resolved) {
+                    return $resolved;
+                }
+
+                if ($candidate->relationLoaded('shop') || isset($candidate->shop)) {
+                    $resolved = preferred_locale_for($candidate->shop);
+
+                    if ($resolved) {
+                        return $resolved;
+                    }
+                }
+
+                continue;
+            }
+
+            if ($candidate instanceof \App\Models\Shop) {
+                $resolved = normalize_locale((string) ($candidate->user?->preferred_locale ?? ''));
+
+                if ($resolved) {
+                    return $resolved;
+                }
+
+                return shop_primary_locale($candidate);
+            }
+
+            if ($candidate instanceof \App\Models\Product) {
+                $resolved = preferred_locale_for($candidate->shop);
+
+                if ($resolved) {
+                    return $resolved;
+                }
+
+                continue;
+            }
+
+            if ($candidate instanceof \App\Models\Order) {
+                $resolved = preferred_locale_for($candidate->user ?? null, $candidate->buyer ?? null, $candidate->shop ?? null);
+
+                if ($resolved) {
+                    return $resolved;
+                }
+
+                continue;
+            }
+
+            if (is_array($candidate) || $candidate instanceof \Traversable) {
+                foreach ($candidate as $item) {
+                    $resolved = preferred_locale_for($item);
+
+                    if ($resolved) {
+                        return $resolved;
+                    }
+                }
+
+                continue;
+            }
+
+            if (is_object($candidate) && method_exists($candidate, 'preferredLocale')) {
+                $resolved = normalize_locale((string) $candidate->preferredLocale());
+
+                if ($resolved) {
+                    return $resolved;
+                }
+            }
+        }
+
+        return null;
     }
 }
 

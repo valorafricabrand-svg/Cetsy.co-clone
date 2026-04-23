@@ -2,7 +2,7 @@
 
 @section('title', 'Cetsy.co Blog')
 @section('meta_description', 'Fresh stories, maker spotlights, and platform updates from the Cetsy.co team.')
-@section('canonical_url', route('blog.index'))
+@section('canonical_url', localized_route('blog.index'))
 @section('meta_robots', request()->query() ? 'noindex, follow' : 'index, follow')
 
 @section('main')
@@ -35,14 +35,14 @@
           <div class="flex flex-wrap items-center gap-2">
             <span class="mr-2 text-sm font-semibold text-slate-700">Browse by topic:</span>
             <a
-              href="{{ route('blog.index') }}"
+              href="{{ localized_route('blog.index') }}"
               class="rounded-full border px-3 py-1.5 text-xs font-semibold transition {{ empty($activeCategory) ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 text-slate-700 hover:border-emerald-300 hover:text-emerald-700' }}"
             >
               All posts
             </a>
             @foreach($categories as $category)
               <a
-                href="{{ route('blog.index', ['category' => $category->slug]) }}"
+                href="{{ localized_route('blog.index', ['category' => $category->slug]) }}"
                 class="rounded-full border px-3 py-1.5 text-xs font-semibold transition {{ $activeCategory === $category->slug ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 text-slate-700 hover:border-emerald-300 hover:text-emerald-700' }}"
               >
                 {{ $category->name }}
@@ -68,7 +68,7 @@
             @endphp
 
             <article class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-              <a href="{{ route('blog.show', $post->slug) }}" class="block">
+              <a href="{{ localized_route('blog.show', $post->slug) }}" class="block">
                 <div class="aspect-[16/9] overflow-hidden border-b border-slate-200 bg-slate-100">
                   <img src="{{ $image }}" alt="{{ $post->title }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]">
                 </div>

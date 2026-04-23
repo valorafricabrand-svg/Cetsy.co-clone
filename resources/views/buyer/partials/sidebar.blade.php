@@ -6,10 +6,16 @@
     $unreadMessages = \App\Models\Message::where('receiver_id', auth()->id())
         ->where('is_read', false)
         ->count();
-    $offersPending = \App\Models\Offer::where('buyer_id', auth()->id())
-        ->where('status', 'pending')
+    $offersPending = \App\Models\Activity::where('user_id', auth()->id())
+        ->where('type', \App\Models\Activity::TYPE_OFFER)
+        ->where('is_read', false)
+        ->whereIn('related_id', \App\Models\Offer::query()->select('id')->where('buyer_id', auth()->id()))
         ->count();
-    $favoritesCount = \App\Models\Wishlist::where('user_id', auth()->id())->count();
+    $favoritesCount = \App\Models\Activity::where('user_id', auth()->id())
+        ->where('type', \App\Models\Activity::TYPE_WISHLIST)
+        ->where('is_read', false)
+        ->whereNull('causer_id')
+        ->count();
 @endphp
 
 @if(auth()->check() && auth()->user()->isBuyer())

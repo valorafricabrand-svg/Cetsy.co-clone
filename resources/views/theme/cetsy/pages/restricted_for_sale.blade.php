@@ -2,7 +2,7 @@
 
 @section('title', 'Restricted and Prohibited Items')
 @section('meta_description', 'See which items are restricted or prohibited for sale on Cetsy and how compliance, IP, and import rules apply.')
-@section('canonical_url', route('restricted_for_sale'))
+@section('canonical_url', localized_route('restricted_for_sale'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', 'index, follow')
 

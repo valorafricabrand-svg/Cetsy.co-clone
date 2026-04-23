@@ -25,7 +25,7 @@ class ContactController extends Controller
 
         if ($request->filled('website')) {
             return redirect()
-                ->route('contact')
+                ->to(localized_route('contact'))
                 ->with('success', 'Your message has been sent. Our support team will get back to you soon.');
         }
 
@@ -65,7 +65,7 @@ class ContactController extends Controller
         }
 
         return redirect()
-            ->route('contact')
+            ->to(localized_route('contact'))
             ->with('success', 'Your message has been sent. Our support team will get back to you soon.');
     }
 }

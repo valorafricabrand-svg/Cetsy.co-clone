@@ -79,6 +79,118 @@ use App\Http\Controllers\Seller\{
 |--------------------------------------------------------------------------
 */
 
+$supportedLocalePattern = implode('|', array_map(
+    static fn (string $locale): string => preg_quote($locale, '/'),
+    array_keys((array) config('locales.supported', ['en' => [], 'sw' => []]))
+));
+
+Route::pattern('locale', $supportedLocalePattern);
+
+Route::prefix('{locale}')
+    ->where(['locale' => $supportedLocalePattern])
+    ->name('localized.')
+    ->group(function () {
+        Route::get('/', [HomeController::class, 'index'])->name('home');
+        Route::get('/landing', function (\Illuminate\Http\Request $request) {
+            return redirect()->to(localized_route('home', [], true, $request->route('locale')), 301);
+        })->name('landing');
+
+        Route::get('/cetsy-blog', function (\Illuminate\Http\Request $request) {
+            $query = $request->getQueryString();
+            $target = localized_route('blog.index', [], true, $request->route('locale')) . ($query ? '?' . $query : '');
+
+            return redirect()->to($target, 301);
+        });
+
+        Route::get('/cetsy-blog/{slug}', function (\Illuminate\Http\Request $request, string $slug) {
+            $query = $request->getQueryString();
+            $target = localized_route('blog.show', ['slug' => $slug], true, $request->route('locale')) . ($query ? '?' . $query : '');
+
+            return redirect()->to($target, 301);
+        });
+
+        Route::get('/post', [BlogController::class, 'index'])->name('blog.index');
+        Route::get('/post/{slug}', [BlogController::class, 'show'])->name('blog.show');
+
+        Route::get('/become-seller', function () {
+            return themed_view('pages.become-seller');
+        })->name('become-seller');
+        Route::get('/privacy', function () {
+            return themed_view('pages.privacy');
+        })->name('privacy');
+        Route::get('/terms', function () {
+            return themed_view('pages.terms');
+        })->name('terms');
+        Route::get('/refunds-returns', function () {
+            return themed_view('pages.refunds-returns');
+        })->name('refunds-returns');
+        Route::get('/shipping-delivery', function () {
+            return themed_view('pages.shipping-delivery');
+        })->name('shipping-delivery');
+        Route::get('/seller-policy', function () {
+            return themed_view('pages.seller-policy');
+        })->name('seller-policy');
+        Route::get('/prohibited-items', function () {
+            return themed_view('pages.prohibited-items');
+        })->name('prohibited-items');
+        Route::get('/contact', function () {
+            return themed_view('pages.contact');
+        })->name('contact');
+        Route::post('/contact', [ContactController::class, 'submit'])
+            ->name('contact.submit')
+            ->middleware('throttle:8,1');
+        Route::get('/seller-forum', function () {
+            return themed_view('pages.seller-forum');
+        })->name('seller-forum');
+        Route::get('/seller-tips', function () {
+            return themed_view('pages.seller-tips');
+        })->name('seller-tips');
+        Route::get('/buyer-tips', function () {
+            return themed_view('pages.buyer-tips');
+        })->name('buyer-tips');
+        Route::get('/buyer-terms', function () {
+            return themed_view('pages.buyer-terms');
+        })->name('buyer-terms');
+        Route::get('/about', function () {
+            return themed_view('pages.about');
+        })->name('about');
+        Route::get('/house-policy', function () {
+            return themed_view('pages.house-policy');
+        })->name('house-policy');
+        Route::get('/user-agreement', function () {
+            return themed_view('pages.user-agreement');
+        })->name('user-agreement');
+        Route::get('/cetsyip_policy', function () {
+            return themed_view('pages.cetsyip_policy');
+        })->name('cetsyip_policy');
+        Route::get('/payment-policy', function () {
+            return themed_view('pages.payment_policy');
+        })->name('payment_policy');
+        Route::get('/restricted_for_sale', function () {
+            return themed_view('pages.restricted_for_sale');
+        })->name('restricted_for_sale');
+
+        Route::get('/categories', [CategoryController::class, 'publicIndex'])->name('categories.index');
+        Route::get('/search', [ProductController::class, 'search'])->name('search');
+        Route::get('/listings', [ProductController::class, 'listings'])->name('listings');
+        Route::get('/listing/{slug}', [ProductController::class, 'listing'])->name('listing.show');
+        Route::get('/category/{slug}', [CategoryController::class, 'categoryShow'])->name('category.show');
+        Route::get('/shops', [ShopController::class, 'publicIndex'])->name('shops.index');
+        Route::get('/shop/{id}', [ShopController::class, 'showPublic'])->name('shop.show');
+        Route::prefix('cart')->name('cart.')->group(function () {
+            Route::get('/', [CartController::class, 'viewCart'])->name('view');
+            Route::post('/add', [CartController::class, 'addToCart'])->name('add');
+            Route::post('/buy', [CartController::class, 'addToBuy'])->name('buy');
+            Route::post('/remove', [CartController::class, 'removeFromCart'])->name('remove');
+            Route::post('/update', [CartController::class, 'updateCart'])->name('update');
+            Route::post('/shipping', [CartController::class, 'updateShippingSelection'])->name('shipping');
+            Route::get('/checkout', [CartController::class, 'checkout'])
+                ->middleware('auth')
+                ->name('checkout');
+        });
+        Route::get('/wishlist', [ProductController::class, 'wishlist'])->name('wishlist');
+    });
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::redirect('/landing', '/', 301)->name('landing');
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');

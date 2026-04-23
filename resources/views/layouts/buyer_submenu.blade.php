@@ -11,8 +11,16 @@
     $pendingOrders  = \App\Models\Order::where('user_id', Auth::id())
         ->where('status','pending')
         ->count();
-    $favoritesCount = \App\Models\Wishlist::where('user_id', Auth::id())->count();
-    $offersPending  = \App\Models\Offer::where('buyer_id', Auth::id())->where('status','pending')->count();
+    $favoritesCount = \App\Models\Activity::where('user_id', Auth::id())
+        ->where('type', \App\Models\Activity::TYPE_WISHLIST)
+        ->where('is_read', false)
+        ->whereNull('causer_id')
+        ->count();
+    $offersPending  = \App\Models\Activity::where('user_id', Auth::id())
+        ->where('type', \App\Models\Activity::TYPE_OFFER)
+        ->where('is_read', false)
+        ->whereIn('related_id', \App\Models\Offer::query()->select('id')->where('buyer_id', Auth::id()))
+        ->count();
     // Disputes count (where user is buyer or seller, excluding closed/finalized)
     $disputesCount  = \App\Models\Dispute::where(function($q){
                           $q->where('buyer_id', Auth::id())

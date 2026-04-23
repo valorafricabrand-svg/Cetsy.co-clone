@@ -32,6 +32,16 @@ class OfferController extends Controller
         // Get all product IDs for this shop
         $productIds = $shop->products()->pluck('id');
 
+        // Opening the offers page should clear unread offer alerts for this
+        // seller's listings so sidebar and tab badges stay in sync.
+        try {
+            Activity::where('user_id', $user->id)
+                ->where('type', Activity::TYPE_OFFER)
+                ->where('is_read', false)
+                ->whereIn('related_id', Offer::query()->select('id')->whereIn('product_id', $productIds))
+                ->update(['is_read' => true]);
+        } catch (\Throwable $e) { /* noop */ }
+
         // Get all offers for these products with relationships
         $query = Offer::whereIn('product_id', $productIds)
             ->with(['product.media', 'buyer', 'originalOffer', 'counterOffers'])

@@ -2,18 +2,18 @@
 
 @section('title', 'All Shops')
 @section('meta_description', 'Browse shops on Cetsy and discover creators offering handmade products, services, and digital goods.')
-@section('canonical_url', route('shops.index'))
+@section('canonical_url', localized_route('shops.index'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
 @section('meta_robots', request()->query() ? 'noindex, follow' : 'index, follow')
 
 @php
-  $shopsUrl = route('shops.index');
+  $shopsUrl = localized_route('shops.index');
   $shopListItems = $shops->getCollection()
     ->take(24)
     ->values()
     ->map(function ($shop, $index) use ($countries) {
       $shopRouteParam = $shop->slug ?: $shop->id;
-      $shopUrl = route('shop.show', $shopRouteParam);
+      $shopUrl = localized_route('shop.show', $shopRouteParam);
       $shopImage = $shop->logo
         ? ($shop->logo_url ?? asset('storage/' . ltrim($shop->logo, '/')))
         : (setting('favicon_url') ?: asset('assets/images/cetsylogmain.png'));
@@ -53,7 +53,7 @@
             '@type' => 'ListItem',
             'position' => 1,
             'name' => 'Home',
-            'item' => url('/'),
+            'item' => localized_route('home'),
           ],
           [
             '@type' => 'ListItem',
@@ -209,7 +209,7 @@
             $countryName = optional($countries->get($shop->country))->name;
           @endphp
           <article class="group rounded-xl border border-slate-200 bg-white p-2 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg sm:rounded-2xl sm:p-3">
-            <a href="{{ route('shop.show', $shop->slug) }}" class="block">
+            <a href="{{ localized_route('shop.show', $shop->slug) }}" class="block">
               <img
                 src="{{ $shopLogo }}"
                 alt="{{ $shop->localized_name ?? $shop->name }} logo"

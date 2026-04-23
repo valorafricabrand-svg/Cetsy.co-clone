@@ -12,8 +12,8 @@
   ];
   $hideNav = $isAdmin || in_array($rn, $hideOnRoutes, true);
 
-  $isHome     = $rn === 'home';
-  $isSearch   = $rn === 'search' || Str::startsWith((string)$rn, 'category.');
+  $isHome     = localized_route_is('home');
+  $isSearch   = localized_route_is('search', 'category.show');
   $isCart     = Str::startsWith((string)$rn, 'cart.');
   $isSeller   = $user && method_exists($user, 'isSeller') && $user->isSeller();
   $isBuyer    = $user && method_exists($user, 'isBuyer')  && $user->isBuyer();
@@ -40,7 +40,7 @@
       }
     } catch (\Throwable $e) { /* fail-safe */ }
   }
-  $isWishlist = !$isSeller && $rn === 'wishlist';
+  $isWishlist = !$isSeller && localized_route_is('wishlist');
   $isOrders   = $isSeller
                  ? Str::startsWith((string)$rn, 'seller.orders')
                  : ($rn === 'account.orders' || $rn === 'orders.index' || Str::startsWith((string)$rn, 'buyer.orders'));
@@ -53,13 +53,13 @@
   <div class="mx-auto w-full max-w-7xl px-2">
     <ul class="grid w-full grid-cols-5">
       <li>
-        <a href="{{ route('home') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isHome ? 'active' : '' }}" aria-current="{{ $isHome ? 'page' : 'false' }}">
+        <a href="{{ localized_route('home') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isHome ? 'active' : '' }}" aria-current="{{ $isHome ? 'page' : 'false' }}">
           <i class="fa-solid fa-house"></i>
           <span class="label">{{ __('Home') }}</span>
         </a>
       </li>
       <li>
-        <a href="{{ route('search') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isSearch ? 'active' : '' }}" aria-current="{{ $isSearch ? 'page' : 'false' }}">
+        <a href="{{ localized_route('search') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isSearch ? 'active' : '' }}" aria-current="{{ $isSearch ? 'page' : 'false' }}">
           <i class="fa-solid fa-magnifying-glass"></i>
           <span class="label">{{ __('Search') }}</span>
         </a>
@@ -89,7 +89,7 @@
         @endif
       </li>
       <li>
-        <a href="{{ route('cart.view') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isCart ? 'active' : '' }}" aria-current="{{ $isCart ? 'page' : 'false' }}">
+        <a href="{{ localized_route('cart.view') }}" class="mobile-bottom-nav__item flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold {{ $isCart ? 'active' : '' }}" aria-current="{{ $isCart ? 'page' : 'false' }}">
           <i class="fa-solid fa-cart-shopping"></i>
           <span class="label">{{ __('Cart') }}</span>
           @if($cartCount > 0)
