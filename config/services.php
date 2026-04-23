@@ -62,4 +62,9 @@ return [
         'embed_url' => env('TAWK_TO_EMBED_URL'),
     ],
 
+    'deepl' => [
+        'key' => env('DEEPL_API_KEY'),
+        'base_url' => env('DEEPL_API_URL', 'https://api-free.deepl.com'),
+    ],
+
 ];

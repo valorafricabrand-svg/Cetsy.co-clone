@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Contracts;
+
+interface TranslationProvider
+{
+    public function configured(): bool;
+
+    public function supports(string $sourceLocale, string $targetLocale): bool;
+
+    /**
+     * Translate the provided texts from the source locale into the target locale.
+     *
+     * @param  array<int, string>  $texts
+     * @param  array<string, mixed>  $options
+     * @return array<int, string>
+     */
+    public function translate(array $texts, string $sourceLocale, string $targetLocale, array $options = []): array;
+}
