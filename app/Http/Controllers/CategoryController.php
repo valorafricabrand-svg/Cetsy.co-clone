@@ -244,8 +244,10 @@ public function update(Request $request, Category $category)
     }
 
 
-public function categoryShow($slug)
+public function categoryShow($localeOrSlug, $slug = null)
 {
+    $slug = $slug ?? $localeOrSlug;
+
     // Find the category (with descendants) or 404
     $category = Category::with('childrenRecursive')
         ->where('slug', $slug)

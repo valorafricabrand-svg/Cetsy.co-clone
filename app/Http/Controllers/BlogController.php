@@ -48,8 +48,10 @@ class BlogController extends Controller
     /**
      * Display a single blog post.
      */
-    public function show(string $slug)
+    public function show(string $localeOrSlug, ?string $slug = null)
     {
+        $slug = $slug ?? $localeOrSlug;
+
         $post = BlogPost::with(['category', 'author'])
             ->live()
             ->where('slug', $slug)

@@ -210,8 +210,10 @@ class ShopController extends Controller
     }
 
 
-    public function showPublic(Request $request, $id)
+    public function showPublic(Request $request, $localeOrId, $id = null)
     {
+        $id = $id ?? $localeOrId;
+
         // Accept either slug or numeric ID for backward compatibility
         $shop = Shop::whereSlug($id)->first();
         $foundByNumericId = false;

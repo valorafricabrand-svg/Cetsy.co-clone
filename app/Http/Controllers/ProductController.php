@@ -913,8 +913,10 @@ public function update(Request $request, Product $product)
         return view('products.show', compact('product'));
     }
 
-public function listing(string $slug)
+public function listing(string $localeOrSlug, ?string $slug = null)
 {
+    $slug = $slug ?? $localeOrSlug;
+
     /* ------------------------------------------------------------
      | 1.  Fetch the product with everything the view needs
      |------------------------------------------------------------ */

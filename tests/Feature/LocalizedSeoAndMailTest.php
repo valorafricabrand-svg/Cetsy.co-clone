@@ -19,10 +19,11 @@ class LocalizedSeoAndMailTest extends TestCase
     public function test_localized_listing_page_outputs_locale_specific_canonical_and_hreflang_tags(): void
     {
         [, , $product] = $this->createLocalizedMarketplaceFixtures();
-        $localeCookie = config('locales.cookie', 'locale');
 
-        $response = $this->withCookie($localeCookie, 'sw')
-            ->get(route('listing.show', $product->slug));
+        $response = $this->get(route('localized.listing.show', [
+            'locale' => 'sw',
+            'slug' => $product->slug,
+        ]));
 
         $response
             ->assertOk()
@@ -32,6 +33,20 @@ class LocalizedSeoAndMailTest extends TestCase
             ->assertSee('hreflang="sw"', false)
             ->assertSee('hreflang="en"', false)
             ->assertSee('hreflang="x-default"', false);
+    }
+
+    public function test_locale_prefixed_shop_route_renders_the_public_shop_page(): void
+    {
+        [, , $product] = $this->createLocalizedMarketplaceFixtures();
+        $shop = $product->shop()->firstOrFail();
+
+        $this->get(route('localized.shop.show', [
+            'locale' => 'sw',
+            'id' => $shop->slug,
+        ]))
+            ->assertOk()
+            ->assertSee('Duka la Kiswahili')
+            ->assertSee('Kikombe cha Kiswahili');
     }
 
     public function test_sitemaps_include_locale_prefixed_marketplace_urls(): void
