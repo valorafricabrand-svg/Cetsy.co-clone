@@ -2,17 +2,15 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 use App\Models\Offer;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
 
-class CounterOfferMail extends Mailable
+class CounterOfferMail extends LocalizedMailable
 {
     use Queueable, SerializesModels;
 
@@ -30,6 +28,7 @@ class CounterOfferMail extends Mailable
         $this->product = $product;
         $this->seller = $seller;
         $this->buyer = $buyer;
+        $this->usePreferredLocale($buyer, $product, $seller);
     }
 
     /**
@@ -38,7 +37,7 @@ class CounterOfferMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'New Counter Offer Available!',
+            subject: __('emails.counter_offer.subject'),
         );
     }
 
@@ -67,4 +66,4 @@ class CounterOfferMail extends Mailable
     {
         return [];
     }
-} 
+}

@@ -2,17 +2,15 @@
 
 namespace App\Mail;
 
+use App\Models\Order;
+use App\Models\Shop;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use App\Models\Order;
-use App\Models\User;
-use App\Models\Shop;
 
-class OrderCreatedBuyerMail extends Mailable
+class OrderCreatedBuyerMail extends LocalizedMailable
 {
     use Queueable, SerializesModels;
 
@@ -28,6 +26,7 @@ class OrderCreatedBuyerMail extends Mailable
         $this->order = $order;
         $this->buyer = $buyer;
         $this->shop = $shop;
+        $this->usePreferredLocale($buyer, $shop);
     }
 
     /**
@@ -36,7 +35,7 @@ class OrderCreatedBuyerMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Order #' . $this->order->id . ' Confirmation - Payment Required',
+            subject: __('emails.order_created_buyer.subject', ['order' => $this->order->id]),
         );
     }
 
@@ -62,7 +61,7 @@ class OrderCreatedBuyerMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Order #' . $this->order->id . ' Confirmation - Payment Required')
+        return $this->subject(__('emails.order_created_buyer.subject', ['order' => $this->order->id]))
             ->view('emails.order_created_buyer')
             ->with([
                 'order' => $this->order,
@@ -70,4 +69,4 @@ class OrderCreatedBuyerMail extends Mailable
                 'shop' => $this->shop,
             ]);
     }
-} 
+}

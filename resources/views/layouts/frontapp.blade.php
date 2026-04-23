@@ -3,14 +3,15 @@
 <head>
     @php
         $siteName = config('app.name', 'Cetsy');
-        $siteUrl = config('app.url', url('/'));
+        $siteUrl = localized_route('home');
         $defaultTitle = $siteName . ' | All-in-one Platform to Showcase Your Handmade Products Globally';
         $metaTitle = trim($__env->yieldContent('title', $defaultTitle));
         $metaDescription = trim($__env->yieldContent('meta_description', 'Cetsy is the all-in-one platform to showcase, sell, and promote your handmade products to a global audience.'));
-        $canonicalUrl = trim($__env->yieldContent('canonical_url', url()->current()));
+        $canonicalUrl = trim($__env->yieldContent('canonical_url', localized_current_url()));
         $metaImage = trim($__env->yieldContent('meta_image', asset('assets/images/cetsylogmain.png')));
         $metaRobots = trim($__env->yieldContent('meta_robots', 'noindex, nofollow'));
         $favicon = favicon_url();
+        $alternateLocaleUrls = localized_alternate_urls();
     @endphp
 
     <meta charset="UTF-8">
@@ -33,6 +34,12 @@
     
     <!-- Canonical URL -->
     <link rel="canonical" href="{{ $canonicalUrl }}">
+    @foreach($alternateLocaleUrls as $alternateLocale => $alternateUrl)
+        <link rel="alternate" hreflang="{{ locale_html_code($alternateLocale) }}" href="{{ $alternateUrl }}">
+    @endforeach
+    @if(!empty($alternateLocaleUrls))
+        <link rel="alternate" hreflang="x-default" href="{{ localized_current_url(default_locale()) }}">
+    @endif
 
     <!-- Social Meta Section -->
     @section('social-meta')
@@ -45,6 +52,9 @@
         <meta property="og:image:alt" content="Cetsy Handmade Products Marketplace">
         <meta property="og:locale" content="{{ locale_og_code() }}">
         <meta property="og:site_name" content="{{ $siteName }}">
+        @foreach(array_keys($alternateLocaleUrls) as $alternateLocale)
+            <meta property="og:locale:alternate" content="{{ locale_og_code($alternateLocale) }}">
+        @endforeach
 
         <!-- Twitter Card Meta Tags -->
         <meta name="twitter:card" content="summary_large_image">
@@ -102,7 +112,7 @@
             'url' => $siteUrl,
             'potentialAction' => [
                 '@type' => 'SearchAction',
-                'target' => url('/search') . '?q={search_term_string}',
+                'target' => localized_route('search') . '?q={search_term_string}',
                 'query-input' => 'required name=search_term_string',
             ],
         ];
@@ -138,7 +148,7 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
   <div class="container">
     {{-- Brand --}}
-    <a class="navbar-brand" href="{{ url('/') }}">
+    <a class="navbar-brand" href="{{ localized_route('home') }}">
       @php
         $__logo = logo_url();
       @endphp
@@ -165,7 +175,7 @@
       <form
         class="d-flex me-3 flex-grow-1"
         method="GET"
-        action="{{ route('search') }}"
+        action="{{ localized_route('search') }}"
       >
         <input
           class="form-control flex-grow-1"
@@ -237,7 +247,10 @@
         @php
           $currentLocale = current_locale();
           $localeOptions = supported_locales();
-          $localeRedirect = url()->full();
+          $localeRedirect = localized_current_url();
+          $localeRedirects = collect(array_keys($localeOptions))
+            ->mapWithKeys(fn ($localeCode) => [$localeCode => localized_current_url($localeCode)])
+            ->all();
         @endphp
         <li class="nav-item dropdown me-3">
           <a class="nav-link dropdown-toggle text-dark" href="#" id="localeDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -251,7 +264,7 @@
             <li><hr class="dropdown-divider"></li>
             @foreach($localeOptions as $localeCode => $localeMeta)
               <li>
-                <a class="dropdown-item d-flex align-items-center justify-content-between {{ $currentLocale === $localeCode ? 'active' : '' }}" href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $localeRedirect]) }}">
+                <a class="dropdown-item d-flex align-items-center justify-content-between {{ $currentLocale === $localeCode ? 'active' : '' }}" href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $localeRedirects[$localeCode] ?? $localeRedirect]) }}">
                   <span>{{ $localeMeta['native'] ?? strtoupper($localeCode) }}</span>
                   @if($currentLocale === $localeCode)
                     <i class="fas fa-check text-success"></i>
@@ -268,7 +281,7 @@
           $cartCount = count(session('cart', []));
         @endphp
         <li class="nav-item me-3">
-          <a href="{{ route('cart.view') }}" class="nav-link position-relative text-dark">
+          <a href="{{ localized_route('cart.view') }}" class="nav-link position-relative text-dark">
             <i class="fas fa-shopping-cart fa-lg"></i>
             @if($cartCount)
               <span class="badge bg-success position-absolute top-0 start-100 translate-middle">
@@ -394,7 +407,7 @@
           $has  = $kids->isNotEmpty();
           echo '<li class="dropdown-submenu'.($has?'':' no-children').'">';
           echo   '<a class="dropdown-item d-flex justify-content-between align-items-center"'.
-                 ' href="'.($has?'#':route('category.show',$cat->slug)).'">';
+                 ' href="'.($has?'#':localized_route('category.show', $cat->slug)).'">';
           echo     e(html_entity_decode($cat->name, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
           if($has) echo '<i class="fas fa-chevron-right ms-2 rotate"></i>';
           echo   '</a>';
@@ -526,11 +539,11 @@ document.addEventListener('DOMContentLoaded',()=>{
         </h4>
         <ul class="list-unstyled mb-0">
           @foreach([
-            'Become a Seller'    => url('/become-seller'),
-            'Privacy Policy'     => url('/privacy'),
-            'Terms & Conditions' => url('/terms'),
-            'Seller Forum'       => url('/seller-forum'),
-            'Seller Tips'        => url('/seller-tips'),
+            'Become a Seller'    => localized_route('become-seller'),
+            'Privacy Policy'     => localized_route('privacy'),
+            'Terms & Conditions' => localized_route('terms'),
+            'Seller Forum'       => localized_route('seller-forum'),
+            'Seller Tips'        => localized_route('seller-tips'),
           ] as $label => $link)
             <li class="mb-2">
               <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
@@ -548,9 +561,9 @@ document.addEventListener('DOMContentLoaded',()=>{
         </h4>
         <ul class="list-unstyled mb-0">
           @foreach([
-            'Buyer Tips'         => url('/buyer-tips'),
-            'Privacy Policy'     => url('/privacy'),
-            'Terms & Conditions' => url('/buyer-terms'),
+            'Buyer Tips'         => localized_route('buyer-tips'),
+            'Privacy Policy'     => localized_route('privacy'),
+            'Terms & Conditions' => localized_route('buyer-terms'),
           ] as $label => $link)
             <li class="mb-2">
               <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
@@ -568,8 +581,8 @@ document.addEventListener('DOMContentLoaded',()=>{
         </h4>
         <ul class="list-unstyled mb-0">
           @foreach([
-            'About ' . config('app.name') => url('/about'),
-            'House Rules & Policy'       => url('/house-policy'),
+            'About ' . config('app.name') => localized_route('about'),
+            'House Rules & Policy'       => localized_route('house-policy'),
           ] as $label => $link)
             <li class="mb-2">
               <a href="{{ $link }}" class="footer-link text-white-50 text-decoration-none">
@@ -587,27 +600,27 @@ document.addEventListener('DOMContentLoaded',()=>{
         </h4>
         <ul class="list-unstyled mb-4">
           <li class="mb-2">
-            <a href="{{ url('/contact') }}" class="footer-link text-white-50 text-decoration-none">
+            <a href="{{ localized_route('contact') }}" class="footer-link text-white-50 text-decoration-none">
               Reach Us
             </a>
           </li>
           <li class="mb-2">
-            <a href="{{ url('/refunds-returns') }}" class="footer-link text-white-50 text-decoration-none">
+            <a href="{{ localized_route('refunds-returns') }}" class="footer-link text-white-50 text-decoration-none">
               Refund &amp; Returns
             </a>
           </li>
           <li class="mb-2">
-            <a href="{{ url('/shipping-delivery') }}" class="footer-link text-white-50 text-decoration-none">
+            <a href="{{ localized_route('shipping-delivery') }}" class="footer-link text-white-50 text-decoration-none">
               Shipping &amp; Delivery
             </a>
           </li>
           <li class="mb-2">
-            <a href="{{ url('/terms') }}" class="footer-link text-white-50 text-decoration-none">
+            <a href="{{ localized_route('terms') }}" class="footer-link text-white-50 text-decoration-none">
               Terms &amp; Conditions
             </a>
           </li>
           <li class="mb-2">
-            <a href="{{ url('/privacy') }}" class="footer-link text-white-50 text-decoration-none">
+            <a href="{{ localized_route('privacy') }}" class="footer-link text-white-50 text-decoration-none">
               Privacy Policy
             </a>
           </li>

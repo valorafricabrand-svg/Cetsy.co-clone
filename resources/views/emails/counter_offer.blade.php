@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ locale_html_code() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Counter Offer</title>
+    <title>{{ __('emails.counter_offer.subject') }}</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -23,76 +23,76 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>💡 New Counter Offer Available!</h1>
+            <h1>{{ __('emails.counter_offer.title') }}</h1>
         </div>
-        
+
         <div class="content">
-            <p>Hello <strong>{{ $buyer->name }}</strong>,</p>
-            
-            <p>The seller has made a counter offer for the following product:</p>
-            
+            <p>{{ __('emails.counter_offer.greeting', ['name' => $buyer->name]) }}</p>
+
+            <p>{{ __('emails.counter_offer.intro') }}</p>
+
             <div class="product-card">
-                <h3>{{ $product->name }}</h3>
-                <p><strong>Seller:</strong> {{ $seller->name }}</p>
-                <p><strong>Date:</strong> {{ now()->format('d M Y, H:i') }}</p>
+                <h3>{{ $product->localized_name ?? $product->name }}</h3>
+                <p><strong>{{ __('emails.counter_offer.seller_label') }}:</strong> {{ $seller->name }}</p>
+                <p><strong>{{ __('emails.counter_offer.date_label') }}:</strong> {{ now()->translatedFormat('d M Y, H:i') }}</p>
             </div>
-            
+
             <div class="counter-offer-box">
-                <h4>Counter Offer Details</h4>
-                
+                <h4>{{ __('emails.counter_offer.details_heading') }}</h4>
+
                 <div class="comparison">
                     <div class="comparison-item">
-                        <h5>Your Original Offer</h5>
+                        <h5>{{ __('emails.counter_offer.original_offer_label') }}</h5>
                         @php
                             $originalInfo = $counterOffer->extractOriginalOfferInfo();
                         @endphp
                         @if($originalInfo)
                             <p class="original-price">{{ get_currency() }} {{ number_format($originalInfo->offer_price, 2) }}</p>
                         @else
-                            <p class="original-price">Original offer not available</p>
+                            <p class="original-price">{{ __('emails.counter_offer.original_missing') }}</p>
                         @endif
                     </div>
                     <div class="comparison-item">
-                        <h5>Seller's Counter Offer</h5>
+                        <h5>{{ __('emails.counter_offer.counter_offer_label') }}</h5>
                         <p class="new-price">{{ get_currency() }} {{ number_format($counterOffer->offer_price, 2) }}</p>
                     </div>
                 </div>
-                
+
                 @if($counterOffer->seller_notes)
                     <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 6px;">
-                        <h6>Seller's Message:</h6>
+                        <h6>{{ __('emails.counter_offer.seller_message_label') }}:</h6>
                         <p><em>"{{ $counterOffer->seller_notes }}"</em></p>
                     </div>
                 @endif
             </div>
-            
-            <p>You can now:</p>
-            
+
+            <p>{{ __('emails.counter_offer.actions_intro') }}</p>
+
             <ul>
-                <li><strong>Accept</strong> the counter offer if you're happy with the price</li>
-                <li><strong>Decline</strong> the counter offer if it doesn't work for you</li>
-                <li><strong>Make another counter offer</strong> with your preferred price</li>
-                <li><strong>Contact the seller</strong> directly to discuss further</li>
+                <li>{{ __('emails.counter_offer.action_accept') }}</li>
+                <li>{{ __('emails.counter_offer.action_decline') }}</li>
+                <li>{{ __('emails.counter_offer.action_counter') }}</li>
+                <li>{{ __('emails.counter_offer.action_contact') }}</li>
             </ul>
-            
+
             <div style="text-align: center; margin: 30px 0;">
-                <a href="{{ route('listing.show', $product->slug ?? $product->id) }}" class="btn">
-                    Respond to Counter Offer
+                <a href="{{ localized_route('listing.show', $product->slug ?? $product->id) }}" class="btn">
+                    {{ __('emails.counter_offer.cta') }}
                 </a>
             </div>
-            
-            <p><strong>Note:</strong> Counter offers typically have a limited time window, so please respond promptly to avoid missing out on this opportunity.</p>
-            
-            <p>Thank you for using our platform!</p>
-            
-            <p>Best regards,<br>
-            <strong>The {{ config('app.name') }} Team</strong></p>
+
+            <p>{{ __('emails.counter_offer.note') }}</p>
+
+            <p>{{ __('emails.counter_offer.thanks') }}</p>
+
+            <p>{{ __('Regards,') }}<br>
+            <strong>{{ __('emails.counter_offer.signature', ['app' => config('app.name')]) }}</strong></p>
         </div>
-        
+
         <div class="footer">
-            <p>This email was sent to {{ $buyer->email }}</p>
-            <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+            <p>{{ __('emails.counter_offer.sent_to', ['email' => $buyer->email]) }}</p>
+            <p>&copy; {{ date('Y') }} {{ config('app.name') }}. {{ __('All rights reserved.') }}</p>
         </div>
     </div>
 </body>
-</html> 
+</html>

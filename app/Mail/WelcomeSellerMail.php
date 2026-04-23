@@ -2,14 +2,13 @@
 
 namespace App\Mail;
 
+use App\Models\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use App\Models\User;
 
-class WelcomeSellerMail extends Mailable
+class WelcomeSellerMail extends LocalizedMailable
 {
     use Queueable, SerializesModels;
 
@@ -21,6 +20,7 @@ class WelcomeSellerMail extends Mailable
     public function __construct(User $user)
     {
         $this->user = $user;
+        $this->usePreferredLocale($user);
     }
 
     /**
@@ -29,8 +29,9 @@ class WelcomeSellerMail extends Mailable
     public function envelope(): Envelope
     {
         $appName = config('app.name');
+
         return new Envelope(
-            subject: "Welcome to {$appName} — Seller Account",
+            subject: __('emails.welcome_seller.subject', ['app' => $appName]),
         );
     }
 
@@ -57,7 +58,8 @@ class WelcomeSellerMail extends Mailable
     public function build()
     {
         $appName = config('app.name');
-        return $this->subject("Welcome to {$appName} — Seller Account")
+
+        return $this->subject(__('emails.welcome_seller.subject', ['app' => $appName]))
             ->view('emails.welcome_seller')
             ->with([
                 'user' => $this->user,
@@ -65,4 +67,3 @@ class WelcomeSellerMail extends Mailable
             ]);
     }
 }
-

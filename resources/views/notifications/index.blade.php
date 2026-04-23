@@ -365,6 +365,47 @@
         font-weight: 500;
     }
 
+    .load-more-panel {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .load-more-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .load-more-btn {
+        background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 999px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 8px 18px rgba(37, 176, 3, 0.2);
+    }
+
+    .load-more-btn:hover {
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(37, 176, 3, 0.28);
+    }
+
+    .load-more-status {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
     /* Modal */
     .modal-content {
         border-radius: var(--border-radius);
@@ -513,8 +554,14 @@
             width: 100%;
         }
 
+        .load-more-panel {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
         .btn-view,
-        .btn-mark-read {
+        .btn-mark-read,
+        .load-more-btn {
             width: 100%;
             justify-content: center;
         }
@@ -588,6 +635,12 @@
     $showBuyerSidebar = auth()->check() && auth()->user()->isBuyer();
     $showSellerSidebar = auth()->check() && auth()->user()->isSeller();
     $hasSidebar = $showBuyerSidebar || $showSellerSidebar;
+    $notificationsIndexUrl = request()->url();
+    $markAllReadUrl = request()->routeIs('seller.*') && \Illuminate\Support\Facades\Route::has('seller.notifications.mark-all-read')
+        ? route('seller.notifications.mark-all-read')
+        : (request()->routeIs('buyer.*') && \Illuminate\Support\Facades\Route::has('buyer.notifications.mark-all-read')
+            ? route('buyer.notifications.mark-all-read')
+            : route('notifications.mark-all-read'));
 @endphp
 <div class="py-8">
     <div class="mx-auto w-full max-w-7xl px-4 sm:px-6">
@@ -610,8 +663,8 @@
                     <i class="fas fa-bell"></i>
                     Notifications
                 </h1>
-                @if($notifications->where('is_read', false)->count() > 0)
-                    <form method="POST" action="{{ route('notifications.mark-all-read') }}" class="inline-block mark-all-form">
+                @if(($unreadCount ?? 0) > 0)
+                    <form method="POST" action="{{ $markAllReadUrl }}" class="inline-block mark-all-form">
                         @csrf
                         <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition mark-all-btn">
                             <i class="fas fa-check-double mr-1"></i>
@@ -620,10 +673,10 @@
                     </form>
                 @endif
             </div>
-            @if($notifications->where('is_read', false)->count() > 0)
+            @if(($unreadCount ?? 0) > 0)
                 <div class="mt-2">
-                    <small class="opacity-75">
-                        You have {{ $notifications->where('is_read', false)->count() }} unread notifications
+                    <small class="opacity-75" id="unreadNotificationsSummary" data-unread-count="{{ $unreadCount }}">
+                        You have {{ $unreadCount }} unread notifications
                     </small>
                 </div>
             @endif
@@ -633,7 +686,12 @@
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm notifications-card">
             <div class="p-4 sm:p-5 p-0">
                 @if($notifications->count() > 0)
-                    <div class="notification-list">
+                    <div class="notification-list" id="notificationList">
+                        @include('notifications.partials.items', [
+                            'notifications' => $notifications,
+                            'notificationsIndexUrl' => $notificationsIndexUrl,
+                        ])
+                        @if(false)
                         @foreach($notifications as $notification)
                             <div class="notification-item {{ !$notification->is_read ? 'unread' : '' }}" id="notification-{{ $notification->id }}">
                                 @if(!$notification->is_read)
@@ -687,21 +745,46 @@
                                 </div>
                             </div>
                         @endforeach
+                        @endif
                     </div>
                     
-                    <!-- Pagination -->
-                    @if($notifications->hasPages())
-                        <div class="pagination-wrapper">
-                            <div class="flex justify-between items-center">
-                                <div class="pagination-info">
-                                    Showing {{ $notifications->firstItem() }} to {{ $notifications->lastItem() }} 
-                                    of {{ $notifications->total() }} notifications
+                    <div class="pagination-wrapper" id="loadMoreWrapper">
+                        <div class="load-more-panel">
+                            <div class="load-more-summary">
+                                <div class="pagination-info" id="notificationsProgressText">
+                                    Showing {{ $notifications->lastItem() ?? 0 }} of {{ $notifications->total() }} notifications
                                 </div>
-                                <div>
-                                    {{ $notifications->links("pagination::tailwind") }}
+                                <div class="load-more-status" id="loadMoreStatusText">
+                                    @if($notifications->hasMorePages())
+                                        {{ $notifications->total() - ($notifications->lastItem() ?? 0) }} more notifications available
+                                    @else
+                                        All notifications are loaded
+                                    @endif
                                 </div>
                             </div>
+                            <button type="button"
+                                    class="load-more-btn {{ $notifications->hasMorePages() ? '' : 'hidden' }}"
+                                    id="loadMoreNotificationsBtn"
+                                    data-next-page-url="{{ $notifications->nextPageUrl() }}">
+                                <i class="fas fa-plus-circle"></i>
+                                Load more notifications
+                            </button>
                         </div>
+                    </div>
+                    @if(false)
+                        @if($notifications->hasPages())
+                            <div class="pagination-wrapper">
+                                <div class="flex justify-between items-center">
+                                    <div class="pagination-info">
+                                        Showing {{ $notifications->firstItem() }} to {{ $notifications->lastItem() }} 
+                                        of {{ $notifications->total() }} notifications
+                                    </div>
+                                    <div>
+                                        {{ $notifications->links("pagination::tailwind") }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     @endif
                 @else
                     <div class="empty-state">
@@ -765,7 +848,18 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentNotificationId = null;
     let currentButton = null;
     let currentListItem = null;
+    let unreadSummary = document.getElementById('unreadNotificationsSummary');
+    let markAllForm = document.querySelector('.mark-all-form');
     const markReadModal = document.getElementById('markReadModal');
+    const markReadForm = document.getElementById('markReadForm');
+    const notificationDescription = document.getElementById('notificationDescription');
+    const notificationList = document.getElementById('notificationList');
+    const loadMoreButton = document.getElementById('loadMoreNotificationsBtn');
+    const progressText = document.getElementById('notificationsProgressText');
+    const loadMoreStatusText = document.getElementById('loadMoreStatusText');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const markReadBaseUrl = @json(rtrim($notificationsIndexUrl, '/'));
+    let isLoadingMore = false;
 
     const openMarkReadModal = () => {
         if (!markReadModal) return;
@@ -782,90 +876,241 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         markReadModal.dispatchEvent(new Event('hidden.bs.modal'));
     };
-    
-    // Success toast function
+
+    const removeMarkAllForm = () => {
+        if (!markAllForm) return;
+
+        const formToRemove = markAllForm;
+        markAllForm = null;
+        formToRemove.style.transform = 'scale(0)';
+        formToRemove.style.opacity = '0';
+        setTimeout(() => formToRemove.remove(), 300);
+    };
+
+    const removeUnreadSummary = () => {
+        if (!unreadSummary) return;
+
+        const summaryElement = unreadSummary;
+        const summaryContainer = summaryElement.parentElement;
+        unreadSummary = null;
+
+        if (summaryContainer) {
+            summaryContainer.style.transform = 'scale(0.98)';
+            summaryContainer.style.opacity = '0';
+            setTimeout(() => summaryContainer.remove(), 300);
+            return;
+        }
+
+        summaryElement.remove();
+    };
+
+    const syncUnreadSummary = (count) => {
+        const normalizedCount = Math.max(0, Number(count) || 0);
+
+        if (unreadSummary) {
+            unreadSummary.dataset.unreadCount = String(normalizedCount);
+            unreadSummary.textContent = normalizedCount > 0
+                ? `You have ${normalizedCount} unread notification${normalizedCount === 1 ? '' : 's'}`
+                : 'You have no unread notifications';
+        }
+
+        if (normalizedCount === 0) {
+            removeUnreadSummary();
+            removeMarkAllForm();
+        }
+    };
+
+    const decrementUnreadSummary = () => {
+        if (!unreadSummary) {
+            removeMarkAllForm();
+            return;
+        }
+
+        const currentUnreadCount = Number(unreadSummary.dataset.unreadCount || '0');
+        syncUnreadSummary(currentUnreadCount - 1);
+    };
+
+    const updateLoadMoreSummary = (shownCount, totalCount, hasMorePages, nextPageUrl = '') => {
+        const normalizedShownCount = Math.max(0, Number(shownCount) || 0);
+        const normalizedTotalCount = Math.max(0, Number(totalCount) || 0);
+        const remainingCount = Math.max(normalizedTotalCount - normalizedShownCount, 0);
+
+        if (progressText) {
+            progressText.textContent = `Showing ${Math.min(normalizedShownCount, normalizedTotalCount)} of ${normalizedTotalCount} notifications`;
+        }
+
+        if (loadMoreStatusText) {
+            loadMoreStatusText.textContent = hasMorePages
+                ? `${remainingCount} more notification${remainingCount === 1 ? '' : 's'} available`
+                : 'All notifications are loaded';
+        }
+
+        if (loadMoreButton) {
+            loadMoreButton.dataset.nextPageUrl = nextPageUrl || '';
+            loadMoreButton.classList.toggle('hidden', !hasMorePages || !nextPageUrl);
+        }
+    };
+
+    const loadMoreNotifications = async (nextPageUrl) => {
+        if (!nextPageUrl || !notificationList || !loadMoreButton || isLoadingMore) {
+            return;
+        }
+
+        isLoadingMore = true;
+        const originalButtonHtml = loadMoreButton.innerHTML;
+        loadMoreButton.classList.add('btn-loading');
+        loadMoreButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Loading...';
+        loadMoreButton.disabled = true;
+
+        try {
+            const response = await fetch(nextPageUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Unable to load more notifications (${response.status})`);
+            }
+
+            const payload = await response.json();
+
+            if (payload.html) {
+                notificationList.insertAdjacentHTML('beforeend', payload.html);
+            }
+
+            updateLoadMoreSummary(
+                payload.shown_count ?? notificationList.querySelectorAll('.notification-item').length,
+                payload.total_count ?? notificationList.querySelectorAll('.notification-item').length,
+                Boolean(payload.has_more_pages),
+                payload.next_page_url ?? ''
+            );
+
+            if (payload.unread_count !== undefined) {
+                syncUnreadSummary(payload.unread_count);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showSuccessToast('Error loading more notifications. Please try again.');
+        } finally {
+            isLoadingMore = false;
+            loadMoreButton.classList.remove('btn-loading');
+            loadMoreButton.innerHTML = originalButtonHtml;
+            loadMoreButton.disabled = false;
+        }
+    };
+
     function showSuccessToast(message = 'Notification marked as read successfully!') {
         const toast = document.getElementById('successToast');
         const messageElement = document.getElementById('toastMessage');
-        
+
         messageElement.textContent = message;
         toast.style.display = 'flex';
-        
+
         setTimeout(() => toast.classList.add('show'), 100);
-        
+
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => toast.style.display = 'none', 400);
         }, 4000);
     }
-    
-    // Handle mark as read buttons
-    document.querySelectorAll('.btn-mark-read').forEach(button => {
-        button.addEventListener('click', function(e) {
+
+    document.addEventListener('click', function(e) {
+        const markReadButton = e.target.closest('.btn-mark-read');
+        if (markReadButton) {
             e.preventDefault();
-            
-            currentNotificationId = this.dataset.notificationId;
-            currentButton = this;
+
+            currentNotificationId = markReadButton.dataset.notificationId;
+            currentButton = markReadButton;
             currentListItem = document.getElementById(`notification-${currentNotificationId}`);
-            
-            document.getElementById('notificationDescription').textContent = this.dataset.notificationDescription;
-            document.getElementById('markReadForm').action = `{{ url('/notifications') }}/${currentNotificationId}/mark-read`;
-            
+
+            if (notificationDescription) {
+                notificationDescription.textContent = markReadButton.dataset.notificationDescription;
+            }
+            if (markReadForm) {
+                markReadForm.action = `${markReadBaseUrl}/${currentNotificationId}/mark-read`;
+            }
+
             openMarkReadModal();
-        });
+            return;
+        }
+
+        const loadMoreTrigger = e.target.closest('#loadMoreNotificationsBtn');
+        if (loadMoreTrigger) {
+            e.preventDefault();
+            loadMoreNotifications(loadMoreTrigger.dataset.nextPageUrl);
+            return;
+        }
+
+        const dismissTrigger = e.target.closest('[data-ui-dismiss="modal"]');
+        if (dismissTrigger && markReadModal?.classList.contains('is-open')) {
+            e.preventDefault();
+            closeMarkReadModal();
+        }
     });
-    
-    // Handle form submission
-    document.getElementById('markReadForm').addEventListener('submit', function(e) {
+
+    markReadModal?.addEventListener('click', function(e) {
+        if (e.target === markReadModal) {
+            closeMarkReadModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && markReadModal?.classList.contains('is-open')) {
+            closeMarkReadModal();
+        }
+    });
+
+    markReadForm?.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalHTML = submitBtn.innerHTML;
         submitBtn.classList.add('btn-loading');
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Processing...';
         submitBtn.disabled = true;
-        
+
         fetch(this.action, {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-CSRF-TOKEN': csrfToken,
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Unable to mark notification as read (${response.status})`);
+            }
+
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                // Animate and remove elements
-                const badge = currentListItem.querySelector('.new-badge');
+                const badge = currentListItem?.querySelector('.new-badge');
                 if (badge) {
                     badge.style.transform = 'scale(0)';
                     badge.style.opacity = '0';
                     setTimeout(() => badge.remove(), 300);
                 }
-                
-                currentButton.style.transform = 'scale(0)';
-                currentButton.style.opacity = '0';
-                setTimeout(() => currentButton.remove(), 300);
-                
-                currentListItem.querySelector('.notification-text')?.classList.remove('unread');
-                currentListItem.querySelector('.notification-icon')?.classList.remove('unread');
-                currentListItem.classList.remove('unread');
-                
-                closeMarkReadModal();
-                
-                showSuccessToast();
-                
-                // Update stats
-                const unreadCount = document.querySelectorAll('.notification-item.unread').length;
-                if (unreadCount === 0) {
-                    const markAllBtn = document.querySelector('.mark-all-form');
-                    if (markAllBtn) {
-                        markAllBtn.style.transform = 'scale(0)';
-                        markAllBtn.style.opacity = '0';
-                        setTimeout(() => markAllBtn.remove(), 300);
-                    }
+
+                if (currentButton) {
+                    currentButton.style.transform = 'scale(0)';
+                    currentButton.style.opacity = '0';
+                    setTimeout(() => currentButton.remove(), 300);
                 }
+
+                currentListItem?.querySelector('.notification-text')?.classList.remove('unread');
+                currentListItem?.querySelector('.notification-icon')?.classList.remove('unread');
+                currentListItem?.classList.remove('unread');
+
+                closeMarkReadModal();
+                showSuccessToast();
+                decrementUnreadSummary();
             }
         })
         .catch(error => {
@@ -878,28 +1123,34 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = false;
         });
     });
-    
-    // Handle mark all as read
-    const markAllForm = document.querySelector('.mark-all-form');
+
     if (markAllForm) {
         markAllForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalHTML = submitBtn.innerHTML;
             submitBtn.classList.add('btn-loading');
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Processing...';
             submitBtn.disabled = true;
-            
+
             fetch(this.action, {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-CSRF-TOKEN': csrfToken,
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Unable to mark all notifications as read (${response.status})`);
+                }
+
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     showSuccessToast('All notifications marked as read!');
@@ -915,9 +1166,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    
-    // Reset modal state
-    document.getElementById('markReadModal').addEventListener('hidden.bs.modal', function() {
+
+    markReadModal?.addEventListener('hidden.bs.modal', function() {
         currentNotificationId = null;
         currentButton = null;
         currentListItem = null;
@@ -926,9 +1176,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
-
-
-
-
-
-

@@ -11,14 +11,35 @@ use Illuminate\Support\Str;
 
 class NotificationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
-        $notifications = Activity::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $notificationQuery = Activity::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc');
 
-        return view('notifications.index', compact('notifications'));
+        $notifications = (clone $notificationQuery)
+            ->paginate(20)
+            ->withQueryString();
+
+        $unreadCount = (clone $notificationQuery)
+            ->where('is_read', false)
+            ->count();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'html' => view('notifications.partials.items', [
+                    'notifications' => $notifications,
+                    'notificationsIndexUrl' => $request->url(),
+                ])->render(),
+                'next_page_url' => $notifications->nextPageUrl(),
+                'has_more_pages' => $notifications->hasMorePages(),
+                'shown_count' => $notifications->lastItem() ?? 0,
+                'total_count' => $notifications->total(),
+                'unread_count' => $unreadCount,
+            ]);
+        }
+
+        return view('notifications.index', compact('notifications', 'unreadCount'));
     }
 
     public function markAsRead(Request $request, $id)

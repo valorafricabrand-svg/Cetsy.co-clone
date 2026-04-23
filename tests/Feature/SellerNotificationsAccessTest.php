@@ -104,5 +104,38 @@ class SellerNotificationsAccessTest extends TestCase
         $resp->assertSessionHas('success');
         $this->assertTrue($activity->fresh()->is_read);
     }
-}
 
+    public function test_seller_notifications_ajax_returns_load_more_payload()
+    {
+        [$user, $shop] = $this->makeSellerWithShop();
+
+        foreach (range(1, 25) as $index) {
+            Activity::create([
+                'user_id' => $user->id,
+                'is_read' => $index > 3,
+                'description' => "Notification {$index}",
+                'type' => Activity::TYPE_GENERAL,
+                'created_at' => now()->subMinutes($index),
+                'updated_at' => now()->subMinutes($index),
+            ]);
+        }
+
+        $this->actingAs($user);
+
+        $response = $this->getJson(route('seller.notifications.index', ['page' => 2]));
+
+        $response->assertOk()
+            ->assertJson([
+                'has_more_pages' => false,
+                'shown_count' => 25,
+                'total_count' => 25,
+                'unread_count' => 3,
+            ]);
+
+        $payload = $response->json();
+
+        $this->assertNull($payload['next_page_url']);
+        $this->assertStringContainsString('Notification 21', $payload['html']);
+        $this->assertStringNotContainsString('Notification 20', $payload['html']);
+    }
+}

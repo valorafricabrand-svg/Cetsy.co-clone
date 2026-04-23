@@ -97,7 +97,7 @@
                 aria-controls="navbarVerticalCollapse" aria-expanded="false" aria-label="Toggle Navigation">
                 <span class="navbar-toggle-icon"><span class="toggle-line"></span></span>
             </button>
-            <a class="navbar-brand me-1 me-sm-3" href="{{ url('/') }}">
+            <a class="navbar-brand me-1 me-sm-3" href="{{ localized_route('home') }}">
                 <div class="d-flex align-items-center">
                     @php
                       $__logo = logo_url();
@@ -157,7 +157,10 @@
             @php
                 $currentLocale = current_locale();
                 $localeOptions = supported_locales();
-                $localeRedirect = url()->full();
+                $localeRedirect = localized_current_url();
+                $localeRedirects = collect(array_keys($localeOptions))
+                    ->mapWithKeys(fn ($localeCode) => [$localeCode => localized_current_url($localeCode)])
+                    ->all();
             @endphp
             <li class="nav-item me-2 dropdown">
                 <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ __('Change language') }}">
@@ -172,7 +175,7 @@
                     <ul class="list-unstyled mb-0">
                         @foreach($localeOptions as $localeCode => $localeMeta)
                             <li>
-                                <a class="dropdown-item d-flex align-items-center justify-content-between {{ $currentLocale === $localeCode ? 'active' : '' }}" href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $localeRedirect]) }}">
+                                <a class="dropdown-item d-flex align-items-center justify-content-between {{ $currentLocale === $localeCode ? 'active' : '' }}" href="{{ route('locale.set', ['locale' => $localeCode, 'redirect' => $localeRedirects[$localeCode] ?? $localeRedirect]) }}">
                                     <span>{{ $localeMeta['native'] ?? strtoupper($localeCode) }}</span>
                                     @if($currentLocale === $localeCode)
                                         <i class="fas fa-check text-success"></i>

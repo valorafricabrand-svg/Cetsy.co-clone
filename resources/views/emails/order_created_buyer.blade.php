@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ locale_html_code() }}">
 <head>
     <meta charset="utf-8">
-    <title>Order Confirmation</title>
+    <title>{{ __('emails.order_created_buyer.subject', ['order' => $order->id]) }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -71,43 +71,43 @@
 </head>
 <body>
     <div class="header">
-        <h2>✅ Order Confirmed!</h2>
-        <p>Order #{{ $order->id }} - Payment Required</p>
+        <h2>{{ __('emails.order_created_buyer.title') }}</h2>
+        <p>{{ __('emails.order_created_buyer.subtitle', ['order' => $order->id]) }}</p>
     </div>
 
     <div class="content">
-        <p>Hello <strong>{{ $buyer->name }}</strong>,</p>
+        <p>{{ __('emails.order_created_buyer.greeting', ['name' => $buyer->name]) }}</p>
 
-        <p>Thank you for your order! Your order has been successfully created and is now pending payment.</p>
+        <p>{{ __('emails.order_created_buyer.intro') }}</p>
 
         <div class="order-details">
-            <h3>Order Details:</h3>
-            <p><strong>Order #:</strong> {{ $order->id }}</p>
-            <p><strong>Shop:</strong> {{ $shop->name }}</p>
-            <p><strong>Order Date:</strong> {{ $order->created_at->format('F j, Y \a\t g:i A') }}</p>
-            <p><strong>Order Status:</strong> <span class="warning">{{ ucfirst($order->status) }}</span></p>
+            <h3>{{ __('emails.order_created_buyer.details_heading') }}:</h3>
+            <p><strong>{{ __('emails.order_created_buyer.order_number') }}:</strong> {{ $order->id }}</p>
+            <p><strong>{{ __('emails.order_created_buyer.shop') }}:</strong> {{ $shop->localized_name ?? $shop->name }}</p>
+            <p><strong>{{ __('emails.order_created_buyer.order_date') }}:</strong> {{ $order->created_at->translatedFormat('F j, Y \\a\\t g:i A') }}</p>
+            <p><strong>{{ __('emails.order_created_buyer.status') }}:</strong> <span class="warning">{{ ucfirst($order->status) }}</span></p>
         </div>
 
         <div class="payment-notice">
-            <h4>💳 Payment Required:</h4>
-            <p><strong>To complete your order, please make the payment now.</strong></p>
-            <p><strong>Total Amount:</strong> <span class="highlight">{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</span></p>
-            <p>Your order will be processed and shipped once payment is confirmed.</p>
+            <h4>{{ __('emails.order_created_buyer.payment_heading') }}:</h4>
+            <p><strong>{{ __('emails.order_created_buyer.payment_intro') }}</strong></p>
+            <p><strong>{{ __('emails.order_created_buyer.payment_total') }}:</strong> <span class="highlight">{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</span></p>
+            <p>{{ __('emails.order_created_buyer.payment_processing') }}</p>
         </div>
 
-        <h4>Order Items:</h4>
+        <h4>{{ __('emails.order_created_buyer.items_heading') }}:</h4>
         <ul>
             @foreach($order->items as $item)
-                <li><strong>{{ $item->product->name }}</strong> - Qty: {{ $item->quantity }} - Price: {{ get_currency() }} {{ number_format($item->price, 2) }}</li>
+                <li><strong>{{ $item->product->localized_name ?? $item->product->name }}</strong> - {{ __('emails.order_created_buyer.quantity_price', ['quantity' => $item->quantity, 'price' => get_currency() . ' ' . number_format($item->price, 2)]) }}</li>
             @endforeach
         </ul>
 
-        <h4>Order Summary:</h4>
-        <p><strong>Subtotal:</strong> {{ get_currency() }} {{ number_format($order->subtotal, 2) }}</p>
-        <p><strong>Shipping Cost:</strong> {{ get_currency() }} {{ number_format($order->shipping_cost, 2) }}</p>
-        <p><strong>Total:</strong> <span class="highlight">{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</span></p>
+        <h4>{{ __('emails.order_created_buyer.summary_heading') }}:</h4>
+        <p><strong>{{ __('emails.order_created_buyer.subtotal') }}:</strong> {{ get_currency() }} {{ number_format($order->subtotal, 2) }}</p>
+        <p><strong>{{ __('emails.order_created_buyer.shipping_cost') }}:</strong> {{ get_currency() }} {{ number_format($order->shipping_cost, 2) }}</p>
+        <p><strong>{{ __('emails.order_created_buyer.total') }}:</strong> <span class="highlight">{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</span></p>
 
-        <h4>Shipping Address:</h4>
+        <h4>{{ __('emails.order_created_buyer.shipping_heading') }}:</h4>
         <p>{{ $order->shipping_address_1 }}</p>
         @if($order->shipping_address_2)
             <p>{{ $order->shipping_address_2 }}</p>
@@ -121,33 +121,33 @@
         @endif
 
         @if($order->order_notes)
-            <h4>Order Notes:</h4>
+            <h4>{{ __('emails.order_created_buyer.order_notes') }}:</h4>
             <p>{{ $order->order_notes }}</p>
         @endif
 
         <div style="text-align: center; margin: 20px 0;">
             <a href="{{ route('pay_now', $order->id) }}" class="btn">
-                Pay Now
+                {{ __('emails.order_created_buyer.cta_pay') }}
             </a>
             <a href="{{ route('buyer.orders.show', $order->id) }}" class="btn btn-primary">
-                View Order Details
+                {{ __('emails.order_created_buyer.cta_view') }}
             </a>
         </div>
 
-        <p><strong>What happens next?</strong></p>
+        <p><strong>{{ __('emails.order_created_buyer.next_steps') }}</strong></p>
         <ol>
-            <li>Complete your payment using the "Pay Now" button above</li>
-            <li>Once payment is confirmed, the seller will be notified</li>
-            <li>The seller will process and ship your order</li>
-            <li>You'll receive tracking information when your order ships</li>
+            <li>{{ __('emails.order_created_buyer.step_pay') }}</li>
+            <li>{{ __('emails.order_created_buyer.step_notify') }}</li>
+            <li>{{ __('emails.order_created_buyer.step_ship') }}</li>
+            <li>{{ __('emails.order_created_buyer.step_tracking') }}</li>
         </ol>
 
-        <p><strong>Need help?</strong> If you have any questions about your order or payment, please don't hesitate to contact us.</p>
+        <p>{{ __('emails.order_created_buyer.help') }}</p>
     </div>
 
     <div class="footer">
-        <p>Thank you for shopping with us!</p>
-        <p>Best regards,<br>The Cetsy Team</p>
+        <p>{{ __('emails.order_created_buyer.footer_thanks') }}</p>
+        <p>{{ __('Regards,') }}<br>{{ __('emails.order_created_buyer.footer_signature', ['app' => config('app.name')]) }}</p>
     </div>
 </body>
-</html> 
+</html>

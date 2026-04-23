@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ locale_html_code() }}">
 <head>
     <meta charset="utf-8">
-    <title>New Order Received</title>
+    <title>{{ __('emails.order_created_shop_owner.subject', ['order' => $order->id]) }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -71,80 +71,80 @@
 </head>
 <body>
     <div class="header">
-        <h2>🛒 New Order Received!</h2>
-        <p>Order #{{ $order->id }} - Pending Payment</p>
+        <h2>{{ __('emails.order_created_shop_owner.title') }}</h2>
+        <p>{{ __('emails.order_created_shop_owner.subtitle', ['order' => $order->id]) }}</p>
     </div>
 
     <div class="content">
-        <p>Hello <strong>{{ $shopOwner->name }}</strong>,</p>
+        <p>{{ __('emails.order_created_shop_owner.greeting', ['name' => $shopOwner->name]) }}</p>
 
-        <p>Great news! You've received a new order for your shop <strong>"{{ $shop->name }}"</strong>.</p>
+        <p>{{ __('emails.order_created_shop_owner.intro', ['shop' => $shop->localized_name ?? $shop->name]) }}</p>
 
         <div class="order-details">
-            <h3>Order Details:</h3>
-            <p><strong>Order #:</strong> {{ $order->id }}</p>
-            <p><strong>Customer:</strong> {{ $buyer->name }}</p>
-            <p><strong>Customer Email:</strong> {{ $order->email }}</p>
-            <p><strong>Customer Phone:</strong> {{ $order->phone }}</p>
-            <p><strong>Order Date:</strong> {{ $order->created_at->format('F j, Y \a\t g:i A') }}</p>
-            <p><strong>Order Status:</strong> <span class="warning">{{ ucfirst($order->status) }}</span></p>
+            <h3>{{ __('emails.order_created_shop_owner.details_heading') }}:</h3>
+            <p><strong>{{ __('emails.order_created_shop_owner.order_number') }}:</strong> {{ $order->id }}</p>
+            <p><strong>{{ __('emails.order_created_shop_owner.customer') }}:</strong> {{ $buyer->name }}</p>
+            <p><strong>{{ __('emails.order_created_shop_owner.customer_email') }}:</strong> {{ $order->email }}</p>
+            <p><strong>{{ __('emails.order_created_shop_owner.customer_phone') }}:</strong> {{ $order->phone }}</p>
+            <p><strong>{{ __('emails.order_created_shop_owner.order_date') }}:</strong> {{ $order->created_at->translatedFormat('F j, Y \\a\\t g:i A') }}</p>
+            <p><strong>{{ __('emails.order_created_shop_owner.status') }}:</strong> <span class="warning">{{ ucfirst($order->status) }}</span></p>
         </div>
 
         <div class="payment-notice">
-            <h4>⚠️ Payment Status:</h4>
-            <p><strong>This order is currently pending payment.</strong></p>
-            <p>The customer will need to complete the payment before you can process and ship the order.</p>
-            <p><strong>Total Amount:</strong> <span class="highlight">{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</span></p>
+            <h4>{{ __('emails.order_created_shop_owner.payment_heading') }}:</h4>
+            <p><strong>{{ __('emails.order_created_shop_owner.payment_intro') }}</strong></p>
+            <p>{{ __('emails.order_created_shop_owner.payment_note') }}</p>
+            <p><strong>{{ __('emails.order_created_shop_owner.payment_total') }}:</strong> <span class="highlight">{{ get_currency() }} {{ number_format($order->total_amount, 2) }}</span></p>
         </div>
 
-        <h4>Order Items:</h4>
+        <h4>{{ __('emails.order_created_shop_owner.items_heading') }}:</h4>
         <ul>
             @foreach($order->items as $item)
-                <li><strong>{{ $item->product->name }}</strong> - Qty: {{ $item->quantity }} - Price: {{ get_currency() }} {{ number_format($item->price, 2) }}</li>
+                <li><strong>{{ $item->product->localized_name ?? $item->product->name }}</strong> - {{ __('emails.order_created_shop_owner.quantity_price', ['quantity' => $item->quantity, 'price' => get_currency() . ' ' . number_format($item->price, 2)]) }}</li>
             @endforeach
         </ul>
 
-        <h4>Shipping Information:</h4>
-        <p><strong>Address:</strong> {{ $order->shipping_address_1 }}</p>
+        <h4>{{ __('emails.order_created_shop_owner.shipping_heading') }}:</h4>
+        <p><strong>{{ __('emails.order_created_shop_owner.shipping_address') }}:</strong> {{ $order->shipping_address_1 }}</p>
         @if($order->shipping_address_2)
-            <p><strong>Address 2:</strong> {{ $order->shipping_address_2 }}</p>
+            <p><strong>{{ __('emails.order_created_shop_owner.shipping_address_2') }}:</strong> {{ $order->shipping_address_2 }}</p>
         @endif
-        <p><strong>City:</strong> {{ $order->shipping_city }}</p>
+        <p><strong>{{ __('emails.order_created_shop_owner.shipping_city') }}:</strong> {{ $order->shipping_city }}</p>
         @if($order->shipping_state)
-            <p><strong>State:</strong> {{ $order->shipping_state }}</p>
+            <p><strong>{{ __('emails.order_created_shop_owner.shipping_state') }}:</strong> {{ $order->shipping_state }}</p>
         @endif
         @if($order->shipping_postal_code)
-            <p><strong>Postal Code:</strong> {{ $order->shipping_postal_code }}</p>
+            <p><strong>{{ __('emails.order_created_shop_owner.shipping_postal') }}:</strong> {{ $order->shipping_postal_code }}</p>
         @endif
 
         @if($order->order_notes)
-            <h4>Order Notes:</h4>
+            <h4>{{ __('emails.order_created_shop_owner.order_notes') }}:</h4>
             <p>{{ $order->order_notes }}</p>
         @endif
 
-        <p><strong>Next Steps:</strong></p>
+        <p><strong>{{ __('emails.order_created_shop_owner.next_steps') }}:</strong></p>
         <ul>
-            <li>Wait for the customer to complete payment</li>
-            <li>Once payment is confirmed, you can process the order</li>
-            <li>Prepare the items for shipping</li>
-            <li>Update the order status when shipped</li>
+            <li>{{ __('emails.order_created_shop_owner.step_wait') }}</li>
+            <li>{{ __('emails.order_created_shop_owner.step_process') }}</li>
+            <li>{{ __('emails.order_created_shop_owner.step_prepare') }}</li>
+            <li>{{ __('emails.order_created_shop_owner.step_update') }}</li>
         </ul>
 
         <div style="text-align: center; margin: 20px 0;">
             <a href="{{ route('seller.orders.show', $order->id) }}" class="btn btn-success">
-                View Order Details
+                {{ __('emails.order_created_shop_owner.cta_view') }}
             </a>
             <a href="{{ route('seller.orders.index') }}" class="btn">
-                View All Orders
+                {{ __('emails.order_created_shop_owner.cta_all') }}
             </a>
         </div>
 
-        <p><strong>Important:</strong> Do not ship the order until payment has been confirmed. You will receive another notification when the payment is completed.</p>
+        <p>{{ __('emails.order_created_shop_owner.important') }}</p>
     </div>
 
     <div class="footer">
-        <p>Thank you for being part of our marketplace!</p>
-        <p>Best regards,<br>The Cetsy Team</p>
+        <p>{{ __('emails.order_created_shop_owner.footer_thanks') }}</p>
+        <p>{{ __('Regards,') }}<br>{{ __('emails.order_created_shop_owner.footer_signature', ['app' => config('app.name')]) }}</p>
     </div>
 </body>
-</html> 
+</html>

@@ -4,13 +4,11 @@ namespace App\Mail;
 
 use App\Models\Offer;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class CounterOfferReceivedMail extends Mailable
+class CounterOfferReceivedMail extends LocalizedMailable
 {
     use Queueable, SerializesModels;
 
@@ -19,12 +17,13 @@ class CounterOfferReceivedMail extends Mailable
     public function __construct(Offer $offer)
     {
         $this->offer = $offer;
+        $this->usePreferredLocale($offer->product?->shop?->user, $offer->product?->shop, $offer->product);
     }
 
     public function envelope()
     {
         return new Envelope(
-            subject: 'New Counter Offer Received',
+            subject: __('emails.counter_offer_received.subject'),
         );
     }
 
@@ -39,4 +38,4 @@ class CounterOfferReceivedMail extends Mailable
     {
         return [];
     }
-} 
+}

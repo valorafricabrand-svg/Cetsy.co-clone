@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ locale_html_code() }}">
 <head>
     <meta charset="utf-8">
-    <title>Welcome to {{ $appName }} — Seller</title>
+    <title>{{ __('emails.welcome_seller.subject', ['app' => $appName]) }}</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: #6f42c1; color: #fff; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
@@ -14,28 +14,27 @@
 </head>
 <body>
     <div class="header">
-        <h2>Welcome, Seller!</h2>
-        <p>Your seller account at {{ $appName }} is ready</p>
+        <h2>{{ __('emails.welcome_seller.title') }}</h2>
+        <p>{{ __('emails.welcome_seller.subtitle', ['app' => $appName]) }}</p>
     </div>
     <div class="content">
-        <p>Hello <strong>{{ $user->name }}</strong>,</p>
-        <p>Great to have you on board. You’re just a few steps away from listing your first product and making sales.</p>
+        <p>{{ __('emails.welcome_seller.greeting', ['name' => $user->name]) }}</p>
+        <p>{{ __('emails.welcome_seller.intro') }}</p>
         <div class="notice">
-            <p><strong>Next steps for sellers:</strong></p>
+            <p><strong>{{ __('emails.welcome_seller.next_steps') }}</strong></p>
             <ol>
-                <li>Activate a subscription to start selling</li>
-                <li>Create your shop profile and policies</li>
-                <li>Add products with clear photos and details</li>
+                <li>{{ __('emails.welcome_seller.step_subscription') }}</li>
+                <li>{{ __('emails.welcome_seller.step_profile') }}</li>
+                <li>{{ __('emails.welcome_seller.step_products') }}</li>
             </ol>
         </div>
         <div style="text-align:center;">
-            <a href="{{ route('seller.subscription') }}" class="btn">Activate Subscription</a>
+            <a href="{{ route('seller.subscription') }}" class="btn">{{ __('emails.welcome_seller.cta') }}</a>
         </div>
-        <p>If you didn’t create this account, please contact support immediately.</p>
+        <p>{{ __('emails.welcome_seller.security') }}</p>
     </div>
     <div class="footer">
-        <p>Wishing you great sales!<br>The {{ $appName }} Team</p>
+        <p>{{ __('emails.welcome_seller.footer') }}<br>{{ __('emails.counter_offer.signature', ['app' => $appName]) }}</p>
     </div>
 </body>
 </html>
-

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -17,7 +18,7 @@ use App\Models\Subscription;
 use App\Models\UserPlatformStat;
 use App\Models\PushSubscription;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -274,5 +275,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function pushSubscriptions()
     {
         return $this->hasMany(PushSubscription::class);
+    }
+
+    public function preferredLocale(): ?string
+    {
+        return normalize_locale((string) ($this->preferred_locale ?? '')) ?? default_locale();
     }
 }

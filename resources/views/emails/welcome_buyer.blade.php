@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ locale_html_code() }}">
 <head>
     <meta charset="utf-8">
-    <title>Welcome to {{ $appName }}</title>
+    <title>{{ __('emails.welcome_buyer.subject', ['app' => $appName]) }}</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: #28a745; color: #fff; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
@@ -10,29 +10,28 @@
         .btn { display: inline-block; padding: 10px 16px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 12px; }
         .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef; font-size: 14px; color: #6c757d; }
     </style>
-    </head>
+</head>
 <body>
     <div class="header">
-        <h2>Welcome to {{ $appName }}!</h2>
-        <p>Your buyer account was created successfully</p>
+        <h2>{{ __('emails.welcome_buyer.title', ['app' => $appName]) }}</h2>
+        <p>{{ __('emails.welcome_buyer.subtitle') }}</p>
     </div>
     <div class="content">
-        <p>Hello <strong>{{ $user->name }}</strong>,</p>
-        <p>Thanks for joining {{ $appName }}. You can now browse products, add items to your cart, and place orders with ease.</p>
-        <p>Here are a few quick tips to get started:</p>
+        <p>{{ __('emails.welcome_buyer.greeting', ['name' => $user->name]) }}</p>
+        <p>{{ __('emails.welcome_buyer.intro', ['app' => $appName]) }}</p>
+        <p>{{ __('emails.welcome_buyer.tips_intro') }}</p>
         <ul>
-            <li>Explore trending products and categories</li>
-            <li>Add items to your wishlist to track favorites</li>
-            <li>Message sellers with any product questions</li>
+            <li>{{ __('emails.welcome_buyer.tip_browse') }}</li>
+            <li>{{ __('emails.welcome_buyer.tip_wishlist') }}</li>
+            <li>{{ __('emails.welcome_buyer.tip_message') }}</li>
         </ul>
         <div style="text-align:center;">
-            <a href="{{ url('/') }}" class="btn">Start Shopping</a>
+            <a href="{{ localized_route('home') }}" class="btn">{{ __('emails.welcome_buyer.cta') }}</a>
         </div>
-        <p>If you didn’t create this account, please contact support immediately.</p>
+        <p>{{ __('emails.welcome_buyer.security') }}</p>
     </div>
     <div class="footer">
-        <p>Happy shopping!<br>The {{ $appName }} Team</p>
+        <p>{{ __('emails.welcome_buyer.footer') }}<br>{{ __('emails.counter_offer.signature', ['app' => $appName]) }}</p>
     </div>
 </body>
 </html>
-
