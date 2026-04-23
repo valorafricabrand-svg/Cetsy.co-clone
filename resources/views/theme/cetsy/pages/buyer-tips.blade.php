@@ -1,5 +1,11 @@
 @extends('theme.'.theme().'.layouts.app')
 
+@section('title', 'Cetsy Buyer Tips')
+@section('meta_description', 'Helpful Cetsy buyer tips for choosing sellers, reviewing listings, communicating clearly, and shopping with confidence.')
+@section('canonical_url', route('buyer-tips'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
+
 @section('main')
   <section class="py-10">
     <div class="mx-auto w-full max-w-5xl px-4 sm:px-6">

@@ -4,7 +4,7 @@
 @section('meta_description', 'Browse shops on Cetsy and discover creators offering handmade products, services, and digital goods.')
 @section('canonical_url', route('shops.index'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
-@section('meta_robots', 'index, follow')
+@section('meta_robots', request()->query() ? 'noindex, follow' : 'index, follow')
 
 @php
   $shopsUrl = route('shops.index');

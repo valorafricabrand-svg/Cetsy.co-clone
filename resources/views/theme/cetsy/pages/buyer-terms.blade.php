@@ -1,5 +1,11 @@
 @extends('theme.'.theme().'.layouts.app')
 
+@section('title', 'Buyer Terms and Conditions')
+@section('meta_description', 'Review Cetsy buyer terms covering orders, payments, cancellations, chargebacks, taxes, and marketplace responsibilities.')
+@section('canonical_url', route('buyer-terms'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
+
 @section('main')
   <section class="py-10">
     <div class="mx-auto w-full max-w-5xl px-4 sm:px-6">

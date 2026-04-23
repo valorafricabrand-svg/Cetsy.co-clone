@@ -1,6 +1,10 @@
 @extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Contact Us')
+@section('meta_description', 'Contact Cetsy support for marketplace help, order questions, seller support, policy questions, and general inquiries.')
+@section('canonical_url', route('contact'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
 
 @section('main')
 <div class="relative overflow-x-clip pb-10">

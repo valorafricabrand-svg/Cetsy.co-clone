@@ -3,6 +3,7 @@
 @section('title', 'Cetsy.co Blog')
 @section('meta_description', 'Fresh stories, maker spotlights, and platform updates from the Cetsy.co team.')
 @section('canonical_url', route('blog.index'))
+@section('meta_robots', request()->query() ? 'noindex, follow' : 'index, follow')
 
 @section('main')
 <div class="relative overflow-x-clip pb-10">

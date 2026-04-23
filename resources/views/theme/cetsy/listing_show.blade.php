@@ -21,11 +21,11 @@ $metaImage = $primaryMedia && $primaryMedia->url
 $metaDescription = Str::limit(strip_tags($product->description ?? $product->name), 155);
 
 $productUrl = route('listing.show', $product->slug);
-$schemaCurrency = get_currency();
+$schemaCurrency = 'USD';
 $schemaRawPrice = is_numeric($product->discounted_price ?? null)
     ? (float) $product->discounted_price
     : (float) ($product->price ?? 0);
-$schemaPrice = convert_usd($schemaRawPrice, $schemaCurrency);
+$schemaPrice = $schemaRawPrice;
 $schemaImages = collect([$metaImage])
     ->merge(($product->media ?? collect())->filter(function ($media) {
         return !empty($media->url) && strtolower((string) ($media->type ?? '')) !== 'video';

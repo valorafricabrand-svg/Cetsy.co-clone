@@ -1,5 +1,11 @@
 @extends('theme.'.theme().'.layouts.app')
 
+@section('title', 'Cetsy IP Infringement Policy')
+@section('meta_description', 'Learn how Cetsy handles intellectual property infringement reports, required evidence, and marketplace enforcement.')
+@section('canonical_url', route('cetsyip_policy'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
+
 @section('main')
   <section class="py-10">
     <div class="mx-auto w-full max-w-5xl px-4 sm:px-6">

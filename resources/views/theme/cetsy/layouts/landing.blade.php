@@ -6,6 +6,8 @@
         $metaTitle = trim($__env->yieldContent('title', $siteName . ' | Landing'));
         $metaDescription = trim($__env->yieldContent('meta_description', 'Tailwind landing page for Cetsy.'));
         $canonicalUrl = trim($__env->yieldContent('canonical_url', url()->current()));
+        $metaImage = trim($__env->yieldContent('meta_image', logo_url()));
+        $metaRobots = trim($__env->yieldContent('meta_robots', 'index, follow'));
         $favicon = favicon_url();
     @endphp
 
@@ -17,9 +19,20 @@
     <meta name="application-name" content="{{ $siteName }}">
     <meta name="apple-mobile-web-app-title" content="{{ $siteName }}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="robots" content="{{ $metaRobots }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="{{ $metaDescription }}">
     <link rel="canonical" href="{{ $canonicalUrl }}">
+    <meta property="og:title" content="{{ $metaTitle }}">
+    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $metaImage }}">
+    <meta property="og:site_name" content="{{ $siteName }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $metaTitle }}">
+    <meta name="twitter:description" content="{{ $metaDescription }}">
+    <meta name="twitter:image" content="{{ $metaImage }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ $favicon }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ $favicon }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ $favicon }}">

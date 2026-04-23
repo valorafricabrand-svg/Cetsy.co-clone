@@ -1,6 +1,10 @@
 @extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Seller Policy / Seller Agreement')
+@section('meta_description', 'Review Cetsy seller policy requirements for onboarding, listings, fulfillment, fees, payouts, refunds, and enforcement.')
+@section('canonical_url', route('seller-policy'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
 
 @section('main')
   <section class="py-10">

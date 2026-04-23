@@ -1,5 +1,11 @@
 @extends('theme.'.theme().'.layouts.app')
 
+@section('title', 'Become a Seller on Cetsy')
+@section('meta_description', 'Open a Cetsy shop to sell handmade products, services, and digital downloads to buyers around the world.')
+@section('canonical_url', route('become-seller'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
+
 @section('main')
 <section class="relative overflow-hidden py-10 lg:py-14">
   <div class="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl"></div>
@@ -53,15 +59,8 @@
       </article>
 
       <aside class="rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-emerald-50 p-5 shadow-sm sm:p-7">
-        @php
-          $imgCandidate = public_path('images/become-seller.svg');
-          $imgUrl = file_exists($imgCandidate)
-            ? asset('images/become-seller.svg')
-            : asset('assets/img/blog/blog-1.png');
-        @endphp
-
         <img
-          src="{{ $imgUrl }}"
+          src="{{ asset('assets/img/blog/blog-1.png') }}"
           alt="Become a Seller"
           class="mx-auto h-auto w-full max-w-sm"
           onerror='this.onerror=null;this.src=@json(asset("assets/images/cetsylogmain.png"));'

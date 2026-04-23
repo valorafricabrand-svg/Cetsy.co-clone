@@ -1,5 +1,11 @@
 @extends('theme.'.theme().'.layouts.app')
 
+@section('title', 'Tips for Selling on Cetsy')
+@section('meta_description', 'Practical seller tips for building strong Cetsy listings, communicating with buyers, shipping reliably, and growing a shop.')
+@section('canonical_url', route('seller-tips'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
+
 @section('main')
   <section class="py-10">
     <div class="mx-auto w-full max-w-5xl px-4 sm:px-6">

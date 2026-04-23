@@ -1,5 +1,11 @@
 @extends('theme.'.theme().'.layouts.app')
 
+@section('title', 'Restricted and Prohibited Items')
+@section('meta_description', 'See which items are restricted or prohibited for sale on Cetsy and how compliance, IP, and import rules apply.')
+@section('canonical_url', route('restricted_for_sale'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
+
 @section('main')
   <section class="py-10">
     <div class="mx-auto w-full max-w-5xl px-4 sm:px-6">

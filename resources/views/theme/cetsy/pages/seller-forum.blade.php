@@ -1,5 +1,11 @@
 @extends('theme.'.theme().'.layouts.app')
 
+@section('title', 'Cetsy Seller Forum')
+@section('meta_description', 'Learn about Cetsy seller forum expectations, community participation, seller support, and marketplace discussion guidelines.')
+@section('canonical_url', route('seller-forum'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
+
 @section('main')
   <section class="py-10">
     <div class="mx-auto w-full max-w-5xl px-4 sm:px-6">

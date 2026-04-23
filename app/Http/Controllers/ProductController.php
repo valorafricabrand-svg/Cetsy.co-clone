@@ -915,12 +915,21 @@ public function listing(string $slug)
     };
 
     $product = $listingQuery()->whereSlug($slug)->first();
+    $foundByNumericId = false;
 
     if (! $product && ctype_digit($slug)) {
         $product = $listingQuery()->find((int) $slug);
+        $foundByNumericId = (bool) $product;
     }
 
     abort_if(! $product, 404);
+
+    if ($foundByNumericId) {
+        $canonicalSlug = trim((string) ($product->slug ?? ''));
+        abort_if($canonicalSlug === '', 404);
+
+        return redirect()->route('listing.show', $canonicalSlug, 301);
+    }
 
     // Public visibility: only active listings are publicly viewable.
     // Allow owner and admins to view paused/draft via direct link (preview).

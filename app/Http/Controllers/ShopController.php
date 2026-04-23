@@ -145,6 +145,7 @@ class ShopController extends Controller
     public function publicIndex(Request $request)
     {
         $query = Shop::query()
+            ->where('is_active', true)
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
             ->latest();
@@ -173,8 +174,21 @@ class ShopController extends Controller
     {
         // Accept either slug or numeric ID for backward compatibility
         $shop = Shop::whereSlug($id)->first();
-        if (!$shop) {
-            $shop = Shop::findOrFail($id);
+        $foundByNumericId = false;
+
+        if (!$shop && ctype_digit((string) $id)) {
+            $shop = Shop::findOrFail((int) $id);
+            $foundByNumericId = true;
+        }
+
+        abort_if(! $shop, 404);
+        abort_if(! $shop->isActive(), 404);
+
+        if ($foundByNumericId) {
+            $canonicalSlug = trim((string) ($shop->slug ?? ''));
+            abort_if($canonicalSlug === '', 404);
+
+            return redirect()->route('shop.show', $canonicalSlug, 301);
         }
 
         $products = $shop->products()

@@ -1,5 +1,9 @@
 ﻿@extends('theme.'.theme().'.layouts.app')
 @section('title', 'Cetsy Payments, Settlement & Global Payouts')
+@section('meta_description', 'Understand how Cetsy buyer payments, seller wallet credits, settlement, payout methods, fees, and refunds work.')
+@section('canonical_url', route('payment_policy'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
 
 @section('main')
 <section class="relative overflow-x-clip bg-slate-50 py-10 sm:py-12">

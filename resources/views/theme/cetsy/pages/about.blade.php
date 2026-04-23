@@ -1,5 +1,11 @@
 @extends('theme.'.theme().'.layouts.app')
 
+@section('title', 'About Cetsy')
+@section('meta_description', 'Learn about Cetsy, a global marketplace for handmade products, services, and digital downloads from independent sellers.')
+@section('canonical_url', route('about'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
+
 @section('main')
 @php
   $__about = App\Models\PolicySection::where('slug','about-cetsy')->first();
@@ -130,18 +136,18 @@
           <div class="grid grid-cols-2 gap-3">
             <div class="about-reveal">
               <div class="about-img-card">
-                <img src="{{ asset('build/assets/images/cetsybout.jpg') }}" alt="Cetsy Boutique" class="h-full w-full object-cover">
+                <img src="{{ asset('assets/images/cetsy_feture_logo.jpg') }}" alt="Cetsy Boutique" class="h-full w-full object-cover">
               </div>
             </div>
             <div class="about-reveal d1">
               <div class="about-img-card">
-                <img src="{{ asset('build/assets/images/cetsyabout3.jpg') }}" alt="About Cetsy" class="h-full w-full object-cover">
+                <img src="{{ asset('assets/img/blog/blog-5.png') }}" alt="About Cetsy" class="h-full w-full object-cover">
               </div>
             </div>
 
             <div class="about-reveal d2 relative col-span-2 mt-1">
               <div class="about-img-card">
-                <img src="{{ asset('build/assets/images/cetsyabout2.jpg') }}" alt="Cetsy Community" class="h-64 w-full object-cover">
+                <img src="{{ asset('assets/img/blog/blog-6.png') }}" alt="Cetsy Community" class="h-64 w-full object-cover">
               </div>
 
               <div class="absolute -right-2 -bottom-2 opacity-15">

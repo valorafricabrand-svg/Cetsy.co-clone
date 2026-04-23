@@ -28,6 +28,7 @@
     ?: ('Explore a wide range of ' . $catName . ($category->listing_type ? ' ' . $category->listing_type : ' listings'));
   $metaDescription = Str::limit(strip_tags($desc), 155);
   $categoryUrl = route('category.show', $category->slug);
+  $categoryMetaRobots = request()->query() ? 'noindex, follow' : 'index, follow';
   $categoryListItems = $products->getCollection()
     ->take(24)
     ->values()
@@ -96,7 +97,7 @@
 @section('meta_description', $metaDescription)
 @section('canonical_url', route('category.show', $category->slug))
 @section('meta_image', $banner ?: asset('assets/images/cetsylogmain.png'))
-@section('meta_robots', 'index, follow')
+@section('meta_robots', $categoryMetaRobots)
 
 @push('structured-data')
 <script type="application/ld+json">

@@ -79,9 +79,7 @@ use App\Http\Controllers\Seller\{
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/landing', function () {
-    return view('theme.cetsy.pages.landing');
-})->name('landing');
+Route::redirect('/landing', '/', 301)->name('landing');
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/sitemap-static.xml', [SitemapController::class, 'static'])->name('sitemap.static');
 Route::get('/sitemap-products-{page}.xml', [SitemapController::class, 'products'])

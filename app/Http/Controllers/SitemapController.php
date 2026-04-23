@@ -56,8 +56,10 @@ class SitemapController extends Controller
             $urls[] = compact('loc', 'lastmod', 'changefreq', 'priority');
         };
 
-        $add(url('/'), now()->toAtomString(), 'daily', '1.0');
-        $add(route('listings'), now()->toAtomString(), 'daily', '0.9');
+        $publicProductsLastmod = $this->latestAtomForQuery($this->productsQuery());
+
+        $add(url('/'), $this->homepageLastmod(), 'daily', '1.0');
+        $add(route('listings'), $publicProductsLastmod, 'daily', '0.9');
 
         foreach ([
             ['categories.index', 'weekly', '0.7'],
@@ -162,6 +164,7 @@ class SitemapController extends Controller
     {
         return Product::query()
             ->where('is_active', 1)
+            ->whereHas('shop', fn (Builder $query) => $query->where('is_active', true))
             ->whereNotNull('slug')
             ->where('slug', '!=', '');
     }
@@ -170,7 +173,11 @@ class SitemapController extends Controller
     {
         return Category::query()
             ->whereNotNull('slug')
-            ->where('slug', '!=', '');
+            ->where('slug', '!=', '')
+            ->where(function (Builder $query) {
+                $query->whereHas('products', fn (Builder $productQuery) => $this->activePublicProductFilter($productQuery))
+                    ->orWhereHas('childrenRecursive.products', fn (Builder $productQuery) => $this->activePublicProductFilter($productQuery));
+            });
     }
 
     private function shopsQuery(): Builder
@@ -185,6 +192,25 @@ class SitemapController extends Controller
             ->live()
             ->whereNotNull('slug')
             ->where('slug', '!=', '');
+    }
+
+    private function activePublicProductFilter(Builder $query): Builder
+    {
+        return $query
+            ->where('is_active', 1)
+            ->whereHas('shop', fn (Builder $shopQuery) => $shopQuery->where('is_active', true));
+    }
+
+    private function homepageLastmod(): ?string
+    {
+        return collect([
+            $this->latestAtomForQuery($this->productsQuery()),
+            $this->latestAtomForQuery($this->shopsQuery()),
+            $this->latestAtomForQuery($this->postsQuery()),
+        ])
+            ->filter()
+            ->sortDesc()
+            ->first();
     }
 
     private function staticRouteNames(): array

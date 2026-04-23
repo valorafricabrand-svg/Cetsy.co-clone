@@ -1,5 +1,11 @@
 @extends('theme.'.theme().'.layouts.app')
 
+@section('title', 'Cetsy House Rules and Community Policy')
+@section('meta_description', 'Read Cetsy community rules covering forums, messages, conduct, policy enforcement, and marketplace safety standards.')
+@section('canonical_url', route('house-policy'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
+
 @section('main')
   <section class="py-10">
     <div class="mx-auto w-full max-w-5xl px-4 sm:px-6">

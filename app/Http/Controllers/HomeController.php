@@ -61,7 +61,9 @@ class HomeController extends Controller
         $shopIdOrder = $topShopCounts->pluck('shop_id')->filter()->all();
         if (!empty($shopIdOrder)) {
             $countsMap = $topShopCounts->pluck('completed_orders_count', 'shop_id');
-            $shops = Shop::whereIn('id', $shopIdOrder)->get()
+            $shops = Shop::whereIn('id', $shopIdOrder)
+                ->where('is_active', true)
+                ->get()
                 ->sortBy(function ($shop) use ($shopIdOrder) {
                     return array_search($shop->id, $shopIdOrder);
                 })
@@ -72,7 +74,7 @@ class HomeController extends Controller
             });
         } else {
             // Fallback: latest shops if no completed/delivered orders yet
-            $shops = Shop::latest()->take(8)->get();
+            $shops = Shop::where('is_active', true)->latest()->take(8)->get();
         }
 
         // Highlight a few active deals (for homepage strip)

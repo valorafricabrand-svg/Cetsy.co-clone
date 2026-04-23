@@ -53,6 +53,7 @@
             );
         $metaRobots = trim($__env->yieldContent('meta_robots', $noindexByDefault ? 'noindex, nofollow' : 'index, follow'));
         $favicon = favicon_url();
+        $organizationLogo = logo_url();
         $isSellerArea = request()->is('seller*') || request()->routeIs('products.*');
         $isTailwindPrimaryArea = request()->is('buyer*')
             || request()->is('account*')
@@ -678,7 +679,7 @@
             '@type' => 'Organization',
             'name' => $siteName,
             'url' => $siteUrl,
-            'logo' => $metaImage ?: $favicon,
+            'logo' => $organizationLogo ?: $favicon,
         ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}
     </script>
     @stack('structured-data')

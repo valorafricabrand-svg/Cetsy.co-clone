@@ -4,6 +4,7 @@
 @section('meta_description', 'Discover products, services, and digital downloads from sellers across the globe on Cetsy.')
 @section('canonical_url', route('home'))
 @section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'noindex, follow')
 
 @section('main')
 <div class="landing-shell pb-28 md:pb-10">

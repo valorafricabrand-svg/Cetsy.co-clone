@@ -1,6 +1,10 @@
 @extends('theme.'.theme().'.layouts.app')
 
 @section('title', 'Shipping & Delivery Policy')
+@section('meta_description', 'Review Cetsy shipping and delivery rules covering processing times, shipping options, tracking, customs, delays, and support.')
+@section('canonical_url', route('shipping-delivery'))
+@section('meta_image', setting('logo_url') ?: asset('assets/images/cetsylogmain.png'))
+@section('meta_robots', 'index, follow')
 
 @section('main')
   <section class="py-10">
