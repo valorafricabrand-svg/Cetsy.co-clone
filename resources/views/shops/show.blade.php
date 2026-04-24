@@ -43,6 +43,12 @@
 </style>
 @endpush
 
+@php
+  $shopLanguageLabel = locale_from_language_name($shop->language)
+    ? locale_label(locale_from_language_name($shop->language), false)
+    : ($shop->language ?: 'N/A');
+@endphp
+
 <div class="content">
 
   {{-- Top: Logo + Title + Actions --}}
@@ -263,7 +269,7 @@
           <div class="grid grid-cols-12 gap-4 gap-y-3">
             <div class="col-span-12 flex flex-wrap justify-between gap-2">
               <span class="text-slate-500">Language</span>
-              <span class="fw-medium">{{ $shop->language }}</span>
+              <span class="fw-medium">{{ $shopLanguageLabel }}</span>
             </div>
             <div class="col-span-12 flex flex-wrap justify-between gap-2">
               <span class="text-slate-500">Country</span>
@@ -419,7 +425,6 @@
 
 </div>
 @endsection
-
 
 
 

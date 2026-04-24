@@ -17,6 +17,17 @@ class SetLocale
     public function handle(Request $request, Closure $next): Response
     {
         $cookieName = (string) config('locales.cookie', 'locale');
+        $rawRouteLocale = is_scalar($request->route('locale'))
+            ? strtolower(trim((string) $request->route('locale')))
+            : '';
+
+        if ($rawRouteLocale !== '' && normalize_locale($rawRouteLocale) === null) {
+            if ($redirect = $this->unsupportedLocaleRedirect($request)) {
+                return $redirect;
+            }
+
+            abort(404);
+        }
 
         $locale = null;
 
@@ -26,7 +37,6 @@ class SetLocale
             $request->hasSession() ? $request->session()->get('locale') : null,
             $request->cookie($cookieName),
             auth()->check() ? auth()->user()->preferred_locale : null,
-            config('app.locale'),
         ] as $candidate) {
             $normalized = normalize_locale(is_scalar($candidate) ? (string) $candidate : null);
 
@@ -50,6 +60,36 @@ class SetLocale
         }
 
         return $next($request);
+    }
+
+    /**
+     * Redirect unsupported locale-prefixed URLs back to the canonical base route.
+     */
+    protected function unsupportedLocaleRedirect(Request $request): ?Response
+    {
+        if (! $request->isMethodCacheable()) {
+            return null;
+        }
+
+        $route = $request->route();
+        $routeName = base_route_name($route?->getName());
+
+        if (! $routeName || ! Route::has($routeName)) {
+            return null;
+        }
+
+        $routeParameters = $route->parameters();
+        unset($routeParameters['locale']);
+
+        $target = route($routeName, route_parameters_for($routeName, $routeParameters), true);
+        $query = $request->query();
+        unset($query['lang']);
+
+        if (! empty($query)) {
+            $target .= '?' . Arr::query($query);
+        }
+
+        return redirect()->to($target, 302);
     }
 
     /**

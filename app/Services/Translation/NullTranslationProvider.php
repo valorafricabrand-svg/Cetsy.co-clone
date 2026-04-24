@@ -16,6 +16,11 @@ class NullTranslationProvider implements TranslationProvider
         return false;
     }
 
+    public function translatableLocales(): array
+    {
+        return [];
+    }
+
     public function supports(string $sourceLocale, string $targetLocale): bool
     {
         return false;

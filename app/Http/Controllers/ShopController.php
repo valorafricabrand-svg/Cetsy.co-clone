@@ -12,6 +12,7 @@ use App\Models\Country;
 use App\Models\Activity;
 use App\Models\Subscription;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 
 class ShopController extends Controller
 {
@@ -41,9 +42,15 @@ class ShopController extends Controller
             ? setting_bool('seller_signup_require_logo', false)
             : false;
 
+        if ($request->filled('language')) {
+            $request->merge([
+                'language' => locale_from_language_name((string) $request->input('language')) ?? $request->input('language'),
+            ]);
+        }
+
         $data = $request->validate([
             // 1) Shop preferences
-            'language'         => 'required|string|in:English,Swahili',
+            'language'         => ['required', 'string', Rule::in(array_keys(locale_catalog()))],
             'country'          => 'required|string|exists:countries,id',
             'currency'         => 'required|string',
 
@@ -276,9 +283,15 @@ class ShopController extends Controller
             abort(403, 'You can only edit your own shop.');
         }
 
+        if ($request->filled('language')) {
+            $request->merge([
+                'language' => locale_from_language_name((string) $request->input('language')) ?? $request->input('language'),
+            ]);
+        }
+
         // Validate just the editable fields
         $data = $request->validate([
-            'language'       => 'required|string|in:English,Swahili',
+            'language'       => ['required', 'string', Rule::in(array_keys(locale_catalog()))],
             'country'        => 'required|string|exists:countries,id',
             'currency'       => 'required|string',
             'name'           => 'required|string|max:255',

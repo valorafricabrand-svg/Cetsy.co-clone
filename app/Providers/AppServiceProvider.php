@@ -11,8 +11,8 @@ use App\Observers\ActivityObserver;
 use App\Observers\MessageObserver;
 use App\Observers\ProductObserver;
 use App\Observers\ShopObserver;
-use App\Services\Translation\DeepLTranslationProvider;
 use App\Services\Translation\NullTranslationProvider;
+use App\Services\Translation\TranslationProviderFactory;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
@@ -25,23 +25,12 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(TranslationProvider::class, function () {
-            if (! config('translation.enabled', false)) {
+        $this->app->singleton(TranslationProvider::class, function ($app) {
+            if (! translation_enabled()) {
                 return new NullTranslationProvider('Auto translation is disabled.');
             }
 
-            return match ((string) config('translation.provider', 'deepl')) {
-                'deepl' => new DeepLTranslationProvider(
-                    (string) config('services.deepl.base_url', 'https://api-free.deepl.com'),
-                    (string) config('services.deepl.key', ''),
-                    (int) config('translation.timeout', 20),
-                    (int) config('translation.retries', 2),
-                    (array) config('translation.providers.deepl.locale_map', [])
-                ),
-                default => new NullTranslationProvider(
-                    'Unsupported translation provider [' . config('translation.provider') . '].'
-                ),
-            };
+            return $app->make(TranslationProviderFactory::class)->make();
         });
     }
 
@@ -70,6 +59,10 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production')) {
             URL::forceScheme('https');
         }
+
+        $defaultLocale = default_locale();
+        app()->setLocale($defaultLocale);
+        Carbon::setLocale($defaultLocale);
 
         // Blade directive: @money(123.45) renders formatted converted string
         Blade::directive('money', function ($expression) {

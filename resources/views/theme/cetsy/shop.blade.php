@@ -24,6 +24,9 @@
   $memberSince = $shop->created_at->diffForHumans();
   $averageRating = (float) ($shop->reviews()->avg('rating') ?? 0);
   $reviewCount = (int) $shop->reviews()->count();
+  $shopLanguageLabel = locale_from_language_name($shop->language)
+    ? locale_label(locale_from_language_name($shop->language), false)
+    : ($shop->language ?: 'N/A');
 
   $reviews = $shop->reviews()
     ->with(['user', 'orderItem.product.media'])
@@ -456,7 +459,7 @@
           <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <h3 class="text-sm font-semibold text-slate-900">Shop Details</h3>
             <div class="mt-3 space-y-2 text-sm text-slate-600">
-              <p><strong class="text-slate-900">Language:</strong> {{ $shop->language ?? 'N/A' }}</p>
+              <p><strong class="text-slate-900">Language:</strong> {{ $shopLanguageLabel }}</p>
               <p><strong class="text-slate-900">Country:</strong> {{ country_name($shop->country) }}</p>
               <p><strong class="text-slate-900">Currency:</strong> {{ $shop->currency ?? 'N/A' }}</p>
               <p class="flex items-center gap-2">

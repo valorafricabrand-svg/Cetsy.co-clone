@@ -21,7 +21,7 @@ class ProductObserver
 
     protected function dispatchIfNeeded(Product $product, bool $created = false): void
     {
-        if (! config('translation.auto_translate_on_write', true)) {
+        if (! translation_auto_translate_on_write()) {
             return;
         }
 
@@ -41,7 +41,7 @@ class ProductObserver
 
         $dispatch = function () use ($product): void {
             TranslateLocalizedContent::dispatch(Product::class, $product->getKey())
-                ->onQueue((string) config('translation.queue', 'default'));
+                ->onQueue(translation_queue_name());
         };
 
         if (! app()->runningUnitTests() && DB::transactionLevel() > 0) {

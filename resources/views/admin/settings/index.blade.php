@@ -158,6 +158,230 @@
       </div>
     </div>
 
+    <!-- ========== MULTILINGUAL SUPPORT ========== -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light fw-semibold">Multilingual Support</div>
+      <div class="card-body">
+        @php
+          $localeCatalog = function_exists('locale_catalog')
+            ? locale_catalog()
+            : ((array) config('locales.catalog', config('locales.supported', ['en' => [], 'sw' => []])));
+          $activeLocales = array_keys(supported_locales());
+          $defaultLocaleValue = old('default_locale', default_locale());
+          $localeRows = old('locale_rows');
+          if (!is_array($localeRows) || $localeRows === []) {
+            $localeRows = [];
+            foreach ($localeCatalog as $localeCode => $localeMeta) {
+              $localeRows[] = [
+                'code' => $localeCode,
+                'name' => $localeMeta['name'] ?? strtoupper($localeCode),
+                'native' => $localeMeta['native'] ?? ($localeMeta['name'] ?? strtoupper($localeCode)),
+                'html' => $localeMeta['html'] ?? str_replace('_', '-', $localeCode),
+                'og' => $localeMeta['og'] ?? '',
+                'enabled' => in_array($localeCode, $activeLocales, true) ? '1' : '0',
+              ];
+            }
+          }
+          $localeRows = array_values(array_filter($localeRows, 'is_array'));
+          if ($localeRows === []) {
+            $localeRows[] = [
+              'code' => 'en',
+              'name' => 'English',
+              'native' => 'English',
+              'html' => 'en',
+              'og' => 'en_US',
+              'enabled' => '1',
+            ];
+          }
+          $translationEnabledValue = (bool) (int) old('translation_enabled', translation_enabled() ? 1 : 0);
+          $translationOnWriteValue = (bool) (int) old('translation_auto_translate_on_write', translation_auto_translate_on_write() ? 1 : 0);
+          $translationQueueValue = old('translation_queue', translation_queue_name());
+          $translationTimeoutValue = old('translation_timeout', translation_timeout_seconds());
+          $translationRetriesValue = old('translation_retries', translation_retry_count());
+          $translationChunkValue = old('translation_chunk_size', translation_chunk_size());
+        @endphp
+
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+              <div>
+                <label class="form-label mb-0">Supported Languages</label>
+                <div class="form-text">Add, edit, enable, or remove storefront languages here.</div>
+                <div class="form-text">When auto translation is enabled, every catalog language must also be supported by DeepL before the settings can be saved.</div>
+              </div>
+              <button type="button" class="btn btn-outline-primary btn-sm" id="addLocaleRow">
+                Add Language
+              </button>
+            </div>
+
+            <div class="table-responsive border rounded">
+              <table class="table table-sm align-middle mb-0" id="localeRowsTable">
+                <thead class="table-light">
+                  <tr>
+                    <th style="min-width:90px;">Default</th>
+                    <th style="min-width:90px;">Enabled</th>
+                    <th style="min-width:120px;">Code</th>
+                    <th style="min-width:160px;">Name</th>
+                    <th style="min-width:160px;">Native</th>
+                    <th style="min-width:120px;">HTML</th>
+                    <th style="min-width:120px;">OG</th>
+                    <th style="min-width:80px;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="localeRowsBody">
+                  @foreach($localeRows as $index => $row)
+                    @php
+                      $rowCode = strtolower(trim((string) ($row['code'] ?? '')));
+                      $rowName = (string) ($row['name'] ?? '');
+                      $rowNative = (string) ($row['native'] ?? '');
+                      $rowHtml = (string) ($row['html'] ?? '');
+                      $rowOg = (string) ($row['og'] ?? '');
+                      $rowEnabled = (bool) (int) ($row['enabled'] ?? 0);
+                      $rowDefault = $rowCode !== '' && $defaultLocaleValue === $rowCode;
+                    @endphp
+                    <tr data-locale-row>
+                      <td>
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" name="default_locale" value="{{ $rowCode }}" data-locale-default-radio {{ $rowDefault ? 'checked' : '' }}>
+                          <label class="form-check-label small">Default</label>
+                        </div>
+                      </td>
+                      <td>
+                        <input type="hidden" name="locale_rows[{{ $index }}][enabled]" value="0">
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" role="switch" name="locale_rows[{{ $index }}][enabled]" value="1" {{ $rowEnabled ? 'checked' : '' }}>
+                        </div>
+                      </td>
+                      <td>
+                        <input type="text" name="locale_rows[{{ $index }}][code]" value="{{ $rowCode }}" class="form-control form-control-sm @error("locale_rows.$index.code") is-invalid @enderror" placeholder="en" data-locale-code>
+                        @error("locale_rows.$index.code") <div class="invalid-feedback">{{ $message }}</div> @enderror
+                      </td>
+                      <td>
+                        <input type="text" name="locale_rows[{{ $index }}][name]" value="{{ $rowName }}" class="form-control form-control-sm @error("locale_rows.$index.name") is-invalid @enderror" placeholder="English">
+                        @error("locale_rows.$index.name") <div class="invalid-feedback">{{ $message }}</div> @enderror
+                      </td>
+                      <td>
+                        <input type="text" name="locale_rows[{{ $index }}][native]" value="{{ $rowNative }}" class="form-control form-control-sm @error("locale_rows.$index.native") is-invalid @enderror" placeholder="English">
+                        @error("locale_rows.$index.native") <div class="invalid-feedback">{{ $message }}</div> @enderror
+                      </td>
+                      <td>
+                        <input type="text" name="locale_rows[{{ $index }}][html]" value="{{ $rowHtml }}" class="form-control form-control-sm @error("locale_rows.$index.html") is-invalid @enderror" placeholder="en">
+                        @error("locale_rows.$index.html") <div class="invalid-feedback">{{ $message }}</div> @enderror
+                      </td>
+                      <td>
+                        <input type="text" name="locale_rows[{{ $index }}][og]" value="{{ $rowOg }}" class="form-control form-control-sm @error("locale_rows.$index.og") is-invalid @enderror" placeholder="en_US">
+                        @error("locale_rows.$index.og") <div class="invalid-feedback">{{ $message }}</div> @enderror
+                      </td>
+                      <td class="text-center">
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-remove-locale-row>&times;</button>
+                      </td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+            @error('locale_rows') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
+            @error('default_locale') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Enable Auto Translation</label>
+            <input type="hidden" name="translation_enabled" value="0">
+            <div class="form-check form-switch mt-1">
+              <input class="form-check-input" type="checkbox" role="switch" id="translation-enabled"
+                     name="translation_enabled" value="1" {{ $translationEnabledValue ? 'checked' : '' }}>
+              <label class="form-check-label" for="translation-enabled">Enabled</label>
+            </div>
+            <div class="form-text">Automatically translate missing marketplace content when supported.</div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Auto Translate On Save</label>
+            <input type="hidden" name="translation_auto_translate_on_write" value="0">
+            <div class="form-check form-switch mt-1">
+              <input class="form-check-input" type="checkbox" role="switch" id="translation-on-write"
+                     name="translation_auto_translate_on_write" value="1" {{ $translationOnWriteValue ? 'checked' : '' }}>
+              <label class="form-check-label" for="translation-on-write">Enabled</label>
+            </div>
+            <div class="form-text">Queues translation jobs after shop and listing content changes.</div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Translation Queue</label>
+            <input type="text"
+                   name="translation_queue"
+                   class="form-control @error('translation_queue') is-invalid @enderror"
+                   value="{{ $translationQueueValue }}"
+                   placeholder="default">
+            @error('translation_queue') <div class="invalid-feedback">{{ $message }}</div> @enderror
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Request Timeout (seconds)</label>
+            <input type="number"
+                   name="translation_timeout"
+                   class="form-control @error('translation_timeout') is-invalid @enderror"
+                   value="{{ $translationTimeoutValue }}"
+                   min="1" max="120" step="1">
+            @error('translation_timeout') <div class="invalid-feedback">{{ $message }}</div> @enderror
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Retry Attempts</label>
+            <input type="number"
+                   name="translation_retries"
+                   class="form-control @error('translation_retries') is-invalid @enderror"
+                   value="{{ $translationRetriesValue }}"
+                   min="1" max="10" step="1">
+            @error('translation_retries') <div class="invalid-feedback">{{ $message }}</div> @enderror
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Backfill Chunk Size</label>
+            <input type="number"
+                   name="translation_chunk_size"
+                   class="form-control @error('translation_chunk_size') is-invalid @enderror"
+                   value="{{ $translationChunkValue }}"
+                   min="1" max="1000" step="1">
+            <div class="form-text">Used by the translation backfill command for batch scans.</div>
+            @error('translation_chunk_size') <div class="invalid-feedback">{{ $message }}</div> @enderror
+          </div>
+
+          <div class="col-12">
+            <div class="small text-muted">
+              DeepL credentials stay in <code>.env</code> via <code>DEEPL_API_KEY</code> and <code>DEEPL_API_URL</code>.
+              Added languages become available in the storefront immediately, but full UI translation still depends on having language files for that locale.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <template id="localeRowTemplate">
+      <tr data-locale-row>
+        <td>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="default_locale" value="" data-locale-default-radio>
+            <label class="form-check-label small">Default</label>
+          </div>
+        </td>
+        <td>
+          <input type="hidden" data-locale-enabled-hidden value="0">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" value="1" checked>
+          </div>
+        </td>
+        <td><input type="text" class="form-control form-control-sm" placeholder="en" data-locale-code></td>
+        <td><input type="text" class="form-control form-control-sm" placeholder="English" data-locale-name></td>
+        <td><input type="text" class="form-control form-control-sm" placeholder="English" data-locale-native></td>
+        <td><input type="text" class="form-control form-control-sm" placeholder="en" data-locale-html></td>
+        <td><input type="text" class="form-control form-control-sm" placeholder="en_US" data-locale-og></td>
+        <td class="text-center">
+          <button type="button" class="btn btn-outline-danger btn-sm" data-remove-locale-row>&times;</button>
+        </td>
+      </tr>
+    </template>
+
 <!-- ========== PAYMENT, CURRENCY & PAYOUTS ========== -->
   <div class="card shadow-sm mb-4">
     <div class="card-header bg-light fw-semibold">Payment, Currency &amp; Payouts</div>
@@ -675,6 +899,117 @@
       }
       form.classList.add('was-validated');
     }, false);
+  });
+})();
+</script>
+<script>
+(() => {
+  'use strict';
+
+  const body = document.getElementById('localeRowsBody');
+  const addButton = document.getElementById('addLocaleRow');
+  const template = document.getElementById('localeRowTemplate');
+
+  if (!body || !addButton || !template) return;
+
+  let nextIndex = body.querySelectorAll('[data-locale-row]').length;
+
+  function sanitizeLocaleCode(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '');
+  }
+
+  function updateRowBindings(row, index) {
+    const codeInput = row.querySelector('[data-locale-code]');
+    const defaultRadio = row.querySelector('[data-locale-default-radio]');
+    const enabledHidden = row.querySelector('[data-locale-enabled-hidden]');
+    const enabledCheckbox = row.querySelector('input[type="checkbox"][role="switch"]');
+    const nameInput = row.querySelector('[data-locale-name]');
+    const nativeInput = row.querySelector('[data-locale-native]');
+    const htmlInput = row.querySelector('[data-locale-html]');
+    const ogInput = row.querySelector('[data-locale-og]');
+
+    if (codeInput) codeInput.name = `locale_rows[${index}][code]`;
+    if (nameInput) nameInput.name = `locale_rows[${index}][name]`;
+    if (nativeInput) nativeInput.name = `locale_rows[${index}][native]`;
+    if (htmlInput) htmlInput.name = `locale_rows[${index}][html]`;
+    if (ogInput) ogInput.name = `locale_rows[${index}][og]`;
+    if (enabledHidden) enabledHidden.name = `locale_rows[${index}][enabled]`;
+    if (enabledCheckbox) enabledCheckbox.name = `locale_rows[${index}][enabled]`;
+
+    const syncDefaultValue = () => {
+      if (!defaultRadio || !codeInput) return;
+      defaultRadio.value = sanitizeLocaleCode(codeInput.value);
+    };
+
+    if (codeInput) {
+      codeInput.addEventListener('input', syncDefaultValue);
+      syncDefaultValue();
+    }
+  }
+
+  function ensureDefaultSelection() {
+    const radios = Array.from(body.querySelectorAll('[data-locale-default-radio]'));
+    if (radios.some(radio => radio.checked)) return;
+
+    const first = radios[0];
+    if (first) first.checked = true;
+  }
+
+  function addRow(values = {}) {
+    const fragment = template.content.cloneNode(true);
+    const row = fragment.querySelector('[data-locale-row]');
+    const codeInput = row.querySelector('[data-locale-code]');
+    const nameInput = row.querySelector('[data-locale-name]');
+    const nativeInput = row.querySelector('[data-locale-native]');
+    const htmlInput = row.querySelector('[data-locale-html]');
+    const ogInput = row.querySelector('[data-locale-og]');
+    const enabledCheckbox = row.querySelector('input[type="checkbox"][role="switch"]');
+    const defaultRadio = row.querySelector('[data-locale-default-radio]');
+
+    if (codeInput) codeInput.value = values.code || '';
+    if (nameInput) nameInput.value = values.name || '';
+    if (nativeInput) nativeInput.value = values.native || '';
+    if (htmlInput) htmlInput.value = values.html || '';
+    if (ogInput) ogInput.value = values.og || '';
+    if (enabledCheckbox) enabledCheckbox.checked = values.enabled !== false;
+    if (defaultRadio) defaultRadio.checked = !!values.default;
+
+    updateRowBindings(row, nextIndex);
+    nextIndex += 1;
+    body.appendChild(fragment);
+    ensureDefaultSelection();
+  }
+
+  body.querySelectorAll('[data-locale-row]').forEach((row, index) => {
+    updateRowBindings(row, index);
+  });
+  nextIndex = body.querySelectorAll('[data-locale-row]').length;
+  ensureDefaultSelection();
+
+  addButton.addEventListener('click', () => {
+    addRow({ enabled: true });
+  });
+
+  body.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-remove-locale-row]');
+    if (!button) return;
+
+    const rows = body.querySelectorAll('[data-locale-row]');
+    if (rows.length <= 1) {
+      window.alert('At least one language row is required.');
+      return;
+    }
+
+    const row = button.closest('[data-locale-row]');
+    const wasDefault = !!row?.querySelector('[data-locale-default-radio]')?.checked;
+    row?.remove();
+
+    if (wasDefault) {
+      ensureDefaultSelection();
+    }
   });
 })();
 </script>

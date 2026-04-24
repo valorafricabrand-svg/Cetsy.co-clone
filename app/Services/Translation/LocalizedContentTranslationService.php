@@ -16,7 +16,7 @@ class LocalizedContentTranslationService
 
     public function configured(): bool
     {
-        return (bool) config('translation.enabled', false)
+        return translation_enabled()
             && $this->provider->configured();
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Jobs\Admin\RunProductImageOptimization;
 use App\Models\Setting;
+use App\Services\Translation\TranslationProviderFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -111,6 +112,22 @@ class SettingsController extends Controller
         'duplicate_sku_strategy'    => 'nullable|in:append,clear,keep',
         'duplicate_sku_suffix'      => 'nullable|string|max:16',
         'duplicate_sku_random_len'  => 'nullable|integer|min:1|max:12',
+
+        // Multilingual support
+        'default_locale'            => 'required|string',
+        'locale_rows'               => ['required', 'array', 'min:1'],
+        'locale_rows.*.code'        => ['required', 'string', 'regex:/^[A-Za-z]{2,3}(?:[-_][A-Za-z]{2,4})?$/'],
+        'locale_rows.*.name'        => ['required', 'string', 'max:64'],
+        'locale_rows.*.native'      => ['nullable', 'string', 'max:64'],
+        'locale_rows.*.html'        => ['nullable', 'string', 'max:16'],
+        'locale_rows.*.og'          => ['nullable', 'string', 'max:16'],
+        'locale_rows.*.enabled'     => 'nullable|boolean',
+        'translation_enabled'       => 'nullable|boolean',
+        'translation_auto_translate_on_write' => 'nullable|boolean',
+        'translation_queue'         => 'nullable|string|max:64',
+        'translation_timeout'       => 'nullable|integer|min:1|max:120',
+        'translation_retries'       => 'nullable|integer|min:1|max:10',
+        'translation_chunk_size'    => 'nullable|integer|min:1|max:1000',
     ]);
 
     $gatewayValidated = $request->validate([
@@ -145,8 +162,131 @@ class SettingsController extends Controller
         $validated['couriers_json'] = json_encode($lines);
         unset($validated['couriers']);
     }
+    $localeRows = array_values(array_filter((array) ($validated['locale_rows'] ?? []), 'is_array'));
+    $localeCatalog = [];
+    $enabledLocales = [];
+    $seenLocaleCodes = [];
+
+    foreach ($localeRows as $row) {
+        $code = sanitize_locale_code((string) ($row['code'] ?? null));
+        $name = trim((string) ($row['name'] ?? ''));
+
+        if (! $code || $name === '') {
+            continue;
+        }
+
+        if (in_array($code, $seenLocaleCodes, true)) {
+            return back()
+                ->withErrors(['locale_rows' => 'Each language code must be unique.'])
+                ->withInput();
+        }
+
+        $seenLocaleCodes[] = $code;
+        $native = trim((string) ($row['native'] ?? ''));
+        $html = trim((string) ($row['html'] ?? ''));
+        $og = trim((string) ($row['og'] ?? ''));
+
+        $localeCatalog[$code] = [
+            'name' => $name,
+            'native' => $native !== '' ? $native : $name,
+            'html' => $html !== '' ? $html : str_replace('_', '-', $code),
+            'og' => $og !== '' ? $og : str_replace('-', '_', strtoupper($code)),
+        ];
+
+        if ((bool) ($row['enabled'] ?? false)) {
+            $enabledLocales[] = $code;
+        }
+    }
+
+    if ($localeCatalog === []) {
+        return back()
+            ->withErrors(['locale_rows' => 'Add at least one valid language.'])
+            ->withInput();
+    }
+
+    $defaultLocale = sanitize_locale_code((string) ($validated['default_locale'] ?? ''));
+    if (! $defaultLocale || ! isset($localeCatalog[$defaultLocale])) {
+        $defaultLocale = $enabledLocales[0] ?? array_key_first($localeCatalog);
+    }
+
+    if (! $defaultLocale) {
+        return back()
+            ->withErrors(['default_locale' => 'Choose a valid default language.'])
+            ->withInput();
+    }
+
+    if ($enabledLocales === []) {
+        $enabledLocales[] = $defaultLocale;
+    }
+
+    if (! in_array($defaultLocale, $enabledLocales, true)) {
+        array_unshift($enabledLocales, $defaultLocale);
+    }
+
+    $enabledLocales = array_values(array_unique(array_filter($enabledLocales)));
+
+    if ($request->boolean('translation_enabled')) {
+        $provider = app(TranslationProviderFactory::class)->make();
+        $providerName = match ((string) config('translation.provider', 'deepl')) {
+            'deepl' => 'DeepL',
+            default => 'the active translation provider',
+        };
+
+        if (! $provider->configured()) {
+            return back()
+                ->withErrors([
+                    'translation_enabled' => 'Configure ' . $providerName . ' credentials before enabling auto translation.',
+                ])
+                ->withInput();
+        }
+
+        $translatableLocales = array_fill_keys(
+            array_map(
+                static fn (string $locale): string => str_replace('_', '-', strtolower($locale)),
+                $provider->translatableLocales()
+            ),
+            true
+        );
+
+        $unsupportedLocales = [];
+
+        foreach ($localeCatalog as $localeCode => $meta) {
+            $providerLocale = str_replace('_', '-', strtolower($localeCode));
+
+            if (! isset($translatableLocales[$providerLocale])) {
+                $unsupportedLocales[] = sprintf(
+                    '%s (%s)',
+                    (string) ($meta['name'] ?? strtoupper($localeCode)),
+                    $localeCode
+                );
+            }
+        }
+
+        if ($unsupportedLocales !== []) {
+            sort($unsupportedLocales);
+
+            return back()
+                ->withErrors([
+                    'locale_rows' => $providerName . ' cannot auto-translate every language in this catalog: '
+                        . implode(', ', $unsupportedLocales)
+                        . '. Remove those languages or turn off auto translation before saving.',
+                ])
+                ->withInput();
+        }
+    }
+
     // Persisted via key-value fallback below; keep it out of mass update.
-    unset($validated['home_listings_cache_ttl_minutes']);
+    unset(
+        $validated['home_listings_cache_ttl_minutes'],
+        $validated['locale_rows'],
+        $validated['default_locale'],
+        $validated['translation_enabled'],
+        $validated['translation_auto_translate_on_write'],
+        $validated['translation_queue'],
+        $validated['translation_timeout'],
+        $validated['translation_retries'],
+        $validated['translation_chunk_size']
+    );
 
     $setting->update($validated);
 
@@ -190,6 +330,16 @@ class SettingsController extends Controller
         if ($request->has('home_listings_cache_ttl_minutes')) {
             $putSetting('home_listings_cache_ttl_minutes', (int) $request->input('home_listings_cache_ttl_minutes'));
         }
+
+        $putSetting('locale_catalog', json_encode($localeCatalog, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $putSetting('default_locale', $defaultLocale);
+        $putSetting('supported_locales', json_encode($enabledLocales, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $putSetting('translation_enabled', $request->boolean('translation_enabled'));
+        $putSetting('translation_auto_translate_on_write', $request->boolean('translation_auto_translate_on_write'));
+        $putSetting('translation_queue', trim((string) $request->input('translation_queue', 'default')) ?: 'default');
+        $putSetting('translation_timeout', (int) $request->input('translation_timeout', translation_timeout_seconds()));
+        $putSetting('translation_retries', (int) $request->input('translation_retries', translation_retry_count()));
+        $putSetting('translation_chunk_size', (int) $request->input('translation_chunk_size', translation_chunk_size()));
 
         // Payout scheduling
         foreach (['payout_schedule','payout_weekday','payout_month_day'] as $k) {

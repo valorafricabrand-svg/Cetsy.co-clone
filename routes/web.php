@@ -79,10 +79,7 @@ use App\Http\Controllers\Seller\{
 |--------------------------------------------------------------------------
 */
 
-$supportedLocalePattern = implode('|', array_map(
-    static fn (string $locale): string => preg_quote($locale, '/'),
-    array_keys((array) config('locales.supported', ['en' => [], 'sw' => []]))
-));
+$supportedLocalePattern = '[A-Za-z]{2}(?:[-_][A-Za-z]{2,4})?';
 
 Route::pattern('locale', $supportedLocalePattern);
 

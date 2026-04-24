@@ -37,7 +37,7 @@ class BackfillTranslations extends Command
             return self::FAILURE;
         }
 
-        $chunkSize = max(1, (int) ($this->option('chunk') ?: config('translation.chunk_size', 100)));
+        $chunkSize = max(1, (int) ($this->option('chunk') ?: translation_chunk_size()));
         $locales = $this->normalizedLocales();
         $force = (bool) $this->option('force');
         $sync = (bool) $this->option('sync');
@@ -67,7 +67,7 @@ class BackfillTranslations extends Command
                         }
 
                         TranslateLocalizedContent::dispatch($record::class, $record->getKey(), $force, $locales)
-                            ->onQueue((string) config('translation.queue', 'default'));
+                            ->onQueue(translation_queue_name());
                         $queued++;
                     }
                 });

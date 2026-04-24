@@ -2,6 +2,8 @@
 
 @section('main')
 @php
+  $shopLanguageOptions = locale_catalog();
+  $selectedShopLanguage = locale_from_language_name(old('language', $shop->language));
   $primaryContentLocale = shop_primary_locale($shop);
   $translationLocales = content_translation_locales($shop);
 @endphp
@@ -51,9 +53,12 @@
           <div class="col-span-12 md:col-span-4">
             <label for="language" class="mb-1 block text-sm font-medium text-slate-700">Language <span class="text-rose-600">*</span></label>
             <select name="language" id="language" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:ring-emerald-500">
-              <option value="" disabled selected>Select language</option>
-              <option value="English" {{ old('language', $shop->language)=='English'?'selected':'' }}>English</option>
-              <option value="Swahili" {{ old('language', $shop->language)=='Swahili'?'selected':'' }}>Swahili</option>
+              <option value="" disabled {{ $selectedShopLanguage ? '' : 'selected' }}>Select language</option>
+              @foreach($shopLanguageOptions as $localeCode => $localeMeta)
+                <option value="{{ $localeCode }}" {{ $selectedShopLanguage === $localeCode ? 'selected' : '' }}>
+                  {{ $localeMeta['name'] ?? strtoupper($localeCode) }}
+                </option>
+              @endforeach
             </select>
             <div class="mt-1 text-xs text-rose-600">Please select a language.</div>
           </div>

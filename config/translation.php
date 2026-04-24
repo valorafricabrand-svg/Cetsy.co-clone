@@ -10,7 +10,7 @@ return [
     | content will be queued for background translation after save.
     |
     */
-    'enabled' => (bool) env('AUTO_TRANSLATION_ENABLED', false),
+    'enabled' => false,
 
     /*
     |--------------------------------------------------------------------------
@@ -20,18 +20,18 @@ return [
     | Supported providers: deepl
     |
     */
-    'provider' => env('AUTO_TRANSLATION_PROVIDER', 'deepl'),
+    'provider' => 'deepl',
 
     /*
     |--------------------------------------------------------------------------
     | Dispatch Behavior
     |--------------------------------------------------------------------------
     */
-    'auto_translate_on_write' => (bool) env('AUTO_TRANSLATION_ON_WRITE', true),
-    'queue' => env('AUTO_TRANSLATION_QUEUE', 'default'),
-    'timeout' => (int) env('AUTO_TRANSLATION_TIMEOUT', 20),
-    'retries' => (int) env('AUTO_TRANSLATION_RETRIES', 2),
-    'chunk_size' => (int) env('AUTO_TRANSLATION_CHUNK_SIZE', 100),
+    'auto_translate_on_write' => true,
+    'queue' => 'default',
+    'timeout' => 20,
+    'retries' => 2,
+    'chunk_size' => 100,
 
     /*
     |--------------------------------------------------------------------------

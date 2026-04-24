@@ -21,7 +21,7 @@ class ShopObserver
 
     protected function dispatchIfNeeded(Shop $shop, bool $created = false): void
     {
-        if (! config('translation.auto_translate_on_write', true)) {
+        if (! translation_auto_translate_on_write()) {
             return;
         }
 
@@ -41,7 +41,7 @@ class ShopObserver
 
         $dispatch = function () use ($shop): void {
             TranslateLocalizedContent::dispatch(Shop::class, $shop->getKey())
-                ->onQueue((string) config('translation.queue', 'default'));
+                ->onQueue(translation_queue_name());
         };
 
         if (! app()->runningUnitTests() && DB::transactionLevel() > 0) {

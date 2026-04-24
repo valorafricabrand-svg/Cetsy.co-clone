@@ -96,6 +96,102 @@ function logo_url(){
     return asset('assets/images/cetsylogmain.png');
 }
 
+if (! function_exists('sanitize_locale_code')) {
+    /**
+     * Normalize a locale code without requiring it to already exist in the catalog.
+     */
+    function sanitize_locale_code(?string $locale): ?string
+    {
+        if (! is_string($locale)) {
+            return null;
+        }
+
+        $normalized = strtolower(trim($locale));
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        return preg_match('/^[a-z]{2,3}(?:[-_][a-z]{2,4})?$/', $normalized) === 1
+            ? $normalized
+            : null;
+    }
+}
+
+if (! function_exists('locale_catalog')) {
+    /**
+     * Known locale metadata keyed by locale code.
+     *
+     * @return array<string, array<string, string>>
+     */
+    function locale_catalog(): array
+    {
+        $fallback = config('locales.catalog', config('locales.supported', []));
+        $catalog = [];
+
+        try {
+            if (function_exists('setting')) {
+                $raw = setting('locale_catalog', null);
+
+                if (is_string($raw) && trim($raw) !== '') {
+                    $decoded = json_decode($raw, true);
+
+                    if (is_array($decoded)) {
+                        foreach ($decoded as $key => $value) {
+                            $row = is_array($value) ? $value : [];
+                            $localeCode = sanitize_locale_code(is_string($key) ? $key : ($row['code'] ?? null));
+                            $fallbackMeta = is_array($fallback[$localeCode ?? ''] ?? null) ? $fallback[$localeCode] : [];
+
+                            if (! $localeCode) {
+                                continue;
+                            }
+
+                            $name = trim((string) ($row['name'] ?? $fallbackMeta['name'] ?? ''));
+
+                            if ($name === '') {
+                                continue;
+                            }
+
+                            $native = trim((string) ($row['native'] ?? $fallbackMeta['native'] ?? ''));
+                            $html = trim((string) ($row['html'] ?? $fallbackMeta['html'] ?? ''));
+                            $og = trim((string) ($row['og'] ?? $fallbackMeta['og'] ?? ''));
+
+                            $catalog[$localeCode] = [
+                                'name' => $name,
+                                'native' => $native !== '' ? $native : $name,
+                                'html' => $html !== '' ? $html : str_replace('_', '-', $localeCode),
+                                'og' => $og !== '' ? $og : str_replace('-', '_', strtoupper($localeCode)),
+                            ];
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore DB issues and fall back to static config.
+        }
+
+        if ($catalog !== []) {
+            return $catalog;
+        }
+
+        $catalog = $fallback;
+
+        return is_array($catalog) ? $catalog : [];
+    }
+}
+
+if (! function_exists('normalize_known_locale')) {
+    /**
+     * Normalize a locale code against the known locale catalog.
+     */
+    function normalize_known_locale(?string $locale): ?string
+    {
+        $normalized = sanitize_locale_code($locale);
+
+        return $normalized && array_key_exists($normalized, locale_catalog()) ? $normalized : null;
+    }
+}
+
 if (! function_exists('supported_locales')) {
     /**
      * Supported application locales keyed by locale code.
@@ -104,9 +200,51 @@ if (! function_exists('supported_locales')) {
      */
     function supported_locales(): array
     {
-        $locales = config('locales.supported', []);
+        $catalog = locale_catalog();
+        $selectedLocales = [];
 
-        return is_array($locales) ? $locales : [];
+        try {
+            if (function_exists('setting')) {
+                $raw = setting('supported_locales', null);
+
+                if (is_string($raw) && trim($raw) !== '') {
+                    $decoded = json_decode($raw, true);
+                    $values = is_array($decoded)
+                        ? $decoded
+                        : preg_split('/[\s,]+/', $raw, -1, PREG_SPLIT_NO_EMPTY);
+
+                    if (is_array($values)) {
+                        foreach ($values as $value) {
+                            $resolved = normalize_known_locale(is_string($value) ? $value : null);
+
+                            if ($resolved) {
+                                $selectedLocales[] = $resolved;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore DB issues and fall back to static config.
+        }
+
+        $selectedLocales = array_values(array_unique($selectedLocales));
+
+        if ($selectedLocales !== []) {
+            $resolved = [];
+
+            foreach ($selectedLocales as $localeCode) {
+                if (isset($catalog[$localeCode])) {
+                    $resolved[$localeCode] = $catalog[$localeCode];
+                }
+            }
+
+            if ($resolved !== []) {
+                return $resolved;
+            }
+        }
+
+        return $catalog;
     }
 }
 
@@ -132,8 +270,29 @@ if (! function_exists('default_locale')) {
      */
     function default_locale(): string
     {
-        return normalize_locale((string) config('locales.default', config('app.locale', 'en')))
-            ?? 'en';
+        try {
+            $configured = function_exists('setting')
+                ? setting('default_locale', config('locales.default', config('app.locale', 'en')))
+                : config('locales.default', config('app.locale', 'en'));
+
+            $resolved = normalize_locale(is_scalar($configured) ? (string) $configured : null);
+
+            if ($resolved) {
+                return $resolved;
+            }
+        } catch (\Throwable $e) {
+            // Ignore DB issues and fall back to static config.
+        }
+
+        $fallback = normalize_locale((string) config('locales.default', config('app.locale', 'en')));
+
+        if ($fallback) {
+            return $fallback;
+        }
+
+        $supported = array_keys(supported_locales());
+
+        return $supported[0] ?? 'en';
     }
 }
 
@@ -165,8 +324,8 @@ if (! function_exists('locale_label')) {
      */
     function locale_label(?string $locale = null, bool $native = true): string
     {
-        $resolved = normalize_locale($locale) ?? current_locale();
-        $meta = supported_locales()[$resolved] ?? [];
+        $resolved = normalize_known_locale($locale) ?? current_locale();
+        $meta = locale_catalog()[$resolved] ?? [];
 
         if ($native && ! empty($meta['native'])) {
             return (string) $meta['native'];
@@ -186,8 +345,8 @@ if (! function_exists('locale_html_code')) {
      */
     function locale_html_code(?string $locale = null): string
     {
-        $resolved = normalize_locale($locale) ?? current_locale();
-        $meta = supported_locales()[$resolved] ?? [];
+        $resolved = normalize_known_locale($locale) ?? current_locale();
+        $meta = locale_catalog()[$resolved] ?? [];
 
         return (string) ($meta['html'] ?? str_replace('_', '-', $resolved));
     }
@@ -199,8 +358,8 @@ if (! function_exists('locale_og_code')) {
      */
     function locale_og_code(?string $locale = null): string
     {
-        $resolved = normalize_locale($locale) ?? current_locale();
-        $meta = supported_locales()[$resolved] ?? [];
+        $resolved = normalize_known_locale($locale) ?? current_locale();
+        $meta = locale_catalog()[$resolved] ?? [];
 
         return (string) ($meta['og'] ?? 'en_US');
     }
@@ -411,11 +570,23 @@ if (! function_exists('locale_from_language_name')) {
     {
         $normalized = strtolower(trim((string) $language));
 
-        return match ($normalized) {
-            'english' => 'en',
-            'swahili', 'kiswahili' => 'sw',
-            default => normalize_locale($normalized),
-        };
+        if ($normalized === '') {
+            return null;
+        }
+
+        foreach (locale_catalog() as $localeCode => $meta) {
+            $candidates = array_filter([
+                strtolower((string) $localeCode),
+                strtolower((string) ($meta['name'] ?? '')),
+                strtolower((string) ($meta['native'] ?? '')),
+            ]);
+
+            if (in_array($normalized, $candidates, true)) {
+                return (string) $localeCode;
+            }
+        }
+
+        return normalize_known_locale($normalized);
     }
 }
 
@@ -546,6 +717,88 @@ if (! function_exists('content_translation_locales')) {
             fn (string $locale): bool => $includePrimary || $locale !== $primaryLocale,
             ARRAY_FILTER_USE_KEY
         );
+    }
+}
+
+if (! function_exists('translation_enabled')) {
+    /**
+     * Determine whether automatic marketplace translation is enabled.
+     */
+    function translation_enabled(): bool
+    {
+        return function_exists('setting_bool')
+            ? setting_bool('translation_enabled', (bool) config('translation.enabled', false))
+            : (bool) config('translation.enabled', false);
+    }
+}
+
+if (! function_exists('translation_auto_translate_on_write')) {
+    /**
+     * Determine whether translations should be queued after shop/product writes.
+     */
+    function translation_auto_translate_on_write(): bool
+    {
+        return function_exists('setting_bool')
+            ? setting_bool('translation_auto_translate_on_write', (bool) config('translation.auto_translate_on_write', true))
+            : (bool) config('translation.auto_translate_on_write', true);
+    }
+}
+
+if (! function_exists('translation_queue_name')) {
+    /**
+     * Resolve the queue used for translation jobs.
+     */
+    function translation_queue_name(): string
+    {
+        $raw = function_exists('setting')
+            ? setting('translation_queue', config('translation.queue', 'default'))
+            : config('translation.queue', 'default');
+
+        $queue = trim((string) $raw);
+
+        return $queue !== '' ? $queue : 'default';
+    }
+}
+
+if (! function_exists('translation_timeout_seconds')) {
+    /**
+     * Resolve the outbound translation request timeout.
+     */
+    function translation_timeout_seconds(): int
+    {
+        $default = (int) config('translation.timeout', 20);
+        $raw = function_exists('setting') ? setting('translation_timeout', $default) : $default;
+        $value = is_numeric($raw) ? (int) $raw : $default;
+
+        return max(1, $value);
+    }
+}
+
+if (! function_exists('translation_retry_count')) {
+    /**
+     * Resolve the number of translation retries.
+     */
+    function translation_retry_count(): int
+    {
+        $default = (int) config('translation.retries', 2);
+        $raw = function_exists('setting') ? setting('translation_retries', $default) : $default;
+        $value = is_numeric($raw) ? (int) $raw : $default;
+
+        return max(1, $value);
+    }
+}
+
+if (! function_exists('translation_chunk_size')) {
+    /**
+     * Resolve the batch size used by translation backfill scans.
+     */
+    function translation_chunk_size(): int
+    {
+        $default = (int) config('translation.chunk_size', 100);
+        $raw = function_exists('setting') ? setting('translation_chunk_size', $default) : $default;
+        $value = is_numeric($raw) ? (int) $raw : $default;
+
+        return max(1, $value);
     }
 }
 

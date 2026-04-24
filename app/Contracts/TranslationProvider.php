@@ -6,6 +6,14 @@ interface TranslationProvider
 {
     public function configured(): bool;
 
+    /**
+     * Return locale codes that are safe to use as both source and target
+     * languages with this provider.
+     *
+     * @return array<int, string>
+     */
+    public function translatableLocales(): array;
+
     public function supports(string $sourceLocale, string $targetLocale): bool;
 
     /**
