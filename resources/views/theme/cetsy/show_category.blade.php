@@ -24,9 +24,9 @@
   }
 
   $catName = html_entity_decode($category->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-  $desc = $category->description
+  $desc = $category->plain_description
     ?: ('Explore a wide range of ' . $catName . ($category->listing_type ? ' ' . $category->listing_type : ' listings'));
-  $metaDescription = Str::limit(strip_tags($desc), 155);
+  $metaDescription = Str::limit($desc, 155);
   $categoryUrl = localized_route('category.show', $category->slug);
   $categoryMetaRobots = request()->query() ? 'noindex, follow' : 'index, follow';
   $categoryListItems = $products->getCollection()

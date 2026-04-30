@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class LocalizedContentTranslationService
 {
+    /**
+     * @var array<string, bool>
+     */
+    protected array $providerSupportCache = [];
+
     public function __construct(
         protected TranslationProvider $provider
     ) {
@@ -45,17 +50,13 @@ class LocalizedContentTranslationService
             return false;
         }
 
-        foreach ($resolvedFields as $field) {
-            $source = trim((string) $model->getAttribute($field));
+        $preparedFields = $this->preparedSourceFields($model, $resolvedFields);
 
-            if ($source === '') {
-                continue;
-            }
-
+        foreach ($preparedFields as $field => $source) {
             $translations = $model->translationsFor($field);
 
             foreach ($targetLocales as $targetLocale) {
-                if ($targetLocale === $sourceLocale || ! $this->provider->supports($sourceLocale, $targetLocale)) {
+                if (! $this->providerSupports($sourceLocale, $targetLocale)) {
                     continue;
                 }
 
@@ -79,8 +80,15 @@ class LocalizedContentTranslationService
         ?array $locales = null,
         ?array $fields = null
     ): array {
+        /** @var \Illuminate\Database\Eloquent\Builder<Model> $query */
+        $query = $modelClass::query();
+
+        if ($modelClass === Product::class) {
+            $query->with('shop:id,language');
+        }
+
         /** @var Model|null $model */
-        $model = $modelClass::query()->find($modelId);
+        $model = $query->find($modelId);
 
         if (! $model) {
             return [
@@ -128,10 +136,25 @@ class LocalizedContentTranslationService
             return $summary;
         }
 
+        $preparedFields = $this->preparedSourceFields($model, $resolvedFields);
+
+        if ($preparedFields === []) {
+            $summary['skipped'][] = 'nothing_to_translate';
+
+            return $summary;
+        }
+
+        $existingTranslations = [];
+        $containsHtml = $this->containsHtml(array_values($preparedFields));
+
+        foreach (array_keys($preparedFields) as $field) {
+            $existingTranslations[$field] = $model->translationsFor($field);
+        }
+
         $updates = [];
 
         foreach ($targetLocales as $targetLocale) {
-            if ($targetLocale === $sourceLocale || ! $this->provider->supports($sourceLocale, $targetLocale)) {
+            if (! $this->providerSupports($sourceLocale, $targetLocale)) {
                 $summary['skipped'][] = 'unsupported_locale:' . $targetLocale;
                 continue;
             }
@@ -139,16 +162,10 @@ class LocalizedContentTranslationService
             $batchTexts = [];
             $batchFields = [];
 
-            foreach ($resolvedFields as $field) {
-                $source = trim((string) $model->getAttribute($field));
+            foreach ($preparedFields as $field => $source) {
+                $fieldTranslations = $updates[$field] ?? $existingTranslations[$field] ?? [];
 
-                if ($source === '') {
-                    continue;
-                }
-
-                $existingTranslations = $updates[$field] ?? $model->translationsFor($field);
-
-                if (! $force && ! empty($existingTranslations[$targetLocale])) {
+                if (! $force && ! empty($fieldTranslations[$targetLocale])) {
                     continue;
                 }
 
@@ -161,7 +178,7 @@ class LocalizedContentTranslationService
             }
 
             $translatedTexts = $this->provider->translate($batchTexts, $sourceLocale, $targetLocale, [
-                'tag_handling' => $this->containsHtml($batchTexts) ? 'html' : null,
+                'tag_handling' => $containsHtml ? 'html' : null,
             ]);
 
             foreach ($translatedTexts as $index => $translatedText) {
@@ -177,7 +194,7 @@ class LocalizedContentTranslationService
                     continue;
                 }
 
-                $fieldTranslations = $updates[$field] ?? $model->translationsFor($field);
+                $fieldTranslations = $updates[$field] ?? $existingTranslations[$field] ?? [];
                 $fieldTranslations[$targetLocale] = $normalizedText;
                 $updates[$field] = $fieldTranslations;
                 $summary['translated'][] = $field . ':' . $targetLocale;
@@ -263,6 +280,40 @@ class LocalizedContentTranslationService
         }
 
         return null;
+    }
+
+    /**
+     * @param  array<int, string>  $fields
+     * @return array<string, string>
+     */
+    protected function preparedSourceFields(Model $model, array $fields): array
+    {
+        $prepared = [];
+
+        foreach ($fields as $field) {
+            $source = trim((string) $model->getAttribute($field));
+
+            if ($source !== '') {
+                $prepared[$field] = $source;
+            }
+        }
+
+        return $prepared;
+    }
+
+    protected function providerSupports(string $sourceLocale, string $targetLocale): bool
+    {
+        if ($sourceLocale === $targetLocale) {
+            return false;
+        }
+
+        $cacheKey = $sourceLocale . '>' . $targetLocale;
+
+        if (! array_key_exists($cacheKey, $this->providerSupportCache)) {
+            $this->providerSupportCache[$cacheKey] = $this->provider->supports($sourceLocale, $targetLocale);
+        }
+
+        return $this->providerSupportCache[$cacheKey];
     }
 
     /**

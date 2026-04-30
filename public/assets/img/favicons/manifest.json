@@ -12,16 +12,28 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/assets/img/favicons/icon-192x192.png",
+      "src": "/assets/img/favicons/cetsy-pwa-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/assets/img/favicons/icon-512x512.png",
+      "src": "/assets/img/favicons/cetsy-pwa-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/img/favicons/cetsy-pwa-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/img/favicons/cetsy-pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/assets/img/favicons/apple-touch-icon.png",

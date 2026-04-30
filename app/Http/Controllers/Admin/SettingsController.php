@@ -403,6 +403,10 @@ class SettingsController extends Controller
         // swallow - settings table shape varies by install
     }
 
+    if (function_exists('forget_settings_runtime_cache')) {
+        forget_settings_runtime_cache();
+    }
+
     /* ----------------------------------------------------------
      | 4. Redirect with flash                                    |
      ---------------------------------------------------------- */

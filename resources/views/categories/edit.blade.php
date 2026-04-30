@@ -71,16 +71,6 @@
       action="{{ route('admin.categories.update', $category) }}"
       method="POST"
       enctype="multipart/form-data"
-      x-data="{
-        name:'{{ addslashes($category->name) }}',
-        slug:'{{ addslashes($category->slug) }}'
-      }"
-      @input.debounce.500ms="
-        slug = name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g,'-')
-          .replace(/(^-|-$)/g,'')
-      "
     >
       @csrf
       @method('PUT')
@@ -90,7 +80,6 @@
         <label for="name" class="mb-1 block text-sm font-medium text-slate-700">Name</label>
         <input
           id="name"
-          x-model="name"
           name="name"
           type="text"
           class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
@@ -104,7 +93,6 @@
         <label for="slug" class="mb-1 block text-sm font-medium text-slate-700">Slug</label>
         <input
           id="slug"
-          x-model="slug"
           name="slug"
           type="text"
           class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 bg-slate-100"

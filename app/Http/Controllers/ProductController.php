@@ -1311,7 +1311,7 @@ public function payFee(Request $request, Product $product)
     $allowedPlan = $freq === 1 ? 'monthly' : '4months';
 
     $validated = $request->validate([
-        'plan' => ['required', Rule::in([$allowedPlan])],
+        'plan' => ['nullable', Rule::in([$allowedPlan])],
     ]);
 
     $plans = [

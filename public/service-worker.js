@@ -1,5 +1,5 @@
 /* Basic PWA service worker for offline support + web push. */
-const CACHE_NAME = "cetsy-pwa-v3";
+const CACHE_NAME = "cetsy-pwa-v4";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
@@ -181,7 +181,7 @@ function normalizePushPayload(payload) {
     body: payload?.body || "You have a new notification.",
     url: payload?.url || "/notifications",
     tag: payload?.tag || "cetsy-push",
-    icon: payload?.icon || "/assets/images/cetsylogmain.png",
-    badge: payload?.badge || "/favicon.ico",
+    icon: payload?.icon || "/assets/img/favicons/cetsy-pwa-192.png",
+    badge: payload?.badge || "/assets/img/favicons/favicon-32x32.png",
   };
 }

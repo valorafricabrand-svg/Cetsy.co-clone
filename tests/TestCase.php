@@ -10,6 +10,10 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        if (function_exists('forget_settings_runtime_cache')) {
+            forget_settings_runtime_cache();
+        }
+
         if (empty(config('app.key'))) {
             config([
                 'app.key' => 'base64:' . base64_encode(random_bytes(32)),

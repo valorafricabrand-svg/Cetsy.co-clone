@@ -96,6 +96,33 @@ class LocalizedSeoAndMailTest extends TestCase
             ->assertSee('Kikombe cha Kiswahili');
     }
 
+    public function test_category_page_renders_rich_text_category_description_as_plain_text(): void
+    {
+        $category = Category::create([
+            'name' => 'Men Shoes',
+            'slug' => 'men-shoes',
+            'listing_type' => 'products',
+            'description' => '<p>Explore our Men&rsquo;s Shoes collection &mdash; made for daily wear.</p>',
+            'listing_fee' => 0.25,
+            'listing_frequency' => 4,
+        ]);
+
+        $response = $this->get(route('category.show', ['slug' => $category->slug]));
+
+        $expected = html_entity_decode(
+            'Explore our Men&rsquo;s Shoes collection &mdash; made for daily wear.',
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8'
+        );
+
+        $response
+            ->assertOk()
+            ->assertSee($expected)
+            ->assertDontSee('&lt;p&gt;', false)
+            ->assertDontSee('&amp;rsquo;', false)
+            ->assertDontSee('&amp;mdash;', false);
+    }
+
     public function test_locale_prefixed_blog_post_route_renders_the_blog_post_page(): void
     {
         $author = User::factory()->create();

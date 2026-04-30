@@ -174,8 +174,8 @@
                 <div class="p-3">
                   <h3 class="line-clamp-1 text-sm font-bold text-slate-900 group-hover:text-emerald-700">{{ $category->name }}</h3>
                   <p class="mt-1 text-xs text-slate-500">{{ $activeCount }} {{ Str::plural('listing', $activeCount) }}</p>
-                  @if($category->description)
-                    <p class="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{{ Str::limit(strip_tags($category->description), 96) }}</p>
+                  @if($category->plain_description)
+                    <p class="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{{ Str::limit($category->plain_description, 96) }}</p>
                   @endif
                 </div>
               </a>

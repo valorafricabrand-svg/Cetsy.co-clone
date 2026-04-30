@@ -19,6 +19,16 @@ function favicon_url(){
     return asset('assets/img/favicons/favicon-32x32.png');
 }
 
+if (! function_exists('pwa_manifest_url')) {
+    function pwa_manifest_url(): string
+    {
+        $url = asset('assets/img/favicons/manifest.json');
+        $path = public_path('assets/img/favicons/manifest.json');
+
+        return is_file($path) ? $url . '?v=' . filemtime($path) : $url;
+    }
+}
+
 if (! function_exists('storage_rel_path')) {
     /**
      * Strip leading public/storage prefixes and leading slash.
@@ -118,6 +128,79 @@ if (! function_exists('sanitize_locale_code')) {
     }
 }
 
+if (! function_exists('settings_runtime_cache')) {
+    /**
+     * In-process cache for settings schema, values, and derived locale metadata.
+     *
+     * @return array<string, mixed>
+     */
+    function &settings_runtime_cache(): array
+    {
+        static $cache = [
+            'schema' => [],
+            'values' => [],
+            'row_loaded' => false,
+            'row' => null,
+            'derived' => [],
+        ];
+
+        return $cache;
+    }
+}
+
+if (! function_exists('forget_settings_runtime_cache')) {
+    /**
+     * Clear the in-process settings cache after admin updates.
+     */
+    function forget_settings_runtime_cache(): void
+    {
+        $cache =& settings_runtime_cache();
+        $cache = [
+            'schema' => [],
+            'values' => [],
+            'row_loaded' => false,
+            'row' => null,
+            'derived' => [],
+        ];
+    }
+}
+
+if (! function_exists('settings_table_has_column')) {
+    /**
+     * Cache expensive schema checks for the settings table.
+     */
+    function settings_table_has_column(string $column): bool
+    {
+        $cache =& settings_runtime_cache();
+
+        if (! array_key_exists($column, $cache['schema'])) {
+            try {
+                $cache['schema'][$column] = \Illuminate\Support\Facades\Schema::hasColumn('settings', $column);
+            } catch (\Throwable $e) {
+                $cache['schema'][$column] = false;
+            }
+        }
+
+        return (bool) $cache['schema'][$column];
+    }
+}
+
+if (! function_exists('remember_settings_derived')) {
+    /**
+     * Memoize derived settings data for the current PHP process.
+     */
+    function remember_settings_derived(string $key, callable $resolver): mixed
+    {
+        $cache =& settings_runtime_cache();
+
+        if (! array_key_exists($key, $cache['derived'])) {
+            $cache['derived'][$key] = $resolver();
+        }
+
+        return $cache['derived'][$key];
+    }
+}
+
 if (! function_exists('locale_catalog')) {
     /**
      * Known locale metadata keyed by locale code.
@@ -126,57 +209,59 @@ if (! function_exists('locale_catalog')) {
      */
     function locale_catalog(): array
     {
-        $fallback = config('locales.catalog', config('locales.supported', []));
-        $catalog = [];
+        return remember_settings_derived('locale_catalog', function (): array {
+            $fallback = config('locales.catalog', config('locales.supported', []));
+            $catalog = [];
 
-        try {
-            if (function_exists('setting')) {
-                $raw = setting('locale_catalog', null);
+            try {
+                if (function_exists('setting')) {
+                    $raw = setting('locale_catalog', null);
 
-                if (is_string($raw) && trim($raw) !== '') {
-                    $decoded = json_decode($raw, true);
+                    if (is_string($raw) && trim($raw) !== '') {
+                        $decoded = json_decode($raw, true);
 
-                    if (is_array($decoded)) {
-                        foreach ($decoded as $key => $value) {
-                            $row = is_array($value) ? $value : [];
-                            $localeCode = sanitize_locale_code(is_string($key) ? $key : ($row['code'] ?? null));
-                            $fallbackMeta = is_array($fallback[$localeCode ?? ''] ?? null) ? $fallback[$localeCode] : [];
+                        if (is_array($decoded)) {
+                            foreach ($decoded as $key => $value) {
+                                $row = is_array($value) ? $value : [];
+                                $localeCode = sanitize_locale_code(is_string($key) ? $key : ($row['code'] ?? null));
+                                $fallbackMeta = is_array($fallback[$localeCode ?? ''] ?? null) ? $fallback[$localeCode] : [];
 
-                            if (! $localeCode) {
-                                continue;
+                                if (! $localeCode) {
+                                    continue;
+                                }
+
+                                $name = trim((string) ($row['name'] ?? $fallbackMeta['name'] ?? ''));
+
+                                if ($name === '') {
+                                    continue;
+                                }
+
+                                $native = trim((string) ($row['native'] ?? $fallbackMeta['native'] ?? ''));
+                                $html = trim((string) ($row['html'] ?? $fallbackMeta['html'] ?? ''));
+                                $og = trim((string) ($row['og'] ?? $fallbackMeta['og'] ?? ''));
+
+                                $catalog[$localeCode] = [
+                                    'name' => $name,
+                                    'native' => $native !== '' ? $native : $name,
+                                    'html' => $html !== '' ? $html : str_replace('_', '-', $localeCode),
+                                    'og' => $og !== '' ? $og : str_replace('-', '_', strtoupper($localeCode)),
+                                ];
                             }
-
-                            $name = trim((string) ($row['name'] ?? $fallbackMeta['name'] ?? ''));
-
-                            if ($name === '') {
-                                continue;
-                            }
-
-                            $native = trim((string) ($row['native'] ?? $fallbackMeta['native'] ?? ''));
-                            $html = trim((string) ($row['html'] ?? $fallbackMeta['html'] ?? ''));
-                            $og = trim((string) ($row['og'] ?? $fallbackMeta['og'] ?? ''));
-
-                            $catalog[$localeCode] = [
-                                'name' => $name,
-                                'native' => $native !== '' ? $native : $name,
-                                'html' => $html !== '' ? $html : str_replace('_', '-', $localeCode),
-                                'og' => $og !== '' ? $og : str_replace('-', '_', strtoupper($localeCode)),
-                            ];
                         }
                     }
                 }
+            } catch (\Throwable $e) {
+                // Ignore DB issues and fall back to static config.
             }
-        } catch (\Throwable $e) {
-            // Ignore DB issues and fall back to static config.
-        }
 
-        if ($catalog !== []) {
-            return $catalog;
-        }
+            if ($catalog !== []) {
+                return $catalog;
+            }
 
-        $catalog = $fallback;
+            $catalog = $fallback;
 
-        return is_array($catalog) ? $catalog : [];
+            return is_array($catalog) ? $catalog : [];
+        });
     }
 }
 
@@ -200,51 +285,53 @@ if (! function_exists('supported_locales')) {
      */
     function supported_locales(): array
     {
-        $catalog = locale_catalog();
-        $selectedLocales = [];
+        return remember_settings_derived('supported_locales', function (): array {
+            $catalog = locale_catalog();
+            $selectedLocales = [];
 
-        try {
-            if (function_exists('setting')) {
-                $raw = setting('supported_locales', null);
+            try {
+                if (function_exists('setting')) {
+                    $raw = setting('supported_locales', null);
 
-                if (is_string($raw) && trim($raw) !== '') {
-                    $decoded = json_decode($raw, true);
-                    $values = is_array($decoded)
-                        ? $decoded
-                        : preg_split('/[\s,]+/', $raw, -1, PREG_SPLIT_NO_EMPTY);
+                    if (is_string($raw) && trim($raw) !== '') {
+                        $decoded = json_decode($raw, true);
+                        $values = is_array($decoded)
+                            ? $decoded
+                            : preg_split('/[\s,]+/', $raw, -1, PREG_SPLIT_NO_EMPTY);
 
-                    if (is_array($values)) {
-                        foreach ($values as $value) {
-                            $resolved = normalize_known_locale(is_string($value) ? $value : null);
+                        if (is_array($values)) {
+                            foreach ($values as $value) {
+                                $resolved = normalize_known_locale(is_string($value) ? $value : null);
 
-                            if ($resolved) {
-                                $selectedLocales[] = $resolved;
+                                if ($resolved) {
+                                    $selectedLocales[] = $resolved;
+                                }
                             }
                         }
                     }
                 }
+            } catch (\Throwable $e) {
+                // Ignore DB issues and fall back to static config.
             }
-        } catch (\Throwable $e) {
-            // Ignore DB issues and fall back to static config.
-        }
 
-        $selectedLocales = array_values(array_unique($selectedLocales));
+            $selectedLocales = array_values(array_unique($selectedLocales));
 
-        if ($selectedLocales !== []) {
-            $resolved = [];
+            if ($selectedLocales !== []) {
+                $resolved = [];
 
-            foreach ($selectedLocales as $localeCode) {
-                if (isset($catalog[$localeCode])) {
-                    $resolved[$localeCode] = $catalog[$localeCode];
+                foreach ($selectedLocales as $localeCode) {
+                    if (isset($catalog[$localeCode])) {
+                        $resolved[$localeCode] = $catalog[$localeCode];
+                    }
+                }
+
+                if ($resolved !== []) {
+                    return $resolved;
                 }
             }
 
-            if ($resolved !== []) {
-                return $resolved;
-            }
-        }
-
-        return $catalog;
+            return $catalog;
+        });
     }
 }
 
@@ -270,29 +357,31 @@ if (! function_exists('default_locale')) {
      */
     function default_locale(): string
     {
-        try {
-            $configured = function_exists('setting')
-                ? setting('default_locale', config('locales.default', config('app.locale', 'en')))
-                : config('locales.default', config('app.locale', 'en'));
+        return remember_settings_derived('default_locale', function (): string {
+            try {
+                $configured = function_exists('setting')
+                    ? setting('default_locale', config('locales.default', config('app.locale', 'en')))
+                    : config('locales.default', config('app.locale', 'en'));
 
-            $resolved = normalize_locale(is_scalar($configured) ? (string) $configured : null);
+                $resolved = normalize_locale(is_scalar($configured) ? (string) $configured : null);
 
-            if ($resolved) {
-                return $resolved;
+                if ($resolved) {
+                    return $resolved;
+                }
+            } catch (\Throwable $e) {
+                // Ignore DB issues and fall back to static config.
             }
-        } catch (\Throwable $e) {
-            // Ignore DB issues and fall back to static config.
-        }
 
-        $fallback = normalize_locale((string) config('locales.default', config('app.locale', 'en')));
+            $fallback = normalize_locale((string) config('locales.default', config('app.locale', 'en')));
 
-        if ($fallback) {
-            return $fallback;
-        }
+            if ($fallback) {
+                return $fallback;
+            }
 
-        $supported = array_keys(supported_locales());
+            $supported = array_keys(supported_locales());
 
-        return $supported[0] ?? 'en';
+            return $supported[0] ?? 'en';
+        });
     }
 }
 
@@ -726,9 +815,11 @@ if (! function_exists('translation_enabled')) {
      */
     function translation_enabled(): bool
     {
-        return function_exists('setting_bool')
-            ? setting_bool('translation_enabled', (bool) config('translation.enabled', false))
-            : (bool) config('translation.enabled', false);
+        return remember_settings_derived('translation_enabled', function (): bool {
+            return function_exists('setting_bool')
+                ? setting_bool('translation_enabled', (bool) config('translation.enabled', false))
+                : (bool) config('translation.enabled', false);
+        });
     }
 }
 
@@ -738,9 +829,11 @@ if (! function_exists('translation_auto_translate_on_write')) {
      */
     function translation_auto_translate_on_write(): bool
     {
-        return function_exists('setting_bool')
-            ? setting_bool('translation_auto_translate_on_write', (bool) config('translation.auto_translate_on_write', true))
-            : (bool) config('translation.auto_translate_on_write', true);
+        return remember_settings_derived('translation_auto_translate_on_write', function (): bool {
+            return function_exists('setting_bool')
+                ? setting_bool('translation_auto_translate_on_write', (bool) config('translation.auto_translate_on_write', true))
+                : (bool) config('translation.auto_translate_on_write', true);
+        });
     }
 }
 
@@ -750,13 +843,15 @@ if (! function_exists('translation_queue_name')) {
      */
     function translation_queue_name(): string
     {
-        $raw = function_exists('setting')
-            ? setting('translation_queue', config('translation.queue', 'default'))
-            : config('translation.queue', 'default');
+        return remember_settings_derived('translation_queue_name', function (): string {
+            $raw = function_exists('setting')
+                ? setting('translation_queue', config('translation.queue', 'default'))
+                : config('translation.queue', 'default');
 
-        $queue = trim((string) $raw);
+            $queue = trim((string) $raw);
 
-        return $queue !== '' ? $queue : 'default';
+            return $queue !== '' ? $queue : 'default';
+        });
     }
 }
 
@@ -766,11 +861,13 @@ if (! function_exists('translation_timeout_seconds')) {
      */
     function translation_timeout_seconds(): int
     {
-        $default = (int) config('translation.timeout', 20);
-        $raw = function_exists('setting') ? setting('translation_timeout', $default) : $default;
-        $value = is_numeric($raw) ? (int) $raw : $default;
+        return remember_settings_derived('translation_timeout_seconds', function (): int {
+            $default = (int) config('translation.timeout', 20);
+            $raw = function_exists('setting') ? setting('translation_timeout', $default) : $default;
+            $value = is_numeric($raw) ? (int) $raw : $default;
 
-        return max(1, $value);
+            return max(1, $value);
+        });
     }
 }
 
@@ -780,11 +877,13 @@ if (! function_exists('translation_retry_count')) {
      */
     function translation_retry_count(): int
     {
-        $default = (int) config('translation.retries', 2);
-        $raw = function_exists('setting') ? setting('translation_retries', $default) : $default;
-        $value = is_numeric($raw) ? (int) $raw : $default;
+        return remember_settings_derived('translation_retry_count', function (): int {
+            $default = (int) config('translation.retries', 2);
+            $raw = function_exists('setting') ? setting('translation_retries', $default) : $default;
+            $value = is_numeric($raw) ? (int) $raw : $default;
 
-        return max(1, $value);
+            return max(1, $value);
+        });
     }
 }
 
@@ -794,11 +893,13 @@ if (! function_exists('translation_chunk_size')) {
      */
     function translation_chunk_size(): int
     {
-        $default = (int) config('translation.chunk_size', 100);
-        $raw = function_exists('setting') ? setting('translation_chunk_size', $default) : $default;
-        $value = is_numeric($raw) ? (int) $raw : $default;
+        return remember_settings_derived('translation_chunk_size', function (): int {
+            $default = (int) config('translation.chunk_size', 100);
+            $raw = function_exists('setting') ? setting('translation_chunk_size', $default) : $default;
+            $value = is_numeric($raw) ? (int) $raw : $default;
 
-        return max(1, $value);
+            return max(1, $value);
+        });
     }
 }
 
@@ -1256,39 +1357,63 @@ if (! function_exists('setting')) {
      */
     function setting(string $key, $default = null)
     {
-        static $cachedRow = null;
+        $cache =& settings_runtime_cache();
+
+        if (array_key_exists($key, $cache['values'])) {
+            $entry = $cache['values'][$key];
+
+            return ($entry['found'] ?? false) ? ($entry['value'] ?? null) : $default;
+        }
 
         // Try key-value store first if the table uses option_key/option_value
         try {
-            if (\Illuminate\Support\Facades\Schema::hasColumn('settings', 'option_key')) {
+            if (settings_table_has_column('option_key')) {
                 $val = Setting::where('option_key', $key)->value('option_value');
-                if ($val !== null) return $val;
+
+                if ($val !== null) {
+                    $cache['values'][$key] = ['found' => true, 'value' => $val];
+
+                    return $val;
+                }
             }
         } catch (\Throwable $e) {}
 
         // Fallback to column-based single-row model
         try {
-            if (! $cachedRow) {
+            if (! $cache['row_loaded']) {
                 // Prefer a row without option_key if the column exists
-                if (\Illuminate\Support\Facades\Schema::hasColumn('settings', 'option_key')) {
-                    $cachedRow = Setting::whereNull('option_key')->orderByDesc('id')->first();
-                    if (! $cachedRow) {
+                if (settings_table_has_column('option_key')) {
+                    $cache['row'] = Setting::whereNull('option_key')->orderByDesc('id')->first();
+                    if (! $cache['row']) {
                         // Some installs have option_key non-nullable; treat empty key row or a row with null option_value as the "main" settings row.
-                        $cachedRow = Setting::where('option_key', '')->orderByDesc('id')->first();
+                        $cache['row'] = Setting::where('option_key', '')->orderByDesc('id')->first();
                     }
-                    if (! $cachedRow && \Illuminate\Support\Facades\Schema::hasColumn('settings', 'option_value')) {
-                        $cachedRow = Setting::whereNull('option_value')->orderByDesc('id')->first();
+                    if (! $cache['row'] && settings_table_has_column('option_value')) {
+                        $cache['row'] = Setting::whereNull('option_value')->orderByDesc('id')->first();
                     }
                     // If none, fallback to any row
-                    if (! $cachedRow) $cachedRow = Setting::orderByDesc('id')->first();
+                    if (! $cache['row']) {
+                        $cache['row'] = Setting::orderByDesc('id')->first();
+                    }
                 } else {
-                    $cachedRow = Setting::orderByDesc('id')->first();
+                    $cache['row'] = Setting::orderByDesc('id')->first();
+                }
+
+                $cache['row_loaded'] = true;
+            }
+
+            if ($cache['row'] && settings_table_has_column($key)) {
+                $value = $cache['row']->getAttribute($key);
+
+                if ($value !== null) {
+                    $cache['values'][$key] = ['found' => true, 'value' => $value];
+
+                    return $value;
                 }
             }
-            if ($cachedRow && isset($cachedRow->$key)) {
-                return $cachedRow->$key;
-            }
         } catch (\Throwable $e) {}
+
+        $cache['values'][$key] = ['found' => false, 'value' => null];
 
         return $default;
     }

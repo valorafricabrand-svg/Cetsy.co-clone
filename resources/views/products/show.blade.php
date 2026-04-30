@@ -426,7 +426,7 @@
 
                   <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     @foreach($planButtons as $planKey => $option)
-                      <form method="POST" action="{{ route('products.pay-fee', $product) }}" class="w-full sm:w-auto">
+                      <form method="POST" action="{{ route('products.pay-fee.submit', $product) }}" class="w-full sm:w-auto">
                         @csrf
                         <input type="hidden" name="plan" value="{{ $planKey }}">
                         <button class="inline-flex w-full flex-col items-start rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500 sm:w-auto">
@@ -444,7 +444,7 @@
 
                   <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     @foreach($planButtons as $planKey => $option)
-                      <form method="POST" action="{{ route('products.pay-fee', $product) }}" class="w-full sm:w-auto">
+                      <form method="POST" action="{{ route('products.pay-fee.submit', $product) }}" class="w-full sm:w-auto">
                         @csrf
                         <input type="hidden" name="plan" value="{{ $planKey }}">
                         <button class="inline-flex w-full flex-col items-start rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500 sm:w-auto">
@@ -506,7 +506,7 @@
 
                   <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     @foreach($planButtons as $planKey => $option)
-                      <form method="POST" action="{{ route('products.pay-fee', $product) }}" class="w-full sm:w-auto">
+                      <form method="POST" action="{{ route('products.pay-fee.submit', $product) }}" class="w-full sm:w-auto">
                         @csrf
                         <input type="hidden" name="plan" value="{{ $planKey }}">
                         <button class="inline-flex w-full flex-col items-start rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500 sm:w-auto">

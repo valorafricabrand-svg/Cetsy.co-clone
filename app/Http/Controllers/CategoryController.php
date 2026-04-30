@@ -154,6 +154,7 @@ public function store(Request $request)
     if (array_key_exists('listing_fee', $data) && ($data['listing_fee'] === null || $data['listing_fee'] === '')) {
         unset($data['listing_fee']);
     }
+    $data['description'] = Category::toPlainDescription($data['description'] ?? null);
 
     // Auto‐slug if blank
     if (empty($data['slug'])) {
@@ -195,7 +196,6 @@ public function update(Request $request, Category $category)
 {
     $data = $request->validate([
         'name'          => "required|string|max:255|unique:categories,name,{$category->id}",
-        'slug'          => "nullable|string|max:255|unique:categories,slug,{$category->id}",
         'parent_id'     => 'nullable|exists:categories,id',
         'listing_type'  => 'required|in:products,services,digital',
         'description'   => 'nullable|string|max:1000',
@@ -208,11 +208,10 @@ public function update(Request $request, Category $category)
     if (array_key_exists('listing_fee', $data) && ($data['listing_fee'] === null || $data['listing_fee'] === '')) {
         unset($data['listing_fee']);
     }
+    $data['description'] = Category::toPlainDescription($data['description'] ?? null);
 
-    // Auto‐slug if blank
-    if (empty($data['slug'])) {
-        $data['slug'] = Str::slug($data['name']);
-    }
+    // Keep existing category URLs stable when editing names, fees, images, or descriptions.
+    $data['slug'] = $category->slug ?: Str::slug($data['name']);
 
     // Replace featured image if uploaded
     if ($file = $request->file('image')) {
@@ -224,7 +223,9 @@ public function update(Request $request, Category $category)
 
     $category->update($data);
 
-    return back()->with('success', 'Category updated successfully!');
+    return redirect()
+        ->route('admin.categories.edit', $category->fresh())
+        ->with('success', 'Category updated successfully!');
 }
 
     /**
@@ -249,9 +250,11 @@ public function categoryShow($localeOrSlug, $slug = null)
     $slug = $slug ?? $localeOrSlug;
 
     // Find the category (with descendants) or 404
-    $category = Category::with('childrenRecursive')
-        ->where('slug', $slug)
-        ->firstOrFail();
+    $category = Category::findBySlugOrNameSlug($slug);
+
+    abort_unless($category, 404);
+
+    $category->load('childrenRecursive');
 
     // Build a flat list of this category + all descendant IDs
     $ids = collect([$category->id]);

@@ -273,7 +273,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ $favicon }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ $favicon }}">
     <link rel="shortcut icon" type="image/x-icon" href="{{ $favicon }}">
-    <link rel="manifest" href="{{ asset('assets/img/favicons/manifest.json') }}">
+    <link rel="manifest" href="{{ pwa_manifest_url() }}">
     <meta name="theme-color" content="#ffffff">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -475,6 +475,9 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        .top-category-carousel:has(.top-category-item--open) .top-category-scroll {
+            overflow: visible;
+        }
         .top-category-scroll::-webkit-scrollbar { display: none; }
         .top-category-scroll [data-top-category-track] {
             display: flex;
@@ -486,7 +489,7 @@
             transform: translate3d(0, 0, 0);
         }
         .top-category-item {
-            flex: 0 0 calc((100% - 2.5rem) / 6);
+            flex: 0 0 calc((100% - 1.5rem) / 4);
             min-width: 0;
         }
         .top-category-item > a {
@@ -498,6 +501,37 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+        .top-category-menu,
+        .top-category-submenu {
+            width: min(26rem, calc(100vw - 2rem));
+            max-height: min(72vh, 36rem);
+            overflow-y: auto;
+            overflow-x: visible;
+            z-index: 80;
+        }
+        .top-category-menu a,
+        .top-category-submenu a {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            line-height: 1.35;
+        }
+        .top-category-menu-label {
+            min-width: 0;
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+        }
+        .top-category-submenu {
+            left: 100%;
+            right: auto;
+            margin-left: 0.5rem;
+        }
+        .top-category-item:nth-child(4n) .top-category-submenu {
+            left: auto;
+            right: 100%;
+            margin-left: 0;
+            margin-right: 0.5rem;
         }
         .top-category-nav {
             position: absolute;
@@ -954,7 +988,7 @@
                 @if (!$hideMarketplaceCategories && $topNavCategories->isNotEmpty())
                     <div class="top-category-carousel pb-1"
                          data-top-category-carousel
-                         data-visible-count="6"
+                         data-visible-count="4"
                          data-autoplay-ms="5000">
                         <button type="button" class="top-category-nav top-category-nav-prev" data-top-category-prev aria-label="Previous categories">
                             <i class="fa-solid fa-chevron-left text-[11px]"></i>
@@ -972,7 +1006,7 @@
                                         : media_url($catImagePath);
                                 }
                             @endphp
-                            <div class="relative top-category-item" data-top-category-item x-data="{ open: false, pinned: false }" @mouseenter="open = true" @mouseleave="if (!pinned) open = false" @focusin="open = true" @focusout="if (!pinned) open = false" @click.outside="open = false; pinned = false">
+                            <div class="relative top-category-item" data-top-category-item x-data="{ open: false, pinned: false }" :class="{ 'top-category-item--open': open }" @mouseenter="open = true" @mouseleave="if (!pinned) open = false" @focusin="open = true" @focusout="if (!pinned) open = false" @click.outside="open = false; pinned = false">
                                 <a href="{{ localized_route('category.show', $cat->slug) }}" class="inline-flex min-w-0 items-center justify-start gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700" @if ($children->isNotEmpty()) @click.prevent="pinned = !pinned; open = pinned" @endif>
                                     @if ($catThumb)
                                         <img src="{{ $catThumb }}" alt="{{ $cat->name }}" class="h-8 w-8 rounded object-cover" onerror="this.onerror=null;this.style.display='none';">
@@ -988,7 +1022,7 @@
                                 </a>
 
                                 @if ($children->isNotEmpty())
-                                    <div x-show="open" x-cloak x-transition class="absolute left-0 top-full z-50 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                                    <div x-show="open" x-cloak x-transition class="top-category-menu absolute left-0 top-full mt-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
                                         <a href="{{ localized_route('category.show', $cat->slug) }}" class="mb-1 block rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">
                                             All {{ $cat->name }}
                                         </a>
@@ -997,15 +1031,15 @@
                                             @foreach ($children as $child)
                                                 @php $grandChildren = collect($child->children ?? []); @endphp
                                                 <li class="relative" x-data="{ openChild: false, pinnedChild: false }" @mouseenter="openChild = true" @mouseleave="if (!pinnedChild) openChild = false" @focusin="openChild = true" @focusout="if (!pinnedChild) openChild = false" @click.outside="openChild = false; pinnedChild = false">
-                                                    <a href="{{ localized_route('category.show', $child->slug) }}" class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900" @if ($grandChildren->isNotEmpty()) @click.prevent="pinnedChild = !pinnedChild; openChild = pinnedChild" @endif>
-                                                        <span class="truncate">{{ $child->name }}</span>
+                                                    <a href="{{ localized_route('category.show', $child->slug) }}" class="flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900" @if ($grandChildren->isNotEmpty()) @click.prevent="pinnedChild = !pinnedChild; openChild = pinnedChild" @endif>
+                                                        <span class="top-category-menu-label">{{ $child->name }}</span>
                                                         @if ($grandChildren->isNotEmpty())
                                                             <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
                                                         @endif
                                                     </a>
 
                                                     @if ($grandChildren->isNotEmpty())
-                                                        <div x-show="openChild" x-cloak x-transition class="absolute left-full top-0 ml-2 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                                                        <div x-show="openChild" x-cloak x-transition class="top-category-submenu absolute top-0 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
                                                             <a href="{{ localized_route('category.show', $child->slug) }}" class="mb-1 block rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">
                                                                 All {{ $child->name }}
                                                             </a>
@@ -1632,7 +1666,7 @@
             }, 80);
         }, true);
 
-        // Desktop top-category rail as a paged carousel (6 categories per slide).
+        // Desktop top-category rail as a paged carousel.
         document.querySelectorAll('[data-top-category-carousel]').forEach(function (carousel) {
             const scroller = carousel.querySelector('.top-category-scroll');
             const track = carousel.querySelector('[data-top-category-track]');

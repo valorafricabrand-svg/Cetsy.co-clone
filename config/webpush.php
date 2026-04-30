@@ -11,6 +11,6 @@ return [
         'private_key' => env('WEBPUSH_VAPID_PRIVATE_KEY'),
     ],
 
-    'icon' => env('WEBPUSH_ICON', rtrim(env('APP_URL', 'http://localhost'), '/') . '/assets/images/cetsylogmain.png'),
-    'badge' => env('WEBPUSH_BADGE', rtrim(env('APP_URL', 'http://localhost'), '/') . '/favicon.ico'),
+    'icon' => env('WEBPUSH_ICON', rtrim(env('APP_URL', 'http://localhost'), '/') . '/assets/img/favicons/cetsy-pwa-192.png'),
+    'badge' => env('WEBPUSH_BADGE', rtrim(env('APP_URL', 'http://localhost'), '/') . '/assets/img/favicons/favicon-32x32.png'),
 ];

@@ -360,8 +360,10 @@ Route::get('/wishlist', [ProductController::class, 'wishlist'])->name('wishlist'
 Route::get('/pay-now/{total}', [OrderController::class, 'payNow'])->name('pay_now');
 
 
-Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
+Route::get('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
     ->name('products.pay-fee');
+Route::post('/products/{product}/pay-fee', [ProductController::class, 'payFee'])
+    ->name('products.pay-fee.submit');
 // Product Reports
 Route::post('/product-reports', [ProductReportController::class, 'store'])->name('product-reports.store');
 

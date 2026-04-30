@@ -129,7 +129,7 @@
             </div>
           </form>
 
-          <form id="payFeeForm-{{ $product->id }}" class="hidden" method="POST" action="{{ route('products.pay-fee', $product) }}">
+          <form id="payFeeForm-{{ $product->id }}" class="hidden" method="POST" action="{{ route('products.pay-fee.submit', $product) }}">
             @csrf
             @php
               $freqHidden = (int) ($product->category?->listing_frequency ?? 4);

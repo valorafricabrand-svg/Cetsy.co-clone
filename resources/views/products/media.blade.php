@@ -492,8 +492,8 @@
       <div class="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div class="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <label class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500" for="productMediaUploadInput">Media File</label>
-            <p class="mt-1 text-xs text-slate-500">Choose one image or video from your phone, then tap Upload Media.</p>
+            <label class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500" for="productMediaUploadInput">Media Files</label>
+            <p class="mt-1 text-xs text-slate-500">Choose one or more images or videos from your phone, then tap Upload Media.</p>
           </div>
           <span class="inline-flex items-center rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Optional</span>
         </div>
@@ -503,13 +503,14 @@
                name="media[]"
                class="sr-only"
                accept="image/*,video/*"
+               multiple
                x-ref="fileInput"
                @change="seedFromNative($event)">
 
         <div class="mt-3 flex flex-wrap items-center gap-3">
           <label for="productMediaUploadInput"
                  class="inline-flex cursor-pointer items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
-            <span>Choose File</span>
+            <span>Choose Files</span>
           </label>
           <p class="text-sm text-slate-500" x-text="selectionStatus()"></p>
         </div>

@@ -37,7 +37,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ $favicon }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ $favicon }}">
     <link rel="shortcut icon" type="image/x-icon" href="{{ $favicon }}">
-    <link rel="manifest" href="{{ asset('assets/img/favicons/manifest.json') }}">
+    <link rel="manifest" href="{{ pwa_manifest_url() }}">
     <meta name="theme-color" content="#ffffff">
     <title>{{ $metaTitle }}</title>
 
