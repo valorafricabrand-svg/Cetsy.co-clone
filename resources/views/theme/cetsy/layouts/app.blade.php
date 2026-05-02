@@ -1537,7 +1537,7 @@
                         <li><a class="hover:text-white" href="{{ localized_route('listings') }}">Browse Listings</a></li>
                         <li><a class="hover:text-white" href="{{ localized_route('shops.index') }}">Find a Shop</a></li>
                         <li><a class="hover:text-white" href="{{ localized_route('become-seller') }}">Sell on {{ $siteName }}</a></li>
-                        <li><a class="hover:text-white" href="{{ localized_route('blog.index') }}">Blog</a></li>
+                        <li><a class="hover:text-white" href="{{ url('/blog') }}">Blog</a></li>
                     </ul>
                 </div>
 
