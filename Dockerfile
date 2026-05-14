@@ -18,12 +18,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libonig-dev \
     libpng-dev \
     libjpeg62-turbo-dev \
-    libwebp-dev \
-    libxpm-dev \
     zlib1g-dev \
     libxml2-dev \
     curl \
- && docker-php-ext-configure gd --with-jpeg --with-webp --with-xpm \
+ && docker-php-ext-configure gd --with-jpeg \
  && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
