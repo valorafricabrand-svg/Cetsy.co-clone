@@ -11,17 +11,7 @@ FROM php:8.2-fpm-alpine
 WORKDIR /var/www/html
 
 # Install minimal required packages
-RUN apk add --no-cache \
-    libzip \
-    libpng \
-    jpeg \
-    freetype \
-    zlib \
-    libxml2 \
-    curl \
-    unzip \
-    git \
-    mysql-client
+RUN apk add --no-cache libzip libpng jpeg freetype zlib libxml2 curl unzip git mysql-client
 
 # Install PHP extensions one by one to reduce memory usage
 RUN docker-php-ext-install pdo_mysql
@@ -30,10 +20,7 @@ RUN docker-php-ext-install zip
 RUN docker-php-ext-install exif
 RUN docker-php-ext-install pcntl
 RUN docker-php-ext-install bcmath
-RUN apk add --no-cache --virtual .gd-deps libpng-dev jpeg-dev freetype-dev \
- && docker-php-ext-configure gd --with-jpeg --with-freetype \
- && docker-php-ext-install gd \
- && apk del .gd-deps
+RUN apk add --no-cache --virtual .gd-deps libpng-dev jpeg-dev freetype-dev && docker-php-ext-configure gd --with-jpeg --with-freetype && docker-php-ext-install gd && apk del .gd-deps
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
