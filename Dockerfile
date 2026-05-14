@@ -11,9 +11,9 @@ FROM php:8.2-fpm-alpine
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /var/www/html
 
-RUN apk add --no-cache \
-    git \
-    unzip \
+RUN apk add --no-cache --virtual .build-deps \
+    build-base \
+    autoconf \
     libzip-dev \
     oniguruma-dev \
     libpng-dev \
@@ -22,8 +22,19 @@ RUN apk add --no-cache \
     zlib-dev \
     libxml2-dev \
     curl \
+    unzip \
+    git \
+ && apk add --no-cache \
+    libzip \
+    oniguruma \
+    libpng \
+    jpeg \
+    freetype \
+    zlib \
+    libxml2 \
  && docker-php-ext-configure gd --with-jpeg --with-freetype \
- && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
+ && docker-php-ext-install -j1 pdo_mysql mbstring zip exif pcntl bcmath gd \
+ && apk del .build-deps
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
