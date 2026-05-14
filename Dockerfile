@@ -18,10 +18,11 @@ RUN apk add --no-cache \
     oniguruma-dev \
     libpng-dev \
     jpeg-dev \
+    freetype-dev \
     zlib-dev \
     libxml2-dev \
     curl \
- && docker-php-ext-configure gd --with-jpeg \
+ && docker-php-ext-configure gd --with-jpeg --with-freetype \
  && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
