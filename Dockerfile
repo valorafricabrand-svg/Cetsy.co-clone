@@ -1,18 +1,17 @@
 # Build the frontend assets in a Node build stage
-FROM node:20 AS build-assets
+FROM node:20-alpine AS build-assets
 WORKDIR /var/www/html
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --only=production
 COPY . .
 RUN npm run build
 
 # Build the PHP application image
 FROM php:8.2-fpm-alpine
-ENV DEBIAN_FRONTEND=noninteractive
+ENV COMPOSER_MEMORY_LIMIT=-1
 WORKDIR /var/www/html
 
 RUN apk add --no-cache --virtual .build-deps \
-    build-base \
     autoconf \
     libzip-dev \
     oniguruma-dev \
@@ -21,9 +20,6 @@ RUN apk add --no-cache --virtual .build-deps \
     freetype-dev \
     zlib-dev \
     libxml2-dev \
-    curl \
-    unzip \
-    git \
  && apk add --no-cache \
     libzip \
     oniguruma \
@@ -32,6 +28,9 @@ RUN apk add --no-cache --virtual .build-deps \
     freetype \
     zlib \
     libxml2 \
+    curl \
+    unzip \
+    git \
  && docker-php-ext-configure gd --with-jpeg --with-freetype \
  && docker-php-ext-install -j1 pdo_mysql mbstring zip exif pcntl bcmath gd \
  && apk del .build-deps
@@ -39,7 +38,7 @@ RUN apk add --no-cache --virtual .build-deps \
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 COPY composer.* ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
 
 COPY . ./
 COPY --from=build-assets /var/www/html/public/build ./public/build
