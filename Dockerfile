@@ -7,23 +7,21 @@ COPY . .
 RUN npm run build
 
 # Build the PHP application image
-FROM php:8.2-fpm
+FROM php:8.2-fpm-alpine
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /var/www/html
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
     git \
     unzip \
     libzip-dev \
-    libonig-dev \
+    oniguruma-dev \
     libpng-dev \
-    libjpeg62-turbo-dev \
-    zlib1g-dev \
+    jpeg-dev \
+    zlib-dev \
     libxml2-dev \
     curl \
- && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-RUN docker-php-ext-configure gd --with-jpeg \
+ && docker-php-ext-configure gd --with-jpeg \
  && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
