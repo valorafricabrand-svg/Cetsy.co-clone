@@ -8,8 +8,10 @@ RUN npm run build
 
 # Build the PHP application image
 FROM php:8.2-fpm
+ENV DEBIAN_FRONTEND=noninteractive
+WORKDIR /var/www/html
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     unzip \
     libzip-dev \
@@ -21,12 +23,11 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libxml2-dev \
     curl \
-    && docker-php-ext-configure gd --with-jpeg --with-webp --with-xpm \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
+ && docker-php-ext-configure gd --with-jpeg --with-webp --with-xpm \
+ && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-WORKDIR /var/www/html
 
 COPY composer.* ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
@@ -34,7 +35,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-di
 COPY . ./
 COPY --from=build-assets /var/www/html/public/build ./public/build
 
-RUN php -r "file_exists('.env') || copy('.env.example', '.env');"
+RUN if [ ! -f .env ]; then cp .env.example .env; fi
 RUN php artisan key:generate --force
 
 EXPOSE 8000
